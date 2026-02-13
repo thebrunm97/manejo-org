@@ -1,0 +1,6 @@
+/* App.css limpo */
+#root {
+  width: 100%;
+  margin: 0 auto;
+  text-align: left; /* Garante que os inputs fiquem alinhados à esquerda */
+}

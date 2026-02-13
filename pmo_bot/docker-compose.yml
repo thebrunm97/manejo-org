@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  wppconnect:
+    container_name: wppconnect
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile.wppconnect
+      args:
+        - NODE_ENV=production
+    ports:
+      - "21465:21465" # Correção: Windows 21465 -> Container 21465
+    environment:
+      - PORT=21465
+      - WEBHOOK_URL=http://pmo-bot:5000/webhook?token=TY6oMv4d20a3
+      - WEBHOOK_ENABLED=true
+      - WEBHOOK_GLOBAL_ENABLED=true
+      - WEBHOOK_READ_MESSAGES=false
+      - WEBHOOK_ALL_EVENTS=true
+      # Fix status@broadcast crash
+      - WEBHOOK_IGNORE_BROADCAST=true
+      - WEBHOOK_IGNORE_STATUS=true
+      - AUTO_READ_MESSAGES=false
+      - MARK_MESSAGES_READ=false
+      - LOG_LEVEL=silly
+      - SECRET_KEY=TY6oMv4d20a3
+      - SESSION_SECRET_KEY=TY6oMv4d20a3
+      - AUTHENTICATION_TYPE=secret
+      - TZ=America/Sao_Paulo
+    env_file:
+      - .env
+    volumes:
+      - ./wppconnect-data:/usr/src/wpp-server/userDataDir
+      - ./tokens:/usr/src/wpp-server/tokens
+      - ./wpp_entrypoint.sh:/entrypoint.sh
+    entrypoint: [ "/bin/sh", "/entrypoint.sh" ]
+
+  redis:
+    container_name: redis
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - redis-data:/data
+
+  pmo-bot:
+    container_name: pmo-bot
+    restart: always
+    build: .
+    command: uvicorn webhook:app --host 0.0.0.0 --port 5000
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    environment:
+      - HOST=0.0.0.0
+      - PORT=5000
+      - WPP_SERVER_URL=http://wppconnect:21465
+      - REDIS_URL=redis://redis:6379
+      - TZ=America/Sao_Paulo
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+    depends_on:
+      - wppconnect
+      - redis
+    volumes:
+      - .:/app
+      - ./docs:/app/docs
+
+  pmo-worker:
+    container_name: pmo-worker
+    restart: always
+    build: .
+    command: arq worker.WorkerSettings
+    env_file:
+      - .env
+    environment:
+      - WPP_SERVER_URL=http://wppconnect:21465
+      - REDIS_URL=redis://redis:6379
+      - TZ=America/Sao_Paulo
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+    depends_on:
+      - redis
+    volumes:
+      - .:/app
+      - ./docs:/app/docs
+
+volumes:
+  redis-data:

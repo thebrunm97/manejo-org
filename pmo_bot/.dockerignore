@@ -1,0 +1,40 @@
+# Node modules
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Dados locais
+wpp-data
+wpp-tokens
+wpp-logs
+wppconnect-data
+
+# Git
+.git
+.gitignore
+.github
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Documentação
+README.md
+docs
+
+# Outros
+*.log
+.env.local
+# Python
+.venv
+venv
+__pycache__
+*.pyc
+
+# Large dirs
+wppconnect-server/node_modules
+wppconnect-server/dist
+_ANTIGOS
+audios_recebidos

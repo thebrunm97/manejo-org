@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  wppconnect:
+    container_name: wppconnect
+    restart: always
+    build:
+      context: ../wppconnect-server
+      dockerfile: Dockerfile
+    ports:
+      - "21465:5000"
+    environment:
+      - PORT=5000
+      - WEBHOOK_URL=http://pmo-bot:5000/webhook?token=${WPPCONNECT_TOKEN}
+      - WEBHOOK_ENABLED=true
+      - WEBHOOK_READ_MESSAGES=true
+      - WEBHOOK_ALL_EVENTS=true
+      - SECRET_KEY=${WPP_SECRET_KEY}
+      - LOG_LEVEL=error
+    env_file:
+      - .env
+    volumes:
+      - ./wppconnect-data:/usr/src/wpp-server/userDataDir
+
+  pmo-bot:
+    container_name: pmo-bot
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    environment:
+      - FLASK_HOST=0.0.0.0
+      - PORT=5000
+    depends_on:
+      - wppconnect
+    volumes:
+      - .:/app

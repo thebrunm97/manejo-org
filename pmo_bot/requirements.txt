@@ -1,0 +1,47 @@
+# PMO Bot - Python Dependencies
+# Security: Versions are pinned to prevent supply chain attacks
+# Updated: 2026-02-12
+
+# Web Framework (FastAPI)
+fastapi>=0.100.0,<1.0.0
+uvicorn[standard]>=0.20.0,<1.0.0
+
+# Task Queue (arq + Redis)
+arq>=0.25.0,<1.0.0
+redis>=5.0.0,<6.0.0
+
+# HTTP Client
+requests>=2.31.0,<3.0.0
+
+# Environment Variables
+python-dotenv>=1.0.0,<2.0.0
+
+# Supabase Client
+supabase>=2.0.0,<3.0.0
+
+# Groq AI SDK
+groq>=0.4.0,<1.0.0
+
+# Google Gemini AI SDK (Expert Agent)
+google-genai>=0.3.0
+
+# Timezone handling
+pytz>=2024.1
+
+# Data Validation
+pydantic>=2.0.0,<3.0.0
+
+# Audio Processing
+mutagen>=1.47.0
+
+# LangChain & LangGraph (Phase 3 Migration)
+langchain>=0.3.0
+langgraph>=0.2.0
+langchain-google-genai
+langchain-groq
+langchain-community
+langchain-postgres
+psycopg[binary]
+psycopg-pool
+asgiref>=3.7.0
+APScheduler>=3.10.0
