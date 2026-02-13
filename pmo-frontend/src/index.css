@@ -1,0 +1,378 @@
+/* ==========================================================================
+   PMO FORM STYLES - src/index.css (VERSÃO COMPLETA E CORRIGIDA)
+   ========================================================================== */
+
+/* ---------------------------------- */
+/* A. CONFIGURAÇÕES GLOBAIS E TEMA    */
+/* ---------------------------------- */
+:root {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  --pmo-color-primary: #0d6efd;
+  --pmo-color-secondary: #0d6efd;
+  --pmo-color-success: #198754;
+  --pmo-color-grey-light: #e0e0e0;
+  --pmo-color-grey-text: #6c757d;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #f1f5f9;
+}
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 1rem;
+}
+
+/* ------------------------------------------- */
+/* B. ESTILOS GERAIS DO FORMULÁRIO (VISIBILIDADE) */
+/* ------------------------------------------- */
+.pmo-form h3 {
+  font-size: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+.pmo-form h5 {
+  font-size: 1.2rem;
+  color: #343a40;
+}
+.pmo-form .form-label,
+.pmo-form .form-check-label {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+.pmo-form .form-control,
+.pmo-form .form-select {
+  font-size: 1rem;
+  padding: 0.75rem 1rem;
+}
+.pmo-form .form-group, .pmo-form .mb-4 {
+  margin-bottom: 2rem !important;
+}
+.pmo-form hr {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+/* ---------------------------------------- */
+/* C. ESTILOS DO STEPPER (MODO CLARO)       */
+/* ---------------------------------------- */
+
+.stepper-container {
+  position: relative;
+  margin-bottom: 3rem; 
+}
+
+.stepper-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stepper-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  border: 1px solid var(--pmo-color-grey-light);
+  background-color: #fff;
+  color: var(--pmo-color-grey-text);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  flex-shrink: 0;
+}
+.stepper-arrow:hover {
+  background-color: #f0f0f0;
+  border-color: #adb5bd;
+}
+.stepper-arrow.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.stepper-wrapper {
+  display: flex;
+  align-items: flex-start; 
+  justify-content: space-between;
+  flex-grow: 1;
+  margin: 0 1rem;
+  overflow: hidden;
+}
+
+.step-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 130px; 
+  padding: 0 10px;
+  cursor: pointer;
+  z-index: 2;
+}
+
+/* ========================================================= */
+/* ||              A CORREÇÃO ESTÁ NESTE BLOCO              || */
+/* ========================================================= */
+.step-item:not(:first-child)::before {
+  content: '';
+  position: absolute;
+  top: 20px; /* Alinhado com o centro do círculo de 40px */
+  
+  /* Puxamos a linha para começar à direita do centro do item anterior */
+  right: calc(50% + 20px); /* 50% + metade da largura do círculo (40px/2) */
+  
+  /* A largura da linha é o espaço total MENOS a largura do círculo */
+  width: calc(100% - 40px); 
+  
+  height: 2px;
+  background-color: var(--pmo-color-grey-light);
+  z-index: 1; /* Garante que a linha fique atrás do círculo */
+  transition: background-color 0.4s ease;
+}
+
+.step-counter {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid var(--pmo-color-grey-light); 
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--pmo-color-grey-text);
+  transition: all 0.3s ease;
+  z-index: 2;
+  margin-bottom: 1rem; 
+}
+
+.step-label-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--pmo-color-grey-text);
+}
+
+.step-icon {
+  font-size: 1.2rem;
+}
+
+.step-label {
+  font-size: 0.95rem; 
+  font-weight: 500;
+}
+.step-sub-label {
+  font-size: 0.8rem;
+  color: var(--pmo-color-grey-text);
+  margin-top: 4px;
+}
+
+.stepper-completion-counter {
+  color: var(--pmo-color-grey-text);
+  font-size: 0.9rem; 
+  margin-top: 1rem;
+  text-align: center;
+}
+
+/* --- Estados do Stepper (Modo Claro) --- */
+.step-item.active .step-counter {
+  border-color: var(--pmo-color-primary);
+  color: var(--pmo-color-primary);
+}
+.step-item.active .step-label-container,
+.step-item.active .step-sub-label {
+  color: var(--pmo-color-primary);
+  font-weight: 500;
+}
+
+.step-item.em-progresso .step-counter {
+    border-color: var(--pmo-color-secondary);
+    color: var(--pmo-color-secondary);
+    opacity: 0.7;
+}
+.step-item.em-progresso .step-label-container,
+.step-item.em-progresso .step-sub-label {
+    color: var(--pmo-color-secondary);
+    opacity: 0.8;
+}
+
+.step-item.completo .step-counter {
+  background-color: var(--pmo-color-success);
+  border-color: var(--pmo-color-success);
+  color: #ffffff;
+}
+.step-item.completo .step-label-container {
+  color: var(--bs-body-color, #213547);
+}
+.step-item.completo:not(:first-child)::before,
+.step-item.active.completo:not(:first-child)::before {
+  background-color: var(--pmo-color-success);
+}
+
+/* ------------------------------------------- */
+/* D. ESTILOS PARA O MODO ESCURO (DARK MODE)   */
+/* ------------------------------------------- */
+@media (prefers-color-scheme: dark) {
+  
+  :root {
+    --pmo-dark-text-primary: rgba(255, 255, 255, 0.85);
+    --pmo-dark-text-secondary: rgba(255, 255, 255, 0.6);
+    --pmo-dark-border: rgba(255, 255, 255, 0.3);
+    --pmo-dark-bg-hover: rgba(255, 255, 255, 0.08);
+    --pmo-dark-active: #64b5f6;
+    --pmo-dark-in-progress: #64b5f6;
+    --pmo-dark-success: #81c784;
+  }
+
+  body {
+    background-color: #121212;
+    color: var(--pmo-dark-text-primary);
+  }
+
+  .stepper-arrow {
+    background-color: transparent;
+    border-color: var(--pmo-dark-border);
+    color: var(--pmo-dark-text-secondary);
+  }
+  .stepper-arrow:hover {
+    background-color: var(--pmo-dark-bg-hover);
+    border-color: var(--pmo-dark-text-primary);
+  }
+
+  .step-counter {
+    background-color: transparent;
+    border-color: var(--pmo-dark-border);
+    color: var(--pmo-dark-text-secondary);
+  }
+
+  .step-item:not(:first-child)::before {
+    background-color: var(--pmo-dark-border);
+  }
+
+  .step-label-container,
+  .step-sub-label,
+  .stepper-completion-counter {
+    color: var(--pmo-dark-text-secondary);
+  }
+  
+  /* --- Estados do Stepper (Modo Escuro) --- */
+  .step-item.active .step-counter {
+    border-color: var(--pmo-dark-active);
+    color: var(--pmo-dark-active);
+  }
+  .step-item.active .step-label-container,
+  .step-item.active .step-sub-label {
+    color: var(--pmo-dark-active);
+  }
+
+  .step-item.em-progresso .step-counter {
+    border-color: var(--pmo-dark-in-progress);
+    color: var(--pmo-dark-in-progress);
+  }
+  .step-item.em-progresso .step-label-container,
+  .step-item.em-progresso .step-sub-label {
+    color: var(--pmo-dark-in-progress);
+  }
+  
+  .step-item.completo .step-counter {
+    background-color: var(--pmo-dark-success);
+    border-color: var(--pmo-dark-success);
+    color: #121212;
+  }
+  .step-item.completo .step-label-container {
+    color: var(--pmo-dark-text-primary);
+  }
+  .step-item.completo:not(:first-child)::before {
+    background-color: var(--pmo-dark-success);
+  }
+}
+
+/* ============================================= */
+/* ||     ESTILOS PARA O CONECTOR DO STEPPER MUI     || */
+/* ============================================= */
+.MuiStepConnector-line {
+  border-color: #eaeaf0;
+  border-top-width: 3px;
+  border-radius: 1px;
+}
+.MuiStep-horizontal.Mui-active .MuiStepConnector-line,
+.MuiStep-horizontal.Mui-completed .MuiStepConnector-line {
+  border-color: #1976D2;
+}
+
+
+
+/* ... outros estilos ... */
+
+/* ======================================================== */
+/* ||     ESTILOS PARA O STEPPER RESPONSIVO COM ROLAGEM     || */
+/* ======================================================== */
+
+.responsive-stepper-container {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.stepper-scroll-wrapper {
+  overflow-x: auto; /* Permite a rolagem */
+  scroll-behavior: smooth; /* Animação suave de rolagem */
+  -ms-overflow-style: none;  /* Esconde a barra de rolagem no IE e Edge */
+  scrollbar-width: none;  /* Esconde a barra de rolagem no Firefox */
+}
+
+/* Esconde a barra de rolagem no Chrome, Safari e Opera */
+.stepper-scroll-wrapper::-webkit-scrollbar {
+  display: none;
+}
+
+/* Estilos para impressão */
+@media print {
+  /* Esconde tudo que não deve ser impresso */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Garante que apenas o conteúdo de impressão seja visível */
+  body * {
+    visibility: hidden;
+  }
+  .only-print, .only-print * {
+    visibility: visible;
+  }
+  .only-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+
+  /* Configurações da página A4 */
+  @page {
+    size: A4;
+    margin: 20mm;
+  }
+}
+
+/* Na tela normal, esconde o conteúdo de impressão */
+@media screen {
+  .only-print {
+    display: none;
+  }
+}

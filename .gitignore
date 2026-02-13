@@ -1,0 +1,94 @@
+# Dependencies
+node_modules/
+
+# Python virtual environments
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.debug
+
+# Build outputs
+dist/
+build/
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+logs_bot.txt
+logs_wpp.txt
+
+# Testing
+coverage/
+
+# Temporary files
+*.tmp
+*.temp
+audios_recebidos/
+
+# Database
+*.sqlite3
+db.sqlite3
+
+# Private documentation and agent rules
+docs/
+.agent/
+*.rules.md
+
+# WPPConnect Data (Huge session files)
+pmo_bot/wppconnect-data/
+wppconnect-data/
+**/wppconnect-data/
+
+# Temporary Debug Scripts
+pmo_bot/scripts/check_lid.py
+scripts/check_lid.py
+test_output.txt
+pmo_bot/test_output.txt
+
+# Compressed archives
+*.rar
+*.zip
+*.7z
+
+# Backup files
+*.backup
+
+# QR Code session files
+qrcode.html
+latest_qrcode.html
+
+# Extra log patterns
+*_logs.txt
+*_log.txt
+*_debug_logs.txt
+
+# AI agent artifacts
+.antigravity/
+
+# Env backups
+.env.backup
+
+# Temp result files
+test_result*.txt
+
+# Temp scripts with hardcoded tokens (unsafe to commit)
+pmo_bot/start_session.py
+pmo_bot/start_session_v2.py
+pmo_bot/check_session_status.py
+pmo_bot/check_status_temp.py
