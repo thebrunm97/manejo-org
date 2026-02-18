@@ -1,4 +1,4 @@
-// src/pages/LoginPage.tsx (Versão TSX - AgroVivo Design System)
+// src/pages/LoginPage.tsx (Versão TSX - Manejo Org Design System)
 
 import React, { useState, FormEvent } from 'react';
 import { useAuth } from '../context/AuthContext';
@@ -190,7 +190,7 @@ function LoginPage() {
                             borderRadius: 2, // rounded-lg
                         }}
                     >
-                        AV
+                        MO
                     </Avatar>
                     <Typography component="h1" variant="h5" sx={{ fontWeight: 700, color: 'white', letterSpacing: '-0.025em' }}>
                         Bem-vindo de volta

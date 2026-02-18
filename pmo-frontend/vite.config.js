@@ -10,8 +10,8 @@ export default defineConfig({
             registerType: 'autoUpdate',
             includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
             manifest: {
-                name: 'AgroVivo - Gestão Orgânica',
-                short_name: 'AgroVivo',
+                name: 'Manejo Org - Gestão Orgânica',
+                short_name: 'Manejo Org',
                 description: 'Sistema de Manejo Orgânico e Rastreabilidade',
                 theme_color: '#4CAF50',
                 background_color: '#ffffff',
