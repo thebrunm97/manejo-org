@@ -11,141 +11,95 @@ export interface ChangelogEntry {
 
 export const changelogData: ChangelogEntry[] = [
     {
-        version: "0.6.0-dev",
-        date: "12 de Fevereiro, 2026",
-        title: "Precisão e Inteligência de Campo",
-        description: "Grandes melhorias na inteligência do Assistente WhatsApp e na visualização de dados no Painel.",
-        sections: [
-            {
-                type: "New",
-                items: [
-                    "Suporte a múltiplos locais simultâneos no WhatsApp (ex: \"Canteiros 1 e 2\").",
-                    "Ícones e cores dinâmicas no Dashboard para Plantio, Manejo e Colheita.",
-                    "Histórico completo da conversa salvo nos detalhes do registro."
-                ]
-            },
-            {
-                type: "Fixes",
-                items: [
-                    "Correção na distinção entre quantidade (50 mudas) e local (Canteiro 5).",
-                    "Bloqueio de mensagens antigas (spam) ao reconectar o servidor."
-                ]
-            }
-        ]
-    },
-    {
         version: "0.5.0",
-        date: "26 de Janeiro, 2026",
-        title: "IA e Experiência do Usuário — MVP Release Candidate",
-        description: "Foco total em melhorar sua interação com nossa Inteligência Artificial e o painel de controle.",
+        date: "Fevereiro 2026",
+        title: "IA e Facilidade no WhatsApp",
+        description: "Melhoramos a conversa com a Inteligência Artificial e o seu painel.",
         sections: [
             {
                 type: "New",
                 items: [
-                    "Painel inteligente com sugestões automáticas e detalhes aprofundados.",
-                    "Novo assistente de boas-vindas e suporte a dúvidas via WhatsApp.",
-                    "Ferramenta de refinamento para ajustar os Planos de Manejo sugeridos.",
-                    "Histórico de estimativas agronômicas e uso do sistema."
+                    "Painel inicial com dicas automáticas sobre o seu manejo.",
+                    "Assistente de boas-vindas e suporte direto pelo WhatsApp.",
+                    "Ferramenta para ajustar os Planos de Manejo sugeridos pela IA."
                 ]
             },
             {
                 type: "Improvements",
                 items: [
-                    "Respostas da Inteligência Artificial mais rápidas e precisas.",
-                    "Melhorias na visualização de registros e logs."
-                ]
-            },
-            {
-                type: "Fixes",
-                items: [
-                    "Ajustes na estabilidade da conexão com WhatsApp.",
-                    "Correções na validação de mensagens e comandos."
+                    "As respostas da IA estão mais rápidas e diretas.",
+                    "O sistema entende melhor datas e áudios enviados no WhatsApp."
                 ]
             }
         ]
     },
     {
         version: "0.4.0",
-        date: "23 de Janeiro, 2026",
-        title: "Rastreabilidade e Integração",
-        description: "Expansão das capacidades de gestão e conexão completa com o WhatsApp.",
+        date: "Janeiro 2026",
+        title: "Rastreabilidade e Organização",
+        description: "Agora você pode controlar melhor a origem dos seus produtos.",
         sections: [
             {
                 type: "New",
                 items: [
-                    "Integração completa com WhatsApp: gerencie tudo pelo chat.",
-                    "Novo módulo de Rastreabilidade de Lotes e unidades complexas.",
-                    "IA aprimorada para entender datas e contextos específicos nas conversas.",
-                    "Maior segurança no armazenamento de comprovantes e documentos."
+                    "Novo módulo para rastrear lotes e colheitas.",
+                    "Possibilidade de gerenciar tudo pelo chat, sem abrir o computador.",
+                    "Segurança reforçada para guardar seus comprovantes e fotos."
                 ]
             },
             {
                 type: "Improvements",
                 items: [
-                    "Janelas e diálogos do sistema modernizados para facilitar o uso.",
-                    "Registro manual de atividades simplificado e mais intuitivo.",
-                    "Carregamento mais rápido das informações da propriedade."
-                ]
-            },
-            {
-                type: "Fixes",
-                items: [
-                    "Correção na criação de planos duplicados.",
-                    "Ajustes visuais na barra lateral e menus de navegação."
+                    "Ficou mais fácil registrar atividades manuais do dia a dia.",
+                    "As telas do sistema carregam mais rápido no celular."
                 ]
             }
         ]
     },
     {
         version: "0.3.0",
-        date: "19 de Janeiro, 2026",
-        title: "Bases da Rastreabilidade",
-        description: "Atualizações fundamentais para suportar o novo crescimento da plataforma.",
+        date: "Dezembro 2025",
+        title: "Novo Visual",
+        description: "Uma cara nova para facilitar o seu trabalho.",
         sections: [
             {
-                type: "Improvements",
+                type: "New",
                 items: [
-                    "Otimizações de segurança e estabilidade geral do sistema.",
-                    "Preparo da infraestrutura para o novo módulo de rastreio."
+                    "Visual renovado, mais limpo e fácil de ler no sol.",
+                    "Menu lateral organizado para achar as funções mais rápido.",
+                    "Cadastro da propriedade simplificado (menos cliques)."
                 ]
             }
         ]
     },
     {
         version: "0.2.0",
-        date: "13 de Janeiro, 2026",
-        title: "Nova Identidade Visual",
-        description: "Uma interface renovada para tornar seu trabalho mais agradável e eficiente.",
+        date: "Novembro 2025",
+        title: "Estabilidade e Segurança",
+        description: "Ajustes para o sistema crescer com segurança.",
         sections: [
             {
-                type: "New",
+                type: "Improvements",
                 items: [
-                    "Interface completamente renovada e mais limpa.",
-                    "Gestão de Propriedade reorganizada para facilitar o cadastro.",
-                    "Navegação mais fluida entre as telas com novo menu lateral."
-                ]
-            },
-            {
-                type: "Fixes",
-                items: [
-                    "Ajustes gerais de layout em dispositivos móveis.",
-                    "Correções no carregamento inicial da aplicação."
+                    "O sistema está mais estável e não cai durante o uso.",
+                    "Correção de pequenos erros na criação de planos duplicados.",
+                    "Melhoria na visualização em celulares pequenos."
                 ]
             }
         ]
     },
     {
         version: "0.1.0",
-        date: "06 de Outubro, 2025",
-        title: "Lançamento Oficial",
-        description: "O início da jornada do Manejo Orgânico.",
+        date: "Outubro 2025",
+        title: "O Início",
+        description: "Lançamento do Manejo Orgânico.",
         sections: [
             {
                 type: "New",
                 items: [
-                    "Lançamento da plataforma de gestão para produtores orgânicos.",
-                    "Caderno de Campo Digital integrado.",
-                    "Primeira versão do assistente de IA."
+                    "Lançamento oficial da plataforma.",
+                    "Caderno de Campo Digital (adeus papel!).",
+                    "Primeira versão da Inteligência Artificial auxiliar."
                 ]
             }
         ]

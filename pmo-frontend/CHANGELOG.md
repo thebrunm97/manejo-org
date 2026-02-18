@@ -1,43 +1,59 @@
 # Changelog
 
-Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
+Visão geral das atualizações para o produtor rural.
 
-O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
-e este projeto adere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [v0.5.0] - Fevereiro 2026
 
-## [Não lançado]
+### IA e Facilidade no WhatsApp
+**Foco:** Melhoramos a conversa com a Inteligência Artificial e o seu painel.
 
-### Adicionado
-- Criação do arquivo CHANGELOG.md para rastreamento de mudanças.
+- **Novidades:**
+  - Painel inicial com dicas automáticas sobre o seu manejo.
+  - Assistente de boas-vindas e suporte direto pelo WhatsApp.
+  - Ferramenta para ajustar os Planos de Manejo sugeridos pela IA.
+- **Melhorias:**
+  - As respostas da IA estão mais rápidas e diretas.
+  - O sistema entende melhor datas e áudios enviados no WhatsApp.
 
-## [Sprint 4] - 2026-01-07
+## [v0.4.0] - Janeiro 2026
 
-### ✨ Funcionalidades
-- **Relatório de Impressão do PMO**: Novo módulo para geração de Relatório Técnico em formato A4/PDF.
-  - Implementado componente `PmoParaImpressao.jsx` com estilos de alto contraste e layout de documentos oficiais.
-  - Adicionado botão "Visualizar Impressão" na barra de ferramentas do formulário (`PmoFormPage.jsx`).
-  - Ocultamento automático de elementos de UI (Sidebar, Botões) durante a impressão através de CSS `@media print`.
-  - Agrupamento inteligente de culturas e produtos na listagem do relatório.
+### Rastreabilidade e Organização
+**Foco:** Agora você pode controlar melhor a origem dos seus produtos.
 
-## [v0.13.1] - 2026-01-06
+- **Novidades:**
+  - Novo módulo para rastrear lotes e colheitas.
+  - Possibilidade de gerenciar tudo pelo chat, sem abrir o computador.
+  - Segurança reforçada para guardar seus comprovantes e fotos.
+- **Melhorias:**
+  - Ficou mais fácil registrar atividades manuais do dia a dia.
+  - As telas do sistema carregam mais rápido no celular.
 
-### ✨ Melhorias de UX/UI (Mobile First)
-- **Diário de Campo (`DiarioDeCampo.jsx`)**: Refatorado para layout responsivo. Desktop exibe tabela fluida; Mobile exibe cards estilo "Feed" (Instagram-style).
-- **Dashboard de Colheita (`HarvestDashboard.jsx`)**: Aplicado mesmo padrão responsivo (Tabela/Cards) na seção "Últimos Registros".
-- **Tabelas Gerais (`GeneralLogTable.jsx`)**: Padronização dos componentes de listagem.
+## [v0.3.0] - Dezembro 2025
 
-### 🗺️ Mapa
-- **Layout Mobile Otimizado**: Altura do mapa ajustada para `40vh` no mobile, permitindo visibilidade da lista de talhões.
-- **Interação Melhorada**: Removida a "trava de scroll" (Map Lock). O mapa agora é sempre interativo e a rolagem da página é feita pela área da lista.
+### Novo Visual
+**Foco:** Uma cara nova para facilitar o seu trabalho.
 
-### 🐛 Correções
-- **Scroll Infinito (`DashboardLayout.jsx`)**: Corrigido bug crítico que impedia a rolagem da página. Layout reestruturado com Flexbox e `height: 100dvh`.
+- **Novidades:**
+  - Visual renovado, mais limpo e fácil de ler no sol.
+  - Menu lateral organizado para achar as funções mais rápido.
+  - Cadastro da propriedade simplificado (menos cliques).
 
-### 🆕 Novas Funcionalidades
-- **Página "Minhas Culturas"**: Adicionada rota `/culturas` com placeholder visual ("Em Breve").
+## [v0.2.0] - Novembro 2025
 
-## [v0.13] - 2026-01-06
+### Estabilidade e Segurança
+**Foco:** Ajustes para o sistema crescer com segurança.
 
-### Contexto
-- Versão atual em desenvolvimento (baseado no diretório `manejo_ORG_v0.13`).
-- Foco recente em correções de estabilidade (Error Boundaries, correções de .map indefinido) e refatoração de layout (DashboardLayout, responsividade).
+- **Melhorias:**
+  - O sistema está mais estável e não cai durante o uso.
+  - Correção de pequenos erros na criação de planos duplicados.
+  - Melhoria na visualização em celulares pequenos.
+
+## [v0.1.0] - Outubro 2025
+
+### O Início
+**Foco:** Lançamento do Manejo Orgânico.
+
+- **Novidades:**
+  - Lançamento oficial da plataforma.
+  - Caderno de Campo Digital (adeus papel!).
+  - Primeira versão da Inteligência Artificial auxiliar.
