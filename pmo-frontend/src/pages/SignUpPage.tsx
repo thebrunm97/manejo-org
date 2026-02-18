@@ -1,4 +1,4 @@
-// src/pages/SignUpPage.tsx (AgroVivo Design System - Dark Glassmorphism)
+// src/pages/SignUpPage.tsx (Manejo Org Design System - Dark Glassmorphism)
 
 import React, { useState, FormEvent, ChangeEvent } from 'react';
 import { useAuth } from '../context/AuthContext';
@@ -204,7 +204,7 @@ function SignUpPage() {
                             borderRadius: 2,
                         }}
                     >
-                        AV
+                        MO
                     </Avatar>
                     <Typography component="h1" variant="h5" sx={{ fontWeight: 700, color: 'white', letterSpacing: '-0.025em' }}>
                         Cadastre-se

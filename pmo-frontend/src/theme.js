@@ -2,10 +2,10 @@ import { createTheme, alpha } from '@mui/material/styles';
 
 // --- Design System Tokens ---
 
-// Palette: Cold Neutrals (Slate) + Agro Green
+// Palette: Cold Neutrals (Slate) + Manejo Org Green
 const palette = {
   primary: {
-    main: '#15803d', // Green-700 (Agro Green)
+    main: '#15803d', // Green-700
     light: '#4ade80', // Green-400
     dark: '#14532d', // Green-900
     contrastText: '#ffffff',
@@ -33,7 +33,7 @@ const palette = {
     disabled: '#cbd5e1', // Slate-300
   },
   divider: '#e2e8f0', // Slate-200
-  // Custom tokens for Dashboard AgroVivo design system
+  // Custom tokens for Dashboard Manejo Org design system
   custom: {
     cardDark: '#020617',
     accentSoft: '#DCFCE7',
