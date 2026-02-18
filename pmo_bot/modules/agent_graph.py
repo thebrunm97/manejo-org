@@ -71,7 +71,7 @@ class AgentState(TypedDict):
 
 class ManejoIntent(BaseModel):
     """Extraction schema for the Interpreter Node."""
-    intencao: str = Field(..., description="A intenção do usuário: 'execucao', 'planejamento', 'duvida' or 'saudacao'")
+    intencao: str = Field(..., description="A intenção do usuário. Use 'duvida' se a mensagem contiver pergunta, pedido de conselho ou ponto de interrogação (?). Use 'execucao' SOMENTE se o usuário AFIRMAR ter realizado uma ação física concreta (verbos passado/presente + produto). Opções: 'execucao', 'planejamento', 'duvida', 'saudacao'")
     tipo_atividade: Optional[str] = Field(None, description="Tipo: Manejo, Plantio, Colheita, Insumo")
     produto: Optional[str] = Field(None, description="Nome do produto, cultura ou insumo principal. Se o produto não for citado explicitamente NESTA mensagem, retorne None. Não retorne string vazia.")
     quantidade_valor: Optional[float] = Field(None, description="Valor numérico da quantidade")
@@ -308,9 +308,16 @@ def router_node(state: AgentState):
             "message": "Olá! Sou seu assistente de manejo. Posso ajudar com registros ou dúvidas técnicas."
         }}
 
+    # 2.5 Safety Net: If classified as execucao but tipo_atividade is None,
+    # it's likely a misclassified question — redirect to specialist
+    tipo = str(slots.get('tipo_atividade') or "").strip()
+    if intent in ('execucao', 'manejo', 'plantio', 'colheita') and not tipo:
+        logger.warning(f"🔀 Safety Net: intent='{intent}' but tipo_atividade is None → redirecting to specialist")
+        return {"next_step": "specialist"}
+
     # 3. Execution (Check Requirements)
     # 3. Execution (Check Requirements)
-    tipo = str(slots.get('tipo_atividade') or "").lower()
+    tipo = tipo.lower()
     
     # Base requirements for everything
     required = ['produto', 'quantidade_valor', 'quantidade_unidade']

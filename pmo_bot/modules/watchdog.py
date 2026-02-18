@@ -2,6 +2,7 @@
 modules/watchdog.py - Connection Monitor & Message Recovery
 """
 import logging
+import asyncio
 import time
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
@@ -84,6 +85,6 @@ def watchdog_routine(orchestrator: 'BotOrchestrator'):
 
 def _safe_process(orchestrator, msg):
     try:
-        orchestrator.process_payload(msg)
+        asyncio.run(orchestrator.process_payload(msg))
     except Exception as e:
         logger.error(f"❌ Watchdog processing failed for msg: {e}", exc_info=True)

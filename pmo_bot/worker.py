@@ -80,7 +80,7 @@ async def process_message_task(ctx: Dict[str, Any], data: Dict[str, Any]) -> Dic
 
     try:
         logger.info(f"📥 Processing message from {sender}")
-        result = orchestrator.process_payload(data)
+        result = await orchestrator.process_payload(data)
         logger.info(f"✅ Done [{sender}] → {result.get('status', '?')}")
         return result
 

@@ -4,7 +4,7 @@ services/bot_orchestrator.py - Central Message Processing Logic
 import logging
 import uuid
 from typing import Optional
-from asgiref.sync import async_to_sync
+
 
 # Services
 from services.auth_service import AuthService
@@ -311,7 +311,7 @@ class BotOrchestrator:
         # ===== NÃO É COMANDO DE SISTEMA =====
         return None
 
-    def process_payload(self, raw_data: dict, request_id: str = None) -> dict:
+    async def process_payload(self, raw_data: dict, request_id: str = None) -> dict:
         """
         Main logic pipeline.
         Replaces webhook.py:process_message_payload.
@@ -433,7 +433,7 @@ class BotOrchestrator:
             try:
                 billing.set_model("llama-3.3-70b-versatile") 
                 
-                result_ia = async_to_sync(invoke_agent)(
+                result_ia = await invoke_agent(
                     texto_usuario=text,
                     user_id=user['id'],
                     thread_id=sender, 
