@@ -68,7 +68,7 @@ const DetailTable: React.FC<DetailTableProps> = ({ title, items, columns }) => (
     <Box mt={2}>
         <Typography variant="subtitle1" gutterBottom fontWeight="bold">{title}</Typography>
         {items && items.length > 0 ? (
-            <div className="overflow-hidden rounded-xl border border-gray-200 shadow-sm bg-white">
+            <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm bg-white">
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">

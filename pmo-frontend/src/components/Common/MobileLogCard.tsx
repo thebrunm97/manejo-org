@@ -4,7 +4,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import HistoryIcon from '@mui/icons-material/History';
 import { CadernoEntry } from '../../types/CadernoTypes';
-import { formatDateBR } from '../../utils/formatters';
+import { formatDateBR, formatComplianceMessage } from '../../utils/formatters';
+import { AlertTriangle } from 'lucide-react';
 
 // Interface for component props
 interface MobileLogCardProps {
@@ -65,7 +66,8 @@ const MobileLogCard: React.FC<MobileLogCardProps> = ({ reg, onEdit, onDelete }) 
                 overflow: 'visible',
                 border: 'none',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                opacity: isCancelado ? 0.7 : 1
+                opacity: isCancelado ? 0.7 : 1,
+                overflow: 'visible'
             }}
         >
             <Box sx={{ p: 2 }}>
@@ -115,13 +117,31 @@ const MobileLogCard: React.FC<MobileLogCardProps> = ({ reg, onEdit, onDelete }) 
 
                     {/* Detalhes Técnicos (Receita/Obs) */}
                     {(details.receita || reg.observacao_original) && (
-                        <Typography
-                            variant="caption"
-                            color="text.disabled"
-                            sx={{ mt: 1, display: 'block', fontStyle: 'italic', lineHeight: 1.2 }}
-                        >
-                            "{details.receita || reg.observacao_original}"
-                        </Typography>
+                        <>
+                            {formatComplianceMessage(reg.observacao_original) ? (
+                                <div className="relative flex items-center group cursor-pointer mt-2 w-fit">
+                                    <div className="flex items-center gap-2 p-3 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md">
+                                        <AlertTriangle className="w-5 h-5 shrink-0 text-amber-600" />
+                                        <span className="font-bold">Ver Alerta de Compliance</span>
+                                    </div>
+
+                                    {/* Tooltip Overlay */}
+                                    <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block group-active:block w-72 p-4 text-sm text-amber-900 bg-white border border-amber-200 rounded-lg shadow-2xl z-50 pointer-events-none">
+                                        <div className="absolute top-full left-6 -mt-[1px] border-4 border-transparent border-t-amber-200"></div>
+                                        <p className="font-bold mb-1 uppercase tracking-widest text-[10px] text-amber-600">Alerta de Compliance</p>
+                                        {formatComplianceMessage(reg.observacao_original)}
+                                    </div>
+                                </div>
+                            ) : (
+                                <Typography
+                                    variant="caption"
+                                    color="text.disabled"
+                                    sx={{ mt: 1, display: 'block', fontStyle: 'italic', lineHeight: 1.2 }}
+                                >
+                                    "{details.receita || reg.observacao_original}"
+                                </Typography>
+                            )}
+                        </>
                     )}
 
                     {isCancelado && ultimaJustificativa && (

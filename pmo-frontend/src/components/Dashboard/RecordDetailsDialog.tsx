@@ -1,19 +1,18 @@
 import React from 'react';
 import {
-    Dialog, DialogTitle, DialogContent, DialogActions,
-    Button, Typography, Box, Chip, Divider, Grid, Paper,
-    Stack, IconButton
-} from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-import AgricultureIcon from '@mui/icons-material/Agriculture';
-import LocalFloristIcon from '@mui/icons-material/LocalFlorist';
-import SpaIcon from '@mui/icons-material/Spa';
-import GrassIcon from '@mui/icons-material/Grass';
-import Inventory2Icon from '@mui/icons-material/Inventory2';
-import PlaceIcon from '@mui/icons-material/Place';
-import EventIcon from '@mui/icons-material/Event';
-
-import { CadernoCampoRecord, DetalhesColheita, DetalhesManejo, DetalhesPlantio, AtividadeItemLite } from '../../types/CadernoTypes';
+    X,
+    Calendar,
+    MapPin,
+    Mic,
+    Activity,
+    Package,
+    Sprout,
+    FlaskConical,
+    Scissors,
+    AlertTriangle
+} from 'lucide-react';
+import { formatDateBR, formatComplianceMessage } from '../../utils/formatters';
+import { CadernoCampoRecord, DetalhesColheita, DetalhesManejo, DetalhesPlantio } from '../../types/CadernoTypes';
 
 export interface RecordDetailsDialogProps {
     open: boolean;
@@ -40,48 +39,35 @@ const getIconByType = (tipo: string) => {
 };
 
 const RecordDetailsDialog: React.FC<RecordDetailsDialogProps> = ({ open, onClose, record }) => {
-    if (!record) return null;
+    if (!open || !record) return null;
 
     const rawTipo = record.tipo_atividade || 'Outro';
     const tipo = rawTipo.toLowerCase();
     const details = record.detalhes_tecnicos || {};
+    const complianceMsg = formatComplianceMessage(record.observacao_original);
 
-    const formatDate = (dateString: string) => {
-        if (!dateString) return 'Data desconhecida';
-        try {
-            // FIX: Prevent timezone shift for YYYY-MM-DD format
-            // If date is just YYYY-MM-DD, append T12:00 to avoid midnight UTC issue
-            let dateToFormat = dateString;
-            if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
-                dateToFormat = `${dateString}T12:00:00`;
-            }
-            return new Date(dateToFormat).toLocaleDateString('pt-BR', {
-                day: 'numeric', month: 'long', year: 'numeric'
-            });
-        } catch {
-            return dateString;
+    const getIconByType = (tipo: string) => {
+        switch (tipo) {
+            case 'colheita': return <Scissors className="w-5 h-5" />;
+            case 'manejo': return <FlaskConical className="w-5 h-5" />;
+            case 'insumo': return <Package className="w-5 h-5" />;
+            case 'plantio': return <Sprout className="w-5 h-5" />;
+            default: return <Activity className="w-5 h-5" />;
         }
     };
 
-    // Detectar se usa novo modelo (atividades array) ou campos legado
-    const usarNovoModelo = record.atividades && record.atividades.length > 0;
-
-    // Badge de sistema só para consórcio/SAF (não poluir com monocultura)
-    const mostrarBadgeSistema = record.sistema && record.sistema !== 'monocultura';
     const getSistemaBadge = () => {
-        if (!mostrarBadgeSistema) return null;
+        if (!record.sistema || record.sistema === 'monocultura') return null;
         const config = {
-            consorcio: { label: 'CONSÓRCIO', color: '#3b82f6', bg: '#dbeafe' },
-            saf: { label: 'SAF', color: '#16a34a', bg: '#dcfce7' }
+            consorcio: { label: 'CONSÓRCIO', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-100' },
+            saf: { label: 'SAF', color: 'text-green-700', bg: 'bg-green-50', border: 'border-green-100' }
         };
         const c = config[record.sistema as 'consorcio' | 'saf'];
         if (!c) return null;
         return (
-            <Chip
-                label={c.label}
-                size="small"
-                sx={{ fontWeight: 700, bgcolor: c.bg, color: c.color, ml: 1 }}
-            />
+            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${c.bg} ${c.color} ${c.border} ml-2 tracking-wider`}>
+                {c.label}
+            </span>
         );
     };
 
@@ -90,310 +76,217 @@ const RecordDetailsDialog: React.FC<RecordDetailsDialogProps> = ({ open, onClose
         : (record.talhao_canteiro || '').split(';').map(part => part.trim()).filter(Boolean);
 
     return (
-        <Dialog
-            open={open}
-            onClose={onClose}
-            maxWidth="sm"
-            fullWidth
-            PaperProps={{
-                sx: {
-                    borderRadius: '24px',
-                    padding: 2,
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
-                }
-            }}
-        >
-            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1, pb: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Box sx={{
-                        bgcolor: '#f1f5f9',
-                        p: 1,
-                        borderRadius: '12px',
-                        color: '#0f172a',
-                        display: 'flex'
-                    }}>
-                        {getIconByType(tipo)}
-                    </Box>
-                    <Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
-                                {rawTipo}
-                            </Typography>
-                            {getSistemaBadge()}
-                        </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: '#64748b' }}>
-                            <EventIcon sx={{ fontSize: 16 }} />
-                            <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                                {formatDate(record.data_registro)}
-                            </Typography>
-                        </Box>
-                    </Box>
-                </Box>
-                <IconButton onClick={onClose} size="small" sx={{ bgcolor: '#f8fafc', '&:hover': { bgcolor: '#e2e8f0' } }}>
-                    <CloseIcon />
-                </IconButton>
-            </DialogTitle>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm overflow-hidden" aria-modal="true" role="dialog">
+            <div className="w-full max-w-lg bg-white rounded-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
 
-            <DialogContent dividers sx={{ borderColor: '#f1f5f9' }}>
-                <Stack spacing={3}>
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50/50">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-white rounded-md border border-gray-100 text-gray-700 shadow-sm">
+                            {getIconByType(tipo)}
+                        </div>
+                        <div>
+                            <div className="flex items-center">
+                                <h3 className="text-lg font-bold text-gray-900 leading-tight">
+                                    {rawTipo}
+                                </h3>
+                                {getSistemaBadge()}
+                            </div>
+                            <div className="flex items-center gap-1.5 text-gray-500 mt-0.5">
+                                <Calendar className="w-3.5 h-3.5" />
+                                <span className="text-xs font-semibold uppercase tracking-wide">
+                                    {formatDateBR(record.data_registro, { day: 'numeric', month: 'long', year: 'numeric' })}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-white rounded-md transition-colors border border-transparent hover:border-gray-200"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
 
-                    {/* SEÇÃO PRINCIPAL: PRODUTO & LOCAL */}
-                    {usarNovoModelo ? (
-                        // NOVO MODELO: Lista de atividades
-                        <Stack spacing={2}>
-                            {(record.atividades ?? []).map((item, idx) => (
-                                <Box
-                                    key={idx}
-                                    sx={{
-                                        bgcolor: '#f8fafc',
-                                        p: 2,
-                                        borderRadius: '16px',
-                                        border: '1px solid #e2e8f0'
-                                    }}
-                                >
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                                        <Typography variant="body1" sx={{ fontWeight: 700, color: '#1e293b' }}>
-                                            🌱 {item.produto && item.produto !== 'NÃO INFORMADO' ? item.produto : ''}
-                                        </Typography>
-                                        {item.papel && item.papel !== 'principal' && (
-                                            <Chip
-                                                label={item.papel.toUpperCase()}
-                                                size="small"
-                                                sx={{ fontSize: '0.7rem', height: 20, bgcolor: '#f1f5f9', color: '#64748b' }}
-                                            />
-                                        )}
-                                    </Box>
-                                    <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
-                                        <Box>
-                                            <Typography variant="caption" sx={{ textTransform: 'uppercase', color: '#94a3b8', fontWeight: 700 }}>
-                                                Quantidade
-                                            </Typography>
-                                            <Typography variant="body2" sx={{ fontWeight: 700, color: '#15803d' }}>
-                                                {item.quantidade}
-                                                <Typography component="span" sx={{ fontSize: '0.8em', ml: 0.5, color: '#64748b' }}>
-                                                    {item.unidade}
-                                                </Typography>
-                                            </Typography>
-                                        </Box>
-                                        <Box>
-                                            <Typography variant="caption" sx={{ textTransform: 'uppercase', color: '#94a3b8', fontWeight: 700 }}>
-                                                Local
-                                            </Typography>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                <PlaceIcon sx={{ fontSize: 16, color: '#64748b' }} />
-                                                <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>
-                                                    {item.local.talhao}{item.local.canteiro ? `, ${item.local.canteiro}` : ''}
-                                                </Typography>
-                                            </Box>
-                                        </Box>
-                                    </Box>
-                                    {item.estrato && (
-                                        <Typography variant="caption" sx={{ mt: 1, display: 'block', color: '#64748b', fontStyle: 'italic' }}>
-                                            Estrato: {item.estrato}
-                                        </Typography>
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+
+                    {/* Compliance Alert Box (Mandatory) */}
+                    {complianceMsg && (
+                        <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                            <AlertTriangle className="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
+                            <div className="space-y-1">
+                                <p className="text-xs font-bold text-amber-800 uppercase tracking-widest">Alerta de Compliance</p>
+                                <p className="text-sm text-amber-800 leading-relaxed">{complianceMsg}</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Data List */}
+                    <dl className="divide-y divide-gray-100 border-t border-b border-gray-100 px-1">
+
+                        {/* Produto/Cultura */}
+                        {record.produto && record.produto !== 'NÃO INFORMADO' && (
+                            <div className="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                                <dt className="text-xs font-bold text-gray-400 uppercase tracking-wider self-center">Produto / Cultura</dt>
+                                <dd className="mt-1 text-sm font-semibold text-gray-900 sm:col-span-2 sm:mt-0 flex items-center gap-1.5 capitalize">
+                                    🌱 {record.produto}
+                                </dd>
+                            </div>
+                        )}
+
+                        {/* Localização */}
+                        <div className="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                            <dt className="text-xs font-bold text-gray-400 uppercase tracking-wider self-center">Localização</dt>
+                            <dd className="mt-1 text-sm font-semibold text-gray-900 sm:col-span-2 sm:mt-0 flex flex-wrap gap-1.5">
+                                {locais.length > 0 ? (
+                                    locais.map((l, i) => (
+                                        <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-700 rounded border border-slate-200 text-xs">
+                                            <MapPin className="w-3 h-3" /> {l}
+                                        </span>
+                                    ))
+                                ) : (
+                                    <span className="text-gray-400 italic font-normal">Geral / Não informado</span>
+                                )}
+                            </dd>
+                        </div>
+
+                        {/* Quantidade (Se houver) */}
+                        {Number(record.quantidade_valor) > 0 && (
+                            <div className="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                                <dt className="text-xs font-bold text-gray-400 uppercase tracking-wider self-center">Quantidade</dt>
+                                <dd className="mt-1 text-sm font-bold text-green-700 sm:col-span-2 sm:mt-0">
+                                    {record.quantidade_valor}
+                                    <span className="text-xs text-gray-500 font-medium ml-1 lowercase">{record.quantidade_unidade}</span>
+                                </dd>
+                            </div>
+                        )}
+
+                        {/* Detalhes Específicos do Tipo */}
+                        {tipo === 'colheita' && (() => {
+                            const d = details as DetalhesColheita;
+                            return (
+                                <>
+                                    {d.lote && (
+                                        <div className="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                                            <dt className="text-xs font-bold text-gray-400 uppercase tracking-wider self-center">Nº Lote</dt>
+                                            <dd className="mt-1 text-sm font-mono text-gray-700 sm:col-span-2 sm:mt-0">{d.lote}</dd>
+                                        </div>
                                     )}
-                                </Box>
-                            ))}
-                        </Stack>
-                    ) : (
-                        // FALLBACK LEGADO: Campos únicos
-                        <Box sx={{ bgcolor: '#f8fafc', p: 2.5, borderRadius: '16px', border: '1px solid #e2e8f0' }}>
-                            {/* Produto */}
-                            <Box sx={{ mb: 2.5 }}>
-                                <Typography variant="caption" sx={{ textTransform: 'uppercase', color: '#94a3b8', fontWeight: 700, letterSpacing: '0.05em' }}>
-                                    Produto / Cultura
-                                </Typography>
-                                <Typography variant="h6" sx={{ fontWeight: 700, color: '#1e293b', mt: 0.5 }}>
-                                    {record.produto && record.produto !== 'NÃO INFORMADO' ? record.produto : ''}
-                                </Typography>
-                            </Box>
+                                    {d.classificacao && (
+                                        <div className="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                                            <dt className="text-xs font-bold text-gray-400 uppercase tracking-wider self-center">Classificação</dt>
+                                            <dd className="mt-1 text-sm font-semibold text-gray-900 sm:col-span-2 sm:mt-0">{d.classificacao}</dd>
+                                        </div>
+                                    )}
+                                    {d.destino && (
+                                        <div className="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                                            <dt className="text-xs font-bold text-gray-400 uppercase tracking-wider self-center">Destino</dt>
+                                            <dd className="mt-1 text-sm text-gray-700 sm:col-span-2 sm:mt-0">{d.destino}</dd>
+                                        </div>
+                                    )}
+                                </>
+                            );
+                        })()}
 
-                            {/* Quantidade e Local lado a lado */}
-                            <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                                {(Number(record.quantidade_valor) > 0) && (
-                                    <Box sx={{ minWidth: 120 }}>
-                                        <Typography variant="caption" sx={{ textTransform: 'uppercase', color: '#94a3b8', fontWeight: 700, letterSpacing: '0.05em' }}>
-                                            Quantidade
-                                        </Typography>
-                                        <Typography variant="h6" sx={{ fontWeight: 700, color: '#15803d', mt: 0.5 }}>
-                                            {record.quantidade_valor}
-                                            {record.quantidade_unidade && (
-                                                <Typography component="span" sx={{ fontSize: '0.75em', ml: 0.5, color: '#64748b', fontWeight: 500 }}>
-                                                    {record.quantidade_unidade}
-                                                </Typography>
-                                            )}
-                                        </Typography>
-                                    </Box>
-                                )}
+                        {(tipo === 'manejo' || tipo === 'insumo') && (() => {
+                            const d = details as DetalhesManejo;
+                            const insumo = d.nome_insumo || d.insumo;
+                            return (
+                                <>
+                                    {insumo && (
+                                        <div className="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                                            <dt className="text-xs font-bold text-gray-400 uppercase tracking-wider self-center">Insumo</dt>
+                                            <dd className="mt-1 text-sm font-bold text-indigo-700 sm:col-span-2 sm:mt-0">{insumo}</dd>
+                                        </div>
+                                    )}
+                                    {d.dosagem && (
+                                        <div className="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                                            <dt className="text-xs font-bold text-gray-400 uppercase tracking-wider self-center">Dosagem</dt>
+                                            <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">{d.dosagem} {d.unidade_dosagem}</dd>
+                                        </div>
+                                    )}
+                                    {d.metodo_aplicacao && (
+                                        <div className="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                                            <dt className="text-xs font-bold text-gray-400 uppercase tracking-wider self-center">Método</dt>
+                                            <dd className="mt-1 text-sm text-gray-700 sm:col-span-2 sm:mt-0">{d.metodo_aplicacao}</dd>
+                                        </div>
+                                    )}
+                                    {d.responsavel && (
+                                        <div className="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                                            <dt className="text-xs font-bold text-gray-400 uppercase tracking-wider self-center">Responsável</dt>
+                                            <dd className="mt-1 text-sm text-gray-700 sm:col-span-2 sm:mt-0">{d.responsavel}</dd>
+                                        </div>
+                                    )}
+                                </>
+                            );
+                        })()}
 
-                                <Box sx={{ flex: 1, minWidth: 150 }}>
-                                    <Typography variant="caption" sx={{ textTransform: 'uppercase', color: '#94a3b8', fontWeight: 700, letterSpacing: '0.05em' }}>
-                                        Local
-                                    </Typography>
-                                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5, mt: 0.5 }}>
-                                        <PlaceIcon sx={{ fontSize: 18, color: '#64748b', mt: 0.2 }} />
-                                        <Typography variant="body1" sx={{ fontWeight: 600, color: '#334155' }}>
-                                            {locais.length === 0
-                                                ? 'Geral / Não especificado'
-                                                : locais.map((part, idx) => (
-                                                    <React.Fragment key={idx}>
-                                                        {idx > 0 && <br />}
-                                                        {part}
-                                                    </React.Fragment>
-                                                ))}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                            </Box>
-                        </Box>
+                        {tipo === 'plantio' && (() => {
+                            const d = details as DetalhesPlantio;
+                            return (
+                                <>
+                                    {d.metodo_propagacao && (
+                                        <div className="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                                            <dt className="text-xs font-bold text-gray-400 uppercase tracking-wider self-center">Propagação</dt>
+                                            <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">{d.metodo_propagacao}</dd>
+                                        </div>
+                                    )}
+                                    {d.lote_semente && (
+                                        <div className="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                                            <dt className="text-xs font-bold text-gray-400 uppercase tracking-wider self-center">Lote Semente</dt>
+                                            <dd className="mt-1 text-sm font-mono text-gray-700 sm:col-span-2 sm:mt-0">{d.lote_semente}</dd>
+                                        </div>
+                                    )}
+                                </>
+                            );
+                        })()}
+                    </dl>
+
+                    {/* Observações Originais (Non-compliance or long notes) */}
+                    {!complianceMsg && record.observacao_original && (
+                        <div className="space-y-1.5">
+                            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Observações</h4>
+                            <div className="p-3 bg-slate-50 border border-slate-100 rounded-lg">
+                                <p className="text-sm text-slate-600 leading-relaxed italic whitespace-pre-wrap">
+                                    "{record.observacao_original}"
+                                </p>
+                            </div>
+                        </div>
                     )}
 
-                    {/* DETALHES ESPECÍFICOS */}
-                    {Object.keys(details).length > 0 && (
-                        <Box>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5, color: '#0f172a' }}>
-                                Detalhes da Atividade
-                            </Typography>
-
-                            <Grid container spacing={2}>
-                                {tipo === 'colheita' && (() => {
-                                    const d = details as DetalhesColheita;
-                                    return (
-                                        <>
-                                            {d.lote && <DetailItem label="Lote" value={d.lote} />}
-                                            {d.destino && <DetailItem label="Destino" value={d.destino} />}
-                                            {d.classificacao && <DetailItem label="Classificação" value={d.classificacao} />}
-                                            {Boolean(d.qtd) && d.qtd !== record.quantidade_valor && (
-                                                <DetailItem label="Qtd. Extra" value={`${d.qtd} ${d.unidade || ''}`} />
-                                            )}
-                                        </>
-                                    );
-                                })()}
-
-                                {(tipo === 'manejo' || tipo === 'insumo') && (() => {
-                                    const d = details as DetalhesManejo;
-                                    return (
-                                        <>
-                                            {(d.nome_insumo || d.insumo) && <DetailItem label="Insumo Aplicado" value={d.nome_insumo || d.insumo} colSpan={12} />}
-                                            {Boolean(d.dosagem) && <DetailItem label="Dosagem" value={`${d.dosagem} ${d.unidade_dosagem || ''}`} />}
-                                            {d.metodo_aplicacao && <DetailItem label="Método" value={d.metodo_aplicacao} />}
-                                            {d.responsavel && <DetailItem label="Responsável" value={d.responsavel} />}
-                                            {d.periodo_carencia && <DetailItem label="Carência" value={d.periodo_carencia} />}
-                                        </>
-                                    );
-                                })()}
-
-                                {tipo === 'plantio' && (() => {
-                                    const d = details as DetalhesPlantio;
-                                    return (
-                                        <>
-                                            {d.metodo_propagacao && <DetailItem label="Propagação" value={d.metodo_propagacao} />}
-                                            {Boolean(d.qtd_utilizada) && <DetailItem label="Qtd. Sementes/Mudas" value={`${d.qtd_utilizada} ${d.unidade_medida}`} />}
-                                            {Boolean(d.espacamento) && <DetailItem label="Espaçamento" value={d.espacamento} />}
-                                            {d.lote_semente && <DetailItem label="Lote Semente" value={d.lote_semente} />}
-                                        </>
-                                    );
-                                })()}
-
-                                {!['colheita', 'manejo', 'insumo', 'plantio'].includes(tipo) && (
-                                    <Grid item xs={12}>
-                                        <Typography variant="body2" sx={{ color: '#64748b', fontStyle: 'italic' }}>
-                                            {JSON.stringify(details, null, 2)}
-                                        </Typography>
-                                    </Grid>
-                                )}
-                            </Grid>
-                        </Box>
-                    )}
-
-                    {/* OBSERVAÇÕES */}
-                    {record.observacao_original && (
-                        <Box>
-                            <Divider sx={{ mb: 2 }} />
-                            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: '#0f172a' }}>
-                                Observações
-                            </Typography>
-                            <Paper elevation={0} sx={{ p: 2, bgcolor: '#fffbed', border: '1px solid #fef3c7', borderRadius: '12px' }}>
-                                <Typography variant="body2" sx={{ color: '#92400e', whiteSpace: 'pre-wrap' }}>
-                                    {record.observacao_original}
-                                </Typography>
-                            </Paper>
-                        </Box>
-                    )}
-
-                    {/* ÁUDIO ORIGINAL (PROVA DE AUDITORIA) */}
+                    {/* Prova de Auditoria: Áudio */}
                     {record.audio_url && (
-                        <Box>
-                            <Divider sx={{ mb: 2 }} />
-                            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 1 }}>
-                                🎙️ Áudio Original (Prova de Auditoria)
-                            </Typography>
-                            <Paper
-                                elevation={0}
-                                sx={{
-                                    p: 2,
-                                    bgcolor: '#f0fdf4',
-                                    border: '1px solid #bbf7d0',
-                                    borderRadius: '12px',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: 1
-                                }}
-                            >
+                        <div className="space-y-2 pt-2">
+                            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                                <Mic className="w-3.5 h-3.5 text-green-600" /> Prova de Auditoria (Áudio)
+                            </h4>
+                            <div className="p-3 bg-green-50/50 border border-green-100 rounded-lg flex flex-col gap-2">
                                 <audio
                                     controls
                                     src={record.audio_url}
+                                    className="w-full h-8"
                                     preload="metadata"
-                                    style={{ width: '100%' }}
                                 />
-                                <Typography variant="caption" sx={{ color: '#16a34a', fontStyle: 'italic' }}>
-                                    Áudio enviado via WhatsApp e transcrito automaticamente
-                                </Typography>
-                            </Paper>
-                        </Box>
+                                <p className="text-[10px] text-green-700 italic font-medium opacity-75">
+                                    Transcrição automática via WhatsApp Gateway
+                                </p>
+                            </div>
+                        </div>
                     )}
+                </div>
 
-                </Stack>
-            </DialogContent>
-
-            <DialogActions sx={{ p: 2, bgcolor: '#f8fafc', borderTop: '1px solid #f1f5f9' }}>
-                <Button
-                    onClick={onClose}
-                    variant="contained"
-                    disableElevation
-                    sx={{
-                        bgcolor: '#0f172a',
-                        color: 'white',
-                        textTransform: 'none',
-                        fontWeight: 700,
-                        borderRadius: '10px',
-                        px: 3,
-                        '&:hover': { bgcolor: '#1e293b' }
-                    }}
-                >
-                    Fechar
-                </Button>
-            </DialogActions>
-        </Dialog>
-    );
-};
-
-// Helper Subcomponent for Grid Items
-const DetailItem = ({ label, value, colSpan = 6 }: { label: string, value: any, colSpan?: number }) => {
-    // Strict clean up: if value is 0, "0", or starts with "0 " (e.g. "0 kg"), treat as empty
-    if (!value) return null;
-    const strVal = String(value).trim();
-    if (strVal === '0' || strVal === '0.0' || strVal.startsWith('0 ')) return null;
-
-    return (
-        <Grid item xs={colSpan}>
-            <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, display: 'block', mb: 0.5 }}>
-                {label}
-            </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>
-                {value}
-            </Typography>
-        </Grid>
+                {/* Footer */}
+                <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+                    <button
+                        onClick={onClose}
+                        className="px-6 py-2 bg-gray-900 border border-transparent rounded-md text-sm font-bold text-white hover:bg-gray-800 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900"
+                    >
+                        Fechar
+                    </button>
+                </div>
+            </div>
+        </div>
     );
 };
 

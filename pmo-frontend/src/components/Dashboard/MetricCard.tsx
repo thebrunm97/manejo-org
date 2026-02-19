@@ -17,7 +17,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
     extraUnits,
 }) => {
     return (
-        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col gap-2">
+        <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col gap-2">
             {/* Icon container */}
             <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
                 {icon || <Scale size={16} />}

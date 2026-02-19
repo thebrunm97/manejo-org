@@ -77,7 +77,7 @@ const PmoCard: React.FC<PmoCardProps> = ({
 
     return (
         <div className={`
-            bg-white rounded-xl border border-gray-200 p-6 shadow-sm 
+            bg-white rounded-lg border border-gray-200 p-6 shadow-sm 
             hover:shadow-md hover:-translate-y-1 transition-all duration-200 
             flex flex-col h-full min-w-0
             ${isActive ? 'ring-2 ring-green-500 border-transparent shadow-[0_4px_20px_rgba(22,163,74,0.15)]' : ''}
@@ -271,7 +271,7 @@ const PlanosManejoList: React.FC = () => {
                 </div>
             ) : (
                 // Empty State
-                <div className="text-center py-16 px-4 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50">
+                <div className="text-center py-16 px-4 border-2 border-dashed border-slate-200 rounded-lg bg-slate-50">
                     <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-slate-100 mb-4">
                         <FileQuestion className="h-8 w-8 text-slate-400" />
                     </div>
@@ -294,7 +294,7 @@ const PlanosManejoList: React.FC = () => {
             {/* Delete Modal (Native-ish Tailwind) */}
             {deleteDialogOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 transform transition-all scale-100">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 transform transition-all scale-100">
                         <h3 className="text-lg font-bold text-gray-900 mb-2">
                             Confirmar Exclusão
                         </h3>

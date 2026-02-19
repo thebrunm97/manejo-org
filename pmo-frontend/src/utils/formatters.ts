@@ -164,3 +164,33 @@ export const formatSmartTotal = (items: any[], valueKey: string, unitKey: string
 
     return parts.join(' + ') || '-';
 };
+
+/**
+ * Limpa e formata mensagens de compliance, removendo prefixos repetitivos
+ * e suavizando o tom (ex: removendo caixa alta excessiva).
+ */
+export const formatComplianceMessage = (text: string | null | undefined): string | null => {
+    if (!text || typeof text !== 'string') return null;
+
+    // Remove os prefixos, ignorando quebras de linha e múltiplos espaços
+    let d = text.replace(/(\[?ALERTA COMPLIANCE\]?:?\s*)+/ig, '');
+    d = d.replace(/(ALERTA DE COMPLIANCE:?\s*)+/ig, '');
+    d = d.replace(/(\[SISTEMA\]:?\s*)+/ig, '');
+
+    // Remove quebras de linha que sobraram no começo ou espaços excessivos
+    d = d.replace(/^\s*[\r\n]+\s*/, '');
+
+    // Troca NÃO por não (palavra inteira apenas)
+    d = d.replace(/\bNÃO\b/g, 'não');
+
+    d = d.trim();
+
+    if (!d) return null;
+
+    // Detecta se é mensagem de sistema/compliance para garantir que só retornamos se for relevante
+    const isCompliance = /ALERTA/i.test(text) || /COMPLIANCE/i.test(text) || /\[SISTEMA/i.test(text) || /⚠️/i.test(text) || /⛔/i.test(text);
+    if (!isCompliance) return null;
+
+    // Garante primeira letra maiúscula
+    return d.charAt(0).toUpperCase() + d.slice(1);
+};

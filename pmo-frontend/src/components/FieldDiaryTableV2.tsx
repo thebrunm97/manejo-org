@@ -34,7 +34,8 @@ import MicIcon from '@mui/icons-material/Mic';
 
 // Import shared types
 import { FieldDiaryFilters } from '../hooks/useFieldDiary';
-import { formatDateBR } from '../utils/formatters';
+import { formatDateBR, formatComplianceMessage } from '../utils/formatters';
+import { AlertTriangle } from 'lucide-react'; // Added import
 
 interface FieldDiaryTableV2Props {
     // Data (Prefiltered & Paginated)
@@ -134,6 +135,24 @@ const FieldDiaryTableV2: React.FC<FieldDiaryTableV2Props> = ({
     const renderDetails = (row: CadernoCampoRecord) => {
         const details = row.detalhes_tecnicos || {};
         const tipo = row.tipo_atividade;
+        const complianceMsg = formatComplianceMessage(row.observacao_original);
+
+        // 1. Compliance Alert (Prioridade Visual via Tooltip)
+        if (complianceMsg) {
+            return (
+                <div className="relative flex items-center group cursor-pointer ml-1 inline-flex">
+                    {/* Ícone Visível */}
+                    <AlertTriangle className="w-5 h-5 text-amber-500 hover:text-amber-600 transition-colors" />
+
+                    {/* Balão do Tooltip */}
+                    <div className="absolute bottom-full right-0 sm:left-1/2 sm:-translate-x-1/2 mb-2 hidden group-hover:block group-active:block w-64 p-3 text-xs sm:text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-lg shadow-xl z-50 pointer-events-none">
+                        <div className="absolute top-full right-2 sm:left-1/2 sm:-translate-x-1/2 -mt-[1px] border-4 border-transparent border-t-amber-200"></div>
+                        <p className="font-bold mb-1 uppercase tracking-tight text-[10px] opacity-70">Alerta de Compliance</p>
+                        {complianceMsg}
+                    </div>
+                </div>
+            );
+        }
 
         if (tipo === ActivityType.MANEJO || tipo === 'Manejo') {
             const d = details as DetalhesManejo;
@@ -190,6 +209,11 @@ const FieldDiaryTableV2: React.FC<FieldDiaryTableV2Props> = ({
 
     const getAlertIcon = (reg: CadernoCampoRecord) => {
         const obs = reg.observacao_original || '';
+        const isCompliance = formatComplianceMessage(obs);
+        // Se já exibimos a mensagem de compliance no renderDetails, não precisamos do ícone aqui para evitar redundância, 
+        // ou mantemos apenas ícones criticos de bloqueio.
+        if (isCompliance) return null;
+
         if (obs.includes('⛔') || obs.includes('RECUSADO')) {
             return <Tooltip title="Registro Recusado / Bloqueado"><BlockIcon color="error" fontSize="small" sx={{ mr: 1, verticalAlign: 'middle' }} /></Tooltip>;
         }
@@ -411,7 +435,7 @@ const FieldDiaryTableV2: React.FC<FieldDiaryTableV2Props> = ({
                                                 Localização <FilterListIcon fontSize="small" sx={{ ml: 0.5, opacity: filtrosAtivos.local ? 1 : 0.3 }} color={filtrosAtivos.local ? "primary" : "inherit"} />
                                             </Box>
                                         </TableCell>
-                                        <TableCell sx={{ width: '20%', fontWeight: 'bold', whiteSpace: 'normal', wordBreak: 'break-word' }}>Resumo</TableCell>
+                                        <TableCell sx={{ width: '20%', fontWeight: 'bold', whiteSpace: 'normal', wordBreak: 'break-word', overflow: 'visible' }}>Resumo</TableCell>
                                         <TableCell sx={{ width: '12%', fontWeight: 'bold' }}><Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><MicIcon fontSize="small" /> Áudio</Box></TableCell>
                                         <TableCell align="center" sx={{ width: '8%', fontWeight: 'bold' }}>Ações</TableCell>
                                     </TableRow>
@@ -425,7 +449,7 @@ const FieldDiaryTableV2: React.FC<FieldDiaryTableV2Props> = ({
                                                 <TableCell><Chip label={reg.tipo_atividade} color={getStatusColor(reg.tipo_atividade)} size="small" variant={isCancelled ? "outlined" : "filled"} /></TableCell>
                                                 <TableCell sx={{ fontWeight: 500 }}>{reg.produto}</TableCell>
                                                 <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>{getRegistroLocalResumo(reg)}</TableCell>
-                                                <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}><Box sx={{ display: 'flex', alignItems: 'center' }}>{getAlertIcon(reg)}{renderDetails(reg)}</Box></TableCell>
+                                                <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word', overflow: 'visible' }}><Box sx={{ display: 'flex', alignItems: 'center' }}>{getAlertIcon(reg)}{renderDetails(reg)}</Box></TableCell>
                                                 <TableCell>{reg.audio_url ? <audio controls src={reg.audio_url} preload="metadata" style={{ height: '32px', maxWidth: '180px', width: '100%' }} /> : <Typography variant="body2" color="text.disabled">—</Typography>}</TableCell>
                                                 <TableCell align="center">
                                                     <Stack direction="row" justifyContent="center" spacing={1}>
@@ -508,7 +532,21 @@ const FieldDiaryTableV2: React.FC<FieldDiaryTableV2Props> = ({
                                         {(hasAlert || reg.observacao_original || reg.detalhes_tecnicos) && (
                                             <>
                                                 <Typography variant="caption" sx={{ display: 'block', textTransform: 'uppercase', fontWeight: 700, color: 'text.secondary', mt: 2, mb: 1 }}>Observações</Typography>
-                                                {hasAlert ? (
+                                                {formatComplianceMessage(reg.observacao_original) ? (
+                                                    <div className="relative flex items-center group cursor-pointer mt-2 w-fit">
+                                                        <div className="flex items-center gap-2 p-3 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md">
+                                                            <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600" />
+                                                            <span className="font-bold">Ver Alerta de Compliance</span>
+                                                        </div>
+
+                                                        {/* Tooltip Mobile Overlay */}
+                                                        <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block group-active:block w-72 p-4 text-sm text-amber-900 bg-white border border-amber-200 rounded-lg shadow-2xl z-50 pointer-events-none">
+                                                            <div className="absolute top-full left-4 -mt-[1px] border-4 border-transparent border-t-amber-200"></div>
+                                                            <p className="font-bold mb-1 uppercase tracking-widest text-[10px] text-amber-600">Alerta de Compliance</p>
+                                                            {formatComplianceMessage(reg.observacao_original)}
+                                                        </div>
+                                                    </div>
+                                                ) : hasAlert ? (
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 2, p: 1.5 }}>
                                                         {alertIcon} <Typography variant="body2" color="warning.dark" fontWeight={500}>Registro Automático</Typography>
                                                     </Box>
