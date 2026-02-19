@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Box, Stack, Chip, Typography, Divider, IconButton } from '@mui/material';
+import { Card, Box, Stack, Chip, Typography, Divider } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import HistoryIcon from '@mui/icons-material/History';
@@ -144,18 +144,32 @@ const MobileLogCard: React.FC<MobileLogCardProps> = ({ reg, onEdit, onDelete }) 
                     {formatQuantidade()}
                 </Typography>
 
-                <Stack direction="row" spacing={0}>
+                <Stack direction="row" spacing={1}>
                     {onEdit && onDelete && !isCancelado ? (
                         <>
-                            <IconButton size="small" onClick={() => onEdit(reg)} sx={{ color: 'primary.main', p: 1 }}>
+                            <button
+                                type="button"
+                                className="inline-flex items-center justify-center p-2 text-indigo-700 transition-colors bg-indigo-50 border border-indigo-200 rounded-md hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={() => onEdit(reg)}
+                            >
                                 <EditIcon fontSize="small" />
-                            </IconButton>
-                            <IconButton size="small" onClick={() => onDelete(reg)} sx={{ color: 'error.main', p: 1 }}>
+                            </button>
+                            <button
+                                type="button"
+                                className="inline-flex items-center justify-center p-2 text-red-700 transition-colors bg-red-50 border border-red-200 rounded-md hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={() => onDelete(reg)}
+                            >
                                 <DeleteIcon fontSize="small" />
-                            </IconButton>
+                            </button>
                         </>
                     ) : (
-                        <IconButton size="small" disabled><HistoryIcon /></IconButton>
+                        <button
+                            type="button"
+                            disabled
+                            className="inline-flex items-center justify-center p-2 text-gray-400 bg-gray-100 border border-gray-200 rounded-md cursor-not-allowed opacity-50"
+                        >
+                            <HistoryIcon fontSize="small" />
+                        </button>
                     )}
                 </Stack>
             </Box>

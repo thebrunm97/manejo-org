@@ -1,9 +1,9 @@
 import React from 'react';
 import {
     Box, Paper, Table, TableBody, TableCell, TableContainer,
-    TableHead, TableRow, Typography, Chip, IconButton,
+    TableHead, TableRow, Typography, Chip,
     Tooltip, CircularProgress, useMediaQuery, useTheme,
-    TextField, Checkbox, FormControlLabel, Stack, Button,
+    TextField, Checkbox, FormControlLabel, Stack,
     Card, CardContent, InputAdornment,
     Popover, TablePagination, MenuItem
 } from '@mui/material';
@@ -221,9 +221,21 @@ const FieldDiaryTableV2: React.FC<FieldDiaryTableV2Props> = ({
                             label="Data Fim" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }}
                             value={filtrosAtivos.dataFim} onChange={(e) => handleFilterChange('dataFim', e.target.value)}
                         />
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Button size="small" onClick={() => { handleFilterChange('dataInicio', ''); handleFilterChange('dataFim', ''); }}>Limpar</Button>
-                            <Button size="small" variant="contained" onClick={handleCloseFilter}>OK</Button>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+                            <button
+                                type="button"
+                                className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={() => { handleFilterChange('dataInicio', ''); handleFilterChange('dataFim', ''); }}
+                            >
+                                Limpar
+                            </button>
+                            <button
+                                type="button"
+                                className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium text-white bg-primary-600 border border-transparent rounded-md shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={handleCloseFilter}
+                            >
+                                OK
+                            </button>
                         </Box>
                     </Box>
                 )}
@@ -244,9 +256,21 @@ const FieldDiaryTableV2: React.FC<FieldDiaryTableV2Props> = ({
                             <option value={ActivityType.OUTRO}>Outro</option>
                             <option value={ActivityType.CANCELADO}>CANCELADO</option>
                         </TextField>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Button size="small" onClick={() => handleFilterChange('tipo_atividade', 'Todos')}>Limpar</Button>
-                            <Button size="small" variant="contained" onClick={handleCloseFilter}>OK</Button>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+                            <button
+                                type="button"
+                                className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={() => handleFilterChange('tipo_atividade', 'Todos')}
+                            >
+                                Limpar
+                            </button>
+                            <button
+                                type="button"
+                                className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium text-white bg-primary-600 border border-transparent rounded-md shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={handleCloseFilter}
+                            >
+                                OK
+                            </button>
                         </Box>
                     </Box>
                 )}
@@ -260,13 +284,25 @@ const FieldDiaryTableV2: React.FC<FieldDiaryTableV2Props> = ({
                             InputProps={{
                                 endAdornment: filtrosAtivos.produto && (
                                     <InputAdornment position="end">
-                                        <IconButton size="small" onClick={() => handleFilterChange('produto', '')}><CloseIcon fontSize="small" /></IconButton>
+                                        <button
+                                            type="button"
+                                            className="p-1 text-gray-400 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            onClick={() => handleFilterChange('produto', '')}
+                                        >
+                                            <CloseIcon fontSize="small" />
+                                        </button>
                                     </InputAdornment>
                                 )
                             }}
                         />
                         <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                            <Button size="small" variant="contained" onClick={handleCloseFilter}>OK</Button>
+                            <button
+                                type="button"
+                                className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium text-white bg-primary-600 border border-transparent rounded-md shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={handleCloseFilter}
+                            >
+                                OK
+                            </button>
                         </Box>
                     </Box>
                 )}
@@ -280,13 +316,25 @@ const FieldDiaryTableV2: React.FC<FieldDiaryTableV2Props> = ({
                             InputProps={{
                                 endAdornment: filtrosAtivos.local && (
                                     <InputAdornment position="end">
-                                        <IconButton size="small" onClick={() => handleFilterChange('local', '')}><CloseIcon fontSize="small" /></IconButton>
+                                        <button
+                                            type="button"
+                                            className="p-1 text-gray-400 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            onClick={() => handleFilterChange('local', '')}
+                                        >
+                                            <CloseIcon fontSize="small" />
+                                        </button>
                                     </InputAdornment>
                                 )
                             }}
                         />
                         <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                            <Button size="small" variant="contained" onClick={handleCloseFilter}>OK</Button>
+                            <button
+                                type="button"
+                                className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium text-white bg-primary-600 border border-transparent rounded-md shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={handleCloseFilter}
+                            >
+                                OK
+                            </button>
                         </Box>
                     </Box>
                 )}
@@ -304,8 +352,22 @@ const FieldDiaryTableV2: React.FC<FieldDiaryTableV2Props> = ({
                             <ListAltIcon color="primary" /> Diário de Campo
                         </Typography>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', maxWidth: { xs: '100%', sm: 'auto' } }}>
-                            <Button variant="outlined" startIcon={<RefreshIcon />} onClick={onAtualizar} size="small">Atualizar</Button>
-                            <Button variant="contained" color="success" startIcon={<AddIcon />} onClick={onNovoRegistro} size="small">Novo Registro</Button>
+                            <button
+                                type="button"
+                                className="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={onAtualizar}
+                            >
+                                <RefreshIcon className="w-5 h-5 mr-2" />
+                                Atualizar
+                            </button>
+                            <button
+                                type="button"
+                                className="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={onNovoRegistro}
+                            >
+                                <AddIcon className="w-5 h-5 mr-2" />
+                                Novo Registro
+                            </button>
                         </Box>
                     </Box>
                     <FormControlLabel
@@ -367,11 +429,35 @@ const FieldDiaryTableV2: React.FC<FieldDiaryTableV2Props> = ({
                                                 <TableCell>{reg.audio_url ? <audio controls src={reg.audio_url} preload="metadata" style={{ height: '32px', maxWidth: '180px', width: '100%' }} /> : <Typography variant="body2" color="text.disabled">—</Typography>}</TableCell>
                                                 <TableCell align="center">
                                                     <Stack direction="row" justifyContent="center" spacing={1}>
-                                                        <Tooltip title="Ver Detalhes"><IconButton size="small" onClick={() => onVisualizar(reg)}><VisibilityIcon fontSize="small" /></IconButton></Tooltip>
+                                                        <Tooltip title="Ver Detalhes">
+                                                            <button
+                                                                type="button"
+                                                                className="inline-flex items-center justify-center p-1.5 text-gray-500 transition-colors bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                onClick={() => onVisualizar(reg)}
+                                                            >
+                                                                <VisibilityIcon fontSize="small" />
+                                                            </button>
+                                                        </Tooltip>
                                                         {!isCancelled && (
                                                             <>
-                                                                <Tooltip title="Editar"><IconButton size="small" color="primary" onClick={() => onEditar(reg)}><EditIcon fontSize="small" /></IconButton></Tooltip>
-                                                                <Tooltip title="Excluir/Cancelar"><IconButton size="small" color="error" onClick={() => onExcluir(reg)}><DeleteIcon fontSize="small" /></IconButton></Tooltip>
+                                                                <Tooltip title="Editar">
+                                                                    <button
+                                                                        type="button"
+                                                                        className="inline-flex items-center justify-center p-1.5 text-indigo-700 transition-colors bg-indigo-50 border border-indigo-200 rounded-md hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                        onClick={() => onEditar(reg)}
+                                                                    >
+                                                                        <EditIcon fontSize="small" />
+                                                                    </button>
+                                                                </Tooltip>
+                                                                <Tooltip title="Excluir/Cancelar">
+                                                                    <button
+                                                                        type="button"
+                                                                        className="inline-flex items-center justify-center p-1.5 text-red-700 transition-colors bg-red-50 border border-red-200 rounded-md hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                        onClick={() => onExcluir(reg)}
+                                                                    >
+                                                                        <DeleteIcon fontSize="small" />
+                                                                    </button>
+                                                                </Tooltip>
                                                             </>
                                                         )}
                                                     </Stack>
@@ -433,29 +519,29 @@ const FieldDiaryTableV2: React.FC<FieldDiaryTableV2Props> = ({
                                         )}
                                     </Box>
                                     <Box sx={{ display: 'flex', flexWrap: { xs: 'wrap', sm: 'nowrap' }, gap: { xs: 0.5, sm: 1 }, width: '100%', mt: 1, borderTop: '1px solid #e5e7eb', bgcolor: '#f9fafb', p: 1 }}>
-                                        <Button
-                                            color="inherit"
+                                        <button
+                                            type="button"
+                                            className="flex items-center justify-center flex-1 px-2 py-2 gap-1 text-xs sm:text-sm font-bold text-gray-600 transition-colors rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                             onClick={() => onVisualizar(reg)}
-                                            sx={{ flex: 1, py: 0.75, px: 1, color: 'text.secondary', borderRadius: 1, flexDirection: 'row', gap: 1, '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' } }}
                                         >
-                                            <VisibilityIcon fontSize="small" /> <Typography variant="caption" fontWeight="bold" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>VER</Typography>
-                                        </Button>
+                                            <VisibilityIcon className="w-4 h-4" /> VER
+                                        </button>
                                         {!isCancelled && (
                                             <>
-                                                <Button
-                                                    color="primary"
+                                                <button
+                                                    type="button"
+                                                    className="flex items-center justify-center flex-1 px-2 py-2 gap-1 text-xs sm:text-sm font-bold text-indigo-700 transition-colors rounded-md hover:bg-indigo-50 disabled:opacity-50 disabled:cursor-not-allowed"
                                                     onClick={() => onEditar(reg)}
-                                                    sx={{ flex: 1, py: 0.75, px: 1, borderRadius: 1, flexDirection: 'row', gap: 1 }}
                                                 >
-                                                    <EditIcon fontSize="small" /> <Typography variant="caption" fontWeight="bold" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>EDITAR</Typography>
-                                                </Button>
-                                                <Button
-                                                    color="error"
+                                                    <EditIcon className="w-4 h-4" /> EDITAR
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="flex items-center justify-center flex-1 px-2 py-2 gap-1 text-xs sm:text-sm font-bold text-red-700 transition-colors rounded-md hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
                                                     onClick={() => onExcluir(reg)}
-                                                    sx={{ flex: 1, py: 0.75, px: 1, borderRadius: 1, flexDirection: 'row', gap: 1 }}
                                                 >
-                                                    <DeleteIcon fontSize="small" /> <Typography variant="caption" fontWeight="bold" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>EXCLUIR</Typography>
-                                                </Button>
+                                                    <DeleteIcon className="w-4 h-4" /> EXCLUIR
+                                                </button>
                                             </>
                                         )}
                                     </Box>
