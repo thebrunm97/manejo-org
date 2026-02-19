@@ -1,15 +1,10 @@
 // src/components/PmoForm/Secao6_MUI.tsx
+// Clonado do Template Canónico — Zero MUI
 
-import React, { ChangeEvent } from 'react';
-import {
-    Accordion, AccordionDetails, AccordionSummary, Box, TextField, FormControl,
-    FormLabel, RadioGroup, FormControlLabel, Radio, Typography
-} from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import React, { ChangeEvent, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 
-// Componente de layout padrão
 import SectionShell from '../Plan/SectionShell';
-
 import CheckboxGroupMUI from './CheckboxGroup_MUI';
 
 // Types
@@ -34,10 +29,35 @@ interface Secao6MUIProps {
     errors?: Record<string, string>;
 }
 
+// Accordion Reutilizável
+interface AccordionPanelProps {
+    title: string;
+    defaultOpen?: boolean;
+    children: React.ReactNode;
+}
+
+const AccordionPanel: React.FC<AccordionPanelProps> = ({ title, defaultOpen = false, children }) => {
+    const [isOpen, setIsOpen] = useState(defaultOpen);
+    return (
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-4 overflow-hidden">
+            <button
+                type="button"
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200 
+                           hover:bg-gray-100 transition-colors duration-150 text-left cursor-pointer"
+            >
+                <span className="font-semibold text-sm text-gray-800 leading-snug pr-4">{title}</span>
+                <ChevronDown size={18} className={`shrink-0 text-gray-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {isOpen && <div className="px-4 py-4">{children}</div>}
+        </div>
+    );
+};
+
 const Secao6MUI: React.FC<Secao6MUIProps> = ({ data, onSectionChange, errors }) => {
     const safeData = data || {};
 
-    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         let finalValue: string | boolean = value;
         if (name === "ha_risco_contaminacao_agua") {
@@ -51,123 +71,141 @@ const Secao6MUI: React.FC<Secao6MUIProps> = ({ data, onSectionChange, errors }) 
     };
 
     return (
-        <SectionShell
-            sectionLabel="Seção 6"
-            title="Aspectos Ambientais"
-        >
+        <SectionShell sectionLabel="Seção 6" title="Aspectos Ambientais">
 
-            <Accordion defaultExpanded>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Typography sx={{ fontWeight: 'bold' }}>6.1. Como irá promover a biodiversidade, conservar o solo e a água e proteger as fontes e nascentes?</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                    <CheckboxGroupMUI
-                        title=""
-                        options={['Culturas consorciadas', 'Sistemas agroflorestais', 'Rotação de culturas', 'Plantio em nível', 'Recuperação/enriquecimento de APPs', 'Plantio direto', 'Corredor ecológico...', 'Preservação da mata ciliar', 'Manejo do mato...', 'Cercamento de nascentes', 'Ausência de fogo', 'Terraceamento', 'Adubação verde', 'Mantém nascente de água própria', 'Adubos orgânicos', 'Realiza manejo das águas residuais', 'Diversificação da produção', 'Evita o desperdício de água', 'Plantio de flores...', 'Orienta vizinhos', 'Cultivo em aleias/faixas', 'Quebra ventos', 'Cobertura do solo']}
-                        selectedString={safeData.promocao_biodiversidade}
-                        onSelectionChange={(newValue) => handleCheckboxChange('promocao_biodiversidade', newValue)}
-                    />
-                </AccordionDetails>
-            </Accordion>
+            <AccordionPanel
+                title="6.1. Como irá promover a biodiversidade, conservar o solo e a água e proteger as fontes e nascentes?"
+                defaultOpen
+            >
+                <CheckboxGroupMUI
+                    title=""
+                    options={['Culturas consorciadas', 'Sistemas agroflorestais', 'Rotação de culturas', 'Plantio em nível', 'Recuperação/enriquecimento de APPs', 'Plantio direto', 'Corredor ecológico...', 'Preservação da mata ciliar', 'Manejo do mato...', 'Cercamento de nascentes', 'Ausência de fogo', 'Terraceamento', 'Adubação verde', 'Mantém nascente de água própria', 'Adubos orgânicos', 'Realiza manejo das águas residuais', 'Diversificação da produção', 'Evita o desperdício de água', 'Plantio de flores...', 'Orienta vizinhos', 'Cultivo em aleias/faixas', 'Quebra ventos', 'Cobertura do solo']}
+                    selectedString={safeData.promocao_biodiversidade}
+                    onSelectionChange={(newValue) => handleCheckboxChange('promocao_biodiversidade', newValue)}
+                />
+            </AccordionPanel>
 
-            <Accordion>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Typography sx={{ fontWeight: 'bold' }}>6.2. Qual a fonte de água utilizada na propriedade?</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                    <CheckboxGroupMUI
-                        title=""
-                        options={['Mina própria...', 'Cisterna', 'Açude', 'Mina fora da propriedade', 'Rio ou riacho', 'Canais coletivos...', 'Água subterrânea - Qual?']}
-                        selectedString={safeData.fonte_agua}
-                        onSelectionChange={(newValue) => handleCheckboxChange('fonte_agua', newValue)}
-                        otherOption="Água subterrânea - Qual?"
-                        otherValue={safeData.fonte_agua_subterranea_especificacao}
-                        onOtherChange={handleChange}
-                        otherName="fonte_agua_subterranea_especificacao"
-                    />
-                </AccordionDetails>
-            </Accordion>
+            <AccordionPanel title="6.2. Qual a fonte de água utilizada na propriedade?">
+                <CheckboxGroupMUI
+                    title=""
+                    options={['Mina própria...', 'Cisterna', 'Açude', 'Mina fora da propriedade', 'Rio ou riacho', 'Canais coletivos...', 'Água subterrânea - Qual?']}
+                    selectedString={safeData.fonte_agua}
+                    onSelectionChange={(newValue) => handleCheckboxChange('fonte_agua', newValue)}
+                    otherOption="Água subterrânea - Qual?"
+                    otherValue={safeData.fonte_agua_subterranea_especificacao}
+                    onOtherChange={handleChange as any}
+                    otherName="fonte_agua_subterranea_especificacao"
+                />
+            </AccordionPanel>
 
-            <Accordion>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Typography sx={{ fontWeight: 'bold' }}>6.3. Como controla o uso da água na produção?</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                    <TextField name="controle_uso_agua" value={safeData.controle_uso_agua || ''} onChange={handleChange} fullWidth multiline rows={3} variant="outlined" />
-                </AccordionDetails>
-            </Accordion>
+            <AccordionPanel title="6.3. Como controla o uso da água na produção?">
+                <textarea
+                    name="controle_uso_agua"
+                    value={safeData.controle_uso_agua || ''}
+                    onChange={handleChange}
+                    rows={3}
+                    className="w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 text-sm
+                               focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none
+                               placeholder-gray-400 resize-y"
+                />
+            </AccordionPanel>
 
-            <Accordion>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Typography sx={{ fontWeight: 'bold' }}>6.4. Há risco de contaminação para sua água?</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                    <FormControl component="fieldset">
-                        <RadioGroup row name="ha_risco_contaminacao_agua" value={String(safeData.ha_risco_contaminacao_agua ?? 'false')} onChange={handleChange}>
-                            <FormControlLabel value="true" control={<Radio />} label="Sim" />
-                            <FormControlLabel value="false" control={<Radio />} label="Não" />
-                        </RadioGroup>
-                        {safeData.ha_risco_contaminacao_agua === true && (
-                            <TextField name="qual_risco_contaminacao_agua" label="Qual(is)?" value={safeData.qual_risco_contaminacao_agua || ''} onChange={handleChange} fullWidth multiline rows={3} variant="outlined" margin="normal" />
-                        )}
-                    </FormControl>
-                </AccordionDetails>
-            </Accordion>
+            <AccordionPanel title="6.4. Há risco de contaminação para sua água?">
+                <fieldset className="space-y-2">
+                    <div className="flex items-center gap-4">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="radio"
+                                name="ha_risco_contaminacao_agua"
+                                value="true"
+                                checked={safeData.ha_risco_contaminacao_agua === true}
+                                onChange={handleChange}
+                                className="h-4 w-4 text-green-600 border-gray-300 focus:ring-green-500"
+                            />
+                            <span className="text-sm text-gray-700">Sim</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="radio"
+                                name="ha_risco_contaminacao_agua"
+                                value="false"
+                                checked={safeData.ha_risco_contaminacao_agua !== true}
+                                onChange={handleChange}
+                                className="h-4 w-4 text-green-600 border-gray-300 focus:ring-green-500"
+                            />
+                            <span className="text-sm text-gray-700">Não</span>
+                        </label>
+                    </div>
+                    {safeData.ha_risco_contaminacao_agua === true && (
+                        <div className="mt-3">
+                            <label className="block text-sm font-medium text-gray-600 mb-1">Qual(is)?</label>
+                            <textarea
+                                name="qual_risco_contaminacao_agua"
+                                value={safeData.qual_risco_contaminacao_agua || ''}
+                                onChange={handleChange}
+                                rows={3}
+                                className="w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 text-sm
+                                           focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none
+                                           placeholder-gray-400 resize-y"
+                            />
+                        </div>
+                    )}
+                </fieldset>
+            </AccordionPanel>
 
-            <Accordion>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Typography sx={{ fontWeight: 'bold' }}>6.5. Quais os principais riscos de contaminação existentes na sua unidade de produção?</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                    <CheckboxGroupMUI
-                        title=""
-                        options={['Cultivos transgênicos...', 'Uso de insumos químicos...', 'Contaminação por pulverização...', 'Contaminação dos cursos...', 'Enxurrada', 'Insumos externos...', 'Animais trazidos de fora...']}
-                        selectedString={safeData.riscos_contaminacao_unidade_producao}
-                        onSelectionChange={(newValue) => handleCheckboxChange('riscos_contaminacao_unidade_producao', newValue)}
-                    />
-                </AccordionDetails>
-            </Accordion>
+            <AccordionPanel title="6.5. Quais os principais riscos de contaminação existentes na sua unidade de produção?">
+                <CheckboxGroupMUI
+                    title=""
+                    options={['Cultivos transgênicos...', 'Uso de insumos químicos...', 'Contaminação por pulverização...', 'Contaminação dos cursos...', 'Enxurrada', 'Insumos externos...', 'Animais trazidos de fora...']}
+                    selectedString={safeData.riscos_contaminacao_unidade_producao}
+                    onSelectionChange={(newValue) => handleCheckboxChange('riscos_contaminacao_unidade_producao', newValue)}
+                />
+            </AccordionPanel>
 
-            <Accordion>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Typography sx={{ fontWeight: 'bold' }}>6.6. Como pretende diminuir ou eliminar os riscos de contaminação identificados?</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                    <TextField name="medidas_minimizar_riscos_contaminacao" value={safeData.medidas_minimizar_riscos_contaminacao || ''} onChange={handleChange} fullWidth multiline rows={4} variant="outlined" />
-                </AccordionDetails>
-            </Accordion>
+            <AccordionPanel title="6.6. Como pretende diminuir ou eliminar os riscos de contaminação identificados?">
+                <textarea
+                    name="medidas_minimizar_riscos_contaminacao"
+                    value={safeData.medidas_minimizar_riscos_contaminacao || ''}
+                    onChange={handleChange}
+                    rows={4}
+                    className="w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 text-sm
+                               focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none
+                               placeholder-gray-400 resize-y"
+                />
+            </AccordionPanel>
 
-            <Accordion>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Typography sx={{ fontWeight: 'bold' }}>6.7. Que práticas são adotadas para o manejo de resíduos orgânicos?</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                    <CheckboxGroupMUI
-                        title=""
-                        options={['Acumula o esterco...', 'Faz compostagem', 'Coloca no biodigestor', 'Produz biofertilizante', 'Faz vermicompostagem/húmus', 'Utiliza na alimentação de animais']}
-                        selectedString={safeData.praticas_manejo_residuos_organicos}
-                        onSelectionChange={(newValue) => handleCheckboxChange('praticas_manejo_residuos_organicos', newValue)}
-                    />
-                </AccordionDetails>
-            </Accordion>
+            <AccordionPanel title="6.7. Que práticas são adotadas para o manejo de resíduos orgânicos?">
+                <CheckboxGroupMUI
+                    title=""
+                    options={['Acumula o esterco...', 'Faz compostagem', 'Coloca no biodigestor', 'Produz biofertilizante', 'Faz vermicompostagem/húmus', 'Utiliza na alimentação de animais']}
+                    selectedString={safeData.praticas_manejo_residuos_organicos}
+                    onSelectionChange={(newValue) => handleCheckboxChange('praticas_manejo_residuos_organicos', newValue)}
+                />
+            </AccordionPanel>
 
-            <Accordion>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Typography sx={{ fontWeight: 'bold' }}>6.8. Compostagem</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                    <TextField name="compostagem" value={safeData.compostagem || ''} onChange={handleChange} fullWidth multiline rows={4} variant="outlined" />
-                </AccordionDetails>
-            </Accordion>
+            <AccordionPanel title="6.8. Compostagem">
+                <textarea
+                    name="compostagem"
+                    value={safeData.compostagem || ''}
+                    onChange={handleChange}
+                    rows={4}
+                    className="w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 text-sm
+                               focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none
+                               placeholder-gray-400 resize-y"
+                />
+            </AccordionPanel>
 
-            <Accordion>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Typography sx={{ fontWeight: 'bold' }}>6.9. Como é tratado/manejado o lixo na propriedade?</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                    <TextField name="tratamento_lixo" value={safeData.tratamento_lixo || ''} onChange={handleChange} fullWidth multiline rows={3} variant="outlined" />
-                </AccordionDetails>
-            </Accordion>
+            <AccordionPanel title="6.9. Como é tratado/manejado o lixo na propriedade?">
+                <textarea
+                    name="tratamento_lixo"
+                    value={safeData.tratamento_lixo || ''}
+                    onChange={handleChange}
+                    rows={3}
+                    className="w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 text-sm
+                               focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none
+                               placeholder-gray-400 resize-y"
+                />
+            </AccordionPanel>
 
         </SectionShell>
     );

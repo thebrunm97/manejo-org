@@ -1,16 +1,7 @@
 // src/components/PmoForm/CheckboxGroup_MUI.tsx
+// MUI ERRADICADO — Tailwind + HTML nativo
 
 import React, { ChangeEvent } from 'react';
-import {
-    FormControl,
-    FormLabel,
-    FormGroup,
-    FormControlLabel,
-    Checkbox,
-    Grid,
-    TextField,
-    Typography
-} from '@mui/material';
 
 interface CheckboxGroupMUIProps {
     title: string;
@@ -54,44 +45,51 @@ const CheckboxGroupMUI: React.FC<CheckboxGroupMUIProps> = ({
     const isOtherSelected = otherOption && selectedOptions.includes(otherOption);
 
     return (
-        <FormControl component="fieldset" fullWidth margin="normal">
-            <FormLabel component="legend">
-                <Typography variant="h6">{title}</Typography>
-            </FormLabel>
+        <fieldset className="w-full mt-3">
+            {title && (
+                <legend className="text-base font-semibold text-gray-800 mb-2">
+                    {title}
+                </legend>
+            )}
 
-            <FormGroup>
-                <Grid container>
-                    {options.map((option) => (
-                        <Grid item xs={12} sm={6} key={option}>
-                            <FormControlLabel
-                                control={
-                                    <Checkbox
-                                        value={option}
-                                        checked={selectedOptions.includes(option)}
-                                        onChange={handleCheckboxChange}
-                                    />
-                                }
-                                label={option}
-                            />
-                        </Grid>
-                    ))}
-                </Grid>
-            </FormGroup>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
+                {options.map((option) => (
+                    <label
+                        key={option}
+                        className="flex items-start gap-2.5 py-1.5 cursor-pointer group"
+                    >
+                        <input
+                            type="checkbox"
+                            value={option}
+                            checked={selectedOptions.includes(option)}
+                            onChange={handleCheckboxChange}
+                            className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 text-green-600 focus:ring-green-500 focus:ring-offset-0 cursor-pointer"
+                        />
+                        <span className="text-sm text-gray-700 leading-snug group-hover:text-gray-900 select-none">
+                            {option}
+                        </span>
+                    </label>
+                ))}
+            </div>
 
             {isOtherSelected && (
-                <TextField
-                    name={otherName}
-                    label={otherPlaceholder}
-                    value={otherValue || ''}
-                    onChange={onOtherChange}
-                    variant="outlined"
-                    fullWidth
-                    multiline
-                    rows={2}
-                    margin="normal"
-                />
+                <div className="mt-3 pl-6">
+                    <label className="block text-sm font-medium text-gray-600 mb-1">
+                        {otherPlaceholder}
+                    </label>
+                    <textarea
+                        name={otherName}
+                        value={otherValue || ''}
+                        onChange={onOtherChange as any}
+                        rows={2}
+                        className="w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 text-sm
+                                   focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none
+                                   placeholder-gray-400 resize-y"
+                        placeholder={otherPlaceholder}
+                    />
+                </div>
             )}
-        </FormControl>
+        </fieldset>
     );
 };
 

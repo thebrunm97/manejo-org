@@ -1,5 +1,6 @@
+// src/components/Plan/SectionShell.tsx
+
 import React from 'react';
-import { Box, Paper, Typography } from '@mui/material';
 import BotSuggestionsPanel from '../PmoForm/BotSuggestionsPanel';
 
 /**
@@ -27,20 +28,9 @@ export interface SectionShellProps {
  * - Optional section label (uppercase, muted)
  * - Title (18px, bold)
  * - Optional subtitle
- * - Paper container with subtle border for content
+ * - Container with subtle border and rounded corners for content
  * 
- * Uses theme tokens: custom.bgSurface, custom.borderSubtle, custom.fgPrimary, custom.fgMuted
- * 
- * @example
- * ```tsx
- * <SectionShell
- *   sectionLabel="Seção 1"
- *   title="Descrição da Propriedade"
- *   subtitle="Informações gerais sobre a propriedade"
- * >
- *   <TextField ... />
- * </SectionShell>
- * ```
+ * Pattern follows the "SaaS Moderno" design system.
  */
 export function SectionShell({
     sectionLabel,
@@ -51,69 +41,36 @@ export function SectionShell({
     onApplySuggestion
 }: SectionShellProps) {
     return (
-        <Box sx={{ mb: 4 }}>
+        <div className="mb-8">
             {/* Section header */}
-            <Box sx={{ mb: 2 }}>
+            <div className="mb-4">
                 {sectionLabel && (
-                    <Typography
-                        component="span"
-                        sx={{
-                            display: 'block',
-                            fontSize: '12px',
-                            fontWeight: 600,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.05em',
-                            color: 'custom.fgMuted',
-                            mb: 0.5,
-                        }}
-                    >
+                    <span className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
                         {sectionLabel}
-                    </Typography>
+                    </span>
                 )}
-                <Typography
-                    component="h2"
-                    sx={{
-                        fontSize: '18px',
-                        fontWeight: 700,
-                        color: 'custom.fgPrimary',
-                        lineHeight: 1.4,
-                    }}
-                >
+                <h2 className="text-xl font-bold text-slate-900 leading-tight">
                     {title}
-                </Typography>
+                </h2>
                 {subtitle && (
-                    <Typography
-                        sx={{
-                            fontSize: '14px',
-                            color: 'custom.fgMuted',
-                            mt: 0.5,
-                        }}
-                    >
+                    <p className="text-sm text-slate-500 mt-1">
                         {subtitle}
-                    </Typography>
+                    </p>
                 )}
-            </Box>
+            </div>
 
             {/* AI Suggestions Panel */}
             {sectionId && onApplySuggestion && (
-                <Box sx={{ mb: 2 }}>
+                <div className="mb-4">
                     <BotSuggestionsPanel sectionId={sectionId} onApply={onApplySuggestion} />
-                </Box>
+                </div>
             )}
 
             {/* Content container */}
-            <Paper
-                sx={{
-                    borderRadius: 3, // 12px (theme spacing: 3 * 4 = 12)
-                    border: '1px solid',
-                    borderColor: 'custom.borderSubtle',
-                    bgcolor: 'custom.bgSurface',
-                    p: 3,
-                }}
-            >
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden p-6 hover:border-green-500/30 transition-colors duration-300">
                 {children}
-            </Paper>
-        </Box>
+            </div>
+        </div>
     );
 }
 

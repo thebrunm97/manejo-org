@@ -1,7 +1,7 @@
 // src/components/PmoForm/Situacao_MUI.tsx
+// Zero MUI — Tailwind + HTML nativo (Select → native <select>)
 
 import React, { ChangeEvent } from 'react';
-import { TextField, MenuItem } from '@mui/material';
 
 interface SituacaoData {
     situacao_propriedade_producao_organica?: string;
@@ -24,32 +24,37 @@ const opcoes = [
 ];
 
 const SituacaoMUI: React.FC<SituacaoMUIProps> = ({ data, onDataChange, errors }) => {
-    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: ChangeEvent<HTMLSelectElement>) => {
         onDataChange({ ...data, [e.target.name]: e.target.value });
     };
 
     const fieldName = 'situacao_propriedade_producao_organica';
+    const hasError = !!errors?.[fieldName];
+    const errorMessage = errors?.[fieldName];
 
     return (
-        <>
-            <TextField
+        <div>
+            <label htmlFor={fieldName} className="block text-sm font-medium text-gray-700 mb-1">
+                Situação da Propriedade <span className="text-red-500">*</span>
+            </label>
+            <select
+                id={fieldName}
                 name={fieldName}
-                label="Situação da Propriedade"
                 value={data?.[fieldName] || ''}
                 onChange={handleChange}
-                error={!!errors?.[fieldName]}
-                helperText={errors?.[fieldName] || ' '}
-                select
-                fullWidth
-                variant="outlined"
                 required
+                className={`w-full rounded-md border shadow-sm px-3 py-2 text-sm outline-none bg-white
+                    ${hasError
+                        ? 'border-red-400 focus:ring-2 focus:ring-red-500 focus:border-red-500'
+                        : 'border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500'}`}
             >
-                <MenuItem value="" disabled>Selecione uma opção</MenuItem>
+                <option value="" disabled>Selecione uma opção</option>
                 {opcoes.map(opcao => (
-                    <MenuItem key={opcao} value={opcao}>{opcao}</MenuItem>
+                    <option key={opcao} value={opcao}>{opcao}</option>
                 ))}
-            </TextField>
-        </>
+            </select>
+            {hasError && <p className="mt-1 text-xs text-red-500">{errorMessage}</p>}
+        </div>
     );
 };
 

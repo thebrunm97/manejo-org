@@ -1,16 +1,6 @@
+// src/components/Sidebar.tsx
+
 import React from 'react';
-import {
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Typography,
-  Avatar,
-  useTheme,
-  Drawer,
-  alpha
-} from '@mui/material';
 import {
   LayoutDashboard,
   Sprout,
@@ -18,7 +8,8 @@ import {
   ClipboardList,
   LogOut,
   Menu as MenuIcon,
-  Sparkles
+  Sparkles,
+  User as UserIcon
 } from 'lucide-react';
 import { useAppNavigation } from '../hooks/navigation/useAppNavigation';
 import { SCREENS, RouteName } from '../routes/routeNames';
@@ -33,7 +24,6 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) => {
-  const theme = useTheme();
   const { navigateTo, goToLogin, currentPath } = useAppNavigation();
   const { isAdmin, isLoadingRole } = useAuth();
 
@@ -76,14 +66,15 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
       case SCREENS.MAP: return '/mapa';
       case SCREENS.CROPS: return '/culturas';
       case SCREENS.CHANGELOG: return '/changelog';
+      case SCREENS.ADMIN: return '/admin';
       default: return '';
     }
   };
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full bg-[#111827] text-white">
+    <div className="flex flex-col h-full bg-[#111827] text-white overflow-hidden">
       {/* 1. Logo */}
-      <div className="h-16 flex items-center px-6 border-b border-gray-800">
+      <div className="h-16 flex items-center px-6 border-b border-gray-800 shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-green-900/20">
             {appInitials}
@@ -95,7 +86,7 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
       </div>
 
       {/* 2. Menu */}
-      <div className="flex-1 overflow-y-auto py-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:none]">
+      <div className="flex-1 overflow-y-auto py-4 scrollbar-hide">
         <div className="px-6 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
           GESTÃO
         </div>
@@ -116,13 +107,13 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
                 key={item.name}
                 onClick={() => handleNavigate(item.path)}
                 className={cn(
-                  "w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg mx-2 mb-1 transition-colors relative max-w-[calc(100%-16px)]",
+                  "w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg mx-2 mb-1 transition-all relative max-w-[calc(100%-16px)] group",
                   active
-                    ? "bg-[#16a34a] text-white shadow-lg shadow-green-900/20"
-                    : "text-gray-400 hover:bg-gray-800 hover:text-white"
+                    ? "bg-[#16a34a] text-white shadow-lg shadow-green-900/40"
+                    : "text-gray-400 hover:bg-gray-800/50 hover:text-white"
                 )}
               >
-                <span className={cn("mr-3", active ? "text-white" : "text-gray-400 group-hover:text-white")}>
+                <span className={cn("mr-3 transition-colors", active ? "text-white" : "text-gray-400 group-hover:text-white text-gray-500")}>
                   {item.icon}
                 </span>
                 {item.name}
@@ -133,24 +124,28 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
       </div>
 
       {/* 3. Rodapé */}
-      <div className="p-4 border-t border-gray-800">
+      <div className="p-4 border-t border-gray-800 shrink-0">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center px-4 py-2 text-sm font-medium text-gray-400 rounded-lg hover:text-red-400 hover:bg-red-500/10 transition-colors"
+          className="w-full flex items-center px-4 py-2 text-sm font-medium text-gray-400 rounded-lg hover:text-red-400 hover:bg-red-500/10 transition-colors group"
         >
-          <LogOut size={20} className="mr-3" />
+          <LogOut size={20} className="mr-3 text-gray-500 group-hover:text-red-400" />
           Sair
         </button>
 
         <div className="mt-4 p-3 bg-gray-900/50 rounded-lg flex items-center gap-3 border border-gray-800">
-          <Avatar sx={{ width: 32, height: 32, bgcolor: '#16a34a', fontSize: '0.8rem' }}>
-            {user?.email?.charAt(0).toUpperCase() || 'U'}
-          </Avatar>
+          <div className="w-8 h-8 rounded-full bg-green-600/20 border border-green-600/30 flex items-center justify-center text-green-500 font-bold text-xs shrink-0 overflow-hidden">
+            {user?.email ? (
+              user.email.charAt(0).toUpperCase()
+            ) : (
+              <UserIcon size={14} />
+            )}
+          </div>
           <div className="overflow-hidden">
             <div className="text-sm font-medium text-gray-200 truncate">
-              {user?.email?.split('@')[0]}
+              {user?.email?.split('@')[0] || 'Produtor'}
             </div>
-            <div className="text-xs text-gray-500">
+            <div className="text-[10px] text-gray-500 uppercase tracking-tight">
               Plano Premium
             </div>
           </div>
@@ -161,30 +156,32 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
 
   return (
     <>
-      {/* Mobile Drawer (MUI) */}
-      <Drawer
-        variant="temporary"
-        open={mobileOpen}
-        onClose={onClose}
-        ModalProps={{
-          keepMounted: true, // Better open performance on mobile.
-        }}
-        sx={{
-          display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': {
-            boxSizing: 'border-box',
-            width: 260,
-            backgroundColor: '#111827',
-            color: 'white',
-            borderRight: '1px solid #1f2937'
-          },
-        }}
+      {/* Mobile Sidebar - Offcanvas Pattern */}
+      <div
+        className={cn(
+          "fixed inset-0 z-[100] md:hidden transition-opacity duration-300 ease-in-out",
+          mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        )}
       >
-        <SidebarContent />
-      </Drawer>
+        {/* Backdrop overlay */}
+        <div
+          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          onClick={onClose}
+        />
 
-      {/* Desktop Sidebar (Flex Item - Not Fixed) */}
-      <aside className="hidden md:flex w-64 flex-col h-full bg-[#111827] border-r border-gray-800 text-white shrink-0">
+        {/* Sidebar Panel */}
+        <div
+          className={cn(
+            "absolute inset-y-0 left-0 w-[280px] bg-[#111827] shadow-2xl transition-transform duration-300 ease-in-out border-r border-gray-800",
+            mobileOpen ? "translate-x-0" : "-translate-x-full"
+          )}
+        >
+          <SidebarContent />
+        </div>
+      </div>
+
+      {/* Desktop Sidebar (Persistent) */}
+      <aside className="hidden md:flex w-64 flex-col h-full bg-[#111827] border-r border-gray-800 text-white shrink-0 overflow-hidden">
         <SidebarContent />
       </aside>
     </>

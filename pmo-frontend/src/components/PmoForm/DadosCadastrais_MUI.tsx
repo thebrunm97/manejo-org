@@ -1,7 +1,7 @@
 // src/components/PmoForm/DadosCadastrais_MUI.tsx
+// Zero MUI — Box → Tailwind grid. DebouncedTextField is already Tailwind-native.
 
 import React from 'react';
-import { Box } from '@mui/material';
 import DebouncedTextField from '../Common/DebouncedTextField';
 
 interface DadosCadastraisData {
@@ -47,14 +47,7 @@ const DadosCadastraisMUI: React.FC<DadosCadastraisMUIProps> = ({ data, onDataCha
     const safeErrors = errors || {};
 
     return (
-        <Box
-            sx={{
-                display: 'grid',
-                gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
-                gap: 3,
-                rowGap: 2.5,
-            }}
-        >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
             {fields.map((field) => (
                 <DebouncedTextField
                     key={field.name}
@@ -66,12 +59,9 @@ const DadosCadastraisMUI: React.FC<DadosCadastraisMUIProps> = ({ data, onDataCha
                     helperText={safeErrors[field.name] || ' '}
                     type={field.type || 'text'}
                     required={field.required}
-                    variant="outlined"
-                    fullWidth
-                    InputLabelProps={field.type === 'date' ? { shrink: true } : {}}
                 />
             ))}
-        </Box>
+        </div>
     );
 };
 

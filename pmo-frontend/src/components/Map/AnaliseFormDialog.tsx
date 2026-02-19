@@ -2,12 +2,17 @@
 
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import {
-    Dialog, DialogTitle, DialogContent, DialogActions,
-    Button, TextField, Grid, Typography, Divider, Box,
-    InputAdornment, Alert
-} from '@mui/material';
+    X,
+    Beaker,
+    Calendar,
+    AlertTriangle,
+    CheckCircle2,
+    Info,
+    Loader2
+} from 'lucide-react';
 import { analiseService } from '../../services/analiseService';
 import { soilLogic } from '../../utils/soilLogic';
+import { cn } from '../../utils/cn';
 
 // Types
 interface AnaliseData {
@@ -123,43 +128,223 @@ const AnaliseFormDialog: React.FC<AnaliseFormDialogProps> = ({ open, onClose, ta
         }
     };
 
+    if (!open) return null;
+
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-            <DialogTitle sx={{ fontWeight: 700, borderBottom: '1px solid #e0e0e0' }}>
-                {initialData ? 'Editar Análise de Solo' : 'Nova Análise de Solo'}
-            </DialogTitle>
-            <DialogContent sx={{ pt: 3 }}>
-                <Box sx={{ mt: 2 }}>
-                    <TextField label="Data da Análise" type="date" name="data_analise" value={formData.data_analise} onChange={handleChange} fullWidth InputLabelProps={{ shrink: true }} sx={{ mb: 3 }} />
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
 
-                    <Typography variant="subtitle2" fontWeight={700} color="primary" sx={{ mb: 2 }}>QUÍMICA DO SOLO</Typography>
-                    <Grid container spacing={2} sx={{ mb: 3 }}>
-                        <Grid item xs={6}><TextField label="pH (H₂O)" name="ph" type="number" value={formData.ph} onChange={handleChange} fullWidth size="small" /></Grid>
-                        <Grid item xs={6}><TextField label="M.O. (%)" name="materia_organica" type="number" value={formData.materia_organica} onChange={handleChange} fullWidth size="small" /></Grid>
-                        <Grid item xs={6}><TextField label="P (mg/dm³)" name="fosforo" type="number" value={formData.fosforo} onChange={handleChange} fullWidth size="small" /></Grid>
-                        <Grid item xs={6}><TextField label="K (mg/dm³)" name="potassio" type="number" value={formData.potassio} onChange={handleChange} fullWidth size="small" /></Grid>
-                        <Grid item xs={4}><TextField label="Ca (cmol)" name="calcio" type="number" value={formData.calcio} onChange={handleChange} fullWidth size="small" /></Grid>
-                        <Grid item xs={4}><TextField label="Mg (cmol)" name="magnesio" type="number" value={formData.magnesio} onChange={handleChange} fullWidth size="small" /></Grid>
-                        <Grid item xs={4}><TextField label="V (%) (Sat. Bases)" name="saturacao_bases" type="number" value={formData.saturacao_bases} onChange={handleChange} fullWidth size="small" InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }} /></Grid>
-                    </Grid>
+            {/* Modal Container */}
+            <div className="relative bg-white w-full max-w-lg max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
 
-                    <Divider sx={{ mb: 2 }} />
+                {/* Header */}
+                <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-green-100 text-green-600 rounded-lg">
+                            <Beaker size={20} />
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-900">
+                            {initialData ? 'Editar Análise de Solo' : 'Nova Análise de Solo'}
+                        </h3>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
 
-                    <Typography variant="subtitle2" fontWeight={700} color="secondary" sx={{ mb: 2 }}>FÍSICA (TEXTURA)</Typography>
-                    {isTextureInvalid() && <Alert severity="error" sx={{ mb: 2 }}>A soma de Argila e Areia não pode exceder 100%</Alert>}
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
+                    <div className="space-y-6">
+                        {/* Data */}
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+                                <Calendar size={14} />
+                                Data da Análise
+                            </label>
+                            <input
+                                type="date"
+                                name="data_analise"
+                                value={formData.data_analise}
+                                onChange={handleChange}
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all font-medium text-slate-700"
+                            />
+                        </div>
 
-                    <Grid container spacing={2}>
-                        <Grid item xs={4}><TextField label="Argila (%)" name="argila" type="number" value={formData.argila} onChange={handleChange} fullWidth size="small" inputProps={{ min: 0, max: 100 }} /></Grid>
-                        <Grid item xs={4}><TextField label="Areia (%)" name="areia" type="number" value={formData.areia} onChange={handleChange} fullWidth size="small" inputProps={{ min: 0, max: 100 }} /></Grid>
-                        <Grid item xs={4}><TextField label="Silte (%)" name="silte" type="number" value={formData.silte} InputProps={{ readOnly: true, sx: { bgcolor: '#f5f5f5' } }} fullWidth size="small" helperText="Calculado automaticamente" /></Grid>
-                    </Grid>
-                </Box>
-            </DialogContent>
-            <DialogActions sx={{ p: 2, borderTop: '1px solid #e0e0e0' }}>
-                <Button onClick={onClose} disabled={loading}>Cancelar</Button>
-                <Button onClick={handleSubmit} variant="contained" color="success" disabled={loading || isTextureInvalid()}>{loading ? 'Salvando...' : 'Salvar Análise'}</Button>
-            </DialogActions>
-        </Dialog>
+                        {/* Química Section */}
+                        <div>
+                            <div className="flex items-center gap-2 mb-4">
+                                <span className="text-xs font-bold text-green-600 uppercase tracking-widest px-2 py-0.5 bg-green-50 border border-green-100 rounded">Química do Solo</span>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1 ml-1">pH (H₂O)</label>
+                                    <input
+                                        type="number"
+                                        name="ph"
+                                        value={formData.ph}
+                                        onChange={handleChange}
+                                        placeholder="7.0"
+                                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1 ml-1">M.O. (%)</label>
+                                    <input
+                                        type="number"
+                                        name="materia_organica"
+                                        value={formData.materia_organica}
+                                        onChange={handleChange}
+                                        placeholder="2.5"
+                                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1 ml-1">P (mg/dm³)</label>
+                                    <input
+                                        type="number"
+                                        name="fosforo"
+                                        value={formData.fosforo}
+                                        onChange={handleChange}
+                                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1 ml-1">K (mg/dm³)</label>
+                                    <input
+                                        type="number"
+                                        name="potassio"
+                                        value={formData.potassio}
+                                        onChange={handleChange}
+                                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-3 mt-4">
+                                <div>
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Ca (cmol)</label>
+                                    <input
+                                        type="number"
+                                        name="calcio"
+                                        value={formData.calcio}
+                                        onChange={handleChange}
+                                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Mg (cmol)</label>
+                                    <input
+                                        type="number"
+                                        name="magnesio"
+                                        value={formData.magnesio}
+                                        onChange={handleChange}
+                                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">V (%) (Sat. Bases)</label>
+                                    <div className="relative">
+                                        <input
+                                            type="number"
+                                            name="saturacao_bases"
+                                            value={formData.saturacao_bases}
+                                            onChange={handleChange}
+                                            className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all pr-7"
+                                        />
+                                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr className="border-slate-100" />
+
+                        {/* Física Section */}
+                        <div>
+                            <div className="flex items-center gap-2 mb-4">
+                                <span className="text-xs font-bold text-amber-600 uppercase tracking-widest px-2 py-0.5 bg-amber-50 border border-amber-100 rounded">Física (Textura)</span>
+                            </div>
+
+                            {isTextureInvalid() && (
+                                <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-600">
+                                    <AlertTriangle size={18} />
+                                    <span className="text-xs font-semibold">A soma de Argila e Areia não pode exceder 100%</span>
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-3 gap-3">
+                                <div>
+                                    <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1 ml-1">Argila (%)</label>
+                                    <input
+                                        type="number"
+                                        name="argila"
+                                        value={formData.argila}
+                                        onChange={handleChange}
+                                        min="0"
+                                        max="100"
+                                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1 ml-1">Areia (%)</label>
+                                    <input
+                                        type="number"
+                                        name="areia"
+                                        value={formData.areia}
+                                        onChange={handleChange}
+                                        min="0"
+                                        max="100"
+                                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1 ml-1">Silte (%)</label>
+                                    <div className="relative">
+                                        <input
+                                            type="number"
+                                            name="silte"
+                                            value={formData.silte}
+                                            readOnly
+                                            className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2 text-sm text-slate-400 cursor-not-allowed"
+                                        />
+                                        <div className="absolute -bottom-4 right-0 leading-none">
+                                            <span className="text-[9px] text-slate-400 font-medium">Auto-calculado</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3">
+                    <button
+                        onClick={onClose}
+                        disabled={loading}
+                        className="px-6 py-2 text-sm font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        onClick={handleSubmit}
+                        disabled={loading || isTextureInvalid()}
+                        className={cn(
+                            "px-6 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-green-900/10 transition-all flex items-center gap-2",
+                            (loading || isTextureInvalid()) ? "opacity-50 cursor-not-allowed" : "hover:scale-[1.02] active:scale-[0.98]"
+                        )}
+                    >
+                        {loading && <Loader2 size={16} className="animate-spin" />}
+                        {loading ? 'Salvando...' : 'Salvar Análise'}
+                    </button>
+                </div>
+            </div>
+        </div>
     );
 };
 
