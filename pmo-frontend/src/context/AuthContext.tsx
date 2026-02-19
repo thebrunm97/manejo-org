@@ -116,7 +116,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }, []);
 
     // 4. Auth Actions
-    const login = async (email: string, password: string) => {
+    const login = useCallback(async (email: string, password: string) => {
         setIsLoadingRole(true); // Inicia verificação ao logar
         const { data, error } = await supabase.auth.signInWithPassword({
             email,
@@ -128,7 +128,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
         navigate(DASHBOARD_PATH);
         return data;
-    };
+    }, [navigate]);
 
     const logout = useCallback(async () => {
         await supabase.auth.signOut();
@@ -140,7 +140,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         navigate('/login');
     }, [navigate]);
 
-    const signUp = async (email: string, password: string, profileData?: ProfileData) => {
+    const signUp = useCallback(async (email: string, password: string, profileData?: ProfileData) => {
         const { data, error } = await supabase.auth.signUp({
             email,
             password,
@@ -150,9 +150,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         });
         if (error) throw error;
         return data;
-    };
+    }, []);
 
-    const socialLogin = async (provider: Provider) => {
+    const socialLogin = useCallback(async (provider: Provider) => {
         const { error } = await supabase.auth.signInWithOAuth({
             provider: provider,
             options: {
@@ -160,10 +160,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
             }
         });
         if (error) throw error;
-    };
+    }, []);
 
-    const loginWithGoogle = useCallback(() => socialLogin('google'), []);
-    const loginWithFacebook = useCallback(() => socialLogin('facebook'), []);
+    const loginWithGoogle = useCallback(() => socialLogin('google'), [socialLogin]);
+    const loginWithFacebook = useCallback(() => socialLogin('facebook'), [socialLogin]);
 
     const refreshProfile = useCallback(async () => {
         if (user) {

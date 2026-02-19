@@ -1,11 +1,23 @@
 import React from 'react';
-import { Card, Box, Stack, Chip, Typography, Divider } from '@mui/material';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import HistoryIcon from '@mui/icons-material/History';
+import { Pencil, Trash2, History } from 'lucide-react';
 import { CadernoEntry } from '../../types/CadernoTypes';
 import { formatDateBR, formatComplianceMessage } from '../../utils/formatters';
 import { AlertTriangle } from 'lucide-react';
+
+// Type for activity chip colors
+type ChipColorClass = string;
+
+const getStatusClasses = (tipo: string | undefined): { bg: string; text: string; border: string } => {
+    const map: Record<string, { bg: string; text: string; border: string }> = {
+        'Insumo': { bg: 'bg-amber-100', text: 'text-amber-800', border: 'border-amber-300' },
+        'Manejo': { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-300' },
+        'Plantio': { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-300' },
+        'Colheita': { bg: 'bg-primary-main/10', text: 'text-primary-dark', border: 'border-primary-main/30' },
+        'CANCELADO': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-300' },
+        'Outro': { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-300' },
+    };
+    return map[tipo || ''] || map['Outro'];
+};
 
 // Interface for component props
 interface MobileLogCardProps {
@@ -13,21 +25,6 @@ interface MobileLogCardProps {
     onEdit?: (reg: CadernoEntry) => void;
     onDelete?: (reg: CadernoEntry) => void;
 }
-
-// Type for activity chip colors
-type ChipColor = 'warning' | 'info' | 'success' | 'primary' | 'error' | 'default';
-
-const getStatusColor = (tipo: string | undefined): ChipColor => {
-    const map: Record<string, ChipColor> = {
-        'Insumo': 'warning',
-        'Manejo': 'info',
-        'Plantio': 'success',
-        'Colheita': 'primary',
-        'CANCELADO': 'error',
-        'Outro': 'default'
-    };
-    return map[tipo || ''] || 'default';
-};
 
 const MobileLogCard: React.FC<MobileLogCardProps> = ({ reg, onEdit, onDelete }) => {
     const isCancelado = reg.tipo_atividade === 'CANCELADO';
@@ -57,62 +54,46 @@ const MobileLogCard: React.FC<MobileLogCardProps> = ({ reg, onEdit, onDelete }) 
         return `${valorStr}${unidadeStr}`;
     };
 
+    const statusClasses = getStatusClasses(reg.tipo_atividade);
+
     return (
-        <Card
-            elevation={2}
-            sx={{
-                mb: 2,
-                borderRadius: 3,
-                overflow: 'visible',
-                border: 'none',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                opacity: isCancelado ? 0.7 : 1,
-                overflow: 'visible'
-            }}
+        <div
+            className={`mb-2 rounded-xl overflow-visible border-none shadow-[0_2px_8px_rgba(0,0,0,0.08)] ${isCancelado ? 'opacity-70' : ''}`}
         >
-            <Box sx={{ p: 2 }}>
+            <div className="p-2">
                 {/* HEADER: Tipo e Data */}
-                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1.5}>
-                    <Chip
-                        label={reg.tipo_atividade || 'Atividade'}
-                        size="small"
-                        color={getStatusColor(reg.tipo_atividade)}
-                        variant={isCancelado ? "outlined" : "filled"}
-                        sx={{ fontWeight: 800, fontSize: '0.7rem', height: 24 }}
-                    />
-                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                <div className="flex flex-row justify-between items-center mb-1.5">
+                    <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[0.7rem] font-extrabold ${isCancelado
+                                ? `border ${statusClasses.border} ${statusClasses.text} bg-transparent`
+                                : `${statusClasses.bg} ${statusClasses.text}`
+                            }`}
+                        style={{ height: 24 }}
+                    >
+                        {reg.tipo_atividade || 'Atividade'}
+                    </span>
+                    <span className="text-xs font-medium text-gray-500">
                         {formatDateBR(reg.data_registro)}
-                    </Typography>
-                </Stack>
+                    </span>
+                </div>
 
                 {/* BODY: Produto e Local */}
-                <Box sx={{ mb: 1.5 }}>
+                <div className="mb-1.5">
                     {isValidValue(reg.produto) && (
-                        <Typography
-                            variant="subtitle1"
-                            fontWeight={800}
-                            color={isCancelado ? 'text.secondary' : 'text.primary'}
-                            sx={{
-                                lineHeight: 1.3,
-                                mb: 0.5,
-                                fontSize: '1.05rem',
-                                textDecoration: isCancelado ? 'line-through' : 'none'
-                            }}
+                        <p
+                            className={`text-[1.05rem] font-extrabold leading-tight mb-0.5 ${isCancelado ? 'text-gray-500 line-through' : 'text-gray-900'
+                                }`}
                         >
                             {reg.produto}
-                        </Typography>
+                        </p>
                     )}
 
                     {isValidValue(reg.talhao_canteiro) && (
-                        <Stack direction="row" alignItems="center" spacing={0.5}>
-                            <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.85rem' }}
-                            >
+                        <div className="flex flex-row items-center gap-0.5">
+                            <span className="text-[0.85rem] text-gray-500 flex items-center gap-0.5">
                                 📍 {reg.talhao_canteiro}
-                            </Typography>
-                        </Stack>
+                            </span>
+                        </div>
                     )}
 
                     {/* Detalhes Técnicos (Receita/Obs) */}
@@ -133,38 +114,30 @@ const MobileLogCard: React.FC<MobileLogCardProps> = ({ reg, onEdit, onDelete }) 
                                     </div>
                                 </div>
                             ) : (
-                                <Typography
-                                    variant="caption"
-                                    color="text.disabled"
-                                    sx={{ mt: 1, display: 'block', fontStyle: 'italic', lineHeight: 1.2 }}
-                                >
+                                <p className="mt-1 block italic text-xs leading-tight text-gray-400">
                                     "{details.receita || reg.observacao_original}"
-                                </Typography>
+                                </p>
                             )}
                         </>
                     )}
 
                     {isCancelado && ultimaJustificativa && (
-                        <Typography
-                            variant="caption"
-                            color="error"
-                            sx={{ mt: 1, display: 'block', fontWeight: 'bold' }}
-                        >
+                        <p className="mt-1 block text-xs font-bold text-red-500">
                             MOTIVO: {ultimaJustificativa}
-                        </Typography>
+                        </p>
                     )}
-                </Box>
-            </Box>
+                </div>
+            </div>
 
-            <Divider />
+            <hr className="border-gray-200" />
 
             {/* FOOTER: Quantidade e Ações */}
-            <Box sx={{ p: 1, pl: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: '#fafafa' }}>
-                <Typography variant="body2" fontWeight={700} color="primary.main" sx={{ fontSize: '0.95rem' }}>
+            <div className="p-1 pl-2 flex justify-between items-center bg-gray-50/80">
+                <span className="text-[0.95rem] font-bold text-primary-main">
                     {formatQuantidade()}
-                </Typography>
+                </span>
 
-                <Stack direction="row" spacing={1}>
+                <div className="flex flex-row gap-1">
                     {onEdit && onDelete && !isCancelado ? (
                         <>
                             <button
@@ -172,14 +145,14 @@ const MobileLogCard: React.FC<MobileLogCardProps> = ({ reg, onEdit, onDelete }) 
                                 className="inline-flex items-center justify-center p-2 text-indigo-700 transition-colors bg-indigo-50 border border-indigo-200 rounded-md hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed"
                                 onClick={() => onEdit(reg)}
                             >
-                                <EditIcon fontSize="small" />
+                                <Pencil className="w-4 h-4" />
                             </button>
                             <button
                                 type="button"
                                 className="inline-flex items-center justify-center p-2 text-red-700 transition-colors bg-red-50 border border-red-200 rounded-md hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
                                 onClick={() => onDelete(reg)}
                             >
-                                <DeleteIcon fontSize="small" />
+                                <Trash2 className="w-4 h-4" />
                             </button>
                         </>
                     ) : (
@@ -188,12 +161,12 @@ const MobileLogCard: React.FC<MobileLogCardProps> = ({ reg, onEdit, onDelete }) 
                             disabled
                             className="inline-flex items-center justify-center p-2 text-gray-400 bg-gray-100 border border-gray-200 rounded-md cursor-not-allowed opacity-50"
                         >
-                            <HistoryIcon fontSize="small" />
+                            <History className="w-4 h-4" />
                         </button>
                     )}
-                </Stack>
-            </Box>
-        </Card>
+                </div>
+            </div>
+        </div>
     );
 };
 

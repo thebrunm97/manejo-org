@@ -1,6 +1,5 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { Box, CircularProgress } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
 import AdminLayout from '../components/layouts/AdminLayout';
 
@@ -12,9 +11,9 @@ export const AdminRoute = () => {
     // 1. Wait for Auth Loading to finish (critical)
     if (isLoading) {
         return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-                <CircularProgress />
-            </Box>
+            <div className="flex items-center justify-center h-screen">
+                <div className="w-8 h-8 border-4 border-green-200 border-t-green-600 rounded-full animate-spin"></div>
+            </div>
         );
     }
 

@@ -1,16 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
-import {
-    Box, Paper, Typography, Chip, IconButton,
-    Tooltip, Dialog, DialogTitle, DialogContent, DialogContentText,
-    TextField, DialogActions, Button, FormControlLabel, Switch,
-    CircularProgress, useMediaQuery, useTheme, Alert
-} from '@mui/material';
-
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
-import HistoryIcon from '@mui/icons-material/History';
-import ListAltIcon from '@mui/icons-material/ListAlt';
+import { Trash2, Pencil, History, ListChecks } from 'lucide-react';
 
 import MobileLogCard from './MobileLogCard';
 
@@ -43,9 +33,15 @@ const GeneralLogTable: React.FC<GeneralLogTableProps> = ({ pmoId }) => {
     const [loading, setLoading] = useState(false);
     const [showDeleted, setShowDeleted] = useState(false);
 
-    const theme = useTheme();
-    // unused isMobile for now but keeping for consistency with original or future use
-    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    // Responsive check (replaces useMediaQuery)
+    const [isMobile, setIsMobile] = useState(false);
+    useEffect(() => {
+        const mq = window.matchMedia('(max-width: 639px)');
+        setIsMobile(mq.matches);
+        const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+        mq.addEventListener('change', handler);
+        return () => mq.removeEventListener('change', handler);
+    }, []);
 
     // Estados do Modal
     const [openDialog, setOpenDialog] = useState(false);
@@ -89,7 +85,7 @@ const GeneralLogTable: React.FC<GeneralLogTableProps> = ({ pmoId }) => {
         ? registros
         : registros.filter(r => r && r.tipo_atividade !== 'CANCELADO')) || [];
 
-    // --- SMART RENDER DISCIMINATED COLUMNS ---
+    // --- SMART RENDER DISCRIMINATED COLUMNS ---
     const renderDetails = (row: CadernoEntry) => {
         const details = row.detalhes_tecnicos || {};
         const tipo = row.tipo_atividade;
@@ -101,47 +97,38 @@ const GeneralLogTable: React.FC<GeneralLogTableProps> = ({ pmoId }) => {
             // Higienização
             if (d.subtipo === ManejoSubtype.HIGIENIZACAO) {
                 return (
-                    <Box>
+                    <div>
                         {d.item_higienizado && (
-                            <Chip
-                                label={`🧹 ${d.item_higienizado}`}
-                                size="small"
-                                color="info"
-                                variant="outlined"
-                                sx={{ mr: 1 }}
-                            />
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border border-blue-300 text-blue-800 bg-blue-50 mr-1">
+                                🧹 {d.item_higienizado}
+                            </span>
                         )}
                         {d.produto_utilizado && d.produto_utilizado !== 'NÃO INFORMADO' && (
-                            <Typography variant="caption" color="text.secondary">
+                            <span className="text-xs text-gray-500">
                                 com {d.produto_utilizado}
-                            </Typography>
+                            </span>
                         )}
-                    </Box>
+                    </div>
                 );
             }
             // Aplicação de Insumo
             if (d.subtipo === ManejoSubtype.APLICACAO_INSUMO) {
                 const dose = d.dosagem ? `${d.dosagem}${d.unidade_dosagem || ''}` : '';
                 return (
-                    <Box>
-                        <Chip
-                            label={`💊 ${d.insumo || d.nome_insumo || 'Insumo'}`}
-                            size="small"
-                            color="warning"
-                            variant="outlined"
-                            sx={{ mr: 1 }}
-                        />
-                        {dose && <Typography variant="caption">{dose}</Typography>}
-                    </Box>
+                    <div>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border border-amber-300 text-amber-800 bg-amber-50 mr-1">
+                            💊 {d.insumo || d.nome_insumo || 'Insumo'}
+                        </span>
+                        {dose && <span className="text-xs">{dose}</span>}
+                    </div>
                 );
             }
             // Manejo Cultural (Default)
-            // Tenta usar 'atividade' do novo schema, ou fallback para 'tipo_manejo' ou observacao original
             const ativ = d.atividade || d.tipo_manejo || row.observacao_original;
             return (
-                <Typography variant="body2" color="text.primary">
+                <p className="text-sm text-gray-900">
                     {ativ}
-                </Typography>
+                </p>
             );
         }
 
@@ -149,20 +136,18 @@ const GeneralLogTable: React.FC<GeneralLogTableProps> = ({ pmoId }) => {
         if (tipo === ActivityType.COLHEITA || tipo === 'Colheita') {
             const d = details as DetalhesColheita;
             return (
-                <Box>
+                <div>
                     {d.lote && (
-                        <Chip
-                            label={`📦 ${d.lote}`}
-                            size="small"
-                            sx={{ mr: 1, bgcolor: '#fef3c7', color: '#d97706' }}
-                        />
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mr-1" style={{ backgroundColor: '#fef3c7', color: '#d97706' }}>
+                            📦 {d.lote}
+                        </span>
                     )}
                     {d.classificacao && (
-                        <Typography variant="caption" sx={{ color: '#b45309', fontWeight: 'bold' }}>
+                        <span className="text-xs font-bold" style={{ color: '#b45309' }}>
                             {d.classificacao}
-                        </Typography>
+                        </span>
                     )}
-                </Box>
+                </div>
             );
         }
 
@@ -170,25 +155,21 @@ const GeneralLogTable: React.FC<GeneralLogTableProps> = ({ pmoId }) => {
         if (tipo === ActivityType.PLANTIO || tipo === 'Plantio') {
             const d = details as DetalhesPlantio;
             return (
-                <Box>
-                    <Chip
-                        label={`🌱 ${d.metodo_propagacao || 'Plantio'}`}
-                        size="small"
-                        color="success"
-                        variant="outlined"
-                        sx={{ mr: 1 }}
-                    />
-                </Box>
+                <div>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border border-green-300 text-green-800 bg-green-50 mr-1">
+                        🌱 {d.metodo_propagacao || 'Plantio'}
+                    </span>
+                </div>
             );
         }
 
         // Default / Fallback
         return (
-            <Tooltip title={row.observacao_original || ''}>
-                <Typography variant="body2" noWrap sx={{ maxWidth: 300 }}>
+            <div title={row.observacao_original || ''}>
+                <p className="text-sm truncate max-w-[300px]">
                     {row.observacao_original || '-'}
-                </Typography>
-            </Tooltip>
+                </p>
+            </div>
         );
     };
 
@@ -271,36 +252,48 @@ const GeneralLogTable: React.FC<GeneralLogTableProps> = ({ pmoId }) => {
         }
     };
 
-    const getStatusColor = (tipo: string) => {
-        const map: Record<string, "warning" | "info" | "success" | "primary" | "error" | "default"> = {
-            'Insumo': 'warning', 'Manejo': 'info', 'Plantio': 'success',
-            'Colheita': 'primary', 'CANCELADO': 'error'
+    const getStatusClasses = (tipo: string): { bg: string; text: string; border: string } => {
+        const map: Record<string, { bg: string; text: string; border: string }> = {
+            'Insumo': { bg: 'bg-amber-100', text: 'text-amber-800', border: 'border-amber-300' },
+            'Manejo': { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-300' },
+            'Plantio': { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-300' },
+            'Colheita': { bg: 'bg-primary-main/10', text: 'text-primary-dark', border: 'border-primary-main/30' },
+            'CANCELADO': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-300' },
         };
-        return map[tipo] || 'default';
+        return map[tipo] || { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-300' };
     };
 
 
     if (!pmoId) return (
-        <Box sx={{ p: 3, textAlign: 'center', color: 'text.secondary' }}>
+        <div className="p-3 text-center text-gray-500">
             Carregando caderno...
-        </Box>
+        </div>
     );
 
     return (
-        <Box sx={{ mt: 0, p: 2, bgcolor: '#fff', borderRadius: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 'bold' }}>
-                    <ListAltIcon /> Diário de Campo Completo (Auditoria)
-                </Typography>
+        <div className="mt-0 p-2 bg-white rounded-lg">
+            <div className="flex justify-between items-center mb-2">
+                <h6 className="flex items-center gap-1 font-bold text-lg">
+                    <ListChecks className="w-5 h-5" /> Diário de Campo Completo (Auditoria)
+                </h6>
 
-                <FormControlLabel
-                    control={<Switch checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} color="error" />}
-                    label="Ver Excluídos"
-                />
-            </Box>
+                <label className="inline-flex items-center gap-2 cursor-pointer">
+                    <span className="text-sm text-gray-600">Ver Excluídos</span>
+                    <div className="relative">
+                        <input
+                            type="checkbox"
+                            checked={showDeleted}
+                            onChange={(e) => setShowDeleted(e.target.checked)}
+                            className="sr-only peer"
+                        />
+                        <div className="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:bg-red-500 transition-colors"></div>
+                        <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
+                    </div>
+                </label>
+            </div>
 
             {/* --- DESKTOP TABLE --- */}
-            <Box sx={{ display: { xs: 'none', sm: 'block' }, width: '100%' }}>
+            <div className="hidden sm:block w-full">
                 <div className="w-full overflow-x-auto block border border-gray-200 rounded-xl shadow-sm bg-white">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
@@ -315,7 +308,11 @@ const GeneralLogTable: React.FC<GeneralLogTableProps> = ({ pmoId }) => {
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {loading ? (
-                                <tr><td colSpan={6} className="px-6 py-4 text-center"><CircularProgress size={24} sx={{ my: 2 }} /></td></tr>
+                                <tr><td colSpan={6} className="px-6 py-4 text-center">
+                                    <div className="flex justify-center py-2">
+                                        <div className="w-6 h-6 border-4 border-green-200 border-t-green-600 rounded-full animate-spin"></div>
+                                    </div>
+                                </td></tr>
                             ) : (visibleRegistros || []).length === 0 ? (
                                 <tr><td colSpan={6} className="px-6 py-10 text-center text-gray-500">Nenhum registro encontrado.</td></tr>
                             ) : (
@@ -325,6 +322,7 @@ const GeneralLogTable: React.FC<GeneralLogTableProps> = ({ pmoId }) => {
                                     const details = row.detalhes_tecnicos as any || {};
                                     const historico = details.historico_alteracoes || [];
                                     const ultimaJustificativa = historico.length > 0 ? historico[historico.length - 1].motivo : null;
+                                    const sc = getStatusClasses(row.tipo_atividade);
 
                                     return (
                                         <tr
@@ -336,12 +334,10 @@ const GeneralLogTable: React.FC<GeneralLogTableProps> = ({ pmoId }) => {
                                                 {formatDateBR(row.data_registro)}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 align-top">
-                                                <Chip
-                                                    label={row.tipo_atividade}
-                                                    color={getStatusColor(row.tipo_atividade)}
-                                                    size="small"
-                                                    variant={isCancelado ? "outlined" : "filled"}
-                                                />
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${isCancelado ? `border ${sc.border} ${sc.text} bg-transparent` : `${sc.bg} ${sc.text}`
+                                                    }`}>
+                                                    {row.tipo_atividade}
+                                                </span>
                                             </td>
                                             <td className="px-6 py-4 text-sm text-gray-900 align-top">
                                                 <div className={isCancelado ? 'line-through decoration-red-500 text-red-700' : 'font-medium'}>
@@ -380,27 +376,25 @@ const GeneralLogTable: React.FC<GeneralLogTableProps> = ({ pmoId }) => {
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium align-top">
                                                 {!isCancelado ? (
                                                     <div className="flex justify-end gap-1">
-                                                        <Tooltip title="Corrigir">
-                                                            <button
-                                                                className="text-indigo-600 hover:text-indigo-900 p-1 rounded-full hover:bg-indigo-50 transition-colors"
-                                                                onClick={() => handleOpenAction(row, 'EDIT')}
-                                                            >
-                                                                <EditIcon fontSize="small" />
-                                                            </button>
-                                                        </Tooltip>
-                                                        <Tooltip title="Invalidar">
-                                                            <button
-                                                                className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
-                                                                onClick={() => handleOpenAction(row, 'DELETE')}
-                                                            >
-                                                                <DeleteIcon fontSize="small" />
-                                                            </button>
-                                                        </Tooltip>
+                                                        <button
+                                                            title="Corrigir"
+                                                            className="text-indigo-600 hover:text-indigo-900 p-1 rounded-full hover:bg-indigo-50 transition-colors"
+                                                            onClick={() => handleOpenAction(row, 'EDIT')}
+                                                        >
+                                                            <Pencil className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                            title="Invalidar"
+                                                            className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
+                                                            onClick={() => handleOpenAction(row, 'DELETE')}
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
                                                     </div>
                                                 ) : (
-                                                    <Tooltip title="Registro Auditado">
-                                                        <span className="text-gray-400 cursor-not-allowed"><HistoryIcon fontSize="small" /></span>
-                                                    </Tooltip>
+                                                    <span title="Registro Auditado" className="text-gray-400 cursor-not-allowed">
+                                                        <History className="w-4 h-4" />
+                                                    </span>
                                                 )}
                                             </td>
                                         </tr>
@@ -410,16 +404,18 @@ const GeneralLogTable: React.FC<GeneralLogTableProps> = ({ pmoId }) => {
                         </tbody>
                     </table>
                 </div>
-            </Box>
+            </div>
 
             {/* --- MOBILE CARDS --- */}
-            <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
+            <div className="block sm:hidden">
                 {loading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}><CircularProgress /></Box>
+                    <div className="flex justify-center p-3">
+                        <div className="w-8 h-8 border-4 border-green-200 border-t-green-600 rounded-full animate-spin"></div>
+                    </div>
                 ) : (visibleRegistros || []).length === 0 ? (
-                    <Paper elevation={0} sx={{ p: 4, textAlign: 'center', color: 'text.secondary', bgcolor: '#f5f5f5', borderRadius: 2 }}>
-                        <Typography>Nenhum registro encontrado.</Typography>
-                    </Paper>
+                    <div className="p-4 text-center text-gray-500 bg-gray-100 rounded-lg">
+                        Nenhum registro encontrado.
+                    </div>
                 ) : (
                     (visibleRegistros || []).map((row) => (
                         <MobileLogCard
@@ -430,35 +426,60 @@ const GeneralLogTable: React.FC<GeneralLogTableProps> = ({ pmoId }) => {
                         />
                     ))
                 )}
-            </Box>
+            </div>
 
-            <Dialog open={openDialog} onClose={handleClose}>
-                <DialogTitle sx={{ color: actionType === 'DELETE' ? 'error.main' : 'primary.main' }}>
-                    {actionType === 'DELETE' ? 'Invalidar Registro' : 'Corrigir Registro'}
-                </DialogTitle>
-                <DialogContent>
-                    <DialogContentText sx={{ mb: 2 }}>
-                        {actionType === 'DELETE'
-                            ? "O registro será marcado como CANCELADO, mas mantido para auditoria."
-                            : "As alterações serão salvas no histórico do registro."}
-                    </DialogContentText>
+            {/* Delete Confirmation Dialog (native) */}
+            {openDialog && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={handleClose}>
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+                        <div className="p-6">
+                            <h3 className={`text-lg font-bold mb-2 ${actionType === 'DELETE' ? 'text-red-600' : 'text-primary-main'}`}>
+                                {actionType === 'DELETE' ? 'Invalidar Registro' : 'Corrigir Registro'}
+                            </h3>
+                            <p className="text-sm text-gray-600 mb-4">
+                                {actionType === 'DELETE'
+                                    ? "O registro será marcado como CANCELADO, mas mantido para auditoria."
+                                    : "As alterações serão salvas no histórico do registro."}
+                            </p>
 
-
-
-                    <TextField
-                        autoFocus label="Justificativa (Obrigatória)" fullWidth multiline rows={2}
-                        value={justificativa} onChange={e => setJustificativa(e.target.value)}
-                        error={justificativa.length > 0 && justificativa.length < 5}
-                        helperText="Ex: Erro de digitação, produto errado, duplicidade..."
-                    />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleClose}>Cancelar</Button>
-                    <Button onClick={handleConfirmAction} variant="contained" color={actionType === 'DELETE' ? 'error' : 'primary'}>
-                        Confirmar
-                    </Button>
-                </DialogActions>
-            </Dialog>
+                            <div className="flex flex-col gap-1">
+                                <label className="text-sm font-medium text-gray-700">Justificativa (Obrigatória)</label>
+                                <textarea
+                                    autoFocus
+                                    rows={2}
+                                    className={`w-full px-3 py-2 rounded-md border bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 transition-colors ${justificativa.length > 0 && justificativa.length < 5
+                                            ? 'border-red-500 focus:ring-red-500/30 focus:border-red-500'
+                                            : 'border-gray-300 focus:ring-primary-main/30 focus:border-primary-main'
+                                        }`}
+                                    value={justificativa}
+                                    onChange={e => setJustificativa(e.target.value)}
+                                    placeholder="Ex: Erro de digitação, produto errado, duplicidade..."
+                                />
+                                <p className="text-xs text-gray-500">Ex: Erro de digitação, produto errado, duplicidade...</p>
+                            </div>
+                        </div>
+                        <div className="flex justify-end gap-2 px-6 pb-6">
+                            <button
+                                type="button"
+                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                                onClick={handleClose}
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="button"
+                                className={`px-4 py-2 text-sm font-medium text-white rounded-md transition-colors ${actionType === 'DELETE'
+                                        ? 'bg-red-600 hover:bg-red-700'
+                                        : 'bg-primary-main hover:bg-primary-dark'
+                                    }`}
+                                onClick={handleConfirmAction}
+                            >
+                                Confirmar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
 
             <ManualRecordDialog
@@ -471,7 +492,7 @@ const GeneralLogTable: React.FC<GeneralLogTableProps> = ({ pmoId }) => {
                     setIsEditOpen(false);
                 }}
             />
-        </Box >
+        </div>
     );
 };
 
