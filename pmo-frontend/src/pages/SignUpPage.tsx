@@ -1,104 +1,18 @@
-// src/pages/SignUpPage.tsx (Manejo Org Design System - Dark Glassmorphism)
-
 import React, { useState, FormEvent, ChangeEvent } from 'react';
+import {
+    User,
+    Mail,
+    Lock,
+    Calendar,
+    Briefcase,
+    Loader2,
+    AlertCircle,
+    ChevronDown
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useAppNavigation } from '../hooks/navigation/useAppNavigation';
-import {
-    Avatar,
-    Box,
-    Button,
-    Grid,
-    Link,
-    TextField,
-    Typography,
-    Paper,
-    CircularProgress,
-    Alert,
-    Select,
-    MenuItem,
-    InputLabel,
-    FormControl,
-    InputAdornment,
-    useTheme,
-    SelectChangeEvent,
-} from '@mui/material';
-import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
-import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import WorkOutlineIcon from '@mui/icons-material/WorkOutline';
 
-// Shared input styles for dark theme (same as LoginPage)
-const inputStyles = {
-    '& .MuiOutlinedInput-root': {
-        bgcolor: '#0f172a', // Solid Slate 900
-        color: 'white',
-        borderRadius: 2,
-        transition: 'all 0.2s ease-in-out',
-        '& fieldset': {
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-        },
-        '&:hover fieldset': {
-            borderColor: 'rgba(255, 255, 255, 0.2)',
-        },
-        '&.Mui-focused': {
-            bgcolor: '#0f172a',
-        },
-        '&.Mui-focused fieldset': {
-            borderColor: 'primary.main',
-            boxShadow: '0 0 0 1px rgba(34, 197, 94, 0.5)',
-        },
-        '& input:-webkit-autofill': {
-            '-webkit-box-shadow': '0 0 0 100px #0f172a inset !important',
-            '-webkit-text-fill-color': '#f1f5f9 !important',
-            'caretColor': '#f1f5f9',
-            'borderRadius': 'inherit',
-        },
-    },
-    '& .MuiInputBase-input::placeholder': {
-        color: 'grey.500',
-        opacity: 1,
-    },
-    '& .MuiInputLabel-root': {
-        color: 'grey.400',
-    },
-    '& .MuiInputLabel-root.Mui-focused': {
-        color: 'grey.300',
-    },
-    '& .MuiInputAdornment-root .MuiSvgIcon-root': {
-        color: 'grey.500',
-    },
-} as const;
-
-// Select styles for dark theme
-const selectStyles = {
-    '& .MuiOutlinedInput-root': {
-        bgcolor: '#0f172a', // Solid Slate 900
-        color: 'white',
-        borderRadius: 1.5,
-        '& fieldset': {
-            borderColor: 'rgba(255, 255, 255, 0.1)',
-        },
-        '&:hover fieldset': {
-            borderColor: 'rgba(255, 255, 255, 0.2)',
-        },
-        '&.Mui-focused fieldset': {
-            borderColor: 'primary.main',
-            boxShadow: '0 0 0 1px rgba(34, 197, 94, 0.4)',
-        },
-    },
-    '& .MuiSelect-icon': {
-        color: 'grey.500',
-    },
-    '& .MuiInputLabel-root': {
-        color: 'grey.400',
-    },
-    '& .MuiInputLabel-root.Mui-focused': {
-        color: 'grey.300',
-    },
-} as const;
-
-function SignUpPage() {
+const SignUpPage: React.FC = () => {
     const [gender, setGender] = useState('');
     const [birthDate, setBirthDate] = useState('');
     const [email, setEmail] = useState('');
@@ -109,7 +23,6 @@ function SignUpPage() {
     const [loading, setLoading] = useState(false);
     const { signUp } = useAuth();
     const { goToLogin } = useAppNavigation();
-    const theme = useTheme();
 
     const handleSignUp = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -135,291 +48,191 @@ function SignUpPage() {
     };
 
     return (
-        <Box
-            sx={{
-                minHeight: '100vh',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                overflow: 'hidden',
-                position: 'relative',
-                py: { xs: 4, md: 8 },
-            }}
-        >
+        <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden py-8 px-4">
             {/* Background Image with Organic Theme */}
-            <Box
-                sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    zIndex: 0,
-                    backgroundImage: `url('https://images.unsplash.com/photo-1625246333195-58197bd47d26?q=80&w=2561&auto=format&fit=crop')`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    backgroundRepeat: 'no-repeat',
-                }}
-            >
-                <Box sx={{ position: 'absolute', inset: 0, bgcolor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(2px)' }} />
-                <Box sx={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent, rgba(15, 23, 42, 0.9))' }} />
-            </Box>
+            <div className="absolute inset-0 z-0 select-none pointer-events-none">
+                <img
+                    src="https://images.unsplash.com/photo-1625246333195-58197bd47d26?q=80&w=2561&auto=format&fit=crop"
+                    alt="Background"
+                    className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px]" />
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-900/90" />
+            </div>
 
-            <Paper
-                elevation={0}
-                sx={{
-                    position: 'relative',
-                    zIndex: 10,
-                    maxWidth: 550,
-                    width: '100%',
-                    mx: 2,
-                    p: 4,
-                    borderRadius: 4,
-                    bgcolor: 'rgba(15, 23, 42, 0.4)',
-                    backdropFilter: 'blur(24px)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-                }}
-            >
+            {/* Glassmorphic Card */}
+            <div className="relative z-10 w-full max-w-[550px] bg-slate-900/40 backdrop-blur-3xl rounded-3xl p-8 border border-white/10 shadow-2xl">
                 {/* Header Section */}
-                <Box
-                    sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        mb: 4,
-                    }}
-                >
-                    <Avatar
-                        variant="rounded"
-                        sx={{
-                            mb: 2,
-                            bgcolor: 'primary.main',
-                            width: 48,
-                            height: 48,
-                            fontSize: '1.125rem',
-                            fontWeight: 'bold',
-                            boxShadow: '0 10px 15px -3px rgba(34, 197, 94, 0.2)',
-                            borderRadius: 2,
-                        }}
-                    >
+                <div className="flex flex-col items-center mb-8">
+                    <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-green-500/20 mb-4 tracking-tighter">
                         MO
-                    </Avatar>
-                    <Typography component="h1" variant="h5" sx={{ fontWeight: 700, color: 'white', letterSpacing: '-0.025em' }}>
-                        Cadastre-se
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: 'grey.300', mt: 0.5 }}>
-                        Crie sua conta e comece a gerenciar
-                    </Typography>
-                </Box>
+                    </div>
+                    <h1 className="text-2xl font-bold text-white tracking-tight">Cadastre-se</h1>
+                    <p className="text-slate-400 mt-1.5 text-sm">Crie sua conta e comece a gerenciar</p>
+                </div>
 
                 {/* Form Section */}
-                <Box component="form" onSubmit={handleSignUp} role="form">
-                    <Grid container spacing={3}>
+                <form onSubmit={handleSignUp} className="space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {/* Full Name */}
-                        <Grid item xs={12}>
-                            <TextField
-                                name="fullName"
-                                required
-                                fullWidth
-                                id="fullName"
-                                placeholder="Nome Completo"
-                                autoFocus
-                                value={fullName}
-                                onChange={(e: ChangeEvent<HTMLInputElement>) => setFullName(e.target.value)}
-                                InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <PersonOutlineIcon />
-                                        </InputAdornment>
-                                    ),
-                                }}
-                                sx={inputStyles}
-                            />
-                        </Grid>
+                        <div className="sm:col-span-2">
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 group-focus-within:text-green-500 transition-colors">
+                                    <User size={20} />
+                                </div>
+                                <input
+                                    required
+                                    type="text"
+                                    id="fullName"
+                                    placeholder="Nome Completo"
+                                    autoFocus
+                                    value={fullName}
+                                    onChange={(e: ChangeEvent<HTMLInputElement>) => setFullName(e.target.value)}
+                                    className="block w-full pl-11 pr-4 py-3 bg-slate-900/80 border border-white/10 rounded-xl text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all text-sm"
+                                />
+                            </div>
+                        </div>
 
                         {/* Birth Date */}
-                        <Grid item xs={12} sm={6}>
-                            <TextField
-                                name="birthDate"
+                        <div className="relative group">
+                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 group-focus-within:text-green-500 transition-colors">
+                                <Calendar size={20} />
+                            </div>
+                            <input
                                 required
-                                fullWidth
+                                type="date"
                                 id="birthDate"
                                 placeholder="Data de Nascimento"
-                                type="date"
                                 value={birthDate}
                                 onChange={(e: ChangeEvent<HTMLInputElement>) => setBirthDate(e.target.value)}
-                                InputLabelProps={{ shrink: true }}
-                                InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <CalendarTodayIcon />
-                                        </InputAdornment>
-                                    ),
-                                }}
-                                sx={inputStyles}
+                                className="block w-full pl-11 pr-4 py-3 bg-slate-900/80 border border-white/10 rounded-xl text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all text-sm"
                             />
-                        </Grid>
+                        </div>
 
-                        {/* Gender */}
-                        <Grid item xs={12} sm={6}>
-                            <FormControl fullWidth required sx={selectStyles}>
-                                <Select
-                                    displayEmpty
-                                    id="gender"
-                                    value={gender}
-                                    onChange={(e: SelectChangeEvent) => setGender(e.target.value)}
-                                    sx={{ color: gender ? 'white' : 'grey.500' }}
-                                    renderValue={(selected) => {
-                                        if (selected.length === 0) {
-                                            return <span>Gênero</span>;
-                                        }
-                                        return selected === 'feminino' ? 'Feminino' : selected === 'masculino' ? 'Masculino' : selected === 'nao_binario' ? 'Não-binário' : selected === 'outro' ? 'Outro' : 'Prefiro não informar';
-                                    }}
-                                >
-                                    <MenuItem disabled value="">
-                                        <em>Gênero</em>
-                                    </MenuItem>
-                                    <MenuItem value="feminino">Feminino</MenuItem>
-                                    <MenuItem value="masculino">Masculino</MenuItem>
-                                    <MenuItem value="nao_binario">Não-binário</MenuItem>
-                                    <MenuItem value="outro">Outro</MenuItem>
-                                    <MenuItem value="nao_informar">Prefiro não informar</MenuItem>
-                                </Select>
-                            </FormControl>
-                        </Grid>
-
-                        {/* Profession */}
-                        <Grid item xs={12}>
-                            <FormControl fullWidth required sx={selectStyles}>
-                                <Select
-                                    displayEmpty
-                                    id="profession"
-                                    value={profession}
-                                    onChange={(e: SelectChangeEvent) => setProfession(e.target.value)}
-                                    startAdornment={
-                                        <InputAdornment position="start">
-                                            <WorkOutlineIcon sx={{ color: 'grey.500' }} />
-                                        </InputAdornment>
-                                    }
-                                    sx={{ color: profession ? 'white' : 'grey.500' }}
-                                    renderValue={(selected) => {
-                                        if (selected.length === 0) {
-                                            return <span>Profissão / Área de Atuação</span>;
-                                        }
-                                        return selected;
-                                    }}
-                                >
-                                    <MenuItem disabled value="">
-                                        <em>Profissão / Área de Atuação</em>
-                                    </MenuItem>
-                                    <MenuItem value="agricultor">Agricultor(a)</MenuItem>
-                                    <MenuItem value="agronomo">Engenheiro(a) Agrônomo(a)</MenuItem>
-                                    <MenuItem value="tecnico">Técnico(a) Agrícola</MenuItem>
-                                    <MenuItem value="estudante">Estudante</MenuItem>
-                                    <MenuItem value="consultor">Consultor(a)</MenuItem>
-                                    <MenuItem value="outro">Outro</MenuItem>
-                                </Select>
-                            </FormControl>
-                        </Grid>
-
-                        {/* Email */}
-                        <Grid item xs={12}>
-                            <TextField
+                        {/* Gender Select */}
+                        <div className="relative group">
+                            <select
                                 required
-                                fullWidth
-                                id="email"
-                                placeholder="Endereço de E-mail"
-                                name="email"
-                                autoComplete="email"
-                                value={email}
-                                onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
-                                InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <EmailOutlinedIcon />
-                                        </InputAdornment>
-                                    ),
-                                }}
-                                sx={inputStyles}
-                            />
-                        </Grid>
+                                id="gender"
+                                value={gender}
+                                onChange={(e: ChangeEvent<HTMLSelectElement>) => setGender(e.target.value)}
+                                className="block w-full pl-4 pr-10 py-3 bg-slate-900/80 border border-white/10 rounded-xl text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all text-sm appearance-none cursor-pointer"
+                            >
+                                <option value="" disabled className="bg-slate-900">Gênero</option>
+                                <option value="feminino" className="bg-slate-900">Feminino</option>
+                                <option value="masculino" className="bg-slate-900">Masculino</option>
+                                <option value="nao_binario" className="bg-slate-900">Não-binário</option>
+                                <option value="outro" className="bg-slate-900">Outro</option>
+                                <option value="nao_informar" className="bg-slate-900">Prefiro não informar</option>
+                            </select>
+                            <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-500 group-focus-within:text-green-500 transition-colors">
+                                <ChevronDown size={18} />
+                            </div>
+                        </div>
 
-                        {/* Password */}
-                        <Grid item xs={12}>
-                            <TextField
+                        {/* Profession Select */}
+                        <div className="sm:col-span-2 relative group">
+                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 group-focus-within:text-green-500 transition-colors">
+                                <Briefcase size={20} />
+                            </div>
+                            <select
                                 required
-                                fullWidth
-                                name="password"
-                                placeholder="Senha (mínimo 6 caracteres)"
-                                type="password"
-                                id="password"
-                                autoComplete="new-password"
-                                value={password}
-                                onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-                                InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <LockOutlinedIcon />
-                                        </InputAdornment>
-                                    ),
-                                }}
-                                sx={inputStyles}
-                            />
-                        </Grid>
-                    </Grid>
+                                id="profession"
+                                value={profession}
+                                onChange={(e: ChangeEvent<HTMLSelectElement>) => setProfession(e.target.value)}
+                                className="block w-full pl-11 pr-10 py-3 bg-slate-900/80 border border-white/10 rounded-xl text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all text-sm appearance-none cursor-pointer"
+                            >
+                                <option value="" disabled className="bg-slate-900">Profissão / Área de Atuação</option>
+                                <option value="agricultor" className="bg-slate-900">Agricultor(a)</option>
+                                <option value="agronomo" className="bg-slate-900">Engenheiro(a) Agrônomo(a)</option>
+                                <option value="tecnico" className="bg-slate-900">Técnico(a) Agrícola</option>
+                                <option value="estudante" className="bg-slate-900">Estudante</option>
+                                <option value="consultor" className="bg-slate-900">Consultor(a)</option>
+                                <option value="outro" className="bg-slate-900">Outro</option>
+                            </select>
+                            <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-500 group-focus-within:text-green-500 transition-colors">
+                                <ChevronDown size={18} />
+                            </div>
+                        </div>
+
+                        {/* Email Field */}
+                        <div className="sm:col-span-2">
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 group-focus-within:text-green-500 transition-colors">
+                                    <Mail size={20} />
+                                </div>
+                                <input
+                                    required
+                                    type="email"
+                                    id="email"
+                                    placeholder="Endereço de E-mail"
+                                    autoComplete="email"
+                                    value={email}
+                                    onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                                    className="block w-full pl-11 pr-4 py-3 bg-slate-900/80 border border-white/10 rounded-xl text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all text-sm"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Password Field */}
+                        <div className="sm:col-span-2">
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 group-focus-within:text-green-500 transition-colors">
+                                    <Lock size={20} />
+                                </div>
+                                <input
+                                    required
+                                    type="password"
+                                    id="password"
+                                    placeholder="Senha (mínimo 6 caracteres)"
+                                    autoComplete="new-password"
+                                    value={password}
+                                    onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                                    className="block w-full pl-11 pr-4 py-3 bg-slate-900/80 border border-white/10 rounded-xl text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all text-sm"
+                                />
+                            </div>
+                        </div>
+                    </div>
 
                     {error && (
-                        <Alert severity="error" sx={{ mt: 2 }}>
-                            {error}
-                        </Alert>
+                        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3 text-red-400 text-sm animate-shake">
+                            <AlertCircle size={18} className="shrink-0 mt-0.5" />
+                            <span>{error}</span>
+                        </div>
                     )}
 
-                    <Button
+                    <button
                         type="submit"
-                        fullWidth
-                        size="large"
-                        variant="contained"
-                        sx={{
-                            mt: 3, // mt-2 in login, but here keeping mt-3 for spacing
-                            mb: 2,
-                            height: 48,
-                            textTransform: 'none',
-                            fontSize: '1rem',
-                            boxShadow: '0 10px 15px -3px rgba(34, 197, 94, 0.25)',
-                        }}
                         disabled={loading}
+                        className="w-full flex items-center justify-center h-12 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg shadow-green-600/30 hover:shadow-green-600/50 transition-all duration-300"
                     >
-                        {loading ? <CircularProgress size={24} color="inherit" /> : 'Cadastrar'}
-                    </Button>
+                        {loading ? <Loader2 className="animate-spin" size={20} /> : 'Cadastrar'}
+                    </button>
 
                     {/* Login Link */}
-                    <Box sx={{ mt: 2, textAlign: 'center' }}>
-                        <Typography variant="body2" component="span" sx={{ color: 'grey.400' }}>
+                    <div className="mt-8 pt-4 text-center">
+                        <p className="text-sm text-slate-400">
                             Já tem uma conta?{' '}
-                        </Typography>
-                        <Link
-                            component="button"
-                            variant="body2"
-                            underline="hover"
-                            onClick={goToLogin}
-                            sx={{ color: 'primary.main' }}
-                        >
-                            Faça o login
-                        </Link>
-                    </Box>
-                </Box>
-            </Paper>
+                            <button
+                                type="button"
+                                onClick={goToLogin}
+                                className="text-green-400 font-bold hover:text-green-300 transition-colors"
+                            >
+                                Faça o login
+                            </button>
+                        </p>
+                    </div>
+                </form>
+            </div>
 
             {/* Footer */}
-            <Box component="footer" sx={{ position: 'relative', zIndex: 10, mt: 4, mb: 2, textAlign: 'center' }}>
-                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)', letterSpacing: '0.1em', fontWeight: 500, textTransform: 'uppercase', fontSize: '0.625rem' }}>
+            <footer className="relative z-10 mt-10 text-center">
+                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.2em]">
                     {import.meta.env.VITE_APP_NAME} © {new Date().getFullYear()}
-                </Typography>
-            </Box>
-        </Box>
+                </p>
+            </footer>
+        </div>
     );
-}
+};
 
 export default SignUpPage;
