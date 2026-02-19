@@ -1,22 +1,23 @@
+// src/pages/admin/AdminDashboard.tsx
+
 import React, { useEffect, useState } from 'react';
 import {
-    Box,
-    Paper,
-    Typography,
-    Button,
-    Grid,
-    Card,
-    CardContent,
-    Tabs,
-    Tab,
-    Chip,
-    IconButton,
-    Tooltip
-} from '@mui/material';
-import { RefreshCcw, DollarSign, Users, Database, AlertCircle, Eye } from 'lucide-react';
-import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
+    RefreshCcw,
+    DollarSign,
+    Users,
+    Database,
+    AlertCircle,
+    Eye,
+    Loader2,
+    Search,
+    ChevronLeft,
+    ChevronRight,
+    CheckCircle2,
+    XCircle
+} from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import LogDetailsDialog, { LogData } from '../../components/admin/LogDetailsDialog';
+import { cn } from '../../utils/cn';
 
 // --- Types ---
 interface DashboardStats {
@@ -26,33 +27,30 @@ interface DashboardStats {
     errors_today: number;
 }
 
-// --- Components ---
-
 // KPI Card Component
-const KpiCard = ({ title, value, icon, color, subvalue }: any) => (
-    <Card sx={{ height: '100%', position: 'relative', overflow: 'hidden' }}>
-        <CardContent>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                <Typography variant="subtitle2" color="textSecondary">
-                    {title}
-                </Typography>
-                <Box sx={{ p: 1, borderRadius: 1, bgcolor: `${color}20`, color: color }}>
-                    {icon}
-                </Box>
-            </Box>
-            <Typography variant="h4" fontWeight="bold">
+const KpiCard = ({ title, value, icon, colorClass, subvalue }: any) => (
+    <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm shadow-slate-200/50 flex flex-col justify-between h-full group hover:border-slate-200 transition-all">
+        <div className="flex justify-between items-start mb-4">
+            <span className="text-xs font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-500 transition-colors">
+                {title}
+            </span>
+            <div className={cn("p-2.5 rounded-xl", colorClass)}>
+                {React.cloneElement(icon, { size: 20 })}
+            </div>
+        </div>
+        <div>
+            <div className="text-3xl font-black text-slate-800 tracking-tight">
                 {value}
-            </Typography>
+            </div>
             {subvalue && (
-                <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block' }}>
+                <div className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-wide">
                     {subvalue}
-                </Typography>
+                </div>
             )}
-        </CardContent>
-    </Card>
+        </div>
+    </div>
 );
 
-// --- Page ---
 const AdminDashboard = () => {
     const [tabValue, setTabValue] = useState(0);
     const [loading, setLoading] = useState(false);
@@ -67,12 +65,10 @@ const AdminDashboard = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            // 1. Fetch Stats (RPC)
             const { data: rpcData, error: rpcError } = await supabase.rpc('get_dashboard_stats');
             if (rpcError) console.error('Error fetching stats:', rpcError);
             else setStats(rpcData);
 
-            // 2. Fetch Consumption Logs
             const { data: logsData, error: logsError } = await supabase
                 .from('logs_consumo')
                 .select('*')
@@ -81,7 +77,6 @@ const AdminDashboard = () => {
             if (logsError) console.error('Error logs:', logsError);
             else setAuditLogs(logsData || []);
 
-            // 3. Fetch Training Logs
             const { data: trainData, error: trainError } = await supabase
                 .from('logs_treinamento')
                 .select('*')
@@ -89,9 +84,7 @@ const AdminDashboard = () => {
                 .limit(50);
 
             if (trainError) console.error('Error training:', trainError);
-            else {
-                setTrainingLogs(trainData || []);
-            }
+            else setTrainingLogs(trainData || []);
 
         } catch (err) {
             console.error('Unexpected error:', err);
@@ -109,260 +102,226 @@ const AdminDashboard = () => {
         setModalOpen(true);
     };
 
-    const handleChangeTab = (event: React.SyntheticEvent, newValue: number) => {
-        setTabValue(newValue);
-    };
-
-    // Columns config
-    const consumptionColumns: GridColDef[] = [
-        {
-            field: 'actions',
-            type: 'actions',
-            headerName: 'Detalhes',
-            width: 80,
-            renderCell: (params: any) => (
-                <IconButton
-                    type="button"
-                    onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleOpenModal(params.row);
-                    }}
-                    color="primary"
-                    size="small"
-                >
-                    <Eye size={18} />
-                </IconButton>
-            )
-        },
-        {
-            field: 'created_at',
-            headerName: 'Data',
-            width: 180,
-            renderCell: (params: GridRenderCellParams) => {
-                const rawDate = params.value || params.row.created_at || params.row.criado_em;
-                if (!rawDate) return <Typography variant="body2">-</Typography>;
-
-                const date = new Date(rawDate);
-                return (
-                    <Typography variant="body2">
-                        {isNaN(date.getTime()) ? '-' : date.toLocaleString()}
-                    </Typography>
-                );
-            }
-        },
-        { field: 'user_id', headerName: 'User ID', width: 130 },
-        { field: 'acao', headerName: 'Ação', width: 150 },
-        { field: 'modelo_ia', headerName: 'Modelo', width: 150 },
-        { field: 'total_tokens', headerName: 'Tokens', width: 100 },
-        {
-            field: 'custo_estimado',
-            headerName: 'Custo ($)',
-            width: 100,
-            renderCell: (params: GridRenderCellParams) => (
-                <Typography color="error" variant="body2" fontWeight="bold">
-                    ${Number(params.value).toFixed(4)}
-                </Typography>
-            )
-        },
-        {
-            field: 'status',
-            headerName: 'Status',
-            width: 120,
-            renderCell: (params: GridRenderCellParams) => (
-                <Chip
-                    label={params.value}
-                    color={params.value === 'success' ? 'success' : 'error'}
-                    size="small"
-                />
-            )
-        }
+    const tabs = [
+        { label: 'Visão Geral', icon: <Database size={18} /> },
+        { label: 'Auditoria Financeira', icon: <DollarSign size={18} /> },
+        { label: 'Treinamento da LLM', icon: <Users size={18} /> }
     ];
-
-    const trainingColumns: GridColDef[] = [
-        {
-            field: 'actions',
-            type: 'actions',
-            headerName: 'Detalhes',
-            width: 80,
-            renderCell: (params: any) => (
-                <IconButton
-                    type="button"
-                    onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleOpenModal(params.row);
-                    }}
-                    color="primary"
-                    size="small"
-                >
-                    <Eye size={18} />
-                </IconButton>
-            )
-        },
-        {
-            field: 'criado_em',
-            headerName: 'Data',
-            width: 160,
-            renderCell: (params: GridRenderCellParams) => {
-                const rawDate = params.value || params.row.created_at || params.row.criado_em;
-                if (!rawDate) return <Typography variant="caption">-</Typography>;
-                const date = new Date(rawDate);
-                return <Typography variant="caption">{isNaN(date.getTime()) ? '-' : date.toLocaleString()}</Typography>;
-            }
-        },
-        {
-            field: 'texto_usuario',
-            headerName: 'Texto do Usuário',
-            width: 350,
-            renderCell: (params: GridRenderCellParams) => (
-                <Tooltip title={params.value || ''}>
-                    <Box sx={{
-                        maxHeight: 50,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        fontSize: '0.8rem',
-                        lineHeight: 1.2
-                    }}>
-                        {params.value}
-                    </Box>
-                </Tooltip>
-            )
-        },
-        {
-            field: 'json_extraido',
-            headerName: 'IA (Resumo)',
-            width: 300,
-            renderCell: (params: GridRenderCellParams) => {
-                const content = params.row.json_corrigido || params.value;
-                const isCorrected = !!params.row.json_corrigido;
-                return (
-                    <Box sx={{ position: 'relative', width: '100%' }}>
-                        {isCorrected && (
-                            <Chip label="Corrigido" color="success" size="small" sx={{ position: 'absolute', right: 0, top: 0, height: 16, fontSize: '0.6rem' }} />
-                        )}
-                        <Typography variant="caption" sx={{ fontFamily: 'monospace', color: isCorrected ? 'success.main' : 'text.secondary' }}>
-                            {JSON.stringify(content).slice(0, 50)}...
-                        </Typography>
-                    </Box>
-                );
-            }
-        }
-    ];
-
-    const TabPanel = (props: { children?: React.ReactNode; index: number; value: number }) => {
-        const { children, value, index, ...other } = props;
-        return (
-            <div role="tabpanel" hidden={value !== index} {...other}>
-                {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-            </div>
-        );
-    };
 
     return (
-        <Box>
+        <div className="p-4 md:p-8 bg-slate-50 min-h-screen font-sans">
             {/* Header */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h4" fontWeight="bold">Painel de Controle</Typography>
-                <Button
-                    variant="contained"
-                    startIcon={<RefreshCcw size={18} />}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                <div>
+                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">Painel de Controle</h1>
+                    <p className="text-slate-500 font-medium mt-1">Gestão de consumo, custos e treinamento de IA.</p>
+                </div>
+                <button
                     onClick={fetchData}
                     disabled={loading}
+                    className="flex items-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white font-bold rounded-2xl shadow-lg shadow-green-600/20 transition-all active:scale-95 whitespace-nowrap"
                 >
+                    {loading ? <Loader2 size={18} className="animate-spin" /> : <RefreshCcw size={18} />}
                     {loading ? 'Atualizando...' : 'Atualizar'}
-                </Button>
-            </Box>
+                </button>
+            </div>
 
             {/* Tabs */}
-            <Paper sx={{ mb: 3 }}>
-                <Tabs value={tabValue} onChange={handleChangeTab} indicatorColor="primary" textColor="primary">
-                    <Tab label="Visão Geral" />
-                    <Tab label="Auditoria Financeira" />
-                    <Tab label="Treinamento da LLM" />
-                </Tabs>
-            </Paper>
+            <div className="bg-white rounded-[2rem] p-2 border border-slate-200 shadow-sm mb-8 max-w-2xl">
+                <nav className="flex space-x-1">
+                    {tabs.map((tab, index) => (
+                        <button
+                            key={index}
+                            onClick={() => setTabValue(index)}
+                            className={cn(
+                                "flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-sm font-bold transition-all",
+                                tabValue === index
+                                    ? "bg-slate-900 text-white shadow-lg shadow-slate-900/20"
+                                    : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                            )}
+                        >
+                            {tab.icon}
+                            <span className="hidden sm:inline">{tab.label}</span>
+                        </button>
+                    ))}
+                </nav>
+            </div>
 
             {/* TAB 1: OVERVIEW (KPIs) */}
-            <TabPanel value={tabValue} index={0}>
-                <Grid container spacing={3}>
-                    <Grid item xs={12} md={3}>
-                        <KpiCard
-                            title="Usuários Ativos"
-                            value={stats?.active_users_24h ?? '-'}
-                            icon={<Users />}
-                            color="#2563eb"
-                        />
-                    </Grid>
-                    <Grid item xs={12} md={3}>
-                        <KpiCard
-                            title="Custo Mês"
-                            value={`$${Number(stats?.total_cost_current_month || 0).toFixed(2)}`}
-                            icon={<DollarSign />}
-                            color="#dc2626"
-                        />
-                    </Grid>
-                    <Grid item xs={12} md={3}>
-                        <KpiCard
-                            title="Tokens Mês"
-                            value={stats?.total_tokens_current_month ?? '-'}
-                            icon={<Database />}
-                            color="#7c3aed"
-                        />
-                    </Grid>
-                    <Grid item xs={12} md={3}>
-                        <KpiCard
-                            title="Erros Hoje"
-                            value={stats?.errors_today ?? '-'}
-                            icon={<AlertCircle />}
-                            color="#ea580c"
-                        />
-                    </Grid>
-                </Grid>
-            </TabPanel>
+            {tabValue === 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <KpiCard
+                        title="Usuários Ativos"
+                        value={stats?.active_users_24h ?? '-'}
+                        icon={<Users />}
+                        colorClass="bg-blue-50 text-blue-600"
+                        subvalue="Últimas 24 horas"
+                    />
+                    <KpiCard
+                        title="Custo Mês"
+                        value={`$${Number(stats?.total_cost_current_month || 0).toFixed(2)}`}
+                        icon={<DollarSign />}
+                        colorClass="bg-rose-50 text-rose-600"
+                        subvalue="Mês vigente"
+                    />
+                    <KpiCard
+                        title="Tokens Mês"
+                        value={stats?.total_tokens_current_month?.toLocaleString() ?? '-'}
+                        icon={<Database />}
+                        colorClass="bg-indigo-50 text-indigo-600"
+                        subvalue="Processamento total"
+                    />
+                    <KpiCard
+                        title="Erros Hoje"
+                        value={stats?.errors_today ?? '-'}
+                        icon={<AlertCircle />}
+                        colorClass="bg-amber-50 text-amber-600"
+                        subvalue="Falhas críticas"
+                    />
+                </div>
+            )}
 
             {/* TAB 2: AUDIT LOGS */}
-            <TabPanel value={tabValue} index={1}>
-                <Paper sx={{ height: 600, width: '100%' }}>
-                    <DataGrid
-                        rows={auditLogs}
-                        columns={consumptionColumns}
-                        initialState={{
-                            pagination: { paginationModel: { pageSize: 10 } },
-                        }}
-                        pageSizeOptions={[10, 25, 50]}
-                        loading={loading}
-                        disableRowSelectionOnClick
-                    />
-                </Paper>
-            </TabPanel>
+            {tabValue === 1 && (
+                <div className="bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm animate-in fade-in duration-300">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-slate-50/50 border-b border-slate-100">
+                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Detalhes</th>
+                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Data</th>
+                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Ação</th>
+                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">IA / Modelo</th>
+                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Tokens</th>
+                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Custo ($)</th>
+                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {auditLogs.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={7} className="px-6 py-20 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">
+                                            Nenhum registro encontrado.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    auditLogs.map((log) => (
+                                        <tr key={log.id} className="hover:bg-slate-50/30 transition-colors group">
+                                            <td className="px-6 py-4">
+                                                <button
+                                                    onClick={() => handleOpenModal(log)}
+                                                    className="p-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                                                >
+                                                    <Eye size={18} />
+                                                </button>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="text-sm font-bold text-slate-700">
+                                                    {new Date(log.created_at).toLocaleDateString()}
+                                                </div>
+                                                <div className="text-[10px] font-medium text-slate-400">
+                                                    {new Date(log.created_at).toLocaleTimeString()}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className="text-xs font-bold text-slate-600 px-2.5 py-1 bg-slate-100 rounded-lg">
+                                                    {log.acao}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-sm font-medium text-slate-500">
+                                                {log.modelo_ia}
+                                            </td>
+                                            <td className="px-6 py-4 text-sm font-black text-slate-700">
+                                                {log.total_tokens}
+                                            </td>
+                                            <td className="px-6 py-4 text-sm font-black text-rose-500">
+                                                ${Number(log.custo_estimado).toFixed(4)}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className={cn(
+                                                    "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider",
+                                                    log.status === 'success' ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
+                                                )}>
+                                                    {log.status === 'success' ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
+                                                    {log.status}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
 
             {/* TAB 3: TRAINING LOGS */}
-            <TabPanel value={tabValue} index={2}>
-                <Paper sx={{ height: 600, width: '100%' }}>
-                    <DataGrid
-                        rows={trainingLogs}
-                        columns={trainingColumns}
-                        initialState={{
-                            pagination: { paginationModel: { pageSize: 10 } },
-                        }}
-                        pageSizeOptions={[10, 25, 50]}
-                        loading={loading}
-                        disableRowSelectionOnClick
-                    />
-                </Paper>
-            </TabPanel>
+            {tabValue === 2 && (
+                <div className="bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm animate-in fade-in duration-300">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-slate-50/50 border-b border-slate-100">
+                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Detalhes</th>
+                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Data</th>
+                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Prompt do Usuário</th>
+                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">IA (Resumo)</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {trainingLogs.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={4} className="px-6 py-20 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">
+                                            Nenhum registro encontrado.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    trainingLogs.map((log) => (
+                                        <tr key={log.id} className="hover:bg-slate-50/30 transition-colors">
+                                            <td className="px-6 py-4">
+                                                <button
+                                                    onClick={() => handleOpenModal(log)}
+                                                    className="p-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                                                >
+                                                    <Eye size={18} />
+                                                </button>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="text-sm font-bold text-slate-700">
+                                                    {new Date(log.criado_em).toLocaleDateString()}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 max-w-md">
+                                                <p className="text-sm text-slate-600 line-clamp-2 leading-tight">
+                                                    {log.texto_usuario}
+                                                </p>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {log.json_corrigido && (
+                                                    <span className="inline-block px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded-md mb-1 uppercase tracking-wider">
+                                                        Corrigido
+                                                    </span>
+                                                )}
+                                                <code className="block text-[11px] font-mono text-slate-400 truncate max-w-xs">
+                                                    {JSON.stringify(log.json_corrigido || log.json_extraido)}
+                                                </code>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
 
-            {/* New Unified Modal */}
+            {/* Modal */}
             <LogDetailsDialog
                 open={modalOpen}
                 onClose={() => setModalOpen(false)}
                 log={selectedLog}
             />
-        </Box>
+        </div>
     );
 };
 

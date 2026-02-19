@@ -1,9 +1,17 @@
 import React from 'react';
-import { Box, Typography, Paper, Chip, Divider, Accordion, AccordionSummary, AccordionDetails, AppBar, Toolbar, IconButton } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { changelogData } from '../data/changelog';
-import { ChevronDown, Tag, Calendar, CheckCircle, AlertCircle, Zap, Star, ArrowLeft } from 'lucide-react';
+import {
+    ChevronDown,
+    Tag,
+    Calendar,
+    CheckCircle,
+    AlertCircle,
+    Zap,
+    Star,
+    ArrowLeft
+} from 'lucide-react';
 
 const ChangelogPage: React.FC = () => {
     const navigate = useNavigate();
@@ -16,147 +24,112 @@ const ChangelogPage: React.FC = () => {
     // Helper para ícones por tipo
     const getTypeIcon = (type: string) => {
         switch (type) {
-            case 'Improvements': return <Zap size={16} color="#eab308" />;
-            case 'Fixes': return <CheckCircle size={16} color="#22c55e" />;
-            case 'Patches': return <AlertCircle size={16} color="#ef4444" />;
-            case 'New': return <Star size={16} color="#3b82f6" />;
+            case 'Improvements': return <Zap size={16} className="text-amber-500" />;
+            case 'Fixes': return <CheckCircle size={16} className="text-emerald-500" />;
+            case 'Patches': return <AlertCircle size={16} className="text-rose-500" />;
+            case 'New': return <Star size={16} className="text-blue-500" />;
             default: return <Tag size={16} />;
         }
     };
 
-    const getTypeColor = (type: string) => {
+    const getTypeColorClasses = (type: string) => {
         switch (type) {
-            case 'Improvements': return '#fef9c3';
-            case 'Fixes': return '#dcfce7';
-            case 'Patches': return '#fee2e2';
-            case 'New': return '#dbeafe';
-            default: return '#f3f4f6';
+            case 'Improvements': return 'bg-amber-50 text-amber-700 border-amber-100';
+            case 'Fixes': return 'bg-emerald-50 text-emerald-700 border-emerald-100';
+            case 'Patches': return 'bg-rose-50 text-rose-700 border-rose-100';
+            case 'New': return 'bg-blue-50 text-blue-700 border-blue-100';
+            default: return 'bg-slate-50 text-slate-700 border-slate-100';
         }
     };
 
     return (
-        <Box>
-            <AppBar position="static" color="transparent" elevation={0} sx={{ borderBottom: '1px solid #e2e8f0' }}>
-                <Toolbar>
-                    <IconButton edge="start" onClick={handleBack} sx={{ mr: 2, color: '#334155' }}>
+        <div className="min-h-screen bg-slate-50">
+            {/* Nav Header */}
+            <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center">
+                    <button
+                        onClick={handleBack}
+                        className="p-2 mr-3 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-all"
+                    >
                         <ArrowLeft size={22} />
-                    </IconButton>
-                    <Typography variant="h6" sx={{ fontWeight: 600, color: '#0f172a' }}>
-                        Novidades
-                    </Typography>
-                </Toolbar>
-            </AppBar>
+                    </button>
+                    <h1 className="text-lg font-bold text-slate-900">Novidades</h1>
+                </div>
+            </header>
 
-            <Box sx={{ maxWidth: 1000, mx: 'auto', p: 4 }}>
-                <Box sx={{ mb: 6, textAlign: 'center' }}>
-                    <Typography variant="h3" sx={{ fontWeight: 800, color: '#0f172a', mb: 2 }}>
+            <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div className="mb-16 text-center">
+                    <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">
                         Novidades e Atualizações
-                    </Typography>
-                    <Typography variant="body1" sx={{ color: '#64748b', fontSize: '1.1rem' }}>
+                    </h2>
+                    <p className="text-lg text-slate-500">
                         Acompanhe a evolução do Manejo Orgânico.
-                    </Typography>
-                </Box>
+                    </p>
+                </div>
 
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div className="flex flex-col gap-16">
                     {changelogData.map((entry, index) => (
-                        <Box key={index} sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 4 }}>
+                        <div key={index} className="flex flex-col md:flex-row gap-8">
                             {/* Left: Version Info */}
-                            <Box sx={{ width: { xs: '100%', md: '200px' }, flexShrink: 0, pt: 2 }}>
-                                <Typography variant="h5" sx={{ fontWeight: 700, color: '#0f172a' }}>
+                            <div className="w-full md:w-52 shrink-0 pt-2">
+                                <h3 className="text-3xl font-black text-slate-900 tracking-tighter">
                                     {entry.version}
-                                </Typography>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, color: '#64748b' }}>
+                                </h3>
+                                <div className="flex items-center gap-1.5 mt-2 text-slate-500">
                                     <Calendar size={14} />
-                                    <Typography variant="caption" sx={{ fontSize: '0.85rem' }}>
+                                    <span className="text-sm font-medium">
                                         {entry.date}
-                                    </Typography>
-                                </Box>
-                            </Box>
+                                    </span>
+                                </div>
+                            </div>
 
                             {/* Right: Content Card */}
-                            <Paper sx={{
-                                flex: 1,
-                                borderRadius: '24px',
-                                border: '1px solid #e2e8f0',
-                                overflow: 'hidden',
-                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
-                            }}>
-                                <Box sx={{ p: 4, bgcolor: '#ffffff' }}>
-                                    <Typography variant="h5" sx={{ fontWeight: 700, mb: 2, color: '#1e293b' }}>
+                            <div className="flex-1 bg-white rounded-[32px] border border-slate-200 shadow-sm shadow-slate-200/50 overflow-hidden">
+                                <div className="p-8 md:p-10">
+                                    <h4 className="text-2xl font-bold text-slate-800 mb-4 tracking-tight">
                                         {entry.title}
-                                    </Typography>
-                                    <Typography variant="body1" sx={{ color: '#475569', mb: 4, lineHeight: 1.6 }}>
+                                    </h4>
+                                    <p className="text-slate-600 text-lg leading-relaxed mb-10">
                                         {entry.description}
-                                    </Typography>
+                                    </p>
 
-                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                    <div className="space-y-10">
                                         {entry.sections.map((section, sIndex) => (
-                                            <Box key={sIndex}>
-                                                <Box sx={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: 1.5,
-                                                    mb: 2,
-                                                    pb: 1,
-                                                    borderBottom: '1px solid #f1f5f9'
-                                                }}>
-                                                    <Box sx={{
-                                                        p: 0.8,
-                                                        borderRadius: '8px',
-                                                        bgcolor: getTypeColor(section.type),
-                                                        display: 'flex'
-                                                    }}>
+                                            <div key={sIndex} className="space-y-6">
+                                                {/* Section Header */}
+                                                <div className="flex items-center gap-2.5 pb-2 border-b border-slate-100">
+                                                    <div className={`p-1.5 rounded-lg flex items-center justify-center ${getTypeColorClasses(section.type)}`}>
                                                         {getTypeIcon(section.type)}
-                                                    </Box>
-                                                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#334155' }}>
+                                                    </div>
+                                                    <span className="text-sm font-black text-slate-700 uppercase tracking-wider">
                                                         {section.type === 'Improvements' ? 'Melhorias' :
                                                             section.type === 'Fixes' ? 'Correções' :
                                                                 section.type === 'Patches' ? 'Ajustes' : 'Novidades'}
-                                                    </Typography>
-                                                    <Chip
-                                                        label={section.items.length}
-                                                        size="small"
-                                                        sx={{
-                                                            height: 20,
-                                                            fontSize: '0.7rem',
-                                                            fontWeight: 600,
-                                                            bgcolor: getTypeColor(section.type),
-                                                            color: '#334155'
-                                                        }}
-                                                    />
-                                                </Box>
-                                                <Box component="ul" sx={{ m: 0, pl: 2, listStyle: 'none' }}>
+                                                    </span>
+                                                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${getTypeColorClasses(section.type)} border`}>
+                                                        {section.items.length}
+                                                    </span>
+                                                </div>
+
+                                                {/* Items List */}
+                                                <ul className="space-y-4 ml-2">
                                                     {section.items.map((item, iIndex) => (
-                                                        <Box component="li" key={iIndex} sx={{
-                                                            mb: 1.5,
-                                                            position: 'relative',
-                                                            '&::before': {
-                                                                content: '""',
-                                                                position: 'absolute',
-                                                                left: -16,
-                                                                top: 8,
-                                                                width: 6,
-                                                                height: 6,
-                                                                borderRadius: '50%',
-                                                                bgcolor: '#cbd5e1'
-                                                            }
-                                                        }}>
-                                                            <Typography variant="body2" sx={{ color: '#475569' }}>
-                                                                {item}
-                                                            </Typography>
-                                                        </Box>
+                                                        <li key={iIndex} className="flex gap-3 text-slate-600 relative">
+                                                            <div className="mt-2.5 w-1.5 h-1.5 rounded-full bg-slate-200 shrink-0" />
+                                                            <span className="text-base leading-relaxed">{item}</span>
+                                                        </li>
                                                     ))}
-                                                </Box>
-                                            </Box>
+                                                </ul>
+                                            </div>
                                         ))}
-                                    </Box>
-                                </Box>
-                            </Paper>
-                        </Box>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     ))}
-                </Box>
-            </Box>
-        </Box>
+                </div>
+            </main>
+        </div>
     );
 };
 
