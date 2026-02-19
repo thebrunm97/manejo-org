@@ -122,14 +122,14 @@ const DashboardPage: React.FC = () => {
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                     <button
                         onClick={() => navigate('/planos')}
-                        className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 text-slate-600 font-semibold hover:bg-slate-50 transition-colors w-full sm:w-auto"
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-slate-300 text-slate-600 font-semibold hover:bg-slate-50 transition-colors w-full sm:w-auto"
                     >
                         <Settings size={18} />
                         Gerenciar Planos
                     </button>
                     <button
                         onClick={() => setOpenRecordDialog(true)}
-                        className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-green-600 text-white font-semibold hover:bg-green-700 shadow-lg shadow-green-600/20 transition-all w-full sm:w-auto hover:-translate-y-0.5 active:translate-y-0"
+                        className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 shadow-lg shadow-green-600/20 transition-all w-full sm:w-auto hover:-translate-y-0.5 active:translate-y-0"
                     >
                         <Plus size={20} />
                         Novo Registro
@@ -138,7 +138,7 @@ const DashboardPage: React.FC = () => {
             </div>
 
             {dataError && (
-                <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
+                <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
                     <p className="font-bold mb-1">Erro no carregamento:</p>
                     <p className="text-sm mb-2">{dataError}</p>
                     <button
@@ -173,7 +173,7 @@ const DashboardPage: React.FC = () => {
                     {/* Bot Card */}
                     <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow">
                         <div className="flex justify-between items-start mb-2">
-                            <div className={`p-2 rounded-xl ${userProfile?.telefone ? 'bg-green-100/50 text-green-600' : 'bg-slate-100 text-slate-500'}`}>
+                            <div className={`p-2 rounded-lg ${userProfile?.telefone ? 'bg-green-100/50 text-green-600' : 'bg-slate-100 text-slate-500'}`}>
                                 <Smartphone size={20} />
                             </div>
                             <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase ${userProfile?.telefone ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
@@ -189,14 +189,14 @@ const DashboardPage: React.FC = () => {
                         {!userProfile?.telefone ? (
                             <button
                                 onClick={() => setOpenWhatsappDialog(true)}
-                                className="w-full mt-2 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors"
+                                className="w-full mt-2 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors"
                             >
                                 <Link size={16} />
                                 Conectar WhatsApp
                             </button>
                         ) : (
                             <div>
-                                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 mb-3">
+                                <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 mb-3">
                                     <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">Última Atividade</span>
                                     <p className="text-sm font-semibold text-slate-900">{formatarDataRelativa(lastActivity)}</p>
                                 </div>

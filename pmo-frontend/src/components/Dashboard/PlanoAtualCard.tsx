@@ -17,7 +17,7 @@ const PlanoAtualCard: React.FC<PlanoAtualCardProps> = ({
     onEditar,
 }) => {
     return (
-        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow duration-200 relative overflow-hidden flex flex-col min-h-[180px]">
+        <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow duration-200 relative overflow-hidden flex flex-col min-h-[180px]">
             {/* Header: Icon + Label */}
             <div className="flex items-center gap-3 mb-4">
                 <div className="p-2 bg-green-50 rounded-lg text-green-600">
