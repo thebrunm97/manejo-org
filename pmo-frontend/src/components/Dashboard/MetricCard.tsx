@@ -1,5 +1,4 @@
 import React, { ReactNode } from 'react';
-import { Paper, Box, Typography } from '@mui/material';
 import { Scale } from 'lucide-react';
 
 interface MetricCardProps {
@@ -18,98 +17,34 @@ const MetricCard: React.FC<MetricCardProps> = ({
     extraUnits,
 }) => {
     return (
-        <Paper
-            elevation={0}
-            sx={{
-                bgcolor: 'custom.bgSurface',
-                border: '1px solid',
-                borderColor: 'custom.borderSubtle',
-                borderRadius: 2,
-                p: 2,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 1,
-                transition: 'all 0.2s ease-in-out',
-                '&:hover': {
-                    borderColor: 'primary.light',
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-                },
-            }}
-        >
+        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col gap-2">
             {/* Icon container */}
-            <Box
-                sx={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 1,
-                    bgcolor: 'custom.bgCanvas',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'custom.fgMuted',
-                }}
-            >
+            <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
                 {icon || <Scale size={16} />}
-            </Box>
+            </div>
 
             {/* Value + Unit */}
-            <Box>
-                <Typography
-                    variant="h5"
-                    sx={{
-                        fontWeight: 800,
-                        color: 'custom.fgPrimary',
-                        letterSpacing: '-0.5px',
-                        lineHeight: 1,
-                        fontFamily: '"Inter", "Roboto Mono", monospace',
-                    }}
-                >
+            <div>
+                <div className="text-3xl font-bold text-slate-900 leading-none tracking-tight font-['Inter']">
                     {value}
-                    <Typography
-                        component="span"
-                        sx={{
-                            fontSize: '0.875rem',
-                            fontWeight: 600,
-                            color: 'custom.fgMuted',
-                            ml: 0.5,
-                        }}
-                    >
+                    <span className="text-sm font-semibold text-slate-500 ml-1">
                         {unit}
-                    </Typography>
-                </Typography>
+                    </span>
+                </div>
 
                 {/* Extra units (e.g., "+ 30 maço") */}
                 {extraUnits && (
-                    <Typography
-                        variant="caption"
-                        sx={{
-                            color: 'custom.fgMuted',
-                            display: 'block',
-                            fontSize: '0.7rem',
-                            mt: 0.25,
-                        }}
-                    >
+                    <p className="text-xs text-slate-400 mt-1 block">
                         + {extraUnits}
-                    </Typography>
+                    </p>
                 )}
-            </Box>
+            </div>
 
             {/* Label */}
-            <Typography
-                variant="body2"
-                sx={{
-                    fontWeight: 600,
-                    color: 'custom.fgSecondary',
-                    textTransform: 'capitalize',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                }}
-            >
+            <p className="text-sm font-semibold text-slate-500 capitalize whitespace-nowrap overflow-hidden text-ellipsis">
                 {label}
-            </Typography>
-        </Paper>
+            </p>
+        </div>
     );
 };
 

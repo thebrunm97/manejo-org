@@ -1,5 +1,4 @@
 import React from 'react';
-import { Paper, Box, Typography, Button, IconButton } from '@mui/material';
 import { Leaf, Edit } from 'lucide-react';
 
 interface PlanoAtualCardProps {
@@ -18,135 +17,56 @@ const PlanoAtualCard: React.FC<PlanoAtualCardProps> = ({
     onEditar,
 }) => {
     return (
-        <Paper
-            sx={{
-                bgcolor: 'custom.cardDark',
-                borderRadius: 2,
-                p: 3,
-                position: 'relative',
-                overflow: 'hidden',
-                color: 'white',
-                display: 'flex',
-                flexDirection: 'column',
-                minHeight: 180,
-            }}
-        >
-            {/* Glow decorativo */}
-            <Box
-                sx={{
-                    position: 'absolute',
-                    top: -40,
-                    right: -40,
-                    width: 120,
-                    height: 120,
-                    borderRadius: '50%',
-                    bgcolor: 'primary.main',
-                    opacity: 0.15,
-                    filter: 'blur(48px)',
-                    pointerEvents: 'none',
-                }}
-            />
-
+        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow duration-200 relative overflow-hidden flex flex-col min-h-[180px]">
             {/* Header: Icon + Label */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                <Leaf size={20} color="#4ade80" />
-                <Typography
-                    variant="caption"
-                    sx={{
-                        color: 'grey.400',
-                        fontWeight: 600,
-                        letterSpacing: '0.05em',
-                        textTransform: 'uppercase',
-                    }}
-                >
+            <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-green-50 rounded-lg text-green-600">
+                    <Leaf size={20} />
+                </div>
+                <span className="text-xs font-bold text-slate-400 tracking-wider uppercase">
                     PLANO ATUAL
-                </Typography>
-            </Box>
+                </span>
+            </div>
 
             {/* Content */}
             {nomePlano ? (
                 <>
-                    <Typography
-                        variant="h5"
-                        sx={{
-                            fontWeight: 700,
-                            wordBreak: 'break-word',
-                            lineHeight: 1.2,
-                            mb: 0.5,
-                        }}
-                    >
+                    <h3 className="text-xl font-bold text-slate-900 leading-tight mb-1 break-words">
                         {nomePlano}
-                    </Typography>
-                    <Typography
-                        variant="caption"
-                        sx={{
-                            color: 'grey.500',
-                            mb: 3,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 0.5,
-                        }}
-                    >
-                        v{versao} •{' '}
-                        <Box
-                            component="span"
-                            sx={{
-                                display: 'inline-block',
-                                width: 6,
-                                height: 6,
-                                borderRadius: '50%',
-                                bgcolor: 'primary.light',
-                                mr: 0.5,
-                            }}
-                        />
-                        {status}
-                    </Typography>
+                    </h3>
+
+                    <div className="text-sm text-slate-500 mb-6 flex items-center gap-2">
+                        <span>v{versao}</span>
+                        <span className="text-slate-300">•</span>
+                        <div className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-green-500 block" />
+                            <span>{status}</span>
+                        </div>
+                    </div>
 
                     {/* Footer: Buttons */}
-                    <Box sx={{ mt: 'auto', display: 'flex', gap: 1 }}>
-                        <Button
-                            variant="contained"
-                            size="small"
-                            fullWidth
+                    <div className="mt-auto flex gap-2">
+                        <button
                             onClick={onVer}
-                            sx={{
-                                bgcolor: 'primary.light',
-                                color: '#064e3b',
-                                borderRadius: 2,
-                                fontWeight: 700,
-                                textTransform: 'none',
-                                '&:hover': {
-                                    bgcolor: '#86efac',
-                                },
-                            }}
+                            className="flex-1 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold py-2 px-4 rounded-lg transition-colors"
                         >
                             Ver
-                        </Button>
-                        <IconButton
-                            size="small"
+                        </button>
+                        <button
                             onClick={onEditar}
-                            sx={{
-                                borderColor: 'rgba(255,255,255,0.3)',
-                                border: '1px solid',
-                                color: 'white',
-                                borderRadius: 2,
-                                minWidth: 40,
-                                '&:hover': {
-                                    borderColor: 'rgba(255,255,255,0.5)',
-                                    bgcolor: 'rgba(255,255,255,0.1)',
-                                },
-                            }}
+                            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors border border-slate-200 hover:border-slate-300"
+                            aria-label="Editar plano"
                         >
-                            <Edit size={16} />
-                        </IconButton>
-                    </Box>
+                            <Edit size={18} />
+                        </button>
+                    </div>
                 </>
             ) : (
-                <Typography variant="body2" sx={{ color: 'grey.500' }}>
+                <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">
                     Nenhum plano selecionado
-                </Typography>
+                </div>
             )}
-        </Paper>
+        </div>
     );
 };
 

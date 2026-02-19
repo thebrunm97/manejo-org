@@ -16,6 +16,7 @@ interface AuthContextType {
     user: User | null;
     profile: UserProfile | null;
     isLoading: boolean;
+    isLoadingRole: boolean; // Novo estado exportado
     login: (email: string, password: string) => Promise<{ user: User | null; session: Session | null }>;
     logout: () => Promise<void>;
     signUp: (email: string, password: string, profileData?: ProfileData) => Promise<{ user: User | null; session: Session | null }>;
@@ -46,6 +47,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [isAdmin, setIsAdmin] = useState(false); // Direct state, not derived
     const [isLoading, setIsLoading] = useState(true);
+    const [isLoadingRole, setIsLoadingRole] = useState(true); // Inicializa como true
     const navigate = useNavigate();
     const DASHBOARD_PATH = '/dashboard';
 
@@ -115,11 +117,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // 4. Auth Actions
     const login = async (email: string, password: string) => {
+        setIsLoadingRole(true); // Inicia verificação ao logar
         const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password,
         });
-        if (error) throw error;
+        if (error) {
+            setIsLoadingRole(false); // Falha no login, encerra
+            throw error;
+        }
         navigate(DASHBOARD_PATH);
         return data;
     };
@@ -130,6 +136,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setUser(null);
         setProfile(null);
         setIsAdmin(false);
+        setIsLoadingRole(false); // Não é admin se não está logado
         navigate('/login');
     }, [navigate]);
 
@@ -169,14 +176,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
     useEffect(() => {
         let mounted = true;
 
-        const checkUser = async () => {
+        const initAuth = async () => {
+            console.log('[AuthContext] Initializing Auth...');
+            setIsLoadingRole(true); // Garante que começa true
+
             try {
                 // Check active session
                 const { data: { session } } = await supabase.auth.getSession();
 
                 if (session) {
                     if (isTokenExpired(session)) {
-                        console.warn('⚠️ Token expirado detectado. Forçando logout...');
+                        console.warn('⚠️ Token expirado detectado no inicio. Forçando logout...');
                         await supabase.auth.signOut();
                         if (mounted) {
                             setAuthToken(null);
@@ -184,110 +194,106 @@ export function AuthProvider({ children }: AuthProviderProps) {
                             setProfile(null);
                             setIsAdmin(false);
                             setIsLoading(false);
+                            setIsLoadingRole(false);
                         }
                         return;
                     }
 
                     if (mounted) {
-                        // 1. Set basic auth state immediately
                         setAuthToken(session.access_token);
                         setUser(session.user);
 
-                        // 2. CRITICAL: Check Admin Status BEFORE unblocking UI
-                        const adminStatus = await checkAdminRPC();
-                        if (mounted) setIsAdmin(adminStatus);
-
-                        // 3. Unblock UI now that we know Role and User
-                        if (mounted) setIsLoading(false);
-
-                        // 4. Fetch Profile in Background
-                        fetchProfile(session.user.id).then(p => {
-                            if (mounted && p) {
-                                console.log('AuthContext: Profile loaded (Role Synced).');
-                                setProfile(p);
+                        // CRITICAL: Wait for Admin Check
+                        console.log('[AuthContext] Session found. Checking Admin...');
+                        try {
+                            const adminStatus = await checkAdminRPC(); // This waits!
+                            if (mounted) {
+                                setIsAdmin(adminStatus);
+                                console.log(`[AuthContext] Admin Status Set: ${adminStatus}`);
                             }
-                        }).catch(err => {
-                            console.error('AuthContext: Background profile fetch failed', err);
-                        });
+                        } finally {
+                            if (mounted) setIsLoadingRole(false); // Finaliza loadingRole
+                        }
 
-                        return;
+                        if (mounted) {
+                            // Fetch Profile in Background (Doesn't block UI)
+                            fetchProfile(session.user.id).then(p => {
+                                if (mounted && p) setProfile(p);
+                            });
+                        }
                     }
+                } else {
+                    console.log('[AuthContext] No active session found.');
+                    if (mounted) setIsLoadingRole(false); // Sem sessão, não está carregando role
                 }
             } catch (error) {
                 console.error("Auth check failed", error);
+                if (mounted) setIsLoadingRole(false); // Erro, para loading
+            } finally {
+                if (mounted) {
+                    console.log('[AuthContext] Loading finished.');
+                    setIsLoading(false);
+                }
             }
-
-            // Fallback: If no session or error, finish loading
-            if (mounted) setIsLoading(false);
         };
 
         // Run check
-        checkUser();
-
-        // Safety Timeout (Increased to 10s)
-        const timeoutId = setTimeout(() => {
-            if (mounted && isLoading) {
-                console.warn('AuthContext: Timeout. Unblocking.');
-                setIsLoading(false);
-            }
-        }, 10000);
+        initAuth();
 
         const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (!mounted) return;
+            console.log(`[AuthContext] Auth Change: ${event}`);
 
             if (session) {
-                if (isTokenExpired(session)) {
-                    await supabase.auth.signOut();
-                    setAuthToken(null);
-                    setUser(null);
-                    setProfile(null);
-                    setIsAdmin(false);
-                    navigate('/login', { replace: true });
+                // If we are already loaded and just refreshing token, don't full reset
+                if (event === 'TOKEN_REFRESHED') {
+                    console.log('[AuthContext] Token refreshed. Updating state.');
+                    setAuthToken(session.access_token);
+                    // We don't strictly need to re-check admin on every refresh unless we suspect revocation
                     return;
                 }
 
-                setAuthToken(session.access_token);
-                setUser(session.user);
-
-                // On any auth event (SIGNED_IN, TOKEN_REFRESHED, etc.), re-check admin
-                console.log(`[AuthContext] onAuthStateChange: event=${event}, re-checking admin...`);
-                const adminStatus = await checkAdminRPC();
-                if (mounted) setIsAdmin(adminStatus);
-
-                fetchProfile(session.user.id).then(p => {
-                    if (mounted && p) setProfile(p);
-                });
-
                 if (event === 'SIGNED_IN') {
-                    if (window.location.hash && window.location.hash.includes('access_token')) {
-                        window.history.replaceState(null, '', window.location.pathname);
-                        if (window.location.pathname !== DASHBOARD_PATH) {
-                            navigate(DASHBOARD_PATH, { replace: true });
-                        }
-                    }
-                }
+                    // Start role check loading specifically for sign-in event
+                    setIsLoadingRole(true);
 
+                    setAuthToken(session.access_token);
+                    setUser(session.user);
+
+                    // If we just signed in, check admin again to be safe
+                    try {
+                        const adminStatus = await checkAdminRPC();
+                        if (mounted) setIsAdmin(adminStatus);
+                    } finally {
+                        if (mounted) setIsLoadingRole(false); // Terminou check
+                    }
+
+                    fetchProfile(session.user.id).then(p => {
+                        if (mounted && p) setProfile(p);
+                    });
+                }
             } else if (event === 'SIGNED_OUT') {
                 setAuthToken(null);
                 setUser(null);
                 setProfile(null);
                 setIsAdmin(false);
+                setIsLoadingRole(false);
+                setIsLoading(false); // Ensure we aren't stuck loading
             }
         });
 
         return () => {
             mounted = false;
-            clearTimeout(timeoutId);
             authListener?.subscription.unsubscribe();
         };
-    }, [navigate, isTokenExpired, fetchProfile, checkAdminRPC]);
+    }, [isTokenExpired, fetchProfile, checkAdminRPC]);
 
     // Value Memo (Using direct isAdmin state)
     const value = useMemo<AuthContextType>(() => ({
-        authToken, user, profile, isLoading,
+        authToken, user, profile, isLoading, isLoadingRole,
         login, logout, signUp, loginWithGoogle, loginWithFacebook, refreshProfile,
         isAdmin // Direct State (Verified by RPC)
-    }), [authToken, user, profile, isLoading, isAdmin, login, logout, signUp, loginWithGoogle, loginWithFacebook, refreshProfile]);
+    }), [authToken, user, profile, isLoading, isLoadingRole, isAdmin, login, logout, signUp, loginWithGoogle, loginWithFacebook, refreshProfile]);
 
     if (isLoading) {
         return (
