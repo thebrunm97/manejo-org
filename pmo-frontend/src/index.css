@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 /* ==========================================================================
    PMO FORM STYLES - src/index.css (VERSÃO COMPLETA E CORRIGIDA)
    ========================================================================== */
@@ -25,7 +27,10 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #f1f5f9;
+  background-color: #f8fafc;
+  /* Slate-50 per visual hierarchy */
+  overflow-x: hidden;
+  /* Prevent horizontal scroll */
 }
 
 .container {
@@ -43,23 +48,29 @@ body {
   font-size: 1.75rem;
   margin-bottom: 0.5rem;
 }
+
 .pmo-form h5 {
   font-size: 1.2rem;
   color: #343a40;
 }
+
 .pmo-form .form-label,
 .pmo-form .form-check-label {
   font-size: 1rem;
   margin-bottom: 0.5rem;
 }
+
 .pmo-form .form-control,
 .pmo-form .form-select {
   font-size: 1rem;
   padding: 0.75rem 1rem;
 }
-.pmo-form .form-group, .pmo-form .mb-4 {
+
+.pmo-form .form-group,
+.pmo-form .mb-4 {
   margin-bottom: 2rem !important;
 }
+
 .pmo-form hr {
   margin-top: 2rem;
   margin-bottom: 2rem;
@@ -71,7 +82,7 @@ body {
 
 .stepper-container {
   position: relative;
-  margin-bottom: 3rem; 
+  margin-bottom: 3rem;
 }
 
 .stepper-main {
@@ -94,10 +105,12 @@ body {
   transition: all 0.2s ease-in-out;
   flex-shrink: 0;
 }
+
 .stepper-arrow:hover {
   background-color: #f0f0f0;
   border-color: #adb5bd;
 }
+
 .stepper-arrow.disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -105,7 +118,7 @@ body {
 
 .stepper-wrapper {
   display: flex;
-  align-items: flex-start; 
+  align-items: flex-start;
   justify-content: space-between;
   flex-grow: 1;
   margin: 0 1rem;
@@ -118,7 +131,7 @@ body {
   flex-direction: column;
   align-items: center;
   flex: 1;
-  min-width: 130px; 
+  min-width: 130px;
   padding: 0 10px;
   cursor: pointer;
   z-index: 2;
@@ -130,17 +143,20 @@ body {
 .step-item:not(:first-child)::before {
   content: '';
   position: absolute;
-  top: 20px; /* Alinhado com o centro do círculo de 40px */
-  
+  top: 20px;
+  /* Alinhado com o centro do círculo de 40px */
+
   /* Puxamos a linha para começar à direita do centro do item anterior */
-  right: calc(50% + 20px); /* 50% + metade da largura do círculo (40px/2) */
-  
+  right: calc(50% + 20px);
+  /* 50% + metade da largura do círculo (40px/2) */
+
   /* A largura da linha é o espaço total MENOS a largura do círculo */
-  width: calc(100% - 40px); 
-  
+  width: calc(100% - 40px);
+
   height: 2px;
   background-color: var(--pmo-color-grey-light);
-  z-index: 1; /* Garante que a linha fique atrás do círculo */
+  z-index: 1;
+  /* Garante que a linha fique atrás do círculo */
   transition: background-color 0.4s ease;
 }
 
@@ -152,13 +168,13 @@ body {
   align-items: center;
   border-radius: 50%;
   background: #ffffff;
-  border: 2px solid var(--pmo-color-grey-light); 
+  border: 2px solid var(--pmo-color-grey-light);
   font-size: 1.1rem;
   font-weight: 500;
   color: var(--pmo-color-grey-text);
   transition: all 0.3s ease;
   z-index: 2;
-  margin-bottom: 1rem; 
+  margin-bottom: 1rem;
 }
 
 .step-label-container {
@@ -173,9 +189,10 @@ body {
 }
 
 .step-label {
-  font-size: 0.95rem; 
+  font-size: 0.95rem;
   font-weight: 500;
 }
+
 .step-sub-label {
   font-size: 0.8rem;
   color: var(--pmo-color-grey-text);
@@ -184,7 +201,7 @@ body {
 
 .stepper-completion-counter {
   color: var(--pmo-color-grey-text);
-  font-size: 0.9rem; 
+  font-size: 0.9rem;
   margin-top: 1rem;
   text-align: center;
 }
@@ -194,6 +211,7 @@ body {
   border-color: var(--pmo-color-primary);
   color: var(--pmo-color-primary);
 }
+
 .step-item.active .step-label-container,
 .step-item.active .step-sub-label {
   color: var(--pmo-color-primary);
@@ -201,14 +219,15 @@ body {
 }
 
 .step-item.em-progresso .step-counter {
-    border-color: var(--pmo-color-secondary);
-    color: var(--pmo-color-secondary);
-    opacity: 0.7;
+  border-color: var(--pmo-color-secondary);
+  color: var(--pmo-color-secondary);
+  opacity: 0.7;
 }
+
 .step-item.em-progresso .step-label-container,
 .step-item.em-progresso .step-sub-label {
-    color: var(--pmo-color-secondary);
-    opacity: 0.8;
+  color: var(--pmo-color-secondary);
+  opacity: 0.8;
 }
 
 .step-item.completo .step-counter {
@@ -216,9 +235,11 @@ body {
   border-color: var(--pmo-color-success);
   color: #ffffff;
 }
+
 .step-item.completo .step-label-container {
   color: var(--bs-body-color, #213547);
 }
+
 .step-item.completo:not(:first-child)::before,
 .step-item.active.completo:not(:first-child)::before {
   background-color: var(--pmo-color-success);
@@ -228,7 +249,7 @@ body {
 /* D. ESTILOS PARA O MODO ESCURO (DARK MODE)   */
 /* ------------------------------------------- */
 @media (prefers-color-scheme: dark) {
-  
+
   :root {
     --pmo-dark-text-primary: rgba(255, 255, 255, 0.85);
     --pmo-dark-text-secondary: rgba(255, 255, 255, 0.6);
@@ -249,6 +270,7 @@ body {
     border-color: var(--pmo-dark-border);
     color: var(--pmo-dark-text-secondary);
   }
+
   .stepper-arrow:hover {
     background-color: var(--pmo-dark-bg-hover);
     border-color: var(--pmo-dark-text-primary);
@@ -269,12 +291,13 @@ body {
   .stepper-completion-counter {
     color: var(--pmo-dark-text-secondary);
   }
-  
+
   /* --- Estados do Stepper (Modo Escuro) --- */
   .step-item.active .step-counter {
     border-color: var(--pmo-dark-active);
     color: var(--pmo-dark-active);
   }
+
   .step-item.active .step-label-container,
   .step-item.active .step-sub-label {
     color: var(--pmo-dark-active);
@@ -284,19 +307,22 @@ body {
     border-color: var(--pmo-dark-in-progress);
     color: var(--pmo-dark-in-progress);
   }
+
   .step-item.em-progresso .step-label-container,
   .step-item.em-progresso .step-sub-label {
     color: var(--pmo-dark-in-progress);
   }
-  
+
   .step-item.completo .step-counter {
     background-color: var(--pmo-dark-success);
     border-color: var(--pmo-dark-success);
     color: #121212;
   }
+
   .step-item.completo .step-label-container {
     color: var(--pmo-dark-text-primary);
   }
+
   .step-item.completo:not(:first-child)::before {
     background-color: var(--pmo-dark-success);
   }
@@ -310,6 +336,7 @@ body {
   border-top-width: 3px;
   border-radius: 1px;
 }
+
 .MuiStep-horizontal.Mui-active .MuiStepConnector-line,
 .MuiStep-horizontal.Mui-completed .MuiStepConnector-line {
   border-color: #1976D2;
@@ -331,10 +358,14 @@ body {
 }
 
 .stepper-scroll-wrapper {
-  overflow-x: auto; /* Permite a rolagem */
-  scroll-behavior: smooth; /* Animação suave de rolagem */
-  -ms-overflow-style: none;  /* Esconde a barra de rolagem no IE e Edge */
-  scrollbar-width: none;  /* Esconde a barra de rolagem no Firefox */
+  overflow-x: auto;
+  /* Permite a rolagem */
+  scroll-behavior: smooth;
+  /* Animação suave de rolagem */
+  -ms-overflow-style: none;
+  /* Esconde a barra de rolagem no IE e Edge */
+  scrollbar-width: none;
+  /* Esconde a barra de rolagem no Firefox */
 }
 
 /* Esconde a barra de rolagem no Chrome, Safari e Opera */
@@ -344,6 +375,7 @@ body {
 
 /* Estilos para impressão */
 @media print {
+
   /* Esconde tudo que não deve ser impresso */
   .no-print {
     display: none !important;
@@ -353,9 +385,12 @@ body {
   body * {
     visibility: hidden;
   }
-  .only-print, .only-print * {
+
+  .only-print,
+  .only-print * {
     visibility: visible;
   }
+
   .only-print {
     position: absolute;
     left: 0;
