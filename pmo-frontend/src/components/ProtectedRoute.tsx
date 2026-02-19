@@ -3,7 +3,6 @@
 import React, { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Box, CircularProgress } from '@mui/material';
 
 interface ProtectedRouteProps {
     children: ReactNode;
@@ -16,17 +15,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     // SECURITY: Show nothing while checking auth to prevent content flash
     if (isLoading) {
         return (
-            <Box
-                sx={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    height: '100vh',
-                    backgroundColor: 'background.default',
-                }}
-            >
-                <CircularProgress />
-            </Box>
+            <div className="flex items-center justify-center h-screen bg-gray-50">
+                <div className="w-8 h-8 border-4 border-green-200 border-t-green-600 rounded-full animate-spin"></div>
+            </div>
         );
     }
 

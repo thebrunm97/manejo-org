@@ -1,12 +1,8 @@
 import React from 'react';
 import {
-    Box, Paper, Table, TableBody, TableCell, TableContainer,
-    TableHead, TableRow, Typography, Chip,
-    Tooltip, CircularProgress, useMediaQuery, useTheme,
-    TextField, Checkbox, FormControlLabel, Stack,
-    Card, CardContent, InputAdornment,
-    Popover, TablePagination, MenuItem
-} from '@mui/material';
+    Filter, RefreshCw, Plus, Eye, Pencil, Trash2,
+    AlertOctagon, Ban, ListChecks, X, Calendar, MapPin, Mic
+} from 'lucide-react';
 
 import {
     CadernoCampoRecord,
@@ -17,25 +13,10 @@ import {
     DetalhesPlantio
 } from '../types/CadernoTypes';
 
-// Icons
-import FilterListIcon from '@mui/icons-material/FilterList';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import AddIcon from '@mui/icons-material/Add';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import ReportProblemIcon from '@mui/icons-material/ReportProblem';
-import BlockIcon from '@mui/icons-material/Block';
-import ListAltIcon from '@mui/icons-material/ListAlt';
-import CloseIcon from '@mui/icons-material/Close';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import PlaceIcon from '@mui/icons-material/Place';
-import MicIcon from '@mui/icons-material/Mic';
-
 // Import shared types
 import { FieldDiaryFilters } from '../hooks/useFieldDiary';
 import { formatDateBR, formatComplianceMessage } from '../utils/formatters';
-import { AlertTriangle } from 'lucide-react'; // Added import
+import { AlertTriangle } from 'lucide-react'; // Already used
 
 interface FieldDiaryTableV2Props {
     // Data (Prefiltered & Paginated)
@@ -51,7 +32,7 @@ interface FieldDiaryTableV2Props {
     page: number;
     rowsPerPage: number;
     onPageChange: (event: unknown, newPage: number) => void;
-    onRowsPerPageChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+    onRowsPerPageChange: (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
 
     // Actions
     onVisualizar: (reg: CadernoCampoRecord) => void;
@@ -60,6 +41,29 @@ interface FieldDiaryTableV2Props {
     onAtualizar: () => void;
     onNovoRegistro: () => void;
 }
+
+// --- Chip color helper ---
+const getStatusClasses = (tipo: string): { bg: string; text: string; border: string } => {
+    const map: Record<string, { bg: string; text: string; border: string }> = {
+        'Insumo': { bg: 'bg-amber-100', text: 'text-amber-800', border: 'border-amber-300' },
+        'Manejo': { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-300' },
+        'Plantio': { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-300' },
+        'Colheita': { bg: 'bg-primary-main/10', text: 'text-primary-dark', border: 'border-primary-main/30' },
+        'CANCELADO': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-300' },
+    };
+    return map[tipo] || { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-300' };
+};
+
+// --- Mobile card border color ---
+const getMobileBorderColor = (tipo: string): string => {
+    const map: Record<string, string> = {
+        'Plantio': '#2e7d32',
+        'Manejo': '#0288d1',
+        'Colheita': '#ed6c02',
+        'CANCELADO': '#ef5350',
+    };
+    return map[tipo] || '#bdbdbd';
+};
 
 const FieldDiaryTableV2: React.FC<FieldDiaryTableV2Props> = ({
     registros,
@@ -80,8 +84,12 @@ const FieldDiaryTableV2: React.FC<FieldDiaryTableV2Props> = ({
     // --- UI STATE ONLY (Filter Popover) ---
     const [filterAnchorEl, setFilterAnchorEl] = React.useState<null | HTMLElement>(null);
     const [activeFilterColumn, setActiveFilterColumn] = React.useState<string | null>(null);
+    // For positioning the popover
+    const [popoverPos, setPopoverPos] = React.useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
     const handleOpenFilter = (event: React.MouseEvent<HTMLElement>, column: string) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        setPopoverPos({ top: rect.bottom + 4, left: rect.left });
         setFilterAnchorEl(event.currentTarget);
         setActiveFilterColumn(column);
     };
@@ -96,23 +104,10 @@ const FieldDiaryTableV2: React.FC<FieldDiaryTableV2Props> = ({
             ...filtrosAtivos,
             [field]: value
         });
-        // Note: Page reset is handled in the Hook now
     };
 
     // --- HELPER RENDERS (Pure Functions) ---
-    const getStatusColor = (tipo: string): any => {
-        const map: any = {
-            'Insumo': 'warning',
-            'Manejo': 'info',
-            'Plantio': 'success',
-            'Colheita': 'primary',
-            'CANCELADO': 'error'
-        };
-        return map[tipo] || 'default';
-    };
-
     const getRegistroLocalResumo = (reg: CadernoCampoRecord): string => {
-        // 1. Se tem atividades, extrair locais únicos
         if (reg.atividades && reg.atividades.length > 0) {
             const locaisUnicos = new Set<string>();
             for (const item of reg.atividades) {
@@ -128,7 +123,6 @@ const FieldDiaryTableV2: React.FC<FieldDiaryTableV2Props> = ({
             if (locaisArr.length === 1) return locaisArr[0];
             return `${locaisArr[0]} +${locaisArr.length - 1}`;
         }
-        // 2. Fallback
         return reg.talhao_canteiro || 'Local não informado';
     };
 
@@ -141,10 +135,7 @@ const FieldDiaryTableV2: React.FC<FieldDiaryTableV2Props> = ({
         if (complianceMsg) {
             return (
                 <div className="relative flex items-center group cursor-pointer ml-1 inline-flex">
-                    {/* Ícone Visível */}
                     <AlertTriangle className="w-5 h-5 text-amber-500 hover:text-amber-600 transition-colors" />
-
-                    {/* Balão do Tooltip */}
                     <div className="absolute bottom-full right-0 sm:left-1/2 sm:-translate-x-1/2 mb-2 hidden group-hover:block group-active:block w-64 p-3 text-xs sm:text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-lg shadow-xl z-50 pointer-events-none">
                         <div className="absolute top-full right-2 sm:left-1/2 sm:-translate-x-1/2 -mt-[1px] border-4 border-transparent border-t-amber-200"></div>
                         <p className="font-bold mb-1 uppercase tracking-tight text-[10px] opacity-70">Alerta de Compliance</p>
@@ -158,388 +149,433 @@ const FieldDiaryTableV2: React.FC<FieldDiaryTableV2Props> = ({
             const d = details as DetalhesManejo;
             if (d.subtipo === ManejoSubtype.HIGIENIZACAO) {
                 return (
-                    <Box component="span">
+                    <span>
                         {d.item_higienizado && (
-                            <Chip label={`🧹 ${d.item_higienizado}`} size="small" color="info" variant="outlined" sx={{ mr: 1, my: 0.5 }} />
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border border-blue-300 text-blue-800 bg-blue-50 mr-1 my-0.5">
+                                🧹 {d.item_higienizado}
+                            </span>
                         )}
-                        {d.produto_utilizado && <Typography variant="caption" color="text.secondary" component="span">com {d.produto_utilizado}</Typography>}
-                    </Box>
+                        {d.produto_utilizado && <span className="text-xs text-gray-500">com {d.produto_utilizado}</span>}
+                    </span>
                 );
             }
             if (d.subtipo === ManejoSubtype.APLICACAO_INSUMO) {
                 const dose = d.dosagem ? `${d.dosagem}${d.unidade_dosagem || ''}` : '';
                 return (
-                    <Box component="span">
-                        <Chip label={`💊 ${d.insumo || d.nome_insumo || 'Insumo'}`} size="small" color="warning" variant="outlined" sx={{ mr: 1, my: 0.5 }} />
-                        {dose && <Typography variant="caption" component="span">{dose}</Typography>}
-                    </Box>
+                    <span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border border-amber-300 text-amber-800 bg-amber-50 mr-1 my-0.5">
+                            💊 {d.insumo || d.nome_insumo || 'Insumo'}
+                        </span>
+                        {dose && <span className="text-xs">{dose}</span>}
+                    </span>
                 );
             }
             const ativ = d.atividade || d.tipo_manejo || row.observacao_original;
-            return <Typography variant="body2" color="text.primary" component="span">{ativ}</Typography>;
+            return <span className="text-sm text-gray-900">{ativ}</span>;
         }
 
         if (tipo === ActivityType.COLHEITA || tipo === 'Colheita') {
             const d = details as DetalhesColheita;
             return (
-                <Box component="span">
-                    {d.lote && <Chip label={`📦 ${d.lote}`} size="small" sx={{ mr: 1, bgcolor: '#fef3c7', color: '#d97706', my: 0.5 }} />}
-                    {d.classificacao && <Typography variant="caption" sx={{ color: '#b45309', fontWeight: 'bold' }} component="span">{d.classificacao}</Typography>}
-                </Box>
+                <span>
+                    {d.lote && <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mr-1 my-0.5" style={{ backgroundColor: '#fef3c7', color: '#d97706' }}>📦 {d.lote}</span>}
+                    {d.classificacao && <span className="text-xs font-bold" style={{ color: '#b45309' }}>{d.classificacao}</span>}
+                </span>
             );
         }
 
         if (tipo === ActivityType.PLANTIO || tipo === 'Plantio') {
             const d = details as DetalhesPlantio;
             return (
-                <Box component="span">
-                    <Chip label={`🌱 ${d.metodo_propagacao || 'Plantio'}`} size="small" color="success" variant="outlined" sx={{ mr: 1, my: 0.5 }} />
-                </Box>
+                <span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border border-green-300 text-green-800 bg-green-50 mr-1 my-0.5">
+                        🌱 {d.metodo_propagacao || 'Plantio'}
+                    </span>
+                </span>
             );
         }
 
         return (
-            <Tooltip title={row.observacao_original || ''}>
-                <Typography variant="body2" sx={{ maxWidth: 300, whiteSpace: 'normal', wordBreak: 'break-word' }}>
+            <span title={row.observacao_original || ''}>
+                <p className="text-sm max-w-[300px] whitespace-normal break-words">
                     {row.observacao_original || '-'}
-                </Typography>
-            </Tooltip>
+                </p>
+            </span>
         );
     };
 
     const getAlertIcon = (reg: CadernoCampoRecord) => {
         const obs = reg.observacao_original || '';
         const isCompliance = formatComplianceMessage(obs);
-        // Se já exibimos a mensagem de compliance no renderDetails, não precisamos do ícone aqui para evitar redundância, 
-        // ou mantemos apenas ícones criticos de bloqueio.
         if (isCompliance) return null;
 
         if (obs.includes('⛔') || obs.includes('RECUSADO')) {
-            return <Tooltip title="Registro Recusado / Bloqueado"><BlockIcon color="error" fontSize="small" sx={{ mr: 1, verticalAlign: 'middle' }} /></Tooltip>;
+            return <span title="Registro Recusado / Bloqueado"><Ban className="w-4 h-4 text-red-500 mr-1 inline align-middle" /></span>;
         }
         if (obs.includes('⚠️') || obs.includes('[SISTEMA') || obs.includes('ALERTA')) {
-            return <Tooltip title="Alerta do Sistema"><ReportProblemIcon color="warning" fontSize="small" sx={{ mr: 1, verticalAlign: 'middle' }} /></Tooltip>;
+            return <span title="Alerta do Sistema"><AlertOctagon className="w-4 h-4 text-amber-500 mr-1 inline align-middle" /></span>;
         }
         return null;
     };
 
+    // --- Filter Popover (native dropdown positioned absolutely) ---
     const renderFilterPopover = () => {
-        if (!activeFilterColumn) return null;
+        if (!activeFilterColumn || !filterAnchorEl) return null;
 
         return (
-            <Popover
-                open={Boolean(filterAnchorEl)}
-                anchorEl={filterAnchorEl}
-                onClose={handleCloseFilter}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-            >
-                {activeFilterColumn === 'data' && (
-                    <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2, minWidth: 250 }}>
-                        <Typography variant="subtitle2" fontWeight="bold">Filtrar por Período</Typography>
-                        <TextField
-                            label="Data Início" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }}
-                            value={filtrosAtivos.dataInicio} onChange={(e) => handleFilterChange('dataInicio', e.target.value)}
-                        />
-                        <TextField
-                            label="Data Fim" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }}
-                            value={filtrosAtivos.dataFim} onChange={(e) => handleFilterChange('dataFim', e.target.value)}
-                        />
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
-                            <button
-                                type="button"
-                                className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                                onClick={() => { handleFilterChange('dataInicio', ''); handleFilterChange('dataFim', ''); }}
-                            >
-                                Limpar
-                            </button>
-                            <button
-                                type="button"
-                                className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium text-white bg-primary-600 border border-transparent rounded-md shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                                onClick={handleCloseFilter}
-                            >
-                                OK
-                            </button>
-                        </Box>
-                    </Box>
-                )}
+            <>
+                {/* Backdrop */}
+                <div className="fixed inset-0 z-40" onClick={handleCloseFilter} />
 
-                {activeFilterColumn === 'atividade' && (
-                    <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2, minWidth: 200 }}>
-                        <Typography variant="subtitle2" fontWeight="bold">Filtrar por Atividade</Typography>
-                        <TextField
-                            select label="Selecione" size="small" fullWidth
-                            value={filtrosAtivos.tipo_atividade} onChange={(e) => handleFilterChange('tipo_atividade', e.target.value)}
-                            SelectProps={{ native: true }}
-                        >
-                            <option value="Todos">Todas</option>
-                            <option value={ActivityType.PLANTIO}>Plantio</option>
-                            <option value={ActivityType.MANEJO}>Manejo</option>
-                            <option value={ActivityType.COLHEITA}>Colheita</option>
-                            <option value={ActivityType.INSUMO}>Insumo</option>
-                            <option value={ActivityType.OUTRO}>Outro</option>
-                            <option value={ActivityType.CANCELADO}>CANCELADO</option>
-                        </TextField>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
-                            <button
-                                type="button"
-                                className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                                onClick={() => handleFilterChange('tipo_atividade', 'Todos')}
-                            >
-                                Limpar
-                            </button>
-                            <button
-                                type="button"
-                                className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium text-white bg-primary-600 border border-transparent rounded-md shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                                onClick={handleCloseFilter}
-                            >
-                                OK
-                            </button>
-                        </Box>
-                    </Box>
-                )}
+                {/* Popover Panel */}
+                <div
+                    className="fixed z-50 bg-white rounded-lg shadow-xl border border-gray-200 min-w-[200px]"
+                    style={{ top: popoverPos.top, left: popoverPos.left }}
+                >
+                    {activeFilterColumn === 'data' && (
+                        <div className="p-3 flex flex-col gap-2 min-w-[250px]">
+                            <p className="text-sm font-bold text-gray-800">Filtrar por Período</p>
+                            <div className="flex flex-col gap-1">
+                                <label className="text-xs font-medium text-gray-600">Data Início</label>
+                                <input
+                                    type="date"
+                                    className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-main/30 focus:border-primary-main outline-none"
+                                    value={filtrosAtivos.dataInicio}
+                                    onChange={(e) => handleFilterChange('dataInicio', e.target.value)}
+                                />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <label className="text-xs font-medium text-gray-600">Data Fim</label>
+                                <input
+                                    type="date"
+                                    className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-main/30 focus:border-primary-main outline-none"
+                                    value={filtrosAtivos.dataFim}
+                                    onChange={(e) => handleFilterChange('dataFim', e.target.value)}
+                                />
+                            </div>
+                            <div className="flex justify-between gap-1">
+                                <button
+                                    type="button"
+                                    className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                                    onClick={() => { handleFilterChange('dataInicio', ''); handleFilterChange('dataFim', ''); }}
+                                >
+                                    Limpar
+                                </button>
+                                <button
+                                    type="button"
+                                    className="px-3 py-1.5 text-xs font-medium text-white bg-primary-main rounded-md hover:bg-primary-dark"
+                                    onClick={handleCloseFilter}
+                                >
+                                    OK
+                                </button>
+                            </div>
+                        </div>
+                    )}
 
-                {activeFilterColumn === 'produto' && (
-                    <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2, minWidth: 250 }}>
-                        <Typography variant="subtitle2" fontWeight="bold">Filtrar por Produto</Typography>
-                        <TextField
-                            label="Contém..." size="small" fullWidth autoFocus
-                            value={filtrosAtivos.produto} onChange={(e) => handleFilterChange('produto', e.target.value)}
-                            InputProps={{
-                                endAdornment: filtrosAtivos.produto && (
-                                    <InputAdornment position="end">
-                                        <button
-                                            type="button"
-                                            className="p-1 text-gray-400 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                                            onClick={() => handleFilterChange('produto', '')}
-                                        >
-                                            <CloseIcon fontSize="small" />
-                                        </button>
-                                    </InputAdornment>
-                                )
-                            }}
-                        />
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                            <button
-                                type="button"
-                                className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium text-white bg-primary-600 border border-transparent rounded-md shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                                onClick={handleCloseFilter}
+                    {activeFilterColumn === 'atividade' && (
+                        <div className="p-3 flex flex-col gap-2 min-w-[200px]">
+                            <p className="text-sm font-bold text-gray-800">Filtrar por Atividade</p>
+                            <select
+                                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-main/30 focus:border-primary-main outline-none bg-white"
+                                value={filtrosAtivos.tipo_atividade}
+                                onChange={(e) => handleFilterChange('tipo_atividade', e.target.value)}
                             >
-                                OK
-                            </button>
-                        </Box>
-                    </Box>
-                )}
+                                <option value="Todos">Todas</option>
+                                <option value={ActivityType.PLANTIO}>Plantio</option>
+                                <option value={ActivityType.MANEJO}>Manejo</option>
+                                <option value={ActivityType.COLHEITA}>Colheita</option>
+                                <option value={ActivityType.INSUMO}>Insumo</option>
+                                <option value={ActivityType.OUTRO}>Outro</option>
+                                <option value={ActivityType.CANCELADO}>CANCELADO</option>
+                            </select>
+                            <div className="flex justify-between gap-1">
+                                <button
+                                    type="button"
+                                    className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                                    onClick={() => handleFilterChange('tipo_atividade', 'Todos')}
+                                >
+                                    Limpar
+                                </button>
+                                <button
+                                    type="button"
+                                    className="px-3 py-1.5 text-xs font-medium text-white bg-primary-main rounded-md hover:bg-primary-dark"
+                                    onClick={handleCloseFilter}
+                                >
+                                    OK
+                                </button>
+                            </div>
+                        </div>
+                    )}
 
-                {activeFilterColumn === 'local' && (
-                    <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2, minWidth: 250 }}>
-                        <Typography variant="subtitle2" fontWeight="bold">Filtrar por Local</Typography>
-                        <TextField
-                            label="Contém..." size="small" fullWidth autoFocus
-                            value={filtrosAtivos.local} onChange={(e) => handleFilterChange('local', e.target.value)}
-                            InputProps={{
-                                endAdornment: filtrosAtivos.local && (
-                                    <InputAdornment position="end">
-                                        <button
-                                            type="button"
-                                            className="p-1 text-gray-400 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                                            onClick={() => handleFilterChange('local', '')}
-                                        >
-                                            <CloseIcon fontSize="small" />
-                                        </button>
-                                    </InputAdornment>
-                                )
-                            }}
-                        />
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                            <button
-                                type="button"
-                                className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium text-white bg-primary-600 border border-transparent rounded-md shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                                onClick={handleCloseFilter}
-                            >
-                                OK
-                            </button>
-                        </Box>
-                    </Box>
-                )}
-            </Popover>
+                    {activeFilterColumn === 'produto' && (
+                        <div className="p-3 flex flex-col gap-2 min-w-[250px]">
+                            <p className="text-sm font-bold text-gray-800">Filtrar por Produto</p>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    autoFocus
+                                    placeholder="Contém..."
+                                    className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-main/30 focus:border-primary-main outline-none pr-8"
+                                    value={filtrosAtivos.produto}
+                                    onChange={(e) => handleFilterChange('produto', e.target.value)}
+                                />
+                                {filtrosAtivos.produto && (
+                                    <button
+                                        type="button"
+                                        className="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-gray-400 rounded-full hover:bg-gray-100"
+                                        onClick={() => handleFilterChange('produto', '')}
+                                    >
+                                        <X className="w-3 h-3" />
+                                    </button>
+                                )}
+                            </div>
+                            <div className="flex justify-end">
+                                <button
+                                    type="button"
+                                    className="px-3 py-1.5 text-xs font-medium text-white bg-primary-main rounded-md hover:bg-primary-dark"
+                                    onClick={handleCloseFilter}
+                                >
+                                    OK
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeFilterColumn === 'local' && (
+                        <div className="p-3 flex flex-col gap-2 min-w-[250px]">
+                            <p className="text-sm font-bold text-gray-800">Filtrar por Local</p>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    autoFocus
+                                    placeholder="Contém..."
+                                    className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-main/30 focus:border-primary-main outline-none pr-8"
+                                    value={filtrosAtivos.local}
+                                    onChange={(e) => handleFilterChange('local', e.target.value)}
+                                />
+                                {filtrosAtivos.local && (
+                                    <button
+                                        type="button"
+                                        className="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-gray-400 rounded-full hover:bg-gray-100"
+                                        onClick={() => handleFilterChange('local', '')}
+                                    >
+                                        <X className="w-3 h-3" />
+                                    </button>
+                                )}
+                            </div>
+                            <div className="flex justify-end">
+                                <button
+                                    type="button"
+                                    className="px-3 py-1.5 text-xs font-medium text-white bg-primary-main rounded-md hover:bg-primary-dark"
+                                    onClick={handleCloseFilter}
+                                >
+                                    OK
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </>
         );
     };
 
+    // --- Pagination helpers ---
+    const totalPages = Math.ceil(totalCount / rowsPerPage);
+    const from = page * rowsPerPage + 1;
+    const to = Math.min((page + 1) * rowsPerPage, totalCount);
+
     return (
-        <Stack spacing={3} sx={{ width: '100%', mb: 10 }}>
+        <div className="w-full max-w-full min-w-0 overflow-hidden flex flex-col gap-6 mb-10">
             {/* 1. HEADER & ACTIONS */}
-            <Paper sx={{ p: 2 }}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'flex-start', sm: 'center' }, justifyContent: 'space-between', gap: { xs: 1.5, sm: 2 } }}>
-                        <Typography variant="h6" sx={{ display: 'flex', gap: 1, fontWeight: 'bold', alignItems: 'center' }}>
-                            <ListAltIcon color="primary" /> Diário de Campo
-                        </Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', maxWidth: { xs: '100%', sm: 'auto' } }}>
+            <div className="p-2 bg-white rounded-lg border border-gray-200 shadow-sm">
+                <div className="flex flex-col gap-1">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1.5 sm:gap-2">
+                        <h6 className="flex gap-1 font-bold text-lg items-center">
+                            <ListChecks className="w-5 h-5 text-primary-main" /> Diário de Campo
+                        </h6>
+                        <div className="flex items-center gap-1 flex-wrap max-w-full sm:max-w-none">
                             <button
                                 type="button"
-                                className="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
                                 onClick={onAtualizar}
                             >
-                                <RefreshIcon className="w-5 h-5 mr-2" />
+                                <RefreshCw className="w-4 h-4 mr-1.5" />
                                 Atualizar
                             </button>
                             <button
                                 type="button"
-                                className="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md shadow-sm hover:bg-green-700"
                                 onClick={onNovoRegistro}
                             >
-                                <AddIcon className="w-5 h-5 mr-2" />
+                                <Plus className="w-4 h-4 mr-1.5" />
                                 Novo Registro
                             </button>
-                        </Box>
-                    </Box>
-                    <FormControlLabel
-                        control={<Checkbox checked={filtrosAtivos.incluirCancelados} onChange={(e) => handleFilterChange('incluirCancelados', e.target.checked)} color="default" size="small" />}
-                        label="Ver Cancelados"
-                        sx={{ ml: 0, '& .MuiTypography-root': { fontSize: '0.85rem', color: 'text.secondary' } }}
-                    />
-                </Box>
-            </Paper>
+                        </div>
+                    </div>
+                    <label className="inline-flex items-center gap-2 ml-0 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={filtrosAtivos.incluirCancelados}
+                            onChange={(e) => handleFilterChange('incluirCancelados', e.target.checked)}
+                            className="w-4 h-4 rounded border-gray-300 text-primary-main focus:ring-primary-main/30"
+                        />
+                        <span className="text-sm text-gray-500">Ver Cancelados</span>
+                    </label>
+                </div>
+            </div>
 
             {/* 3. CONTENT AREA */}
             {loading ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}><CircularProgress /></Box>
+                <div className="flex justify-center p-5">
+                    <div className="w-8 h-8 border-4 border-green-200 border-t-green-600 rounded-full animate-spin"></div>
+                </div>
             ) : registros.length === 0 ? (
-                <Paper sx={{ p: 4, textAlign: 'center' }}><Typography color="text.secondary">Nenhum registro encontrado para os filtros selecionados.</Typography></Paper>
+                <div className="p-4 text-center bg-white rounded-lg border border-gray-200 shadow-sm">
+                    <p className="text-gray-500">Nenhum registro encontrado para os filtros selecionados.</p>
+                </div>
             ) : (
                 <>
                     {/* --- DESKTOP TABLE --- */}
-                    <div className="w-full max-w-full overflow-x-auto block">
-                        <TableContainer component={Paper} elevation={0} sx={{ display: { xs: 'none', md: 'block' }, width: '100%', mb: 2, boxShadow: 'none' }}>
-                            <Table size="medium" sx={{ width: '100%', minWidth: 800 }}>
-                                <TableHead>
-                                    <TableRow sx={{ bgcolor: '#f5f5f5' }}>
-                                        <TableCell sx={{ width: '10%' }}>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer', '&:hover': { color: 'primary.main' } }} onClick={(e) => handleOpenFilter(e, 'data')}>
-                                                Data <FilterListIcon fontSize="small" sx={{ ml: 0.5, opacity: (filtrosAtivos.dataInicio || filtrosAtivos.dataFim) ? 1 : 0.3 }} color={(filtrosAtivos.dataInicio || filtrosAtivos.dataFim) ? "primary" : "inherit"} />
-                                            </Box>
-                                        </TableCell>
-                                        <TableCell sx={{ width: '12%' }}>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer', '&:hover': { color: 'primary.main' } }} onClick={(e) => handleOpenFilter(e, 'atividade')}>
-                                                Atividade <FilterListIcon fontSize="small" sx={{ ml: 0.5, opacity: filtrosAtivos.tipo_atividade !== 'Todos' ? 1 : 0.3 }} color={filtrosAtivos.tipo_atividade !== 'Todos' ? "primary" : "inherit"} />
-                                            </Box>
-                                        </TableCell>
-                                        <TableCell sx={{ width: '22%' }}>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer', '&:hover': { color: 'primary.main' } }} onClick={(e) => handleOpenFilter(e, 'produto')}>
-                                                Produto / Cultura <FilterListIcon fontSize="small" sx={{ ml: 0.5, opacity: filtrosAtivos.produto ? 1 : 0.3 }} color={filtrosAtivos.produto ? "primary" : "inherit"} />
-                                            </Box>
-                                        </TableCell>
-                                        <TableCell sx={{ width: '26%', whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer', '&:hover': { color: 'primary.main' } }} onClick={(e) => handleOpenFilter(e, 'local')}>
-                                                Localização <FilterListIcon fontSize="small" sx={{ ml: 0.5, opacity: filtrosAtivos.local ? 1 : 0.3 }} color={filtrosAtivos.local ? "primary" : "inherit"} />
-                                            </Box>
-                                        </TableCell>
-                                        <TableCell sx={{ width: '20%', fontWeight: 'bold', whiteSpace: 'normal', wordBreak: 'break-word', overflow: 'visible' }}>Resumo</TableCell>
-                                        <TableCell sx={{ width: '12%', fontWeight: 'bold' }}><Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><MicIcon fontSize="small" /> Áudio</Box></TableCell>
-                                        <TableCell align="center" sx={{ width: '8%', fontWeight: 'bold' }}>Ações</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {registros.map((reg) => {
-                                        const isCancelled = reg.tipo_atividade === ActivityType.CANCELADO;
-                                        return (
-                                            <TableRow key={reg.id} hover sx={{ opacity: isCancelled ? 0.6 : 1, bgcolor: isCancelled ? '#fff5f5' : 'inherit' }}>
-                                                <TableCell>{formatDateBR(reg.data_registro)}</TableCell>
-                                                <TableCell><Chip label={reg.tipo_atividade} color={getStatusColor(reg.tipo_atividade)} size="small" variant={isCancelled ? "outlined" : "filled"} /></TableCell>
-                                                <TableCell sx={{ fontWeight: 500 }}>{reg.produto}</TableCell>
-                                                <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>{getRegistroLocalResumo(reg)}</TableCell>
-                                                <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word', overflow: 'visible' }}><Box sx={{ display: 'flex', alignItems: 'center' }}>{getAlertIcon(reg)}{renderDetails(reg)}</Box></TableCell>
-                                                <TableCell>{reg.audio_url ? <audio controls src={reg.audio_url} preload="metadata" style={{ height: '32px', maxWidth: '180px', width: '100%' }} /> : <Typography variant="body2" color="text.disabled">—</Typography>}</TableCell>
-                                                <TableCell align="center">
-                                                    <Stack direction="row" justifyContent="center" spacing={1}>
-                                                        <Tooltip title="Ver Detalhes">
+                    <div className="hidden md:block w-full max-w-full overflow-x-auto border border-gray-200 rounded-lg shadow-sm bg-white min-w-0">
+                        <table className="min-w-[800px] w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
+                                        <button type="button" className="flex items-center gap-0.5 hover:text-primary-main transition-colors" onClick={(e) => handleOpenFilter(e, 'data')}>
+                                            Data <Filter className={`w-3.5 h-3.5 ${(filtrosAtivos.dataInicio || filtrosAtivos.dataFim) ? 'text-primary-main opacity-100' : 'opacity-30'}`} />
+                                        </button>
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[12%]">
+                                        <button type="button" className="flex items-center gap-0.5 hover:text-primary-main transition-colors" onClick={(e) => handleOpenFilter(e, 'atividade')}>
+                                            Atividade <Filter className={`w-3.5 h-3.5 ${filtrosAtivos.tipo_atividade !== 'Todos' ? 'text-primary-main opacity-100' : 'opacity-30'}`} />
+                                        </button>
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[22%]">
+                                        <button type="button" className="flex items-center gap-0.5 hover:text-primary-main transition-colors" onClick={(e) => handleOpenFilter(e, 'produto')}>
+                                            Produto / Cultura <Filter className={`w-3.5 h-3.5 ${filtrosAtivos.produto ? 'text-primary-main opacity-100' : 'opacity-30'}`} />
+                                        </button>
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[26%] whitespace-normal break-words">
+                                        <button type="button" className="flex items-center gap-0.5 hover:text-primary-main transition-colors" onClick={(e) => handleOpenFilter(e, 'local')}>
+                                            Localização <Filter className={`w-3.5 h-3.5 ${filtrosAtivos.local ? 'text-primary-main opacity-100' : 'opacity-30'}`} />
+                                        </button>
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-[20%] whitespace-normal break-words">Resumo</th>
+                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-[12%]">
+                                        <span className="flex items-center gap-0.5"><Mic className="w-3.5 h-3.5" /> Áudio</span>
+                                    </th>
+                                    <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-[8%]">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {registros.map((reg) => {
+                                    const isCancelled = reg.tipo_atividade === ActivityType.CANCELADO;
+                                    const sc = getStatusClasses(reg.tipo_atividade);
+                                    return (
+                                        <tr key={reg.id} className={`hover:bg-gray-50 transition-colors ${isCancelled ? 'bg-red-50/50' : ''}`} style={{ opacity: isCancelled ? 0.6 : 1 }}>
+                                            <td className="px-4 py-3 text-sm text-gray-900">{formatDateBR(reg.data_registro)}</td>
+                                            <td className="px-4 py-3">
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${isCancelled ? `border ${sc.border} ${sc.text} bg-transparent` : `${sc.bg} ${sc.text}`
+                                                    }`}>
+                                                    {reg.tipo_atividade}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-sm font-medium text-gray-900">{reg.produto}</td>
+                                            <td className="px-4 py-3 text-sm text-gray-900 whitespace-normal break-words">{getRegistroLocalResumo(reg)}</td>
+                                            <td className="px-4 py-3 text-sm text-gray-900 whitespace-normal break-words overflow-visible">
+                                                <div className="flex items-center">{getAlertIcon(reg)}{renderDetails(reg)}</div>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                {reg.audio_url ? (
+                                                    <audio controls src={reg.audio_url} preload="metadata" style={{ height: '32px', maxWidth: '180px', width: '100%' }} />
+                                                ) : (
+                                                    <span className="text-sm text-gray-300">—</span>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <div className="flex flex-row items-center justify-center gap-1">
+                                                    <button
+                                                        type="button"
+                                                        title="Ver Detalhes"
+                                                        className="inline-flex items-center justify-center p-1.5 text-gray-500 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100 hover:text-gray-700 transition-colors"
+                                                        onClick={() => onVisualizar(reg)}
+                                                    >
+                                                        <Eye className="w-4 h-4" />
+                                                    </button>
+                                                    {!isCancelled && (
+                                                        <>
                                                             <button
                                                                 type="button"
-                                                                className="inline-flex items-center justify-center p-1.5 text-gray-500 transition-colors bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                                onClick={() => onVisualizar(reg)}
+                                                                title="Editar"
+                                                                className="inline-flex items-center justify-center p-1.5 text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-md hover:bg-indigo-100 transition-colors"
+                                                                onClick={() => onEditar(reg)}
                                                             >
-                                                                <VisibilityIcon fontSize="small" />
+                                                                <Pencil className="w-4 h-4" />
                                                             </button>
-                                                        </Tooltip>
-                                                        {!isCancelled && (
-                                                            <>
-                                                                <Tooltip title="Editar">
-                                                                    <button
-                                                                        type="button"
-                                                                        className="inline-flex items-center justify-center p-1.5 text-indigo-700 transition-colors bg-indigo-50 border border-indigo-200 rounded-md hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                                        onClick={() => onEditar(reg)}
-                                                                    >
-                                                                        <EditIcon fontSize="small" />
-                                                                    </button>
-                                                                </Tooltip>
-                                                                <Tooltip title="Excluir/Cancelar">
-                                                                    <button
-                                                                        type="button"
-                                                                        className="inline-flex items-center justify-center p-1.5 text-red-700 transition-colors bg-red-50 border border-red-200 rounded-md hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                                        onClick={() => onExcluir(reg)}
-                                                                    >
-                                                                        <DeleteIcon fontSize="small" />
-                                                                    </button>
-                                                                </Tooltip>
-                                                            </>
-                                                        )}
-                                                    </Stack>
-                                                </TableCell>
-                                            </TableRow>
-                                        );
-                                    })}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
+                                                            <button
+                                                                type="button"
+                                                                title="Excluir/Cancelar"
+                                                                className="inline-flex items-center justify-center p-1.5 text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 transition-colors"
+                                                                onClick={() => onExcluir(reg)}
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
                     </div>
 
                     {/* --- MOBILE CARDS --- */}
-                    <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 2 }}>
+                    <div className="flex md:hidden flex-col gap-2">
                         {registros.map((reg) => {
                             const isCancelled = reg.tipo_atividade === ActivityType.CANCELADO;
-                            const getColors = () => {
-                                switch (reg.tipo_atividade) {
-                                    case ActivityType.PLANTIO: case 'Plantio': return { border: '#2e7d32', chip: 'success' };
-                                    case ActivityType.MANEJO: case 'Manejo': return { border: '#0288d1', chip: 'info' };
-                                    case ActivityType.COLHEITA: case 'Colheita': return { border: '#ed6c02', chip: 'warning' };
-                                    case ActivityType.CANCELADO: return { border: '#ef5350', chip: 'error' };
-                                    default: return { border: '#bdbdbd', chip: 'default' };
-                                }
-                            };
-                            const colors = getColors();
+                            const borderColor = getMobileBorderColor(reg.tipo_atividade);
+                            const sc = getStatusClasses(reg.tipo_atividade);
                             const hasAlert = (reg.observacao_original || '').includes('⛔') || (reg.observacao_original || '').includes('⚠️') || (reg.observacao_original || '').includes('[SISTEMA');
                             const alertIcon = getAlertIcon(reg);
 
                             return (
-                                <Card key={reg.id} sx={{ borderRadius: 3, boxShadow: 3, borderWidth: 2, borderStyle: 'solid', borderColor: colors.border, opacity: isCancelled ? 0.7 : 1, mb: 1, overflow: 'hidden' }}>
-                                    <Box sx={{ p: 2.5, borderBottom: '1px solid #e5e7eb', bgcolor: '#f9fafb' }}>
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                                            <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontWeight: 500 }}>
-                                                <CalendarTodayIcon fontSize="inherit" sx={{ fontSize: '1rem', mb: 0.2 }} /> {formatDateBR(reg.data_registro)}
-                                            </Typography>
-                                            <Chip label={reg.tipo_atividade.toUpperCase()} color={colors.chip as any} size="small" sx={{ fontWeight: 'bold', borderRadius: 1 }} />
-                                        </Box>
-                                        <Typography variant="h6" sx={{ fontWeight: 'bold', lineHeight: 1.2 }}>{reg.produto}</Typography>
-                                    </Box>
-                                    <Box sx={{ p: 2 }}>
-                                        <Box sx={{ bgcolor: '#f9fafb', borderRadius: 2, border: '1px solid #e5e7eb', p: 1.5 }}>
-                                            <Typography variant="caption" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, textTransform: 'uppercase', fontWeight: 700, color: 'text.secondary', mb: 0.5 }}>
-                                                <PlaceIcon fontSize="inherit" /> Localização
-                                            </Typography>
-                                            <Typography variant="body2" sx={{ fontWeight: 500 }}>{getRegistroLocalResumo(reg)}</Typography>
-                                        </Box>
+                                <div
+                                    key={reg.id}
+                                    className="rounded-xl shadow-md overflow-hidden"
+                                    style={{ borderWidth: 2, borderStyle: 'solid', borderColor, opacity: isCancelled ? 0.7 : 1 }}
+                                >
+                                    {/* Card Header */}
+                                    <div className="p-2.5 border-b border-gray-200 bg-gray-50">
+                                        <div className="flex justify-between items-center mb-1.5">
+                                            <span className="text-sm text-gray-500 font-medium flex items-center gap-0.5">
+                                                <Calendar className="w-4 h-4" /> {formatDateBR(reg.data_registro)}
+                                            </span>
+                                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${sc.bg} ${sc.text}`}>
+                                                {reg.tipo_atividade.toUpperCase()}
+                                            </span>
+                                        </div>
+                                        <h6 className="text-lg font-bold leading-tight">{reg.produto}</h6>
+                                    </div>
+
+                                    {/* Card Body */}
+                                    <div className="p-2">
+                                        <div className="bg-gray-50 rounded-lg border border-gray-200 p-1.5">
+                                            <p className="text-[10px] uppercase font-bold text-gray-500 mb-0.5 flex items-center gap-0.5">
+                                                <MapPin className="w-3 h-3" /> Localização
+                                            </p>
+                                            <p className="text-sm font-medium">{getRegistroLocalResumo(reg)}</p>
+                                        </div>
                                         {(hasAlert || reg.observacao_original || reg.detalhes_tecnicos) && (
                                             <>
-                                                <Typography variant="caption" sx={{ display: 'block', textTransform: 'uppercase', fontWeight: 700, color: 'text.secondary', mt: 2, mb: 1 }}>Observações</Typography>
+                                                <p className="text-[10px] uppercase font-bold text-gray-500 mt-2 mb-1">Observações</p>
                                                 {formatComplianceMessage(reg.observacao_original) ? (
                                                     <div className="relative flex items-center group cursor-pointer mt-2 w-fit">
                                                         <div className="flex items-center gap-2 p-3 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md">
                                                             <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600" />
                                                             <span className="font-bold">Ver Alerta de Compliance</span>
                                                         </div>
-
-                                                        {/* Tooltip Mobile Overlay */}
                                                         <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block group-active:block w-72 p-4 text-sm text-amber-900 bg-white border border-amber-200 rounded-lg shadow-2xl z-50 pointer-events-none">
                                                             <div className="absolute top-full left-4 -mt-[1px] border-4 border-transparent border-t-amber-200"></div>
                                                             <p className="font-bold mb-1 uppercase tracking-widest text-[10px] text-amber-600">Alerta de Compliance</p>
@@ -547,70 +583,96 @@ const FieldDiaryTableV2: React.FC<FieldDiaryTableV2Props> = ({
                                                         </div>
                                                     </div>
                                                 ) : hasAlert ? (
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 2, p: 1.5 }}>
-                                                        {alertIcon} <Typography variant="body2" color="warning.dark" fontWeight={500}>Registro Automático</Typography>
-                                                    </Box>
+                                                    <div className="flex items-center gap-1 bg-orange-50 border border-orange-200 rounded-lg p-1.5">
+                                                        {alertIcon} <span className="text-sm text-orange-800 font-medium">Registro Automático</span>
+                                                    </div>
                                                 ) : (
-                                                    <Box sx={{ mt: 0.5, p: 1.5, bgcolor: '#fffbeb', border: '1px solid #fef3c7', borderRadius: 2 }}>{renderDetails(reg)}</Box>
+                                                    <div className="mt-0.5 p-1.5 bg-yellow-50 border border-yellow-100 rounded-lg">{renderDetails(reg)}</div>
                                                 )}
                                             </>
                                         )}
-                                    </Box>
-                                    <Box sx={{ display: 'flex', flexWrap: { xs: 'wrap', sm: 'nowrap' }, gap: { xs: 0.5, sm: 1 }, width: '100%', mt: 1, borderTop: '1px solid #e5e7eb', bgcolor: '#f9fafb', p: 1 }}>
+                                    </div>
+
+                                    {/* Card Footer Actions */}
+                                    <div className="flex flex-wrap sm:flex-nowrap gap-0.5 sm:gap-1 w-full border-t border-gray-200 bg-gray-50 p-1">
                                         <button
                                             type="button"
-                                            className="flex items-center justify-center flex-1 px-2 py-2 gap-1 text-xs sm:text-sm font-bold text-gray-600 transition-colors rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="flex items-center justify-center flex-1 px-2 py-2 gap-1 text-xs sm:text-sm font-bold text-gray-600 rounded-md hover:bg-gray-200 transition-colors"
                                             onClick={() => onVisualizar(reg)}
                                         >
-                                            <VisibilityIcon className="w-4 h-4" /> VER
+                                            <Eye className="w-4 h-4" /> VER
                                         </button>
                                         {!isCancelled && (
                                             <>
                                                 <button
                                                     type="button"
-                                                    className="flex items-center justify-center flex-1 px-2 py-2 gap-1 text-xs sm:text-sm font-bold text-indigo-700 transition-colors rounded-md hover:bg-indigo-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    className="flex items-center justify-center flex-1 px-2 py-2 gap-1 text-xs sm:text-sm font-bold text-indigo-700 rounded-md hover:bg-indigo-50 transition-colors"
                                                     onClick={() => onEditar(reg)}
                                                 >
-                                                    <EditIcon className="w-4 h-4" /> EDITAR
+                                                    <Pencil className="w-4 h-4" /> EDITAR
                                                 </button>
                                                 <button
                                                     type="button"
-                                                    className="flex items-center justify-center flex-1 px-2 py-2 gap-1 text-xs sm:text-sm font-bold text-red-700 transition-colors rounded-md hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    className="flex items-center justify-center flex-1 px-2 py-2 gap-1 text-xs sm:text-sm font-bold text-red-700 rounded-md hover:bg-red-50 transition-colors"
                                                     onClick={() => onExcluir(reg)}
                                                 >
-                                                    <DeleteIcon className="w-4 h-4" /> EXCLUIR
+                                                    <Trash2 className="w-4 h-4" /> EXCLUIR
                                                 </button>
                                             </>
                                         )}
-                                    </Box>
-                                </Card>
+                                    </div>
+                                </div>
                             );
                         })}
-                    </Box>
+                    </div>
 
-                    {/* SHARED PAGINATION CONTROLS */}
-                    <TablePagination
-                        rowsPerPageOptions={[5, 10, 25, 50]}
-                        component="div"
-                        count={totalCount}
-                        rowsPerPage={rowsPerPage}
-                        page={page}
-                        onPageChange={onPageChange}
-                        onRowsPerPageChange={onRowsPerPageChange}
-                        labelRowsPerPage="Linhas:"
-                        labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`}
-                    />
+                    {/* SHARED PAGINATION CONTROLS (native) */}
+                    <div className="w-full max-w-full min-w-0 overflow-x-auto">
+                        <div className="flex items-center justify-between px-2 py-2 text-sm text-gray-600">
+                            <div className="flex items-center gap-2">
+                                <span>Linhas:</span>
+                                <select
+                                    className="px-2 py-1 border border-gray-300 rounded-md text-sm bg-white focus:ring-2 focus:ring-primary-main/30 focus:border-primary-main outline-none"
+                                    value={rowsPerPage}
+                                    onChange={(e) => onRowsPerPageChange(e as any)}
+                                >
+                                    {[5, 10, 25, 50].map(n => <option key={n} value={n}>{n}</option>)}
+                                </select>
+                            </div>
+                            <span>
+                                {totalCount > 0 ? `${from}-${to} de ${totalCount}` : '0 registros'}
+                            </span>
+                            <div className="flex items-center gap-1">
+                                <button
+                                    type="button"
+                                    disabled={page === 0}
+                                    className="px-2 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                                    onClick={() => onPageChange(null, page - 1)}
+                                >
+                                    ←
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={page >= totalPages - 1}
+                                    className="px-2 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                                    onClick={() => onPageChange(null, page + 1)}
+                                >
+                                    →
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </>
             )}
 
             {!loading && totalCount > 0 && (
-                <Typography variant="caption" color="text.secondary" align="right" sx={{ mr: 2 }}>
+                <p className="text-xs text-gray-500 text-right mr-2">
                     Total Geral: {totalCount}
-                </Typography>
+                </p>
             )}
 
             {renderFilterPopover()}
-        </Stack>
+        </div>
     );
 };
 

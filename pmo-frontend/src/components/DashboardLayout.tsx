@@ -31,8 +31,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             <div className="flex-1 flex flex-col min-w-0 max-w-full overflow-hidden relative bg-slate-100">
                 <Navbar onMenuClick={handleDrawerToggle} />
 
-                <main className="flex-1 overflow-y-auto overflow-x-hidden w-full relative p-4 md:p-6 scroll-smooth">
-                    <div className="max-w-7xl mx-auto w-full px-2 sm:px-4 box-border">
+                <main className="flex-1 overflow-y-auto overflow-x-hidden w-full max-w-full relative p-4 md:p-6 scroll-smooth">
+                    <div className="max-w-7xl mx-auto w-full px-2 sm:px-4 box-border min-w-0">
                         {children}
                     </div>
                 </main>

@@ -118,7 +118,7 @@ const DiarioDeCampo: React.FC<DiarioDeCampoProps> = ({ pmoId: propPmoId }) => {
   };
 
   return (
-    <Box sx={{ mt: 3, mb: 10, width: '100%', display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <Box className="w-full max-w-full min-w-0 overflow-hidden flex flex-col gap-3 mt-3 mb-10">
       {error && <Alert severity="error">{error}</Alert>}
 
       <FieldDiaryTableV2

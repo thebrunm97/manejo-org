@@ -1,13 +1,7 @@
 import React from 'react';
 import {
-  Box, Paper, Typography, Alert, Stack, Chip, Button, Avatar
-} from '@mui/material';
-import AgricultureIcon from '@mui/icons-material/Agriculture';
-import ScaleIcon from '@mui/icons-material/Scale';
-import LocalFloristIcon from '@mui/icons-material/LocalFlorist';
-import ScienceIcon from '@mui/icons-material/Science';
-import Inventory2Icon from '@mui/icons-material/Inventory2';
-import DescriptionIcon from '@mui/icons-material/Description';
+  Tractor, Scale, Flower2, FlaskConical, Package, FileText
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { HarvestSummary } from '../../services/dashboardService';
 import { formatDateBR } from '../../utils/formatters';
@@ -16,15 +10,15 @@ import { formatDateBR } from '../../utils/formatters';
 const getActivityConfig = (tipo: string | undefined) => {
   switch ((tipo || '').toLowerCase()) {
     case 'plantio':
-      return { label: 'Plantio', icon: <LocalFloristIcon />, bgcolor: '#E8F5E9', color: '#1B5E20' };
+      return { label: 'Plantio', icon: <Flower2 className="w-5 h-5" />, bgcolor: '#E8F5E9', color: '#1B5E20' };
     case 'manejo':
-      return { label: 'Manejo', icon: <ScienceIcon />, bgcolor: '#E3F2FD', color: '#0D47A1' };
+      return { label: 'Manejo', icon: <FlaskConical className="w-5 h-5" />, bgcolor: '#E3F2FD', color: '#0D47A1' };
     case 'colheita':
-      return { label: 'Colheita', icon: <AgricultureIcon />, bgcolor: '#FFF3E0', color: '#E65100' };
+      return { label: 'Colheita', icon: <Tractor className="w-5 h-5" />, bgcolor: '#FFF3E0', color: '#E65100' };
     case 'insumo':
-      return { label: 'Insumo', icon: <Inventory2Icon />, bgcolor: '#F3E5F5', color: '#6A1B9A' };
+      return { label: 'Insumo', icon: <Package className="w-5 h-5" />, bgcolor: '#F3E5F5', color: '#6A1B9A' };
     default:
-      return { label: tipo || 'Outro', icon: <DescriptionIcon />, bgcolor: '#F1F5F9', color: '#475569' };
+      return { label: tipo || 'Outro', icon: <FileText className="w-5 h-5" />, bgcolor: '#F1F5F9', color: '#475569' };
   }
 };
 
@@ -37,117 +31,101 @@ const HarvestDashboard: React.FC<HarvestDashboardProps> = ({ harvestStats, recen
   const navigate = useNavigate();
 
   return (
-    <Box sx={{ flexGrow: 1, p: 2, bgcolor: '#fff', borderRadius: 2, boxShadow: 1 }}>
-      <Typography variant="h6" gutterBottom component="div" sx={{ mb: 3, fontWeight: '800', color: '#1b5e20', letterSpacing: '-0.5px' }}>
-        <AgricultureIcon sx={{ verticalAlign: 'middle', mr: 1 }} />
+    <div className="flex-grow p-2 bg-white rounded-lg shadow">
+      <h6 className="mb-3 font-extrabold text-[#1b5e20] tracking-tight flex items-center gap-1">
+        <Tractor className="w-5 h-5 inline-block align-middle" />
         Monitoramento de Colheita
-      </Typography>
+      </h6>
 
       {/* Carousel de Resumo */}
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(auto-fill, minmax(150px, 1fr))' },
-          gap: 2,
-          pb: 2,
-          mb: 4,
-        }}
-      >
+      <div className="grid grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-2 pb-2 mb-4">
         {Object.entries(harvestStats).length === 0 ? (
-          <Alert severity="info" sx={{ width: '100%', borderRadius: 3 }}>Nenhuma colheita registrada neste plano ainda.</Alert>
+          <div className="w-full px-4 py-3 text-sm text-blue-800 bg-blue-50 border border-blue-200 rounded-xl">
+            Nenhuma colheita registrada neste plano ainda.
+          </div>
         ) : (
           Object.entries(harvestStats).map(([key, dados]) => (
-            <Paper
+            <div
               key={key}
-              elevation={0}
-              sx={{
-                minWidth: 'auto',
-                aspectRatio: '1 / 0.9',
-                // flex: '0 0 auto', // Removed for Grid
-                border: '1px solid #F0F0F0',
-                borderRadius: 4,
-                boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-                p: 2.5,
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                transition: 'transform 0.2s',
-                '&:hover': { transform: 'translateY(-4px)' }
-              }}
+              className="border border-gray-100 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.05)] p-2.5 flex flex-col justify-between items-start transition-transform hover:-translate-y-1"
+              style={{ aspectRatio: '1 / 0.9' }}
             >
-              <Avatar
-                variant="rounded"
-                sx={{ width: 48, height: 48, bgcolor: '#E8F5E9', color: '#1B5E20', borderRadius: 3, mb: 1 }}
+              <div
+                className="w-12 h-12 rounded-xl mb-1 flex items-center justify-center"
+                style={{ backgroundColor: '#E8F5E9', color: '#1B5E20' }}
               >
-                <ScaleIcon fontSize="small" />
-              </Avatar>
-              <Box sx={{ width: '100%' }}>
-                <Typography variant="h4" sx={{ fontWeight: '800', color: '#1e293b', letterSpacing: '-1px', lineHeight: 1, mb: 0.5 }}>
+                <Scale className="w-5 h-5" />
+              </div>
+              <div className="w-full">
+                <p className="text-3xl font-extrabold text-slate-800 tracking-tight leading-none mb-0.5">
                   {dados.total.toLocaleString('pt-BR')}
-                  <Typography component="span" variant="body2" sx={{ fontWeight: '600', color: '#94a3b8', ml: 0.5 }}>
+                  <span className="text-sm font-semibold text-slate-400 ml-0.5">
                     {dados.unidade}
-                  </Typography>
-                </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#64748b', textTransform: 'capitalize', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  </span>
+                </p>
+                <p className="text-sm font-semibold text-slate-500 capitalize whitespace-nowrap overflow-hidden text-ellipsis">
                   {dados.produto.toLowerCase()}
-                </Typography>
-              </Box>
-            </Paper>
+                </p>
+              </div>
+            </div>
           ))
         )}
-      </Box>
+      </div>
 
       {/* Lista de Atividades */}
-      {
-        (recentActivity || []).length > 0 && (
-          <>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 4, mb: 3 }}>
-              <Typography variant="h6" sx={{ color: '#1e293b', fontWeight: 800 }}>
-                Últimas Atividades
-              </Typography>
-              <Button size="small" variant="text" onClick={() => navigate('/caderno')} sx={{ textTransform: 'none', color: '#059669', fontWeight: 700, borderRadius: 2, px: 2 }}>
-                Ver tudo
-              </Button>
-            </Box>
+      {(recentActivity || []).length > 0 && (
+        <>
+          <div className="flex justify-between items-center mt-4 mb-3">
+            <h6 className="text-slate-900 font-extrabold">
+              Últimas Atividades
+            </h6>
+            <button
+              type="button"
+              className="text-sm font-bold text-emerald-600 hover:text-emerald-700 px-2 py-1 rounded transition-colors"
+              onClick={() => navigate('/caderno')}
+            >
+              Ver tudo
+            </button>
+          </div>
 
-            <Stack spacing={2}>
-              {(recentActivity || []).slice(0, 5).map((row) => {
-                const cfg = getActivityConfig(row.tipo_atividade || row.tipo);
-                return (
-                  <Paper
-                    key={row.id}
-                    elevation={0}
-                    sx={{ p: 2, borderRadius: 4, border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 2, transition: 'background-color 0.2s', '&:hover': { bgcolor: '#f8fafc' } }}
+          <div className="flex flex-col gap-2">
+            {(recentActivity || []).slice(0, 5).map((row) => {
+              const cfg = getActivityConfig(row.tipo_atividade || row.tipo);
+              return (
+                <div
+                  key={row.id}
+                  className="p-2 rounded-2xl border border-gray-100 flex items-center gap-2 transition-colors hover:bg-slate-50"
+                >
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: cfg.bgcolor, color: cfg.color }}
                   >
-                    <Avatar variant="rounded" sx={{ width: 48, height: 48, bgcolor: cfg.bgcolor, color: cfg.color, borderRadius: 3 }}>
-                      {cfg.icon}
-                    </Avatar>
-                    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                      <Typography variant="body1" sx={{ fontWeight: 700, color: '#0f172a', lineHeight: 1.2 }}>{cfg.label}</Typography>
-                      <Typography variant="body2" sx={{ color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {row.produto}
-                        {row.talhao_canteiro && (
-                          <Typography component="span" variant="body2" sx={{ color: '#94a3b8' }}>{' • '}{row.talhao_canteiro}</Typography>
-                        )}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
-                      <Chip
-                        label={formatDateBR(row.data_registro, { day: '2-digit', month: 'short' }).replace('.', '')}
-                        size="small"
-                        variant="filled"
-                        sx={{ height: 24, bgcolor: '#F1F5F9', color: '#475569', fontWeight: 700, borderRadius: 1, fontSize: '0.75rem' }}
-                      />
-                    </Box>
-                  </Paper>
-                );
-              })}
-            </Stack>
-          </>
-        )
-      }
-    </Box >
+                    {cfg.icon}
+                  </div>
+                  <div className="flex-grow min-w-0">
+                    <p className="text-base font-bold text-slate-900 leading-tight">{cfg.label}</p>
+                    <p className="text-sm text-slate-500 whitespace-nowrap overflow-hidden text-ellipsis">
+                      {row.produto}
+                      {row.talhao_canteiro && (
+                        <span className="text-slate-400">{' • '}{row.talhao_canteiro}</span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-0.5">
+                    <span
+                      className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold"
+                      style={{ backgroundColor: '#F1F5F9', color: '#475569', height: 24 }}
+                    >
+                      {formatDateBR(row.data_registro, { day: '2-digit', month: 'short' }).replace('.', '')}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
   );
 };
 

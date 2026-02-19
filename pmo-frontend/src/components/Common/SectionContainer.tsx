@@ -1,7 +1,5 @@
 import React, { ReactNode } from 'react';
-import { Box, Stack, Typography, Button, Paper, useTheme, alpha } from '@mui/material';
-import { AddCircleOutline as AddIcon, Spa as SpaIcon } from '@mui/icons-material';
-import AvCard from './AvCard';
+import { PlusCircle, Leaf } from 'lucide-react';
 import BotSuggestionsPanel from '../PmoForm/BotSuggestionsPanel';
 
 interface SectionContainerProps {
@@ -27,75 +25,56 @@ const SectionContainer: React.FC<SectionContainerProps> = ({
     sectionId,
     onApplySuggestion
 }) => {
-    const theme = useTheme();
-
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, mb: 6 }}>
+        <div className="flex flex-col gap-4 mb-6">
             {/* 0. Painel de Sugestões do Robô */}
             {sectionId && onApplySuggestion && (
                 <BotSuggestionsPanel sectionId={sectionId} onApply={onApplySuggestion} />
             )}
             {/* Header Padronizado */}
-            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+            <div className="flex flex-row justify-between items-center mb-2">
+                <h6 className="text-base font-bold text-primary-main">
                     {title}
-                </Typography>
+                </h6>
 
                 {!isEmpty && onAdd && (
-                    <Button
-                        variant="contained"
-                        size="small"
-                        startIcon={<AddIcon />}
+                    <button
+                        type="button"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-white bg-primary-main rounded-md hover:bg-primary-dark transition-colors"
                         onClick={onAdd}
-                        sx={{ fontWeight: 600 }}
                     >
+                        <PlusCircle className="w-4 h-4" />
                         {addButtonLabel}
-                    </Button>
+                    </button>
                 )}
-            </Stack>
+            </div>
 
             {/* Conteúdo ou Empty State */}
             {isEmpty ? (
-                <Paper
-                    variant="outlined"
-                    sx={{
-                        textAlign: 'center',
-                        py: 8, // 32px
-                        px: 4,
-                        bgcolor: 'background.subtle', // Uses new custom token
-                        borderRadius: 2, // md (8px)
-                        borderStyle: 'dashed',
-                        borderColor: 'divider',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: 3
-                    }}
-                >
-                    <Box sx={{ color: 'text.disabled' }}>
-                        {icon || <SpaIcon sx={{ fontSize: 48 }} />}
-                    </Box>
-                    <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500 }}>
+                <div className="text-center py-8 px-4 bg-gray-50 rounded-lg border border-dashed border-gray-300 flex flex-col items-center gap-3">
+                    <div className="text-gray-400">
+                        {icon || <Leaf className="w-12 h-12" />}
+                    </div>
+                    <p className="text-base font-medium text-gray-500">
                         {emptyMessage}
-                    </Typography>
+                    </p>
                     {onAdd && (
-                        <Button
-                            variant="outlined"
-                            color="primary"
-                            startIcon={<AddIcon />}
+                        <button
+                            type="button"
+                            className="inline-flex items-center gap-1.5 mt-2 px-4 py-2 text-sm font-medium text-primary-main border border-primary-main rounded-md hover:bg-primary-main/5 transition-colors"
                             onClick={onAdd}
-                            sx={{ mt: 2 }}
                         >
+                            <PlusCircle className="w-4 h-4" />
                             {addButtonLabel}
-                        </Button>
+                        </button>
                     )}
-                </Paper>
+                </div>
             ) : (
-                <Box>
+                <div>
                     {children}
-                </Box>
+                </div>
             )}
-        </Box>
+        </div>
     );
 };
 
