@@ -324,63 +324,65 @@ const FieldDiaryTableV2: React.FC<FieldDiaryTableV2Props> = ({
             ) : (
                 <>
                     {/* --- DESKTOP TABLE --- */}
-                    <TableContainer component={Paper} sx={{ display: { xs: 'none', md: 'block' }, width: '100%', overflowX: { xs: 'auto', md: 'visible' } }}>
-                        <Table size="medium" sx={{ tableLayout: 'fixed', width: '100%' }}>
-                            <TableHead>
-                                <TableRow sx={{ bgcolor: '#f5f5f5' }}>
-                                    <TableCell sx={{ width: '10%' }}>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer', '&:hover': { color: 'primary.main' } }} onClick={(e) => handleOpenFilter(e, 'data')}>
-                                            Data <FilterListIcon fontSize="small" sx={{ ml: 0.5, opacity: (filtrosAtivos.dataInicio || filtrosAtivos.dataFim) ? 1 : 0.3 }} color={(filtrosAtivos.dataInicio || filtrosAtivos.dataFim) ? "primary" : "inherit"} />
-                                        </Box>
-                                    </TableCell>
-                                    <TableCell sx={{ width: '12%' }}>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer', '&:hover': { color: 'primary.main' } }} onClick={(e) => handleOpenFilter(e, 'atividade')}>
-                                            Atividade <FilterListIcon fontSize="small" sx={{ ml: 0.5, opacity: filtrosAtivos.tipo_atividade !== 'Todos' ? 1 : 0.3 }} color={filtrosAtivos.tipo_atividade !== 'Todos' ? "primary" : "inherit"} />
-                                        </Box>
-                                    </TableCell>
-                                    <TableCell sx={{ width: '22%' }}>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer', '&:hover': { color: 'primary.main' } }} onClick={(e) => handleOpenFilter(e, 'produto')}>
-                                            Produto / Cultura <FilterListIcon fontSize="small" sx={{ ml: 0.5, opacity: filtrosAtivos.produto ? 1 : 0.3 }} color={filtrosAtivos.produto ? "primary" : "inherit"} />
-                                        </Box>
-                                    </TableCell>
-                                    <TableCell sx={{ width: '26%', whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer', '&:hover': { color: 'primary.main' } }} onClick={(e) => handleOpenFilter(e, 'local')}>
-                                            Localização <FilterListIcon fontSize="small" sx={{ ml: 0.5, opacity: filtrosAtivos.local ? 1 : 0.3 }} color={filtrosAtivos.local ? "primary" : "inherit"} />
-                                        </Box>
-                                    </TableCell>
-                                    <TableCell sx={{ width: '20%', fontWeight: 'bold', whiteSpace: 'normal', wordBreak: 'break-word' }}>Resumo</TableCell>
-                                    <TableCell sx={{ width: '12%', fontWeight: 'bold' }}><Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><MicIcon fontSize="small" /> Áudio</Box></TableCell>
-                                    <TableCell align="center" sx={{ width: '8%', fontWeight: 'bold' }}>Ações</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {registros.map((reg) => {
-                                    const isCancelled = reg.tipo_atividade === ActivityType.CANCELADO;
-                                    return (
-                                        <TableRow key={reg.id} hover sx={{ opacity: isCancelled ? 0.6 : 1, bgcolor: isCancelled ? '#fff5f5' : 'inherit' }}>
-                                            <TableCell>{formatDateBR(reg.data_registro)}</TableCell>
-                                            <TableCell><Chip label={reg.tipo_atividade} color={getStatusColor(reg.tipo_atividade)} size="small" variant={isCancelled ? "outlined" : "filled"} /></TableCell>
-                                            <TableCell sx={{ fontWeight: 500 }}>{reg.produto}</TableCell>
-                                            <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>{getRegistroLocalResumo(reg)}</TableCell>
-                                            <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}><Box sx={{ display: 'flex', alignItems: 'center' }}>{getAlertIcon(reg)}{renderDetails(reg)}</Box></TableCell>
-                                            <TableCell>{reg.audio_url ? <audio controls src={reg.audio_url} preload="metadata" style={{ height: '32px', maxWidth: '180px', width: '100%' }} /> : <Typography variant="body2" color="text.disabled">—</Typography>}</TableCell>
-                                            <TableCell align="center">
-                                                <Stack direction="row" justifyContent="center" spacing={1}>
-                                                    <Tooltip title="Ver Detalhes"><IconButton size="small" onClick={() => onVisualizar(reg)}><VisibilityIcon fontSize="small" /></IconButton></Tooltip>
-                                                    {!isCancelled && (
-                                                        <>
-                                                            <Tooltip title="Editar"><IconButton size="small" color="primary" onClick={() => onEditar(reg)}><EditIcon fontSize="small" /></IconButton></Tooltip>
-                                                            <Tooltip title="Excluir/Cancelar"><IconButton size="small" color="error" onClick={() => onExcluir(reg)}><DeleteIcon fontSize="small" /></IconButton></Tooltip>
-                                                        </>
-                                                    )}
-                                                </Stack>
-                                            </TableCell>
-                                        </TableRow>
-                                    );
-                                })}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
+                    <div className="w-full max-w-full overflow-x-auto block">
+                        <TableContainer component={Paper} elevation={0} sx={{ display: { xs: 'none', md: 'block' }, width: '100%', mb: 2, boxShadow: 'none' }}>
+                            <Table size="medium" sx={{ width: '100%', minWidth: 800 }}>
+                                <TableHead>
+                                    <TableRow sx={{ bgcolor: '#f5f5f5' }}>
+                                        <TableCell sx={{ width: '10%' }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer', '&:hover': { color: 'primary.main' } }} onClick={(e) => handleOpenFilter(e, 'data')}>
+                                                Data <FilterListIcon fontSize="small" sx={{ ml: 0.5, opacity: (filtrosAtivos.dataInicio || filtrosAtivos.dataFim) ? 1 : 0.3 }} color={(filtrosAtivos.dataInicio || filtrosAtivos.dataFim) ? "primary" : "inherit"} />
+                                            </Box>
+                                        </TableCell>
+                                        <TableCell sx={{ width: '12%' }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer', '&:hover': { color: 'primary.main' } }} onClick={(e) => handleOpenFilter(e, 'atividade')}>
+                                                Atividade <FilterListIcon fontSize="small" sx={{ ml: 0.5, opacity: filtrosAtivos.tipo_atividade !== 'Todos' ? 1 : 0.3 }} color={filtrosAtivos.tipo_atividade !== 'Todos' ? "primary" : "inherit"} />
+                                            </Box>
+                                        </TableCell>
+                                        <TableCell sx={{ width: '22%' }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer', '&:hover': { color: 'primary.main' } }} onClick={(e) => handleOpenFilter(e, 'produto')}>
+                                                Produto / Cultura <FilterListIcon fontSize="small" sx={{ ml: 0.5, opacity: filtrosAtivos.produto ? 1 : 0.3 }} color={filtrosAtivos.produto ? "primary" : "inherit"} />
+                                            </Box>
+                                        </TableCell>
+                                        <TableCell sx={{ width: '26%', whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer', '&:hover': { color: 'primary.main' } }} onClick={(e) => handleOpenFilter(e, 'local')}>
+                                                Localização <FilterListIcon fontSize="small" sx={{ ml: 0.5, opacity: filtrosAtivos.local ? 1 : 0.3 }} color={filtrosAtivos.local ? "primary" : "inherit"} />
+                                            </Box>
+                                        </TableCell>
+                                        <TableCell sx={{ width: '20%', fontWeight: 'bold', whiteSpace: 'normal', wordBreak: 'break-word' }}>Resumo</TableCell>
+                                        <TableCell sx={{ width: '12%', fontWeight: 'bold' }}><Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}><MicIcon fontSize="small" /> Áudio</Box></TableCell>
+                                        <TableCell align="center" sx={{ width: '8%', fontWeight: 'bold' }}>Ações</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {registros.map((reg) => {
+                                        const isCancelled = reg.tipo_atividade === ActivityType.CANCELADO;
+                                        return (
+                                            <TableRow key={reg.id} hover sx={{ opacity: isCancelled ? 0.6 : 1, bgcolor: isCancelled ? '#fff5f5' : 'inherit' }}>
+                                                <TableCell>{formatDateBR(reg.data_registro)}</TableCell>
+                                                <TableCell><Chip label={reg.tipo_atividade} color={getStatusColor(reg.tipo_atividade)} size="small" variant={isCancelled ? "outlined" : "filled"} /></TableCell>
+                                                <TableCell sx={{ fontWeight: 500 }}>{reg.produto}</TableCell>
+                                                <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>{getRegistroLocalResumo(reg)}</TableCell>
+                                                <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}><Box sx={{ display: 'flex', alignItems: 'center' }}>{getAlertIcon(reg)}{renderDetails(reg)}</Box></TableCell>
+                                                <TableCell>{reg.audio_url ? <audio controls src={reg.audio_url} preload="metadata" style={{ height: '32px', maxWidth: '180px', width: '100%' }} /> : <Typography variant="body2" color="text.disabled">—</Typography>}</TableCell>
+                                                <TableCell align="center">
+                                                    <Stack direction="row" justifyContent="center" spacing={1}>
+                                                        <Tooltip title="Ver Detalhes"><IconButton size="small" onClick={() => onVisualizar(reg)}><VisibilityIcon fontSize="small" /></IconButton></Tooltip>
+                                                        {!isCancelled && (
+                                                            <>
+                                                                <Tooltip title="Editar"><IconButton size="small" color="primary" onClick={() => onEditar(reg)}><EditIcon fontSize="small" /></IconButton></Tooltip>
+                                                                <Tooltip title="Excluir/Cancelar"><IconButton size="small" color="error" onClick={() => onExcluir(reg)}><DeleteIcon fontSize="small" /></IconButton></Tooltip>
+                                                            </>
+                                                        )}
+                                                    </Stack>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </div>
 
                     {/* --- MOBILE CARDS --- */}
                     <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 2 }}>
@@ -430,17 +432,29 @@ const FieldDiaryTableV2: React.FC<FieldDiaryTableV2Props> = ({
                                             </>
                                         )}
                                     </Box>
-                                    <Box sx={{ display: 'grid', gridTemplateColumns: isCancelled ? '1fr' : 'repeat(3, 1fr)', borderTop: '1px solid #e5e7eb', bgcolor: '#f9fafb' }}>
-                                        <Button color="inherit" onClick={() => onVisualizar(reg)} sx={{ flexDirection: 'column', py: 1.5, color: 'text.secondary', borderRadius: 0, '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' } }}>
-                                            <VisibilityIcon sx={{ mb: 0.5 }} /> <Typography variant="caption" fontWeight="bold">VER</Typography>
+                                    <Box sx={{ display: 'flex', flexWrap: { xs: 'wrap', sm: 'nowrap' }, gap: { xs: 0.5, sm: 1 }, width: '100%', mt: 1, borderTop: '1px solid #e5e7eb', bgcolor: '#f9fafb', p: 1 }}>
+                                        <Button
+                                            color="inherit"
+                                            onClick={() => onVisualizar(reg)}
+                                            sx={{ flex: 1, py: 0.75, px: 1, color: 'text.secondary', borderRadius: 1, flexDirection: 'row', gap: 1, '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' } }}
+                                        >
+                                            <VisibilityIcon fontSize="small" /> <Typography variant="caption" fontWeight="bold" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>VER</Typography>
                                         </Button>
                                         {!isCancelled && (
                                             <>
-                                                <Button color="primary" onClick={() => onEditar(reg)} sx={{ flexDirection: 'column', py: 1.5, borderLeft: '1px solid #e5e7eb', borderRadius: 0 }}>
-                                                    <EditIcon sx={{ mb: 0.5 }} /> <Typography variant="caption" fontWeight="bold">EDITAR</Typography>
+                                                <Button
+                                                    color="primary"
+                                                    onClick={() => onEditar(reg)}
+                                                    sx={{ flex: 1, py: 0.75, px: 1, borderRadius: 1, flexDirection: 'row', gap: 1 }}
+                                                >
+                                                    <EditIcon fontSize="small" /> <Typography variant="caption" fontWeight="bold" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>EDITAR</Typography>
                                                 </Button>
-                                                <Button color="error" onClick={() => onExcluir(reg)} sx={{ flexDirection: 'column', py: 1.5, borderLeft: '1px solid #e5e7eb', borderRadius: 0 }}>
-                                                    <DeleteIcon sx={{ mb: 0.5 }} /> <Typography variant="caption" fontWeight="bold">EXCLUIR</Typography>
+                                                <Button
+                                                    color="error"
+                                                    onClick={() => onExcluir(reg)}
+                                                    sx={{ flex: 1, py: 0.75, px: 1, borderRadius: 1, flexDirection: 'row', gap: 1 }}
+                                                >
+                                                    <DeleteIcon fontSize="small" /> <Typography variant="caption" fontWeight="bold" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>EXCLUIR</Typography>
                                                 </Button>
                                             </>
                                         )}

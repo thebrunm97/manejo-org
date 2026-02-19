@@ -4,7 +4,7 @@ import {
     Button, TextField, Box, Typography, Stack,
     Select, MenuItem, InputLabel, FormControl
 } from '@mui/material';
-import { TableColumn } from './TabelaDinamica_MUI';
+import { TableColumn } from './TabelaDinamica';
 
 interface Props {
     open: boolean;

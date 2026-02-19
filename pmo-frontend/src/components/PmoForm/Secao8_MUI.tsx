@@ -7,7 +7,7 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 import SectionShell from '../Plan/SectionShell';
-import TabelaDinamicaMUI, { TableColumn } from './TabelaDinamica_MUI';
+import TabelaDinamica, { TableColumn } from './TabelaDinamica';
 import SuggestionReviewDialog from './SuggestionReviewDialog';
 import { logFeedback } from '../../services/pmoService';
 import GroupedInsumosList from './GroupedInsumosList_MUI';

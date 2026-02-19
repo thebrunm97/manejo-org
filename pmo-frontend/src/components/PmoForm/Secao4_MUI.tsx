@@ -10,7 +10,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 // Componente de layout padrão
 import SectionShell from '../Plan/SectionShell';
 
-import TabelaDinamicaMUI, { TableColumn } from './TabelaDinamica_MUI';
+import TabelaDinamica, { TableColumn } from './TabelaDinamica';
 
 // Types
 
@@ -50,7 +50,7 @@ const TabelaAnimaisSubsistencia: React.FC<TabelaAnimaisSubsistenciaProps> = ({ i
     ];
 
     return (
-        <TabelaDinamicaMUI
+        <TabelaDinamica
             columns={colunas}
             data={itens}
             onDataChange={onItensChange}
@@ -115,7 +115,7 @@ const Secao4MUI: React.FC<Secao4MUIProps> = ({ data, onSectionChange }) => {
                             <Typography sx={{ fontWeight: 'bold' }}>4.1.1 Animais de Serviço</Typography>
                         </AccordionSummary>
                         <AccordionDetails>
-                            <TabelaDinamicaMUI
+                            <TabelaDinamica
                                 columns={colunasAnimaisServico}
                                 data={safeData.animais_servico?.lista_animais_servico || []}
                                 onDataChange={(novoArray) => handleArrayChange('animais_servico', 'lista_animais_servico', novoArray)}

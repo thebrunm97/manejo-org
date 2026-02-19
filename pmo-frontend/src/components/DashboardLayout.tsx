@@ -18,7 +18,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     };
 
     return (
-        <div className="flex flex-row h-screen w-full bg-slate-50 overflow-hidden">
+        <div className="flex h-screen w-full bg-slate-100 overflow-hidden relative">
             {/* Sidebar */}
             <Sidebar
                 mobileOpen={mobileOpen}
@@ -28,11 +28,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             />
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative bg-slate-50">
+            <div className="flex-1 flex flex-col min-w-0 max-w-full overflow-hidden relative bg-slate-100">
                 <Navbar onMenuClick={handleDrawerToggle} />
 
-                <main className="flex-1 overflow-y-auto p-4 md:p-6 scroll-smooth">
-                    <div className="max-w-7xl mx-auto pb-20">
+                <main className="flex-1 overflow-y-auto overflow-x-hidden w-full relative p-4 md:p-6 scroll-smooth">
+                    <div className="max-w-7xl mx-auto w-full px-2 sm:px-4 box-border">
                         {children}
                     </div>
                 </main>

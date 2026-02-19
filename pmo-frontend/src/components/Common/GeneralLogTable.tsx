@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import {
-    Box, Paper, Table, TableBody, TableCell, TableContainer,
-    TableHead, TableRow, Typography, Chip, IconButton,
+    Box, Paper, Typography, Chip, IconButton,
     Tooltip, Dialog, DialogTitle, DialogContent, DialogContentText,
     TextField, DialogActions, Button, FormControlLabel, Switch,
     CircularProgress, useMediaQuery, useTheme, Alert
@@ -301,24 +300,24 @@ const GeneralLogTable: React.FC<GeneralLogTableProps> = ({ pmoId }) => {
             </Box>
 
             {/* --- DESKTOP TABLE --- */}
-            <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-                <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid #eee', maxHeight: 500, width: '100%', overflowX: 'auto' }}>
-                    <Table stickyHeader size="small" sx={{ minWidth: 650 }}>
-                        <TableHead>
-                            <TableRow>
-                                <TableCell sx={{ width: '120px' }}>Data</TableCell>
-                                <TableCell sx={{ width: '120px' }}>Atividade</TableCell>
-                                <TableCell sx={{ width: '25%' }}>Produto / Local</TableCell>
-                                <TableCell sx={{ width: '10%' }}>Qtd</TableCell>
-                                <TableCell>Detalhes</TableCell>
-                                <TableCell align="right" sx={{ width: '80px' }}>Ações</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
+            <Box sx={{ display: { xs: 'none', sm: 'block' }, width: '100%' }}>
+                <div className="w-full overflow-x-auto block border border-gray-200 rounded-xl shadow-sm bg-white">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[120px]">Data</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[120px]">Atividade</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">Produto / Local</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">Qtd</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Detalhes</th>
+                                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-[80px]">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
                             {loading ? (
-                                <TableRow><TableCell colSpan={6} align="center"><CircularProgress size={24} sx={{ my: 2 }} /></TableCell></TableRow>
+                                <tr><td colSpan={6} className="px-6 py-4 text-center"><CircularProgress size={24} sx={{ my: 2 }} /></td></tr>
                             ) : (visibleRegistros || []).length === 0 ? (
-                                <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3 }}>Nenhum registro encontrado.</TableCell></TableRow>
+                                <tr><td colSpan={6} className="px-6 py-10 text-center text-gray-500">Nenhum registro encontrado.</td></tr>
                             ) : (
                                 (visibleRegistros || []).map((row) => {
                                     if (!row) return null; // Proteção contra linhas nulas
@@ -328,85 +327,89 @@ const GeneralLogTable: React.FC<GeneralLogTableProps> = ({ pmoId }) => {
                                     const ultimaJustificativa = historico.length > 0 ? historico[historico.length - 1].motivo : null;
 
                                     return (
-                                        <TableRow
+                                        <tr
                                             key={row.id}
-                                            sx={{
-                                                bgcolor: isCancelado ? '#fff5f5' : 'inherit',
-                                                opacity: isCancelado ? 0.8 : 1
-                                            }}
+                                            className={`hover:bg-gray-50 transition-colors ${isCancelado ? 'bg-red-50/50' : ''}`}
+                                            style={{ opacity: isCancelado ? 0.8 : 1 }}
                                         >
-                                            <TableCell>{formatDateBR(row.data_registro)}</TableCell>
-                                            <TableCell>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 align-top">
+                                                {formatDateBR(row.data_registro)}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 align-top">
                                                 <Chip
                                                     label={row.tipo_atividade}
                                                     color={getStatusColor(row.tipo_atividade)}
                                                     size="small"
                                                     variant={isCancelado ? "outlined" : "filled"}
                                                 />
-                                            </TableCell>
-                                            <TableCell>
-                                                <strong style={{ textDecoration: isCancelado ? 'line-through' : 'none', color: isCancelado ? '#d32f2f' : 'inherit' }}>
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-gray-900 align-top">
+                                                <div className={isCancelado ? 'line-through decoration-red-500 text-red-700' : 'font-medium'}>
                                                     {row.produto}
-                                                </strong>
-                                                <Typography variant="caption" display="block" color="text.secondary">
+                                                </div>
+                                                <div className="text-xs text-gray-500 mt-0.5">
                                                     {row.caderno_campo_canteiros && row.caderno_campo_canteiros.length > 0
                                                         ? `Canteiros: ${row.caderno_campo_canteiros.map((c: any) => c.canteiros?.nome).join(', ')}`
                                                         : (row.talhao_canteiro !== 'NÃO INFORMADO' ? row.talhao_canteiro : '')}
-                                                </Typography>
-                                            </TableCell>
-                                            <TableCell>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 align-top">
                                                 {Number(row.quantidade_valor) > 0 ? (
                                                     <>
                                                         {row.quantidade_valor}
                                                         {row.quantidade_unidade ? ` ${row.quantidade_unidade}` : ''}
                                                     </>
                                                 ) : '-'}
-                                            </TableCell>
+                                            </td>
 
-                                            <TableCell sx={{ maxWidth: 300 }}>
-
+                                            <td className="px-6 py-4 text-sm text-gray-900 align-top max-w-xs">
                                                 {/* SMART RENDER HERE */}
-                                                <Box sx={{ textDecoration: isCancelado ? 'line-through' : 'none' }}>
+                                                <div className={isCancelado ? 'line-through decoration-gray-400' : ''}>
                                                     {renderDetails(row)}
-                                                </Box>
-
+                                                </div>
 
                                                 {isCancelado && ultimaJustificativa && (
-                                                    <Box sx={{ mt: 1, p: 0.5, px: 1, bgcolor: '#ffebee', borderRadius: 1, border: '1px dashed #ef5350', display: 'inline-block' }}>
-                                                        <Typography variant="caption" color="error" sx={{ fontWeight: 'bold' }}>
+                                                    <div className="mt-2 p-1.5 px-2 bg-red-50 rounded border border-dashed border-red-300 inline-block">
+                                                        <span className="text-xs font-bold text-red-600">
                                                             MOTIVO: {ultimaJustificativa}
-                                                        </Typography>
-                                                    </Box>
+                                                        </span>
+                                                    </div>
                                                 )}
-                                            </TableCell>
+                                            </td>
 
-                                            <TableCell align="right">
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium align-top">
                                                 {!isCancelado ? (
-                                                    <>
+                                                    <div className="flex justify-end gap-1">
                                                         <Tooltip title="Corrigir">
-                                                            <IconButton size="small" color="primary" onClick={() => handleOpenAction(row, 'EDIT')}>
+                                                            <button
+                                                                className="text-indigo-600 hover:text-indigo-900 p-1 rounded-full hover:bg-indigo-50 transition-colors"
+                                                                onClick={() => handleOpenAction(row, 'EDIT')}
+                                                            >
                                                                 <EditIcon fontSize="small" />
-                                                            </IconButton>
+                                                            </button>
                                                         </Tooltip>
                                                         <Tooltip title="Invalidar">
-                                                            <IconButton size="small" color="error" onClick={() => handleOpenAction(row, 'DELETE')}>
+                                                            <button
+                                                                className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
+                                                                onClick={() => handleOpenAction(row, 'DELETE')}
+                                                            >
                                                                 <DeleteIcon fontSize="small" />
-                                                            </IconButton>
+                                                            </button>
                                                         </Tooltip>
-                                                    </>
+                                                    </div>
                                                 ) : (
                                                     <Tooltip title="Registro Auditado">
-                                                        <IconButton size="small" disabled><HistoryIcon /></IconButton>
+                                                        <span className="text-gray-400 cursor-not-allowed"><HistoryIcon fontSize="small" /></span>
                                                     </Tooltip>
                                                 )}
-                                            </TableCell>
-                                        </TableRow>
+                                            </td>
+                                        </tr>
                                     );
                                 })
                             )}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
+                        </tbody>
+                    </table>
+                </div>
             </Box>
 
             {/* --- MOBILE CARDS --- */}

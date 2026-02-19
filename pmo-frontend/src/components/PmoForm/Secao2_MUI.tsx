@@ -4,7 +4,7 @@ import {
 } from '@mui/material';
 import { useParams } from 'react-router-dom';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import TabelaDinamicaMUI, { TableColumn, TableRowBase } from './TabelaDinamica_MUI';
+import TabelaDinamica, { TableColumn, TableRowBase } from './TabelaDinamica';
 import GroupedVegetalList from './GroupedVegetalList_MUI';
 import Secao2RecordDetailsDialog, {
     Secao2ItemType,
@@ -250,7 +250,7 @@ const Secao2MUI: React.FC<Secao2Props> = ({ data, onSectionChange }) => {
                     <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>2.2. Produção Primária Animal (PPA)</Typography>
                 </AccordionSummary>
                 <AccordionDetails>
-                    <TabelaDinamicaMUI<AnimalItem>
+                    <TabelaDinamica<AnimalItem>
                         columns={columnsAnimal}
                         data={safeData.producao_primaria_animal?.animais_primaria_animal || []}
                         onDataChange={handleAnimalChange}
@@ -266,7 +266,7 @@ const Secao2MUI: React.FC<Secao2Props> = ({ data, onSectionChange }) => {
                     <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>2.3. Processamento de Produtos de Origem Vegetal (PPOV)</Typography>
                 </AccordionSummary>
                 <AccordionDetails>
-                    <TabelaDinamicaMUI<AgroindItem>
+                    <TabelaDinamica<AgroindItem>
                         columns={columnsProcessamento}
                         data={safeData.processamento_produtos_origem_vegetal?.produtos_processamento_vegetal || []}
                         onDataChange={handleProcessamentoVegetalChange}
@@ -282,7 +282,7 @@ const Secao2MUI: React.FC<Secao2Props> = ({ data, onSectionChange }) => {
                     <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>2.4. Processamento de Produtos de Origem Animal (PPOA)</Typography>
                 </AccordionSummary>
                 <AccordionDetails>
-                    <TabelaDinamicaMUI<AgroindItem>
+                    <TabelaDinamica<AgroindItem>
                         columns={columnsProcessamento}
                         data={safeData.processamento_produtos_origem_animal?.produtos_processamento_animal || []}
                         onDataChange={handleProcessamentoAnimalChange}

@@ -46,18 +46,11 @@ const HarvestDashboard: React.FC<HarvestDashboardProps> = ({ harvestStats, recen
       {/* Carousel de Resumo */}
       <Box
         sx={{
-          display: 'flex',
-          overflowX: 'auto',
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(auto-fill, minmax(150px, 1fr))' },
           gap: 2,
           pb: 2,
           mb: 4,
-          mx: -2,
-          px: 2,
-          scrollBehavior: 'smooth',
-          '&::-webkit-scrollbar': { height: '6px' },
-          '&::-webkit-scrollbar-track': { backgroundColor: 'transparent' },
-          '&::-webkit-scrollbar-thumb': { backgroundColor: '#e2e8f0', borderRadius: '10px' },
-          '&::-webkit-scrollbar-thumb:hover': { backgroundColor: '#cbd5e1' }
         }}
       >
         {Object.entries(harvestStats).length === 0 ? (
@@ -68,9 +61,9 @@ const HarvestDashboard: React.FC<HarvestDashboardProps> = ({ harvestStats, recen
               key={key}
               elevation={0}
               sx={{
-                minWidth: '150px',
+                minWidth: 'auto',
                 aspectRatio: '1 / 0.9',
-                flex: '0 0 auto',
+                // flex: '0 0 auto', // Removed for Grid
                 border: '1px solid #F0F0F0',
                 borderRadius: 4,
                 boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
@@ -106,53 +99,55 @@ const HarvestDashboard: React.FC<HarvestDashboardProps> = ({ harvestStats, recen
       </Box>
 
       {/* Lista de Atividades */}
-      {(recentActivity || []).length > 0 && (
-        <>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 4, mb: 3 }}>
-            <Typography variant="h6" sx={{ color: '#1e293b', fontWeight: 800 }}>
-              Últimas Atividades
-            </Typography>
-            <Button size="small" variant="text" onClick={() => navigate('/caderno')} sx={{ textTransform: 'none', color: '#059669', fontWeight: 700, borderRadius: 2, px: 2 }}>
-              Ver tudo
-            </Button>
-          </Box>
+      {
+        (recentActivity || []).length > 0 && (
+          <>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 4, mb: 3 }}>
+              <Typography variant="h6" sx={{ color: '#1e293b', fontWeight: 800 }}>
+                Últimas Atividades
+              </Typography>
+              <Button size="small" variant="text" onClick={() => navigate('/caderno')} sx={{ textTransform: 'none', color: '#059669', fontWeight: 700, borderRadius: 2, px: 2 }}>
+                Ver tudo
+              </Button>
+            </Box>
 
-          <Stack spacing={2}>
-            {(recentActivity || []).slice(0, 5).map((row) => {
-              const cfg = getActivityConfig(row.tipo_atividade || row.tipo);
-              return (
-                <Paper
-                  key={row.id}
-                  elevation={0}
-                  sx={{ p: 2, borderRadius: 4, border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 2, transition: 'background-color 0.2s', '&:hover': { bgcolor: '#f8fafc' } }}
-                >
-                  <Avatar variant="rounded" sx={{ width: 48, height: 48, bgcolor: cfg.bgcolor, color: cfg.color, borderRadius: 3 }}>
-                    {cfg.icon}
-                  </Avatar>
-                  <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                    <Typography variant="body1" sx={{ fontWeight: 700, color: '#0f172a', lineHeight: 1.2 }}>{cfg.label}</Typography>
-                    <Typography variant="body2" sx={{ color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {row.produto}
-                      {row.talhao_canteiro && (
-                        <Typography component="span" variant="body2" sx={{ color: '#94a3b8' }}>{' • '}{row.talhao_canteiro}</Typography>
-                      )}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
-                    <Chip
-                      label={formatDateBR(row.data_registro, { day: '2-digit', month: 'short' }).replace('.', '')}
-                      size="small"
-                      variant="filled"
-                      sx={{ height: 24, bgcolor: '#F1F5F9', color: '#475569', fontWeight: 700, borderRadius: 1, fontSize: '0.75rem' }}
-                    />
-                  </Box>
-                </Paper>
-              );
-            })}
-          </Stack>
-        </>
-      )}
-    </Box>
+            <Stack spacing={2}>
+              {(recentActivity || []).slice(0, 5).map((row) => {
+                const cfg = getActivityConfig(row.tipo_atividade || row.tipo);
+                return (
+                  <Paper
+                    key={row.id}
+                    elevation={0}
+                    sx={{ p: 2, borderRadius: 4, border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 2, transition: 'background-color 0.2s', '&:hover': { bgcolor: '#f8fafc' } }}
+                  >
+                    <Avatar variant="rounded" sx={{ width: 48, height: 48, bgcolor: cfg.bgcolor, color: cfg.color, borderRadius: 3 }}>
+                      {cfg.icon}
+                    </Avatar>
+                    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                      <Typography variant="body1" sx={{ fontWeight: 700, color: '#0f172a', lineHeight: 1.2 }}>{cfg.label}</Typography>
+                      <Typography variant="body2" sx={{ color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {row.produto}
+                        {row.talhao_canteiro && (
+                          <Typography component="span" variant="body2" sx={{ color: '#94a3b8' }}>{' • '}{row.talhao_canteiro}</Typography>
+                        )}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
+                      <Chip
+                        label={formatDateBR(row.data_registro, { day: '2-digit', month: 'short' }).replace('.', '')}
+                        size="small"
+                        variant="filled"
+                        sx={{ height: 24, bgcolor: '#F1F5F9', color: '#475569', fontWeight: 700, borderRadius: 1, fontSize: '0.75rem' }}
+                      />
+                    </Box>
+                  </Paper>
+                );
+              })}
+            </Stack>
+          </>
+        )
+      }
+    </Box >
   );
 };
 

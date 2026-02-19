@@ -110,12 +110,12 @@ const DashboardPage: React.FC = () => {
             />
 
             {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-0 mb-8">
-                <div>
-                    <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-1">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-0 mb-8 w-full max-w-full overflow-hidden">
+                <div className="min-w-0 max-w-full break-words whitespace-normal flex-wrap">
+                    <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-1 break-words">
                         {saudacao}, {user?.email?.split('@')[0]}! 🚜
                     </h1>
-                    <p className="text-slate-500 text-base">
+                    <p className="text-slate-500 text-base break-words">
                         Resumo da produção em <span className="capitalize font-semibold text-slate-700">{hoje}</span>.
                     </p>
                 </div>
@@ -157,9 +157,9 @@ const DashboardPage: React.FC = () => {
             )}
 
             {/* Grid Layout */}
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-6 items-start mb-8">
+            <div className="flex flex-col lg:flex-row gap-6 items-start mb-8 w-full min-w-0">
                 {/* Left Column */}
-                <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-6 w-full lg:w-1/3 min-w-0">
                     <PlanoAtualCard
                         nomePlano={pmoName}
                         versao={pmoVersion || 1}
@@ -222,7 +222,7 @@ const DashboardPage: React.FC = () => {
                 </div>
 
                 {/* Right Column */}
-                <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm min-h-full">
+                <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm min-h-full w-full lg:w-2/3 min-w-0">
                     <HarvestDashboard
                         harvestStats={harvestStats || {}}
                         recentActivity={recentActivities || []}
