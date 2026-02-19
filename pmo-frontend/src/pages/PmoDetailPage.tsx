@@ -66,20 +66,36 @@ const DetailItem: React.FC<DetailItemProps> = ({ label, value, sx }) => (
 
 const DetailTable: React.FC<DetailTableProps> = ({ title, items, columns }) => (
     <Box mt={2}>
-        <Typography variant="subtitle1" gutterBottom>{title}</Typography>
+        <Typography variant="subtitle1" gutterBottom fontWeight="bold">{title}</Typography>
         {items && items.length > 0 ? (
-            <List dense>
-                {(items || []).map((item, index) => (
-                    <ListItem key={index} divider={index < items.length - 1}>
-                        <ListItemText
-                            primary={item[columns[0].key] || 'Item sem nome'}
-                            secondary={columns.slice(1).map(col => `${col.header}: ${item[col.key] || 'N/A'}`).join(' | ')}
-                        />
-                    </ListItem>
-                ))}
-            </List>
+            <div className="overflow-hidden rounded-xl border border-gray-200 shadow-sm bg-white">
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                {columns.map((col) => (
+                                    <th key={col.key} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        {col.header}
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                            {items.map((item, index) => (
+                                <tr key={index} className="hover:bg-gray-50 transition-colors">
+                                    {columns.map((col) => (
+                                        <td key={col.key} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            {item[col.key] || '-'}
+                                        </td>
+                                    ))}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         ) : (
-            <Typography variant="body2" color="text.secondary">Nenhum item cadastrado.</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>Nenhum item cadastrado.</Typography>
         )}
     </Box>
 );

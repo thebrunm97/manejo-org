@@ -13,7 +13,7 @@ import DashboardLayout from './components/DashboardLayout';
 // Páginas
 import DashboardPage from './pages/DashboardPage';
 import PmoFormPage from './pages/PmoFormPage';
-import PmoDetailPageMUI from './pages/PmoDetailPage_MUI';
+import PmoDetailPage from './pages/PmoDetailPage';
 import LoginPage from './pages/LoginPage';
 import SignUpPage from './pages/SignUpPage';
 import LandingPage from './pages/LandingPage';
@@ -126,8 +126,8 @@ const App: React.FC = () => {
                 <Route
                     path="/pmo/:pmoId"
                     element={
-                        <DebugErrorBoundary name="PmoDetailPageMUI">
-                            <PmoDetailPageMUI />
+                        <DebugErrorBoundary name="PmoDetailPage">
+                            <PmoDetailPage />
                         </DebugErrorBoundary>
                     }
                 />

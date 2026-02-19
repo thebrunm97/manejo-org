@@ -1,6 +1,10 @@
-/* App.css limpo */
+/* App.css reset */
 #root {
   width: 100%;
-  margin: 0 auto;
-  text-align: left; /* Garante que os inputs fiquem alinhados à esquerda */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
 }

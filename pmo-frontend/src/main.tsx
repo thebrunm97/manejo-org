@@ -8,7 +8,6 @@ import { BrowserRouter } from 'react-router-dom';
 
 // MUI Imports
 import { ThemeProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
 
 // Import do Provedor de Autenticação
 import { AuthProvider } from './context/AuthContext';
@@ -40,7 +39,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             <BrowserRouter>
                 <AuthProvider>
                     <ThemeProvider theme={theme}>
-                        <CssBaseline />
                         <App />
                     </ThemeProvider>
                 </AuthProvider>

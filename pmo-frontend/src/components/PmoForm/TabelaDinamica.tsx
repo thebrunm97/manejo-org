@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
-    Table, TableBody, TableCell, TableContainer,
-    TableHead, TableRow as MuiTableRow, Paper, TextField, Button,
+    Paper, TextField, Button,
     Typography, IconButton, Box, FormControl, Select, MenuItem, Tooltip,
     useMediaQuery, useTheme, Card, CardContent, Divider, Chip, Stack, Grid,
     Collapse,
@@ -121,7 +120,7 @@ const FastTextField = React.memo(({ value, onChange, onBlur, ...props }: any) =>
 // ||                     COMPONENT DEFINITION                     ||
 // ==================================================================
 
-export default function TabelaDinamicaMUI<T extends TableRowBase>({
+export default function TabelaDinamica<T extends TableRowBase>({
     label,
     columns = [],
     data = [],
@@ -574,57 +573,68 @@ export default function TabelaDinamicaMUI<T extends TableRowBase>({
                 </Stack>
             ) : (
                 // --- DESKTOP TABLE ---
-                <TableContainer component={Paper} variant="outlined" elevation={0} sx={{ borderRadius: 1, borderColor: '#e2e8f0' }}>
-                    <Table size="small">
-                        <TableHead>
-                            <MuiTableRow sx={{ bgcolor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                                {safeColumns.map(col => (
-                                    <TableCell key={col.id} sx={{ fontWeight: '600', color: '#64748b', fontSize: '0.75rem', py: 1 }}>
-                                        {col.label?.toUpperCase()}
-                                    </TableCell>
-                                ))}
-                                {!readOnly && <TableCell align="center" sx={{ fontWeight: '600', width: '90px', color: '#64748b', fontSize: '0.75rem' }}>AÇÕES</TableCell>}
-                            </MuiTableRow>
-                        </TableHead>
-                        <TableBody>
-                            {localData.map((item) => (
-                                <MuiTableRow
-                                    key={item.id}
-                                    hover={!!onRowClick && !disableRowClick}
-                                    onClick={() => {
-                                        if (!disableRowClick && onRowClick) {
-                                            onRowClick(item);
-                                        }
-                                    }}
-                                    sx={{
-                                        '& td': { borderBottom: '1px solid #f1f5f9' },
-                                        cursor: !disableRowClick && onRowClick ? 'pointer' : 'default'
-                                    }}
-                                >
+                <div className="overflow-hidden rounded-xl border border-gray-200 shadow-sm bg-white">
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
                                     {safeColumns.map(col => (
-                                        <TableCell key={col.id} sx={{ p: 0.5 }}>{renderField(item, col)}</TableCell>
+                                        <th
+                                            key={col.id}
+                                            scope="col"
+                                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                            style={{ width: col.width }}
+                                        >
+                                            {col.label?.toUpperCase()}
+                                        </th>
                                     ))}
                                     {!readOnly && (
-                                        <TableCell align="center" sx={{ p: 0.5 }}>
-                                            <Tooltip title="Remover">
-                                                <IconButton
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        removerItem(item.id);
-                                                    }}
-                                                    color="error"
-                                                    size="small"
-                                                >
-                                                    <DeleteIcon fontSize="small" />
-                                                </IconButton>
-                                            </Tooltip>
-                                        </TableCell>
+                                        <th
+                                            scope="col"
+                                            className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[100px]"
+                                        >
+                                            AÇÕES
+                                        </th>
                                     )}
-                                </MuiTableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {localData.map((item) => (
+                                    <tr
+                                        key={item.id}
+                                        onClick={() => {
+                                            if (!disableRowClick && onRowClick) {
+                                                onRowClick(item);
+                                            }
+                                        }}
+                                        className={`hover:bg-gray-50 transition-colors ${!disableRowClick && onRowClick ? 'cursor-pointer' : ''}`}
+                                    >
+                                        {safeColumns.map(col => (
+                                            <td key={col.id} className="px-6 py-4 text-sm text-gray-900 align-top">
+                                                {renderField(item, col)}
+                                            </td>
+                                        ))}
+                                        {!readOnly && (
+                                            <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                                <Tooltip title="Remover">
+                                                    <button
+                                                        className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            removerItem(item.id);
+                                                        }}
+                                                    >
+                                                        <DeleteIcon fontSize="small" />
+                                                    </button>
+                                                </Tooltip>
+                                            </td>
+                                        )}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             )}
 
             {!isMobile && !readOnly && (

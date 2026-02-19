@@ -3,7 +3,7 @@
  * @description View para listagem de PMOs (Planos de Manejo Orgânico).
  * 
  * ✅ REFACTORED: Toda lógica extraída para usePlanosListLogic hook.
- * Este arquivo contém APENAS apresentação visual (MUI).
+ * ✅ Sestilo: Tailwind CSS (SaaS Moderno).
  */
 
 import React, { useState } from 'react';
@@ -15,36 +15,30 @@ import { usePlanosListLogic } from '../hooks/pmo/usePlanosListLogic';
 // Domain Types
 import type { PmoListItem } from '../domain/pmo/pmoTypes';
 
+// Ícones (Lucide)
 import {
-    Box,
-    Card,
-    CardContent,
-    CardActions,
-    Typography,
-    Chip,
-    IconButton,
-    Button,
-    CircularProgress,
-    Tooltip,
-    Paper,
-    Divider,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogContentText,
-    DialogActions,
-} from '@mui/material';
+    Plus,
+    FileText,
+    CheckCircle,
+    Hourglass,
+    Edit,
+    AlertCircle,
+    Trash2,
+    BookOpen,
+    Power,
+    FileQuestion
+} from 'lucide-react';
 
-// Ícones
-import AddIcon from '@mui/icons-material/Add';
-import DescriptionIcon from '@mui/icons-material/Description';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
-import EditIcon from '@mui/icons-material/Edit';
-import ErrorIcon from '@mui/icons-material/Error';
-import DeleteIcon from '@mui/icons-material/Delete';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
-import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew';
+// ==================================================================
+// ||                    COMPONENTS HELPERS                        ||
+// ==================================================================
+
+const Spinner = ({ size = 'small', color = 'border-green-600' }: { size?: 'small' | 'medium', color?: string }) => {
+    const dim = size === 'small' ? 'h-4 w-4' : 'h-8 w-8';
+    return (
+        <div className={`animate-spin rounded-full ${dim} border-b-2 ${color}`}></div>
+    );
+};
 
 // ==================================================================
 // ||                    CARD COMPONENT                            ||
@@ -69,159 +63,119 @@ const PmoCard: React.FC<PmoCardProps> = ({
 }) => {
     const navigate = useNavigate();
 
-    const statusConfig: Record<string, { label: string; color: 'default' | 'info' | 'success' | 'error'; icon: React.ReactElement }> = {
-        'RASCUNHO': { label: 'Rascunho', color: 'default', icon: <EditIcon fontSize="inherit" /> },
-        'CONCLUÍDO': { label: 'Concluído', color: 'info', icon: <HourglassEmptyIcon fontSize="inherit" /> },
-        'APROVADO': { label: 'Aprovado', color: 'success', icon: <CheckCircleIcon fontSize="inherit" /> },
-        'REPROVADO': { label: 'Reprovado', color: 'error', icon: <ErrorIcon fontSize="inherit" /> },
+    const statusConfig: Record<string, { label: string; bg: string; text: string; icon: React.ElementType }> = {
+        'RASCUNHO': { label: 'Rascunho', bg: 'bg-gray-100', text: 'text-gray-700', icon: Edit },
+        'CONCLUÍDO': { label: 'Concluído', bg: 'bg-blue-50', text: 'text-blue-700', icon: Hourglass },
+        'APROVADO': { label: 'Aprovado', bg: 'bg-green-50', text: 'text-green-700', icon: CheckCircle },
+        'REPROVADO': { label: 'Reprovado', bg: 'bg-red-50', text: 'text-red-700', icon: AlertCircle },
     };
     const currentStatus = statusConfig[pmo.status] || statusConfig['RASCUNHO'];
+    const StatusIcon = currentStatus.icon;
 
-    // Disable all actions when this card is busy
+    // Actions disabled
     const isBusy = isActivating || isDeleting;
 
     return (
-        <Card sx={{
-            height: 250,
-            display: 'flex',
-            flexDirection: 'column',
-            borderRadius: 3,
-            overflow: 'hidden',
-            border: isActive ? '2px solid #16a34a' : '1px solid #e2e8f0',
-            boxShadow: isActive ? '0 4px 20px rgba(22, 163, 74, 0.2)' : '0 2px 8px rgba(0,0,0,0.05)',
-            transition: 'all 0.2s',
-            opacity: isBusy ? 0.7 : 1,
-            '&:hover': { transform: isBusy ? 'none' : 'translateY(-4px)', boxShadow: '0 12px 24px rgba(0,0,0,0.1)' }
-        }}>
-            {/* Ícone e Título */}
-            <CardContent sx={{ flex: 1, pt: 2, pb: 1, overflow: 'hidden' }}>
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1.5 }}>
-                    <Box sx={{
-                        p: 1.5,
-                        borderRadius: '12px',
-                        bgcolor: isActive ? '#dcfce7' : '#f1f5f9',
-                        mr: 2,
-                        minWidth: 54,
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center'
-                    }}>
-                        <DescriptionIcon sx={{ color: isActive ? '#16a34a' : '#64748b', fontSize: 30 }} />
-                    </Box>
-                    <Box sx={{ overflow: 'hidden', flex: 1, minWidth: 0 }}>
-                        <Tooltip title={pmo.nome_identificador} arrow placement="top">
-                            <Typography
-                                variant="h6"
-                                component="h2"
-                                sx={{
-                                    fontWeight: 600,
-                                    fontSize: '1rem',
-                                    lineHeight: 1.3,
-                                    mb: 0.5,
-                                    display: '-webkit-box',
-                                    WebkitLineClamp: 2,
-                                    WebkitBoxOrient: 'vertical',
-                                    overflow: 'hidden',
-                                    textAlign: 'left'
-                                }}
-                            >
-                                {pmo.nome_identificador}
-                            </Typography>
-                        </Tooltip>
-                        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'left' }}>
-                            Versão: {pmo.version || '1'}
-                        </Typography>
-                    </Box>
-                </Box>
+        <div className={`
+            bg-white rounded-xl border border-gray-200 p-6 shadow-sm 
+            hover:shadow-md hover:-translate-y-1 transition-all duration-200 
+            flex flex-col h-full min-w-0
+            ${isActive ? 'ring-2 ring-green-500 border-transparent shadow-[0_4px_20px_rgba(22,163,74,0.15)]' : ''}
+            ${isBusy ? 'opacity-70 pointer-events-none' : ''}
+        `}>
+            {/* Header: Icon + Title + Status */}
+            <div className="flex items-start justify-between mb-4">
+                <div className="flex items-start gap-3 min-w-0">
+                    <div className={`
+                        p-2.5 rounded-lg flex-shrink-0
+                        ${isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}
+                    `}>
+                        <FileText size={24} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <h3
+                            className="text-lg font-semibold text-gray-900 truncate pr-2"
+                            title={pmo.nome_identificador}
+                        >
+                            {pmo.nome_identificador}
+                        </h3>
+                        <p className="text-sm text-gray-500">Versão {pmo.version || '1'}</p>
+                    </div>
+                </div>
+            </div>
 
-                {/* Área de Badges */}
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, minHeight: 56, justifyContent: 'center', alignItems: 'flex-start', mb: 1 }}>
-                    {isActive && (
-                        <Chip
-                            label="✓ ATIVO NO ZAP"
-                            color="success"
-                            size="small"
-                            sx={{
-                                fontWeight: 'bold',
-                                fontSize: '0.65rem',
-                                height: 24
-                            }}
-                        />
-                    )}
-                    <Chip
-                        icon={currentStatus.icon}
-                        label={currentStatus.label}
-                        color={currentStatus.color}
-                        size="small"
-                        variant="outlined"
-                        sx={{ height: 24 }}
-                    />
-                </Box>
+            {/* Badges / Info */}
+            <div className="mb-4 space-y-2">
+                {isActive && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800 border border-green-200">
+                        ✓ ATIVO NO ZAP
+                    </span>
+                )}
 
-                <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'left', display: 'block' }}>
+                <div className="flex">
+                    <span className={`
+                        inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border
+                        ${currentStatus.bg} ${currentStatus.text} border-transparent
+                    `}>
+                        <StatusIcon size={12} />
+                        {currentStatus.label}
+                    </span>
+                </div>
+            </div>
+
+            {/* Date */}
+            <div className="mt-auto">
+                <p className="text-xs text-gray-400 mb-4 pt-4 border-t border-gray-100">
                     Criado em: {new Date(pmo.created_at).toLocaleDateString('pt-BR')}
-                </Typography>
-            </CardContent>
+                </p>
 
-            <Divider />
+                {/* Actions Footer */}
+                <div className="flex items-center gap-2 pt-2">
+                    {/* Primary Actions */}
+                    <button
+                        onClick={() => navigate(`/pmo/${pmo.id}/editar?aba=caderno`)}
+                        className="p-2 text-gray-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+                        title="Abrir Caderno de Campo"
+                        disabled={isBusy}
+                    >
+                        <BookOpen size={20} />
+                    </button>
 
-            <CardActions sx={{ justifyContent: 'space-between', p: 1.5, bgcolor: '#f8fafc' }}>
-                <Box>
-                    <Tooltip title={isActive ? "Já está ativo" : "Ativar este plano no WhatsApp"}>
-                        <span>
-                            <IconButton
-                                size="small"
-                                color={isActive ? "success" : "default"}
-                                disabled={isActive || isBusy}
-                                onClick={() => onActivate(pmo.id)}
-                            >
-                                {isActivating ? (
-                                    <CircularProgress size={18} color="inherit" />
-                                ) : (
-                                    <PowerSettingsNewIcon fontSize="small" />
-                                )}
-                            </IconButton>
-                        </span>
-                    </Tooltip>
-                </Box>
-                <Box>
-                    <Tooltip title="Abrir Caderno">
-                        <IconButton
-                            size="small"
-                            sx={{ color: '#0f172a' }}
-                            disabled={isBusy}
-                            onClick={() => navigate(`/pmo/${pmo.id}/editar?aba=caderno`)}
-                        >
-                            <MenuBookIcon fontSize="small" />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Editar PMO">
-                        <IconButton
-                            size="small"
-                            color="primary"
-                            disabled={isBusy}
-                            onClick={() => navigate(`/pmo/${pmo.id}/editar`)}
-                        >
-                            <EditIcon fontSize="small" />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Excluir">
-                        <IconButton
-                            size="small"
-                            color="error"
-                            disabled={isBusy}
-                            onClick={() => onDelete(pmo)}
-                        >
-                            {isDeleting ? (
-                                <CircularProgress size={18} color="error" />
-                            ) : (
-                                <DeleteIcon fontSize="small" />
-                            )}
-                        </IconButton>
-                    </Tooltip>
-                </Box>
-            </CardActions>
-        </Card>
+                    <button
+                        onClick={() => onActivate(pmo.id)}
+                        className={`p-2 rounded-lg transition-colors ${isActive
+                            ? 'text-green-600 cursor-default'
+                            : 'text-gray-400 hover:text-green-600 hover:bg-green-50'
+                            }`}
+                        title={isActive ? "Plano Ativo" : "Ativar no WhatsApp"}
+                        disabled={isActive || isBusy}
+                    >
+                        {isActivating ? <Spinner /> : <Power size={20} />}
+                    </button>
+
+                    <div className="flex-1"></div>
+
+                    {/* Secondary Actions */}
+                    <button
+                        onClick={() => navigate(`/pmo/${pmo.id}/editar`)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Editar Plano"
+                        disabled={isBusy}
+                    >
+                        <Edit size={20} />
+                    </button>
+
+                    <button
+                        onClick={() => onDelete(pmo)}
+                        className="p-2 text-red-400 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Excluir Plano"
+                        disabled={isBusy}
+                    >
+                        {isDeleting ? <Spinner color="border-red-600" /> : <Trash2 size={20} />}
+                    </button>
+                </div>
+            </div>
+        </div>
     );
 };
 
@@ -232,9 +186,7 @@ const PmoCard: React.FC<PmoCardProps> = ({
 const PlanosManejoList: React.FC = () => {
     const navigate = useNavigate();
 
-    // ─────────────────────────────────────────────────────────────
-    // HOOK: Toda a lógica vem daqui
-    // ─────────────────────────────────────────────────────────────
+    // Hook Data
     const {
         pmos,
         activePmoId,
@@ -245,9 +197,7 @@ const PlanosManejoList: React.FC = () => {
         handleDeletePmo
     } = usePlanosListLogic();
 
-    // ─────────────────────────────────────────────────────────────
-    // LOCAL STATE: Confirm Delete Dialog
-    // ─────────────────────────────────────────────────────────────
+    // Local State (Modal)
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [pmoToDelete, setPmoToDelete] = useState<PmoListItem | null>(null);
 
@@ -268,71 +218,45 @@ const PlanosManejoList: React.FC = () => {
         handleCloseDeleteDialog();
     };
 
-    // ─────────────────────────────────────────────────────────────
-    // RENDER
-    // ─────────────────────────────────────────────────────────────
-    return (
-        <Box sx={{
-            p: 3,
-            display: 'flex',
-            flexDirection: 'column',
-            minHeight: '100%',
-            pb: 10
-        }}>
-            {/* Cabeçalho da Página */}
-            <Box sx={{
-                display: 'flex',
-                flexDirection: { xs: 'column', sm: 'row' },
-                justifyContent: 'space-between',
-                alignItems: { xs: 'flex-start', sm: 'center' },
-                gap: 2,
-                mb: 4
-            }}>
-                <Box>
-                    <Typography
-                        variant="h4"
-                        sx={{ fontWeight: 700, color: '#0f172a', fontSize: { xs: '1.75rem', md: '2.125rem' } }}
-                    >
-                        Gerenciar Planos
-                    </Typography>
-                    <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5 }}>
-                        Visualize, edite ou crie novos planos.
-                    </Typography>
-                </Box>
-                <Button
-                    variant="contained"
-                    color="success"
-                    startIcon={<AddIcon />}
-                    onClick={() => navigate('/pmo/novo')}
-                    sx={{
-                        px: 3,
-                        py: 1,
-                        fontWeight: 'bold',
-                        textTransform: 'none',
-                        borderRadius: 2,
-                        width: { xs: '100%', sm: 'auto' }
-                    }}
-                >
-                    Novo Plano
-                </Button>
-            </Box>
+    // Render Loading
+    if (listLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen text-green-600">
+                <Spinner size="medium" color="border-green-600" />
+            </div>
+        );
+    }
 
-            {/* Conteúdo - Lista de Cards */}
-            {listLoading ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
-                    <CircularProgress color="success" />
-                </Box>
-            ) : pmos.length > 0 ? (
-                <Box sx={{
-                    display: 'grid',
-                    gridTemplateColumns: {
-                        xs: '1fr',
-                        sm: 'repeat(2, 1fr)',
-                        md: 'repeat(3, 1fr)',
-                        lg: 'repeat(4, 1fr)'
-                    },
-                    gap: 2
-                }}>
+    return (
+        <div className="p-4 md:p-8 min-h-full pb-20">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                <div>
+                    <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
+                        Gerenciar Planos
+                    </h1>
+                    <p className="text-slate-500 mt-1">
+                        Visualize, edite ou crie novos planos digitais.
+                    </p>
+                </div>
+                <button
+                    onClick={() => navigate('/pmo/novo')}
+                    className="
+                        inline-flex items-center justify-center gap-2 
+                        px-4 py-2.5 rounded-lg 
+                        bg-green-600 hover:bg-green-700 
+                        text-white font-medium shadow-sm transition-colors
+                        w-full md:w-auto
+                    "
+                >
+                    <Plus size={20} />
+                    Novo Plano
+                </button>
+            </div>
+
+            {/* List */}
+            {pmos.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 w-full min-w-0">
                     {pmos.map(pmo => (
                         <PmoCard
                             key={pmo.id}
@@ -344,62 +268,59 @@ const PlanosManejoList: React.FC = () => {
                             onDelete={handleOpenDeleteDialog}
                         />
                     ))}
-                </Box>
+                </div>
             ) : (
-                <Paper
-                    elevation={0}
-                    sx={{
-                        p: 8,
-                        textAlign: 'center',
-                        bgcolor: 'white',
-                        border: '2px dashed #cbd5e1',
-                        borderRadius: 4
-                    }}
-                >
-                    <DescriptionIcon sx={{ fontSize: 60, color: '#cbd5e1', mb: 2 }} />
-                    <Typography variant="h6" color="text.secondary" gutterBottom>
-                        Nenhum Plano de Manejo Encontrado
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                        Comece criando o plano digital da sua propriedade para organizar a produção.
-                    </Typography>
-                    <Button variant="outlined" color="success" onClick={() => navigate('/pmo/novo')}>
-                        Criar Meu Primeiro Plano
-                    </Button>
-                </Paper>
+                // Empty State
+                <div className="text-center py-16 px-4 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50">
+                    <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-slate-100 mb-4">
+                        <FileQuestion className="h-8 w-8 text-slate-400" />
+                    </div>
+                    <h3 className="text-lg font-medium text-slate-900">Nenhum plano encontrado</h3>
+                    <p className="mt-1 text-sm text-slate-500 max-w-sm mx-auto">
+                        Você ainda não tem nenhum Plano de Manejo Orgânico cadastrado.
+                    </p>
+                    <div className="mt-6">
+                        <button
+                            onClick={() => navigate('/pmo/novo')}
+                            className="inline-flex items-center gap-2 px-4 py-2 border border-green-600 text-green-700 bg-white rounded-lg hover:bg-green-50 font-medium transition-colors"
+                        >
+                            <Plus size={18} />
+                            Criar meu primeiro plano
+                        </button>
+                    </div>
+                </div>
             )}
 
-            {/* Delete Confirmation Dialog */}
-            <Dialog
-                open={deleteDialogOpen}
-                onClose={handleCloseDeleteDialog}
-                aria-labelledby="delete-dialog-title"
-                aria-describedby="delete-dialog-description"
-            >
-                <DialogTitle id="delete-dialog-title">
-                    Confirmar Exclusão
-                </DialogTitle>
-                <DialogContent>
-                    <DialogContentText id="delete-dialog-description">
-                        Tem certeza que deseja excluir <strong>"{pmoToDelete?.nome_identificador}"</strong>?
-                        Esta ação não pode ser desfeita.
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions sx={{ px: 3, pb: 2 }}>
-                    <Button onClick={handleCloseDeleteDialog} color="inherit">
-                        Cancelar
-                    </Button>
-                    <Button
-                        onClick={handleConfirmDelete}
-                        color="error"
-                        variant="contained"
-                        autoFocus
-                    >
-                        Excluir
-                    </Button>
-                </DialogActions>
-            </Dialog>
-        </Box>
+            {/* Delete Modal (Native-ish Tailwind) */}
+            {deleteDialogOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 transform transition-all scale-100">
+                        <h3 className="text-lg font-bold text-gray-900 mb-2">
+                            Confirmar Exclusão
+                        </h3>
+                        <p className="text-gray-600 mb-6">
+                            Tem certeza que deseja excluir <strong>"{pmoToDelete?.nome_identificador}"</strong>?
+                            <br />
+                            <span className="text-sm text-red-600 mt-1 block">Esta ação não pode ser desfeita.</span>
+                        </p>
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={handleCloseDeleteDialog}
+                                className="px-4 py-2 rounded-lg text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 font-medium transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleConfirmDelete}
+                                className="px-4 py-2 rounded-lg text-white bg-red-600 hover:bg-red-700 font-medium shadow-sm transition-colors"
+                            >
+                                Excluir Permanentemente
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
     );
 };
 

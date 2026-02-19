@@ -11,7 +11,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckboxGroupMUI from './CheckboxGroup_MUI';
-import TabelaDinamicaMUI, { TableColumn } from './TabelaDinamica_MUI';
+import TabelaDinamica, { TableColumn } from './TabelaDinamica';
 
 // Types
 interface NutricaoItem {
@@ -152,7 +152,7 @@ const Secao13MUI: React.FC<Secao13MUIProps> = ({ data, onSectionChange }) => {
 
             <Accordion><AccordionSummary expandIcon={<ExpandMoreIcon />}><Typography sx={{ fontWeight: 'bold' }}>13.2. Como realiza a reprodução?</Typography></AccordionSummary><AccordionDetails><CheckboxGroupMUI title="" options={['Compra animais de fora', 'Monta natural', 'Métodos artificiais', 'Outros - citar:']} selectedString={safeData.reproducao_animais} onSelectionChange={(v) => handleCheckboxChange('reproducao_animais', v)} otherOption="Outros - citar:" otherValue={safeData.reproducao_animais_outros} onOtherChange={handleChange} otherName="reproducao_animais_outros" /></AccordionDetails></Accordion>
 
-            <Accordion><AccordionSummary expandIcon={<ExpandMoreIcon />}><Typography sx={{ fontWeight: 'bold' }}>13.4. Evolução do plantel</Typography></AccordionSummary><AccordionDetails><TabelaDinamicaMUI columns={colunasEvolucaoPlantel} data={safeData.evolucao_plantel} onDataChange={(newData) => onSectionChange({ ...safeData, evolucao_plantel: newData })} itemName="Tipo de Animal" /></AccordionDetails></Accordion>
+            <Accordion><AccordionSummary expandIcon={<ExpandMoreIcon />}><Typography sx={{ fontWeight: 'bold' }}>13.4. Evolução do plantel</Typography></AccordionSummary><AccordionDetails><TabelaDinamica columns={colunasEvolucaoPlantel} data={safeData.evolucao_plantel} onDataChange={(newData) => onSectionChange({ ...safeData, evolucao_plantel: newData })} itemName="Tipo de Animal" /></AccordionDetails></Accordion>
 
             <Accordion><AccordionSummary expandIcon={<ExpandMoreIcon />}><Typography sx={{ fontWeight: 'bold' }}>13.5. Nutrição animal</Typography></AccordionSummary><AccordionDetails><TabelaNutricaoAnimalMUI data={safeData.nutricao_animal} onDataChange={(newData) => onSectionChange({ ...safeData, nutricao_animal: newData })} /></AccordionDetails></Accordion>
 
@@ -162,7 +162,7 @@ const Secao13MUI: React.FC<Secao13MUIProps> = ({ data, onSectionChange }) => {
 
             <Accordion><AccordionSummary expandIcon={<ExpandMoreIcon />}><Typography sx={{ fontWeight: 'bold' }}>13.8. Bem-estar dos animais</Typography></AccordionSummary><AccordionDetails><CheckboxGroupMUI title="" options={['Manejo adequado', 'Água de boa qualidade', 'Alimento farto', 'Instalações adequadas', 'Lotação adequada', 'Sombreamento']} selectedString={safeData.bem_estar_animais} onSelectionChange={(v) => handleCheckboxChange('bem_estar_animais', v)} /></AccordionDetails></Accordion>
 
-            <Accordion><AccordionSummary expandIcon={<ExpandMoreIcon />}><Typography sx={{ fontWeight: 'bold' }}>13.9. Manejo sanitário animal</Typography></AccordionSummary><AccordionDetails><Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}><TextField label="13.9.1. Promoção da saúde animal" name="promocao_saude_animal" fullWidth multiline rows={3} value={safeData.manejo_sanitario_animal?.promocao_saude_animal?.promocao_saude_animal || ''} onChange={handleManejoSanitarioChange} /><TextField label="13.9.2. Controle de vermes e parasitas" name="controle_vermes_parasitas" fullWidth multiline rows={3} value={safeData.manejo_sanitario_animal?.controle_vermes_parasitas?.controle_vermes_parasitas || ''} onChange={handleManejoSanitarioChange} /><TabelaDinamicaMUI label="13.9.3. Tratamentos realizados" columns={colunasTratamentoAnimais} data={safeData.manejo_sanitario_animal?.tratamento_animais_doentes} onDataChange={(newData) => onSectionChange({ ...safeData, manejo_sanitario_animal: { ...safeData.manejo_sanitario_animal, tratamento_animais_doentes: newData } })} itemName="Tratamento" itemNoun="o" /></Box></AccordionDetails></Accordion>
+            <Accordion><AccordionSummary expandIcon={<ExpandMoreIcon />}><Typography sx={{ fontWeight: 'bold' }}>13.9. Manejo sanitário animal</Typography></AccordionSummary><AccordionDetails><Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}><TextField label="13.9.1. Promoção da saúde animal" name="promocao_saude_animal" fullWidth multiline rows={3} value={safeData.manejo_sanitario_animal?.promocao_saude_animal?.promocao_saude_animal || ''} onChange={handleManejoSanitarioChange} /><TextField label="13.9.2. Controle de vermes e parasitas" name="controle_vermes_parasitas" fullWidth multiline rows={3} value={safeData.manejo_sanitario_animal?.controle_vermes_parasitas?.controle_vermes_parasitas || ''} onChange={handleManejoSanitarioChange} /><TabelaDinamica label="13.9.3. Tratamentos realizados" columns={colunasTratamentoAnimais} data={safeData.manejo_sanitario_animal?.tratamento_animais_doentes} onDataChange={(newData) => onSectionChange({ ...safeData, manejo_sanitario_animal: { ...safeData.manejo_sanitario_animal, tratamento_animais_doentes: newData } })} itemName="Tratamento" itemNoun="o" /></Box></AccordionDetails></Accordion>
         </Box>
     );
 };

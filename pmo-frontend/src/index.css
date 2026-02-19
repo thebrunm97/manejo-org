@@ -23,14 +23,21 @@
   --pmo-color-grey-text: #6c757d;
 }
 
+html,
 body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  background-color: #f8fafc;
-  /* Slate-50 per visual hierarchy */
+  width: 100%;
   overflow-x: hidden;
-  /* Prevent horizontal scroll */
+  margin: 0;
+  padding: 0;
+  background-color: #f1f5f9;
+  /* slate-100 */
+  color: #0f172a;
+  /* slate-900 */
+}
+
+body {
+  min-height: 100vh;
+  position: relative;
 }
 
 .container {
