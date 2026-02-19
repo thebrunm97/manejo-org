@@ -11,7 +11,7 @@ import { useCadernoSync } from './hooks/offline/useCadernoSync';
 import DashboardLayout from './components/DashboardLayout';
 
 // Páginas
-import DashboardPageMUI from './pages/DashboardPage_MUI';
+import DashboardPage from './pages/DashboardPage';
 import PmoFormPage from './pages/PmoFormPage';
 import PmoDetailPageMUI from './pages/PmoDetailPage_MUI';
 import LoginPage from './pages/LoginPage';
@@ -62,8 +62,8 @@ const App: React.FC = () => {
                 <Route
                     path="/dashboard"
                     element={
-                        <DebugErrorBoundary name="DashboardPageMUI">
-                            <DashboardPageMUI />
+                        <DebugErrorBoundary name="DashboardPage">
+                            <DashboardPage />
                         </DebugErrorBoundary>
                     }
                 />

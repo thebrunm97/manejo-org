@@ -452,6 +452,7 @@ def inserir_no_caderno_campo(payload: dict) -> Optional[str]:
     
     # DEBUG: Log incoming talhao_canteiro value
     logger.info(f"📍 DEBUG talhao_canteiro recebido: '{payload.get('talhao_canteiro')}'")
+    logger.error(f"🚨 DEBUG FORCE: Inserindo no caderno campo! Payload: {payload}")
     
     if not payload.get("pmo_id"):
         logger.warning("⚠️ pmo_id ausente no payload!")

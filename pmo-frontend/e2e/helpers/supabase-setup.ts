@@ -62,6 +62,14 @@ export async function loginViaBrowser(page: Page) {
     // Fazer login pelo formulário
     console.log('🔐 Logging in via browser...');
 
+    // Se estiver na Landing Page, clicar em Login
+    const loginLink = page.locator('button:has-text("Login")');
+    if (await loginLink.isVisible({ timeout: 2000 }).catch(() => false)) {
+        console.log('➡️ Clicking Login on Landing Page...');
+        await loginLink.click();
+        await page.waitForURL('**/login', { timeout: 10000 });
+    }
+
     // Preencher email
     const emailInput = page.locator('input[type="email"], input[placeholder*="E-mail"], input[placeholder*="email"]').first();
     await emailInput.fill(testUserEmail!);
@@ -144,7 +152,21 @@ export async function setActivePMO(pmoId: number) {
         // Se falhar o update, pode ser que o perfil não exista (falha no trigger)
         // Tentamos insert apenas se for esse o caso, mas geralmente RLS bloqueia INSERT
     } else if (data.length === 0) {
-        console.warn(`⚠️ Failed to set active PMO: Profile not found for user ${session.session.user.id}`);
+        console.warn(`⚠️ Failed to set active PMO: Profile not found for user ${session.session.user.id}. Attempting to create profile...`);
+
+        const { error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+                id: session.session.user.id,
+                pmo_ativo_id: pmoId,
+                updated_at: new Date().toISOString()
+            });
+
+        if (insertError) {
+            console.error(`❌ Failed to create profile: ${insertError.message}`);
+        } else {
+            console.log(`✅ Created profile and set active PMO: ${pmoId}`);
+        }
     } else {
         console.log(`✅ Set active PMO to: ${pmoId}`);
     }
@@ -157,6 +179,23 @@ export async function cleanupTestData(pmoId: number) {
     if (!pmoId) {
         console.warn('⚠️ No PMO ID provided for cleanup');
         return;
+    }
+
+    // 0. Desvincular PMO do perfil antes de deletar para evitar erro de FK
+    const { data: session } = await supabase.auth.getSession();
+    const testUserId = session.session?.user?.id;
+
+    if (testUserId) {
+        const { error: profileError } = await supabase
+            .from('profiles')
+            .update({ pmo_ativo_id: null })
+            .eq('id', testUserId);
+
+        if (profileError) {
+            console.warn(`⚠️ Failed to unlink PMO from profile: ${profileError.message}`);
+        } else {
+            console.log(`🔗 Unlinked PMO ${pmoId} from user ${testUserId}`);
+        }
     }
 
     // 1. Deletar registros do diário de campo

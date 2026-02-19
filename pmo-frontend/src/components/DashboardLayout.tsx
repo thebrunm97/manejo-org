@@ -1,109 +1,43 @@
 // src/components/DashboardLayout.tsx
 
 import React, { useState, ReactNode } from 'react';
-import { Box, CssBaseline, IconButton, AppBar, Toolbar, Typography, useTheme } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
 import Sidebar from './Sidebar';
-
-const drawerWidth = 260;
+import Navbar from './Navbar';
+import { useAuth } from '../context/AuthContext';
 
 interface DashboardLayoutProps {
     children: ReactNode;
 }
 
-import { useAuth } from '../context/AuthContext';
-
-// ...
-
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     const [mobileOpen, setMobileOpen] = useState(false);
-    const theme = useTheme();
-    const { user, logout } = useAuth(); // Call hook here (should work as RouteGuard works)
+    const { user, logout } = useAuth();
 
     const handleDrawerToggle = () => {
         setMobileOpen(!mobileOpen);
     };
 
     return (
-        <Box
-            sx={{
-                display: 'grid',
-                height: '100vh',
-                width: '100vw',
-                overflow: 'hidden',
-                gridTemplateColumns: { md: `${drawerWidth}px 1fr`, xs: '1fr' },
-                gridTemplateRows: { md: '1fr', xs: 'auto 1fr' },
-                bgcolor: 'background.default',
-            }}
-        >
-            <CssBaseline />
-
-            {/* APP BAR - Mobile Only */}
-            <AppBar
-                position="fixed"
-                elevation={0}
-                sx={{
-                    display: { md: 'none' },
-                    gridRow: 1,
-                    width: '100%',
-                    bgcolor: 'background.paper',
-                    borderBottom: `1px solid ${theme.palette.divider}`,
-                    color: 'text.primary',
-                    zIndex: (theme) => theme.zIndex.drawer + 1
-                }}
-            >
-                <Toolbar>
-                    <IconButton
-                        color="inherit"
-                        aria-label="open drawer"
-                        edge="start"
-                        onClick={handleDrawerToggle}
-                        sx={{ mr: 2 }}
-                    >
-                        <MenuIcon />
-                    </IconButton>
-                    <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 700, color: 'primary.main' }}>
-                        {import.meta.env.VITE_APP_NAME}
-                    </Typography>
-                </Toolbar>
-            </AppBar>
-
-            {/* Sidebar Area */}
+        <div className="flex flex-row h-screen w-full bg-slate-50 overflow-hidden">
+            {/* Sidebar */}
             <Sidebar
                 mobileOpen={mobileOpen}
-                onClose={handleDrawerToggle}
+                onClose={() => setMobileOpen(false)}
                 user={user}
                 logout={logout}
             />
 
             {/* Main Content Area */}
-            <Box
-                component="main"
-                sx={{
-                    gridColumn: { md: 2, xs: 1 },
-                    gridRow: { md: 1, xs: 2 },
-                    height: '100%',
-                    overflowY: 'auto',
-                    padding: 6,
-                    scrollBehavior: 'smooth',
-                    display: 'flex',
-                    flexDirection: 'column',
-                }}
-            >
-                {/* Spacer for Mobile AppBar */}
-                <Toolbar sx={{ display: { md: 'none' } }} />
+            <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative bg-slate-50">
+                <Navbar onMenuClick={handleDrawerToggle} />
 
-                {/* Content Container */}
-                <Box sx={{
-                    maxWidth: '1600px',
-                    width: '100%',
-                    margin: '0 auto',
-                    flexGrow: 1
-                }}>
-                    {children}
-                </Box>
-            </Box>
-        </Box>
+                <main className="flex-1 overflow-y-auto p-4 md:p-6 scroll-smooth">
+                    <div className="max-w-7xl mx-auto pb-20">
+                        {children}
+                    </div>
+                </main>
+            </div>
+        </div>
     );
 };
 
