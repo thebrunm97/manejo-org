@@ -1,13 +1,16 @@
 import React from 'react';
-import { Button } from '@mui/material';
-import AgricultureIcon from '@mui/icons-material/Agriculture';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import ChatIcon from '@mui/icons-material/Chat';
-import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
-import SpeedIcon from '@mui/icons-material/Speed';
 import { useNavigate } from 'react-router-dom';
+import {
+    Tractor,
+    LayoutDashboard,
+    MessageSquare,
+    ShieldCheck,
+    Gauge,
+    ArrowRight,
+    Users,
+    CheckCircle2
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { cn } from '../utils/cn';
 import heroIllustration from '../assets/illustrations/hero-illustration.svg';
 import complianceIllustration from '../assets/illustrations/compliance-illustration.svg';
 import productivityIllustration from '../assets/illustrations/productivity-illustration.svg';
@@ -28,44 +31,39 @@ const LandingPage: React.FC = () => {
             {/* AppBar (Glassmorphism) */}
             <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-md border-b border-white/20 shadow-sm transition-all duration-300">
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-                    <div className="flex items-center gap-3 group cursor-pointer transition-transform duration-300 hover:scale-[1.02]">
+                    <div className="flex items-center gap-3 group cursor-pointer transition-transform duration-300 hover:scale-[1.02]" onClick={() => navigate('/')}>
                         <div className="p-2 bg-gradient-to-br from-green-600 to-green-700 rounded-xl shadow-lg shadow-green-600/20 text-white">
-                            <AgricultureIcon fontSize="medium" />
+                            <Tractor size={24} />
                         </div>
                         <span className="text-xl font-extrabold tracking-tight text-slate-900 group-hover:text-green-800 transition-colors">
                             Manejo Orgânico
                         </span>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <nav className="flex items-center gap-4">
                         {user ? (
-                            <Button
-                                variant="contained"
-                                color="primary"
+                            <button
                                 onClick={() => navigate('/dashboard')}
-                                className="!rounded-full !px-6 !py-2 !shadow-lg !shadow-green-500/30 !hover:shadow-green-500/50 !transition-all !duration-300 !transform !hover:-translate-y-0.5"
+                                className="inline-flex items-center justify-center px-6 py-2 text-sm font-bold text-white bg-green-600 rounded-full shadow-lg shadow-green-600/30 hover:shadow-green-600/50 hover:-translate-y-0.5 transition-all duration-300"
                             >
                                 Dashboard
-                            </Button>
+                            </button>
                         ) : (
                             <>
-                                <Button
-                                    color="inherit"
+                                <button
                                     onClick={() => navigate('/login')}
-                                    className="!font-medium !text-slate-600 !hover:text-slate-900 !rounded-full !px-5"
+                                    className="px-5 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 rounded-full transition-colors"
                                 >
                                     Login
-                                </Button>
-                                <Button
-                                    variant="contained"
-                                    color="primary"
+                                </button>
+                                <button
                                     onClick={() => navigate('/cadastro')}
-                                    className="!rounded-full !px-6 !py-2.5 !bg-gradient-to-r !from-green-600 !to-green-700 !shadow-lg !shadow-green-600/30 !hover:shadow-green-600/50 !transition-all !duration-300 !transform !hover:-translate-y-0.5"
+                                    className="inline-flex items-center justify-center px-6 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-green-600 to-green-700 rounded-full shadow-lg shadow-green-600/30 hover:shadow-green-600/50 hover:-translate-y-0.5 transition-all duration-300"
                                 >
                                     Começar Grátis
-                                </Button>
+                                </button>
                             </>
                         )}
-                    </div>
+                    </nav>
                 </div>
             </header>
 
@@ -74,7 +72,7 @@ const LandingPage: React.FC = () => {
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                         <div className="max-w-2xl">
-                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-50 border border-green-100 text-green-700 text-sm font-semibold mb-8 animate-fade-in-up">
+                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-50 border border-green-100 text-green-700 text-sm font-semibold mb-8">
                                 <span className="relative flex h-2 w-2">
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                                     <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
@@ -95,32 +93,26 @@ const LandingPage: React.FC = () => {
 
                             <div className="flex flex-col sm:flex-row gap-5">
                                 {user ? (
-                                    <Button
-                                        variant="contained"
-                                        size="large"
+                                    <button
                                         onClick={() => navigate('/dashboard')}
-                                        className="!rounded-full !px-10 !py-4 !text-lg !font-bold !bg-green-600 !shadow-xl !shadow-green-600/30 !hover:shadow-green-600/50 !hover:-translate-y-1 !transition-all"
+                                        className="inline-flex items-center justify-center px-10 py-4 text-lg font-bold text-white bg-green-600 rounded-full shadow-xl shadow-green-600/30 hover:shadow-green-600/50 hover:-translate-y-1 transition-all"
                                     >
                                         Acessar Meu Painel
-                                    </Button>
+                                    </button>
                                 ) : (
-                                    <Button
-                                        variant="contained"
-                                        size="large"
+                                    <button
                                         onClick={() => navigate('/cadastro')}
-                                        className="!rounded-full !px-10 !py-4 !text-lg !font-bold !bg-green-600 !shadow-xl !shadow-green-600/30 !hover:shadow-green-600/50 !hover:-translate-y-1 !transition-all"
+                                        className="inline-flex items-center justify-center px-10 py-4 text-lg font-bold text-white bg-green-600 rounded-full shadow-xl shadow-green-600/30 hover:shadow-green-600/50 hover:-translate-y-1 transition-all"
                                     >
                                         Criar Conta Grátis
-                                    </Button>
+                                    </button>
                                 )}
-                                <Button
-                                    variant="outlined"
-                                    size="large"
+                                <button
                                     onClick={() => navigate('/login')}
-                                    className="!rounded-full !px-10 !py-4 !text-lg !font-bold !border-2 !border-slate-200 !text-slate-700 !hover:border-slate-300 !hover:bg-slate-50 !transition-all"
+                                    className="inline-flex items-center justify-center px-10 py-4 text-lg font-bold text-slate-700 bg-white border-2 border-slate-200 rounded-full hover:border-slate-300 hover:bg-slate-50 hover:-translate-y-1 transition-all"
                                 >
                                     {user ? 'Sair' : 'Ver Demo'}
-                                </Button>
+                                </button>
                             </div>
 
                             <div className="mt-12 flex items-center gap-4 text-sm text-slate-500 font-medium">
@@ -166,7 +158,7 @@ const LandingPage: React.FC = () => {
                             <div className="absolute inset-0 bg-green-50/50 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                             <div className="relative z-10">
                                 <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-100 group-hover:scale-110 transition-all duration-300">
-                                    <ChatIcon className="text-blue-600 text-3xl" />
+                                    <MessageSquare className="text-blue-600 opacity-80" size={32} />
                                 </div>
                                 <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-green-700 transition-colors">Bot Inteligente</h3>
                                 <p className="text-slate-600 leading-relaxed text-sm md:text-base">
@@ -180,7 +172,7 @@ const LandingPage: React.FC = () => {
                             <div className="absolute inset-0 bg-green-50/50 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                             <div className="relative z-10">
                                 <div className="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-green-100 group-hover:scale-110 transition-all duration-300">
-                                    <DashboardIcon className="text-green-600 text-3xl" />
+                                    <LayoutDashboard className="text-green-600 opacity-80" size={32} />
                                 </div>
                                 <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-green-700 transition-colors">Painel de Controle</h3>
                                 <p className="text-slate-600 leading-relaxed text-sm md:text-base">
@@ -194,7 +186,7 @@ const LandingPage: React.FC = () => {
                             <div className="absolute inset-0 bg-green-50/50 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                             <div className="relative z-10">
                                 <div className="w-16 h-16 bg-purple-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-purple-100 group-hover:scale-110 transition-all duration-300">
-                                    <VerifiedUserIcon className="text-purple-600 text-3xl" />
+                                    <ShieldCheck className="text-purple-600 opacity-80" size={32} />
                                 </div>
                                 <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-green-700 transition-colors">100% Auditável</h3>
                                 <p className="text-slate-600 leading-relaxed text-sm md:text-base">
@@ -228,7 +220,7 @@ const LandingPage: React.FC = () => {
                                 ].map((item, i) => (
                                     <li key={i} className="flex items-center gap-3 text-slate-700 font-medium">
                                         <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-green-600">
-                                            <VerifiedUserIcon sx={{ fontSize: 16 }} />
+                                            <CheckCircle2 size={16} />
                                         </div>
                                         {item}
                                     </li>
@@ -280,8 +272,8 @@ const LandingPage: React.FC = () => {
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
                         <div className="col-span-1 md:col-span-1">
-                            <div className="flex items-center gap-2 mb-6">
-                                <AgricultureIcon className="text-green-500" fontSize="large" />
+                            <div className="flex items-center gap-2 mb-6" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
+                                <Tractor className="text-green-500" size={32} />
                                 <span className="text-xl font-bold tracking-tight">Manejo Orgânico</span>
                             </div>
                             <p className="text-slate-400 text-sm leading-relaxed mb-6">

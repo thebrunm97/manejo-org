@@ -1,97 +1,26 @@
-// src/pages/LoginPage.tsx (Versão TSX - Manejo Org Design System)
-
 import React, { useState, FormEvent } from 'react';
+import {
+    Mail,
+    Lock,
+    Chrome,
+    Facebook,
+    FlaskConical,
+    Loader2,
+    AlertCircle,
+    Eye,
+    EyeOff
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useAppNavigation } from '../hooks/navigation/useAppNavigation';
-import {
-    Avatar,
-    Box,
-    Button,
-    Grid,
-    Link,
-    TextField,
-    Typography,
-    Divider,
-    CircularProgress,
-    Alert,
-    IconButton,
-    Paper,
-    InputAdornment,
-    FormControlLabel,
-    Checkbox,
-    useTheme,
-} from '@mui/material';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
-import GoogleIcon from '@mui/icons-material/Google';
-import FacebookIcon from '@mui/icons-material/Facebook';
-import ScienceIcon from '@mui/icons-material/Science';
 
-// Shared input styles for dark theme (bg-slate-950/50 approx)
-const inputStyles = {
-    '& .MuiOutlinedInput-root': {
-        bgcolor: '#0f172a', // Solid Slate 900
-        color: 'white',
-        borderRadius: 2, // Slightly more rounded (8px)
-        transition: 'all 0.2s ease-in-out',
-        '& fieldset': {
-            border: '1px solid rgba(255, 255, 255, 0.08)', // Very subtle border, no notch
-        },
-        '&:hover fieldset': {
-            borderColor: 'rgba(255, 255, 255, 0.2)',
-        },
-        '&.Mui-focused': {
-            bgcolor: '#0f172a',
-        },
-        '&.Mui-focused fieldset': {
-            borderColor: 'primary.main',
-            boxShadow: '0 0 0 1px rgba(34, 197, 94, 0.5)',
-        },
-        '& input:-webkit-autofill': {
-            '-webkit-box-shadow': '0 0 0 100px #0f172a inset !important',
-            '-webkit-text-fill-color': '#f1f5f9 !important',
-            'caretColor': '#f1f5f9',
-            'borderRadius': 'inherit',
-        },
-    },
-    '& .MuiInputBase-input::placeholder': {
-        color: 'grey.500',
-        opacity: 1,
-    },
-    '& .MuiInputLabel-root': {
-        color: 'grey.400',
-    },
-    '& .MuiInputLabel-root.Mui-focused': {
-        color: 'grey.300',
-    },
-    '& .MuiInputAdornment-root .MuiSvgIcon-root': {
-        color: 'grey.500',
-    },
-} as const;
-
-// Social button styles (bg-white/5, hover:bg-white/10)
-const socialButtonStyles = {
-    borderColor: 'transparent',
-    color: 'white',
-    bgcolor: 'rgba(255, 255, 255, 0.05)',
-    textTransform: 'none',
-    borderWidth: 0,
-    height: 44,
-    fontSize: '0.9rem',
-    '&:hover': {
-        bgcolor: 'rgba(255, 255, 255, 0.1)',
-        borderColor: 'transparent',
-    },
-} as const;
-
-function LoginPage() {
+const LoginPage: React.FC = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const { login, loginWithGoogle, loginWithFacebook } = useAuth();
     const { goHome, goToSignUp, goToLab } = useAppNavigation();
-    const theme = useTheme();
 
     const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -119,245 +48,186 @@ function LoginPage() {
     };
 
     return (
-        <Box
-            sx={{
-                minHeight: '100vh',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                overflow: 'hidden', // Hide scrollbars for the absolute background
-                position: 'relative',
-                py: { xs: 4, md: 8 },
-            }}
-        >
+        <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden py-8 px-4">
             {/* Background Image with Organic Theme */}
-            <Box
-                sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    zIndex: 0,
-                    backgroundImage: `url('https://images.unsplash.com/photo-1625246333195-58197bd47d26?q=80&w=2561&auto=format&fit=crop')`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    backgroundRepeat: 'no-repeat',
-                }}
-            >
+            <div className="absolute inset-0 z-0 select-none pointer-events-none">
+                <img
+                    src="https://images.unsplash.com/photo-1625246333195-58197bd47d26?q=80&w=2561&auto=format&fit=crop"
+                    alt="Background"
+                    className="w-full h-full object-cover"
+                />
                 {/* Dark overlay for contrast */}
-                <Box sx={{ position: 'absolute', inset: 0, bgcolor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(2px)' }} />
+                <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px]" />
                 {/* Organic decorative gradients */}
-                <Box sx={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent, rgba(15, 23, 42, 0.9))' }} />
-            </Box>
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-900/90" />
+            </div>
 
-            <Paper
-                elevation={0}
-                sx={{
-                    position: 'relative', // Ensure z-index works
-                    zIndex: 10,
-                    maxWidth: 420, // Match max-w-[420px]
-                    width: '100%',
-                    mx: 2,
-                    p: 4, // p-8 approx 32px -> 4 * 8 = 32px.
-                    borderRadius: 4, // rounded-2xl
-                    bgcolor: 'rgba(15, 23, 42, 0.4)', // bg-slate-900/40
-                    backdropFilter: 'blur(24px)', // backdrop-blur-xl
-                    border: '1px solid rgba(255, 255, 255, 0.1)', // border-white/10
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', // shadow-2xl
-                }}
-            >
+            {/* Glassmorphic Card */}
+            <div className="relative z-10 w-full max-w-[420px] bg-slate-900/40 backdrop-blur-3xl rounded-3xl p-8 border border-white/10 shadow-2xl">
                 {/* Header Section */}
-                <Box
-                    sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        mb: 4,
-                    }}
-                >
-                    <Avatar
-                        variant="rounded"
-                        sx={{
-                            mb: 2,
-                            bgcolor: 'primary.main',
-                            width: 48, // w-12
-                            height: 48, // h-12
-                            fontSize: '1.125rem', // text-lg
-                            fontWeight: 'bold',
-                            boxShadow: '0 10px 15px -3px rgba(34, 197, 94, 0.2)', // shadow-lg shadow-accent/20
-                            borderRadius: 2, // rounded-lg
-                        }}
-                    >
+                <div className="flex flex-col items-center mb-10">
+                    <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-green-500/20 mb-4 tracking-tighter">
                         MO
-                    </Avatar>
-                    <Typography component="h1" variant="h5" sx={{ fontWeight: 700, color: 'white', letterSpacing: '-0.025em' }}>
-                        Bem-vindo de volta
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: 'grey.300', mt: 0.5 }}>
-                        Acesse sua gestão agrícola inteligente
-                    </Typography>
-                </Box>
+                    </div>
+                    <h1 className="text-2xl font-bold text-white tracking-tight">Bem-vindo de volta</h1>
+                    <p className="text-slate-400 mt-1.5 text-sm">Acesse sua gestão agrícola inteligente</p>
+                </div>
 
                 {/* Form Section */}
-                <Box component="form" onSubmit={handleLogin} role="form">
-                    <TextField
-                        margin="normal"
-                        required
-                        fullWidth
-                        id="email"
-                        placeholder="Endereço de E-mail"
-                        name="email"
-                        autoComplete="email"
-                        autoFocus
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        InputProps={{
-                            startAdornment: (
-                                <InputAdornment position="start">
-                                    <EmailOutlinedIcon />
-                                </InputAdornment>
-                            ),
-                        }}
-                        sx={inputStyles}
-                    />
-                    <TextField
-                        margin="normal"
-                        required
-                        fullWidth
-                        name="password"
-                        placeholder="Sua Senha"
-                        type="password"
-                        id="password"
-                        autoComplete="current-password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        InputProps={{
-                            startAdornment: (
-                                <InputAdornment position="start">
-                                    <LockOutlinedIcon />
-                                </InputAdornment>
-                            ),
-                        }}
-                        sx={inputStyles}
-                    />
+                <form onSubmit={handleLogin} className="space-y-4">
+                    {/* Email Field */}
+                    <div className="space-y-1.5">
+                        <div className="relative group">
+                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 group-focus-within:text-green-500 transition-colors">
+                                <Mail size={20} />
+                            </div>
+                            <input
+                                required
+                                type="email"
+                                id="email"
+                                placeholder="Endereço de E-mail"
+                                autoComplete="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="block w-full pl-11 pr-4 py-3 bg-slate-900/80 border border-white/10 rounded-xl text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all text-sm"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Password Field */}
+                    <div className="space-y-1.5">
+                        <div className="relative group">
+                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 group-focus-within:text-green-500 transition-colors">
+                                <Lock size={20} />
+                            </div>
+                            <input
+                                required
+                                type={showPassword ? "text" : "password"}
+                                id="password"
+                                placeholder="Sua Senha"
+                                autoComplete="current-password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="block w-full pl-11 pr-12 py-3 bg-slate-900/80 border border-white/10 rounded-xl text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all text-sm"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
+                            >
+                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                        </div>
+                    </div>
 
                     {/* Options Row */}
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            mt: 1,
-                            mb: 2,
-                        }}
-                    >
-                        <FormControlLabel
-                            control={<Checkbox value="remember" size="small" sx={{ color: 'grey.500', '&.Mui-checked': { color: 'primary.main' } }} />}
-                            label={<Typography variant="body2" sx={{ color: 'grey.400' }}>Lembrar-me</Typography>}
-                        />
-                        <Link href="#" variant="body2" underline="hover" sx={{ color: 'primary.light' }}>
+                    <div className="flex items-center justify-between mt-2 mb-6">
+                        <label className="flex items-center gap-2 cursor-pointer group">
+                            <div className="relative flex items-center">
+                                <input
+                                    type="checkbox"
+                                    className="peer h-4 w-4 appearance-none rounded-md border border-white/20 bg-slate-900/80 checked:bg-green-600 checked:border-green-600 focus:outline-none transition-all cursor-pointer"
+                                />
+                                <CheckCircle className="absolute inset-0 h-4 w-4 text-white p-0.5 opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" />
+                            </div>
+                            <span className="text-sm text-slate-400 group-hover:text-slate-300 transition-colors">Lembrar-me</span>
+                        </label>
+                        <button type="button" className="text-sm font-medium text-green-400 hover:text-green-300 transition-colors decoration-green-400/30 underline-offset-4">
                             Esqueceu a senha?
-                        </Link>
-                    </Box>
+                        </button>
+                    </div>
 
                     {error && (
-                        <Alert severity="error" sx={{ mb: 2 }}>
-                            {error}
-                        </Alert>
+                        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3 text-red-400 text-sm animate-shake">
+                            <AlertCircle size={18} className="shrink-0 mt-0.5" />
+                            <span>{error}</span>
+                        </div>
                     )}
 
-                    <Button
+                    <button
                         type="submit"
-                        fullWidth
-                        size="large"
-                        variant="contained"
-                        sx={{
-                            mt: 2,
-                            mb: 2,
-                            height: 48,
-                            textTransform: 'none',
-                            fontSize: '1rem',
-                            boxShadow: '0 10px 15px -3px rgba(34, 197, 94, 0.25)',
-                        }}
                         disabled={loading}
+                        className="w-full flex items-center justify-center h-12 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg shadow-green-600/30 hover:shadow-green-600/50 transition-all duration-300"
                     >
-                        {loading ? <CircularProgress size={24} color="inherit" /> : 'Entrar'}
-                    </Button>
+                        {loading ? <Loader2 className="animate-spin" size={20} /> : 'Entrar'}
+                    </button>
 
-                    <Divider sx={{ my: 3, borderColor: 'rgba(148,163,184,0.25)' }}>
-                        <Typography variant="caption" sx={{ color: 'grey.500', letterSpacing: 1, fontWeight: 500, textTransform: 'uppercase' }}>
-                            OU CONTINUE COM
-                        </Typography>
-                    </Divider>
+                    <div className="flex items-center gap-4 my-8">
+                        <div className="h-[1px] flex-1 bg-white/10" />
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">ou continue com</span>
+                        <div className="h-[1px] flex-1 bg-white/10" />
+                    </div>
 
                     {/* Social Login Buttons */}
-                    <Grid container spacing={2}>
-                        <Grid item xs={12} sm={6}>
-                            <Button
-                                fullWidth
-                                variant="outlined"
-                                startIcon={<GoogleIcon />}
-                                onClick={() => handleSocialLogin('google')}
-                                sx={socialButtonStyles}
-                            >
-                                Google
-                            </Button>
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                            <Button
-                                fullWidth
-                                variant="outlined"
-                                startIcon={<FacebookIcon />}
-                                onClick={() => handleSocialLogin('facebook')}
-                                sx={socialButtonStyles}
-                            >
-                                Facebook
-                            </Button>
-                        </Grid>
-                    </Grid>
+                    <div className="grid grid-cols-2 gap-4">
+                        <button
+                            type="button"
+                            onClick={() => handleSocialLogin('google')}
+                            className="flex items-center justify-center gap-2.5 h-11 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-sm font-medium text-white transition-all"
+                        >
+                            <Chrome size={18} className="text-red-400" />
+                            Google
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleSocialLogin('facebook')}
+                            className="flex items-center justify-center gap-2.5 h-11 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-sm font-medium text-white transition-all"
+                        >
+                            <Facebook size={18} className="text-blue-500" />
+                            Facebook
+                        </button>
+                    </div>
 
                     {/* Registration Link */}
-                    <Box sx={{ mt: 4, textAlign: 'center' }}>
-                        <Typography variant="body2" component="span" sx={{ color: 'grey.400' }}>
+                    <div className="mt-8 pt-4 text-center">
+                        <p className="text-sm text-slate-400">
                             Não tem uma conta?{' '}
-                        </Typography>
-                        <Link
-                            component="button"
-                            variant="body2"
-                            underline="hover"
-                            onClick={goToSignUp}
-                            sx={{ color: 'primary.main' }}
-                        >
-                            Cadastre-se
-                        </Link>
-                    </Box>
-                </Box>
-            </Paper>
+                            <button
+                                type="button"
+                                onClick={goToSignUp}
+                                className="text-green-400 font-bold hover:text-green-300 transition-colors"
+                            >
+                                Cadastre-se
+                            </button>
+                        </p>
+                    </div>
+                </form>
+            </div>
 
             {/* Footer */}
-            <Box component="footer" sx={{ position: 'relative', zIndex: 10, mt: 4, mb: 2, textAlign: 'center' }}>
-                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)', letterSpacing: '0.1em', fontWeight: 500, textTransform: 'uppercase', fontSize: '0.625rem' }}>
+            <footer className="relative z-10 mt-10 text-center">
+                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.2em]">
                     {import.meta.env.VITE_APP_NAME} © {new Date().getFullYear()}
-                </Typography>
-            </Box>
+                </p>
+            </footer>
 
             {/* Lab Button (Secret Access) */}
-            <Box sx={{ position: 'fixed', bottom: 16, right: 16, zIndex: 10 }}>
-                <IconButton
+            <div className="fixed bottom-6 right-6 z-10">
+                <button
                     onClick={goToLab}
-                    title="Ir para Lab de Design"
-                    sx={{
-                        color: 'rgba(255,255,255,0.1)',
-                        '&:hover': { color: '#4ade80', bgcolor: 'rgba(255, 255, 255, 0.05)' },
-                    }}
+                    title="Design Lab"
+                    className="p-3 bg-white/5 hover:bg-green-500/20 text-slate-600 hover:text-green-500 border border-white/5 rounded-full backdrop-blur-md transition-all group"
                 >
-                    <ScienceIcon />
-                </IconButton>
-            </Box>
-        </Box>
+                    <FlaskConical size={20} className="group-hover:scale-110 transition-transform" />
+                </button>
+            </div>
+        </div>
     );
-}
+};
+
+// Simple helper icon for the checkbox
+const CheckCircle: React.FC<{ className?: string }> = ({ className }) => (
+    <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+    >
+        <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+);
 
 export default LoginPage;
