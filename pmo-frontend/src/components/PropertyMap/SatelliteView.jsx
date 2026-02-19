@@ -1,19 +1,27 @@
+// src/components/PropertyMap/SatelliteView.jsx
+
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, Paper, Typography, IconButton, Button, Stack } from '@mui/material';
+import {
+    Trash2,
+    Save,
+    Layers,
+    Square,
+    Edit2,
+    Loader2,
+    X,
+    Map as MapIcon,
+    Maximize2,
+    Minimize2
+} from 'lucide-react';
 import { MapContainer, TileLayer, FeatureGroup, useMap, ZoomControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import L from 'leaflet';
 import 'leaflet-draw';
-import GrassIcon from '@mui/icons-material/Grass';
-import DeleteIcon from '@mui/icons-material/Delete';
-import SaveIcon from '@mui/icons-material/Save';
-import LayersIcon from '@mui/icons-material/Layers';
-import SquareFootIcon from '@mui/icons-material/SquareFoot'; // Ruler
-import EditIcon from '@mui/icons-material/Edit'; // Pencil
 import { useTalhaoManager } from '../../hooks/map/useTalhaoManager';
 import { useAuth } from '../../context/AuthContext';
 import TalhaoDetails from '../Map/TalhaoDetails';
+import { cn } from '../../utils/cn';
 
 // --- ÍCONES LEAFLET FIX ---
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -30,7 +38,7 @@ L.Icon.Default.mergeOptions({
 const GlobalMapStyles = () => (
     <style>{`
         .leaflet-container {
-            font-family: 'Roboto', sans-serif !important;
+            font-family: 'Inter', sans-serif !important;
         }
         .map-label-transparent {
             background: transparent !important;
@@ -40,8 +48,26 @@ const GlobalMapStyles = () => (
         .map-label-transparent::before {
             display: none !important;
         }
-        .leaflet-top { top: 10px; }
-        .leaflet-left { left: 10px; }
+        .leaflet-top { top: 16px; }
+        .leaflet-left { left: 16px; }
+        .leaflet-bar {
+            border: none !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+            border-radius: 12px !important;
+            overflow: hidden;
+        }
+        .leaflet-bar a {
+            background-color: white !important;
+            color: #64748b !important;
+            border-bottom: 1px solid #f1f5f9 !important;
+            width: 40px !important;
+            height: 40px !important;
+            line-height: 40px !important;
+        }
+        .leaflet-bar a:hover {
+            background-color: #f8fafc !important;
+            color: #1e293b !important;
+        }
     `}</style>
 );
 
@@ -169,11 +195,11 @@ const TalhoesRenderer = ({ talhoes, onTalhaoClick, selectedTalhaoId }) => {
 
                 const geoJsonLayer = L.geoJSON(enrichedGeometry, {
                     style: {
-                        color: t.cor || '#39ff14',
+                        color: t.cor || '#16a34a',
                         weight: isSelected ? 6 : 4,
                         opacity: 1,
-                        fillOpacity: isSelected ? 0.7 : 0.5,
-                        fillColor: t.cor || '#39ff14',
+                        fillOpacity: isSelected ? 0.7 : 0.4,
+                        fillColor: t.cor || '#16a34a',
                     },
                     onEachFeature: (feature, layer) => {
                         layer.on({
@@ -188,9 +214,9 @@ const TalhoesRenderer = ({ talhoes, onTalhaoClick, selectedTalhaoId }) => {
                 geoJsonLayer.eachLayer(l => {
                     if (l.bindTooltip && t.nome) {
                         l.bindTooltip(`
-                            <div style="display: flex; flex-direction: column; align-items: center;">
-                                <span style="font-weight: 900; text-transform: uppercase; font-size: 14px; text-shadow: 0px 0px 4px rgba(0,0,0,1); color: white;">${t.nome}</span>
-                                <span style="font-size: 12px; background: rgba(0,0,0,0.6); color: #fff; padding: 2px 6px; border-radius: 4px; margin-top: 2px;">
+                            <div style="display: flex; flex-direction: column; align-items: center; pointer-events: none;">
+                                <span style="font-weight: 900; text-transform: uppercase; font-size: 13px; text-shadow: 0px 1px 4px rgba(0,0,0,0.8); color: white; letter-spacing: 0.5px;">${t.nome}</span>
+                                <span style="font-size: 11px; font-weight: 700; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); color: #fff; padding: 1px 8px; border-radius: 99px; margin-top: 2px; border: 1px solid rgba(255,255,255,0.2);">
                                     ${t.area_ha ? Number(t.area_ha).toFixed(2) + ' ha' : ''}
                                 </span>
                             </div>
@@ -254,8 +280,6 @@ const SatelliteView = ({ pmoId }) => {
     }, []);
 
     const handleCreated = async (geoJSON, layer) => {
-        // Convert Leaflet LatLng[] to Domain GeoPoint[]
-        // Leaflet polygon getLatLngs() returns an array of rings. First ring is the outer boundary.
         const latLngs = layer.getLatLngs()[0];
         const coords = latLngs.map(ll => ({ lat: ll.lat, lng: ll.lng }));
 
@@ -271,8 +295,6 @@ const SatelliteView = ({ pmoId }) => {
             alert('Erro ao salvar talhão.');
             featureGroupRef.current.removeLayer(layer);
         } else {
-            // Success! The hook updates the state, and the TalhoesRenderer will draw it.
-            // We remove the drawn layer because the renderer will add the "persisted" one.
             featureGroupRef.current.removeLayer(layer);
         }
     };
@@ -282,7 +304,7 @@ const SatelliteView = ({ pmoId }) => {
     };
 
     const handleDelete = async (id) => {
-        if (!confirm("Deletar talhão?")) return;
+        if (!confirm("Deletar talhão? Isso excluirá permanentemente todos os dados associados.")) return;
         const success = await removeTalhao(id);
         if (success) {
             setSelectedTalhaoId(null);
@@ -291,15 +313,19 @@ const SatelliteView = ({ pmoId }) => {
         }
     };
 
-    // Loading priority: Map location first, then data
     const isLoading = !mapReady || (talhoesLoading && talhoes.length === 0);
 
     return (
-        <Box sx={{ display: 'flex', height: '600px', flexDirection: { xs: 'column', md: 'row' } }}>
+        <div className="flex flex-col md:flex-row h-[700px] w-full bg-slate-100 rounded-3xl overflow-hidden shadow-2xl border border-slate-200">
             <GlobalMapStyles />
 
-            <Paper sx={{ flexGrow: 1, position: 'relative', zIndex: 1 }}>
-                {!isLoading && (
+            <div className="flex-1 relative z-10">
+                {isLoading ? (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/10 backdrop-blur-sm z-50">
+                        <Loader2 size={48} className="animate-spin text-green-600 mb-4" />
+                        <span className="text-slate-600 font-bold uppercase tracking-widest text-xs">Carregando Mapa...</span>
+                    </div>
+                ) : (
                     <MapContainer
                         center={activeCenter}
                         zoom={16}
@@ -331,27 +357,29 @@ const SatelliteView = ({ pmoId }) => {
                         />
                     </MapContainer>
                 )}
-            </Paper>
+            </div>
 
             {selectedTalhaoId && (
-                <Paper sx={{ width: { xs: '100%', md: 300 }, borderLeft: '1px solid #ddd', zIndex: 2 }}>
-                    <TalhaoDetails
-                        talhao={talhoes.find(t => t.id === selectedTalhaoId)}
-                        onBack={() => setSelectedTalhaoId(null)}
-                    />
-                    <Box sx={{ p: 2, textAlign: 'center' }}>
-                        <Button
-                            variant="outlined"
-                            color="error"
-                            startIcon={<DeleteIcon fontSize="small" />}
+                <div className="w-full md:w-[350px] bg-white border-l border-slate-200 z-20 flex flex-col shadow-[-10px_0_30px_-15px_rgba(0,0,0,0.1)] animate-in slide-in-from-right duration-300">
+                    <div className="flex-1 overflow-hidden">
+                        <TalhaoDetails
+                            talhao={talhoes.find(t => t.id === selectedTalhaoId)}
+                            onBack={() => setSelectedTalhaoId(null)}
+                        />
+                    </div>
+
+                    <div className="p-6 bg-slate-50 border-t border-slate-100 shrink-0">
+                        <button
                             onClick={() => handleDelete(selectedTalhaoId)}
+                            className="w-full flex items-center justify-center gap-2 px-6 py-3 border-2 border-red-100 text-red-600 font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-red-50 hover:border-red-200 transition-all active:scale-95"
                         >
+                            <Trash2 size={16} />
                             Excluir Talhão
-                        </Button>
-                    </Box>
-                </Paper>
+                        </button>
+                    </div>
+                </div>
             )}
-        </Box>
+        </div>
     );
 };
 

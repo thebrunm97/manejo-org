@@ -1,24 +1,21 @@
+// src/components/admin/LogDetailsDialog.tsx
+
 import React, { useEffect, useState } from 'react';
 import {
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    Button,
-    Typography,
-    Box,
-    Grid,
-    Card,
-    CardContent,
-    Chip,
-    IconButton,
-    CircularProgress,
-    Divider,
-    Alert,
-    Paper
-} from '@mui/material';
-import { X, User, MessageSquare, Database, DollarSign, Activity, Clock } from 'lucide-react';
+    X,
+    User,
+    MessageSquare,
+    Database,
+    DollarSign,
+    Activity,
+    Clock,
+    CheckCircle2,
+    AlertCircle,
+    Info,
+    Loader2
+} from 'lucide-react';
 import { supabase } from '../../supabaseClient';
+import { cn } from '../../utils/cn';
 
 export interface LogData {
     id: string;
@@ -72,17 +69,14 @@ const LogDetailsDialog: React.FC<LogDetailsDialogProps> = ({ open, onClose, log 
         setLoadingProfile(true);
         setFetchError(null);
         try {
-            // Use RPC to get email from auth.users + profile data
             const { data, error } = await supabase
                 .rpc('get_admin_user_details', { target_user_id: userId });
 
             if (error) throw error;
 
-            // RPC returns an array of rows
             if (data && data.length > 0) {
                 setUserProfile(data[0]);
             } else {
-                // Fallback for edge cases (e.g. user deleted from auth but profile exists?)
                 setUserProfile({ nome: 'Usuário não encontrado', email: '-', plan_tier: '-', role: '-' });
             }
         } catch (err: any) {
@@ -104,196 +98,197 @@ const LogDetailsDialog: React.FC<LogDetailsDialogProps> = ({ open, onClose, log 
 
     const messageContent = log.texto_usuario || (log as any).input_message || '';
     const jsonContent = log.json_corrigido || log.json_extraido || log.meta;
-    // Note: 'meta' is used in logs_consumo, json_* in logs_treinamento
-
     const audioUrl = log.audio_url || (log.json_extraido as any)?.audio_url || (log.meta as any)?.audio_url;
 
     const hasMessageContent = !!messageContent || !!audioUrl;
     const hasJsonContent = jsonContent && Object.keys(jsonContent).length > 0;
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: '#f8f9fa' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Activity size={20} className="text-blue-600" />
-                    <Typography variant="h6" component="div">
-                        Detalhes da Interação
-                    </Typography>
-                    <Chip
-                        label={formattedDate}
-                        size="small"
-                        variant="outlined"
-                        icon={<Clock size={14} />}
-                        sx={{ ml: 2, bgcolor: 'white' }}
-                    />
-                </Box>
-                <IconButton
-                    aria-label="close"
-                    onClick={onClose}
-                    sx={{ color: (theme) => theme.palette.grey[500] }}
-                >
-                    <X size={20} />
-                </IconButton>
-            </DialogTitle>
+        <div className={cn(
+            "fixed inset-0 z-[110] flex items-center justify-center p-4 transition-all duration-300",
+            open ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
+        )}>
+            {/* Backdrop */}
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
 
-            <DialogContent dividers sx={{ p: 3 }}>
-                <Grid container spacing={3}>
-                    {/* 1. SEÇÃO DE USUÁRIO */}
-                    <Grid item xs={12}>
-                        <Card variant="outlined" sx={{ bgcolor: '#f1f5f9' }}>
-                            <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                        <Box sx={{ p: 1, bgcolor: 'white', borderRadius: '50%' }}>
-                                            <User size={24} className="text-slate-500" />
-                                        </Box>
-                                        <Box>
-                                            {loadingProfile ? (
-                                                <CircularProgress size={16} />
-                                            ) : (
-                                                <>
-                                                    <Typography variant="subtitle1" fontWeight="bold">
-                                                        {userProfile?.nome || 'Usuário Desconhecido'}
-                                                    </Typography>
-                                                    <Typography variant="caption" color="textSecondary">
-                                                        {userProfile?.email || log.user_id}
-                                                    </Typography>
-                                                    {fetchError && (
-                                                        <Typography variant="caption" color="error" display="block">
-                                                            Erro: {fetchError}
-                                                        </Typography>
-                                                    )}
-                                                </>
-                                            )}
-                                        </Box>
-                                    </Box>
-                                    <Box sx={{ display: 'flex', gap: 1 }}>
-                                        <Chip
-                                            label={userProfile?.plan_tier?.toUpperCase() || 'FREE'}
-                                            color="primary"
-                                            size="small"
-                                            variant="filled"
-                                        />
-                                        {userProfile?.role === 'admin' && (
-                                            <Chip label="ADMIN" color="error" size="small" />
+            {/* Modal Container */}
+            <div className={cn(
+                "relative bg-white w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 transform",
+                open ? "scale-100 translate-y-0" : "scale-95 translate-y-4"
+            )}>
+
+                {/* Header */}
+                <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
+                            <Activity size={20} />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-slate-900">Detalhes da Interação</h3>
+                            <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-xs font-medium text-slate-500 bg-white border border-slate-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                    <Clock size={12} />
+                                    {formattedDate}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+
+                        {/* 1. SEÇÃO DE USUÁRIO */}
+                        <div className="col-span-12">
+                            <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-white rounded-full border border-slate-200 flex items-center justify-center text-slate-400 shadow-sm">
+                                        <User size={24} />
+                                    </div>
+                                    <div>
+                                        {loadingProfile ? (
+                                            <div className="flex items-center gap-2 text-slate-400">
+                                                <Loader2 size={16} className="animate-spin" />
+                                                <span className="text-sm">Carregando perfil...</span>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <h4 className="font-bold text-slate-900">
+                                                    {userProfile?.nome || 'Usuário Desconhecido'}
+                                                </h4>
+                                                <p className="text-xs text-slate-500">
+                                                    {userProfile?.email || log.user_id}
+                                                </p>
+                                                {fetchError && (
+                                                    <p className="text-[10px] text-red-500 mt-1">
+                                                        Erro: {fetchError}
+                                                    </p>
+                                                )}
+                                            </>
                                         )}
-                                    </Box>
-                                </Box>
-                            </CardContent>
-                        </Card>
-                    </Grid>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <span className="px-2.5 py-1 bg-blue-600 text-white text-[10px] font-bold rounded-lg uppercase tracking-wider">
+                                        {userProfile?.plan_tier || 'FREE'}
+                                    </span>
+                                    {userProfile?.role === 'admin' && (
+                                        <span className="px-2.5 py-1 bg-red-100 text-red-600 text-[10px] font-bold rounded-lg uppercase tracking-wider">
+                                            ADMIN
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
 
-                    {/* 2. DADOS TÉCNICOS & JSON (Coluna Esquerda) */}
-                    <Grid item xs={12} md={hasMessageContent ? 6 : 12}>
-                        <Typography variant="subtitle2" color="textSecondary" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Database size={16} />
-                            Metadados Técnicos
-                        </Typography>
+                        {/* 2. DADOS TÉCNICOS & JSON (Coluna Esquerda) */}
+                        <div className={cn(
+                            "col-span-12",
+                            hasMessageContent ? "md:col-span-6" : ""
+                        )}>
+                            <div className="flex items-center gap-2 mb-4 text-slate-500">
+                                <Database size={16} />
+                                <span className="text-xs font-bold uppercase tracking-wider">Metadados Técnicos</span>
+                            </div>
 
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
-                            {log.modelo_ia && (
-                                <Chip label={log.modelo_ia} size="small" variant="outlined" />
-                            )}
-                            {log.acao && (
-                                <Chip label={`Ação: ${log.acao}`} size="small" color="secondary" variant="outlined" />
-                            )}
-                            {log.total_tokens !== undefined && (
-                                <Chip label={`${log.total_tokens} Tokens`} size="small" icon={<Database size={12} />} />
-                            )}
-                            {log.custo_estimado !== undefined && (
-                                <Chip label={`$${Number(log.custo_estimado).toFixed(6)}`} size="small" icon={<DollarSign size={12} />} color="error" variant="outlined" />
-                            )}
-                            {log.duracao_ms !== undefined && (
-                                <Chip label={`${log.duracao_ms}ms`} size="small" variant="outlined" />
-                            )}
-                        </Box>
+                            <div className="flex flex-wrap gap-2 mb-6">
+                                {log.modelo_ia && (
+                                    <span className="px-2 py-1 bg-slate-100 text-slate-600 text-[11px] font-medium rounded border border-slate-200">
+                                        {log.modelo_ia}
+                                    </span>
+                                )}
+                                {log.acao && (
+                                    <span className="px-2 py-1 bg-purple-50 text-purple-600 text-[11px] font-medium rounded border border-purple-100">
+                                        {log.acao}
+                                    </span>
+                                )}
+                                {log.total_tokens !== undefined && (
+                                    <span className="px-2 py-1 bg-slate-100 text-slate-700 text-[11px] font-medium rounded flex items-center gap-1 border border-slate-200">
+                                        <Database size={10} />
+                                        {log.total_tokens} Tokens
+                                    </span>
+                                )}
+                                {log.custo_estimado !== undefined && (
+                                    <span className="px-2 py-1 bg-red-50 text-red-600 text-[11px] font-medium rounded flex items-center gap-1 border border-red-100">
+                                        <DollarSign size={10} />
+                                        ${Number(log.custo_estimado).toFixed(6)}
+                                    </span>
+                                )}
+                                {log.duracao_ms !== undefined && (
+                                    <span className="px-2 py-1 bg-slate-100 text-slate-600 text-[11px] font-medium rounded border border-slate-200">
+                                        {log.duracao_ms}ms
+                                    </span>
+                                )}
+                            </div>
 
-                        {hasJsonContent && (
-                            <>
-                                <Typography variant="subtitle2" color="textSecondary" sx={{ mb: 1 }}>
-                                    JSON Processado
-                                </Typography>
-                                <Box sx={{
-                                    p: 2,
-                                    bgcolor: '#1e293b',
-                                    color: '#e2e8f0',
-                                    borderRadius: 1,
-                                    whiteSpace: 'pre-wrap',
-                                    wordBreak: 'break-word',
-                                    overflowWrap: 'break-word',
-                                    maxHeight: '400px',
-                                    overflowY: 'auto',
-                                    fontSize: '0.75rem',
-                                    fontFamily: 'monospace'
-                                }}>
-                                    {JSON.stringify(jsonContent || {}, null, 2)}
-                                </Box>
-                            </>
-                        )}
-                    </Grid>
+                            {hasJsonContent && (
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-2 text-slate-500">
+                                        <span className="text-xs font-bold uppercase tracking-wider text-slate-400">JSON Processado</span>
+                                    </div>
+                                    <div className="bg-slate-900 text-slate-300 p-4 rounded-xl font-mono text-[10px] leading-relaxed overflow-hidden">
+                                        <pre className="overflow-x-auto max-h-[400px] scrollbar-hide">
+                                            {JSON.stringify(jsonContent || {}, null, 2)}
+                                        </pre>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
 
-                    {/* 3. CONTEÚDO DA MENSAGEM (Coluna Direita - Somente se houver conteúdo) */}
-                    {hasMessageContent && (
-                        <Grid item xs={12} md={6}>
-                            <Typography variant="subtitle2" color="textSecondary" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <MessageSquare size={16} />
-                                Conteúdo da Mensagem
-                            </Typography>
+                        {/* 3. CONTEÚDO DA MENSAGEM (Coluna Direita - Somente se houver conteúdo) */}
+                        {hasMessageContent && (
+                            <div className="col-span-12 md:col-span-6 space-y-6">
+                                <div className="flex items-center gap-2 text-slate-500">
+                                    <MessageSquare size={16} />
+                                    <span className="text-xs font-bold uppercase tracking-wider">Conteúdo da Mensagem</span>
+                                </div>
 
-                            {audioUrl && (
-                                <Box sx={{ mb: 3 }}>
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        🎙️ Áudio Original (Prova de Auditoria)
-                                    </Typography>
-                                    <Paper
-                                        elevation={0}
-                                        sx={{
-                                            p: 2,
-                                            bgcolor: '#f0fdf4',
-                                            border: '1px solid #bbf7d0',
-                                            borderRadius: '12px',
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            gap: 1
-                                        }}
-                                    >
+                                {audioUrl && (
+                                    <div className="bg-green-50 border border-green-100 p-4 rounded-xl space-y-3">
+                                        <div className="flex items-center gap-2 text-green-700">
+                                            <span className="text-xs font-bold uppercase tracking-wider">🎙️ Áudio Original</span>
+                                        </div>
                                         <audio
                                             controls
                                             src={audioUrl}
-                                            style={{ width: '100%' }}
+                                            className="w-full h-10"
                                         />
-                                        <Typography variant="caption" sx={{ color: '#16a34a', fontStyle: 'italic' }}>
+                                        <p className="text-[10px] text-green-600 italic">
                                             Áudio enviado via WhatsApp e transcrito automaticamente
-                                        </Typography>
-                                    </Paper>
-                                </Box>
-                            )}
+                                        </p>
+                                    </div>
+                                )}
 
-                            {messageContent && (
-                                <Box sx={{
-                                    p: 2,
-                                    bgcolor: '#eff6ff',
-                                    borderRadius: 2,
-                                    border: '1px solid #dbeafe',
-                                    minHeight: audioUrl ? 100 : 200,
-                                    whiteSpace: 'pre-wrap',
-                                    wordBreak: 'break-word'
-                                }}>
-                                    <Typography variant="body1">
-                                        {messageContent}
-                                    </Typography>
-                                </Box>
-                            )}
-                        </Grid>
-                    )}
-                </Grid>
-            </DialogContent>
-            <DialogActions sx={{ p: 2 }}>
-                <Button onClick={onClose} variant="contained" color="primary">
-                    Fechar
-                </Button>
-            </DialogActions>
-        </Dialog>
+                                {messageContent && (
+                                    <div className="bg-blue-50/50 border border-blue-100 p-4 rounded-xl min-h-[150px]">
+                                        <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap italic">
+                                            "{messageContent}"
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Footer Actions */}
+                <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+                    <button
+                        onClick={onClose}
+                        className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-900/10 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                        Fechar
+                    </button>
+                </div>
+            </div>
+        </div>
     );
 };
 

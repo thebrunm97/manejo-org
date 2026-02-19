@@ -1,10 +1,9 @@
 // src/components/PmoForm/Secao17_MUI.tsx
+// Clonado do Template Canónico (Secao11) — Zero MUI
 
-import React, { ChangeEvent } from 'react';
-import {
-    Accordion, AccordionDetails, AccordionSummary, TextField, Typography
-} from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import React, { ChangeEvent, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
+
 import SectionShell from '../Plan/SectionShell';
 
 // Types
@@ -20,69 +19,96 @@ interface Secao17MUIProps {
     onSectionChange: (data: Secao17Data) => void;
 }
 
+// Accordion Reutilizável
+interface AccordionPanelProps {
+    title: string;
+    defaultOpen?: boolean;
+    children: React.ReactNode;
+}
+
+const AccordionPanel: React.FC<AccordionPanelProps> = ({ title, defaultOpen = false, children }) => {
+    const [isOpen, setIsOpen] = useState(defaultOpen);
+
+    return (
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-4 overflow-hidden">
+            <button
+                type="button"
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200 
+                           hover:bg-gray-100 transition-colors duration-150 text-left cursor-pointer"
+            >
+                <span className="font-semibold text-sm text-gray-800 leading-snug pr-4">
+                    {title}
+                </span>
+                <ChevronDown
+                    size={18}
+                    className={`shrink-0 text-gray-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                />
+            </button>
+            {isOpen && (
+                <div className="px-4 py-4">
+                    {children}
+                </div>
+            )}
+        </div>
+    );
+};
+
 const Secao17MUI: React.FC<Secao17MUIProps> = ({ data, onSectionChange }) => {
     const safeData = data || {};
 
-    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         onSectionChange({ ...safeData, [name]: { [name]: value } });
     };
 
     return (
         <SectionShell sectionLabel="Seção 17" title="Opinião">
-            <Accordion defaultExpanded>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Typography sx={{ fontWeight: 'bold' }}>17.1. Quais os principais problemas enfrentados na produção orgânica?</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                    <TextField
-                        name="principais_problemas_producao_organica"
-                        value={safeData.principais_problemas_producao_organica?.principais_problemas_producao_organica || ''}
-                        onChange={handleChange}
-                        variant="outlined"
-                        fullWidth
-                        multiline
-                        rows={4}
-                        placeholder="Descreva os problemas aqui..."
-                    />
-                </AccordionDetails>
-            </Accordion>
+            <AccordionPanel
+                title="17.1. Quais os principais problemas enfrentados na produção orgânica?"
+                defaultOpen
+            >
+                <textarea
+                    name="principais_problemas_producao_organica"
+                    value={safeData.principais_problemas_producao_organica?.principais_problemas_producao_organica || ''}
+                    onChange={handleChange}
+                    rows={4}
+                    placeholder="Descreva os problemas aqui..."
+                    className="w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 text-sm
+                               focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none
+                               placeholder-gray-400 resize-y"
+                />
+            </AccordionPanel>
 
-            <Accordion>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Typography sx={{ fontWeight: 'bold' }}>17.2. Quais as principais vantagens da produção orgânica?</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                    <TextField
-                        name="principais_vantagens_producao_organica"
-                        value={safeData.principais_vantagens_producao_organica?.principais_vantagens_producao_organica || ''}
-                        onChange={handleChange}
-                        variant="outlined"
-                        fullWidth
-                        multiline
-                        rows={4}
-                        placeholder="Descreva as vantagens aqui..."
-                    />
-                </AccordionDetails>
-            </Accordion>
+            <AccordionPanel
+                title="17.2. Quais as principais vantagens da produção orgânica?"
+            >
+                <textarea
+                    name="principais_vantagens_producao_organica"
+                    value={safeData.principais_vantagens_producao_organica?.principais_vantagens_producao_organica || ''}
+                    onChange={handleChange}
+                    rows={4}
+                    placeholder="Descreva as vantagens aqui..."
+                    className="w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 text-sm
+                               focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none
+                               placeholder-gray-400 resize-y"
+                />
+            </AccordionPanel>
 
-            <Accordion>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Typography sx={{ fontWeight: 'bold' }}>17.3. Outras informações que achar necessário.</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                    <TextField
-                        name="outras_informacoes_necessarias"
-                        value={safeData.outras_informacoes_necessarias?.outras_informacoes_necessarias || ''}
-                        onChange={handleChange}
-                        variant="outlined"
-                        fullWidth
-                        multiline
-                        rows={4}
-                        placeholder="Adicione outras informações aqui..."
-                    />
-                </AccordionDetails>
-            </Accordion>
+            <AccordionPanel
+                title="17.3. Outras informações que achar necessário."
+            >
+                <textarea
+                    name="outras_informacoes_necessarias"
+                    value={safeData.outras_informacoes_necessarias?.outras_informacoes_necessarias || ''}
+                    onChange={handleChange}
+                    rows={4}
+                    placeholder="Adicione outras informações aqui..."
+                    className="w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 text-sm
+                               focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none
+                               placeholder-gray-400 resize-y"
+                />
+            </AccordionPanel>
         </SectionShell>
     );
 };

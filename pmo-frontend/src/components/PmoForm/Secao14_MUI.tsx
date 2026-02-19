@@ -1,11 +1,9 @@
 // src/components/PmoForm/Secao14_MUI.tsx
+// Clonado do Template Canónico — Zero MUI
 
-import React, { ChangeEvent } from 'react';
-import {
-    Accordion, AccordionDetails, AccordionSummary, Box, FormControl,
-    FormGroup, FormControlLabel, Checkbox, TextField, Typography
-} from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import React, { ChangeEvent, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
+
 import SectionShell from '../Plan/SectionShell';
 
 // Types
@@ -15,7 +13,7 @@ interface CanalConfig {
     placeholder?: string;
 }
 
-interface CanalCheckboxMUIProps {
+interface CanalCheckboxProps {
     label: string;
     name?: string;
     checked: boolean;
@@ -39,32 +37,60 @@ interface Secao14MUIProps {
     onSectionChange: (data: Secao14Data) => void;
 }
 
-const CanalCheckboxMUI: React.FC<CanalCheckboxMUIProps> = ({ label, name, checked, onChange, conditionalValue, onTextChange, placeholder }) => {
+// Sub-componente: Canal Checkbox com campo condicional
+const CanalCheckbox: React.FC<CanalCheckboxProps> = ({ label, name, checked, onChange, conditionalValue, onTextChange, placeholder }) => {
     return (
-        <Box>
-            <FormControlLabel
-                control={
-                    <Checkbox
-                        value={label}
-                        checked={checked}
-                        onChange={(e) => onChange(e.target.value, e.target.checked)}
-                    />
-                }
-                label={label}
-            />
+        <div>
+            <label className="flex items-start gap-2.5 py-1.5 cursor-pointer group">
+                <input
+                    type="checkbox"
+                    value={label}
+                    checked={checked}
+                    onChange={(e) => onChange(e.target.value, e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 text-green-600 focus:ring-green-500 focus:ring-offset-0 cursor-pointer"
+                />
+                <span className="text-sm text-gray-700 leading-snug group-hover:text-gray-900 select-none">
+                    {label}
+                </span>
+            </label>
             {checked && placeholder && (
-                <TextField
+                <input
+                    type="text"
                     name={name}
                     placeholder={placeholder}
                     value={conditionalValue || ''}
                     onChange={onTextChange}
-                    variant="standard"
-                    size="small"
-                    fullWidth
-                    sx={{ mb: 1, pl: 4 }}
+                    className="w-full ml-6 mt-1 mb-2 rounded-md border border-gray-300 shadow-sm px-3 py-1.5 text-sm
+                               focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none
+                               placeholder-gray-400"
                 />
             )}
-        </Box>
+        </div>
+    );
+};
+
+// Accordion Reutilizável
+interface AccordionPanelProps {
+    title: string;
+    defaultOpen?: boolean;
+    children: React.ReactNode;
+}
+
+const AccordionPanel: React.FC<AccordionPanelProps> = ({ title, defaultOpen = false, children }) => {
+    const [isOpen, setIsOpen] = useState(defaultOpen);
+    return (
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-4 overflow-hidden">
+            <button
+                type="button"
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200 
+                           hover:bg-gray-100 transition-colors duration-150 text-left cursor-pointer"
+            >
+                <span className="font-semibold text-sm text-gray-800 leading-snug pr-4">{title}</span>
+                <ChevronDown size={18} className={`shrink-0 text-gray-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {isOpen && <div className="px-4 py-4">{children}</div>}
+        </div>
     );
 };
 
@@ -99,29 +125,25 @@ const Secao14MUI: React.FC<Secao14MUIProps> = ({ data, onSectionChange }) => {
 
     return (
         <SectionShell sectionLabel="Seção 14" title="Comercialização">
-            <Accordion defaultExpanded>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Typography sx={{ fontWeight: 'bold' }}>14.1. Em quais canais os produtos são comercializados?</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                    <FormControl component="fieldset" fullWidth>
-                        <FormGroup sx={{ mt: 1 }}>
-                            {canais.map(canal => (
-                                <CanalCheckboxMUI
-                                    key={canal.label}
-                                    label={canal.label}
-                                    name={canal.name}
-                                    checked={canaisSelecionados.includes(canal.label)}
-                                    onChange={handleCheckboxChange}
-                                    conditionalValue={canal.name ? safeData[canal.name] : ''}
-                                    onTextChange={handleTextChange}
-                                    placeholder={canal.placeholder}
-                                />
-                            ))}
-                        </FormGroup>
-                    </FormControl>
-                </AccordionDetails>
-            </Accordion>
+            <AccordionPanel
+                title="14.1. Em quais canais os produtos são comercializados?"
+                defaultOpen
+            >
+                <fieldset className="space-y-0.5 mt-1">
+                    {canais.map(canal => (
+                        <CanalCheckbox
+                            key={canal.label}
+                            label={canal.label}
+                            name={canal.name}
+                            checked={canaisSelecionados.includes(canal.label)}
+                            onChange={handleCheckboxChange}
+                            conditionalValue={canal.name ? safeData[canal.name] : ''}
+                            onTextChange={handleTextChange}
+                            placeholder={canal.placeholder}
+                        />
+                    ))}
+                </fieldset>
+            </AccordionPanel>
         </SectionShell>
     );
 };

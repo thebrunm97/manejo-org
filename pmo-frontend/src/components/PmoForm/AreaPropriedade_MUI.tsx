@@ -1,7 +1,7 @@
 // src/components/PmoForm/AreaPropriedade_MUI.tsx
+// Zero MUI — Box → Tailwind grid. DebouncedTextField is already Tailwind-native.
 
 import React from 'react';
-import { Box } from '@mui/material';
 import DebouncedTextField from '../Common/DebouncedTextField';
 
 interface AreaPropriedadeData {
@@ -44,32 +44,22 @@ const AreaPropriedadeMUI: React.FC<AreaPropriedadeMUIProps> = ({ data, onDataCha
     const safeErrors = errors || {};
 
     return (
-        <Box
-            sx={{
-                display: 'grid',
-                gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
-                gap: 3,
-                rowGap: 2.5,
-            }}
-        >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
             {fields.map((field) => (
                 <DebouncedTextField
                     key={field.name}
                     name={field.name}
                     label={field.label}
-                    value={safeData[field.name] || ''}
+                    value={String(safeData[field.name] ?? '')}
                     onChange={(val: string) => handleChange(field.name, val)}
                     error={!!safeErrors[field.name]}
                     helperText={safeErrors[field.name] || ' '}
                     type="number"
                     required={field.required}
-                    variant="outlined"
-                    fullWidth
-                    InputLabelProps={{ shrink: true }}
                     inputProps={{ step: '0.01', min: '0' }}
                 />
             ))}
-        </Box>
+        </div>
     );
 };
 
