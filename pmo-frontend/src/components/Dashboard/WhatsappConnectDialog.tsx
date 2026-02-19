@@ -3,21 +3,17 @@
  * Dialog for generating and displaying WhatsApp connection codes.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    Button,
-    Box,
-    Typography,
-    CircularProgress,
-    Alert,
-    IconButton,
-    Tooltip
-} from '@mui/material';
-import { MessageCircle, Copy, Check, RefreshCw, X, ExternalLink } from 'lucide-react';
+    MessageCircle,
+    Copy,
+    Check,
+    RefreshCw,
+    X,
+    ExternalLink,
+    Loader2,
+    AlertCircle
+} from 'lucide-react';
 import { generateWhatsappCode, getWhatsappBotNumber } from '../../services/whatsappService';
 
 interface WhatsappConnectDialogProps {
@@ -39,6 +35,15 @@ const WhatsappConnectDialog: React.FC<WhatsappConnectDialogProps> = ({
     const [copied, setCopied] = useState(false);
 
     const botNumber = getWhatsappBotNumber();
+
+    // Reset state on open change
+    useEffect(() => {
+        if (!open) {
+            setCode(null);
+            setError(null);
+            setCopied(false);
+        }
+    }, [open]);
 
     const handleGenerateCode = async () => {
         setLoading(true);
@@ -75,182 +80,139 @@ const WhatsappConnectDialog: React.FC<WhatsappConnectDialogProps> = ({
     };
 
     const handleClose = () => {
-        // Reset state on close
-        setCode(null);
-        setError(null);
-        setCopied(false);
-        onClose();
         if (code && onSuccess) {
             onSuccess();
         }
+        onClose();
     };
 
+    if (!open) return null;
+
     return (
-        <Dialog
-            open={open}
-            onClose={handleClose}
-            maxWidth="sm"
-            fullWidth
-            PaperProps={{
-                sx: {
-                    borderRadius: '20px',
-                    p: 1
-                }
-            }}
-        >
-            <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Box sx={{ p: 1, bgcolor: '#dcfce7', borderRadius: '12px' }}>
-                        <MessageCircle size={24} color="#16a34a" />
-                    </Box>
-                    <Typography variant="h6" fontWeight={700}>
-                        Conectar WhatsApp
-                    </Typography>
-                </Box>
-                <IconButton onClick={handleClose} size="small">
-                    <X size={20} />
-                </IconButton>
-            </DialogTitle>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-white/20">
+                {/* Header */}
+                <div className="flex items-center justify-between p-6 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-green-50 rounded-2xl flex items-center justify-center">
+                            <MessageCircle size={24} className="text-green-600" />
+                        </div>
+                        <h2 className="text-xl font-bold text-slate-800">
+                            Conectar WhatsApp
+                        </h2>
+                    </div>
+                    <button
+                        onClick={handleClose}
+                        className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
 
-            <DialogContent>
-                {error && (
-                    <Alert severity="error" sx={{ mb: 2, borderRadius: '12px' }}>
-                        {error}
-                    </Alert>
-                )}
+                {/* Content */}
+                <div className="p-8 overflow-y-auto">
+                    {error && (
+                        <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-3 text-red-700 text-sm">
+                            <AlertCircle size={18} className="shrink-0 mt-0.5" />
+                            <span>{error}</span>
+                        </div>
+                    )}
 
-                {!code ? (
-                    <Box sx={{ textAlign: 'center', py: 3 }}>
-                        <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-                            Gere um código de conexão para vincular seu WhatsApp ao sistema.
-                            <br />
-                            <strong>O código expira após o uso.</strong>
-                        </Typography>
+                    {!code ? (
+                        <div className="text-center">
+                            <p className="text-slate-500 mb-8 leading-relaxed">
+                                Gere um código de conexão para vincular seu WhatsApp ao sistema.
+                                <br />
+                                <span className="font-bold text-slate-700">O código expira após o uso.</span>
+                            </p>
 
-                        <Button
-                            variant="contained"
-                            size="large"
-                            onClick={handleGenerateCode}
-                            disabled={loading}
-                            startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <RefreshCw size={20} />}
-                            sx={{
-                                bgcolor: '#16a34a',
-                                borderRadius: '12px',
-                                px: 4,
-                                py: 1.5,
-                                textTransform: 'none',
-                                fontWeight: 600,
-                                '&:hover': { bgcolor: '#15803d' }
-                            }}
-                        >
-                            {loading ? 'Gerando...' : 'Gerar Código de Conexão'}
-                        </Button>
-                    </Box>
-                ) : (
-                    <Box sx={{ textAlign: 'center', py: 2 }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                            Envie este código via WhatsApp:
-                        </Typography>
-
-                        {/* Code Display */}
-                        <Box
-                            sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: 2,
-                                p: 3,
-                                bgcolor: '#f0fdf4',
-                                borderRadius: '16px',
-                                border: '2px dashed #86efac',
-                                mb: 3
-                            }}
-                        >
-                            <Typography
-                                variant="h3"
-                                sx={{
-                                    fontFamily: 'monospace',
-                                    fontWeight: 800,
-                                    letterSpacing: '0.3em',
-                                    color: '#16a34a'
-                                }}
+                            <button
+                                onClick={handleGenerateCode}
+                                disabled={loading}
+                                className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-2xl shadow-lg shadow-green-600/20 transition-all active:scale-95"
                             >
-                                {code}
-                            </Typography>
-                            <Tooltip title={copied ? 'Copiado!' : 'Copiar código'}>
-                                <IconButton
+                                {loading ? (
+                                    <>
+                                        <Loader2 size={20} className="animate-spin" />
+                                        Gerando...
+                                    </>
+                                ) : (
+                                    <>
+                                        <RefreshCw size={20} />
+                                        Gerar Código de Conexão
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="text-center">
+                            <p className="text-sm font-medium text-slate-500 mb-4 uppercase tracking-wider">
+                                Envie este código via WhatsApp:
+                            </p>
+
+                            {/* Code Display */}
+                            <div className="relative group mb-8">
+                                <div className="p-8 bg-emerald-50 border-2 border-dashed border-emerald-200 rounded-[2rem] flex items-center justify-center gap-4 group-hover:border-emerald-300 transition-colors">
+                                    <span className="text-4xl md:text-5xl font-mono font-black tracking-[0.4em] text-emerald-600 selection:bg-emerald-200">
+                                        {code}
+                                    </span>
+                                </div>
+                                <button
                                     onClick={handleCopyCode}
-                                    sx={{
-                                        bgcolor: copied ? '#dcfce7' : '#e2e8f0',
-                                        '&:hover': { bgcolor: copied ? '#bbf7d0' : '#cbd5e1' }
-                                    }}
+                                    className={`absolute -right-2 -top-2 p-3 shadow-lg rounded-full transition-all active:scale-90 ${copied ? 'bg-emerald-500 text-white' : 'bg-white text-emerald-600 border border-emerald-100 hover:bg-emerald-50'
+                                        }`}
+                                    title={copied ? 'Copiado!' : 'Copiar código'}
                                 >
-                                    {copied ? <Check size={20} color="#16a34a" /> : <Copy size={20} />}
-                                </IconButton>
-                            </Tooltip>
-                        </Box>
+                                    {copied ? <Check size={24} /> : <Copy size={24} />}
+                                </button>
+                            </div>
 
-                        {/* Send to WhatsApp Button */}
-                        {botNumber ? (
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                <Button
-                                    variant="contained"
-                                    size="large"
-                                    href={`https://wa.me/${botNumber}?text=CONECTAR%20${code}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    startIcon={<ExternalLink size={20} />}
-                                    sx={{
-                                        bgcolor: '#25D366',
-                                        borderRadius: '12px',
-                                        px: 4,
-                                        py: 1.5,
-                                        textTransform: 'none',
-                                        fontWeight: 600,
-                                        '&:hover': { bgcolor: '#128C7E' }
-                                    }}
-                                >
-                                    Enviar para o WhatsApp
-                                </Button>
-                                <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center' }}>
-                                    Será enviado: <strong>CONECTAR {code}</strong>
-                                </Typography>
-                            </Box>
-                        ) : (
-                            <Alert severity="info" sx={{ borderRadius: '12px' }}>
-                                Número do bot não configurado. Entre em contato com o suporte.
-                            </Alert>
-                        )}
+                            {/* Send to WhatsApp Button */}
+                            {botNumber ? (
+                                <div className="space-y-4">
+                                    <a
+                                        href={`https://wa.me/${botNumber}?text=CONECTAR%20${code}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-[#25D366] hover:bg-[#128C7E] text-white font-bold rounded-2xl shadow-lg shadow-green-500/20 transition-all active:scale-95"
+                                    >
+                                        <ExternalLink size={20} />
+                                        Enviar para o WhatsApp
+                                    </a>
+                                    <p className="text-xs font-medium text-slate-400">
+                                        Será enviado: <span className="text-slate-600 font-bold tracking-wide">CONECTAR {code}</span>
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-600 text-sm">
+                                    Número do bot não configurado. Entre em contato com o suporte.
+                                </div>
+                            )}
 
-                        {/* Regenerate Button */}
-                        <Button
-                            variant="text"
-                            size="small"
-                            onClick={handleGenerateCode}
-                            disabled={loading}
-                            startIcon={loading ? <CircularProgress size={16} /> : <RefreshCw size={16} />}
-                            sx={{ mt: 2, textTransform: 'none', color: '#64748b' }}
-                        >
-                            Gerar novo código
-                        </Button>
-                    </Box>
-                )}
-            </DialogContent>
+                            {/* Regenerate Button */}
+                            <button
+                                onClick={handleGenerateCode}
+                                disabled={loading}
+                                className="mt-8 text-sm font-medium text-slate-400 hover:text-slate-600 transition-colors inline-flex items-center gap-2"
+                            >
+                                <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+                                Gerar novo código
+                            </button>
+                        </div>
+                    )}
+                </div>
 
-            <DialogActions sx={{ px: 3, pb: 2 }}>
-                <Button
-                    onClick={handleClose}
-                    sx={{
-                        borderRadius: '10px',
-                        textTransform: 'none',
-                        fontWeight: 600,
-                        color: '#64748b'
-                    }}
-                >
-                    {code ? 'Fechar' : 'Cancelar'}
-                </Button>
-            </DialogActions>
-        </Dialog>
+                {/* Footer */}
+                <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end">
+                    <button
+                        onClick={handleClose}
+                        className="px-6 py-2.5 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors"
+                    >
+                        {code ? 'Fechar' : 'Cancelar'}
+                    </button>
+                </div>
+            </div>
+        </div>
     );
 };
 

@@ -1,8 +1,7 @@
 // src/pages/MapaPropriedade.tsx
 
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, CircularProgress, Chip } from '@mui/material';
-import AgricultureIcon from '@mui/icons-material/Agriculture';
+import { Tractor, AlertTriangle, Loader2 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { getPmoDetails, fetchUserProperties } from '../services/pmoService';
@@ -69,40 +68,50 @@ const MapaPropriedade: React.FC = () => {
 
     if (loading) {
         return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-                <CircularProgress />
-            </Box>
+            <div className="flex flex-col items-center justify-center h-[100vh]">
+                <Loader2 className="animate-spin text-green-600 mb-2" size={40} />
+                <span className="text-sm font-medium text-slate-500">Carregando mapa...</span>
+            </div>
         );
     }
 
     if (!pmoId) {
         return (
-            <Box sx={{ p: 4, textAlign: 'center' }}>
-                <Typography variant="h6" color="error">
+            <div className="p-8 text-center flex flex-col items-center justify-center">
+                <AlertTriangle className="text-red-500 mb-4" size={48} />
+                <h6 className="text-xl font-bold text-red-600 mb-2">
                     Nenhum Plano de Manejo Ativo encontrado.
-                </Typography>
-                <Typography variant="body2">
+                </h6>
+                <p className="text-slate-500">
                     Por favor, selecione ou crie um plano no seu perfil.
-                </Typography>
-            </Box>
+                </p>
+            </div>
         );
     }
 
     return (
-        <Box sx={{ p: { xs: 2, md: 4 } }}>
-            <Typography variant="h4" sx={{ fontWeight: '800', mb: 2, color: '#1e293b' }}>
-                Mapa da Propriedade
-            </Typography>
+        <div className="p-4 md:p-8">
+            <div className="flex items-center gap-3 mb-6">
+                <div className="p-2.5 bg-green-100 rounded-xl text-green-700">
+                    <Tractor size={28} />
+                </div>
+                <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">
+                    Mapa da Propriedade
+                </h1>
+            </div>
 
             {/* Exibir o nome da fazenda para confirmar que carregou */}
             {nomePropriedade && (
-                <div style={{ padding: '10px', background: '#e8f5e9', color: '#2e7d32', fontWeight: 'bold', marginBottom: '16px', borderRadius: '4px' }}>
+                <div className="p-4 bg-emerald-50 border border-emerald-100 text-emerald-800 font-bold mb-6 rounded-xl flex items-center gap-3 shadow-sm shadow-emerald-600/5">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                     Visualizando: {nomePropriedade}
                 </div>
             )}
 
-            <PropertyMap propriedadeId={propriedadeId} />
-        </Box>
+            <div className="bg-white rounded-3xl overflow-hidden shadow-xl shadow-slate-200/50 border border-slate-100">
+                <PropertyMap propriedadeId={propriedadeId} />
+            </div>
+        </div>
     );
 };
 
