@@ -210,7 +210,7 @@ const PmoFormPage: React.FC = () => {
                         placeholder="Nome da Propriedade / Ano"
                         value={nomeIdentificador}
                         onChange={(e: ChangeEvent<HTMLInputElement>) => setNomeIdentificador(e.target.value)}
-                        className="w-full border border-gray-300 rounded-md p-2.5 text-sm bg-white shadow-sm focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                        className="w-full border border-gray-300 dark:border-slate-700 rounded-md p-2.5 text-sm bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 shadow-sm focus:ring-1 focus:ring-green-500 focus:border-green-500"
                     />
                 </div>
             </div>

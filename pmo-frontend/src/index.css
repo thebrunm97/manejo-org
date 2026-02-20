@@ -71,6 +71,7 @@ body {
 .pmo-form .form-select {
   font-size: 1rem;
   padding: 0.75rem 1rem;
+  color: #0f172a;
 }
 
 .pmo-form .form-group,
@@ -268,8 +269,28 @@ body {
   }
 
   body {
-    background-color: #121212;
+    background-color: #0f172a;
+    /* slate-900 */
     color: var(--pmo-dark-text-primary);
+  }
+
+  /* Global Fix for Inputs in Dark Mode */
+  input,
+  textarea,
+  select,
+  .form-control {
+    background-color: #1e293b;
+    /* slate-800 */
+    color: #f1f5f9 !important;
+    /* slate-100 */
+    border-color: #334155;
+    /* slate-700 */
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #64748b;
+    /* slate-500 */
   }
 
   .stepper-arrow {
