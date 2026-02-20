@@ -1,7 +1,7 @@
 // src/components/PmoForm/LocalizacaoSafInput.tsx
+// Refatorado — Zero MUI. Usa datalist nativo + Tailwind.
 
-import React, { useState, useEffect, SyntheticEvent } from 'react';
-import { Autocomplete, TextField, Grid } from '@mui/material';
+import React, { useState, useEffect, ChangeEvent } from 'react';
 
 // Listas de opções para SAF
 const TALHOES = ['Talhão 1', 'Talhão 2', 'Talhão 3', 'SAF Experimental', 'SAF Principal', 'Horta Mandala'];
@@ -64,55 +64,52 @@ const LocalizacaoSafInput: React.FC<LocalizacaoSafInputProps> = ({
         }
     };
 
-    const handleTalhaoChange = (_event: SyntheticEvent, newValue: string | null) => {
-        setTalhao(newValue || '');
-        handleUpdate(newValue || '', detalhe);
+    const handleTalhaoChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const newValue = e.target.value;
+        setTalhao(newValue);
+        handleUpdate(newValue, detalhe);
     };
 
-    const handleDetalheChange = (_event: SyntheticEvent, newValue: string | null) => {
-        setDetalhe(newValue || '');
-        handleUpdate(talhao, newValue || '');
+    const handleDetalheChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const newValue = e.target.value;
+        setDetalhe(newValue);
+        handleUpdate(talhao, newValue);
     };
+
+    const inputCls = `w-full border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 text-sm ${size === 'small' ? 'p-1.5' : 'p-2'
+        }`;
 
     return (
-        <Grid container spacing={1}>
-            <Grid item xs={6}>
-                <Autocomplete
-                    freeSolo
-                    size={size}
-                    options={TALHOES}
+        <div className="grid grid-cols-2 gap-2">
+            <div>
+                <label className="block text-xs font-medium text-gray-600 mb-0.5">Talhão</label>
+                <input
+                    type="text"
+                    list="saf-talhoes"
                     value={talhao}
                     onChange={handleTalhaoChange}
-                    onInputChange={handleTalhaoChange}
-                    renderInput={(params) => (
-                        <TextField
-                            {...params}
-                            label="Talhão"
-                            placeholder="Ex: Talhão 1"
-                            size={size}
-                        />
-                    )}
+                    placeholder="Ex: Talhão 1"
+                    className={inputCls}
                 />
-            </Grid>
-            <Grid item xs={6}>
-                <Autocomplete
-                    freeSolo
-                    size={size}
-                    options={MICRO_LOCAIS}
+                <datalist id="saf-talhoes">
+                    {TALHOES.map(t => <option key={t} value={t} />)}
+                </datalist>
+            </div>
+            <div>
+                <label className="block text-xs font-medium text-gray-600 mb-0.5">Micro-Local</label>
+                <input
+                    type="text"
+                    list="saf-micro-locais"
                     value={detalhe}
                     onChange={handleDetalheChange}
-                    onInputChange={handleDetalheChange}
-                    renderInput={(params) => (
-                        <TextField
-                            {...params}
-                            label="Micro-Local"
-                            placeholder="Ex: Entrelinha"
-                            size={size}
-                        />
-                    )}
+                    placeholder="Ex: Entrelinha"
+                    className={inputCls}
                 />
-            </Grid>
-        </Grid>
+                <datalist id="saf-micro-locais">
+                    {MICRO_LOCAIS.map(m => <option key={m} value={m} />)}
+                </datalist>
+            </div>
+        </div>
     );
 };
 

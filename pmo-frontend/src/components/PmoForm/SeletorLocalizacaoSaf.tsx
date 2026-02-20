@@ -1,27 +1,12 @@
 // src/components/PmoForm/SeletorLocalizacaoSaf.tsx
+// Refatorado — Zero MUI. Usa Tailwind + lucide-react.
 
-import React, { useState, useEffect, useMemo, ChangeEvent, SyntheticEvent } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
-    Box, Chip, List, ListItem, ListItemButton, ListItemAvatar, ListItemText, Avatar,
-    Typography, IconButton, Button, Dialog, DialogTitle, DialogContent,
-    DialogActions, TextField, Stack, RadioGroup, FormControlLabel, Radio,
-    InputAdornment, Checkbox, useMediaQuery, useTheme, Grid, CircularProgress,
-    Alert, Fade
-} from '@mui/material';
-import {
-    Grass as GrassIcon,
-    Forest as TreeIcon,
-    Add as AddIcon,
-    Search as SearchIcon,
-    Delete as DeleteIcon,
-    Edit as EditIcon,
-    SquareFoot as AreaIcon,
-    LinearScale as LinearIcon,
-    Map as MapIcon,
-    Close as CloseIcon,
-    WaterDrop as WaterIcon,
-    ArrowBack as ArrowBackIcon
-} from '@mui/icons-material';
+    Sprout, TreePine, Plus, Search, MapPin, X, ArrowLeft,
+    Droplets, Loader2, Ruler
+} from 'lucide-react';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import { locationService } from '../../services/locationService';
 
 // Types
@@ -77,8 +62,7 @@ const SeletorLocalizacaoSaf: React.FC<SeletorLocalizacaoSafProps> = ({
     error = false,
     helperText = ''
 }) => {
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const isMobile = useIsMobile();
 
     // States
     const [talhoes, setTalhoes] = useState<Talhao[]>([]);
@@ -101,11 +85,7 @@ const SeletorLocalizacaoSaf: React.FC<SeletorLocalizacaoSafProps> = ({
     const [filterType, setFilterType] = useState<FilterType>('todos');
 
     const [formLocal, setFormLocal] = useState<FormLocalData>({
-        nome: '',
-        tipo: 'canteiro',
-        largura: '',
-        comprimento: '',
-        linhas: ''
+        nome: '', tipo: 'canteiro', largura: '', comprimento: '', linhas: ''
     });
     const [saving, setSaving] = useState(false);
 
@@ -128,11 +108,7 @@ const SeletorLocalizacaoSaf: React.FC<SeletorLocalizacaoSafProps> = ({
 
     // Load Canteiros
     useEffect(() => {
-        if (!selectedTalhaoId) {
-            setCanteiros([]);
-            return;
-        }
-
+        if (!selectedTalhaoId) { setCanteiros([]); return; }
         const loadCanteiros = async () => {
             setLoadingCanteiros(true);
             try {
@@ -151,35 +127,18 @@ const SeletorLocalizacaoSaf: React.FC<SeletorLocalizacaoSafProps> = ({
     const canteirosFiltrados = useMemo(() => {
         if (!canteiros) return [];
         let lista = [...canteiros];
-
-        if (busca) {
-            lista = lista.filter(l => l.nome && l.nome.toLowerCase().includes(busca.toLowerCase()));
-        }
-
-        if (filterType !== 'todos') {
-            lista = lista.filter(l => (l.tipo || '').toLowerCase() === filterType.toLowerCase());
-        }
-
-        lista.sort((a, b) => {
-            const nameA = a.nome || '';
-            const nameB = b.nome || '';
-            return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' });
-        });
+        if (busca) lista = lista.filter(l => l.nome && l.nome.toLowerCase().includes(busca.toLowerCase()));
+        if (filterType !== 'todos') lista = lista.filter(l => (l.tipo || '').toLowerCase() === filterType.toLowerCase());
+        lista.sort((a, b) => (a.nome || '').localeCompare(b.nome || '', undefined, { numeric: true, sensitivity: 'base' }));
 
         const nameCounts: Record<string, number> = {};
-        lista.forEach(item => {
-            nameCounts[item.nome] = (nameCounts[item.nome] || 0) + 1;
-        });
-
-        return lista.map(item => {
-            if (nameCounts[item.nome] > 1) {
-                return { ...item, _displayName: `${item.nome} (#${String(item.id).slice(-4)})` };
-            }
-            return { ...item, _displayName: item.nome };
-        });
+        lista.forEach(item => { nameCounts[item.nome] = (nameCounts[item.nome] || 0) + 1; });
+        return lista.map(item => ({
+            ...item,
+            _displayName: nameCounts[item.nome] > 1 ? `${item.nome} (#${String(item.id).slice(-4)})` : item.nome
+        }));
     }, [canteiros, busca, filterType]);
 
-    // Debug logging
     useEffect(() => {
         if (process.env.NODE_ENV === 'development') {
             const typesFound = [...new Set(canteirosFiltrados.map(l => l.tipo))];
@@ -190,7 +149,6 @@ const SeletorLocalizacaoSaf: React.FC<SeletorLocalizacaoSafProps> = ({
     // Handlers
     const handleSelect = (canteiro: Canteiro) => {
         const talhao = talhoes.find(t => t.id === selectedTalhaoId);
-
         const selectionObject: SelectionValue = {
             talhao_id: selectedTalhaoId,
             talhao_nome: talhao ? talhao.nome : 'Unknown',
@@ -199,16 +157,12 @@ const SeletorLocalizacaoSaf: React.FC<SeletorLocalizacaoSafProps> = ({
             area_m2: canteiro.area_total_m2 || 0,
             _display: `${talhao ? talhao.nome : ''} > ${canteiro.nome}`
         };
-
         onChange(selectionObject);
         setModalSelectorOpen(false);
     };
 
     const handleOpenCreateMode = () => {
-        if (!selectedTalhaoId) {
-            alert("Selecione um Talhão primeiro.");
-            return;
-        }
+        if (!selectedTalhaoId) { alert("Selecione um Talhão primeiro."); return; }
         setFormLocal({ nome: '', tipo: 'canteiro', largura: '', comprimento: '', linhas: '' });
         setViewMode('create');
     };
@@ -221,22 +175,15 @@ const SeletorLocalizacaoSaf: React.FC<SeletorLocalizacaoSafProps> = ({
     const handleCreateLocal = async () => {
         if (!formLocal.nome || !selectedTalhaoId) return;
         setSaving(true);
-
         try {
             const larg = parseFloat(formLocal.largura) || 0;
             const comp = parseFloat(formLocal.comprimento) || 0;
             const areaCalc = larg * comp;
-
             const metadata = {
-                tipo: formLocal.tipo,
-                largura: larg,
-                comprimento: comp,
-                linhas: formLocal.linhas,
-                area: areaCalc > 0 ? areaCalc.toFixed(2) : null
+                tipo: formLocal.tipo, largura: larg, comprimento: comp,
+                linhas: formLocal.linhas, area: areaCalc > 0 ? areaCalc.toFixed(2) : null
             };
-
             const novoCanteiro = await locationService.createCanteiro(selectedTalhaoId, formLocal.nome, metadata);
-
             setCanteiros(prev => [novoCanteiro, ...prev]);
             handleSelect(novoCanteiro);
             setViewMode('list');
@@ -252,20 +199,20 @@ const SeletorLocalizacaoSaf: React.FC<SeletorLocalizacaoSafProps> = ({
     const getIcon = (tipo?: string) => {
         const t = (tipo || '').toLowerCase();
         switch (t) {
-            case 'canteiro': return <GrassIcon />;
-            case 'entrelinha': return <TreeIcon />;
-            case 'tanque': return <WaterIcon />;
-            default: return <MapIcon />;
+            case 'canteiro': return <Sprout size={20} />;
+            case 'entrelinha': return <TreePine size={20} />;
+            case 'tanque': return <Droplets size={20} />;
+            default: return <MapPin size={20} />;
         }
     };
 
     const getColors = (tipo?: string) => {
         const t = (tipo || '').toLowerCase();
         switch (t) {
-            case 'canteiro': return { bg: '#dcfce7', color: '#16a34a' };
-            case 'entrelinha': return { bg: '#fef3c7', color: '#d97706' };
-            case 'tanque': return { bg: '#dbeafe', color: '#2563eb' };
-            default: return { bg: '#f3f4f6', color: '#6b7280' };
+            case 'canteiro': return { bg: 'bg-green-100', text: 'text-green-600' };
+            case 'entrelinha': return { bg: 'bg-amber-100', text: 'text-amber-600' };
+            case 'tanque': return { bg: 'bg-blue-100', text: 'text-blue-600' };
+            default: return { bg: 'bg-gray-100', text: 'text-gray-500' };
         }
     };
 
@@ -273,236 +220,266 @@ const SeletorLocalizacaoSaf: React.FC<SeletorLocalizacaoSafProps> = ({
     const selectedTalhaoName = talhoes.find(t => t.id === selectedTalhaoId)?.nome;
     const valueObj = typeof value === 'object' ? value : null;
 
+    const inputCls = "w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-green-500 focus:border-green-500";
+
     return (
         <>
-            <TextField
-                fullWidth
-                value={displayValue}
-                placeholder="Toque para selecionar..."
-                onClick={() => setModalSelectorOpen(true)}
-                error={error}
-                helperText={helperText}
-                InputProps={{
-                    readOnly: true,
-                    startAdornment: (
-                        <InputAdornment position="start">
-                            <MapIcon color={displayValue ? "primary" : "action"} />
-                        </InputAdornment>
-                    ),
-                    sx: { cursor: 'pointer', caretColor: 'transparent' }
-                }}
-                size="small"
-            />
+            {/* Trigger Input */}
+            <div className="relative">
+                <div className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <MapPin size={18} className={displayValue ? 'text-green-600' : 'text-gray-400'} />
+                </div>
+                <input
+                    type="text"
+                    readOnly
+                    value={displayValue}
+                    placeholder="Toque para selecionar..."
+                    onClick={() => setModalSelectorOpen(true)}
+                    className={`w-full pl-9 pr-3 py-2 text-sm border rounded-md cursor-pointer bg-white caret-transparent ${error ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-green-500 focus:border-green-500'
+                        }`}
+                />
+                {helperText && (
+                    <p className={`text-xs mt-0.5 ${error ? 'text-red-500' : 'text-gray-500'}`}>{helperText}</p>
+                )}
+            </div>
 
-            <Dialog
-                open={modalSelectorOpen}
-                onClose={handleCloseModal}
-                fullScreen={isMobile}
-                fullWidth
-                maxWidth="md"
-                PaperProps={{
-                    sx: { height: isMobile ? '100%' : '80vh', display: 'flex', flexDirection: 'column' }
-                }}
-            >
-                <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #eee' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        {viewMode === 'create' && (
-                            <IconButton onClick={() => setViewMode('list')} size="small" edge="start">
-                                <ArrowBackIcon />
-                            </IconButton>
-                        )}
-                        <Typography variant="h6" fontWeight={700}>
-                            {viewMode === 'list' ? 'Selecionar Local' : `Novo Local em ${selectedTalhaoName}`}
-                        </Typography>
-                        {(loadingTalhoes && viewMode === 'list') && <CircularProgress size={20} />}
-                    </Box>
-                    <IconButton onClick={handleCloseModal}><CloseIcon /></IconButton>
-                </Box>
+            {/* Selector Modal */}
+            {modalSelectorOpen && (
+                <div
+                    className={
+                        isMobile
+                            ? 'fixed inset-0 bg-white z-[100] flex flex-col'
+                            : 'fixed inset-0 z-[100] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4'
+                    }
+                    onClick={isMobile ? undefined : handleCloseModal}
+                >
+                    <div
+                        className={
+                            isMobile
+                                ? 'flex flex-col h-full'
+                                : 'bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col'
+                        }
+                        style={!isMobile ? { height: '80vh' } : undefined}
+                        onClick={isMobile ? undefined : (e) => e.stopPropagation()}
+                    >
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+                            <div className="flex items-center gap-2">
+                                {viewMode === 'create' && (
+                                    <button type="button" onClick={() => setViewMode('list')} className="p-1 text-gray-500 hover:text-gray-700 rounded">
+                                        <ArrowLeft size={20} />
+                                    </button>
+                                )}
+                                <h2 className="text-lg font-bold text-gray-800">
+                                    {viewMode === 'list' ? 'Selecionar Local' : `Novo Local em ${selectedTalhaoName}`}
+                                </h2>
+                                {loadingTalhoes && viewMode === 'list' && <Loader2 size={18} className="animate-spin text-green-600" />}
+                            </div>
+                            <button type="button" onClick={handleCloseModal} className="p-1 text-gray-400 hover:text-gray-600 rounded">
+                                <X size={20} />
+                            </button>
+                        </div>
 
-                <DialogContent sx={{ p: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                    {viewMode === 'list' ? (
-                        <>
-                            <Box sx={{ p: 2, bgcolor: '#f8f9fa', borderBottom: '1px solid #e0e0e0' }}>
-                                <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'text.secondary', mb: 1, display: 'block' }}>
-                                    TALHÃO / ÁREA
-                                </Typography>
-                                <Box sx={{ mb: 2, overflowX: 'auto', whiteSpace: 'nowrap', display: 'flex', gap: 1, pb: 0.5 }}>
-                                    {talhoes.map(talhao => (
-                                        <Chip
-                                            key={talhao.id}
-                                            label={talhao.nome}
-                                            onClick={() => setSelectedTalhaoId(talhao.id)}
-                                            color={selectedTalhaoId === talhao.id ? 'primary' : 'default'}
-                                            variant={selectedTalhaoId === talhao.id ? 'filled' : 'outlined'}
-                                            clickable
-                                            sx={{ fontWeight: 600 }}
-                                        />
-                                    ))}
-                                </Box>
-
-                                <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-                                    {(['todos', 'canteiro', 'entrelinha', 'tanque'] as FilterType[]).map((t) => (
-                                        <Chip
-                                            key={t}
-                                            label={t === 'todos' ? 'Todos' : t.charAt(0).toUpperCase() + t.slice(1)}
-                                            size="small"
-                                            color={filterType === t ? 'secondary' : 'default'}
-                                            variant={filterType === t ? 'filled' : 'outlined'}
-                                            onClick={() => setFilterType(t)}
-                                            clickable
-                                        />
-                                    ))}
-                                </Box>
-
-                                <TextField
-                                    fullWidth size="small"
-                                    placeholder="Buscar canteiro, linha ou espaço..."
-                                    value={busca}
-                                    onChange={(e) => setBusca(e.target.value)}
-                                    InputProps={{
-                                        startAdornment: <InputAdornment position="start"><SearchIcon color="action" fontSize="small" /></InputAdornment>
-                                    }}
-                                />
-                            </Box>
-
-                            <List sx={{ flexGrow: 1, overflowY: 'auto', px: 1 }}>
-                                {loadingCanteiros ? (
-                                    <Box sx={{ py: 4, display: 'flex', justifyContent: 'center' }}><CircularProgress /></Box>
-                                ) : canteirosFiltrados.length === 0 ? (
-                                    <Box sx={{ py: 6, textAlign: 'center', color: 'text.secondary' }}>
-                                        <Typography variant="h6" color="text.secondary" gutterBottom>Nenhum local encontrado</Typography>
-                                        <Button startIcon={<AddIcon />} variant="outlined" onClick={handleOpenCreateMode}>
-                                            Criar Local Agora
-                                        </Button>
-                                    </Box>
-                                ) : (
-                                    canteirosFiltrados.map((local) => {
-                                        const colors = getColors(local.tipo);
-                                        const isSelected = valueObj?.canteiro_id === local.id;
-
-                                        return (
-                                            <ListItem key={local.id} disablePadding divider>
-                                                <ListItemButton
-                                                    onClick={() => handleSelect(local)}
-                                                    selected={isSelected}
-                                                    sx={{
-                                                        borderRadius: 2,
-                                                        mb: 0.5,
-                                                        '&.Mui-selected': { bgcolor: 'primary.50', border: '1px solid', borderColor: 'primary.main' }
-                                                    }}
+                        {/* Content */}
+                        <div className="flex-1 flex flex-col overflow-hidden">
+                            {viewMode === 'list' ? (
+                                <>
+                                    {/* Filters */}
+                                    <div className="p-3 bg-gray-50 border-b border-gray-200 space-y-2.5">
+                                        <p className="text-xs font-bold text-gray-500 uppercase">Talhão / Área</p>
+                                        <div className="flex gap-1.5 overflow-x-auto pb-1">
+                                            {talhoes.map(talhao => (
+                                                <button
+                                                    type="button"
+                                                    key={talhao.id}
+                                                    onClick={() => setSelectedTalhaoId(talhao.id)}
+                                                    className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border transition-colors ${selectedTalhaoId === talhao.id
+                                                        ? 'bg-green-600 text-white border-green-600'
+                                                        : 'bg-white text-gray-700 border-gray-300 hover:border-green-400'
+                                                        }`}
                                                 >
-                                                    <ListItemAvatar>
-                                                        <Avatar sx={{ bgcolor: colors.bg, color: colors.color }}>
+                                                    {talhao.nome}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        <div className="flex gap-1.5">
+                                            {(['todos', 'canteiro', 'entrelinha', 'tanque'] as FilterType[]).map((t) => (
+                                                <button
+                                                    type="button"
+                                                    key={t}
+                                                    onClick={() => setFilterType(t)}
+                                                    className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${filterType === t
+                                                        ? 'bg-purple-600 text-white border-purple-600'
+                                                        : 'bg-white text-gray-600 border-gray-300 hover:border-purple-400'
+                                                        }`}
+                                                >
+                                                    {t === 'todos' ? 'Todos' : t.charAt(0).toUpperCase() + t.slice(1)}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        {/* Search */}
+                                        <div className="relative">
+                                            <Search size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                                            <input
+                                                type="text"
+                                                placeholder="Buscar canteiro, linha ou espaço..."
+                                                value={busca}
+                                                onChange={(e) => setBusca(e.target.value)}
+                                                className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* List */}
+                                    <div className="flex-1 overflow-y-auto px-2">
+                                        {loadingCanteiros ? (
+                                            <div className="flex justify-center py-8"><Loader2 size={28} className="animate-spin text-green-600" /></div>
+                                        ) : canteirosFiltrados.length === 0 ? (
+                                            <div className="py-10 text-center">
+                                                <p className="text-lg font-semibold text-gray-400 mb-3">Nenhum local encontrado</p>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleOpenCreateMode}
+                                                    className="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium text-green-700 border border-green-300 rounded-lg hover:bg-green-50"
+                                                >
+                                                    <Plus size={16} /> Criar Local Agora
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            canteirosFiltrados.map((local) => {
+                                                const colors = getColors(local.tipo);
+                                                const isSelected = valueObj?.canteiro_id === local.id;
+
+                                                return (
+                                                    <button
+                                                        type="button"
+                                                        key={local.id}
+                                                        onClick={() => handleSelect(local)}
+                                                        className={`w-full flex items-center gap-3 p-3 text-left rounded-lg mb-1 transition-colors border ${isSelected
+                                                            ? 'bg-green-50 border-green-500 ring-1 ring-green-200'
+                                                            : 'border-transparent hover:bg-gray-50'
+                                                            }`}
+                                                    >
+                                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${colors.bg} ${colors.text}`}>
                                                             {getIcon(local.tipo)}
-                                                        </Avatar>
-                                                    </ListItemAvatar>
-                                                    <ListItemText
-                                                        primary={
-                                                            <Box display="flex" justifyContent="space-between" alignItems="center">
-                                                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center justify-between gap-2">
+                                                                <span className="text-sm font-bold text-gray-800 truncate">
                                                                     {local._displayName || local.nome}
-                                                                </Typography>
+                                                                </span>
                                                                 {local.area_total_m2 && (
-                                                                    <Chip label={`${local.area_total_m2} m²`} size="small" variant="outlined" sx={{ height: 20, fontSize: '0.7rem' }} />
+                                                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-gray-300 text-gray-500 flex-shrink-0">
+                                                                        {local.area_total_m2} m²
+                                                                    </span>
                                                                 )}
-                                                            </Box>
-                                                        }
-                                                        secondary={
-                                                            <Typography variant="caption" display="block" color="text.secondary">
+                                                            </div>
+                                                            <span className="text-xs text-gray-500">
                                                                 {local.largura && local.comprimento
                                                                     ? `${local.largura}m x ${local.comprimento}m`
                                                                     : local.tipo?.toUpperCase()}
-                                                            </Typography>
-                                                        }
-                                                    />
-                                                </ListItemButton>
-                                            </ListItem>
-                                        );
-                                    })
-                                )}
-                            </List>
-                        </>
-                    ) : (
-                        <Fade in={true}>
-                            <Box sx={{ p: 3, flexGrow: 1, overflowY: 'auto' }}>
-                                <Grid container spacing={3}>
-                                    <Grid item xs={12}>
-                                        <Typography variant="subtitle2" color="textSecondary" fontWeight={600} gutterBottom>TIPO DE LOCAL</Typography>
-                                        <RadioGroup row value={formLocal.tipo} onChange={(e) => setFormLocal({ ...formLocal, tipo: e.target.value })}>
-                                            <FormControlLabel value="canteiro" control={<Radio color="success" />} label="Canteiro" />
-                                            <FormControlLabel value="entrelinha" control={<Radio color="warning" />} label="Entrelinha SAF" />
-                                            <FormControlLabel value="tanque" control={<Radio color="primary" />} label="Tanque" />
-                                        </RadioGroup>
-                                    </Grid>
+                                                            </span>
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })
+                                        )}
+                                    </div>
+                                </>
+                            ) : (
+                                /* Create Mode */
+                                <div className="flex-1 overflow-y-auto p-4">
+                                    <div className="space-y-4">
+                                        {/* Tipo */}
+                                        <div>
+                                            <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Tipo de Local</p>
+                                            <div className="flex gap-3">
+                                                {[
+                                                    { value: 'canteiro', label: 'Canteiro', color: 'text-green-600' },
+                                                    { value: 'entrelinha', label: 'Entrelinha SAF', color: 'text-amber-600' },
+                                                    { value: 'tanque', label: 'Tanque', color: 'text-blue-600' }
+                                                ].map(opt => (
+                                                    <label key={opt.value} className="flex items-center gap-1.5 cursor-pointer">
+                                                        <input
+                                                            type="radio" name="tipo-local" value={opt.value}
+                                                            checked={formLocal.tipo === opt.value}
+                                                            onChange={(e) => setFormLocal({ ...formLocal, tipo: e.target.value })}
+                                                            className={`w-4 h-4 ${opt.color} focus:ring-green-500`}
+                                                        />
+                                                        <span className="text-sm">{opt.label}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
 
-                                    <Grid item xs={12}>
-                                        <TextField
-                                            label="Nome (Ex: Canteiro 05, Linha de Limão)"
-                                            fullWidth
-                                            variant="outlined"
-                                            autoFocus
-                                            value={formLocal.nome}
-                                            onChange={(e) => setFormLocal({ ...formLocal, nome: e.target.value })}
-                                            placeholder="Digite o nome..."
-                                        />
-                                    </Grid>
+                                        {/* Nome */}
+                                        <div>
+                                            <label className="text-xs font-medium text-gray-600 mb-1 block">Nome (Ex: Canteiro 05, Linha de Limão)</label>
+                                            <input
+                                                type="text" autoFocus
+                                                value={formLocal.nome}
+                                                onChange={(e) => setFormLocal({ ...formLocal, nome: e.target.value })}
+                                                placeholder="Digite o nome..."
+                                                className={inputCls}
+                                            />
+                                        </div>
 
-                                    <Grid item xs={6}>
-                                        <TextField
-                                            label="Largura (m)" type="number" fullWidth
-                                            value={formLocal.largura} onChange={(e) => setFormLocal({ ...formLocal, largura: e.target.value })}
-                                        />
-                                    </Grid>
-                                    <Grid item xs={6}>
-                                        <TextField
-                                            label="Comprimento (m)" type="number" fullWidth
-                                            value={formLocal.comprimento} onChange={(e) => setFormLocal({ ...formLocal, comprimento: e.target.value })}
-                                        />
-                                    </Grid>
+                                        {/* Dimensions */}
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="text-xs font-medium text-gray-600 mb-1 block">Largura (m)</label>
+                                                <input type="number" value={formLocal.largura}
+                                                    onChange={(e) => setFormLocal({ ...formLocal, largura: e.target.value })}
+                                                    className={inputCls} />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-medium text-gray-600 mb-1 block">Comprimento (m)</label>
+                                                <input type="number" value={formLocal.comprimento}
+                                                    onChange={(e) => setFormLocal({ ...formLocal, comprimento: e.target.value })}
+                                                    className={inputCls} />
+                                            </div>
+                                        </div>
 
-                                    {(formLocal.largura && formLocal.comprimento) && (
-                                        <Grid item xs={12}>
-                                            <Alert severity="info" icon={<AreaIcon />}>
+                                        {/* Area Preview */}
+                                        {formLocal.largura && formLocal.comprimento && (
+                                            <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+                                                <Ruler size={18} className="text-blue-600 flex-shrink-0" />
                                                 Área Calculada: <strong>{previewArea} m²</strong>
-                                            </Alert>
-                                        </Grid>
-                                    )}
-                                </Grid>
-                            </Box>
-                        </Fade>
-                    )}
-                </DialogContent>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
 
-                <DialogActions sx={{ p: 2, borderTop: '1px solid #eee', bgcolor: '#fbfbfb', justifyContent: 'space-between' }}>
-                    {viewMode === 'list' ? (
-                        <>
-                            <Button onClick={handleCloseModal} color="inherit">Fechar</Button>
-                            <Button
-                                variant="contained"
-                                startIcon={<AddIcon />}
-                                onClick={handleOpenCreateMode}
-                                color="success"
-                                sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
-                            >
-                                Criar Novo Local
-                            </Button>
-                        </>
-                    ) : (
-                        <>
-                            <Button onClick={() => setViewMode('list')} color="inherit" disabled={saving}>Cancelar</Button>
-                            <Button
-                                onClick={handleCreateLocal}
-                                variant="contained"
-                                color="primary"
-                                disabled={!formLocal.nome || saving}
-                                sx={{ borderRadius: 2, fontWeight: 700 }}
-                            >
-                                {saving ? 'Salvando...' : 'Salvar Local'}
-                            </Button>
-                        </>
-                    )}
-                </DialogActions>
-            </Dialog>
+                        {/* Footer */}
+                        <div className="flex items-center justify-between p-3 border-t border-gray-200 bg-gray-50">
+                            {viewMode === 'list' ? (
+                                <>
+                                    <button type="button" onClick={handleCloseModal} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Fechar</button>
+                                    <button type="button" onClick={handleOpenCreateMode} className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-green-600 hover:bg-green-700 rounded-lg">
+                                        <Plus size={16} /> Criar Novo Local
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <button type="button" onClick={() => setViewMode('list')} disabled={saving} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg disabled:opacity-50">Cancelar</button>
+                                    <button
+                                        type="button"
+                                        onClick={handleCreateLocal}
+                                        disabled={!formLocal.nome || saving}
+                                        className="px-5 py-2 text-sm font-bold text-white bg-green-600 hover:bg-green-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {saving ? 'Salvando...' : 'Salvar Local'}
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 };

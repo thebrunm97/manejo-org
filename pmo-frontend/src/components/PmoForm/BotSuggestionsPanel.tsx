@@ -1,6 +1,8 @@
+// src/components/PmoForm/BotSuggestionsPanel.tsx
+// Refatorado — Zero MUI. Usa Tailwind + lucide-react.
+
 import React, { useEffect, useState } from 'react';
-import { Alert, AlertTitle, Button, Stack, Typography, Box } from '@mui/material';
-import { SmartToy as BotIcon, Add as AddIcon, Close as IgnoreIcon } from '@mui/icons-material';
+import { Bot, Plus, X, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { fetchPlanningSuggestions, markSuggestionAsProcessed } from '../../services/pmoService';
 
@@ -19,34 +21,26 @@ const BotSuggestionsPanel: React.FC<BotSuggestionsPanelProps> = ({ sectionId, on
         if (user?.id) {
             fetchPlanningSuggestions(user.id).then(res => {
                 if (res.success && res.data) {
-                    console.log('BotSuggestions raw:', res.data); // Debug log
+                    console.log('BotSuggestions raw:', res.data);
 
-                    // Filter matching section
                     const relevant = res.data.filter(s => {
                         try {
-                            const json = s.json_extraido || s.dados_extraidos; // Fallback
+                            const json = s.json_extraido || s.dados_extraidos;
                             const data = typeof json === 'string' ? JSON.parse(json) : json;
-
                             console.log('Checking suggestion:', data);
 
-                            // 1. Exact Match (if bot provided section)
                             if (data?.secao_pmo) {
                                 return Number(data.secao_pmo) === Number(sectionId);
                             }
 
-                            // 2. Heuristic for Section 10 (Fitossanidade)
-                            // If no section provided, check for fitossanidade specific keys
                             if (sectionId === 10) {
                                 const isFitossanidade =
                                     !!data?.alvo_praga_doenca ||
                                     !!data?.alvo_principal ||
-                                    (!!data?.produto && !!data?.dose_valor); // Maybe product + dose without target?
-
+                                    (!!data?.produto && !!data?.dose_valor);
                                 return isFitossanidade;
                             }
 
-                            // 3. Fallback: If generic planning, maybe show? 
-                            // For now, default to false to avoid noise.
                             return false;
                         } catch (e) {
                             console.error('Error parsing suggestion JSON:', e);
@@ -71,67 +65,79 @@ const BotSuggestionsPanel: React.FC<BotSuggestionsPanelProps> = ({ sectionId, on
     const handleApplyWrapper = async (suggestion: any) => {
         const json = suggestion.json_extraido || suggestion.dados_extraidos;
         const data = typeof json === 'string' ? JSON.parse(json) : json;
-
-        // Injetar ID do log para rastreamento (Fechamento do Loop)
-        const dataWithLogId = {
-            ...data,
-            _log_id: suggestion.id
-        };
-
-        // Passamos o callback de remoção para o pai decidir quando chamar (ex: após confirmar modal)
+        const dataWithLogId = { ...data, _log_id: suggestion.id };
         onApply(dataWithLogId, () => handleIgnore(suggestion.id));
     };
 
     if (suggestions.length === 0) return null;
 
     return (
-        <Stack spacing={2} sx={{ mb: 3 }}>
+        <div className="flex flex-col gap-3 mb-4">
             {suggestions.map((s) => {
                 const json = s.json_extraido || s.dados_extraidos;
                 const data = typeof json === 'string' ? JSON.parse(json) : json;
                 const hasAlert = !!data.alerta_conformidade;
 
                 return (
-                    <Alert
+                    <div
                         key={s.id}
-                        icon={<BotIcon fontSize="inherit" />}
-                        severity={hasAlert ? "warning" : "info"}
-                        action={
-                            <Stack direction="row" spacing={1}>
-                                <Button size="small" color="inherit" onClick={() => handleIgnore(s.id)}>
-                                    Ignorar
-                                </Button>
-                                <Button
-                                    size="small"
-                                    variant="contained"
-                                    color={hasAlert ? "warning" : "primary"}
-                                    startIcon={<AddIcon />}
-                                    onClick={() => handleApplyWrapper(s)}
-                                >
-                                    Adicionar à Tabela
-                                </Button>
-                            </Stack>
-                        }
-                        sx={{ alignItems: 'center' }}
+                        className={`rounded-lg border p-4 flex gap-3 items-start ${hasAlert
+                            ? 'bg-amber-50 border-amber-300'
+                            : 'bg-blue-50 border-blue-200'
+                            }`}
                     >
-                        <AlertTitle>Sugestão do Assistente de Voz</AlertTitle>
-                        <Typography variant="body2" sx={{ fontStyle: 'italic', mb: 0.5 }}>
-                            "{s.texto_usuario}"
-                        </Typography>
-                        {hasAlert && (
-                            <Box sx={{ mt: 1, fontWeight: 'bold' }}>
-                                ⚠️ {data.alerta_conformidade}
-                            </Box>
-                        )}
-                        {!hasAlert && (
-                            <Typography variant="caption" display="block">
-                                Extraído: {data.produto} {data.dose_valor ? `(${data.dose_valor} ${data.dose_unidade})` : ''}
-                            </Typography>
-                        )}
-                    </Alert>
+                        {/* Icon */}
+                        <div className={`shrink-0 mt-0.5 ${hasAlert ? 'text-amber-600' : 'text-blue-600'}`}>
+                            <Bot size={22} />
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                            <p className={`text-sm font-semibold mb-1 ${hasAlert ? 'text-amber-800' : 'text-blue-800'}`}>
+                                Sugestão do Assistente de Voz
+                            </p>
+                            <p className="text-sm italic text-gray-700 mb-1">
+                                &quot;{s.texto_usuario}&quot;
+                            </p>
+                            {hasAlert && (
+                                <div className="flex items-center gap-1 mt-1 text-sm font-bold text-amber-800">
+                                    <AlertTriangle size={14} />
+                                    {data.alerta_conformidade}
+                                </div>
+                            )}
+                            {!hasAlert && (
+                                <p className="text-xs text-gray-500">
+                                    Extraído: {data.produto} {data.dose_valor ? `(${data.dose_valor} ${data.dose_unidade})` : ''}
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => handleIgnore(s.id)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                            >
+                                <X size={14} />
+                                Ignorar
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleApplyWrapper(s)}
+                                className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white rounded-md transition-colors ${hasAlert
+                                    ? 'bg-amber-600 hover:bg-amber-700'
+                                    : 'bg-blue-600 hover:bg-blue-700'
+                                    }`}
+                            >
+                                <Plus size={14} />
+                                Adicionar à Tabela
+                            </button>
+                        </div>
+                    </div>
                 );
             })}
-        </Stack>
+        </div>
     );
 };
 
