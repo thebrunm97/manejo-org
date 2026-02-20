@@ -1,20 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import {
-    Paper, TextField, Button,
-    Typography, IconButton, Box, FormControl, Select, MenuItem, Tooltip,
-    useMediaQuery, useTheme, Card, CardContent, Divider, Chip, Stack, Grid,
-    Collapse,
-    SelectChangeEvent,
-    InputLabel,
-    Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText
-} from '@mui/material';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
-import SaveIcon from '@mui/icons-material/Save';
-import MapIcon from '@mui/icons-material/Map';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import { PlusCircle, Trash2, ChevronDown, X } from 'lucide-react';
 
 // @ts-ignore
 import LocalizacaoSafInput from './LocalizacaoSafInput';
@@ -37,13 +22,11 @@ export interface TableColumn {
     label: string;
     type: ColumnType;
     width?: string | number;
-    options?: (string | TableOption)[]; // Suporta array de strings ou objetos
+    options?: (string | TableOption)[];
     required?: boolean;
     readOnly?: boolean;
     placeholder?: string;
-    suffix?: string; // Ex: 'kg', 'ha'
-
-    // Legacy support for unitSelector logic
+    suffix?: string;
     unitSelector?: {
         key: string;
         options: string[];
@@ -51,33 +34,24 @@ export interface TableColumn {
 }
 
 export interface TableRowBase {
-    id: string | number; // Identificador único da linha é obrigatório
-    [key: string]: any; // Permite campos dinâmicos baseados nas colunas
+    id: string | number;
+    [key: string]: any;
 }
 
 export interface TabelaDinamicaProps<T extends TableRowBase> {
-    label?: string; // Title of the table section
+    label?: string;
     columns: TableColumn[];
     data: T[];
     onDataChange?: (newData: T[]) => void;
     readOnly?: boolean;
-    onAddRow?: () => void;
-    onRemoveRow?: (id: string | number) => void;
-
-    // Extra props for compatibility/specialized features
     itemName?: string;
     itemNoun?: string;
-    renderMobileItem?: (item: T, toggleEdit: () => void, removeItem: () => void) => React.ReactNode;
-
-    // New Props for Click Handling
     onRowClick?: (item: T) => void;
     disableRowClick?: boolean;
 }
 
-// Função para gerar um ID simples e único
 const generateUniqueId = (): string => `row_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-// Função auxiliar simples de debounce
 function debounce(func: Function, wait: number) {
     let timeout: any;
     return (...args: any[]) => {
@@ -86,34 +60,60 @@ function debounce(func: Function, wait: number) {
     };
 }
 
-// Componente otimizado de Input
-const FastTextField = React.memo(({ value, onChange, onBlur, ...props }: any) => {
+// Optimized Input Component (native)
+const FastInput = React.memo(({ value, onChange, onBlur, type = 'text', multiline = false, rows = 1, suffix, className = '', ...props }: any) => {
     const [localValue, setLocalValue] = useState(value ?? '');
 
-    // Synced with parent ONLY if value changes deeply (drastically)
     useEffect(() => {
         setLocalValue(value ?? '');
     }, [value]);
 
-    // Debounce reference
     const debouncedChange = useMemo(
         () => debounce((val: string) => onChange(val), 300),
         [onChange]
     );
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const val = e.target.value.toUpperCase();
-        setLocalValue(val); // Instant visual update
-        debouncedChange(val); // Delayed logical update
+        setLocalValue(val);
+        debouncedChange(val);
     };
 
     const handleBlur = (e: any) => {
-        // Flush immediately on blur
         onChange(localValue);
         if (onBlur) onBlur(e);
     };
 
-    return <TextField {...props} value={localValue} onChange={handleChange} onBlur={handleBlur} />;
+    const inputCls = `w-full bg-transparent border border-gray-200 focus:ring-1 focus:ring-green-500 focus:border-green-500 rounded p-1.5 text-sm ${className}`;
+
+    if (multiline) {
+        return (
+            <div className="relative">
+                <textarea
+                    {...props}
+                    value={localValue}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    rows={rows}
+                    className={inputCls}
+                />
+            </div>
+        );
+    }
+
+    return (
+        <div className="relative flex items-center">
+            <input
+                {...props}
+                type={type}
+                value={localValue}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={inputCls}
+            />
+            {suffix && <span className="ml-1 text-xs text-gray-400 shrink-0">{suffix}</span>}
+        </div>
+    );
 });
 
 // ==================================================================
@@ -128,88 +128,52 @@ export default function TabelaDinamica<T extends TableRowBase>({
     readOnly = false,
     itemName = 'Item',
     itemNoun = 'o',
-    renderMobileItem,
-    onAddRow,
     onRowClick,
     disableRowClick = false
 }: TabelaDinamicaProps<T>) {
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    const isSpreadsheet = !isMobile;
 
     // --- PERFORMANCE STATE ---
-    // Mantemos uma cópia local para edição rápida (Rapid Input)
     const [localData, setLocalData] = useState<T[]>([]);
-
-    // REF DE CONTROLE
     const isUserTyping = React.useRef(false);
     const latestLocalData = React.useRef(localData);
     const latestOnChange = React.useRef(onDataChange);
     const debounceTimerRef = React.useRef<any>(null);
 
-    // Mantém refs atualizadas
-    useEffect(() => {
-        latestLocalData.current = localData;
-    }, [localData]);
+    useEffect(() => { latestLocalData.current = localData; }, [localData]);
+    useEffect(() => { latestOnChange.current = onDataChange; }, [onDataChange]);
 
-    useEffect(() => {
-        latestOnChange.current = onDataChange;
-    }, [onDataChange]);
-
-    // 1. Sincroniza props -> state (Pai -> Filho)
-    // SÓ atualiza se o usuário NÃO estiver digitando.
     useEffect(() => {
         if (!isUserTyping.current) {
             const dataWithIds = (Array.isArray(data) ? data : []).map((item, index) => ({
                 ...item,
                 id: item.id || localData[index]?.id || generateUniqueId(),
             })) as T[];
-
             setLocalData(dataWithIds);
         }
     }, [data]);
-    // Nota: dependência 'localData' removida intencionalmente para evitar loop,
-    // usamos o localData[index]?.id apenas se disponível na renderização corrente, o que é seguro.
 
-    // 2. Debounce seguro (Filho -> Pai)
     useEffect(() => {
-        // Se a mudança não foi disparo explícito de digitação (ex: carga inicial), não dispara timer
         if (isUserTyping.current) {
             if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-
             debounceTimerRef.current = setTimeout(() => {
                 if (latestOnChange.current) {
                     latestOnChange.current(latestLocalData.current);
-
-                    // Resetamos flag para permitir que o input formatado volte do pai, se for o caso
-                    // isUserTyping.current = false; 
-                    // (Opcional: alguns preferem resetar só no onBlur. 
-                    // Mas para garantir ciclo completo, resetar aqui permite que o pai assuma se o user parou.)
                     isUserTyping.current = false;
                 }
             }, 800);
         }
-
-        return () => {
-            if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-        };
+        return () => { if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current); };
     }, [localData]);
 
-
-    // 3. Flush on Unmount (Salvar na Saída)
     useEffect(() => {
         return () => {
-            // Se desmontou e tinha coisa pendente (user digitando ou timer rodando)
             if (isUserTyping.current && latestOnChange.current) {
-                // Cancela timer pendente para evitar double save
                 if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-                // Força save imediato
                 latestOnChange.current(latestLocalData.current);
             }
         };
     }, []);
 
-    // 4. Manual Flush (usado no onBlur)
     const flush = useCallback(() => {
         if (isUserTyping.current && latestOnChange.current) {
             if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
@@ -219,15 +183,18 @@ export default function TabelaDinamica<T extends TableRowBase>({
     }, []);
 
     // --- UI STATES ---
-    const [editingId, setEditingId] = useState<string | number | null>(null);
+    const [openCards, setOpenCards] = useState<Set<string | number>>(new Set());
     const [itemToDelete, setItemToDelete] = useState<string | number | null>(null);
-    const [activeCell, setActiveCell] = useState<{ id: string | number, field: string } | null>(null);
 
-    // --- MOBILE ADD MODAL STATE ---
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const [newItemTemp, setNewItemTemp] = useState<Partial<T>>({});
+    const toggleCard = useCallback((id: string | number) => {
+        setOpenCards(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    }, []);
 
-    // --- BACKWARD COMPATIBILITY ---
     const safeColumns = useMemo(() => {
         return (columns || []).map(col => ({
             ...col,
@@ -236,151 +203,92 @@ export default function TabelaDinamica<T extends TableRowBase>({
         }));
     }, [columns]);
 
-
     // --- HANDLERS ---
-
     const handleItemChange = (id: string | number, fieldKey: string, value: any) => {
-        // Marca que usuário está mexendo
         isUserTyping.current = true;
-
         setLocalData(prev => prev.map(item => {
             if (item.id !== id) return item;
             return { ...item, [fieldKey]: value };
         }));
     };
 
-    // Handler para mudança no modal de 'Novo Item'
-    const handleNewItemChange = (fieldKey: string, value: any) => {
-        setNewItemTemp(prev => ({ ...prev, [fieldKey]: value }));
-    };
-
     const adicionarItem = () => {
-        if (isMobile) {
-            // No mobile, abre modal
-            const initialItem: any = safeColumns.reduce((acc: any, col) => {
-                acc[col.id] = '';
-                if (col.unitSelector) {
-                    acc[col.unitSelector.key] = col.unitSelector.options?.[0] || '';
-                }
-                return acc;
-            }, { id: generateUniqueId() });
-
-            setNewItemTemp(initialItem);
-            setIsAddModalOpen(true);
-        } else {
-            // Desktop: Comportamento padrão (inline)
-            const novoItem: any = safeColumns.reduce((acc: any, col) => {
-                acc[col.id] = '';
-                if (col.unitSelector) {
-                    acc[col.unitSelector.key] = col.unitSelector.options?.[0] || '';
-                }
-                return acc;
-            }, { id: generateUniqueId() });
-
-            const newData = [...localData, novoItem];
-            setLocalData(newData);
-            if (onDataChange) onDataChange(newData);
-        }
-    };
-
-    const salvarNovoItemMobile = () => {
-        const itemToSave = { ...newItemTemp, id: newItemTemp.id || generateUniqueId() } as T;
-        const newData = [...localData, itemToSave];
+        const novoId = generateUniqueId();
+        const novoItem: any = safeColumns.reduce((acc: any, col) => {
+            acc[col.id] = '';
+            if (col.unitSelector) acc[col.unitSelector.key] = col.unitSelector.options?.[0] || '';
+            return acc;
+        }, { id: novoId });
+        const newData = [...localData, novoItem];
         setLocalData(newData);
-        if (onDataChange) onDataChange(newData); // Save immediately
-        setIsAddModalOpen(false);
-        setNewItemTemp({});
+        if (onDataChange) onDataChange(newData);
+        // CR#3: New item opens automatically
+        setOpenCards(prev => new Set(prev).add(novoId));
     };
 
-    const removerItem = (id: string | number) => {
-        setItemToDelete(id);
-    };
+    const removerItem = (id: string | number) => { setItemToDelete(id); };
 
     const confirmarRemocao = () => {
         if (itemToDelete) {
             const newData = localData.filter(item => item.id !== itemToDelete);
             setLocalData(newData);
-            if (onDataChange) onDataChange(newData); // Immediate sync for delete
-
-            if (editingId === itemToDelete) setEditingId(null);
+            if (onDataChange) onDataChange(newData);
+            setOpenCards(prev => {
+                const next = new Set(prev);
+                next.delete(itemToDelete);
+                return next;
+            });
             setItemToDelete(null);
         }
     };
 
-    const cancelarRemocao = () => {
-        setItemToDelete(null);
-    };
-
-    const toggleEdit = (id: string | number) => {
-        setEditingId(prev => prev === id ? null : id);
-    };
+    const cancelarRemocao = () => { setItemToDelete(null); };
 
     // --- RENDER HELPERS ---
-
-    // --- RENDER HELPERS ---
-
     const renderValue = (item: Partial<T>, col: TableColumn) => {
         const val = item[col.id];
-
-        // Safely handle objects (e.g., location selectors)
         if (val && typeof val === 'object') {
             if ('_display' in val) return val._display || '';
-            if (val.talhao_nome || val.canteiro_nome) {
-                return `📍 ${val.talhao_nome || '?'} › ${val.canteiro_nome || '?'}`;
-            }
-            // Fallback: avoid returning object directly
+            if (val.talhao_nome || val.canteiro_nome) return `📍 ${val.talhao_nome || '?'} › ${val.canteiro_nome || '?'}`;
             return '-';
         }
-
         if (col.unitSelector) {
-            return val !== undefined && val !== null ? `${val} ${item[col.unitSelector.key] ?? ''}` : '-';
+            return val !== undefined && val !== null && val !== '' ? `${val} ${item[col.unitSelector.key] ?? ''}` : '-';
         }
         return val ?? '-';
     };
 
-    // Generic Input Render to reuse in Table and Modal
     const renderInputControl = (col: TableColumn, value: any, onChange: (val: any) => void, onBlurCmd?: () => void, unitValue?: any, onUnitChange?: (val: any) => void) => {
-        // --- COMPLEX FIELDS (LOCATION) ---
         if (col.type === 'saf_visual' || col.type === 'saf_location') {
             const Component = col.type === 'saf_visual' ? SeletorLocalizacaoSaf : LocalizacaoSafInput;
-            return (
-                <Component
-                    value={value ?? ''}
-                    onChange={onChange}
-                    size="small"
-                />
-            );
+            return <Component value={value ?? ''} onChange={onChange} size="small" />;
         }
 
-        // --- SELECT TYPE ---
         if (col.type === 'select') {
             const options = col.options || [];
             const isValidOption = options.some((opt: string | TableOption) => {
-                const val = typeof opt === 'object' ? opt.value : opt;
-                return String(val) === String(value);
+                const v = typeof opt === 'object' ? opt.value : opt;
+                return String(v) === String(value);
             });
-            let safeValue = isValidOption ? value : '';
+            const safeValue = isValidOption ? value : '';
 
             return (
-                <FormControl fullWidth size="small">
-                    <Select
-                        value={safeValue ?? ''}
-                        onChange={(e) => onChange(e.target.value)}
-                        onBlur={onBlurCmd}
-                        displayEmpty
-                    >
-                        <MenuItem value="" disabled><em>Selecione</em></MenuItem>
-                        {options.map((opt, index) => {
-                            const val = typeof opt === 'object' ? opt.value : opt;
-                            const lab = typeof opt === 'object' ? opt.label : opt;
-                            return <MenuItem key={index} value={val}>{lab}</MenuItem>;
-                        })}
-                    </Select>
-                </FormControl>
+                <select
+                    value={safeValue ?? ''}
+                    onChange={(e) => onChange(e.target.value)}
+                    onBlur={onBlurCmd}
+                    className="w-full border border-gray-200 rounded p-1.5 text-sm bg-white focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                >
+                    <option value="" disabled>Selecione</option>
+                    {options.map((opt, index) => {
+                        const v = typeof opt === 'object' ? opt.value : opt;
+                        const lab = typeof opt === 'object' ? opt.label : opt;
+                        return <option key={index} value={v}>{lab}</option>;
+                    })}
+                </select>
             );
         }
 
-        // --- UNIT SELECTOR ---
         if (col.unitSelector) {
             const options = col.unitSelector.options || [];
             const currentVal = unitValue ?? '';
@@ -388,63 +296,43 @@ export default function TabelaDinamica<T extends TableRowBase>({
             const effectiveOptions = isCustom ? [currentVal, ...options] : options;
 
             return (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <FastTextField
-                        value={value ?? ''}
-                        onChange={(val: any) => onChange(val)}
-                        onBlur={onBlurCmd}
-                        size="small"
-                        fullWidth
-                    />
-                    <Select
+                <div className="flex items-center gap-1">
+                    <FastInput value={value ?? ''} onChange={(val: any) => onChange(val)} onBlur={onBlurCmd} />
+                    <select
                         value={currentVal}
                         onChange={(e) => onUnitChange && onUnitChange(e.target.value)}
                         onBlur={onBlurCmd}
-                        size="small"
-                        sx={{ minWidth: 70 }}
+                        className="border border-gray-200 rounded p-1.5 text-sm bg-white min-w-[70px] focus:ring-1 focus:ring-green-500"
                     >
                         {effectiveOptions.map(opt => (
-                            <MenuItem key={opt} value={opt}>
-                                {isCustom && opt === currentVal ? `${opt} *` : opt}
-                            </MenuItem>
+                            <option key={opt} value={opt}>{isCustom && opt === currentVal ? `${opt} *` : opt}</option>
                         ))}
-                    </Select>
-                </Box>
+                    </select>
+                </div>
             );
         }
 
-        // --- STANDARD ---
         return (
-            <FastTextField
+            <FastInput
                 type={col.type === 'number' ? 'number' : 'text'}
                 value={value ?? ''}
                 onChange={(val: any) => onChange(val)}
                 onBlur={onBlurCmd}
-                size="small"
-                fullWidth
                 multiline={col.type === 'textarea'}
                 rows={col.type === 'textarea' ? 3 : 1}
-                InputProps={{
-                    endAdornment: col.suffix ? <Typography variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>{col.suffix}</Typography> : null
-                }}
+                suffix={col.suffix}
             />
         );
     };
 
-    // Wrapper for Main Table/Cards
     const renderField = (item: T, col: TableColumn) => {
         if (readOnly || col.readOnly) {
-            return <Typography variant="body2">{String(renderValue(item, col))}</Typography>;
+            return <span className="text-sm text-gray-700">{String(renderValue(item, col))}</span>;
         }
-
-        // Spreadsheet optimizations omitted for brevity in mobile fix, utilizing standard renderInputControl
-        // But preventing spreadsheet mode logic in mobile is easy.
-
         return renderInputControl(
-            col,
-            item[col.id],
+            col, item[col.id],
             (val) => handleItemChange(item.id, col.id, val),
-            flush, // <--- FLUSH ON BLUR
+            flush,
             col.unitSelector ? item[col.unitSelector.key] : undefined,
             col.unitSelector ? (val) => handleItemChange(item.id, col.unitSelector!.key, val) : undefined
         );
@@ -452,236 +340,191 @@ export default function TabelaDinamica<T extends TableRowBase>({
 
     // --- CARD MAP HELPERS ---
     const getCardMap = (cols: TableColumn[]) => {
-        const titleCol = cols.find(c => ['produto', 'cultura', 'especie', 'nome'].includes(c.id)) || cols[0];
+        const titleCol = cols.find(c => ['produto', 'cultura', 'especie', 'nome', 'produto_ou_manejo', 'tipo_animal', 'animal_lote', 'alimento'].includes(c.id)) || cols[0];
         const badgeCol = cols.find(c => ['atividade', 'tipo', 'status', 'categoria'].includes(c.id));
-        const subtitleCol = cols.find(c => ['talhoes_canteiros', 'local', 'localizacao'].includes(c.id));
-        const dateCol = cols.find(c => ['data', 'periodo', 'epoca'].includes(c.id));
-        const footerCol = cols.find(c => c.unitSelector || ['quantidade', 'area_plantada', 'producao_esperada_ano'].includes(c.id));
-        return { titleCol, badgeCol, subtitleCol, dateCol, footerCol };
+        const footerCol = cols.find(c => c.unitSelector || ['quantidade', 'area_plantada', 'producao_esperada_ano', 'n_de_animais'].includes(c.id));
+        return { titleCol, badgeCol, footerCol };
     };
-    const { titleCol, badgeCol, subtitleCol, dateCol, footerCol } = getCardMap(safeColumns);
+    const { titleCol, badgeCol, footerCol } = getCardMap(safeColumns);
+
+    // --- CR#2: Title fallback for empty items ---
+    const getCardTitle = (item: T): string => {
+        const val = renderValue(item, titleCol);
+        const str = String(val).trim();
+        if (!str || str === '-' || str === '') {
+            return itemName ? `Novo ${itemName}` : 'Novo Registo';
+        }
+        return str;
+    };
+
+    const isCardTitleEmpty = (item: T): boolean => {
+        const val = renderValue(item, titleCol);
+        const str = String(val).trim();
+        return !str || str === '-' || str === '';
+    };
 
     // --- RENDER ---
-
     return (
-        <Box sx={{ my: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                {label && <Typography variant="h6" sx={{ fontWeight: 600, color: '#2c3e50' }}>{label}</Typography>}
-                {isMobile && !readOnly && (
-                    <Button
-                        variant="contained" size="small" startIcon={<AddCircleOutlineIcon />}
-                        onClick={adicionarItem} sx={{ textTransform: 'none', borderRadius: 2 }}
+        <div className="my-3">
+            {/* Header */}
+            <div className="flex justify-between items-center mb-2">
+                {label && <h3 className="text-lg font-semibold text-gray-800">{label}</h3>}
+                {!readOnly && (
+                    <button
+                        type="button"
+                        onClick={adicionarItem}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
                     >
-                        Adicionar
-                    </Button>
+                        <PlusCircle size={16} /> Adicionar
+                    </button>
                 )}
-            </Box>
+            </div>
 
-            {isMobile ? (
-                // --- MOBILE CARDS ---
-                <Stack spacing={2}>
-                    {localData.map((item) => {
-                        const isEditing = editingId === item.id;
-                        if (renderMobileItem && !isEditing) {
-                            return (
-                                <Box key={item.id}>
-                                    {renderMobileItem(item, () => toggleEdit(item.id), () => removerItem(item.id))}
-                                    <Collapse in={isEditing}>
-                                        <Card variant="outlined" sx={{ mt: 1 }}>
-                                            <Box sx={{ p: 2 }}>
-                                                <Stack spacing={2}>
-                                                    {safeColumns.map(col => <Box key={col.id}>{renderField(item, col)}</Box>)}
-                                                </Stack>
-                                                <Button onClick={() => setEditingId(null)} sx={{ mt: 2 }} fullWidth variant="contained">Concluir</Button>
-                                            </Box>
-                                        </Card>
-                                    </Collapse>
-                                </Box>
-                            );
-                        }
-
-                        // Standard Card
-                        return (
-                            <Card
-                                key={item.id}
-                                elevation={0}
-                                variant="outlined"
-                                onClick={() => {
-                                    if (!isEditing && !disableRowClick && onRowClick) {
-                                        onRowClick(item);
-                                    }
-                                }}
-                                sx={{
-                                    borderRadius: 2,
-                                    borderColor: '#e2e8f0',
-                                    border: isEditing ? `1.5px solid ${theme.palette.primary.main}` : undefined,
-                                    cursor: !isEditing && !disableRowClick && onRowClick ? 'pointer' : 'default',
-                                    transition: 'all 0.2s',
-                                    '&:hover': (!isEditing && !disableRowClick && onRowClick) ? {
-                                        borderColor: theme.palette.primary.main,
-                                        transform: 'translateY(-2px)',
-                                        boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-                                    } : {}
-                                }}
-                            >
-                                {!isEditing && (
-                                    <CardContent sx={{ pb: '16px !important', pt: 2, px: 2 }}>
-                                        {/* HEADER */}
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
-                                            <Chip
-                                                label={badgeCol && item[badgeCol.id] ? item[badgeCol.id] : (itemNoun?.toUpperCase() || 'ITEM')}
-                                                size="small" color="success" variant="outlined"
-                                                sx={{ height: 24, fontSize: '0.75rem', fontWeight: 600, borderRadius: '4px' }}
-                                            />
-                                            <Box>
-                                                <IconButton onClick={(e) => { e.stopPropagation(); toggleEdit(item.id); }} color="primary" size="small"><EditIcon fontSize="small" /></IconButton>
-                                                <IconButton onClick={(e) => { e.stopPropagation(); removerItem(item.id); }} color="error" size="small"><DeleteIcon fontSize="small" /></IconButton>
-                                            </Box>
-                                        </Box>
-
-                                        {/* BODY */}
-                                        <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2, color: '#1e293b', mb: 0.5 }}>
-                                            {renderValue(item, titleCol)}
-                                        </Typography>
-
-                                        {footerCol && (
-                                            <Box sx={{ mt: 1 }}>
-                                                <Typography variant="caption" color="text.secondary">{footerCol.label}: </Typography>
-                                                <Typography variant="body2" component="span" fontWeight={700}>{renderValue(item, footerCol)}</Typography>
-                                            </Box>
-                                        )}
-                                    </CardContent>
-                                )}
-
-                                <Collapse in={isEditing}>
-                                    <Box sx={{ p: 2, bgcolor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
-                                        <Stack spacing={2}>
-                                            <Typography variant="caption" fontWeight="bold" color="primary">EDITAR</Typography>
-                                            {safeColumns.map(col => (
-                                                <Box key={col.id}>
-                                                    <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>{col.label}</Typography>
-                                                    {renderField(item, col)}
-                                                </Box>
-                                            ))}
-                                            <Button onClick={() => setEditingId(null)} fullWidth variant="contained" startIcon={<SaveIcon />}>Concluir Edição</Button>
-                                        </Stack>
-                                    </Box>
-                                </Collapse>
-                            </Card>
-                        );
-                    })}
-                </Stack>
-            ) : (
-                // --- DESKTOP TABLE ---
-                <div className="overflow-hidden rounded-xl border border-gray-200 shadow-sm bg-white">
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    {safeColumns.map(col => (
-                                        <th
-                                            key={col.id}
-                                            scope="col"
-                                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                            style={{ width: col.width }}
-                                        >
-                                            {col.label?.toUpperCase()}
-                                        </th>
-                                    ))}
-                                    {!readOnly && (
-                                        <th
-                                            scope="col"
-                                            className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[100px]"
-                                        >
-                                            AÇÕES
-                                        </th>
-                                    )}
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {localData.map((item) => (
-                                    <tr
-                                        key={item.id}
-                                        onClick={() => {
-                                            if (!disableRowClick && onRowClick) {
-                                                onRowClick(item);
-                                            }
-                                        }}
-                                        className={`hover:bg-gray-50 transition-colors ${!disableRowClick && onRowClick ? 'cursor-pointer' : ''}`}
-                                    >
-                                        {safeColumns.map(col => (
-                                            <td key={col.id} className="px-6 py-4 text-sm text-gray-900 align-top">
-                                                {renderField(item, col)}
-                                            </td>
-                                        ))}
-                                        {!readOnly && (
-                                            <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                                <Tooltip title="Remover">
-                                                    <button
-                                                        className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            removerItem(item.id);
-                                                        }}
-                                                    >
-                                                        <DeleteIcon fontSize="small" />
-                                                    </button>
-                                                </Tooltip>
-                                            </td>
-                                        )}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+            {/* Empty State */}
+            {localData.length === 0 && (
+                <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-xl">
+                    <p className="text-sm text-gray-400">
+                        Nenhum {itemName?.toLowerCase() || 'item'} adicionado.
+                    </p>
+                    {!readOnly && (
+                        <button
+                            type="button"
+                            onClick={adicionarItem}
+                            className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+                        >
+                            <PlusCircle size={18} />
+                            Adicionar {itemNoun ? `nov${itemNoun}` : ''} {itemName}
+                        </button>
+                    )}
                 </div>
             )}
 
-            {!isMobile && !readOnly && (
-                <Button
-                    startIcon={<AddCircleOutlineIcon />}
+            {/* Cards List */}
+            <div className="flex flex-col gap-3">
+                {localData.map((item) => {
+                    const isOpen = openCards.has(item.id);
+                    const hasRowClick = !disableRowClick && onRowClick;
+                    const cardTitle = getCardTitle(item);
+                    const titleEmpty = isCardTitleEmpty(item);
+
+                    return (
+                        <div
+                            key={item.id}
+                            className={`border rounded-xl overflow-hidden transition-all shadow-sm ${isOpen
+                                    ? 'border-green-500 shadow-md'
+                                    : 'border-gray-200 hover:border-gray-300 hover:shadow'
+                                }`}
+                        >
+                            {/* Card Header */}
+                            <div
+                                className={`flex items-center gap-3 px-4 py-3 bg-gray-50 ${hasRowClick && !isOpen ? 'cursor-pointer hover:bg-gray-100' : ''
+                                    } transition-colors`}
+                                onClick={() => {
+                                    // CR#1: onRowClick fires on header click (only when card is closed)
+                                    if (hasRowClick && !isOpen) {
+                                        onRowClick!(item);
+                                    }
+                                }}
+                            >
+                                {/* Badge */}
+                                {badgeCol && item[badgeCol.id] && (
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold border border-green-600 text-green-700 shrink-0">
+                                        {item[badgeCol.id]}
+                                    </span>
+                                )}
+
+                                {/* Title + Footer summary */}
+                                <div className="flex-1 min-w-0">
+                                    <h4 className={`text-sm font-bold leading-tight truncate ${titleEmpty ? 'text-gray-400 italic' : 'text-gray-800'
+                                        }`}>
+                                        {cardTitle}
+                                    </h4>
+                                    {footerCol && !isOpen && (
+                                        <p className="text-xs text-gray-500 mt-0.5 truncate">
+                                            {footerCol.label}: <span className="font-semibold text-gray-700">{renderValue(item, footerCol)}</span>
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div className="flex items-center gap-1 shrink-0">
+                                    {!readOnly && (
+                                        <button
+                                            type="button"
+                                            title="Remover"
+                                            className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                            onClick={(e) => {
+                                                // CR#1: stopPropagation so delete doesn't trigger onRowClick
+                                                e.stopPropagation();
+                                                removerItem(item.id);
+                                            }}
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    )}
+                                    <button
+                                        type="button"
+                                        title={isOpen ? 'Fechar' : 'Expandir'}
+                                        className="p-1.5 text-gray-500 hover:bg-gray-200 rounded-lg transition-colors"
+                                        onClick={(e) => {
+                                            // CR#1: stopPropagation so chevron doesn't trigger onRowClick
+                                            e.stopPropagation();
+                                            toggleCard(item.id);
+                                        }}
+                                    >
+                                        <ChevronDown
+                                            size={18}
+                                            className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                                        />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Card Body (Accordion) */}
+                            {isOpen && (
+                                <div className="px-4 py-4 border-t border-gray-200 bg-white">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {safeColumns.map(col => (
+                                            <div key={col.id} className={col.type === 'textarea' ? 'md:col-span-2' : ''}>
+                                                <label className="text-xs font-medium text-gray-500 mb-1 block">
+                                                    {col.label}
+                                                </label>
+                                                {renderField(item, col)}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* Bottom Add Button (desktop convenience) */}
+            {localData.length > 0 && !readOnly && (
+                <button
+                    type="button"
                     onClick={adicionarItem}
-                    sx={{ mt: 2, textTransform: 'none', fontWeight: 600 }}
+                    className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-50 rounded-lg transition-colors"
                 >
+                    <PlusCircle size={18} />
                     Adicionar nov{itemNoun} {itemName}
-                </Button>
+                </button>
             )}
 
-            {/* DIALOG DE EXCLUSAO */}
-            <Dialog open={!!itemToDelete} onClose={cancelarRemocao}>
-                <DialogTitle>Confirmar Exclusão</DialogTitle>
-                <DialogContent><DialogContentText>Deseja remover este item?</DialogContentText></DialogContent>
-                <DialogActions>
-                    <Button onClick={cancelarRemocao}>Cancelar</Button>
-                    <Button onClick={confirmarRemocao} color="error" variant="contained">Remover</Button>
-                </DialogActions>
-            </Dialog>
-
-            {/* DIALOG ADD ITEM MOBILE */}
-            <Dialog open={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} fullWidth maxWidth="xs">
-                <DialogTitle>Adicionar {itemName}</DialogTitle>
-                <DialogContent>
-                    <Stack spacing={2} sx={{ mt: 1 }}>
-                        {safeColumns.map(col => (
-                            <Box key={col.id}>
-                                <Typography variant="caption" color="text.secondary">{col.label}</Typography>
-                                {renderInputControl(
-                                    col,
-                                    newItemTemp[col.id],
-                                    (val) => handleNewItemChange(col.id, val),
-                                    undefined,
-                                    col.unitSelector ? newItemTemp[col.unitSelector.key] : undefined,
-                                    col.unitSelector ? (val) => handleNewItemChange(col.unitSelector!.key, val) : undefined
-                                )}
-                            </Box>
-                        ))}
-                    </Stack>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setIsAddModalOpen(false)}>Cancelar</Button>
-                    <Button onClick={salvarNovoItemMobile} variant="contained" color="primary">Adicionar</Button>
-                </DialogActions>
-            </Dialog>
-        </Box>
+            {/* DELETE CONFIRMATION MODAL */}
+            {itemToDelete && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm" onClick={cancelarRemocao}>
+                    <div className="bg-white rounded-lg shadow-xl max-w-sm w-full mx-4 p-6" onClick={(e) => e.stopPropagation()}>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Confirmar Exclusão</h3>
+                        <p className="text-sm text-gray-600 mb-4">Deseja remover este item?</p>
+                        <div className="flex justify-end gap-2">
+                            <button type="button" onClick={cancelarRemocao} className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">Cancelar</button>
+                            <button type="button" onClick={confirmarRemocao} className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors">Remover</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
     );
 }
