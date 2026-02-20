@@ -1,5 +1,5 @@
-import { useState, useMemo, useCallback } from 'react';
-import { VegetalItem } from '../../components/PmoForm/GroupedVegetalList_MUI';
+﻿import { useState, useMemo, useCallback } from 'react';
+import { VegetalItem } from '../../domain/pmo/pmoTypes';
 
 export interface CulturaGroup {
     nome: string;
