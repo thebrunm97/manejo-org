@@ -84,7 +84,7 @@ const FastInput = React.memo(({ value, onChange, onBlur, type = 'text', multilin
         if (onBlur) onBlur(e);
     };
 
-    const inputCls = `w-full bg-transparent border border-gray-200 focus:ring-1 focus:ring-green-500 focus:border-green-500 rounded p-1.5 text-sm ${className}`;
+    const inputCls = `w-full bg-transparent border border-gray-200 dark:border-slate-700 focus:ring-1 focus:ring-green-500 focus:border-green-500 rounded p-1.5 text-sm text-gray-900 dark:text-slate-100 ${className}`;
 
     if (multiline) {
         return (
@@ -277,7 +277,7 @@ export default function TabelaDinamica<T extends TableRowBase>({
                     value={safeValue ?? ''}
                     onChange={(e) => onChange(e.target.value)}
                     onBlur={onBlurCmd}
-                    className="w-full border border-gray-200 rounded p-1.5 text-sm bg-white focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                    className="w-full border border-gray-200 dark:border-slate-700 rounded p-1.5 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 focus:ring-1 focus:ring-green-500 focus:border-green-500"
                 >
                     <option value="" disabled>Selecione</option>
                     {options.map((opt, index) => {
@@ -302,7 +302,7 @@ export default function TabelaDinamica<T extends TableRowBase>({
                         value={currentVal}
                         onChange={(e) => onUnitChange && onUnitChange(e.target.value)}
                         onBlur={onBlurCmd}
-                        className="border border-gray-200 rounded p-1.5 text-sm bg-white min-w-[70px] focus:ring-1 focus:ring-green-500"
+                        className="border border-gray-200 dark:border-slate-700 rounded p-1.5 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 min-w-[70px] focus:ring-1 focus:ring-green-500"
                     >
                         {effectiveOptions.map(opt => (
                             <option key={opt} value={opt}>{isCustom && opt === currentVal ? `${opt} *` : opt}</option>
@@ -411,13 +411,13 @@ export default function TabelaDinamica<T extends TableRowBase>({
                         <div
                             key={item.id}
                             className={`border rounded-xl overflow-hidden transition-all shadow-sm ${isOpen
-                                    ? 'border-green-500 shadow-md'
-                                    : 'border-gray-200 hover:border-gray-300 hover:shadow'
-                                }`}
+                                ? 'border-green-500 shadow-md ring-1 ring-green-500/20'
+                                : 'border-gray-200 dark:border-slate-800 hover:border-gray-300 dark:hover:border-slate-700 hover:shadow'
+                                } bg-white dark:bg-slate-900`}
                         >
                             {/* Card Header */}
                             <div
-                                className={`flex items-center gap-3 px-4 py-3 bg-gray-50 ${hasRowClick && !isOpen ? 'cursor-pointer hover:bg-gray-100' : ''
+                                className={`flex items-center gap-3 px-4 py-3 ${isOpen ? 'bg-white dark:bg-slate-900' : 'bg-gray-50 dark:bg-slate-800/50'} ${hasRowClick && !isOpen ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800' : ''
                                     } transition-colors`}
                                 onClick={() => {
                                     // CR#1: onRowClick fires on header click (only when card is closed)
@@ -435,13 +435,13 @@ export default function TabelaDinamica<T extends TableRowBase>({
 
                                 {/* Title + Footer summary */}
                                 <div className="flex-1 min-w-0">
-                                    <h4 className={`text-sm font-bold leading-tight truncate ${titleEmpty ? 'text-gray-400 italic' : 'text-gray-800'
+                                    <h4 className={`text-sm font-bold leading-tight truncate ${titleEmpty ? 'text-gray-400 dark:text-gray-500 italic' : 'text-gray-800 dark:text-slate-100'
                                         }`}>
                                         {cardTitle}
                                     </h4>
                                     {footerCol && !isOpen && (
                                         <p className="text-xs text-gray-500 mt-0.5 truncate">
-                                            {footerCol.label}: <span className="font-semibold text-gray-700">{renderValue(item, footerCol)}</span>
+                                            {footerCol.label}: <span className="font-semibold text-gray-700 dark:text-slate-300">{renderValue(item, footerCol)}</span>
                                         </p>
                                     )}
                                 </div>
@@ -482,11 +482,11 @@ export default function TabelaDinamica<T extends TableRowBase>({
 
                             {/* Card Body (Accordion) */}
                             {isOpen && (
-                                <div className="px-4 py-4 border-t border-gray-200 bg-white">
+                                <div className="px-4 py-4 border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {safeColumns.map(col => (
                                             <div key={col.id} className={col.type === 'textarea' ? 'md:col-span-2' : ''}>
-                                                <label className="text-xs font-medium text-gray-500 mb-1 block">
+                                                <label className="text-xs font-medium text-gray-500 dark:text-slate-400 mb-1 block">
                                                     {col.label}
                                                 </label>
                                                 {renderField(item, col)}
