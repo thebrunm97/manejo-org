@@ -68,15 +68,40 @@ body {
 }
 
 .pmo-form .form-control,
-.pmo-form .form-select {
+.pmo-form .form-select,
+.pmo-form input,
+.pmo-form textarea,
+.pmo-form select {
   font-size: 1rem;
   padding: 0.75rem 1rem;
-  color: #0f172a;
+  color: #0f172a !important;
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+.pmo-form .form-control::placeholder,
+.pmo-form input::placeholder,
+.pmo-form textarea::placeholder {
+  color: #94a3b8 !important;
 }
 
 .pmo-form .form-group,
 .pmo-form .mb-4 {
   margin-bottom: 2rem !important;
+}
+
+/* Force Dark Text for Form Labels and Headers regardless of theme */
+.pmo-form label,
+.pmo-form h1,
+.pmo-form h2,
+.pmo-form h3,
+.pmo-form h4,
+.pmo-form h5,
+.pmo-form p,
+.pmo-form span:not(.step-counter),
+.step-label,
+.step-sub-label {
+  color: #0f172a !important;
 }
 
 .pmo-form hr {
@@ -272,25 +297,6 @@ body {
     background-color: #0f172a;
     /* slate-900 */
     color: var(--pmo-dark-text-primary);
-  }
-
-  /* Global Fix for Inputs in Dark Mode */
-  input,
-  textarea,
-  select,
-  .form-control {
-    background-color: #1e293b;
-    /* slate-800 */
-    color: #f1f5f9 !important;
-    /* slate-100 */
-    border-color: #334155;
-    /* slate-700 */
-  }
-
-  input::placeholder,
-  textarea::placeholder {
-    color: #64748b;
-    /* slate-500 */
   }
 
   .stepper-arrow {
