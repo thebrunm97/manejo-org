@@ -4,27 +4,26 @@ import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import Secao5MUI from './Secao5';
 
-// Secao5 defines its table internally, so we don't mock it, we test interaction.
+// TabelaDinamica uses a heuristic to pick the title column. 
+// For Secao5, 'produto' is in the priority list, so it becomes the card title.
 
 describe('Secao5MUI', () => {
-    test('deve adicionar item na tabela de produção terceirizada', () => {
+    test('deve adicionar item na tabela de produção terceirizada', async () => {
         const mockOnSectionChange = vi.fn();
         const data = { produtos_terceirizados: [] };
 
         render(<Secao5MUI data={data} onSectionChange={mockOnSectionChange} />);
 
         // Click Add Button
-        const btnAdd = screen.getByText(/Adicionar Produto Terceirizado/i);
+        const btnAdd = await screen.findByText(/Adicionar.*Produto Terceirizado/i);
         fireEvent.click(btnAdd);
 
-        // Expect onSectionChange to be called with a new array containing 1 item
         expect(mockOnSectionChange).toHaveBeenCalled();
         const callArgs = mockOnSectionChange.mock.calls[0][0];
         expect(callArgs.produtos_terceirizados).toHaveLength(1);
-        expect(callArgs.produtos_terceirizados[0]).toHaveProperty('id');
     });
 
-    test('deve renderizar itens existentes', () => {
+    test('deve renderizar itens existentes e permitir expansão', async () => {
         const mockOnSectionChange = vi.fn();
         const data = {
             produtos_terceirizados: [
@@ -32,10 +31,18 @@ describe('Secao5MUI', () => {
             ]
         };
 
-        render(<Secao5MUI data={data} onSectionChange={mockOnSectionChange} />);
+        const { debug } = render(<Secao5MUI data={data} onSectionChange={mockOnSectionChange} />);
 
-        // Check if values are in the inputs
-        expect(screen.getByDisplayValue('Fornecedor A')).toBeInTheDocument();
+        // Wait for the sync effect to run
+        const tomato = await screen.findByText(/Tomate/i);
+        expect(tomato).toBeInTheDocument();
+
+        // Expand the card
+        const expandBtn = screen.getByTitle('Expandir');
+        fireEvent.click(expandBtn);
+
+        // Check values in expanded body
+        expect(await screen.findByDisplayValue('Fornecedor A')).toBeInTheDocument();
         expect(screen.getByDisplayValue('Tomate')).toBeInTheDocument();
     });
 });

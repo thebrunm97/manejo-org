@@ -19,7 +19,7 @@ interface Secao8Data {
 
 interface Secao8MUIProps {
     data: Secao8Data | null | undefined;
-    formData?: { insumos_melhorar_fertilidade?: any[] };
+    formData?: any;
     onSectionChange: (data: Secao8Data) => void;
 }
 
@@ -28,7 +28,11 @@ const AccordionPanel: React.FC<{ title: string; defaultOpen?: boolean; children:
     const [open, setOpen] = useState(defaultOpen);
     return (
         <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left">
+            <button
+                type="button"
+                onClick={() => setOpen(!open)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+            >
                 <span className="font-bold text-sm text-gray-800">{title}</span>
                 <ChevronDown size={18} className={`text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`} />
             </button>
@@ -37,9 +41,19 @@ const AccordionPanel: React.FC<{ title: string; defaultOpen?: boolean; children:
     );
 };
 
-const Secao8MUI: React.FC<Secao8MUIProps> = ({ data, onSectionChange }) => {
+const Secao8MUI: React.FC<Secao8MUIProps> = ({ data, formData, onSectionChange }) => {
     const safeData = data || {};
     const insumosFertilidade = safeData.insumos_melhorar_fertilidade || [];
+
+    // Extração de culturas da Secao 2.1 para o Multi-Select "Onde"
+    const culturasRegistradas = React.useMemo(() => {
+        const produtosPPV = formData?.secao_2_atividades_produtivas_organicas?.producao_primaria_vegetal?.produtos_primaria_vegetal || [];
+        // Filtra nomes vazios e remove duplicatas
+        const nomes = produtosPPV
+            .map((p: any) => p.produto)
+            .filter((p: any) => !!p && typeof p === 'string');
+        return Array.from(new Set(nomes)) as string[];
+    }, [formData]);
 
     // Debug para verificar atualização
     React.useEffect(() => {
@@ -193,6 +207,7 @@ const Secao8MUI: React.FC<Secao8MUIProps> = ({ data, onSectionChange }) => {
                         <GroupedInsumosList
                             data={insumosFertilidade}
                             onDataChange={(newData) => onSectionChange({ ...safeData, insumos_melhorar_fertilidade: newData })}
+                            opcoesCulturas={culturasRegistradas}
                         />
                     </AccordionPanel>
 

@@ -1,24 +1,22 @@
 ﻿// src/components/PmoForm/Secao5.tsx
-// Refatorado — Zero MUI. Usa Tailwind + lucide-react.
+// Refatorado — Zero MUI. Usa Tailwind + lucide-react + TabelaDinamica standard.
 
-import React, { useState, ChangeEvent } from 'react';
-import { ChevronDown, PlusCircle, Trash2 } from 'lucide-react';
-import { useIsMobile } from '../../hooks/useIsMobile';
+import React, { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import SectionShell from '../Plan/SectionShell';
+import TabelaDinamica, { TableColumn } from './TabelaDinamica';
 
-// Types
+// ==================================================================
+// ||                         INTERFACES                           ||
+// ==================================================================
+
 interface ProdutoTerceirizado {
-    id?: string;
+    id: string | number;
     fornecedor?: string;
     localidade?: string;
     produto?: string;
     quantidade_ano?: string | number;
-    processamento?: boolean | null;
-}
-
-interface TabelaProducaoTerceirizadaProps {
-    itens: ProdutoTerceirizado[];
-    onItensChange: (itens: ProdutoTerceirizado[]) => void;
+    processamento?: boolean | string | null;
 }
 
 interface Secao5Data {
@@ -31,107 +29,22 @@ interface Secao5MUIProps {
     onSectionChange: (data: Secao5Data) => void;
 }
 
-const inputCls = "w-full border-b border-gray-300 bg-transparent py-1 text-sm focus:border-green-500 focus:outline-none";
-const labelCls = "text-xs font-medium text-gray-600 mb-1 block";
+// ==================================================================
+// ||                     HELPER COMPONENTS                        ||
+// ==================================================================
 
-const TabelaProducaoTerceirizada: React.FC<TabelaProducaoTerceirizadaProps> = ({ itens, onItensChange }) => {
-    const isMobile = useIsMobile(768); // md breakpoint
-
-    const handleItemChange = (index: number, name: string, value: string | boolean) => {
-        const novosItens = [...itens];
-        novosItens[index] = { ...novosItens[index], [name]: value };
-        onItensChange(novosItens);
-    };
-
-    const adicionarItem = () => {
-        onItensChange([...itens, { id: `new_${Date.now()}`, fornecedor: '', localidade: '', produto: '', quantidade_ano: '', processamento: null }]);
-    };
-
-    const removerItem = (index: number) => {
-        onItensChange(itens.filter((_, i) => i !== index));
-    };
-
-    const DesktopLayout = () => (
-        <div className="border border-gray-200 rounded-lg overflow-auto">
-            <table className="w-full text-sm">
-                <thead>
-                    <tr className="bg-gray-50 border-b border-gray-200">
-                        <th className="px-3 py-2 text-left font-bold text-gray-700">Fornecedor</th>
-                        <th className="px-3 py-2 text-left font-bold text-gray-700">Localidade</th>
-                        <th className="px-3 py-2 text-left font-bold text-gray-700">Produto</th>
-                        <th className="px-3 py-2 text-left font-bold text-gray-700">Quantidade/ano</th>
-                        <th className="px-3 py-2 text-left font-bold text-gray-700">Processamento</th>
-                        <th className="px-3 py-2 text-center font-bold text-gray-700">Ação</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {(itens || []).map((item, index) => (
-                        <tr key={item.id || index} className="border-b border-gray-100 hover:bg-gray-50">
-                            <td className="px-3 py-1"><input className={inputCls} value={item.fornecedor || ''} onChange={(e) => handleItemChange(index, 'fornecedor', e.target.value)} /></td>
-                            <td className="px-3 py-1"><input className={inputCls} value={item.localidade || ''} onChange={(e) => handleItemChange(index, 'localidade', e.target.value)} /></td>
-                            <td className="px-3 py-1"><input className={inputCls} value={item.produto || ''} onChange={(e) => handleItemChange(index, 'produto', e.target.value)} /></td>
-                            <td className="px-3 py-1"><input className={inputCls} type="number" value={item.quantidade_ano || ''} onChange={(e) => handleItemChange(index, 'quantidade_ano', e.target.value)} /></td>
-                            <td className="px-3 py-1">
-                                <div className="flex items-center gap-2 text-sm">
-                                    <label className="flex items-center gap-1 cursor-pointer">
-                                        <input type="radio" name={`proc-${index}`} checked={item.processamento === true} onChange={() => handleItemChange(index, 'processamento', true)} className="w-3.5 h-3.5" /> Sim
-                                    </label>
-                                    <label className="flex items-center gap-1 cursor-pointer">
-                                        <input type="radio" name={`proc-${index}`} checked={item.processamento === false} onChange={() => handleItemChange(index, 'processamento', false)} className="w-3.5 h-3.5" /> Não
-                                    </label>
-                                </div>
-                            </td>
-                            <td className="px-3 py-1 text-center">
-                                <button onClick={() => removerItem(index)} className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"><Trash2 size={16} /></button>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-    );
-
-    const MobileLayout = () => (
-        <div className="space-y-3">
-            {(itens || []).map((item, index) => (
-                <div key={item.id || index} className="border border-gray-200 rounded-lg p-3 relative shadow-sm">
-                    <button onClick={() => removerItem(index)} className="absolute top-2 right-2 p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded">
-                        <Trash2 size={16} />
-                    </button>
-                    <div className="space-y-2">
-                        <div><label className={labelCls}>Fornecedor</label><input className={inputCls} value={item.fornecedor || ''} onChange={(e) => handleItemChange(index, 'fornecedor', e.target.value)} /></div>
-                        <div><label className={labelCls}>Localidade</label><input className={inputCls} value={item.localidade || ''} onChange={(e) => handleItemChange(index, 'localidade', e.target.value)} /></div>
-                        <div><label className={labelCls}>Produto</label><input className={inputCls} value={item.produto || ''} onChange={(e) => handleItemChange(index, 'produto', e.target.value)} /></div>
-                        <div><label className={labelCls}>Quantidade/ano</label><input className={inputCls} type="number" value={item.quantidade_ano || ''} onChange={(e) => handleItemChange(index, 'quantidade_ano', e.target.value)} /></div>
-                        <div>
-                            <label className={labelCls}>Processamento</label>
-                            <div className="flex gap-4 text-sm mt-1">
-                                <label className="flex items-center gap-1 cursor-pointer"><input type="radio" name={`proc-m-${index}`} checked={item.processamento === true} onChange={() => handleItemChange(index, 'processamento', true)} className="w-3.5 h-3.5" /> Sim</label>
-                                <label className="flex items-center gap-1 cursor-pointer"><input type="radio" name={`proc-m-${index}`} checked={item.processamento === false} onChange={() => handleItemChange(index, 'processamento', false)} className="w-3.5 h-3.5" /> Não</label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            ))}
-        </div>
-    );
-
-    return (
-        <div>
-            {isMobile ? <MobileLayout /> : <DesktopLayout />}
-            <button onClick={adicionarItem} className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 text-sm text-green-700 hover:bg-green-50 rounded-md">
-                <PlusCircle size={16} /> Adicionar Produto Terceirizado
-            </button>
-        </div>
-    );
-};
-
-// Accordion Panel helper
+/**
+ * Accordion Panel helper with fixed button type to prevent accidental submits.
+ */
 const AccordionPanel: React.FC<{ title: string; defaultOpen?: boolean; children: React.ReactNode }> = ({ title, defaultOpen = false, children }) => {
     const [open, setOpen] = useState(defaultOpen);
     return (
         <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left">
+            <button
+                type="button"
+                onClick={() => setOpen(!open)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+            >
                 <span className="font-bold text-sm text-gray-800">{title}</span>
                 <ChevronDown size={18} className={`text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`} />
             </button>
@@ -140,9 +53,47 @@ const AccordionPanel: React.FC<{ title: string; defaultOpen?: boolean; children:
     );
 };
 
+// ==================================================================
+// ||                     MAIN COMPONENT                           ||
+// ==================================================================
+
 const Secao5MUI: React.FC<Secao5MUIProps> = ({ data, onSectionChange }) => {
+
+    // Configuração das colunas seguindo o novo padrão TabelaDinamica
+    const columns: TableColumn[] = [
+        { id: 'fornecedor', label: 'Fornecedor', type: 'text' },
+        { id: 'localidade', label: 'Localidade', type: 'text' },
+        { id: 'produto', label: 'Produto', type: 'text' },
+        { id: 'quantidade_ano', label: 'Quantidade/ano', type: 'number' },
+        {
+            id: 'processamento',
+            label: 'Processamento',
+            type: 'select',
+            options: [
+                { value: 'true', label: 'Sim' },
+                { value: 'false', label: 'Não' }
+            ]
+        },
+    ];
+
+    /**
+     * Sincroniza os dados da TabelaDinamica com o estado da Secção 5.
+     * Converte os valores booleanos vindos do select (strings "true"/"false")
+     * de volta para booleanos para manter a integridade do schema original.
+     */
     const handleTabelaChange = (novoArray: ProdutoTerceirizado[]) => {
-        onSectionChange({ ...data, produtos_terceirizados: novoArray });
+        const normalizedArray = novoArray.map(item => {
+            let procValue = item.processamento;
+            if (procValue === 'true') procValue = true;
+            else if (procValue === 'false') procValue = false;
+
+            return {
+                ...item,
+                processamento: procValue
+            };
+        });
+
+        onSectionChange({ ...data, produtos_terceirizados: normalizedArray });
     };
 
     return (
@@ -151,9 +102,12 @@ const Secao5MUI: React.FC<Secao5MUIProps> = ({ data, onSectionChange }) => {
             title="Produção Terceirizada"
         >
             <AccordionPanel title="5.1. Adquire produtos de terceiros para processar ou comercializar sem processamento?" defaultOpen>
-                <TabelaProducaoTerceirizada
-                    itens={data?.produtos_terceirizados || []}
-                    onItensChange={handleTabelaChange}
+                <TabelaDinamica<ProdutoTerceirizado>
+                    columns={columns}
+                    data={data?.produtos_terceirizados || []}
+                    onDataChange={handleTabelaChange}
+                    itemName="Produto Terceirizado"
+                    itemNoun="o"
                 />
             </AccordionPanel>
         </SectionShell>
