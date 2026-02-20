@@ -49,11 +49,11 @@ export function SectionShell({
                         {sectionLabel}
                     </span>
                 )}
-                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 leading-tight">
+                <h2 className="text-xl font-bold text-slate-900 leading-tight">
                     {title}
                 </h2>
                 {subtitle && (
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                    <p className="text-sm text-slate-500 mt-1">
                         {subtitle}
                     </p>
                 )}
@@ -66,8 +66,8 @@ export function SectionShell({
                 </div>
             )}
 
-            {/* Content container */}
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden p-6 hover:border-green-500/30 dark:hover:border-green-500/50 transition-colors duration-300">
+            {/* Content container - FORCED WHITE BACKGROUND */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden p-6 hover:border-green-500/30 transition-colors duration-300">
                 {children}
             </div>
         </div>
