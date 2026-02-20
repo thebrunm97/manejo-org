@@ -1,14 +1,8 @@
 // src/components/PmoForm/SeletorVisualSaf.tsx
+// Refatorado — Zero MUI. Usa Tailwind + lucide-react.
 
-import React, { useState, SyntheticEvent, ChangeEvent } from 'react';
-import {
-    Box, Tabs, Tab, Grid, Paper, Typography, IconButton, Dialog,
-    DialogTitle, DialogContent, DialogActions, Button, TextField,
-    RadioGroup, FormControlLabel, Radio, Card, CardActionArea
-} from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import GrassIcon from '@mui/icons-material/Grass';
-import RouteIcon from '@mui/icons-material/Route';
+import React, { useState, ChangeEvent } from 'react';
+import { Plus, Sprout, Route, X } from 'lucide-react';
 
 // Types
 interface Espaco {
@@ -65,15 +59,9 @@ const SeletorVisualSaf: React.FC<SeletorVisualSafProps> = ({ value = '', onChang
         ? value.split(' - ')
         : ['', ''];
 
-    const handleTalhaoChange = (_event: SyntheticEvent, newValue: string) => {
-        setTalhaoAtual(newValue);
-    };
-
     const handleEspacoClick = (espaco: Espaco) => {
         const novoValor = `${talhaoAtual} - ${espaco.nome}`;
-        if (onChange) {
-            onChange(novoValor);
-        }
+        if (onChange) onChange(novoValor);
     };
 
     const handleAdicionarEspaco = () => {
@@ -83,11 +71,7 @@ const SeletorVisualSaf: React.FC<SeletorVisualSafProps> = ({ value = '', onChang
         }
 
         const novoId = Math.max(...Object.values(layout).flat().map(e => e.id), 0) + 1;
-        const espacoCriado: Espaco = {
-            id: novoId,
-            nome: novoEspaco.nome.trim(),
-            tipo: novoEspaco.tipo
-        };
+        const espacoCriado: Espaco = { id: novoId, nome: novoEspaco.nome.trim(), tipo: novoEspaco.tipo };
 
         setLayout(prev => ({
             ...prev,
@@ -104,151 +88,128 @@ const SeletorVisualSaf: React.FC<SeletorVisualSafProps> = ({ value = '', onChang
         const isSelected = talhaoSelecionado === talhaoAtual && espacoSelecionado === espaco.nome;
 
         return (
-            <Grid item xs={6} sm={4} md={3} key={espaco.id}>
-                <Card
-                    elevation={isSelected ? 6 : 1}
-                    sx={{
-                        border: isSelected ? 3 : 2,
-                        borderColor: isSelected ? 'primary.main' : (isCanteiro ? 'success.light' : 'warning.main'),
-                        bgcolor: isCanteiro ? 'success.50' : 'warning.50',
-                        transition: 'all 0.2s',
-                        '&:hover': {
-                            elevation: 4,
-                            transform: 'translateY(-4px)'
-                        }
-                    }}
-                >
-                    <CardActionArea onClick={() => handleEspacoClick(espaco)} sx={{ p: 2 }}>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                            {isCanteiro ? (
-                                <GrassIcon sx={{ fontSize: 40, color: 'success.main' }} />
-                            ) : (
-                                <RouteIcon sx={{ fontSize: 40, color: 'warning.dark' }} />
-                            )}
-                            <Typography variant="body2" align="center" sx={{ fontWeight: 600 }}>
-                                {espaco.nome}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                                {isCanteiro ? 'Canteiro' : 'Entrelinha'}
-                            </Typography>
-                        </Box>
-                    </CardActionArea>
-                </Card>
-            </Grid>
+            <button
+                type="button"
+                key={espaco.id}
+                onClick={() => handleEspacoClick(espaco)}
+                className={`flex flex-col items-center gap-1.5 p-4 rounded-xl border-2 transition-all duration-200 hover:-translate-y-1 hover:shadow-md cursor-pointer text-center ${isSelected
+                    ? 'border-green-500 shadow-lg ring-2 ring-green-200'
+                    : isCanteiro
+                        ? 'border-green-200 bg-green-50 hover:border-green-400'
+                        : 'border-amber-300 bg-amber-50 hover:border-amber-500'
+                    }`}
+            >
+                {isCanteiro
+                    ? <Sprout size={36} className="text-green-600" />
+                    : <Route size={36} className="text-amber-700" />
+                }
+                <span className="text-sm font-semibold text-gray-800">{espaco.nome}</span>
+                <span className="text-xs text-gray-500">{isCanteiro ? 'Canteiro' : 'Entrelinha'}</span>
+            </button>
         );
     };
 
     return (
-        <Box sx={{ width: '100%', my: 2 }}>
-            <Tabs
-                value={talhaoAtual}
-                onChange={handleTalhaoChange}
-                variant="scrollable"
-                scrollButtons="auto"
-                sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}
-            >
+        <div className="w-full my-3">
+            {/* Tabs */}
+            <div className="flex space-x-1 border-b border-gray-200 mb-4 overflow-x-auto">
                 {talhoes.map(talhao => (
-                    <Tab key={talhao} label={talhao} value={talhao} />
+                    <button
+                        type="button"
+                        key={talhao}
+                        onClick={() => setTalhaoAtual(talhao)}
+                        className={`px-4 py-2 text-sm font-medium whitespace-nowrap rounded-t-lg transition-colors ${talhaoAtual === talhao
+                            ? 'text-green-700 bg-green-50 border-b-2 border-green-500'
+                            : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                            }`}
+                    >
+                        {talhao}
+                    </button>
                 ))}
-            </Tabs>
+            </div>
 
-            <Grid container spacing={2}>
+            {/* Grid of Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 {(layout[talhaoAtual] || []).map(espaco => renderEspacoCard(espaco))}
 
-                <Grid item xs={6} sm={4} md={3}>
-                    <Paper
-                        elevation={0}
-                        sx={{
-                            border: 2,
-                            borderStyle: 'dashed',
-                            borderColor: 'grey.400',
-                            bgcolor: 'grey.50',
-                            minHeight: 140,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            '&:hover': {
-                                borderColor: 'primary.main',
-                                bgcolor: 'primary.50'
-                            }
-                        }}
-                        onClick={() => setDialogOpen(true)}
-                    >
-                        <IconButton color="primary" size="large">
-                            <AddIcon sx={{ fontSize: 40 }} />
-                        </IconButton>
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                            Adicionar Espaço
-                        </Typography>
-                    </Paper>
-                </Grid>
-            </Grid>
+                {/* Add Button Card */}
+                <button
+                    type="button"
+                    onClick={() => setDialogOpen(true)}
+                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 min-h-[140px] cursor-pointer transition-all hover:border-green-500 hover:bg-green-50"
+                >
+                    <Plus size={36} className="text-green-500" />
+                    <span className="text-sm text-gray-500">Adicionar Espaço</span>
+                </button>
+            </div>
 
+            {/* Selection indicator */}
             {value && (
-                <Box sx={{ mt: 2, p: 2, bgcolor: 'primary.50', borderRadius: 1 }}>
-                    <Typography variant="caption" color="text.secondary">
-                        Selecionado:
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {value}
-                    </Typography>
-                </Box>
+                <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                    <span className="text-xs text-gray-500">Selecionado:</span>
+                    <p className="text-sm font-semibold text-gray-800">{value}</p>
+                </div>
             )}
 
-            <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="xs" fullWidth>
-                <DialogTitle>Adicionar Novo Espaço em {talhaoAtual}</DialogTitle>
-                <DialogContent>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-                        <TextField
-                            label="Nome do Espaço"
-                            value={novoEspaco.nome}
-                            onChange={(e: ChangeEvent<HTMLInputElement>) => setNovoEspaco(prev => ({ ...prev, nome: e.target.value }))}
-                            fullWidth
-                            autoFocus
-                            placeholder="Ex: Canteiro 04, Entrelinha C"
-                        />
+            {/* Add Dialog */}
+            {dialogOpen && (
+                <div className="fixed inset-0 z-[100] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setDialogOpen(false)}>
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm flex flex-col" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+                            <h3 className="text-base font-semibold text-gray-800">Adicionar Novo Espaço em {talhaoAtual}</h3>
+                            <button type="button" onClick={() => setDialogOpen(false)} className="p-1 text-gray-400 hover:text-gray-600"><X size={18} /></button>
+                        </div>
 
-                        <Box>
-                            <Typography variant="body2" sx={{ mb: 1 }}>Tipo de Espaço:</Typography>
-                            <RadioGroup
-                                value={novoEspaco.tipo}
-                                onChange={(e: ChangeEvent<HTMLInputElement>) => setNovoEspaco(prev => ({ ...prev, tipo: e.target.value as 'canteiro' | 'entrelinha' }))}
-                            >
-                                <FormControlLabel
-                                    value="canteiro"
-                                    control={<Radio />}
-                                    label={
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <GrassIcon sx={{ color: 'success.main' }} />
-                                            <Typography>Canteiro / Linha de Cultivo</Typography>
-                                        </Box>
-                                    }
+                        <div className="p-5 flex flex-col gap-4">
+                            <div>
+                                <label className="text-xs font-medium text-gray-600 mb-1 block">Nome do Espaço</label>
+                                <input
+                                    type="text"
+                                    value={novoEspaco.nome}
+                                    onChange={(e: ChangeEvent<HTMLInputElement>) => setNovoEspaco(prev => ({ ...prev, nome: e.target.value }))}
+                                    autoFocus
+                                    placeholder="Ex: Canteiro 04, Entrelinha C"
+                                    className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-green-500 focus:border-green-500"
                                 />
-                                <FormControlLabel
-                                    value="entrelinha"
-                                    control={<Radio />}
-                                    label={
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <RouteIcon sx={{ color: 'warning.dark' }} />
-                                            <Typography>Entrelinha / Caminho</Typography>
-                                        </Box>
-                                    }
-                                />
-                            </RadioGroup>
-                        </Box>
-                    </Box>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>
-                    <Button onClick={handleAdicionarEspaco} variant="contained" startIcon={<AddIcon />}>
-                        Adicionar
-                    </Button>
-                </DialogActions>
-            </Dialog>
-        </Box>
+                            </div>
+
+                            <div>
+                                <p className="text-sm text-gray-700 mb-2">Tipo de Espaço:</p>
+                                <div className="flex flex-col gap-2">
+                                    <label className="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-gray-50">
+                                        <input
+                                            type="radio" name="tipo-espaco" value="canteiro"
+                                            checked={novoEspaco.tipo === 'canteiro'}
+                                            onChange={(e) => setNovoEspaco(prev => ({ ...prev, tipo: e.target.value as 'canteiro' | 'entrelinha' }))}
+                                            className="w-4 h-4 text-green-600 focus:ring-green-500"
+                                        />
+                                        <Sprout size={18} className="text-green-600" />
+                                        <span className="text-sm">Canteiro / Linha de Cultivo</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-gray-50">
+                                        <input
+                                            type="radio" name="tipo-espaco" value="entrelinha"
+                                            checked={novoEspaco.tipo === 'entrelinha'}
+                                            onChange={(e) => setNovoEspaco(prev => ({ ...prev, tipo: e.target.value as 'canteiro' | 'entrelinha' }))}
+                                            className="w-4 h-4 text-amber-600 focus:ring-amber-500"
+                                        />
+                                        <Route size={18} className="text-amber-700" />
+                                        <span className="text-sm">Entrelinha / Caminho</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end gap-2 p-4 border-t border-gray-200">
+                            <button type="button" onClick={() => setDialogOpen(false)} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Cancelar</button>
+                            <button type="button" onClick={handleAdicionarEspaco} className="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg">
+                                <Plus size={16} /> Adicionar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
     );
 };
 

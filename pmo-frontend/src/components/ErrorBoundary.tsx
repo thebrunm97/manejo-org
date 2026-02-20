@@ -1,7 +1,5 @@
-// src/components/ErrorBoundary.tsx
-
+// src/components/ErrorBoundary.tsx — Zero MUI
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Box, Typography, Button, Paper } from '@mui/material';
 import { AlertTriangle } from 'lucide-react';
 
 interface ErrorBoundaryProps {
@@ -41,39 +39,43 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     render(): ReactNode {
         if (this.state.hasError) {
             return (
-                <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#f1f5f9', p: 3 }}>
-                    <Paper elevation={3} sx={{ maxWidth: 600, p: 4, textAlign: 'center', borderTop: '4px solid #ef4444' }}>
+                <div className="min-h-screen flex items-center justify-center bg-slate-100 p-3">
+                    <div className="max-w-[600px] w-full bg-white rounded-lg shadow-lg border-t-4 border-red-500 p-6 text-center">
                         {this.props.name && (
-                            <Typography variant="caption" color="error" sx={{ display: 'block', mb: 1, fontWeight: 'bold' }}>
+                            <span className="block text-xs font-bold text-red-500 mb-1">
                                 🎯 Erro capturado em: {this.props.name}
-                            </Typography>
+                            </span>
                         )}
-                        <AlertTriangle size={64} color="#ef4444" style={{ marginBottom: 16 }} />
-                        <Typography variant="h5" fontWeight={700} color="#0f172a" gutterBottom>Ops! Algo deu errado</Typography>
-                        <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>A aplicação encontrou um erro inesperado. Por favor, recarregue a página.</Typography>
+                        <AlertTriangle size={64} color="#ef4444" className="mx-auto mb-4" />
+                        <h2 className="text-xl font-bold text-slate-900 mb-2">Ops! Algo deu errado</h2>
+                        <p className="text-gray-500 mb-4">A aplicação encontrou um erro inesperado. Por favor, recarregue a página.</p>
 
                         {this.state.error && (
-                            <Box sx={{ mt: 2, p: 2, bgcolor: '#fef2f2', borderRadius: 2, textAlign: 'left', maxHeight: 300, overflow: 'auto' }}>
-                                <Typography variant="caption" fontWeight={600} color="#dc2626">Detalhes técnicos:</Typography>
-                                <Typography variant="caption" component="pre" sx={{ mt: 1, fontSize: '0.75rem', color: '#7f1d1d', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                            <div className="mt-2 p-3 bg-red-50 rounded-lg text-left max-h-[300px] overflow-auto">
+                                <span className="text-xs font-semibold text-red-600">Detalhes técnicos:</span>
+                                <pre className="mt-1 text-xs text-red-900 whitespace-pre-wrap break-words">
                                     {this.state.error.toString()}
-                                </Typography>
+                                </pre>
                                 {this.state.errorInfo?.componentStack && (
                                     <>
-                                        <Typography variant="caption" fontWeight={600} color="#dc2626" sx={{ display: 'block', mt: 2 }}>Component Stack:</Typography>
-                                        <Typography variant="caption" component="pre" sx={{ mt: 1, fontSize: '0.7rem', color: '#991b1b', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                                        <span className="block text-xs font-semibold text-red-600 mt-2">Component Stack:</span>
+                                        <pre className="mt-1 text-[0.7rem] text-red-800 whitespace-pre-wrap break-words">
                                             {this.state.errorInfo.componentStack}
-                                        </Typography>
+                                        </pre>
                                     </>
                                 )}
-                            </Box>
+                            </div>
                         )}
 
-                        <Button variant="contained" onClick={() => window.location.reload()} sx={{ mt: 3, bgcolor: '#16a34a', '&:hover': { bgcolor: '#15803d' } }}>
+                        <button
+                            type="button"
+                            onClick={() => window.location.reload()}
+                            className="mt-4 px-5 py-2.5 bg-green-600 text-white rounded-md font-medium hover:bg-green-700 transition-colors"
+                        >
                             Recarregar Página
-                        </Button>
-                    </Paper>
-                </Box>
+                        </button>
+                    </div>
+                </div>
             );
         }
 

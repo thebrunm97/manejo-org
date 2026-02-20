@@ -1,93 +1,79 @@
+// src/components/PmoForm/cards/PropagacaoCard.jsx
+// Refatorado — Zero MUI. Usa Tailwind + lucide-react.
+
 import React from 'react';
-import {
-    Card, CardContent, CardActions, Typography, Chip, Box, IconButton, Stack, Tooltip
-} from '@mui/material';
 import { Edit, Trash2, Sprout, Calendar } from 'lucide-react';
 
 const PropagacaoCard = ({ item, onEdit, onDelete }) => {
     const isOrganic = item.sistema_organico === true;
 
     return (
-        <Card
-            elevation={2}
-            sx={{
-                borderRadius: 2,
-                borderLeft: '4px solid #16a34a',
-                transition: 'all 0.2s',
-                '&:hover': { elevation: 4, transform: 'translateY(-2px)' }
-            }}
-        >
-            <CardContent>
-                {/* Header com Tipo */}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                    <Chip
-                        label={item.tipo === 'semente' ? 'Semente' : 'Muda'}
-                        size="small"
-                        sx={{
-                            bgcolor: '#16a34a',
-                            color: 'white',
-                            fontWeight: 600,
-                            textTransform: 'uppercase',
-                            fontSize: '0.7rem'
-                        }}
-                    />
-                    <Box>
-                        <Tooltip title="Editar">
-                            <IconButton size="small" onClick={() => onEdit(item)} sx={{ color: '#16a34a' }}>
-                                <Edit size={18} />
-                            </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Excluir">
-                            <IconButton size="small" onClick={() => onDelete(item)} sx={{ color: '#ef4444' }}>
-                                <Trash2 size={18} />
-                            </IconButton>
-                        </Tooltip>
-                    </Box>
-                </Box>
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm border-l-4 border-l-green-600 hover:shadow-md hover:-translate-y-0.5 transition-all">
+            <div className="p-4">
+                {/* Header com Tipo + Ações */}
+                <div className="flex justify-between items-start mb-3">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[0.7rem] font-semibold uppercase tracking-wide bg-green-600 text-white">
+                        {item.tipo === 'semente' ? 'Semente' : 'Muda'}
+                    </span>
+                    <div className="flex gap-1">
+                        <button
+                            type="button"
+                            onClick={() => onEdit(item)}
+                            title="Editar"
+                            className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors"
+                        >
+                            <Edit size={18} />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => onDelete(item)}
+                            title="Excluir"
+                            className="p-1.5 text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                        >
+                            <Trash2 size={18} />
+                        </button>
+                    </div>
+                </div>
 
                 {/* Título Principal */}
-                <Typography variant="h6" sx={{ fontWeight: 700, color: '#1f2937', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Sprout size={20} color="#16a34a" />
+                <h3 className="text-lg font-bold text-gray-800 mb-2 flex items-center gap-1.5">
+                    <Sprout size={20} className="text-green-600 shrink-0" />
                     {item.especies || 'Não especificado'}
-                </Typography>
+                </h3>
 
                 {/* Chips de Informação */}
-                <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap', gap: 1 }}>
-                    <Chip
-                        label={`Origem: ${item.origem || 'N/A'}`}
-                        size="small"
-                        variant="outlined"
-                        sx={{ borderColor: '#3b82f6', color: '#3b82f6' }}
-                    />
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border border-blue-500 text-blue-500">
+                        Origem: {item.origem || 'N/A'}
+                    </span>
                     {item.sistema_organico !== null && (
-                        <Chip
-                            label={isOrganic ? 'Orgânico' : 'Convencional'}
-                            size="small"
-                            sx={{
-                                bgcolor: isOrganic ? '#dcfce7' : '#f3f4f6',
-                                color: isOrganic ? '#166534' : '#6b7280',
-                                fontWeight: 600
-                            }}
-                        />
+                        <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${isOrganic
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-gray-100 text-gray-500'
+                                }`}
+                        >
+                            {isOrganic ? 'Orgânico' : 'Convencional'}
+                        </span>
                     )}
-                </Stack>
+                </div>
 
                 {/* Metadados */}
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                <div className="flex flex-col gap-1">
                     {item.quantidade && (
-                        <Typography variant="body2" color="text.secondary">
+                        <p className="text-sm text-gray-500">
                             <strong>Quantidade:</strong> {item.quantidade}
-                        </Typography>
+                        </p>
                     )}
                     {item.data_compra && (
-                        <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <p className="text-sm text-gray-500 flex items-center gap-1">
                             <Calendar size={14} />
                             <strong>Compra:</strong> {new Date(item.data_compra).toLocaleDateString('pt-BR')}
-                        </Typography>
+                        </p>
                     )}
-                </Box>
-            </CardContent>
-        </Card>
+                </div>
+            </div>
+        </div>
     );
 };
 

@@ -1,9 +1,7 @@
-// src/components/MainLayout.tsx
-
+// src/components/MainLayout.tsx — Zero MUI
 import React, { ReactNode } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Box, Typography, Button, Container, AppBar, Toolbar, useTheme } from '@mui/material';
-import LogoutIcon from '@mui/icons-material/Logout';
+import { LogOut } from 'lucide-react';
 
 interface MainLayoutProps {
     children: ReactNode;
@@ -12,39 +10,27 @@ interface MainLayoutProps {
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children, pageTitle }) => {
     const { logout } = useAuth();
-    const theme = useTheme();
 
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: 'background.default' }}>
-            <AppBar
-                position="static"
-                elevation={0}
-                sx={{
-                    bgcolor: 'background.paper',
-                    borderBottom: `1px solid ${theme.palette.divider}`,
-                    color: 'text.primary'
-                }}
-            >
-                <Toolbar>
-                    <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 700 }}>
-                        PMO Digital
-                    </Typography>
-                    <Button
-                        color="inherit"
-                        startIcon={<LogoutIcon />}
+        <div className="flex flex-col min-h-screen bg-gray-50">
+            <header className="bg-white border-b border-gray-200">
+                <nav className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
+                    <h1 className="text-lg font-bold text-gray-900">PMO Digital</h1>
+                    <button
+                        type="button"
                         onClick={logout}
-                        sx={{ fontWeight: 600 }}
+                        className="inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
                     >
+                        <LogOut size={18} />
                         Logout
-                    </Button>
-                </Toolbar>
-            </AppBar>
+                    </button>
+                </nav>
+            </header>
 
-            {/* Main Content */}
-            <Container component="main" maxWidth="xl" sx={{ mt: 6, mb: 6, flexGrow: 1 }}>
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
                 {children}
-            </Container>
-        </Box>
+            </main>
+        </div>
     );
 };
 

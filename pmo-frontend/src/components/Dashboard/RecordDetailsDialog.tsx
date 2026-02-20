@@ -28,15 +28,7 @@ const SprayCanIcon = () => (
     </svg>
 );
 
-const getIconByType = (tipo: string) => {
-    switch (tipo) {
-        case 'colheita': return <AgricultureIcon />;
-        case 'manejo': return <SprayCanIcon />;
-        case 'insumo': return <Inventory2Icon />;
-        case 'plantio': return <SpaIcon />;
-        default: return <LocalFloristIcon />;
-    }
-};
+
 
 const RecordDetailsDialog: React.FC<RecordDetailsDialogProps> = ({ open, onClose, record }) => {
     if (!open || !record) return null;

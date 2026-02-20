@@ -1,23 +1,8 @@
 // src/components/PmoForm/SectionsModal.tsx
+// Refatorado — Zero MUI. Usa Tailwind + lucide-react.
 
 import React from 'react';
-import {
-    Dialog,
-    AppBar,
-    Toolbar,
-    IconButton,
-    Typography,
-    List,
-    ListItemButton,
-    ListItemIcon,
-    ListItemText,
-    Slide,
-} from '@mui/material';
-import { TransitionProps } from '@mui/material/transitions';
-import CloseIcon from '@mui/icons-material/Close';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import EditIcon from '@mui/icons-material/Edit';
-import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
+import { X, CheckCircle, Pencil, Circle } from 'lucide-react';
 
 // Types
 interface FormSection {
@@ -37,27 +22,10 @@ interface SectionsModalProps {
     sectionStatus: Record<string, SectionStatus>;
 }
 
-interface StatusIconProps {
-    status: SectionStatus;
-}
-
-// Efeito de transição para o modal
-const Transition = React.forwardRef(function Transition(
-    props: TransitionProps & { children: React.ReactElement },
-    ref: React.Ref<unknown>,
-) {
-    return <Slide direction="up" ref={ref} {...props} />;
-});
-
-// Ícone de status baseado no progresso da seção
-const StatusIcon: React.FC<StatusIconProps> = ({ status }) => {
-    if (status === 'completo') {
-        return <CheckCircleIcon color="success" />;
-    }
-    if (status === 'em-progresso') {
-        return <EditIcon color="primary" />;
-    }
-    return <RadioButtonUncheckedIcon color="action" />;
+const StatusIcon: React.FC<{ status: SectionStatus }> = ({ status }) => {
+    if (status === 'completo') return <CheckCircle size={22} className="text-green-500" />;
+    if (status === 'em-progresso') return <Pencil size={22} className="text-blue-500" />;
+    return <Circle size={22} className="text-gray-400" />;
 };
 
 const SectionsModal: React.FC<SectionsModalProps> = ({
@@ -68,44 +36,41 @@ const SectionsModal: React.FC<SectionsModalProps> = ({
     onNavigate,
     sectionStatus,
 }) => {
-    return (
-        <Dialog
-            fullScreen
-            open={open}
-            onClose={onClose}
-            TransitionComponent={Transition}
-        >
-            <AppBar sx={{ position: 'relative' }}>
-                <Toolbar>
-                    <IconButton edge="start" color="inherit" onClick={onClose} aria-label="close">
-                        <CloseIcon />
-                    </IconButton>
-                    <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
-                        Seções do Plano
-                    </Typography>
-                </Toolbar>
-            </AppBar>
+    if (!open) return null;
 
-            <List>
-                {sections.map((section) => (
-                    <ListItemButton
-                        key={section.id}
-                        selected={currentStep === section.id}
-                        onClick={() => onNavigate(section.id)}
-                    >
-                        <ListItemIcon>
-                            <StatusIcon status={sectionStatus[section.key]} />
-                        </ListItemIcon>
-                        <ListItemText
-                            primary={`${section.id}. ${section.label}`}
-                            primaryTypographyProps={{
-                                fontWeight: currentStep === section.id ? 'bold' : 'normal',
-                            }}
-                        />
-                    </ListItemButton>
-                ))}
-            </List>
-        </Dialog>
+    return (
+        <div className="fixed inset-0 z-[100] bg-slate-900/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div className="bg-white w-full sm:max-w-lg sm:rounded-xl rounded-t-xl shadow-2xl max-h-[90vh] flex flex-col animate-in slide-in-from-bottom duration-300">
+                {/* Header */}
+                <div className="bg-green-600 text-white px-4 py-3 flex items-center gap-3 sm:rounded-t-xl rounded-t-xl">
+                    <button type="button" onClick={onClose} className="p-1 hover:bg-green-700 rounded-lg transition-colors" aria-label="close">
+                        <X size={22} />
+                    </button>
+                    <h2 className="text-lg font-semibold flex-1">Seções do Plano</h2>
+                </div>
+
+                {/* Section List */}
+                <div className="overflow-y-auto flex-1">
+                    {sections.map((section) => {
+                        const isActive = currentStep === section.id;
+                        return (
+                            <button
+                                type="button"
+                                key={section.id}
+                                onClick={() => onNavigate(section.id)}
+                                className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors border-b border-gray-100 ${isActive ? 'bg-green-50 border-l-4 border-l-green-500' : 'hover:bg-gray-50'
+                                    }`}
+                            >
+                                <StatusIcon status={sectionStatus[section.key]} />
+                                <span className={`text-sm ${isActive ? 'font-bold text-green-800' : 'text-gray-700'}`}>
+                                    {section.id}. {section.label}
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+        </div>
     );
 };
 

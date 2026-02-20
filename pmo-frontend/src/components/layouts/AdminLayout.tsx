@@ -1,6 +1,5 @@
 import React from 'react';
-import { Box, Typography } from '@mui/material';
-import DashboardLayout from '../DashboardLayout'; // Reuse existing layout structure or wrap it
+import DashboardLayout from '../DashboardLayout';
 
 interface AdminLayoutProps {
     children: React.ReactNode;
@@ -9,12 +8,11 @@ interface AdminLayoutProps {
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     return (
         <DashboardLayout>
-            <Box sx={{ borderBottom: 2, borderColor: 'primary.main', mb: 3, pb: 1 }}>
-                <Typography variant="overline" color="primary" sx={{ fontWeight: 'bold' }}>
+            <div className="border-b-2 border-green-600 mb-3 pb-1">
+                <span className="text-xs font-bold text-green-600 uppercase tracking-wider">
                     ADMINISTRAÇÃO
-                </Typography>
-            </Box>
-
+                </span>
+            </div>
             {children}
         </DashboardLayout>
     );

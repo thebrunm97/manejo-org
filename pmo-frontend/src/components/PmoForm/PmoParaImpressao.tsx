@@ -1,9 +1,7 @@
 // src/components/PmoForm/PmoParaImpressao.tsx
 
 import React from 'react';
-import { Box, Button } from '@mui/material';
-import PrintIcon from '@mui/icons-material/Print';
-import CloseIcon from '@mui/icons-material/Close';
+import { Printer, X } from 'lucide-react';
 
 import { formatSmartTotal } from '../../utils/formatters';
 
@@ -318,32 +316,30 @@ const PmoParaImpressao: React.FC<PmoParaImpressaoProps> = ({ dadosPmo, onClose }
     const dataImpressao = new Date().toLocaleDateString('pt-BR');
 
     return (
-        <Box className="print-preview-container">
+        <div className="print-preview-container">
             <PrintStyles />
 
             {/* Botões Flutuantes (Não Impressos) */}
-            <Box sx={{ position: 'fixed', top: 20, right: 20, zIndex: 9999, display: 'flex', gap: 2 }} className="no-print">
-                <Button
-                    variant="contained"
-                    color="primary"
-                    startIcon={<PrintIcon />}
+            <div className="fixed top-5 right-5 z-[9999] flex gap-2 no-print">
+                <button
+                    type="button"
                     onClick={handlePrint}
-                    sx={{ boxShadow: 4 }}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-md font-medium shadow-lg hover:bg-green-700 transition-colors"
                 >
+                    <Printer size={18} />
                     Imprimir / Salvar PDF
-                </Button>
+                </button>
                 {onClose && (
-                    <Button
-                        variant="contained"
-                        color="secondary"
-                        startIcon={<CloseIcon />}
+                    <button
+                        type="button"
                         onClick={onClose}
-                        sx={{ boxShadow: 4 }}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-600 text-white rounded-md font-medium shadow-lg hover:bg-gray-700 transition-colors"
                     >
+                        <X size={18} />
                         Fechar
-                    </Button>
+                    </button>
                 )}
-            </Box>
+            </div>
 
             {/* Área da Folha A4 */}
             <div id="area-impressao" className="a4-page">
@@ -424,8 +420,9 @@ const PmoParaImpressao: React.FC<PmoParaImpressaoProps> = ({ dadosPmo, onClose }
                     <p>Este documento é parte integrante do Plano de Manejo Orgânico. Gerado via Sistema {import.meta.env.VITE_APP_NAME}.</p>
                 </div>
             </div>
-        </Box>
+        </div>
     );
 };
 
 export default PmoParaImpressao;
+

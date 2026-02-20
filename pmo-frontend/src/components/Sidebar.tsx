@@ -86,7 +86,7 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
       </div>
 
       {/* 2. Menu */}
-      <div className="flex-1 overflow-y-auto py-4 scrollbar-hide">
+      <div className="flex-1 overflow-y-auto py-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <div className="px-6 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
           GESTÃO
         </div>

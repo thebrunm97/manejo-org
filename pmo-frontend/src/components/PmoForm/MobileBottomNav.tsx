@@ -1,13 +1,8 @@
 // src/components/PmoForm/MobileBottomNav.tsx
+// Refatorado — Zero MUI. Usa Tailwind + lucide-react.
 
-import React, { useState } from 'react';
-import { AppBar, Toolbar, IconButton, Button, Menu, MenuItem, Box, Tooltip } from '@mui/material';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import SaveIcon from '@mui/icons-material/Save';
-import GridViewIcon from '@mui/icons-material/GridView';
-import DashboardIcon from '@mui/icons-material/Dashboard';
+import React, { useState, useRef, useEffect } from 'react';
+import { ArrowLeft, ArrowRight, MoreVertical, Save, LayoutGrid, LayoutDashboard } from 'lucide-react';
 
 interface MobileBottomNavProps {
     onNext: () => void;
@@ -28,79 +23,89 @@ const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
     isNextDisabled = false,
     isPrevDisabled = false,
 }) => {
-    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-    const open = Boolean(anchorEl);
+    const [menuOpen, setMenuOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
 
-    const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-        setAnchorEl(event.currentTarget);
-    };
-
-    const handleMenuClose = () => {
-        setAnchorEl(null);
-    };
+    // Close menu on outside click
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+                setMenuOpen(false);
+            }
+        };
+        if (menuOpen) document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [menuOpen]);
 
     const handleAction = (action: () => void) => {
         action();
-        handleMenuClose();
+        setMenuOpen(false);
     };
 
     return (
-        <AppBar position="fixed" color="inherit" sx={{ top: 'auto', bottom: 0, borderTop: '1px solid #e0e0e0' }}>
-            <Toolbar sx={{ justifyContent: 'space-between' }}>
-                {/* Lado Esquerdo: Ações Secundárias */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Tooltip title="Anterior">
-                        <span>
-                            <IconButton onClick={onPrev} disabled={isPrevDisabled} color="primary">
-                                <ArrowBackIcon />
-                            </IconButton>
-                        </span>
-                    </Tooltip>
-
-                    <Tooltip title="Mais Opções">
-                        <IconButton
-                            aria-label="mais opções"
-                            onClick={handleMenuClick}
-                        >
-                            <MoreVertIcon />
-                        </IconButton>
-                    </Tooltip>
-                    <Menu
-                        id="long-menu"
-                        anchorEl={anchorEl}
-                        open={open}
-                        onClose={handleMenuClose}
-                        anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
-                        transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                    >
-                        {onGoToDashboard && (
-                            <MenuItem onClick={() => handleAction(onGoToDashboard)}>
-                                <DashboardIcon sx={{ mr: 1.5 }} />
-                                Voltar ao Painel
-                            </MenuItem>
-                        )}
-                        <MenuItem onClick={() => handleAction(onGoToSections)}>
-                            <GridViewIcon sx={{ mr: 1.5 }} />
-                            Ver Seções
-                        </MenuItem>
-                        <MenuItem onClick={() => handleAction(onSaveDraft)}>
-                            <SaveIcon sx={{ mr: 1.5 }} />
-                            Salvar Rascunho
-                        </MenuItem>
-                    </Menu>
-                </Box>
-
-                {/* Lado Direito: Ação Primária */}
-                <Button
-                    variant="contained"
-                    onClick={onNext}
-                    disabled={isNextDisabled}
-                    endIcon={<ArrowForwardIcon />}
+        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex items-center justify-between px-3 py-2 z-50 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+            {/* Left: Back + More */}
+            <div className="flex items-center gap-1">
+                <button
+                    onClick={onPrev}
+                    disabled={isPrevDisabled}
+                    title="Anterior"
+                    className="p-2.5 text-green-600 hover:bg-green-50 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
-                    Próximo
-                </Button>
-            </Toolbar>
-        </AppBar>
+                    <ArrowLeft size={22} />
+                </button>
+
+                {/* More Options */}
+                <div className="relative" ref={menuRef}>
+                    <button
+                        onClick={() => setMenuOpen(!menuOpen)}
+                        aria-label="mais opções"
+                        className="p-2.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                        <MoreVertical size={22} />
+                    </button>
+
+                    {/* Dropdown Menu */}
+                    {menuOpen && (
+                        <div className="absolute bottom-full left-0 mb-2 bg-white rounded-lg shadow-xl border border-gray-200 min-w-[200px] py-1 z-50">
+                            {onGoToDashboard && (
+                                <button
+                                    onClick={() => handleAction(onGoToDashboard)}
+                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                >
+                                    <LayoutDashboard size={18} className="text-gray-500" />
+                                    Voltar ao Painel
+                                </button>
+                            )}
+                            <button
+                                onClick={() => handleAction(onGoToSections)}
+                                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                                <LayoutGrid size={18} className="text-gray-500" />
+                                Ver Seções
+                            </button>
+                            <button
+                                onClick={() => handleAction(onSaveDraft)}
+                                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                                <Save size={18} className="text-gray-500" />
+                                Salvar Rascunho
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Right: Primary Action */}
+            <button
+                onClick={onNext}
+                disabled={isNextDisabled}
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+                Próximo
+                <ArrowRight size={18} />
+            </button>
+        </nav>
     );
 };
 

@@ -1,8 +1,6 @@
 import React from 'react';
-import { IconButton } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
+import { Menu, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { LogOut } from 'lucide-react';
 import { cn } from '../utils/cn';
 
 interface NavbarProps {
@@ -19,15 +17,14 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick, className }) => {
             className
         )}>
             <div className="flex items-center gap-3">
-                <IconButton
-                    color="inherit"
+                <button
+                    type="button"
                     aria-label="open drawer"
-                    edge="start"
                     onClick={onMenuClick}
                     className="md:hidden text-slate-600 hover:bg-slate-100 rounded-md p-2"
                 >
-                    <MenuIcon />
-                </IconButton>
+                    <Menu size={24} />
+                </button>
                 <div className="text-lg font-bold text-primary-main truncate md:hidden">
                     {import.meta.env.VITE_APP_NAME || 'Manejo Org'}
                 </div>
@@ -38,8 +35,8 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick, className }) => {
             </div>
 
             <div className="flex items-center gap-2">
-                {/* Add standard actions here later (Notifications, etc) */}
                 <button
+                    type="button"
                     onClick={logout}
                     className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
                     title="Sair"
