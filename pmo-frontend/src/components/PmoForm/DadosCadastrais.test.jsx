@@ -1,10 +1,10 @@
-// src/components/PmoForm/DadosCadastrais.test.jsx
+﻿// src/components/PmoForm/DadosCadastrais.test.jsx
 
 import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
-import DadosCadastrais from './DadosCadastrais_MUI'; // Importação Default
+import DadosCadastrais from './DadosCadastrais'; // Importação Default
 
 describe('Componente DadosCadastrais', () => {
   const mockData = {

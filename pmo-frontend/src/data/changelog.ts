@@ -11,6 +11,32 @@ export interface ChangelogEntry {
 
 export const changelogData: ChangelogEntry[] = [
     {
+        version: "0.5.1",
+        date: "Fevereiro 2026",
+        title: "The SaaS Moderno Update",
+        description: "Nova identidade visual, formulários nativos e melhorias de responsividade em todo o sistema.",
+        sections: [
+            {
+                type: "New",
+                items: [
+                    "Páginas públicas redesenhadas com efeito Glassmorphism e gradientes modernos.",
+                    "Componente AccordionPanel reutilizável para todas as seções do Plano de Manejo.",
+                    "Componente RadioSimNao para perguntas Sim/Não com conteúdo condicional."
+                ]
+            },
+            {
+                type: "Improvements",
+                items: [
+                    "Mais de 40 componentes Material UI substituídos por Tailwind CSS nativo.",
+                    "Formulários do Plano de Manejo (19 seções) completamente migrados para HTML nativo.",
+                    "Diário de Campo com responsividade drasticamente melhorada no celular.",
+                    "Tooltips de conformidade substituem alertas inline, eliminando overflow horizontal.",
+                    "Botões, cards e tabelas do Dashboard agora usam o novo Design System."
+                ]
+            }
+        ]
+    },
+    {
         version: "0.5.0",
         date: "Fevereiro 2026",
         title: "IA e Facilidade no WhatsApp",

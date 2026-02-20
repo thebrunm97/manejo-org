@@ -1,4 +1,4 @@
-// src/main.tsx
+// src/main.tsx — Zero MUI
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
@@ -6,17 +6,11 @@ import App from './App';
 import './index.css';
 import { BrowserRouter } from 'react-router-dom';
 
-// MUI Imports
-import { ThemeProvider } from '@mui/material/styles';
-
 // Import do Provedor de Autenticação
 import { AuthProvider } from './context/AuthContext';
 
 // Import do ErrorBoundary
 import ErrorBoundary from './components/ErrorBoundary';
-
-// Tema Personalizado
-import theme from './theme';
 
 // Service Worker Registration
 if ('serviceWorker' in navigator) {
@@ -38,9 +32,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <ErrorBoundary>
             <BrowserRouter>
                 <AuthProvider>
-                    <ThemeProvider theme={theme}>
-                        <App />
-                    </ThemeProvider>
+                    <App />
                 </AuthProvider>
             </BrowserRouter>
         </ErrorBoundary>

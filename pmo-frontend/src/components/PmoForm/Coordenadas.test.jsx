@@ -1,10 +1,10 @@
-// src/components/PmoForm/Coordenadas.test.jsx (versão com mock corrigido)
+﻿// src/components/PmoForm/Coordenadas.test.jsx (versão com mock corrigido)
 
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
-import Coordenadas from './Coordenadas_MUI';
+import Coordenadas from './Coordenadas';
 
 // Guarda a implementação original do navigator.geolocation para restaurá-la depois
 const originalGeolocation = navigator.geolocation;
