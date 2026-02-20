@@ -1,21 +1,18 @@
 ﻿// src/components/PmoForm/Secao7.tsx
-// Refatorado — Zero MUI. Usa Tailwind + lucide-react.
+// Refatorado — Zero MUI. Usa Tailwind + lucide-react + TabelaDinamica standard.
 
 import React, { useState, ChangeEvent } from 'react';
-import { ChevronDown, PlusCircle, Trash2 } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import SectionShell from '../Plan/SectionShell';
 import CheckboxGroupMUI from './CheckboxGroup';
+import TabelaDinamica, { TableColumn } from './TabelaDinamica';
 
 // Types
 interface MembroFamilia {
+    id: string | number;
     nome?: string;
     parentesco?: string;
     funcao?: string;
-}
-
-interface TabelaMembrosFamiliaProps {
-    membros: MembroFamilia[] | undefined;
-    onMembrosChange: (membros: MembroFamilia[]) => void;
 }
 
 interface Secao7Data {
@@ -35,64 +32,18 @@ interface Secao7MUIProps {
     errors?: Record<string, string>;
 }
 
-const inputCls = "w-full border-b border-gray-300 bg-transparent py-1 text-sm focus:border-green-500 focus:outline-none";
-
-const TabelaMembrosFamilia: React.FC<TabelaMembrosFamiliaProps> = ({ membros, onMembrosChange }) => {
-    const membrosArray = Array.isArray(membros) ? membros : [];
-
-    const handleMemberChange = (index: number, field: keyof MembroFamilia, value: string) => {
-        const novosMembros = [...membrosArray];
-        novosMembros[index] = { ...novosMembros[index], [field]: value };
-        onMembrosChange(novosMembros);
-    };
-
-    const adicionarMembro = () => {
-        onMembrosChange([...membrosArray, { nome: '', parentesco: '', funcao: '' }]);
-    };
-
-    const removerMembro = (index: number) => {
-        onMembrosChange(membrosArray.filter((_, i) => i !== index));
-    };
-
-    return (
-        <div>
-            <div className="border border-gray-200 rounded-lg overflow-auto">
-                <table className="w-full text-sm">
-                    <thead>
-                        <tr className="bg-gray-50 border-b border-gray-200">
-                            <th className="px-3 py-2 text-left font-bold text-gray-700">Nome do Membro</th>
-                            <th className="px-3 py-2 text-left font-bold text-gray-700">Parentesco</th>
-                            <th className="px-3 py-2 text-left font-bold text-gray-700">Função na Produção</th>
-                            <th className="px-3 py-2 text-center font-bold text-gray-700">Ação</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {membrosArray.map((membro, index) => (
-                            <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                                <td className="px-3 py-1"><input className={inputCls} value={membro.nome || ''} onChange={(e) => handleMemberChange(index, 'nome', e.target.value)} /></td>
-                                <td className="px-3 py-1"><input className={inputCls} value={membro.parentesco || ''} onChange={(e) => handleMemberChange(index, 'parentesco', e.target.value)} /></td>
-                                <td className="px-3 py-1"><input className={inputCls} value={membro.funcao || ''} onChange={(e) => handleMemberChange(index, 'funcao', e.target.value)} /></td>
-                                <td className="px-3 py-1 text-center">
-                                    <button onClick={() => removerMembro(index)} className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"><Trash2 size={16} /></button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-            <button onClick={adicionarMembro} className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 text-sm text-green-700 hover:bg-green-50 rounded-md">
-                <PlusCircle size={16} /> Adicionar Membro
-            </button>
-        </div>
-    );
-};
-
-// Accordion Panel helper
+/**
+ * Accordion Panel helper with fixed button type to prevent accidental submits.
+ */
 const AccordionPanel: React.FC<{ title: string; defaultOpen?: boolean; children: React.ReactNode }> = ({ title, defaultOpen = false, children }) => {
     const [open, setOpen] = useState(defaultOpen);
     return (
         <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left">
+            <button
+                type="button"
+                onClick={() => setOpen(!open)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+            >
                 <span className="font-bold text-sm text-gray-800">{title}</span>
                 <ChevronDown size={18} className={`text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`} />
             </button>
@@ -104,6 +55,13 @@ const AccordionPanel: React.FC<{ title: string; defaultOpen?: boolean; children:
 
 const Secao7MUI: React.FC<Secao7MUIProps> = ({ data, onSectionChange, errors }) => {
     const safeData = data || {};
+
+    // Configuração das colunas para os membros da família
+    const familyColumns: TableColumn[] = [
+        { id: 'nome', label: 'Nome do Membro', type: 'text' },
+        { id: 'parentesco', label: 'Parentesco', type: 'text' },
+        { id: 'funcao', label: 'Função na Produção', type: 'text' },
+    ];
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -118,6 +76,10 @@ const Secao7MUI: React.FC<Secao7MUIProps> = ({ data, onSectionChange, errors }) 
         onSectionChange({ ...safeData, [fieldName]: newValue });
     };
 
+    const handleFamilyDataChange = (newMembros: MembroFamilia[]) => {
+        onSectionChange({ ...safeData, membros_familia_producao: newMembros });
+    };
+
     return (
         <SectionShell
             sectionLabel="Seção 7"
@@ -125,9 +87,12 @@ const Secao7MUI: React.FC<Secao7MUIProps> = ({ data, onSectionChange, errors }) 
         >
             <div className="flex flex-col gap-3">
                 <AccordionPanel title="7.1. Quais os membros da família estão envolvidos na produção?" defaultOpen>
-                    <TabelaMembrosFamilia
-                        membros={safeData.membros_familia_producao}
-                        onMembrosChange={(newMembros) => onSectionChange({ ...safeData, membros_familia_producao: newMembros })}
+                    <TabelaDinamica<MembroFamilia>
+                        columns={familyColumns}
+                        data={safeData.membros_familia_producao || []}
+                        onDataChange={handleFamilyDataChange}
+                        itemName="Membro da Família"
+                        itemNoun="o"
                     />
                 </AccordionPanel>
 

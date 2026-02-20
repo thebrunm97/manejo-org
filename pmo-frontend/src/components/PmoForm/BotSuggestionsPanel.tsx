@@ -81,39 +81,42 @@ const BotSuggestionsPanel: React.FC<BotSuggestionsPanelProps> = ({ sectionId, on
                 return (
                     <div
                         key={s.id}
-                        className={`rounded-lg border p-4 flex gap-3 items-start ${hasAlert
+                        className={`rounded-lg border p-4 flex flex-col sm:flex-row sm:items-start gap-4 ${hasAlert
                             ? 'bg-amber-50 border-amber-300'
                             : 'bg-blue-50 border-blue-200'
                             }`}
                     >
-                        {/* Icon */}
-                        <div className={`shrink-0 mt-0.5 ${hasAlert ? 'text-amber-600' : 'text-blue-600'}`}>
-                            <Bot size={22} />
-                        </div>
+                        {/* Sub-container for Icon + Text */}
+                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                            {/* Icon */}
+                            <div className={`shrink-0 mt-0.5 ${hasAlert ? 'text-amber-600' : 'text-blue-600'}`}>
+                                <Bot size={22} />
+                            </div>
 
-                        {/* Content */}
-                        <div className="flex-1 min-w-0">
-                            <p className={`text-sm font-semibold mb-1 ${hasAlert ? 'text-amber-800' : 'text-blue-800'}`}>
-                                Sugestão do Assistente de Voz
-                            </p>
-                            <p className="text-sm italic text-gray-700 mb-1">
-                                &quot;{s.texto_usuario}&quot;
-                            </p>
-                            {hasAlert && (
-                                <div className="flex items-center gap-1 mt-1 text-sm font-bold text-amber-800">
-                                    <AlertTriangle size={14} />
-                                    {data.alerta_conformidade}
-                                </div>
-                            )}
-                            {!hasAlert && (
-                                <p className="text-xs text-gray-500">
-                                    Extraído: {data.produto} {data.dose_valor ? `(${data.dose_valor} ${data.dose_unidade})` : ''}
+                            {/* Content */}
+                            <div className="flex-1 min-w-0">
+                                <p className={`text-sm font-semibold mb-1 ${hasAlert ? 'text-amber-800' : 'text-blue-800'}`}>
+                                    Sugestão do Assistente de Voz
                                 </p>
-                            )}
+                                <p className="text-sm italic text-gray-700 mb-1 leading-relaxed">
+                                    &quot;{s.texto_usuario}&quot;
+                                </p>
+                                {hasAlert && (
+                                    <div className="flex items-center gap-1 mt-1 text-sm font-bold text-amber-800">
+                                        <AlertTriangle size={14} className="shrink-0" />
+                                        <span className="truncate">{data.alerta_conformidade}</span>
+                                    </div>
+                                )}
+                                {!hasAlert && (
+                                    <p className="text-xs text-gray-500">
+                                        Extraído: {data.produto} {data.dose_valor ? `(${data.dose_valor} ${data.dose_unidade})` : ''}
+                                    </p>
+                                )}
+                            </div>
                         </div>
 
                         {/* Actions */}
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex flex-wrap gap-2 w-full sm:w-auto shrink-0 justify-end sm:justify-start pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100 sm:border-transparent">
                             <button
                                 type="button"
                                 onClick={() => handleIgnore(s.id)}
@@ -125,7 +128,7 @@ const BotSuggestionsPanel: React.FC<BotSuggestionsPanelProps> = ({ sectionId, on
                             <button
                                 type="button"
                                 onClick={() => handleApplyWrapper(s)}
-                                className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white rounded-md transition-colors ${hasAlert
+                                className={`inline-flex items-center gap-1 px-4 py-1.5 text-xs font-bold text-white rounded-md shadow-sm transition-all active:scale-95 ${hasAlert
                                     ? 'bg-amber-600 hover:bg-amber-700'
                                     : 'bg-blue-600 hover:bg-blue-700'
                                     }`}
