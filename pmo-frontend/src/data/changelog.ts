@@ -11,121 +11,145 @@ export interface ChangelogEntry {
 
 export const changelogData: ChangelogEntry[] = [
     {
-        version: "0.5.1",
-        date: "Fevereiro 2026",
-        title: "The SaaS Moderno Update",
-        description: "Nova identidade visual, formulários nativos e melhorias de responsividade em todo o sistema.",
+        version: "0.6.0",
+        date: "25 de Fevereiro de 2026",
+        title: "Gestão Total e Rastreabilidade",
+        description: "O maior avanço do Manejo Orgânico. Rastreabilidade completa, conversas mais inteligentes no WhatsApp e um sistema redesenhado do zero para ser super rápido no seu celular.",
         sections: [
             {
                 type: "New",
                 items: [
-                    "Páginas públicas redesenhadas com efeito Glassmorphism e gradientes modernos.",
-                    "Componente AccordionPanel reutilizável para todas as seções do Plano de Manejo.",
-                    "Componente RadioSimNao para perguntas Sim/Não com conteúdo condicional."
+                    "Novo Módulo de Gestão da Propriedade (Croqui Digital) para organizar talhões e canteiros.",
+                    "Calculadora automática de textura e saúde do solo direto no painel.",
+                    "Sistema de rastreabilidade passo a passo para a origem detalhada dos seus lotes.",
+                    "Adequação automática às normas do IMA com nova seleção múltipla de culturas e flexibilidade de datas."
                 ]
             },
             {
                 type: "Improvements",
                 items: [
-                    "Mais de 40 componentes Material UI substituídos por Tailwind CSS nativo.",
-                    "Formulários do Plano de Manejo (19 seções) completamente migrados para HTML nativo.",
-                    "Diário de Campo com responsividade drasticamente melhorada no celular.",
-                    "Tooltips de conformidade substituem alertas inline, eliminando overflow horizontal.",
-                    "Botões, cards e tabelas do Dashboard agora usam o novo Design System."
+                    "Sistema mais leve e rápido para celulares no campo (migração total de design).",
+                    "Tabelas agora se transformam em cartões expansíveis para leitura fácil na tela do celular.",
+                    "A inteligência artificial no WhatsApp entende melhor suas dúvidas técnicas e os planos de safra.",
+                    "Correção de pequenos travamentos ao preencher os 19 formulários do Plano de Manejo.",
+                    "Suporte no cadastro para informar as medidas exatas (largura e comprimento) dos canteiros."
+                ]
+            }
+        ]
+    },
+    {
+        version: "0.5.1",
+        date: "20 de Fevereiro de 2026",
+        title: "O Aplicativo Mais Rápido e Inteligente da Roça",
+        description: "Novo visual, preenchimento de formulários incrivelmente rápido e sistema que se adapta perfeitamente a qualquer tamanho de celular, mesmo com a internet oscilando.",
+        sections: [
+            {
+                type: "New",
+                items: [
+                    "Visual mais limpo e fácil de ler no celular mesmo debaixo de sol forte.",
+                    "Formulários de Plano de Manejo mais inteligentes que se adaptam às suas respostas, diminuindo drasticamente a quantidade de cliques e digitação."
+                ]
+            },
+            {
+                type: "Improvements",
+                items: [
+                    "Sistema construído para ser muito mais leve e rápido, ideal para o uso do dia a dia no campo com internet 3G.",
+                    "O preenchimento de todas as 19 seções do Plano de Manejo ficou mais ágil e focado na sua resposta direta.",
+                    "Diário de Campo muito mais intuitivo para registrar insumos e atividades direto da roça.",
+                    "Alertas de regras Orgânicas agora aparecem apenas quando você deseja, liberando o espaço valioso na tela do seu celular.",
+                    "Painel inicial com novas caixinhas e botões, organizando e destacando o que realmente importa para a gestão da fazenda."
                 ]
             }
         ]
     },
     {
         version: "0.5.0",
-        date: "Fevereiro 2026",
-        title: "IA e Facilidade no WhatsApp",
-        description: "Melhoramos a conversa com a Inteligência Artificial e o seu painel.",
+        date: "28 de Janeiro de 2026",
+        title: "Inteligência e Agilidade no WhatsApp",
+        description: "O seu assistente no WhatsApp ficou muito mais esperto, rápido e confiável para te dar suporte no meio da lida.",
         sections: [
             {
                 type: "New",
                 items: [
-                    "Painel inicial com dicas automáticas sobre o seu manejo.",
-                    "Assistente de boas-vindas e suporte direto pelo WhatsApp.",
-                    "Ferramenta para ajustar os Planos de Manejo sugeridos pela IA."
+                    "Inteligência artificial fortalecida, capaz de entender dúvidas difíceis e te ajudar na instalação e uso da ferramenta.",
+                    "A inteligência agora consegue separar se a sua dúvida é de planejamento de longo prazo da safra ou um aviso do dia a dia, te entregando a orientação exata.",
+                    "Novo quadro de informações na internet para apresentar as vantagens do Manejo Orgânico de maneira rápida para outros produtores."
                 ]
             },
             {
                 type: "Improvements",
                 items: [
-                    "As respostas da IA estão mais rápidas e diretas.",
-                    "O sistema entende melhor datas e áudios enviados no WhatsApp."
+                    "Nova fundação tecnológica garantindo segurança extra no WhatsApp; o sistema não cai mais e as respostas para seus áudios chegam de prontidão.",
+                    "Resolvido o corte no envio das respostas mais compridas ou listas enviadas pela inteligência artificial."
                 ]
             }
         ]
     },
     {
         version: "0.4.0",
-        date: "Janeiro 2026",
-        title: "Rastreabilidade e Organização",
-        description: "Agora você pode controlar melhor a origem dos seus produtos.",
+        date: "23 de Janeiro de 2026",
+        title: "Gestão Firme da Produção",
+        description: "Mais organização e rastreamento da sua produção orgânica para ajudar você a fechar bons negócios com segurança.",
         sections: [
             {
                 type: "New",
                 items: [
-                    "Novo módulo para rastrear lotes e colheitas.",
-                    "Possibilidade de gerenciar tudo pelo chat, sem abrir o computador.",
-                    "Segurança reforçada para guardar seus comprovantes e fotos."
-                ]
-            },
-            {
-                type: "Improvements",
-                items: [
-                    "Ficou mais fácil registrar atividades manuais do dia a dia.",
-                    "As telas do sistema carregam mais rápido no celular."
+                    "Sistema inteligente para rastrear cada lote de colheita, garantindo facilidade para registrar as unidades maiores de produção.",
+                    "Novos botões de preenchimento automático que sugam o horário e as datas do seu celular para te poupar trabalho na hora do intervalo.",
+                    "Acesso mais fácil para consultar avisos novos e dicas rápidas do sistema de maneira simples."
                 ]
             }
         ]
     },
     {
         version: "0.3.0",
-        date: "Dezembro 2025",
-        title: "Novo Visual",
-        description: "Uma cara nova para facilitar o seu trabalho.",
+        date: "7 de Janeiro de 2026",
+        title: "O Seu Croqui Digital",
+        description: "Toda a organização da sua propriedade, dos canteiros soltos ao curral, cabe agora na palma da sua mão - e o sistema faz cálculos agrários por você.",
         sections: [
             {
                 type: "New",
                 items: [
-                    "Visual renovado, mais limpo e fácil de ler no sol.",
-                    "Menu lateral organizado para achar as funções mais rápido.",
-                    "Cadastro da propriedade simplificado (menos cliques)."
+                    "Painel inovador do 'Croqui Digital' desenhado para guardar informações de onde, qual tamanho e quanto há dentro dos talhões ou piquetes.",
+                    "Botão que permite criar mais de 10, 50 ou 100 canteiros / linhas seguidas com apenas alguns poucos cliques rápidos.",
+                    "Calculadora inteligente e automatizada para a saúde do solo, cruzando dados de textura da terra e apontando na hora a recomendação do plantio."
+                ]
+            },
+            {
+                type: "Improvements",
+                items: [
+                    "Caixinhas de opções mais agradáveis que dão menos problemas se o dedo clicar do lado sem querer.",
+                    "Menus de navegação laterais e internos mais visíveis e limpos, tirando o medo de se perder no sistema."
                 ]
             }
         ]
     },
     {
         version: "0.2.0",
-        date: "Novembro 2025",
-        title: "Estabilidade e Segurança",
-        description: "Ajustes para o sistema crescer com segurança.",
+        date: "21 de Dezembro de 2025",
+        title: "Caderno de Campo Embutido",
+        description: "Adeus ao preenchedor de papel debaixo do sol do meio dia. Os seus registros foram os mais beneficiados aqui.",
         sections: [
             {
                 type: "Improvements",
                 items: [
-                    "O sistema está mais estável e não cai durante o uso.",
-                    "Correção de pequenos erros na criação de planos duplicados.",
-                    "Melhoria na visualização em celulares pequenos."
+                    "Acesso no topo da tela do seu celular para pular o papo furado e ir certinho onde você registra as horas da mão de obra sem delongas.",
+                    "As informações da produção registradas pelos seus trabalhadores estão muito mais legíveis e amplas nos detalhes técnicos."
                 ]
             }
         ]
     },
     {
         version: "0.1.0",
-        date: "Outubro 2025",
-        title: "O Início",
-        description: "Lançamento do Manejo Orgânico.",
+        date: "6 de Outubro de 2025",
+        title: "A Semente Virou Broto",
+        description: "Demos a cavada inicial neste projeto feito por pessoas orgânicas a favor das terras orgânicas.",
         sections: [
             {
                 type: "New",
                 items: [
-                    "Lançamento oficial da plataforma.",
-                    "Caderno de Campo Digital (adeus papel!).",
-                    "Primeira versão da Inteligência Artificial auxiliar."
+                    "Criação e construção da base de segurança super forte para dar total tranquilidade de que somente você tem acesso aos dados da propriedade.",
+                    "As bases e as lógicas rascunhadas no papel ganham as telas seguras do celular para começar o fim das papeladas das cooperativas e prefeituras."
                 ]
             }
         ]
