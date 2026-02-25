@@ -69,6 +69,7 @@ export interface PmoListItem {
  */
 export interface UserProfile {
     id: string;
+    nome?: string;
     pmo_ativo_id: string | null;
     telefone?: string;
     role?: 'user' | 'admin'; // Role based access control
@@ -143,7 +144,7 @@ export type SectionStatusValue = 'completo' | 'em-progresso' | 'pendente' | unde
 
 /**
  * Mapa de status por chave de seção (string).
- * Compatível com DesktopStepperMUI e SectionsModal.
+ * Compatível com DesktopStepper e SectionsModal.
  */
 export type SectionStatusMap = Record<string, SectionStatusValue>;
 
