@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file PmoFormPage.tsx
  * @description View component for PMO (Plano de Manejo Orgânico) form.
  * 
@@ -18,32 +18,32 @@ import { usePmoFormLogic } from '../hooks/pmo/usePmoFormLogic';
 import * as validations from '../validation/pmoValidation';
 
 // Form Components
-import DesktopStepperMUI from '../components/PmoForm/DesktopStepper';
-import StepperNavigationMUI from '../components/PmoForm/StepperNavigation';
+import DesktopStepper from '../components/PmoForm/DesktopStepper';
+import StepperNavigation from '../components/PmoForm/StepperNavigation';
 import MobileBottomNav from '../components/PmoForm/MobileBottomNav';
 import SectionsModal from '../components/PmoForm/SectionsModal';
 import PmoParaImpressao from '../components/PmoForm/PmoParaImpressao';
 
 // Section Components
 import DiarioDeCampo from '../components/DiarioDeCampo';
-import Secao1MUI from '../components/PmoForm/Secao1';
-import Secao2MUI from '../components/PmoForm/Secao2';
-import Secao3MUI from '../components/PmoForm/Secao3';
-import Secao4MUI from '../components/PmoForm/Secao4';
-import Secao5MUI from '../components/PmoForm/Secao5';
-import Secao6MUI from '../components/PmoForm/Secao6';
-import Secao7MUI from '../components/PmoForm/Secao7';
-import Secao8MUI from '../components/PmoForm/Secao8';
-import Secao9MUI from '../components/PmoForm/Secao9';
-import Secao10MUI from '../components/PmoForm/Secao10';
-import Secao11MUI from '../components/PmoForm/Secao11';
-import Secao12MUI from '../components/PmoForm/Secao12';
-import Secao13MUI from '../components/PmoForm/Secao13';
-import Secao14MUI from '../components/PmoForm/Secao14';
-import Secao15MUI from '../components/PmoForm/Secao15';
-import Secao16MUI from '../components/PmoForm/Secao16';
-import Secao17MUI from '../components/PmoForm/Secao17';
-import Secao18MUI from '../components/PmoForm/Secao18';
+import Secao1 from '../components/PmoForm/Secao1';
+import Secao2 from '../components/PmoForm/Secao2';
+import Secao3 from '../components/PmoForm/Secao3';
+import Secao4 from '../components/PmoForm/Secao4';
+import Secao5 from '../components/PmoForm/Secao5';
+import Secao6 from '../components/PmoForm/Secao6';
+import Secao7 from '../components/PmoForm/Secao7';
+import Secao8 from '../components/PmoForm/Secao8';
+import Secao9 from '../components/PmoForm/Secao9';
+import Secao10 from '../components/PmoForm/Secao10';
+import Secao11 from '../components/PmoForm/Secao11';
+import Secao12 from '../components/PmoForm/Secao12';
+import Secao13 from '../components/PmoForm/Secao13';
+import Secao14 from '../components/PmoForm/Secao14';
+import Secao15 from '../components/PmoForm/Secao15';
+import Secao16 from '../components/PmoForm/Secao16';
+import Secao17 from '../components/PmoForm/Secao17';
+import Secao18 from '../components/PmoForm/Secao18';
 
 // ==================================================================
 // ||                         TYPES                                ||
@@ -112,24 +112,24 @@ const PmoFormPage: React.FC = () => {
     // SECTION CONFIG (static, memoized)
     // ─────────────────────────────────────────────────────────────────
     const formSections: FormSection[] = useMemo(() => [
-        { id: 1, key: 'secao_1_descricao_propriedade', Component: Secao1MUI, validate: validations.validateSecao1, label: 'Propriedade' },
-        { id: 2, key: 'secao_2_atividades_produtivas_organicas', Component: Secao2MUI, validate: validations.validateSecao2, label: 'Atividades Orgânicas' },
-        { id: 3, key: 'secao_3_atividades_produtivas_nao_organicas', Component: Secao3MUI, validate: validations.validateSecao3, label: 'Atividades Não-Orgânicas' },
-        { id: 4, key: 'secao_4_animais_servico_subsistencia_companhia', Component: Secao4MUI, validate: validations.validateSecao4, label: 'Outros Animais' },
-        { id: 5, key: 'secao_5_producao_terceirizada', Component: Secao5MUI, validate: validations.validateSecao5, label: 'Terceiros' },
-        { id: 6, key: 'secao_6_aspectos_ambientais', Component: Secao6MUI, validate: validations.validateSecao6, label: 'Ambiental' },
-        { id: 7, key: 'secao_7_aspectos_sociais', Component: Secao7MUI, validate: validations.validateSecao7, label: 'Social' },
-        { id: 8, key: 'secao_8_insumos_equipamentos', Component: Secao8MUI, validate: validations.validateSecao8, label: 'Insumos' },
-        { id: 9, key: 'secao_9_propagacao_vegetal', Component: Secao9MUI, validate: validations.validateSecao9, label: 'Propagação' },
-        { id: 10, key: 'secao_10_fitossanidade', Component: Secao10MUI, validate: validations.validateSecao10, label: 'Fitossanidade' },
-        { id: 11, key: 'secao_11_colheita', Component: Secao11MUI, validate: validations.validateSecao11, label: 'Colheita' },
-        { id: 12, key: 'secao_12_pos_colheita', Component: Secao12MUI, validate: validations.validateSecao12, label: 'Pós-Colheita' },
-        { id: 13, key: 'secao_13_producao_animal', Component: Secao13MUI, validate: validations.validateSecao13, label: 'Produção Animal' },
-        { id: 14, key: 'secao_14_comercializacao', Component: Secao14MUI, validate: validations.validateSecao14, label: 'Comércio' },
-        { id: 15, key: 'secao_15_rastreabilidade', Component: Secao15MUI, validate: validations.validateSecao15, label: 'Rastreio' },
-        { id: 16, key: 'secao_16_sac', Component: Secao16MUI, validate: validations.validateSecao16, label: 'SAC' },
-        { id: 17, key: 'secao_17_opiniao', Component: Secao17MUI, validate: validations.validateSecao17, label: 'Opinião' },
-        { id: 18, key: 'secao_18_anexos', Component: Secao18MUI, validate: validations.validateSecao18, label: 'Anexos' },
+        { id: 1, key: 'secao_1_descricao_propriedade', Component: Secao1, validate: validations.validateSecao1, label: 'Propriedade' },
+        { id: 2, key: 'secao_2_atividades_produtivas_organicas', Component: Secao2, validate: validations.validateSecao2, label: 'Atividades Orgânicas' },
+        { id: 3, key: 'secao_3_atividades_produtivas_nao_organicas', Component: Secao3, validate: validations.validateSecao3, label: 'Atividades Não-Orgânicas' },
+        { id: 4, key: 'secao_4_animais_servico_subsistencia_companhia', Component: Secao4, validate: validations.validateSecao4, label: 'Outros Animais' },
+        { id: 5, key: 'secao_5_producao_terceirizada', Component: Secao5, validate: validations.validateSecao5, label: 'Terceiros' },
+        { id: 6, key: 'secao_6_aspectos_ambientais', Component: Secao6, validate: validations.validateSecao6, label: 'Ambiental' },
+        { id: 7, key: 'secao_7_aspectos_sociais', Component: Secao7, validate: validations.validateSecao7, label: 'Social' },
+        { id: 8, key: 'secao_8_insumos_equipamentos', Component: Secao8, validate: validations.validateSecao8, label: 'Insumos' },
+        { id: 9, key: 'secao_9_propagacao_vegetal', Component: Secao9, validate: validations.validateSecao9, label: 'Propagação' },
+        { id: 10, key: 'secao_10_fitossanidade', Component: Secao10, validate: validations.validateSecao10, label: 'Fitossanidade' },
+        { id: 11, key: 'secao_11_colheita', Component: Secao11, validate: validations.validateSecao11, label: 'Colheita' },
+        { id: 12, key: 'secao_12_pos_colheita', Component: Secao12, validate: validations.validateSecao12, label: 'Pós-Colheita' },
+        { id: 13, key: 'secao_13_producao_animal', Component: Secao13, validate: validations.validateSecao13, label: 'Produção Animal' },
+        { id: 14, key: 'secao_14_comercializacao', Component: Secao14, validate: validations.validateSecao14, label: 'Comércio' },
+        { id: 15, key: 'secao_15_rastreabilidade', Component: Secao15, validate: validations.validateSecao15, label: 'Rastreio' },
+        { id: 16, key: 'secao_16_sac', Component: Secao16, validate: validations.validateSecao16, label: 'SAC' },
+        { id: 17, key: 'secao_17_opiniao', Component: Secao17, validate: validations.validateSecao17, label: 'Opinião' },
+        { id: 18, key: 'secao_18_anexos', Component: Secao18, validate: validations.validateSecao18, label: 'Anexos' },
         { id: 19, key: 'caderno_de_campo', Component: DiarioDeCampo, validate: () => true, label: 'Caderno de Campo' }
     ], []);
 
@@ -228,7 +228,7 @@ const PmoFormPage: React.FC = () => {
                         <p className="text-xs text-gray-500 text-center mt-1">Seção {currentStep} de {totalSteps}</p>
                     </div>
                 ) : (
-                    <DesktopStepperMUI
+                    <DesktopStepper
                         sections={formSections}
                         currentStep={currentStep}
                         goToStep={goToStep}
@@ -259,7 +259,7 @@ const PmoFormPage: React.FC = () => {
                     )}
 
                     {!isMobile && (
-                        <StepperNavigationMUI
+                        <StepperNavigation
                             currentStep={currentStep}
                             totalSteps={totalSteps}
                             isLoading={isLoading || isSaving}

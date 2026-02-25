@@ -1,17 +1,7 @@
 import { supabase } from '../supabaseClient';
-import { GeoPoint } from '../domain/geo/geoTypes';
+import { GeoPoint, Talhao, GeoJSONGeometry } from '../domain/geo/geoTypes';
 
-export interface Talhao {
-    id: string;
-    pmo_id?: string;
-    propriedade_id?: number; // FK para tabela propriedades
-    nome: string;
-    geometria: GeoPoint[]; // Mapeado de/para GeoJSON no banco
-    area_hectares: number;
-    cor?: string;
-    cultura?: string;
-    user_id?: string;
-}
+export type { Talhao, GeoJSONGeometry };
 
 // Auxiliar para converter formato do Banco (GeoJSON) <-> App (GeoPoint[])
 const convertGeoJsonToPoints = (geoJson: any): GeoPoint[] => {

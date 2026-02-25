@@ -6,26 +6,7 @@ import { EditControl } from 'react-leaflet-draw';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import L, { LatLngExpression } from 'leaflet';
-
-// Types
-interface GeoJSONGeometry {
-    type: string;
-    coordinates: number[][][];
-}
-
-interface Talhao {
-    id: string;
-    nome: string;
-    tipo?: string;
-    geometry?: string | GeoJSONGeometry;
-    cor?: string;
-    area_total_m2?: number;
-    area_m2?: number;
-    cultura?: string;
-    ph_solo?: number;
-    v_percent?: number;
-    teor_argila?: number;
-}
+import { Talhao, GeoJSONGeometry } from '../../services/talhaoService';
 
 interface MapCreatedEvent {
     layer: L.Layer;

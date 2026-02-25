@@ -24,18 +24,7 @@ import { cn } from '../../utils/cn';
 import FarmMap from '../Map/FarmMap';
 import TalhaoDetailsDrawer from './TalhaoDetailsDrawer';
 import { locationService } from '../../services/locationService';
-
-// Tipagem simplificada para evitar erros
-interface Talhao {
-    id: number;
-    nome: string;
-    tipo: string;
-    area_total_m2: number;
-    area_ha?: number;
-    cultura?: string;
-    canteiros?: any[];
-    [key: string]: any;
-}
+import { Talhao } from '../../services/talhaoService';
 
 const formatArea = (m2: number) => {
     if (!m2) return '0 m²';
@@ -111,7 +100,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
         setSelectedTalhao(null);
     };
 
-    const handleUpdateTalhao = async (id: string | number, data: any) => {
+    const handleUpdateTalhao = async (id: string, data: any) => {
         try {
             await locationService.updateTalhao(String(id), data);
             await loadTalhoes();
@@ -121,7 +110,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
         }
     };
 
-    const handleDeleteCanteiro = async (canteiroId: string | number) => {
+    const handleDeleteCanteiro = async (canteiroId: string) => {
         setCanteiroToDelete(String(canteiroId));
         setDeleteConfirmOpen(true);
     };
