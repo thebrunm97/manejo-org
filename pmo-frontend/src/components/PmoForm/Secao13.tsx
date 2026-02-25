@@ -1,14 +1,14 @@
-﻿// src/components/PmoForm/Secao13.tsx — Zero MUI
+// src/components/PmoForm/Secao13.tsx — Zero MUI
 import React, { ChangeEvent, useState } from 'react';
 import { ChevronDown, PlusCircle, Trash2 } from 'lucide-react';
 import { useIsMobile } from '../../hooks/useIsMobile';
-import CheckboxGroupMUI from './CheckboxGroup';
+import CheckboxGroup from './CheckboxGroup';
 import TabelaDinamica, { TableColumn } from './TabelaDinamica';
 
 interface NutricaoItem { animal?: string; identificacao_ingrediente?: string; origem_transgenica?: boolean | null; descricao?: string; procedencia?: string; frequencia?: string; quantidade?: string; }
 interface AlimentoItem { alimento?: string;[key: string]: any; }
 interface Secao13Data { tecnicas_melhoria_pastos?: string; tecnicas_melhoria_pastos_outros?: string; reproducao_animais?: string; reproducao_animais_outros?: string; aquisicao_animais?: any; evolucao_plantel?: any[]; nutricao_animal?: NutricaoItem[]; plano_anual_alimentacao_animal?: AlimentoItem[]; alimentacao_mamiferos_jovens?: { alimentacao_mamiferos_jovens?: string }; bem_estar_animais?: string; manejo_sanitario_animal?: any;[key: string]: any; }
-interface Secao13MUIProps { data: Secao13Data | null | undefined; onSectionChange: (d: Secao13Data) => void; }
+interface Secao13Props { data: Secao13Data | null | undefined; onSectionChange: (d: Secao13Data) => void; }
 
 const inputCls = "w-full border-b border-gray-300 bg-transparent py-1 text-sm focus:border-green-500 focus:outline-none";
 const labelCls = "text-xs font-medium text-gray-600 mb-1 block";
@@ -91,7 +91,7 @@ const PlanoAnual: React.FC<{ data: AlimentoItem[] | undefined; onDataChange: (d:
     );
 };
 
-const Secao13MUI: React.FC<Secao13MUIProps> = ({ data, onSectionChange }) => {
+const Secao13: React.FC<Secao13Props> = ({ data, onSectionChange }) => {
     const sd = data || {};
     const hc = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onSectionChange({ ...sd, [e.target.name]: e.target.value });
     const hcb = (fn: string, nv: string) => onSectionChange({ ...sd, [fn]: nv });
@@ -104,16 +104,16 @@ const Secao13MUI: React.FC<Secao13MUIProps> = ({ data, onSectionChange }) => {
     return (
         <div className="flex flex-col gap-3">
             <h2 className="text-2xl font-bold text-gray-800 mb-1">Seção 13: Produção Animal</h2>
-            <AP title="13.1. Técnicas para melhoria de pastos" defaultOpen><CheckboxGroupMUI title="" options={['Pastejo rotacionado', 'Consorciação de pastagens', 'Rotação de culturas', 'Adubação orgânica', 'Uso de quebra-vento', 'Plantio de árvores nativas', 'Integração lavoura/pecuária', 'Outros - citar:']} selectedString={sd.tecnicas_melhoria_pastos} onSelectionChange={v => hcb('tecnicas_melhoria_pastos', v)} otherOption="Outros - citar:" otherValue={sd.tecnicas_melhoria_pastos_outros} onOtherChange={hc} otherName="tecnicas_melhoria_pastos_outros" /></AP>
-            <AP title="13.2. Como realiza a reprodução?"><CheckboxGroupMUI title="" options={['Compra animais de fora', 'Monta natural', 'Métodos artificiais', 'Outros - citar:']} selectedString={sd.reproducao_animais} onSelectionChange={v => hcb('reproducao_animais', v)} otherOption="Outros - citar:" otherValue={sd.reproducao_animais_outros} onOtherChange={hc} otherName="reproducao_animais_outros" /></AP>
+            <AP title="13.1. Técnicas para melhoria de pastos" defaultOpen><CheckboxGroup title="" options={['Pastejo rotacionado', 'Consorciação de pastagens', 'Rotação de culturas', 'Adubação orgânica', 'Uso de quebra-vento', 'Plantio de árvores nativas', 'Integração lavoura/pecuária', 'Outros - citar:']} selectedString={sd.tecnicas_melhoria_pastos} onSelectionChange={v => hcb('tecnicas_melhoria_pastos', v)} otherOption="Outros - citar:" otherValue={sd.tecnicas_melhoria_pastos_outros} onOtherChange={hc} otherName="tecnicas_melhoria_pastos_outros" /></AP>
+            <AP title="13.2. Como realiza a reprodução?"><CheckboxGroup title="" options={['Compra animais de fora', 'Monta natural', 'Métodos artificiais', 'Outros - citar:']} selectedString={sd.reproducao_animais} onSelectionChange={v => hcb('reproducao_animais', v)} otherOption="Outros - citar:" otherValue={sd.reproducao_animais_outros} onOtherChange={hc} otherName="reproducao_animais_outros" /></AP>
             <AP title="13.4. Evolução do plantel"><TabelaDinamica columns={colEvo} data={sd.evolucao_plantel} onDataChange={nd => onSectionChange({ ...sd, evolucao_plantel: nd })} itemName="Tipo de Animal" /></AP>
             <AP title="13.5. Nutrição animal"><TabelaNutricao data={sd.nutricao_animal} onDataChange={nd => onSectionChange({ ...sd, nutricao_animal: nd })} /></AP>
             <AP title="13.6. Plano anual de alimentação"><PlanoAnual data={sd.plano_anual_alimentacao_animal} onDataChange={nd => onSectionChange({ ...sd, plano_anual_alimentacao_animal: nd })} /></AP>
             <AP title="13.7. Alimentação de mamíferos jovens"><textarea name="alimentacao_mamiferos_jovens" className={textareaCls} rows={3} value={sd.alimentacao_mamiferos_jovens?.alimentacao_mamiferos_jovens || ''} onChange={hnc} /></AP>
-            <AP title="13.8. Bem-estar dos animais"><CheckboxGroupMUI title="" options={['Manejo adequado', 'Água de boa qualidade', 'Alimento farto', 'Instalações adequadas', 'Lotação adequada', 'Sombreamento']} selectedString={sd.bem_estar_animais} onSelectionChange={v => hcb('bem_estar_animais', v)} /></AP>
+            <AP title="13.8. Bem-estar dos animais"><CheckboxGroup title="" options={['Manejo adequado', 'Água de boa qualidade', 'Alimento farto', 'Instalações adequadas', 'Lotação adequada', 'Sombreamento']} selectedString={sd.bem_estar_animais} onSelectionChange={v => hcb('bem_estar_animais', v)} /></AP>
             <AP title="13.9. Manejo sanitário animal"><div className="flex flex-col gap-4"><div><label className={labelCls}>13.9.1. Promoção da saúde animal</label><textarea name="promocao_saude_animal" className={textareaCls} rows={3} value={sd.manejo_sanitario_animal?.promocao_saude_animal?.promocao_saude_animal || ''} onChange={hms} /></div><div><label className={labelCls}>13.9.2. Controle de vermes e parasitas</label><textarea name="controle_vermes_parasitas" className={textareaCls} rows={3} value={sd.manejo_sanitario_animal?.controle_vermes_parasitas?.controle_vermes_parasitas || ''} onChange={hms} /></div><TabelaDinamica label="13.9.3. Tratamentos realizados" columns={colTrat} data={sd.manejo_sanitario_animal?.tratamento_animais_doentes} onDataChange={nd => onSectionChange({ ...sd, manejo_sanitario_animal: { ...sd.manejo_sanitario_animal, tratamento_animais_doentes: nd } })} itemName="Tratamento" itemNoun="o" /></div></AP>
         </div>
     );
 };
 
-export default Secao13MUI;
+export default Secao13;

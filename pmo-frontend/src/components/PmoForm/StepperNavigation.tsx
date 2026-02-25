@@ -1,10 +1,10 @@
-﻿// src/components/PmoForm/StepperNavigation.tsx
+// src/components/PmoForm/StepperNavigation.tsx
 // Refatorado — Zero MUI. Usa Tailwind + lucide-react.
 
 import React from 'react';
 import { ArrowLeft, ArrowRight, Save, CheckCheck, LayoutDashboard, Loader2 } from 'lucide-react';
 
-interface StepperNavigationMUIProps {
+interface StepperNavigationProps {
     currentStep: number;
     totalSteps: number;
     isLoading: boolean;
@@ -16,7 +16,7 @@ interface StepperNavigationMUIProps {
     onGoToStart: () => void;
 }
 
-const StepperNavigationMUI: React.FC<StepperNavigationMUIProps> = ({
+const StepperNavigation: React.FC<StepperNavigationProps> = ({
     currentStep,
     totalSteps,
     isLoading,
@@ -102,4 +102,4 @@ const StepperNavigationMUI: React.FC<StepperNavigationMUIProps> = ({
     );
 };
 
-export default StepperNavigationMUI;
+export default StepperNavigation;

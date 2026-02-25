@@ -1,4 +1,4 @@
-﻿// src/components/PmoForm/Secao9.tsx — Zero MUI
+// src/components/PmoForm/Secao9.tsx — Zero MUI
 import React, { useState, ChangeEvent } from 'react';
 import { ChevronDown, PlusCircle, Sprout, X, AlertTriangle } from 'lucide-react';
 import SectionShell from '../Plan/SectionShell';
@@ -6,7 +6,7 @@ import PropagacaoCard from './cards/PropagacaoCard';
 
 interface PropagacaoItem { _id: string; tipo?: string; especies?: string; origem?: string; quantidade?: string; sistema_organico?: boolean; data_compra?: string; }
 interface Secao9Data { sementes_mudas_organicas?: PropagacaoItem[]; sementes_mudas_nao_organicas?: PropagacaoItem[]; tratamento_sementes_mudas?: { tratamento_sementes_mudas?: string }; manejo_producao_propria?: { manejo_producao_propria?: string }; postura_uso_materiais_transgenicos_organica?: { postura_uso_materiais_transgenicos_organica?: string }; cuidados_uso_materiais_transgenicos_nao_organica?: { cuidados_uso_materiais_transgenicos_nao_organica?: string };[key: string]: any; }
-interface Secao9MUIProps { data: Secao9Data | null | undefined; onSectionChange: (d: Secao9Data) => void; }
+interface Secao9Props { data: Secao9Data | null | undefined; onSectionChange: (d: Secao9Data) => void; }
 
 const genId = () => `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 const iCls = "w-full border border-gray-300 rounded-md p-2.5 text-sm focus:ring-1 focus:ring-green-500 focus:border-green-500";
@@ -20,7 +20,7 @@ const AP: React.FC<{ title: string; defaultOpen?: boolean; children: React.React
     return (<div className="border border-gray-200 rounded-lg overflow-hidden"><button type="button" onClick={() => setO(!o)} className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left"><span className="font-bold text-sm text-gray-800">{title}</span><ChevronDown size={18} className={`text-gray-500 transition-transform ${o ? 'rotate-180' : ''}`} /></button>{o && <div className="p-4">{children}</div>}</div>);
 };
 
-const Secao9MUI: React.FC<Secao9MUIProps> = ({ data, onSectionChange }) => {
+const Secao9: React.FC<Secao9Props> = ({ data, onSectionChange }) => {
     const sd = data || {};
     const [mOpen, setMOpen] = useState(false);
     const [listKey, setListKey] = useState<string | null>(null);
@@ -99,4 +99,4 @@ const Secao9MUI: React.FC<Secao9MUIProps> = ({ data, onSectionChange }) => {
     );
 };
 
-export default Secao9MUI;
+export default Secao9;

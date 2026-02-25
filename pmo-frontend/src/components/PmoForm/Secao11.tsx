@@ -1,4 +1,4 @@
-﻿// src/components/PmoForm/Secao11.tsx
+// src/components/PmoForm/Secao11.tsx
 // 🏗️ TEMPLATE CANÓNICO — Zero MUI, Tailwind + HTML nativo
 
 import React, { ChangeEvent, useState } from 'react';
@@ -13,7 +13,7 @@ interface Secao11Data {
     [key: string]: any;
 }
 
-interface Secao11MUIProps {
+interface Secao11Props {
     data: Secao11Data | null | undefined;
     onSectionChange: (data: Secao11Data) => void;
 }
@@ -58,7 +58,7 @@ const AccordionPanel: React.FC<AccordionPanelProps> = ({ title, defaultOpen = fa
 // =============================================================
 // Componente Principal
 // =============================================================
-const Secao11MUI: React.FC<Secao11MUIProps> = ({ data, onSectionChange }) => {
+const Secao11: React.FC<Secao11Props> = ({ data, onSectionChange }) => {
     const safeData = data || {};
 
     // Handler para os campos de texto aninhados
@@ -109,4 +109,4 @@ const Secao11MUI: React.FC<Secao11MUIProps> = ({ data, onSectionChange }) => {
     );
 };
 
-export default Secao11MUI;
+export default Secao11;

@@ -1,11 +1,11 @@
-﻿// src/components/PmoForm/Secao6.tsx
+// src/components/PmoForm/Secao6.tsx
 // Clonado do Template Canónico — Zero MUI
 
 import React, { ChangeEvent, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 
 import SectionShell from '../Plan/SectionShell';
-import CheckboxGroupMUI from './CheckboxGroup';
+import CheckboxGroup from './CheckboxGroup';
 
 // Types
 interface Secao6Data {
@@ -23,7 +23,7 @@ interface Secao6Data {
     [key: string]: any;
 }
 
-interface Secao6MUIProps {
+interface Secao6Props {
     data: Secao6Data | null | undefined;
     onSectionChange: (data: Secao6Data) => void;
     errors?: Record<string, string>;
@@ -54,7 +54,7 @@ const AccordionPanel: React.FC<AccordionPanelProps> = ({ title, defaultOpen = fa
     );
 };
 
-const Secao6MUI: React.FC<Secao6MUIProps> = ({ data, onSectionChange, errors }) => {
+const Secao6: React.FC<Secao6Props> = ({ data, onSectionChange, errors }) => {
     const safeData = data || {};
 
     const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -77,7 +77,7 @@ const Secao6MUI: React.FC<Secao6MUIProps> = ({ data, onSectionChange, errors }) 
                 title="6.1. Como irá promover a biodiversidade, conservar o solo e a água e proteger as fontes e nascentes?"
                 defaultOpen
             >
-                <CheckboxGroupMUI
+                <CheckboxGroup
                     title=""
                     options={['Culturas consorciadas', 'Sistemas agroflorestais', 'Rotação de culturas', 'Plantio em nível', 'Recuperação/enriquecimento de APPs', 'Plantio direto', 'Corredor ecológico...', 'Preservação da mata ciliar', 'Manejo do mato...', 'Cercamento de nascentes', 'Ausência de fogo', 'Terraceamento', 'Adubação verde', 'Mantém nascente de água própria', 'Adubos orgânicos', 'Realiza manejo das águas residuais', 'Diversificação da produção', 'Evita o desperdício de água', 'Plantio de flores...', 'Orienta vizinhos', 'Cultivo em aleias/faixas', 'Quebra ventos', 'Cobertura do solo']}
                     selectedString={safeData.promocao_biodiversidade}
@@ -86,7 +86,7 @@ const Secao6MUI: React.FC<Secao6MUIProps> = ({ data, onSectionChange, errors }) 
             </AccordionPanel>
 
             <AccordionPanel title="6.2. Qual a fonte de água utilizada na propriedade?">
-                <CheckboxGroupMUI
+                <CheckboxGroup
                     title=""
                     options={['Mina própria...', 'Cisterna', 'Açude', 'Mina fora da propriedade', 'Rio ou riacho', 'Canais coletivos...', 'Água subterrânea - Qual?']}
                     selectedString={safeData.fonte_agua}
@@ -154,7 +154,7 @@ const Secao6MUI: React.FC<Secao6MUIProps> = ({ data, onSectionChange, errors }) 
             </AccordionPanel>
 
             <AccordionPanel title="6.5. Quais os principais riscos de contaminação existentes na sua unidade de produção?">
-                <CheckboxGroupMUI
+                <CheckboxGroup
                     title=""
                     options={['Cultivos transgênicos...', 'Uso de insumos químicos...', 'Contaminação por pulverização...', 'Contaminação dos cursos...', 'Enxurrada', 'Insumos externos...', 'Animais trazidos de fora...']}
                     selectedString={safeData.riscos_contaminacao_unidade_producao}
@@ -175,7 +175,7 @@ const Secao6MUI: React.FC<Secao6MUIProps> = ({ data, onSectionChange, errors }) 
             </AccordionPanel>
 
             <AccordionPanel title="6.7. Que práticas são adotadas para o manejo de resíduos orgânicos?">
-                <CheckboxGroupMUI
+                <CheckboxGroup
                     title=""
                     options={['Acumula o esterco...', 'Faz compostagem', 'Coloca no biodigestor', 'Produz biofertilizante', 'Faz vermicompostagem/húmus', 'Utiliza na alimentação de animais']}
                     selectedString={safeData.praticas_manejo_residuos_organicos}
@@ -211,4 +211,4 @@ const Secao6MUI: React.FC<Secao6MUIProps> = ({ data, onSectionChange, errors }) 
     );
 };
 
-export default Secao6MUI;
+export default Secao6;

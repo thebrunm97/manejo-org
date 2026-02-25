@@ -1,20 +1,20 @@
-﻿// src/components/PmoForm/Secao1.tsx
-// Orchestrador — Zero MUI (sub-componentes serão refatorados no Sub-lote 6D)
+// src/components/PmoForm/Secao1.tsx
+// Orchestrador — Tailwind + lucide-react
 
 import React, { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 
 import SectionShell from '../Plan/SectionShell';
 
-// Componentes filhos (ainda com MUI internamente — serão refatorados no Sub-lote 6D)
-import DadosCadastraisMUI from './DadosCadastrais';
-import RoteiroAcessoMUI from './RoteiroAcesso';
-import MapaCroquiMUI from './MapaCroqui';
-import CoordenadasMUI from './Coordenadas';
-import AreaPropriedadeMUI from './AreaPropriedade';
-import HistoricoMUI from './Historico';
-import SituacaoMUI from './Situacao';
-import SeparacaoAreasProducaoParalelaMUI from './SeparacaoAreasProducaoParalela';
+// Componentes filhos (Tailwind-native)
+import DadosCadastrais from './DadosCadastrais';
+import RoteiroAcesso from './RoteiroAcesso';
+import MapaCroqui from './MapaCroqui';
+import Coordenadas from './Coordenadas';
+import AreaPropriedade from './AreaPropriedade';
+import Historico from './Historico';
+import Situacao from './Situacao';
+import SeparacaoAreasProducaoParalela from './SeparacaoAreasProducaoParalela';
 
 // Types
 interface Secao1Data {
@@ -29,7 +29,7 @@ interface Secao1Data {
     [key: string]: any;
 }
 
-interface Secao1MUIProps {
+interface Secao1Props {
     data: Secao1Data | null | undefined;
     onSectionChange: (data: Secao1Data) => void;
     errors?: Record<string, any>;
@@ -60,7 +60,7 @@ const AccordionPanel: React.FC<AccordionPanelProps> = ({ title, defaultOpen = fa
     );
 };
 
-const Secao1MUI: React.FC<Secao1MUIProps> = ({ data, onSectionChange, errors }) => {
+const Secao1: React.FC<Secao1Props> = ({ data, onSectionChange, errors }) => {
     const handleSubSectionChange = (subSectionName: string, subSectionData: any) => {
         onSectionChange({ ...data, [subSectionName]: subSectionData });
     };
@@ -75,7 +75,7 @@ const Secao1MUI: React.FC<Secao1MUIProps> = ({ data, onSectionChange, errors }) 
                 {/* --- 1.1 Dados Cadastrais --- */}
                 <AccordionPanel title="1.1 Dados Cadastrais" defaultOpen>
                     <div className="w-full">
-                        <DadosCadastraisMUI
+                        <DadosCadastrais
                             data={safeData.dados_cadastrais}
                             onDataChange={(newData) => handleSubSectionChange('dados_cadastrais', newData)}
                             errors={safeErrors.dados_cadastrais}
@@ -86,12 +86,12 @@ const Secao1MUI: React.FC<Secao1MUIProps> = ({ data, onSectionChange, errors }) 
                 {/* --- 1.2 Roteiro de Acesso e Croqui --- */}
                 <AccordionPanel title="1.2 Roteiro de Acesso e Croqui">
                     <div className="w-full flex flex-col gap-6">
-                        <RoteiroAcessoMUI
+                        <RoteiroAcesso
                             data={safeData.roteiro_acesso_propriedade}
                             onDataChange={(newData) => handleSubSectionChange('roteiro_acesso_propriedade', newData)}
                             errors={safeErrors.roteiro_acesso_propriedade}
                         />
-                        <MapaCroquiMUI
+                        <MapaCroqui
                             data={safeData.mapa_propriedade_croqui}
                             onDataChange={(newData) => handleSubSectionChange('mapa_propriedade_croqui', newData)}
                             errors={safeErrors.mapa_propriedade_croqui}
@@ -106,7 +106,7 @@ const Secao1MUI: React.FC<Secao1MUIProps> = ({ data, onSectionChange, errors }) 
                             <h4 className="text-sm font-semibold text-green-700 mb-3">
                                 Coordenadas Geográficas
                             </h4>
-                            <CoordenadasMUI
+                            <Coordenadas
                                 data={safeData.coordenadas_geograficas}
                                 onDataChange={(newData) => handleSubSectionChange('coordenadas_geograficas', newData)}
                                 errors={safeErrors.coordenadas_geograficas}
@@ -116,7 +116,7 @@ const Secao1MUI: React.FC<Secao1MUIProps> = ({ data, onSectionChange, errors }) 
                         <hr className="border-gray-200" />
 
                         <div>
-                            <AreaPropriedadeMUI
+                            <AreaPropriedade
                                 data={safeData.area_propriedade}
                                 onDataChange={(newData) => handleSubSectionChange('area_propriedade', newData)}
                                 errors={safeErrors.area_propriedade}
@@ -128,7 +128,7 @@ const Secao1MUI: React.FC<Secao1MUIProps> = ({ data, onSectionChange, errors }) 
                 {/* --- 1.4 Histórico da Propriedade --- */}
                 <AccordionPanel title="1.4 Histórico da Propriedade">
                     <div className="w-full">
-                        <HistoricoMUI
+                        <Historico
                             data={safeData.historico_propriedade_producao_organica}
                             onDataChange={(newData) => handleSubSectionChange('historico_propriedade_producao_organica', newData)}
                             errors={safeErrors.historico_propriedade_producao_organica}
@@ -139,7 +139,7 @@ const Secao1MUI: React.FC<Secao1MUIProps> = ({ data, onSectionChange, errors }) 
                 {/* --- 1.5 Situação da Propriedade --- */}
                 <AccordionPanel title="1.5 Situação da Propriedade">
                     <div className="w-full">
-                        <SituacaoMUI
+                        <Situacao
                             data={safeData.situacao_propriedade_relacao_producao_organica}
                             onDataChange={(newData) => handleSubSectionChange('situacao_propriedade_relacao_producao_organica', newData)}
                             errors={safeErrors.situacao_propriedade_producao_organica}
@@ -150,7 +150,7 @@ const Secao1MUI: React.FC<Secao1MUIProps> = ({ data, onSectionChange, errors }) 
                 {/* --- 1.6 Separação de Áreas (Produção Paralela) --- */}
                 <AccordionPanel title="1.6 Separação de Áreas (Produção Paralela)">
                     <div className="w-full">
-                        <SeparacaoAreasProducaoParalelaMUI
+                        <SeparacaoAreasProducaoParalela
                             data={safeData.separacao_areas_producao_paralela}
                             onDataChange={(newData) => handleSubSectionChange('separacao_areas_producao_paralela', newData)}
                             errors={safeErrors.separacao_areas_producao_paralela}
@@ -163,4 +163,4 @@ const Secao1MUI: React.FC<Secao1MUIProps> = ({ data, onSectionChange, errors }) 
     );
 };
 
-export default Secao1MUI;
+export default Secao1;

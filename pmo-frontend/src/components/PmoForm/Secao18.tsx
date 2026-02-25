@@ -1,4 +1,4 @@
-﻿// src/components/PmoForm/Secao18.tsx — Zero MUI
+// src/components/PmoForm/Secao18.tsx — Zero MUI
 import React, { useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import { useAuth } from '../../context/AuthContext';
@@ -7,11 +7,11 @@ import { Camera, Paperclip, FileText, CheckCircle, Link as LinkIcon, Trash2, Loa
 
 interface Anexo { nome_documento: string; descricao?: string; url_arquivo: string; path_arquivo: string; }
 interface Secao18Data { lista_anexos?: Anexo[];[key: string]: any; }
-interface Secao18MUIProps { data: Secao18Data | null | undefined; onSectionChange: (d: Secao18Data) => void; }
+interface Secao18Props { data: Secao18Data | null | undefined; onSectionChange: (d: Secao18Data) => void; }
 
 const inputCls = "w-full border border-gray-300 rounded-md p-2.5 text-sm focus:ring-1 focus:ring-green-500 focus:border-green-500";
 
-const Secao18MUI: React.FC<Secao18MUIProps> = ({ data, onSectionChange }) => {
+const Secao18: React.FC<Secao18Props> = ({ data, onSectionChange }) => {
     const safeData = data || {};
     const anexos: Anexo[] = Array.isArray(safeData.lista_anexos) ? safeData.lista_anexos : [];
     const { user } = useAuth();
@@ -101,4 +101,4 @@ const Secao18MUI: React.FC<Secao18MUIProps> = ({ data, onSectionChange }) => {
     );
 };
 
-export default Secao18MUI;
+export default Secao18;

@@ -1,11 +1,11 @@
-﻿// src/components/PmoForm/Secao15.tsx
+// src/components/PmoForm/Secao15.tsx
 // Clonado do Template Canónico — Zero MUI
 
 import React, { ChangeEvent, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 
 import SectionShell from '../Plan/SectionShell';
-import CheckboxGroupMUI from './CheckboxGroup';
+import CheckboxGroup from './CheckboxGroup';
 
 // Types
 interface Secao15Data {
@@ -15,7 +15,7 @@ interface Secao15Data {
     [key: string]: any;
 }
 
-interface Secao15MUIProps {
+interface Secao15Props {
     data: Secao15Data | null | undefined;
     onSectionChange: (data: Secao15Data) => void;
 }
@@ -45,7 +45,7 @@ const AccordionPanel: React.FC<AccordionPanelProps> = ({ title, defaultOpen = fa
     );
 };
 
-const Secao15MUI: React.FC<Secao15MUIProps> = ({ data, onSectionChange }) => {
+const Secao15: React.FC<Secao15Props> = ({ data, onSectionChange }) => {
     const safeData = data || {};
 
     const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -80,7 +80,7 @@ const Secao15MUI: React.FC<Secao15MUIProps> = ({ data, onSectionChange }) => {
             </AccordionPanel>
 
             <AccordionPanel title="15.2. Com que frequência realiza os registros/anotações?">
-                <CheckboxGroupMUI
+                <CheckboxGroup
                     title=""
                     options={['Diário', 'Semanal', 'Quinzenal', 'Mensal', 'Outro(s) - Qual(is)?']}
                     selectedString={safeData.frequencia_registros_anotacoes}
@@ -96,4 +96,4 @@ const Secao15MUI: React.FC<Secao15MUIProps> = ({ data, onSectionChange }) => {
     );
 };
 
-export default Secao15MUI;
+export default Secao15;

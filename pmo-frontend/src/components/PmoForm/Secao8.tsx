@@ -1,4 +1,4 @@
-﻿// src/components/PmoForm/Secao8.tsx
+// src/components/PmoForm/Secao8.tsx
 // Refatorado — Zero MUI. Usa Tailwind + lucide-react.
 
 import React, { ChangeEvent, useState } from 'react';
@@ -17,7 +17,7 @@ interface Secao8Data {
     [key: string]: any;
 }
 
-interface Secao8MUIProps {
+interface Secao8Props {
     data: Secao8Data | null | undefined;
     formData?: any;
     onSectionChange: (data: Secao8Data) => void;
@@ -41,7 +41,7 @@ const AccordionPanel: React.FC<{ title: string; defaultOpen?: boolean; children:
     );
 };
 
-const Secao8MUI: React.FC<Secao8MUIProps> = ({ data, formData, onSectionChange }) => {
+const Secao8: React.FC<Secao8Props> = ({ data, formData, onSectionChange }) => {
     const safeData = data || {};
     const insumosFertilidade = safeData.insumos_melhorar_fertilidade || [];
 
@@ -246,4 +246,4 @@ const Secao8MUI: React.FC<Secao8MUIProps> = ({ data, formData, onSectionChange }
     );
 };
 
-export default Secao8MUI;
+export default Secao8;

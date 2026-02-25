@@ -1,4 +1,4 @@
-﻿// src/components/PmoForm/AreaPropriedade.tsx
+// src/components/PmoForm/AreaPropriedade.tsx
 // Zero MUI — Box → Tailwind grid. DebouncedTextField is already Tailwind-native.
 
 import React from 'react';
@@ -14,7 +14,7 @@ interface AreaPropriedadeData {
     [key: string]: any;
 }
 
-interface AreaPropriedadeMUIProps {
+interface AreaPropriedadeProps {
     data: AreaPropriedadeData | null | undefined;
     onDataChange: (data: AreaPropriedadeData) => void;
     errors?: Record<string, string>;
@@ -35,7 +35,7 @@ const fields: FieldConfig[] = [
     { name: 'area_total_propriedade_hectares', label: 'Área Total (ha)', required: true },
 ];
 
-const AreaPropriedadeMUI: React.FC<AreaPropriedadeMUIProps> = ({ data, onDataChange, errors }) => {
+const AreaPropriedade: React.FC<AreaPropriedadeProps> = ({ data, onDataChange, errors }) => {
     const handleChange = (name: string, value: string) => {
         onDataChange({ ...data, [name]: value });
     };
@@ -63,4 +63,4 @@ const AreaPropriedadeMUI: React.FC<AreaPropriedadeMUIProps> = ({ data, onDataCha
     );
 };
 
-export default AreaPropriedadeMUI;
+export default AreaPropriedade;

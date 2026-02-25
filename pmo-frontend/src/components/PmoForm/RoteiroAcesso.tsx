@@ -1,4 +1,4 @@
-﻿// src/components/PmoForm/RoteiroAcesso.tsx
+// src/components/PmoForm/RoteiroAcesso.tsx
 // Zero MUI — Tailwind + HTML nativo
 
 import React, { ChangeEvent } from 'react';
@@ -13,13 +13,13 @@ interface RoteiroAcessoErrors {
     [key: string]: any;
 }
 
-interface RoteiroAcessoMUIProps {
+interface RoteiroAcessoProps {
     data: RoteiroAcessoData;
     onDataChange: (data: RoteiroAcessoData) => void;
     errors?: RoteiroAcessoErrors;
 }
 
-const RoteiroAcessoMUI: React.FC<RoteiroAcessoMUIProps> = ({ data, onDataChange, errors }) => {
+const RoteiroAcesso: React.FC<RoteiroAcessoProps> = ({ data, onDataChange, errors }) => {
     const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
         onDataChange({ ...data, [e.target.name]: e.target.value });
     };
@@ -50,4 +50,4 @@ const RoteiroAcessoMUI: React.FC<RoteiroAcessoMUIProps> = ({ data, onDataChange,
     );
 };
 
-export default RoteiroAcessoMUI;
+export default RoteiroAcesso;

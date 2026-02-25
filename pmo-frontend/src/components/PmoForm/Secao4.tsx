@@ -1,4 +1,4 @@
-﻿// src/components/PmoForm/Secao4.tsx
+// src/components/PmoForm/Secao4.tsx
 // Clonado do Template Canónico — Zero MUI
 
 import React, { ChangeEvent, useState } from 'react';
@@ -21,7 +21,7 @@ interface Secao4Data {
     [key: string]: any;
 }
 
-interface Secao4MUIProps {
+interface Secao4Props {
     data: Secao4Data | null | undefined;
     onSectionChange: (data: Secao4Data) => void;
 }
@@ -78,7 +78,7 @@ const TabelaAnimaisSubsistencia: React.FC<TabelaAnimaisSubsistenciaProps> = ({ i
     );
 };
 
-const Secao4MUI: React.FC<Secao4MUIProps> = ({ data, onSectionChange }) => {
+const Secao4: React.FC<Secao4Props> = ({ data, onSectionChange }) => {
     const safeData = data || {};
     const temAnimais = safeData.ha_animais_servico_subsistencia_companhia?.ha_animais_servico_subsistencia_companhia === true;
 
@@ -158,4 +158,4 @@ const Secao4MUI: React.FC<Secao4MUIProps> = ({ data, onSectionChange }) => {
     );
 };
 
-export default Secao4MUI;
+export default Secao4;

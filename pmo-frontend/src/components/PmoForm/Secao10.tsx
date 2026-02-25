@@ -1,4 +1,4 @@
-﻿// src/components/PmoForm/Secao10.tsx — Zero MUI
+// src/components/PmoForm/Secao10.tsx — Zero MUI
 import React, { useState } from 'react';
 import { Bug, Droplets, Pencil, Trash2, ChevronDown, ChevronUp, X, Plus } from 'lucide-react';
 import SectionContainer from '../Common/SectionContainer';
@@ -49,7 +49,7 @@ const FCard: React.FC<{ item: FitossanidadeItem; onEdit: () => void; onDelete: (
 
 interface Secao10Props { data: any; onSectionChange: (d: any) => void; }
 
-const Secao10MUI: React.FC<Secao10Props> = ({ data, onSectionChange }) => {
+const Secao10: React.FC<Secao10Props> = ({ data, onSectionChange }) => {
   const items: FitossanidadeItem[] = Array.isArray(data?.lista_fitossanidade) ? data.lista_fitossanidade : [];
   const [mOpen, setMOpen] = useState(false);
   const [ei, setEi] = useState<FitossanidadeItem | null>(null);
@@ -113,4 +113,4 @@ const Secao10MUI: React.FC<Secao10Props> = ({ data, onSectionChange }) => {
   );
 };
 
-export default Secao10MUI;
+export default Secao10;

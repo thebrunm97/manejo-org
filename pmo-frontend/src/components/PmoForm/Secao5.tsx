@@ -1,4 +1,4 @@
-﻿// src/components/PmoForm/Secao5.tsx
+// src/components/PmoForm/Secao5.tsx
 // Refatorado — Zero MUI. Usa Tailwind + lucide-react + TabelaDinamica standard.
 
 import React, { useState } from 'react';
@@ -24,7 +24,7 @@ interface Secao5Data {
     [key: string]: any;
 }
 
-interface Secao5MUIProps {
+interface Secao5Props {
     data: Secao5Data | null | undefined;
     onSectionChange: (data: Secao5Data) => void;
 }
@@ -57,7 +57,7 @@ const AccordionPanel: React.FC<{ title: string; defaultOpen?: boolean; children:
 // ||                     MAIN COMPONENT                           ||
 // ==================================================================
 
-const Secao5MUI: React.FC<Secao5MUIProps> = ({ data, onSectionChange }) => {
+const Secao5: React.FC<Secao5Props> = ({ data, onSectionChange }) => {
 
     // Configuração das colunas seguindo o novo padrão TabelaDinamica
     const columns: TableColumn[] = [
@@ -114,4 +114,4 @@ const Secao5MUI: React.FC<Secao5MUIProps> = ({ data, onSectionChange }) => {
     );
 };
 
-export default Secao5MUI;
+export default Secao5;
