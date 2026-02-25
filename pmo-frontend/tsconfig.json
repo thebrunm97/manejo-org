@@ -1,5 +1,9 @@
 {
     "compilerOptions": {
+        "types": [
+            "vitest/globals",
+            "@testing-library/jest-dom"
+        ],
         "target": "ES2020",
         "useDefineForClassFields": true,
         "lib": [
