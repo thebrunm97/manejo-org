@@ -4,12 +4,12 @@ import { useAuth } from '../context/AuthContext';
 import AdminLayout from '../components/layouts/AdminLayout';
 
 export const AdminRoute = () => {
-    const { isAdmin, isLoading } = useAuth();
+    const { isAdmin, isLoading, isLoadingRole } = useAuth();
 
-    console.log('[AdminRoute] Check:', { isLoading, isAdmin });
+    console.log('[AdminRoute] Check:', { isLoading, isLoadingRole, isAdmin });
 
     // 1. Wait for Auth Loading to finish (critical)
-    if (isLoading) {
+    if (isLoading || isLoadingRole) {
         return (
             <div className="flex items-center justify-center h-screen">
                 <div className="w-8 h-8 border-4 border-green-200 border-t-green-600 rounded-full animate-spin"></div>

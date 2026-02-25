@@ -59,6 +59,16 @@ const App: React.FC = () => {
                 {/* Redirect Logic */}
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
+                {/* PERFIL */}
+                <Route
+                    path="/perfil"
+                    element={
+                        <DebugErrorBoundary name="ProfilePage">
+                            <ProfilePage />
+                        </DebugErrorBoundary>
+                    }
+                />
+
                 {/* VISÃO GERAL (HOME - Now /dashboard) */}
                 <Route
                     path="/dashboard"

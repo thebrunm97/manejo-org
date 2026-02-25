@@ -51,15 +51,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const navigate = useNavigate();
     const DASHBOARD_PATH = '/dashboard';
 
-    // 1. Helper: Check Token Expiry
-    const isTokenExpired = useCallback((session: Session | null): boolean => {
-        if (!session?.expires_at) return false;
-        // expires_at is a Unix timestamp (seconds since epoch)
-        const expiresAt = session.expires_at * 1000; // Convert to milliseconds
-        const now = Date.now();
-        const bufferMs = 60 * 1000; // 1 minute buffer before actual expiry
-        return now >= (expiresAt - bufferMs);
-    }, []);
+
 
     // 2. Separate Profile Fetch (Display Data)
     const fetchProfile = useCallback(async (userId: string) => {
@@ -89,9 +81,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
             console.log(`[AuthContext] Checking Admin RPC (Attempt ${i + 1}/${MAX_RETRIES + 1})...`);
 
             try {
-                // 5s timeout per attempt
+                // 15s timeout per attempt to avoid kicking users out on slow connections
                 const timeoutPromise = new Promise((_, reject) => {
-                    setTimeout(() => reject(new Error('RPC Timeout')), 5000);
+                    setTimeout(() => reject(new Error('RPC Timeout')), 15000);
                 });
 
                 const { data, error } = await Promise.race([
@@ -185,20 +177,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 const { data: { session } } = await supabase.auth.getSession();
 
                 if (session) {
-                    if (isTokenExpired(session)) {
-                        console.warn('⚠️ Token expirado detectado no inicio. Forçando logout...');
-                        await supabase.auth.signOut();
-                        if (mounted) {
-                            setAuthToken(null);
-                            setUser(null);
-                            setProfile(null);
-                            setIsAdmin(false);
-                            setIsLoading(false);
-                            setIsLoadingRole(false);
-                        }
-                        return;
-                    }
-
                     if (mounted) {
                         setAuthToken(session.access_token);
                         setUser(session.user);
@@ -253,7 +231,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     return;
                 }
 
-                if (event === 'SIGNED_IN') {
+                if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
                     // Start role check loading specifically for sign-in event
                     setIsLoadingRole(true);
 
@@ -286,7 +264,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             mounted = false;
             authListener?.subscription.unsubscribe();
         };
-    }, [isTokenExpired, fetchProfile, checkAdminRPC]);
+    }, [fetchProfile, checkAdminRPC]);
 
     // Value Memo (Using direct isAdmin state)
     const value = useMemo<AuthContextType>(() => ({
