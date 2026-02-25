@@ -11,6 +11,7 @@ export const SCREENS = {
     CROPS: 'CROPS',
     ADMIN: 'ADMIN', // New protected route
     CHANGELOG: 'CHANGELOG',
+    PROFILE: 'PROFILE',
 } as const;
 
 
@@ -29,5 +30,6 @@ export type RootStackParamList = {
     [SCREENS.CROPS]: undefined;
     [SCREENS.ADMIN]: undefined;
     [SCREENS.CHANGELOG]: undefined;
+    [SCREENS.PROFILE]: undefined;
 };
 

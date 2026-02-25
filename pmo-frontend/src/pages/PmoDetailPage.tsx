@@ -68,7 +68,7 @@ const AP: React.FC<{ title: string; defaultOpen?: boolean; children: ReactNode }
     );
 };
 
-const PmoDetailPageMUI: React.FC = () => {
+const PmoDetailPage: React.FC = () => {
     const { pmoId } = useParams<{ pmoId: string }>();
     const navigate = useNavigate();
     const [pmo, setPmo] = useState<Pmo | null>(null);
@@ -158,4 +158,4 @@ const PmoDetailPageMUI: React.FC = () => {
     );
 };
 
-export default PmoDetailPageMUI;
+export default PmoDetailPage;

@@ -578,3 +578,31 @@ export async function saveRefinedSuggestion(
     }
 }
 
+
+/**
+ * Atualiza os dados do perfil do usuário.
+ * 
+ * @param userId - ID do usuário
+ * @param data - Dados para atualizar (nome, telefone)
+ * @returns SaveResult indicando sucesso ou erro
+ */
+export async function updateUserProfile(
+    userId: string,
+    data: { nome?: string; telefone?: string }
+): Promise<SaveResult> {
+    try {
+        const { error } = await supabase
+            .from('profiles')
+            .update(data)
+            .eq('id', userId);
+
+        if (error) {
+            return { success: false, error: error.message };
+        }
+
+        return { success: true };
+    } catch (err) {
+        const message = err instanceof Error ? err.message : 'Erro ao atualizar perfil';
+        return { success: false, error: message };
+    }
+}

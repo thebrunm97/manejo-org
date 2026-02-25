@@ -12,6 +12,7 @@ import DashboardLayout from './components/DashboardLayout';
 
 // Páginas
 import DashboardPage from './pages/DashboardPage';
+import ProfilePage from './pages/ProfilePage';
 import PmoFormPage from './pages/PmoFormPage';
 import PmoDetailPage from './pages/PmoDetailPage';
 import LoginPage from './pages/LoginPage';

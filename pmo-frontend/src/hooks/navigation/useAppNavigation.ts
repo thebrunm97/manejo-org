@@ -12,6 +12,7 @@ const ROUTE_PATHS: Partial<Record<keyof RootStackParamList, string>> = {
     [SCREENS.CROPS]: '/culturas',
     [SCREENS.ADMIN]: '/admin',
     [SCREENS.CHANGELOG]: '/changelog',
+    [SCREENS.PROFILE]: '/perfil',
 };
 
 
