@@ -36,3 +36,10 @@ pmo-frontend.rar
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Misc
+dev-dist
+relatorio-diferencas-pmo-frontend.patch
+release-notes-raw.txt
+test_output.txt
+git_status_out.txt
