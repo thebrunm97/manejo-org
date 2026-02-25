@@ -73,7 +73,7 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
     }
   };
 
-  const SidebarContent = () => (
+  const SidebarContent = ({ isDesktop = false }: { isDesktop?: boolean }) => (
     <div className="flex flex-col h-full bg-[#111827] text-white overflow-hidden">
       {/* 1. Logo */}
       <div className="h-16 flex items-center px-6 border-b border-gray-800 shrink-0">
@@ -107,6 +107,7 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
             return (
               <button
                 key={item.name}
+                id={(isDesktop && item.path === SCREENS.MAP) ? "tour-sidebar-map" : undefined}
                 onClick={() => handleNavigate(item.path)}
                 className={cn(
                   "w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg mx-2 mb-1 transition-all relative max-w-[calc(100%-16px)] group",
@@ -184,7 +185,7 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
 
       {/* Desktop Sidebar (Persistent) */}
       <aside className="hidden md:flex w-64 flex-col h-full bg-[#111827] border-r border-gray-800 text-white shrink-0 overflow-hidden">
-        <SidebarContent />
+        <SidebarContent isDesktop />
       </aside>
     </>
   );

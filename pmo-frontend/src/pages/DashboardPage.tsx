@@ -179,54 +179,55 @@ const DashboardPage: React.FC = () => {
                     <WeatherWidget weather={weather} loading={isLoading} />
 
                     {/* Bot Card */}
-                    <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="flex justify-between items-start mb-2">
-                            <div className={`p-2 rounded-lg ${userProfile?.telefone ? 'bg-green-100/50 text-green-600' : 'bg-slate-100 text-slate-500'}`}>
-                                <Smartphone size={20} />
-                            </div>
-                            <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase ${userProfile?.telefone ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
-                                {userProfile?.telefone ? "ATIVO" : "OFFLINE"}
-                            </span>
-                        </div>
-                        <h4 className="text-lg font-bold text-slate-900 leading-tight">Assistente Inteligente</h4>
-                        <span className="block text-xs font-medium text-slate-500 mb-4 mt-1">
-                            {formatarTelefone(userProfile?.telefone)}
-                        </span>
-
-                        {/* Connection Button or Last Activity */}
-                        {!userProfile?.telefone ? (
-                            <button
-                                id="tour-whatsapp-btn"
-                                onClick={() => setOpenWhatsappDialog(true)}
-                                className="w-full mt-2 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors"
-                            >
-                                <Link size={16} />
-                                Conectar WhatsApp
-                            </button>
-                        ) : (
-                            <div>
-                                <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 mb-3">
-                                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">Última Atividade</span>
-                                    <p className="text-sm font-semibold text-slate-900">{formatarDataRelativa(lastActivity)}</p>
+                    <div id="tour-whatsapp-card" className="h-full w-full">
+                        <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow h-full">
+                            <div className="flex justify-between items-start mb-2">
+                                <div className={`p-2 rounded-lg ${userProfile?.telefone ? 'bg-green-100/50 text-green-600' : 'bg-slate-100 text-slate-500'}`}>
+                                    <Smartphone size={20} />
                                 </div>
-                                <button
-                                    onClick={async () => {
-                                        if (window.confirm('Tem certeza que deseja desconectar o WhatsApp?')) {
-                                            try {
-                                                await unlinkWhatsapp(user?.id || '');
-                                                refreshDashboard();
-                                            } catch (err) {
-                                                alert('Erro ao desconectar. Tente novamente.');
-                                            }
-                                        }
-                                    }}
-                                    className="w-full flex items-center justify-center gap-2 text-red-500 hover:bg-red-50 py-2 rounded-lg text-xs font-semibold transition-colors"
-                                >
-                                    <Unlink size={14} />
-                                    Desconectar
-                                </button>
+                                <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase ${userProfile?.telefone ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
+                                    {userProfile?.telefone ? "ATIVO" : "OFFLINE"}
+                                </span>
                             </div>
-                        )}
+                            <h4 className="text-lg font-bold text-slate-900 leading-tight">Assistente Inteligente</h4>
+                            <span className="block text-xs font-medium text-slate-500 mb-4 mt-1">
+                                {formatarTelefone(userProfile?.telefone)}
+                            </span>
+
+                            {/* Connection Button or Last Activity */}
+                            {!userProfile?.telefone ? (
+                                <button
+                                    onClick={() => setOpenWhatsappDialog(true)}
+                                    className="w-full mt-2 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors"
+                                >
+                                    <Link size={16} />
+                                    Conectar WhatsApp
+                                </button>
+                            ) : (
+                                <div>
+                                    <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 mb-3">
+                                        <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">Última Atividade</span>
+                                        <p className="text-sm font-semibold text-slate-900">{formatarDataRelativa(lastActivity)}</p>
+                                    </div>
+                                    <button
+                                        onClick={async () => {
+                                            if (window.confirm('Tem certeza que deseja desconectar o WhatsApp?')) {
+                                                try {
+                                                    await unlinkWhatsapp(user?.id || '');
+                                                    refreshDashboard();
+                                                } catch (err) {
+                                                    alert('Erro ao desconectar. Tente novamente.');
+                                                }
+                                            }
+                                        }}
+                                        className="w-full flex items-center justify-center gap-2 text-red-500 hover:bg-red-50 py-2 rounded-lg text-xs font-semibold transition-colors"
+                                    >
+                                        <Unlink size={14} />
+                                        Desconectar
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
