@@ -1,4 +1,4 @@
-﻿// src/components/PmoForm/Secao17.tsx
+// src/components/PmoForm/Secao17.tsx
 // Clonado do Template Canónico (Secao11) — Zero MUI
 
 import React, { ChangeEvent, useState } from 'react';
@@ -14,7 +14,7 @@ interface Secao17Data {
     [key: string]: any;
 }
 
-interface Secao17MUIProps {
+interface Secao17Props {
     data: Secao17Data | null | undefined;
     onSectionChange: (data: Secao17Data) => void;
 }
@@ -54,7 +54,7 @@ const AccordionPanel: React.FC<AccordionPanelProps> = ({ title, defaultOpen = fa
     );
 };
 
-const Secao17MUI: React.FC<Secao17MUIProps> = ({ data, onSectionChange }) => {
+const Secao17: React.FC<Secao17Props> = ({ data, onSectionChange }) => {
     const safeData = data || {};
 
     const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -113,4 +113,4 @@ const Secao17MUI: React.FC<Secao17MUIProps> = ({ data, onSectionChange }) => {
     );
 };
 
-export default Secao17MUI;
+export default Secao17;

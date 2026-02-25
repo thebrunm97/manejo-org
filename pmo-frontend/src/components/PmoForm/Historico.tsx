@@ -1,4 +1,4 @@
-﻿// src/components/PmoForm/Historico.tsx
+// src/components/PmoForm/Historico.tsx
 // Zero MUI — Tailwind + HTML nativo
 
 import React, { ChangeEvent } from 'react';
@@ -13,13 +13,13 @@ interface HistoricoErrors {
     [key: string]: any;
 }
 
-interface HistoricoMUIProps {
+interface HistoricoProps {
     data: HistoricoData;
     onDataChange: (data: HistoricoData) => void;
     errors?: HistoricoErrors;
 }
 
-const HistoricoMUI: React.FC<HistoricoMUIProps> = ({ data, onDataChange, errors }) => {
+const Historico: React.FC<HistoricoProps> = ({ data, onDataChange, errors }) => {
     const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => onDataChange({ ...data, [e.target.name]: e.target.value });
     const fieldName = 'historico_propriedade_producao_organica';
     const hasError = !!errors?.[fieldName];
@@ -47,4 +47,4 @@ const HistoricoMUI: React.FC<HistoricoMUIProps> = ({ data, onDataChange, errors 
     );
 };
 
-export default HistoricoMUI;
+export default Historico;

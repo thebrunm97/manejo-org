@@ -1,10 +1,10 @@
-﻿// src/components/PmoForm/Secao7.tsx
+// src/components/PmoForm/Secao7.tsx
 // Refatorado — Zero MUI. Usa Tailwind + lucide-react + TabelaDinamica standard.
 
 import React, { useState, ChangeEvent } from 'react';
 import { ChevronDown } from 'lucide-react';
 import SectionShell from '../Plan/SectionShell';
-import CheckboxGroupMUI from './CheckboxGroup';
+import CheckboxGroup from './CheckboxGroup';
 import TabelaDinamica, { TableColumn } from './TabelaDinamica';
 
 // Types
@@ -26,7 +26,7 @@ interface Secao7Data {
     [key: string]: any;
 }
 
-interface Secao7MUIProps {
+interface Secao7Props {
     data: Secao7Data | null | undefined;
     onSectionChange: (data: Secao7Data) => void;
     errors?: Record<string, string>;
@@ -53,7 +53,7 @@ const AccordionPanel: React.FC<{ title: string; defaultOpen?: boolean; children:
 };
 
 
-const Secao7MUI: React.FC<Secao7MUIProps> = ({ data, onSectionChange, errors }) => {
+const Secao7: React.FC<Secao7Props> = ({ data, onSectionChange, errors }) => {
     const safeData = data || {};
 
     // Configuração das colunas para os membros da família
@@ -112,7 +112,7 @@ const Secao7MUI: React.FC<Secao7MUIProps> = ({ data, onSectionChange, errors }) 
                                     <label className="text-xs font-medium text-gray-600 mb-1 block">Quantas pessoas?</label>
                                     <input type="number" name="quantidade_mao_de_obra" value={safeData.quantidade_mao_de_obra || ''} onChange={handleChange} className="w-48 border border-gray-300 rounded-md p-2 text-sm focus:ring-1 focus:ring-green-500 focus:border-green-500" />
                                 </div>
-                                <CheckboxGroupMUI
+                                <CheckboxGroup
                                     title="Qual a relação trabalhista?"
                                     options={['Trabalhador temporário', 'Trabalhador permanente', 'Parceria']}
                                     selectedString={safeData.relacao_trabalhista}
@@ -124,7 +124,7 @@ const Secao7MUI: React.FC<Secao7MUIProps> = ({ data, onSectionChange, errors }) 
                 </AccordionPanel>
 
                 <AccordionPanel title="7.3. Incentiva e promove atividades educativas envolvendo família e/ou funcionário?">
-                    <CheckboxGroupMUI
+                    <CheckboxGroup
                         title="Se sim, qual(is)?"
                         options={['Incentivo à escolarização', 'Cursos', 'Outras. Quais?']}
                         selectedString={safeData.incentivo_atividades_educativas}
@@ -138,7 +138,7 @@ const Secao7MUI: React.FC<Secao7MUIProps> = ({ data, onSectionChange, errors }) 
                 </AccordionPanel>
 
                 <AccordionPanel title="7.4. Como se relaciona com outros produtores e com as atividades culturais?">
-                    <CheckboxGroupMUI
+                    <CheckboxGroup
                         title=""
                         options={['Participa de associação de produção ou associação comunitária.', 'Participa de atividades que valorizam a cultura local.', 'Promove atividades culturais que valorizam a cultura local.']}
                         selectedString={safeData.relacionamento_outros_produtores}
@@ -150,4 +150,4 @@ const Secao7MUI: React.FC<Secao7MUIProps> = ({ data, onSectionChange, errors }) 
     );
 };
 
-export default Secao7MUI;
+export default Secao7;

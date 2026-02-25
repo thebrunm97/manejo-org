@@ -1,4 +1,4 @@
-﻿// src/components/PmoForm/MapaCroqui.tsx
+// src/components/PmoForm/MapaCroqui.tsx
 // Zero MUI — Tailwind + HTML nativo
 
 import React, { ChangeEvent } from 'react';
@@ -13,13 +13,13 @@ interface MapaCroquiErrors {
     [key: string]: any;
 }
 
-interface MapaCroquiMUIProps {
+interface MapaCroquiProps {
     data: MapaCroquiData;
     onDataChange: (data: MapaCroquiData) => void;
     errors?: MapaCroquiErrors;
 }
 
-const MapaCroquiMUI: React.FC<MapaCroquiMUIProps> = ({ data, onDataChange, errors }) => {
+const MapaCroqui: React.FC<MapaCroquiProps> = ({ data, onDataChange, errors }) => {
     const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
         onDataChange({ ...data, [e.target.name]: e.target.value });
     };
@@ -50,4 +50,4 @@ const MapaCroquiMUI: React.FC<MapaCroquiMUIProps> = ({ data, onDataChange, error
     );
 };
 
-export default MapaCroquiMUI;
+export default MapaCroqui;

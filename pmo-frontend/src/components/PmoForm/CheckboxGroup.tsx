@@ -1,9 +1,9 @@
-﻿// src/components/PmoForm/CheckboxGroup.tsx
+// src/components/PmoForm/CheckboxGroup.tsx
 // MUI ERRADICADO — Tailwind + HTML nativo
 
 import React, { ChangeEvent } from 'react';
 
-interface CheckboxGroupMUIProps {
+interface CheckboxGroupProps {
     title: string;
     options: string[];
     selectedString: string | null | undefined;
@@ -15,7 +15,7 @@ interface CheckboxGroupMUIProps {
     otherPlaceholder?: string;
 }
 
-const CheckboxGroupMUI: React.FC<CheckboxGroupMUIProps> = ({
+const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
     title,
     options,
     selectedString,
@@ -93,4 +93,4 @@ const CheckboxGroupMUI: React.FC<CheckboxGroupMUIProps> = ({
     );
 };
 
-export default CheckboxGroupMUI;
+export default CheckboxGroup;

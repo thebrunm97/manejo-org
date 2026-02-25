@@ -1,11 +1,11 @@
-﻿// src/components/PmoForm/Secao12.tsx
+// src/components/PmoForm/Secao12.tsx
 // Clonado do Template Canónico — Zero MUI
 
 import React, { ChangeEvent, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 
 import SectionShell from '../Plan/SectionShell';
-import CheckboxGroupMUI from './CheckboxGroup';
+import CheckboxGroup from './CheckboxGroup';
 
 // Types
 interface AcondicionamentoData {
@@ -32,7 +32,7 @@ interface Secao12Data {
     [key: string]: any;
 }
 
-interface Secao12MUIProps {
+interface Secao12Props {
     data: Secao12Data | null | undefined;
     onSectionChange: (data: Secao12Data) => void;
 }
@@ -111,7 +111,7 @@ const AcondicionamentoProdutos: React.FC<{ data: AcondicionamentoData | undefine
     </div>
 );
 
-const Secao12MUI: React.FC<Secao12MUIProps> = ({ data, onSectionChange }) => {
+const Secao12: React.FC<Secao12Props> = ({ data, onSectionChange }) => {
     const safeData = data || {};
     const camposAninhados = ['higienizacao_produtos_organicos', 'descricao_processamento_producao_organica', 'descricao_processamento_producao_paralela', 'higienizacao_equipamentos_instalacoes', 'descricao_rotulagem', 'controle_pragas_instalacoes', 'transporte_produtos_organicos'];
 
@@ -172,7 +172,7 @@ const Secao12MUI: React.FC<Secao12MUIProps> = ({ data, onSectionChange }) => {
             </AccordionPanel>
 
             <AccordionPanel title="12.7. Procedimentos de armazenamento">
-                <CheckboxGroupMUI
+                <CheckboxGroup
                     title=""
                     options={['Identificação clara de produtos orgânicos e não orgânicos', 'Local específico para armazenamento', 'Local limpo e higienizado', 'Equipamentos/embalagens adequados', 'Outros - citar:']}
                     selectedString={safeData.procedimentos_armazenamento}
@@ -196,4 +196,4 @@ const Secao12MUI: React.FC<Secao12MUIProps> = ({ data, onSectionChange }) => {
     );
 };
 
-export default Secao12MUI;
+export default Secao12;

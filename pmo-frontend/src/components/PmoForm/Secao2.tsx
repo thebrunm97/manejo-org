@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 import TabelaDinamica, { TableColumn, TableRowBase } from './TabelaDinamica';
@@ -85,7 +85,7 @@ const AccordionPanel: React.FC<{ title: string; defaultOpen?: boolean; children:
 // ||                     COMPONENT DEFINITION                     ||
 // ==================================================================
 
-const Secao2MUI: React.FC<Secao2Props> = ({ data, onSectionChange }) => {
+const Secao2: React.FC<Secao2Props> = ({ data, onSectionChange }) => {
     const { pmoId } = useParams<{ pmoId: string }>();
     const safeData: Secao2Data = data || {};
 
@@ -290,4 +290,4 @@ const Secao2MUI: React.FC<Secao2Props> = ({ data, onSectionChange }) => {
     );
 }
 
-export default Secao2MUI;
+export default Secao2;

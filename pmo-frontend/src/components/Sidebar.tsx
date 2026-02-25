@@ -37,6 +37,7 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
     { name: 'Mapa da Propriedade', icon: <MapIcon size={22} />, path: SCREENS.MAP },
     { name: 'Minhas Culturas', icon: <Sprout size={22} />, path: SCREENS.CROPS },
     { name: 'Novidades', icon: <Sparkles size={22} />, path: SCREENS.CHANGELOG },
+    { name: 'Meu Perfil', icon: <UserIcon size={22} />, path: SCREENS.PROFILE }, // Added Meu Perfil item
   ];
 
   if (isAdmin || isLoadingRole) {
@@ -67,6 +68,7 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
       case SCREENS.CROPS: return '/culturas';
       case SCREENS.CHANGELOG: return '/changelog';
       case SCREENS.ADMIN: return '/admin';
+      case SCREENS.PROFILE: return '/perfil'; // Added path for profile
       default: return '';
     }
   };

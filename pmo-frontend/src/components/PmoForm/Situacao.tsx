@@ -1,4 +1,4 @@
-﻿// src/components/PmoForm/Situacao.tsx
+// src/components/PmoForm/Situacao.tsx
 // Zero MUI — Tailwind + HTML nativo (Select → native <select>)
 
 import React, { ChangeEvent } from 'react';
@@ -8,7 +8,7 @@ interface SituacaoData {
     [key: string]: any;
 }
 
-interface SituacaoMUIProps {
+interface SituacaoProps {
     data: SituacaoData | null | undefined;
     onDataChange: (data: SituacaoData) => void;
     errors?: Record<string, string>;
@@ -23,7 +23,7 @@ const opcoes = [
     "Há produção orgânica, não orgânica e em conversão"
 ];
 
-const SituacaoMUI: React.FC<SituacaoMUIProps> = ({ data, onDataChange, errors }) => {
+const Situacao: React.FC<SituacaoProps> = ({ data, onDataChange, errors }) => {
     const handleChange = (e: ChangeEvent<HTMLSelectElement>) => {
         onDataChange({ ...data, [e.target.name]: e.target.value });
     };
@@ -58,4 +58,4 @@ const SituacaoMUI: React.FC<SituacaoMUIProps> = ({ data, onDataChange, errors })
     );
 };
 
-export default SituacaoMUI;
+export default Situacao;

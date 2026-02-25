@@ -1,4 +1,4 @@
-﻿// src/components/PmoForm/Secao3.tsx
+// src/components/PmoForm/Secao3.tsx
 // Clonado do Template Canónico — Zero MUI
 
 import React, { ChangeEvent, useState } from 'react';
@@ -25,7 +25,7 @@ interface Secao3Data {
     [key: string]: any;
 }
 
-interface Secao3MUIProps {
+interface Secao3Props {
     data: Secao3Data | null | undefined;
     onSectionChange: (data: Secao3Data) => void;
 }
@@ -55,7 +55,7 @@ const AccordionPanel: React.FC<AccordionPanelProps> = ({ title, defaultOpen = fa
     );
 };
 
-const Secao3MUI: React.FC<Secao3MUIProps> = ({ data, onSectionChange }) => {
+const Secao3: React.FC<Secao3Props> = ({ data, onSectionChange }) => {
     const safeData = data || {};
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -172,4 +172,4 @@ const Secao3MUI: React.FC<Secao3MUIProps> = ({ data, onSectionChange }) => {
     );
 };
 
-export default Secao3MUI;
+export default Secao3;

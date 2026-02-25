@@ -1,8 +1,8 @@
-﻿// src/components/PmoForm/DesktopStepper.tsx
+// src/components/PmoForm/DesktopStepper.tsx
 // Refatorado — Zero MUI. Usa Tailwind + StepIcon nativo.
 
 import React, { useRef, useEffect, useState } from 'react';
-import StepIconMUI from './StepIcon';
+import StepIcon from './StepIcon';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Types
@@ -16,14 +16,14 @@ interface FormSection {
 
 type SectionStatus = 'completo' | 'em-progresso' | 'pendente' | undefined;
 
-interface DesktopStepperMUIProps {
+interface DesktopStepperProps {
     sections: FormSection[];
     currentStep: number;
     goToStep: (step: number) => void;
     sectionStatus: Record<string, SectionStatus>;
 }
 
-const DesktopStepperMUI: React.FC<DesktopStepperMUIProps> = ({
+const DesktopStepper: React.FC<DesktopStepperProps> = ({
     sections,
     currentStep,
     goToStep,
@@ -87,7 +87,7 @@ const DesktopStepperMUI: React.FC<DesktopStepperMUIProps> = ({
                                     : 'hover:bg-gray-50'
                                 }`}
                         >
-                            <StepIconMUI
+                            <StepIcon
                                 completed={isComplete}
                                 active={isActive}
                                 icon={section.id}
@@ -114,4 +114,4 @@ const DesktopStepperMUI: React.FC<DesktopStepperMUIProps> = ({
     );
 };
 
-export default DesktopStepperMUI;
+export default DesktopStepper;

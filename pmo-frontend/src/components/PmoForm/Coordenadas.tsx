@@ -1,4 +1,4 @@
-﻿// src/components/PmoForm/Coordenadas.tsx
+// src/components/PmoForm/Coordenadas.tsx
 // Zero MUI — Tailwind + HTML nativo + lucide-react
 
 import React, { useState, ChangeEvent } from 'react';
@@ -10,13 +10,13 @@ interface CoordenadasData {
     [key: string]: any;
 }
 
-interface CoordenadasMUIProps {
+interface CoordenadasProps {
     data: CoordenadasData | null | undefined;
     onDataChange: (data: CoordenadasData) => void;
     errors?: Record<string, string>;
 }
 
-const CoordenadasMUI: React.FC<CoordenadasMUIProps> = ({ data, onDataChange, errors }) => {
+const Coordenadas: React.FC<CoordenadasProps> = ({ data, onDataChange, errors }) => {
     const [geoError, setGeoError] = useState<string>('');
     const [isFetching, setIsFetching] = useState<boolean>(false);
 
@@ -123,4 +123,4 @@ const CoordenadasMUI: React.FC<CoordenadasMUIProps> = ({ data, onDataChange, err
     );
 };
 
-export default CoordenadasMUI;
+export default Coordenadas;

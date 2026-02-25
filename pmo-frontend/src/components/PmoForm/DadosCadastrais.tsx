@@ -1,4 +1,4 @@
-﻿// src/components/PmoForm/DadosCadastrais.tsx
+// src/components/PmoForm/DadosCadastrais.tsx
 // Zero MUI — Box → Tailwind grid. DebouncedTextField is already Tailwind-native.
 
 import React from 'react';
@@ -15,7 +15,7 @@ interface DadosCadastraisData {
     [key: string]: any;
 }
 
-interface DadosCadastraisMUIProps {
+interface DadosCadastraisProps {
     data: DadosCadastraisData | null | undefined;
     onDataChange: (data: DadosCadastraisData) => void;
     errors?: Record<string, string>;
@@ -38,7 +38,7 @@ const fields: FieldConfig[] = [
     { name: 'data_preenchimento', label: 'Data de Preenchimento', type: 'date', required: true },
 ];
 
-const DadosCadastraisMUI: React.FC<DadosCadastraisMUIProps> = ({ data, onDataChange, errors }) => {
+const DadosCadastrais: React.FC<DadosCadastraisProps> = ({ data, onDataChange, errors }) => {
     const handleChange = (name: string, value: string) => {
         onDataChange({ ...data, [name]: value });
     };
@@ -65,4 +65,4 @@ const DadosCadastraisMUI: React.FC<DadosCadastraisMUIProps> = ({ data, onDataCha
     );
 };
 
-export default DadosCadastraisMUI;
+export default DadosCadastrais;
