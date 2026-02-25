@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { changelogData } from '../data/changelog';
@@ -16,6 +16,11 @@ import {
 const ChangelogPage: React.FC = () => {
     const navigate = useNavigate();
     const { user } = useAuth();
+    const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
+
+    const toggleAccordion = (index: number) => {
+        setExpandedIndex(expandedIndex === index ? null : index);
+    };
 
     const handleBack = () => {
         navigate(user ? '/dashboard' : '/');
@@ -85,45 +90,58 @@ const ChangelogPage: React.FC = () => {
 
                             {/* Right: Content Card */}
                             <div className="flex-1 bg-white rounded-[32px] border border-slate-200 shadow-sm shadow-slate-200/50 overflow-hidden">
-                                <div className="p-8 md:p-10">
-                                    <h4 className="text-2xl font-bold text-slate-800 mb-4 tracking-tight">
-                                        {entry.title}
-                                    </h4>
-                                    <p className="text-slate-600 text-lg leading-relaxed mb-10">
-                                        {entry.description}
-                                    </p>
-
-                                    <div className="space-y-10">
-                                        {entry.sections.map((section, sIndex) => (
-                                            <div key={sIndex} className="space-y-6">
-                                                {/* Section Header */}
-                                                <div className="flex items-center gap-2.5 pb-2 border-b border-slate-100">
-                                                    <div className={`p-1.5 rounded-lg flex items-center justify-center ${getTypeColorClasses(section.type)}`}>
-                                                        {getTypeIcon(section.type)}
-                                                    </div>
-                                                    <span className="text-sm font-black text-slate-700 uppercase tracking-wider">
-                                                        {section.type === 'Improvements' ? 'Melhorias' :
-                                                            section.type === 'Fixes' ? 'Correções' :
-                                                                section.type === 'Patches' ? 'Ajustes' : 'Novidades'}
-                                                    </span>
-                                                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${getTypeColorClasses(section.type)} border`}>
-                                                        {section.items.length}
-                                                    </span>
-                                                </div>
-
-                                                {/* Items List */}
-                                                <ul className="space-y-4 ml-2">
-                                                    {section.items.map((item, iIndex) => (
-                                                        <li key={iIndex} className="flex gap-3 text-slate-600 relative">
-                                                            <div className="mt-2.5 w-1.5 h-1.5 rounded-full bg-slate-200 shrink-0" />
-                                                            <span className="text-base leading-relaxed">{item}</span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        ))}
+                                <button
+                                    className="w-full p-8 md:p-10 flex items-center justify-between transition-colors hover:bg-slate-50 focus:outline-none text-left"
+                                    onClick={() => toggleAccordion(index)}
+                                    type="button"
+                                >
+                                    <div>
+                                        <h4 className="text-2xl font-bold text-slate-800 mb-2 tracking-tight">
+                                            {entry.title}
+                                        </h4>
+                                        <p className="text-slate-600 text-lg leading-relaxed">
+                                            {entry.description}
+                                        </p>
                                     </div>
-                                </div>
+                                    <div className={`ml-4 p-2 shrink-0 rounded-full bg-slate-100 text-slate-500 transition-transform duration-300 ${expandedIndex === index ? 'rotate-180' : ''}`}>
+                                        <ChevronDown size={24} />
+                                    </div>
+                                </button>
+
+                                {expandedIndex === index && (
+                                    <div className="p-8 md:p-10 pt-0">
+                                        <div className="pt-8 border-t border-slate-100 space-y-10">
+                                            {entry.sections.map((section, sIndex) => (
+                                                <div key={sIndex} className="space-y-6">
+                                                    {/* Section Header */}
+                                                    <div className="flex items-center gap-2.5 pb-2 border-b border-slate-100">
+                                                        <div className={`p-1.5 rounded-lg flex items-center justify-center ${getTypeColorClasses(section.type)}`}>
+                                                            {getTypeIcon(section.type)}
+                                                        </div>
+                                                        <span className="text-sm font-black text-slate-700 uppercase tracking-wider">
+                                                            {section.type === 'Improvements' ? 'Melhorias' :
+                                                                section.type === 'Fixes' ? 'Correções' :
+                                                                    section.type === 'Patches' ? 'Ajustes' : 'Novidades'}
+                                                        </span>
+                                                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${getTypeColorClasses(section.type)} border`}>
+                                                            {section.items.length}
+                                                        </span>
+                                                    </div>
+
+                                                    {/* Items List */}
+                                                    <ul className="space-y-4 ml-2">
+                                                        {section.items.map((item, iIndex) => (
+                                                            <li key={iIndex} className="flex gap-3 text-slate-600 relative">
+                                                                <div className="mt-2.5 w-1.5 h-1.5 rounded-full bg-slate-200 shrink-0" />
+                                                                <span className="text-base leading-relaxed">{item}</span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}
