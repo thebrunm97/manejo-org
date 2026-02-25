@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ProductTour } from '../components/Common/ProductTour';
+import ProfileIncompleteAlert from '../components/Common/ProfileIncompleteAlert';
 import { useAuth } from '../context/AuthContext';
 
 import HarvestDashboard from '../components/Dashboard/HarvestDashboard';
@@ -93,8 +95,12 @@ const DashboardPage: React.FC = () => {
 
     const pmoIdNumber = pmoId ? Number(pmoId) : 0; // Adaptação para props legadas
 
+    const isPageReady = !isLoading;
+
     return (
         <div className="pb-8 overflow-x-hidden">
+            <ProfileIncompleteAlert show={!userProfile?.telefone} />
+            <ProductTour ready={isPageReady} />
             <ManualRecordDialog
                 open={openRecordDialog}
                 onClose={() => setOpenRecordDialog(false)}
@@ -112,7 +118,7 @@ const DashboardPage: React.FC = () => {
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-0 mb-8 w-full max-w-full overflow-hidden">
                 <div className="min-w-0 max-w-full break-words whitespace-normal flex-wrap">
-                    <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-1 break-words">
+                    <h1 id="tour-welcome" className="text-3xl font-extrabold text-slate-900 tracking-tight mb-1 break-words">
                         {saudacao}, {user?.email?.split('@')[0]}! 🚜
                     </h1>
                     <p className="text-slate-500 text-base break-words">
@@ -160,13 +166,15 @@ const DashboardPage: React.FC = () => {
             <div className="flex flex-col lg:flex-row gap-6 items-start mb-8 w-full min-w-0">
                 {/* Left Column */}
                 <div className="flex flex-col gap-6 w-full lg:w-1/3 min-w-0">
-                    <PlanoAtualCard
-                        nomePlano={pmoName}
-                        versao={pmoVersion || 1}
-                        status="Em andamento"
-                        onVer={() => navigate('/caderno')}
-                        onEditar={() => navigate('/planos')}
-                    />
+                    <div id="tour-pmo-card">
+                        <PlanoAtualCard
+                            nomePlano={pmoName}
+                            versao={pmoVersion || 1}
+                            status="Em andamento"
+                            onVer={() => navigate('/caderno')}
+                            onEditar={() => navigate('/planos')}
+                        />
+                    </div>
 
                     <WeatherWidget weather={weather} loading={isLoading} />
 
@@ -188,6 +196,7 @@ const DashboardPage: React.FC = () => {
                         {/* Connection Button or Last Activity */}
                         {!userProfile?.telefone ? (
                             <button
+                                id="tour-whatsapp-btn"
                                 onClick={() => setOpenWhatsappDialog(true)}
                                 className="w-full mt-2 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors"
                             >
