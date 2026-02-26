@@ -13,9 +13,10 @@ import re
 from datetime import datetime, date, timedelta
 import time     # For latency measurement
 import pytz
-from groq import Groq
+from langchain.chat_models import init_chat_model
+from langchain_core.messages import SystemMessage, HumanMessage
 from dotenv import load_dotenv
-from pydantic import ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
 # Centralized parsing
 import sys
@@ -100,9 +101,49 @@ def sanitizar_input(texto: str) -> str:
 # LLM RETRY LOGIC (JSON MODE)
 # ==============================================================================
 
-def call_llm_with_retries(client_groq, user_text: str, max_attempts: int = 3) -> dict:
+from typing import Optional, List, Dict, Any
+
+class AtividadeExtracao(BaseModel):
+    produto: Optional[str] = Field(None, description="Nome do produto principal (UPPERCASE)")
+    quantidade: Optional[float] = Field(None, description="Valor numérico da quantidade total")
+    unidade: Optional[str] = Field(None, description="Unidade da quantidade (kg, L, unid)")
+    dose_valor: Optional[float] = Field(None, description="Taxa de aplicação (ex: 5 em '5 L/ha')")
+    dose_unidade: Optional[str] = Field(None, description="Unidade da dose (ex: L/ha)")
+    cultura: Optional[str] = Field(None, description="Cultura alvo (ex: Tomate)")
+    fase: Optional[str] = Field(None, description="Fase fenológica ou momento (ex: Cobertura)")
+    local: Optional[Dict[str, Any]] = Field(None, description="Local com chaves 'talhao' e/ou 'canteiro'")
+
+class ExtracaoIA(BaseModel):
+    """Schema Pydantic robusto para parse nativo usando with_structured_output do Langchain v1."""
+    intencao: str = Field(..., description="'execucao', 'planejamento' ou 'duvida'")
+    secao_pmo: Optional[int] = Field(None, description="Número da seção do PMO (1-18) se planejamento")
+    alerta_conformidade: Optional[str] = Field(None, description="Mensagem de alerta educativo se necessário")
+    tipo_atividade: Optional[str] = Field(None, description="'Plantio', 'Manejo', 'Colheita', 'Insumo', 'Compra', 'Venda', 'Outro'")
+    data_registro: Optional[str] = Field(None, description="Data formato YYYY-MM-DD")
+    talhao_canteiro: Optional[str] = Field(None, description="Local mencionado")
+    origem: Optional[str] = Field(None, description="'Compra', 'Venda / Saída', 'Produção Própria', 'Doação'")
+    atividades: Optional[List[AtividadeExtracao]] = Field(None, description="Lista de atividades detalhadas")
+    produto: Optional[str] = Field(None, description="Nome do produto legado / compat")
+    quantidade_valor: Optional[float] = Field(None, description="Valor da quantidade global")
+    quantidade_unidade: Optional[str] = Field(None, description="Unidade da quantidade global")
+    valor_total: Optional[float] = Field(None, description="Valor em R$")
+    tipo_operacao: Optional[str] = Field(None, description="Detalhe da operação para Manejo")
+    responsavel: Optional[str] = Field(None, description="Nome da pessoa responsável")
+    equipamentos: Optional[List[str]] = Field(None, description="Ferramentas utilizadas")
+    lote: Optional[str] = Field(None, description="Código do Lote")
+    destino: Optional[str] = Field(None, description="Destino da produção/venda")
+    classificacao: Optional[str] = Field(None, description="Classificação de Colheita")
+    observacoes: Optional[str] = Field(None, description="Texto livre qualitativo")
+    houve_descartes: Optional[bool] = Field(None, description="Se houve descarte/perda")
+    qtd_descartes: Optional[float] = Field(None, description="Qtde perdida")
+    unidade_descartes: Optional[str] = Field(None)
+    detalhes_tecnicos: Optional[Dict[str, Any]] = Field(None, description="Dicionário aninhado opcional")
+    observacao_original: Optional[str] = Field(None, description="Contexto extra")
+    subtipo: Optional[str] = Field(None, description="Subtipo de manejo")
+
+def call_llm_with_retries(user_text: str, max_attempts: int = 3) -> dict:
     """
-    Call LLM with progressive prompts on retry using native JSON MODE.
+    Call LLM with progressive prompts on retry using modern langchain init_chat_model.
     
     Returns:
         dict with keys: success, data, attempts, tokens_used, tokens_prompt, tokens_completion, latency_ms
@@ -128,6 +169,11 @@ def call_llm_with_retries(client_groq, user_text: str, max_attempts: int = 3) ->
     )
     user_text_with_context = f"{date_context}\n\n{user_text}"
     
+    # Initialize unified model config using Groq as default 
+    llm = init_chat_model(model="llama-3.3-70b-versatile", model_provider="groq", temperature=0)
+    # Using structured output feature
+    structured_llm = llm.with_structured_output(ExtracaoIA, include_raw=True)
+    
     for attempt in range(1, max_attempts + 1):
         try:
             if attempt == 1:
@@ -137,51 +183,60 @@ def call_llm_with_retries(client_groq, user_text: str, max_attempts: int = 3) ->
             else:
                 system_prompt = get_minimal_prompt()
             
-            # GROQ JSON MODE: Force 'json_object'
-            response = client_groq.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_text_with_context}
-                ],
-                temperature=0.0,
-                max_tokens=2000,
-                response_format={"type": "json_object"}
-            )
+            messages = [
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=user_text_with_context)
+            ]
             
-            content = response.choices[0].message.content
-            last_raw_response = content
+            response_dict = structured_llm.invoke(messages)
             
-            # Capture detailed token usage from Groq response
-            if hasattr(response, 'usage') and response.usage:
-                total_tokens_used += response.usage.total_tokens
-                tokens_prompt += response.usage.prompt_tokens
-                tokens_completion += response.usage.completion_tokens
-                
-                logger.info(f"📊 Groq tokens used this call: {response.usage.total_tokens} (prompt: {response.usage.prompt_tokens}, completion: {response.usage.completion_tokens})")
+            raw_res = response_dict.get("raw")
+            parsed_result: ExtracaoIA = response_dict.get("parsed")
             
-            # Simple, standard parsing without manual string manipulation
-            try:
-                json_data = json.loads(content)
-                return {
-                    "success": True, 
-                    "data": json_data, 
-                    "attempts": attempt,
-                    "tokens_used": total_tokens_used,
-                    "tokens_prompt": tokens_prompt,
-                    "tokens_completion": tokens_completion,
-                    "latency_ms": int((time.time() - start_time) * 1000),
-                    "raw_response": content
-                }
-            except json.JSONDecodeError as e:
-                last_error = f"JSON Inválido retornado pelo LLM: {str(e)[:100]}"
-                logger.warning(f"⚠️ Attempt {attempt}: {last_error}")
-                logger.warning(f"⚠️ Raw LLM response: {content[:500]}")
-                continue
+            if not parsed_result:
+                raise ValueError("O LLM não conseguiu retornar uma saída estruturada válida para ExtracaoIA")
+            
+            last_raw_response = str(raw_res)
+            
+            # Capture detailed token usage
+            if raw_res and hasattr(raw_res, 'usage_metadata') and raw_res.usage_metadata:
+                pt = getattr(raw_res.usage_metadata, 'input_tokens', 0) or raw_res.usage_metadata.get('input_tokens', 0)
+                ct = getattr(raw_res.usage_metadata, 'output_tokens', 0) or raw_res.usage_metadata.get('output_tokens', 0)
+                total = pt + ct
+                total_tokens_used += total
+                tokens_prompt += pt
+                tokens_completion += ct
+                logger.info(f"📊 Tokens used this call: {total} (prompt: {pt}, completion: {ct})")
+            elif raw_res and hasattr(raw_res, 'response_metadata'):
+                meta = raw_res.response_metadata
+                usage = meta.get('token_usage') or meta.get('usage')
+                if usage:
+                    pt = usage.get("prompt_tokens", 0)
+                    ct = usage.get("completion_tokens", 0)
+                    total = usage.get("total_tokens", pt + ct)
+                    total_tokens_used += total
+                    tokens_prompt += pt
+                    tokens_completion += ct
+                    logger.info(f"📊 Tokens used this call: {total} (prompt: {pt}, completion: {ct})")
+            
+            # Convert pydantic object back to dict expected by validations
+            json_data = parsed_result.model_dump(exclude_none=True)
+            
+            return {
+                "success": True, 
+                "data": json_data, 
+                "attempts": attempt,
+                "tokens_used": total_tokens_used,
+                "tokens_prompt": tokens_prompt,
+                "tokens_completion": tokens_completion,
+                "latency_ms": int((time.time() - start_time) * 1000),
+                "raw_response": last_raw_response
+            }
             
         except Exception as e:
             last_error = str(e)
             logger.error(f"❌ Attempt {attempt}: Unexpected error - {last_error}")
+            continue
     
     return {
         "success": False, 
@@ -601,7 +656,7 @@ def validar_e_normalizar_json(dados: dict, user_id: str = None) -> dict:
 # MAIN PROCESSING FUNCTION
 # ==============================================================================
 
-def processar_ia(texto_usuario: str, user_id: str = None, client_groq=None) -> dict:
+def processar_ia(texto_usuario: str, user_id: str = None) -> dict:
     """
     Process user text using AI with progressive retry.
     Includes Circuit Breaker pattern.
@@ -641,13 +696,8 @@ def processar_ia(texto_usuario: str, user_id: str = None, client_groq=None) -> d
     # =========================================================================
     # Continue with LLM processing
     # =========================================================================
-    if not client_groq:
-        api_key = os.getenv("GROQ_API_KEY")
-        if not api_key:
-            return {"status": "error", "message": "GROQ_API_KEY not configured"}
-        client_groq = Groq(api_key=api_key)
     
-    result = call_llm_with_retries(client_groq, texto_usuario, max_attempts=3)
+    result = call_llm_with_retries(texto_usuario, max_attempts=3)
     
     # Prepare Usage Metrics for Audit
     usage_metrics = {

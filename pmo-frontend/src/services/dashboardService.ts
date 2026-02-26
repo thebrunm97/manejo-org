@@ -41,7 +41,7 @@ export const dashboardService = {
         try {
             const { data, error } = await supabase
                 .from('caderno_campo')
-                .select('*')
+                .select('produto, quantidade_valor, quantidade_unidade')
                 .eq('tipo_atividade', 'Colheita')
                 .eq('pmo_id', pmoId)
                 .neq('tipo_atividade', 'CANCELADO')

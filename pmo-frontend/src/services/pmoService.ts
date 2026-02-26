@@ -161,6 +161,36 @@ export async function fetchPmoById(pmoId: string): Promise<FetchResult<PmoRecord
 }
 
 /**
+ * Busca detalhes MINIMOS de um PMO para exibição no Dashboard.
+ * Ignora propositalmente a coluna `form_data` (JSONB) que pode conter megabytes de texto.
+ * 
+ * @param pmoId - ID do PMO a buscar
+ * @returns FetchResult com nome_identificador, version e id.
+ */
+export async function fetchDashboardPmoDetails(pmoId: string): Promise<FetchResult<{ id: string, nome_identificador: string, version: number }>> {
+    try {
+        const { data, error } = await supabase
+            .from('pmos')
+            .select('id, nome_identificador, version')
+            .eq('id', pmoId)
+            .single();
+
+        if (error) {
+            return { success: false, error: error.message };
+        }
+
+        if (!data) {
+            return { success: false, error: `PMO Dashboard Info com ID ${pmoId} não encontrado.` };
+        }
+
+        return { success: true, data };
+    } catch (err) {
+        const message = err instanceof Error ? err.message : 'Erro ao buscar Detalhes do PMO';
+        return { success: false, error: message };
+    }
+}
+
+/**
  * Busca detalhes simplificados de um PMO (útil para resolução de propriedade_id e nome).
  * 
  * @param pmoId - ID do PMO
