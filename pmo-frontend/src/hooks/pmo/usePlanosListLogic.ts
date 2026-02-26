@@ -129,17 +129,24 @@ export function usePlanosListLogic(
         setError(null);
 
         try {
-            // Fetch PMO list
-            // Passamos user?.id para garantir que, mesmo sendo admin, busque apenas OS SEUS planos nesta tela
-            const pmosResult = await fetchAllPmos(user?.id);
-            if (!pmosResult.success) {
-                throw new Error(pmosResult.error || 'Erro ao carregar planos');
-            }
-            setPmos(pmosResult.data || []);
+            // Fetch PMO list and User Profile concurrently
+            const pmoPromise = fetchAllPmos(user?.id);
+            const profilePromise = user?.id ? fetchUserProfile(user.id) : Promise.resolve({ success: false, data: null });
 
-            // Fetch user profile for active PMO
-            if (user?.id) {
-                const profileResult = await fetchUserProfile(user.id);
+            const [pmosResultObj, profileResultObj] = await Promise.allSettled([pmoPromise, profilePromise]);
+
+            if (pmosResultObj.status === 'fulfilled') {
+                const pmosResult = pmosResultObj.value;
+                if (!pmosResult.success) {
+                    throw new Error(pmosResult.error || 'Erro ao carregar planos');
+                }
+                setPmos(pmosResult.data || []);
+            } else {
+                throw new Error('Erro ao carregar planos');
+            }
+
+            if (profileResultObj.status === 'fulfilled') {
+                const profileResult = profileResultObj.value;
                 if (profileResult.success && profileResult.data) {
                     setUserProfile(profileResult.data);
                 }

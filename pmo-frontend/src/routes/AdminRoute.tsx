@@ -8,8 +8,7 @@ export const AdminRoute = () => {
 
     console.log('[AdminRoute] Check:', { isLoading, isLoadingRole, isAdmin });
 
-    // 1. Aguarda apenas a verificação de sessão (isLoading)
-    // isLoadingRole é exclusivo do Sidebar — não deve bloquear a rota inteira
+    // 1. Aguarda verificação de sessão
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-screen">
@@ -18,7 +17,7 @@ export const AdminRoute = () => {
         );
     }
 
-    // 2. Enquanto o RPC de admin ainda está a resolver, não redireciona ainda
+    // 2. Aguarda verificação de role (admin RPC)
     if (isLoadingRole) {
         return (
             <div className="flex items-center justify-center h-screen">

@@ -84,7 +84,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
     }, []);
 
-
     // 4. Auth Actions
     const login = useCallback(async (email: string, password: string) => {
         setIsLoadingRole(true); // Inicia verificação ao logar
@@ -146,8 +145,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     useEffect(() => {
         let mounted = true;
 
-        // Helper interno — chamado como fire-and-forget para não bloquear o callback do Supabase
-        const handleSessionLoad = async (session: ReturnType<typeof supabase.auth.getSession> extends Promise<infer T> ? NonNullable<T['data']['session']> : never) => {
+        // Helper interno — fire-and-forget para não bloquear o callback síncrono do Supabase
+        const handleSessionLoad = async (session: Session) => {
             currentUserRef.current = session.user.id;
             setAuthToken(session.access_token);
             setUser(session.user);
@@ -174,7 +173,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             }
         };
 
-        // NÃO usar callback async diretamente — Supabase V2 não aguarda a promise
+        // NÃO usar callback async — Supabase V2 não aguarda a promise
         const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
             if (!mounted) return;
             console.log(`[AuthContext] Auth Change: ${event}`);
@@ -202,7 +201,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     console.log('[AuthContext] Ignorando SIGNED_IN (foco na aba), utilizador já carregado.');
                     return;
                 }
-                // Fire-and-forget: não bloquear o callback síncrono do Supabase
+                // Fire-and-forget
                 handleSessionLoad(session);
             }
         });
