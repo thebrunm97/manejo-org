@@ -9,8 +9,8 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, BaseMessage
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_groq import ChatGroq
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain.chat_models import init_chat_model
+from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 # Persistence
@@ -43,11 +43,6 @@ class AgentState(TypedDict):
     Main state for the ManejoGraph.
     Tracks conversation history, slot filling status, and final legacy output.
     """
-    # Context
-    user_id: str
-    pmo_id: int
-    thread_id: str
-    
     # Conversation
     messages: Annotated[List[BaseMessage], add_messages]
     
@@ -64,6 +59,12 @@ class AgentState(TypedDict):
     
     # Metrics
     usage: NotRequired[Dict[str, int]]
+
+class PMOConfig(TypedDict):
+    user_id: str
+    pmo_id: int
+    thread_id: str
+
 
 # ==============================================================================
 # 2. SCHEMA EXTRACTION (PYDANTIC)
@@ -91,11 +92,8 @@ def get_llm():
     """
     Factory to get the best available LLM.
     RESTORED LEGACY PRIORITY: Google Gemini for Text/Logic.
-    Now with automatic fallback when rate limited.
+    Now with automatic fallback when rate limited, using init_chat_model v1.0.
     """
-    
-    # Circuit breaker: Track if Groq is rate limited
-    # Using module-level variable for simplicity
     global _groq_rate_limited_until
     
     current_time = time.time()
@@ -104,7 +102,7 @@ def get_llm():
     
     # 1. First priority: Groq 70b (if not rate limited)
     if groq_key and current_time > _groq_rate_limited_until:
-        return ChatGroq(model_name="llama-3.3-70b-versatile", temperature=0)
+        return init_chat_model(model="llama-3.3-70b-versatile", model_provider="groq", temperature=0)
     elif groq_key and current_time <= _groq_rate_limited_until:
         remaining = int(_groq_rate_limited_until - current_time)
         logger.info(f"⏳ Groq 70b rate limited, trying fallbacks ({remaining}s remaining)")
@@ -113,7 +111,7 @@ def get_llm():
     if groq_key:
         try:
             logger.info("🔄 Using Groq llama-3.1-8b-instant as fallback")
-            return ChatGroq(model_name="llama-3.1-8b-instant", temperature=0)
+            return init_chat_model(model="llama-3.1-8b-instant", model_provider="groq", temperature=0)
         except Exception as e:
             logger.warning(f"⚠️ Groq 8b also failed: {e}")
 
@@ -121,11 +119,7 @@ def get_llm():
     if google_key:
         try:
             logger.info("🔄 Using Google Gemini as LLM provider")
-            return ChatGoogleGenerativeAI(
-                model="models/gemini-2.0-flash", 
-                temperature=0,
-                convert_system_message_to_human=True
-            )
+            return init_chat_model(model="gemini-2.0-flash", model_provider="google_genai", temperature=0)
         except Exception as e:
             logger.warning(f"⚠️ Google GenAI fail: {e}")
     
@@ -141,7 +135,8 @@ def mark_groq_rate_limited(seconds: int = 600):
     logger.warning(f"🚫 Groq marked as rate limited for {seconds}s")
 
 
-async def interpreter_node(state: AgentState):
+
+async def interpreter_node(state: AgentState, config: RunnableConfig):
     """
     Analyzes the last message to extract intent and slots.
     Merges new slots with existing ones using 'Smart Merge'.
@@ -150,6 +145,7 @@ async def interpreter_node(state: AgentState):
     logger.info("🧠 Interpreter Node: Analyzing message...")
     
     llm = get_llm()
+    structured_llm = llm.with_structured_output(ManejoIntent, include_raw=True)
     
     # Construct context-aware prompt
     escaped_system_prompt = SYSTEM_PROMPT.replace("{", "{{").replace("}", "}}")
@@ -176,8 +172,7 @@ async def interpreter_node(state: AgentState):
     # SINGLE LLM CALL with JSON mode to ensure structured output
     # Wrapped with rate limit handling for automatic fallback
     try:
-        json_llm = llm.bind(response_format={"type": "json_object"})
-        raw_res = await json_llm.ainvoke(msgs)
+        response_dict = await structured_llm.ainvoke(msgs)
     except Exception as e:
         error_str = str(e)
         # Check if it's a rate limit error (429)
@@ -187,29 +182,34 @@ async def interpreter_node(state: AgentState):
             
             # Retry with fallback provider (should now use Gemini)
             llm = get_llm()
-            json_llm = llm.bind(response_format={"type": "json_object"})
-            raw_res = await json_llm.ainvoke(msgs)
+            structured_llm = llm.with_structured_output(ManejoIntent, include_raw=True)
+            response_dict = await structured_llm.ainvoke(msgs)
         else:
             raise  # Re-raise non-rate-limit errors
+            
+    raw_res = response_dict.get("raw")
+    result: ManejoIntent = response_dict.get("parsed")
+    
+    if not result:
+        logger.warning(f"Failed to parse JSON directly. Fallback to soft parser.")
+        result = ManejoIntent(intencao="duvida", observacao=last_msg)
     
     # === EXTRACT TOKEN USAGE ===
     token_usage = {}
     
-    # Strategy 1: usage_metadata (LangChain >= 0.1.x)
-    if hasattr(raw_res, 'usage_metadata') and raw_res.usage_metadata:
+    if raw_res and hasattr(raw_res, 'usage_metadata') and raw_res.usage_metadata:
         token_usage = {
-            "prompt_tokens": raw_res.usage_metadata.get('input_tokens', 0),
-            "completion_tokens": raw_res.usage_metadata.get('output_tokens', 0)
+            "prompt_tokens": getattr(raw_res.usage_metadata, 'input_tokens', 0) or raw_res.usage_metadata.get('input_tokens', 0),
+            "completion_tokens": getattr(raw_res.usage_metadata, 'output_tokens', 0) or raw_res.usage_metadata.get('output_tokens', 0)
         }
         logger.info(f"📊 Tokens via usage_metadata: {token_usage}")
-    # Strategy 2: response_metadata.token_usage (Groq standard)
-    elif raw_res.response_metadata.get('token_usage'):
-        token_usage = raw_res.response_metadata['token_usage']
-        logger.info(f"📊 Tokens via response_metadata.token_usage: {token_usage}")
-    # Strategy 3: response_metadata.usage (fallback)
-    elif raw_res.response_metadata.get('usage'):
-        token_usage = raw_res.response_metadata['usage']
-        logger.info(f"📊 Tokens via response_metadata.usage: {token_usage}")
+    elif raw_res and hasattr(raw_res, 'response_metadata'):
+        if raw_res.response_metadata.get('token_usage'):
+            token_usage = raw_res.response_metadata['token_usage']
+            logger.info(f"📊 Tokens via response_metadata.token_usage: {token_usage}")
+        elif raw_res.response_metadata.get('usage'):
+            token_usage = raw_res.response_metadata['usage']
+            logger.info(f"📊 Tokens via response_metadata.usage: {token_usage}")
     else:
         logger.warning("⚠️ No token usage found in response!")
     
@@ -220,29 +220,6 @@ async def interpreter_node(state: AgentState):
         "completion_tokens": prev_usage["completion_tokens"] + token_usage.get("completion_tokens", 0)
     }
     
-    # === PARSE JSON RESPONSE ===
-    import json
-    
-    content_str = raw_res.content
-    # Clean markdown if present
-    if "```json" in content_str:
-        content_str = content_str.split("```json")[1].split("```")[0].strip()
-    elif "```" in content_str:
-        content_str = content_str.split("```")[1].split("```")[0].strip()
-    
-    try:
-        data_dict = json.loads(content_str)
-        
-        # Handle case where AI returns talhao_canteiro directly instead of talhao
-        if 'talhao_canteiro' in data_dict and 'talhao' not in data_dict:
-            data_dict['talhao'] = data_dict.pop('talhao_canteiro')
-        
-        result = ManejoIntent(**data_dict)
-    except Exception as e:
-        logger.warning(f"Failed to parse JSON directly: {e}. Fallback to soft parser.")
-        # Fallback default
-        result = ManejoIntent(intencao="duvida", observacao=last_msg)
-
     # === PREPARE NEW DATA (MAPPING) ===
     new_data = result.dict()
     
@@ -280,7 +257,7 @@ async def interpreter_node(state: AgentState):
              final_intent = previous_intent
              logger.info(f"🔄 Keeping previous intent '{previous_intent}' instead of '{new_intent}'")
 
-    logger.info(f"🧠 Extracted: {result.dict()} | Final Intent: {final_intent} | Slots: {updated_slots}")
+    logger.info(f"🧠 Extracted: {new_data} | Final Intent: {final_intent} | Slots: {updated_slots}")
     
     return {
         "intent": final_intent, 
@@ -374,19 +351,22 @@ async def inquiry_node(state: AgentState):
         }
     }
 
-def specialist_node(state: AgentState):
+async def specialist_node(state: AgentState):
     """
     Handles technical doubts using the Expert Tool (RAG).
+    Runs in a dedicated thread to prevent AsyncToSync loop conflicts.
     """
+    import asyncio
     query = state['messages'][-1].content
     logger.info(f"🎓 Specialist: querying '{query}'")
     
-    # Call wrapper directly
-    response = consultar_especialista_wrapper(query)
+    # Call wrapper directly in a thread block
+    response = await asyncio.to_thread(consultar_especialista_wrapper, query)
     
     return {
         "final_response": {
             "status": "success", 
+            "message": response,
             "data": {
                 "intencao": "duvida",
                 "resposta_tecnica": response
@@ -394,13 +374,18 @@ def specialist_node(state: AgentState):
         }
     }
 
-def compliance_check_node(state: AgentState):
+def compliance_check_node(state: AgentState, config: RunnableConfig):
     """
     Validates organic compliance before execution.
     """
     slots = state['slots']
-    pmo_id = state['pmo_id']
+    pmo_context = config.get("configurable", {}).get("pmo_context", {})
+    pmo_id = pmo_context.get("pmo_id")
     
+    if not pmo_id:
+        logger.warning("No pmo_id found in config. Skipper compliance check.")
+        return {"next_step": "execute"}
+        
     # Call wrapper
     res_str = consultar_compliance_wrapper(
         pmo_id=pmo_id,
@@ -424,14 +409,15 @@ def compliance_check_node(state: AgentState):
     
     return {"next_step": "execute"}
 
-def execution_node(state: AgentState):
+def execution_node(state: AgentState, config: RunnableConfig):
     """
     Persists data to Supabase (Caderno de Campo).
     Concatenates recent conversation history into observacao_original
     for full audit trail, keeping observacao for structured AI notes/alerts.
     """
     slots = state['slots']
-    pmo_id = state['pmo_id']
+    pmo_context = config.get("configurable", {}).get("pmo_context", {})
+    pmo_id = pmo_context.get("pmo_id")
     
     # --- Build full conversation context for observacao_original ---
     messages = state.get('messages', [])
@@ -556,37 +542,41 @@ async def invoke_agent(texto_usuario: str, user_id: str, thread_id: str, pmo_id:
     Wraps graph invocation and ensures contract compatibility.
     """
     # 1. Setup Persistence (Async)
-    # Note: For production with AsyncPostgresSaver, we need to manage the connection pool lifecycle.
-    # Here we simulate with MemorySaver OR dynamic pool (less efficient but functional for prototype).
-    
     db_url = os.getenv("DATABASE_URL")
     checkpointer = MemorySaver()
     
-    if db_url and AsyncPostgresSaver:
-        # Advanced: Use the pool context manager
-        # Because we are inside a function request, we create a pool just for this run?
-        # Ideally, pool is global. But AsyncPostgresSaver needs an active connection/pool.
-        async with AsyncConnectionPool(conninfo=db_url, kwargs={"autocommit": True}) as pool:
-            checkpointer = AsyncPostgresSaver(pool)
-            app = build_graph().compile(checkpointer=checkpointer)
-            
-            return await _run_graph(app, texto_usuario, user_id, thread_id, pmo_id)
-            
-    # Fallback to Memory (In-Memory runs are ephemeral if app restarts, but work per request if global?)
-    # MemorySaver is in-memory. If we compile `app_graph` globally with MemorySaver, 
-    # it persists as long as the process lives.
-    # The default `app_graph` defined above uses `MemorySaver`.
-    return await _run_graph(app_graph, texto_usuario, user_id, thread_id, pmo_id)
+    try:
+        if db_url and AsyncPostgresSaver:
+            # Advanced: Use the pool context manager
+            async with AsyncConnectionPool(conninfo=db_url, kwargs={"autocommit": True}) as pool:
+                checkpointer = AsyncPostgresSaver(pool)
+                app = build_graph().compile(checkpointer=checkpointer)
+                
+                return await _run_graph(app, texto_usuario, user_id, thread_id, pmo_id)
+                
+        # Fallback to Memory (In-Memory runs are ephemeral if app restarts)
+        return await _run_graph(app_graph, texto_usuario, user_id, thread_id, pmo_id)
+    except Exception as e:
+        logger.error(f"❌ Erro fatal ao executar o grafo do agente: {e}", exc_info=True)
+        return {
+            "status": "error",
+            "message": "Enfrentamos um problema técnico momentâneo (comunicação ou API). Por favor, tente enviar novamente em instantes."
+        }
 
 async def _run_graph(app, texto, user_id, thread_id, pmo_id):
     inputs = {
-        "messages": [HumanMessage(content=texto)],
-        "user_id": user_id,
-        "pmo_id": pmo_id,
-        "thread_id": thread_id
+        "messages": [HumanMessage(content=texto)]
     }
     
-    config = {"configurable": {"thread_id": thread_id}}
+    config = {
+        "configurable": {
+            "thread_id": thread_id,
+            "pmo_context": {
+                "user_id": user_id,
+                "pmo_id": pmo_id
+            }
+        }
+    }
     
     # Invoke
     # Use ainvoke for async

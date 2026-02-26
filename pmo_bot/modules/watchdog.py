@@ -78,7 +78,11 @@ def watchdog_routine(orchestrator: 'BotOrchestrator'):
         logger.info(f"🆕 Watchdog: Processing {len(new_messages)} NEW messages")
         
         for msg in new_messages:
-            executor.submit(_safe_process, orchestrator, msg)
+            # Wrap in expected webhook format for Pydantic validation
+            payload = msg.copy()
+            if 'event' not in payload:
+                payload['event'] = 'onmessage'
+            executor.submit(_safe_process, orchestrator, payload)
             
     except Exception as e:
         logger.error(f"❌ Watchdog fetch error: {e}")

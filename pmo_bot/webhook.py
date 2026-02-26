@@ -9,6 +9,7 @@ import hmac
 import time
 import logging
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from typing import Any, Dict
 
 from fastapi import FastAPI, Request, Query, Header
@@ -70,14 +71,20 @@ async def lifespan(application: FastAPI):
     orchestrator = BotOrchestrator()
     application.state.orchestrator = orchestrator
 
-    # Background scheduler (watchdog + cache cleanup)
+    # Background scheduler (watchdog + cache cleanup + bot heartbeat)
     from apscheduler.schedulers.background import BackgroundScheduler
     scheduler = BackgroundScheduler()
     scheduler.add_job(
         watchdog_routine, "interval",
         args=[orchestrator], seconds=60, max_instances=1,
+        misfire_grace_time=30,
     )
     scheduler.add_job(cleanup_message_cache, "interval", seconds=3600)
+    scheduler.add_job(
+        _heartbeat_bot_status, "interval",
+        seconds=60, max_instances=1,
+        misfire_grace_time=30,
+    )
     scheduler.start()
     application.state.scheduler = scheduler
 
@@ -125,6 +132,58 @@ def _check_admin(authorization: str | None) -> bool:
         return False
     token = authorization.replace("Bearer ", "")
     return token == ADMIN_TOKEN
+
+
+# ---------------------------------------------------------------------------
+# Bot Status Helpers
+# ---------------------------------------------------------------------------
+_supabase_admin = None
+
+
+def _get_supabase_admin():
+    """Lazy-init a Supabase client using the service role key."""
+    global _supabase_admin
+    if _supabase_admin is None:
+        from supabase import create_client
+        url = os.getenv("SUPABASE_URL")
+        key = os.getenv("SUPABASE_KEY")  # Service role key
+        if not url or not key:
+            logger.warning("⚠️ SUPABASE_URL/KEY not set, bot_status disabled")
+            return None
+        _supabase_admin = create_client(url, key)
+    return _supabase_admin
+
+
+def _update_bot_status_supabase(status: str, data: dict | None):
+    """Upsert bot status to the bot_status Supabase table."""
+    sb = _get_supabase_admin()
+    if not sb:
+        return
+    try:
+        sb.table("bot_status").upsert(
+            {
+                "session_name": os.getenv("WPP_SESSION", "agro_vivo"),
+                "status": status,
+                "last_heartbeat": datetime.now(timezone.utc).isoformat(),
+                "details": data or {},
+            },
+            on_conflict="session_name",
+        ).execute()
+    except Exception as e:
+        logger.error(f"❌ Failed to update bot_status: {e}")
+
+
+def _heartbeat_bot_status():
+    """Periodic heartbeat: check WppConnect and update Supabase."""
+    from modules.whatsapp_client import check_connection
+    result = check_connection(timeout=3)
+    status = "UNKNOWN"
+    if result.success and result.data:
+        status = "CONNECTED" if result.data.get("connected") else "DISCONNECTED"
+    elif result.error_code == "NETWORK_ERROR":
+        status = "DISCONNECTED"
+    _update_bot_status_supabase(status, result.data)
+    logger.info(f"💓 Bot heartbeat: {status}")
 
 
 # ---------------------------------------------------------------------------
@@ -285,6 +344,38 @@ async def admin_del(
         {"status": "success" if success else "error"},
         status_code=200 if success else 500,
     )
+
+
+# ---------------------------------------------------------------------------
+# Bot status (admin)
+# ---------------------------------------------------------------------------
+@app.get("/admin/bot-status")
+async def admin_bot_status(
+    request: Request,
+    authorization: str | None = Header(default=None),
+):
+    """Check WppConnect session status and update Supabase."""
+    if not _check_admin(authorization):
+        return JSONResponse({"status": "unauthorized"}, status_code=401)
+
+    from modules.whatsapp_client import check_connection
+    result = check_connection(timeout=3)
+
+    status = "UNKNOWN"
+    if result.success and result.data:
+        status = "CONNECTED" if result.data.get("connected") else "DISCONNECTED"
+    elif result.error_code == "NETWORK_ERROR":
+        status = "DISCONNECTED"
+
+    _update_bot_status_supabase(status, result.data)
+
+    return {
+        "status": status,
+        "session": result.data.get("session") if result.data else None,
+        "raw": result.data,
+        "error": result.error_message,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
 
 
 # ---------------------------------------------------------------------------

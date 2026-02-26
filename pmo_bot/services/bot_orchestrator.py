@@ -455,9 +455,14 @@ class BotOrchestrator:
                         data["audio_url"] = audio_url
                     
                     agent_msg = result_ia.get("message", "✅ Ação concluída.")
-                    self.notifier.send_text(reply_to, agent_msg)
                     
-                    self._log_confirmation(data, user)
+                    # Detect if the graph swallowed an error from the specialist wrapper
+                    if isinstance(agent_msg, str) and (agent_msg.startswith("Erro assistente técnico") or agent_msg.startswith("Erro ao consultar especialista")):
+                        self.notifier.send_text(reply_to, agent_msg)
+                        logger.warning(f"⚠️ Specialist Node Error sent to user: {agent_msg}")
+                    else:
+                        self.notifier.send_text(reply_to, agent_msg)
+                        self._log_confirmation(data, user)
                     
                     billing.set_action(data.get("tipo_atividade", "ia_success"))
 

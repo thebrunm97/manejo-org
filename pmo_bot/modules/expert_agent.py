@@ -1,162 +1,157 @@
-from google import genai
-from google.genai import types
 import os
 import logging
-from pathlib import Path
+from typing import Dict, Any, List
+
+# RAG Integration
+from modules.database import get_supabase_client
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain.chat_models import init_chat_model
+from langchain_core.messages import SystemMessage, HumanMessage
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
-# Configure API Client
 # Validates API KEY presence
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 if not GOOGLE_API_KEY:
     logger.warning("⚠️ GOOGLE_API_KEY not set. Expert Agent will fail.")
 
-client = genai.Client(api_key=GOOGLE_API_KEY)
-
-# Global Cache
-KNOWLEDGE_BASE = None
-
-def get_knowledge_base():
+def get_expert_llm():
     """
-    Scans the docs/ folder and uploads PDFs to Gemini.
-    Returns a list of file objects (types.Content or similar references).
-    Uses global caching to avoid re-uploading on every request.
+    Instantiates the expert LLM. We use gemini-2.0-flash via the 
+    LangChain unified factory.
     """
-    global KNOWLEDGE_BASE
-    
-    if KNOWLEDGE_BASE is not None:
-        logger.info("♻️ Usando cache da Base de Conhecimento.")
-        return KNOWLEDGE_BASE
+    return init_chat_model(
+        model="gemini-2.0-flash",
+        model_provider="google_genai",
+        temperature=0.2
+    )
 
+def fetch_knowledge_chunks(query: str, match_count: int = 5) -> str:
+    """
+    Generates embedding for the query and searches Supabase for relevant chunks.
+    Returns concatenated text context.
+    """
+    logger.info(f"🔎 Buscando contexto RAG para a query: '{query[:50]}...'")
     try:
-        docs_path = Path("docs")
+        # 1. Gerar Embedding da Pergunta
+        from google import genai
+        import os
+        client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+        response = client.models.embed_content(
+            model="models/gemini-embedding-001",
+            contents=query,
+        )
+        query_vector = response.embeddings[0].values
         
-        # Debug 1: Check folder existence
-        if not docs_path.exists():
-            print("❌ Folder 'docs' does not exist inside container!")
-            return []
+        # 2. Buscar no Supabase pgvector usando RPC
+        with get_supabase_client() as supabase:
+            res = supabase.rpc(
+                "match_chunks",
+                {
+                    "query_embedding": query_vector,
+                    "match_count": match_count
+                }
+            ).execute()
         
-        # Debug 2: List files
-        print(f"📂 Folder 'docs' found. Listing contents...")
-        try:
-            files_in_dir = os.listdir('docs')
-            print(f"📂 Files found in docs: {files_in_dir}")
-        except Exception as e:
-            print(f"❌ Error listing docs directory: {e}")
-
-        uploaded_files = []
+        chunks = res.data or []
         
-        # List all PDF files
-        pdf_files = list(docs_path.glob("*.pdf"))
-        
-        if not pdf_files:
-            print("⚠️ Nenhum PDF encontrado na pasta docs.")
-            return []
-
-        print(f"📚 Encontrados {len(pdf_files)} PDFs para base de conhecimento.")
-
-        for pdf in pdf_files:
-            try:
-                print(f"📤 Uploading: {pdf.name}")
-                # New SDK Upload
-                # user `file` argument instead of path
-                file_obj = client.files.upload(file=str(pdf))
-                uploaded_files.append(file_obj)
-                print(f"✅ Upload success: {pdf.name}")
-            except Exception as e:
-                print(f"❌ Erro ao fazer upload de {pdf.name}: {e}")
-                logger.error(f"Upload error: {e}")
-
-        if uploaded_files:
-            KNOWLEDGE_BASE = uploaded_files
+        if not chunks:
+            logger.warning("⚠️ Nenhum contexto encontrado no Supabase.")
+            return ""
             
-        return uploaded_files
+        logger.info(f"📚 Encontrados {len(chunks)} trechos relevantes no RAG.")
         
+        # 3. Formatar o Contexto
+        context_parts = []
+        for i, chunk in enumerate(chunks, 1):
+            doc_name = chunk.get("document_name", "Desconhecido")
+            content = chunk.get("content", "")
+            score = chunk.get("similarity", 0)
+            
+            # Formatação limpa para o LLM entender a fonte
+            part = f"[Fonte: {doc_name} | Relevância: {score:.2f}]\n{content}"
+            context_parts.append(part)
+            
+        return "\n\n---\n\n".join(context_parts)
+            
     except Exception as e:
-        # Simplify error logging to ensuring we see it in docker logs
-        print(f"\n\n❌ [EXPERT AGENT ERROR] ❌\n{str(e)}\n\n")
-        logger.error(f"Critical error in get_knowledge_base: {e}", exc_info=True)
-        return []
+        logger.error(f"❌ Erro ao buscar contexto RAG: {e}", exc_info=True)
+        return ""
 
 def consultar_especialista(query: str) -> dict:
     """
-    Directly queries Gemini 1.5 Flash using the docs as context.
-    Returns: {"response": str, "model": str}
+    Queries Gemini 2.0 Flash using LangChain and strict RAG context.
+    Returns: {"response": str, "model": str, "input_tokens": int, "output_tokens": int}
     """
     try:
-        # 1. Prepare Knowledge Base
-        files = get_knowledge_base()
+        # 1. Recuperar contexto rico do RAG
+        rag_context = fetch_knowledge_chunks(query, match_count=5)
         
-        if not files:
-            logger.warning("⚠️ Base de conhecimento vazia. Usando apenas conhecimento geral do LLM.")
-            # Não retorna erro, segue para o modelo responder com conhecimento de treinamento.
-            # return {"response": "⚠️ Não consegui carregar os manuais oficiais. Por favor, tente novamente mais tarde.", "model": "error"}
-
-        # 2. Configure Model
-        # Use 1.5-flash. O 2.0-flash quebrou por cota (Resource Exhausted) nos seus logs.
-        chosen_model_name = "gemini-1.5-flash" 
+        # 2. Configurar o LLM
+        llm = get_expert_llm()
+        chosen_model_name = "gemini-2.0-flash" 
         
-        # Note: Listing models in new SDK might differ. For now, trusting defaults or basic list if needed.
-        # But 'gemini-2.0-flash' is standard in 2026.
-        print(f"🤖 Model Selected: {chosen_model_name}")
-        
-        # 3. System Prompt & Query
+        # 3. Prompt do Sistema (Blindado e Estrito)
         system_prompt = (
-            "You are a Senior Agronomist specialized in Organic Agriculture.\n\n"
-            "HIERARCHY OF KNOWLEDGE:\n"
-            "1. **Legislation & Regulations (Laws, INs, Portarias):** You must STRICTLY follow the provided PDF documents. Do not invent laws. Cite the specific Article/IN.\n"
-            "2. **Technical Agronomy (Pests, Diseases, Management):** Use the provided Manuals as your primary source. However, use your general agronomic knowledge to interpret, correct, or expand on biological concepts if the documents are unclear or incomplete. Do NOT confuse pathogens (e.g., Phytophthora vs Septoria).\n\n"
-            "Goal: Provide accurate, practical, and legally compliant advice."
+            "Você é um Agrônomo Sênior especializado em Agricultura Orgânica.\n\n"
+            "DIRETRIZ FUNDAMENTAL:\n"
+            "Responda à dúvida do usuário baseando-se ESTRITAMENTE no contexto documental fornecido abaixo. "
+            "Se a resposta não estiver clara no contexto ou se não houver contexto suficiente, diga humildemente "
+            "que não tem informações suficientes para garantir a precisão legal ou agronômica.\n\n"
+            "HIERARQUIA DE CONHECIMENTO:\n"
+            "1. **Legislação (Leis, INs, Portarias):** Siga os documentos e cite os artigos explícitos quando aplicável.\n"
+            "2. **Técnica Agronômica:** Utilize os manuais como fonte primária. Não recomende insumos proibidos em orgânicos.\n\n"
+            "--- CONTEXTO RECUPERADO DA BASE DE DADOS (RAG) ---\n"
+            f"{rag_context if rag_context else 'Nenhum contexto oficial disponível para esta consulta.'}\n"
+            "--------------------------------------------------\n\n"
+            "Meta: Fornecer resposta precisa, prática e em conformidade legal, formatada de forma clara e profissional."
         )
         
-        # Construct message content
-        # New SDK supports list of parts. 'files' are File objects which can be passed as parts.
-        # We need to construct the 'contents' argument properly.
-        # It accepts a list of Content objects or a list of parts.
-        
-        # Build parts list
-        parts = []
-        
-        # Add files as parts (referencing their URI/names implicitly handled by SDK objects? 
-        # Actually usually we pass the file object or its URI)
-        for f in files:
-            # New SDK usually handles File object directly in contents or we might need types.Part.from_uri
-            # Let's verify standard usage. 
-            # client.models.generate_content(..., contents=[file_obj, "prompt"]) works in many examples.
-            parts.append(f)
-            
-        parts.append(system_prompt)
-        parts.append(f"Pergunta: {query}")
+        messages = [
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=f"Dúvida do produtor: {query}")
+        ]
 
-        logger.info(f"🧠 Consultando Especialista: {query}")
+        logger.info(f"🧠 Consultando Especialista (LangChain LLM): {query}")
         
         # 4. Generate Response
-        response = client.models.generate_content(
-            model=chosen_model_name,
-            contents=parts
-        )
+        response = llm.invoke(messages)
         
-        # Extract Token Usage
+        # 5. Extract Token Usage
         input_tokens = 0
         output_tokens = 0
         try:
-             # Response structure usage_metadata might differ
-             if response.usage_metadata:
-                input_tokens = response.usage_metadata.prompt_token_count
-                output_tokens = response.usage_metadata.candidates_token_count
+             # Extract from LangChain standard AIMessage usage_metadata
+             if hasattr(response, 'usage_metadata') and response.usage_metadata:
+                 input_tokens = response.usage_metadata.get('input_tokens', 0)
+                 output_tokens = response.usage_metadata.get('output_tokens', 0)
         except Exception as e_tok:
-            logger.warning(f"Feature: Token extraction failed: {e_tok}")
+            logger.warning(f"⚠️ Token extraction failed: {e_tok}")
 
         return {
-            "response": response.text,
+            "response": response.content,
             "model": chosen_model_name,
             "input_tokens": input_tokens,
             "output_tokens": output_tokens
         }
 
     except Exception as e:
-        print(f"\n\n❌ [GEMINI GENERATE ERROR] ❌\n{str(e)}\n\n")
-        logger.error(f"❌ Erro no Agente Especialista: {e}", exc_info=True)
-        return {"response": "Desculpe, tive um erro ao consultar minha base de conhecimento.", "model": "error"}
+        error_msg = str(e).lower()
+        if "429" in error_msg or "quota" in error_msg or "resource_exhausted" in error_msg:
+            friendly_msg = "Desculpe, o limite gratuito da inteligência artificial foi atingido (Cota Excedida). Por favor, aguarde alguns minutos e tente novamente."
+            logger.warning(f"⚠️ [RAG Cota Excedida] {e}")
+        else:
+            friendly_msg = "Desculpe, tive um problema técnico ao consultar os manuais agronômicos. Tente novamente em instantes."
+            logger.error(f"❌ Erro no Agente Especialista: {e}", exc_info=True)
+            
+        print(f"\n\n❌ [AGENT LANGCHAIN ERRO] ❌\n{str(e)}\n\n")
+        return {
+            "response": friendly_msg, 
+            "model": "error",
+            "input_tokens": 0,
+            "output_tokens": 0
+        }
