@@ -65,26 +65,38 @@ const AdminDashboard = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const { data: rpcData, error: rpcError } = await supabase.rpc('get_dashboard_stats');
-            if (rpcError) console.error('Error fetching stats:', rpcError);
-            else setStats(rpcData);
-
-            const { data: logsData, error: logsError } = await supabase
+            const statsPromise = supabase.rpc('get_dashboard_stats');
+            const logsPromise = supabase
                 .from('logs_consumo')
                 .select('*')
                 .order('created_at', { ascending: false })
                 .limit(100);
-            if (logsError) console.error('Error logs:', logsError);
-            else setAuditLogs(logsData || []);
-
-            const { data: trainData, error: trainError } = await supabase
+            const trainingPromise = supabase
                 .from('logs_treinamento')
-                .select('*')
+                .select('id, criado_em, texto_usuario, json_corrigido, json_extraido')
                 .order('criado_em', { ascending: false })
                 .limit(50);
 
-            if (trainError) console.error('Error training:', trainError);
-            else setTrainingLogs(trainData || []);
+            const [statsRes, logsRes, trainRes] = await Promise.allSettled([
+                statsPromise,
+                logsPromise,
+                trainingPromise
+            ]);
+
+            if (statsRes.status === 'fulfilled') {
+                if (statsRes.value.error) console.error('Error fetching stats:', statsRes.value.error);
+                else setStats(statsRes.value.data as any);
+            }
+
+            if (logsRes.status === 'fulfilled') {
+                if (logsRes.value.error) console.error('Error logs:', logsRes.value.error);
+                else setAuditLogs(logsRes.value.data || []);
+            }
+
+            if (trainRes.status === 'fulfilled') {
+                if (trainRes.value.error) console.error('Error training:', trainRes.value.error);
+                else setTrainingLogs(trainRes.value.data || []);
+            }
 
         } catch (err) {
             console.error('Unexpected error:', err);
