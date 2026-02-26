@@ -11,6 +11,29 @@ export interface ChangelogEntry {
 
 export const changelogData: ChangelogEntry[] = [
     {
+        version: "0.6.1",
+        date: "26 de Fevereiro de 2026",
+        title: "O Doutor Agrônomo e o Painel Mais Rápido",
+        description: "Bem-vindo à v0.6.1! O bot ficou mais inteligente com leitura de cartilhas orgânicas, o painel voa ao trocar de abas e agora você sabe se o WhatsApp está conectado em tempo real.",
+        sections: [
+            {
+                type: "New",
+                items: [
+                    "Bot Mais Inteligente (O Doutor Agrônomo): Ensinámos o nosso assistente a ler cartilhas orgânicas e normativas do MAPA para responder melhor às suas dúvidas.",
+                    "Nova Aba \"Base de Conhecimento\": Adicionámos um painel para ver quais documentos o bot já leu e seus resumos.",
+                    "Monitor de Saúde do Bot: Novo indicador em tempo real para saber se o bot do WhatsApp está online e conectado."
+                ]
+            },
+            {
+                type: "Improvements",
+                items: [
+                    "Painel Mais Rápido: Corrigimos o recarregamento visual ao trocar de abas. Agora o painel voa!",
+                    "Carregamento do Painel de Administração corrigido — sem mais spinner infinito ao entrar na página."
+                ]
+            }
+        ]
+    },
+    {
         version: "0.6.0",
         date: "25 de Fevereiro de 2026",
         title: "Gestão Total e Rastreabilidade",

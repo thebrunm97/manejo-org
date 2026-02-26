@@ -8,8 +8,8 @@ export const AdminRoute = () => {
 
     console.log('[AdminRoute] Check:', { isLoading, isLoadingRole, isAdmin });
 
-    // 1. Wait for Auth Loading to finish (critical)
-    if (isLoading || isLoadingRole) {
+    // 1. Aguarda verificação de sessão
+    if (isLoading) {
         return (
             <div className="flex items-center justify-center h-screen">
                 <div className="w-8 h-8 border-4 border-green-200 border-t-green-600 rounded-full animate-spin"></div>
@@ -17,13 +17,22 @@ export const AdminRoute = () => {
         );
     }
 
-    // 2. Only check permissions AFTER loading is false
+    // 2. Aguarda verificação de role (admin RPC)
+    if (isLoadingRole) {
+        return (
+            <div className="flex items-center justify-center h-screen">
+                <div className="w-8 h-8 border-4 border-green-200 border-t-green-600 rounded-full animate-spin"></div>
+            </div>
+        );
+    }
+
+    // 3. Only check permissions AFTER both loadings are false
     if (!isAdmin) {
         console.warn('[AdminRoute] Access Denied. Redirecting to home.');
         return <Navigate to="/" replace />;
     }
 
-    // 3. Render Admin Layout
+    // 4. Render Admin Layout
     return (
         <AdminLayout>
             <Outlet />
