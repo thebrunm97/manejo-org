@@ -48,6 +48,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const [isAdmin, setIsAdmin] = useState(false); // Direct state, not derived
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingRole, setIsLoadingRole] = useState(true); // Inicializa como true
+    const currentUserRef = useRef<string | null>(null);
     const navigate = useNavigate();
     const DASHBOARD_PATH = '/dashboard';
 
@@ -73,6 +74,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
     }, []);
 
+    // 3. Admin RPC Check
+    const checkAdminRPC = useCallback(async (): Promise<boolean> => {
+        try {
+            const { data, error } = await supabase.rpc('is_admin');
+            return !!data && !error;
+        } catch {
+            return false;
+        }
+    }, []);
 
     // 4. Auth Actions
     const login = useCallback(async (email: string, password: string) => {
@@ -135,74 +145,80 @@ export function AuthProvider({ children }: AuthProviderProps) {
     useEffect(() => {
         let mounted = true;
 
-        // Função que verifica a sessão E a role, só libertando a UI no final
-        const loadSessionAndRole = async (session: Session | null) => {
-            if (!session) {
-                if (mounted) {
-                    setAuthToken(null);
-                    setUser(null);
-                    setProfile(null);
-                    setIsAdmin(false);
-                    setIsLoadingRole(false);
-                    setIsLoading(false);
-                }
-                return;
-            }
+        // Helper interno — fire-and-forget para não bloquear o callback síncrono do Supabase
+        const handleSessionLoad = async (session: Session) => {
+            currentUserRef.current = session.user.id;
+            setAuthToken(session.access_token);
+            setUser(session.user);
+            // Libera a UI IMEDIATAMENTE — não espera o RPC
+            if (mounted) setIsLoading(false);
 
+            setIsLoadingRole(true);
             try {
-                // Bloqueia a UI explicitamente até o DB responder
-                const { data, error } = await supabase.rpc('is_admin');
+                // Admin check e profile fetch em paralelo
+                const [adminStatus] = await Promise.all([
+                    checkAdminRPC(),
+                    fetchProfile(session.user.id).then(p => { if (mounted && p) setProfile(p); }),
+                ]);
                 if (mounted) {
-                    setIsAdmin(!!data && !error);
+                    setIsAdmin(adminStatus);
+                    console.log(`[AuthContext] Admin Status Set: ${adminStatus}`);
                 }
-
-                // Profile fetch
-                const profileData = await fetchProfile(session.user.id);
-                if (mounted && profileData) {
-                    setProfile(profileData);
-                }
-
-            } catch (error) {
-                console.error("Erro ao carregar permissões ou perfil:", error);
+            } catch (err) {
+                console.error('[AuthContext] Erro ao carregar role/perfil:', err);
                 if (mounted) setIsAdmin(false);
             } finally {
-                // SÓ LIBERTA A UI AQUI, depois de ter 100% certeza de tudo!
-                if (mounted) {
-                    setIsLoadingRole(false);
-                    setIsLoading(false);
-                }
+                // SEMPRE garante que o loading é desativado
+                if (mounted) setIsLoadingRole(false);
             }
         };
 
-        // O onAuthStateChange do Supabase V2 dispara 'INITIAL_SESSION' automaticamente no load (F5)
-        const { data: authListener } = supabase.auth.onAuthStateChange(
-            (event, session) => {
-                if (!mounted) return;
-                console.log(`[AuthContext] Auth Change: ${event}`);
+        // NÃO usar callback async — Supabase V2 não aguarda a promise
+        const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+            if (!mounted) return;
+            console.log(`[AuthContext] Auth Change: ${event}`);
 
-                setAuthToken(session?.access_token ?? null);
-                setUser(session?.user ?? null);
-
-                if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-                    setIsLoading(true);     // Previne que a UI renderize sem saber a role
-                    setIsLoadingRole(true); // Indica carregamento do painel admin
-                    loadSessionAndRole(session);
-                } else if (event === 'SIGNED_OUT') {
-                    setAuthToken(null);
-                    setUser(null);
-                    setProfile(null);
-                    setIsAdmin(false);
-                    setIsLoadingRole(false);
-                    setIsLoading(false);
-                }
+            if (event === 'SIGNED_OUT' || !session) {
+                setAuthToken(null);
+                setUser(null);
+                setProfile(null);
+                setIsAdmin(false);
+                setIsLoadingRole(false);
+                setIsLoading(false);
+                currentUserRef.current = null;
+                return;
             }
-        );
+
+            if (event === 'TOKEN_REFRESHED') {
+                console.log('[AuthContext] Token refreshed. Updating state.');
+                setAuthToken(session.access_token);
+                return;
+            }
+
+            if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
+                // Previne re-load ao voltar de outra aba (foco na aba)
+                if (event === 'SIGNED_IN' && currentUserRef.current === session.user.id) {
+                    console.log('[AuthContext] Ignorando SIGNED_IN (foco na aba), utilizador já carregado.');
+                    return;
+                }
+                // Fire-and-forget
+                handleSessionLoad(session);
+            }
+        });
+
+        // Fallback: garante que isLoading/isLoadingRole são desativados se não há sessão
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (!session && mounted) {
+                setIsLoading(false);
+                setIsLoadingRole(false);
+            }
+        });
 
         return () => {
             mounted = false;
             authListener?.subscription.unsubscribe();
         };
-    }, [fetchProfile]);
+    }, [fetchProfile, checkAdminRPC]);
 
     // Value Memo (Using direct isAdmin state)
     const value = useMemo<AuthContextType>(() => ({

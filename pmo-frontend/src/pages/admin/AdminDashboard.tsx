@@ -13,10 +13,14 @@ import {
     ChevronLeft,
     ChevronRight,
     CheckCircle2,
-    XCircle
+    XCircle,
+    BookOpen
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import LogDetailsDialog, { LogData } from '../../components/admin/LogDetailsDialog';
+import BotStatusCard from '../../components/admin/BotStatusCard';
+import KnowledgeBaseTab from '../../components/admin/KnowledgeBaseTab';
+import { BotStatus, fetchBotStatus } from '../../services/botStatusService';
 import { cn } from '../../utils/cn';
 
 // --- Types ---
@@ -57,6 +61,7 @@ const AdminDashboard = () => {
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [auditLogs, setAuditLogs] = useState<any[]>([]);
     const [trainingLogs, setTrainingLogs] = useState<any[]>([]);
+    const [botStatus, setBotStatus] = useState<BotStatus | null>(null);
 
     // Modal State
     const [selectedLog, setSelectedLog] = useState<LogData | null>(null);
@@ -76,11 +81,13 @@ const AdminDashboard = () => {
                 .select('id, criado_em, texto_usuario, json_corrigido, json_extraido')
                 .order('criado_em', { ascending: false })
                 .limit(50);
+            const botStatusPromise = fetchBotStatus();
 
-            const [statsRes, logsRes, trainRes] = await Promise.allSettled([
+            const [statsRes, logsRes, trainRes, botStatusRes] = await Promise.allSettled([
                 statsPromise,
                 logsPromise,
-                trainingPromise
+                trainingPromise,
+                botStatusPromise,
             ]);
 
             if (statsRes.status === 'fulfilled') {
@@ -96,6 +103,10 @@ const AdminDashboard = () => {
             if (trainRes.status === 'fulfilled') {
                 if (trainRes.value.error) console.error('Error training:', trainRes.value.error);
                 else setTrainingLogs(trainRes.value.data || []);
+            }
+
+            if (botStatusRes.status === 'fulfilled') {
+                setBotStatus(botStatusRes.value);
             }
 
         } catch (err) {
@@ -117,7 +128,8 @@ const AdminDashboard = () => {
     const tabs = [
         { label: 'Visão Geral', icon: <Database size={18} /> },
         { label: 'Auditoria Financeira', icon: <DollarSign size={18} /> },
-        { label: 'Treinamento da LLM', icon: <Users size={18} /> }
+        { label: 'Treinamento da LLM', icon: <Users size={18} /> },
+        { label: 'Base de Conhecimento', icon: <BookOpen size={18} /> }
     ];
 
     return (
@@ -161,35 +173,44 @@ const AdminDashboard = () => {
 
             {/* TAB 1: OVERVIEW (KPIs) */}
             {tabValue === 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <KpiCard
-                        title="Usuários Ativos"
-                        value={stats?.active_users_24h ?? '-'}
-                        icon={<Users />}
-                        colorClass="bg-blue-50 text-blue-600"
-                        subvalue="Últimas 24 horas"
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    {/* Bot Status Card */}
+                    <BotStatusCard
+                        botStatus={botStatus}
+                        onStatusUpdate={setBotStatus}
                     />
-                    <KpiCard
-                        title="Custo Mês"
-                        value={`$${Number(stats?.total_cost_current_month || 0).toFixed(2)}`}
-                        icon={<DollarSign />}
-                        colorClass="bg-rose-50 text-rose-600"
-                        subvalue="Mês vigente"
-                    />
-                    <KpiCard
-                        title="Tokens Mês"
-                        value={stats?.total_tokens_current_month?.toLocaleString() ?? '-'}
-                        icon={<Database />}
-                        colorClass="bg-indigo-50 text-indigo-600"
-                        subvalue="Processamento total"
-                    />
-                    <KpiCard
-                        title="Erros Hoje"
-                        value={stats?.errors_today ?? '-'}
-                        icon={<AlertCircle />}
-                        colorClass="bg-amber-50 text-amber-600"
-                        subvalue="Falhas críticas"
-                    />
+
+                    {/* KPI Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <KpiCard
+                            title="Usuários Ativos"
+                            value={stats?.active_users_24h ?? '-'}
+                            icon={<Users />}
+                            colorClass="bg-blue-50 text-blue-600"
+                            subvalue="Últimas 24 horas"
+                        />
+                        <KpiCard
+                            title="Custo Mês"
+                            value={`$${Number(stats?.total_cost_current_month || 0).toFixed(2)}`}
+                            icon={<DollarSign />}
+                            colorClass="bg-rose-50 text-rose-600"
+                            subvalue="Mês vigente"
+                        />
+                        <KpiCard
+                            title="Tokens Mês"
+                            value={stats?.total_tokens_current_month?.toLocaleString() ?? '-'}
+                            icon={<Database />}
+                            colorClass="bg-indigo-50 text-indigo-600"
+                            subvalue="Processamento total"
+                        />
+                        <KpiCard
+                            title="Erros Hoje"
+                            value={stats?.errors_today ?? '-'}
+                            icon={<AlertCircle />}
+                            colorClass="bg-amber-50 text-amber-600"
+                            subvalue="Falhas críticas"
+                        />
+                    </div>
                 </div>
             )}
 
@@ -325,6 +346,11 @@ const AdminDashboard = () => {
                         </table>
                     </div>
                 </div>
+            )}
+
+            {/* TAB 4: KNOWLEDGE BASE */}
+            {tabValue === 3 && (
+                <KnowledgeBaseTab />
             )}
 
             {/* Modal */}
