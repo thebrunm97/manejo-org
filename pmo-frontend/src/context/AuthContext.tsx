@@ -1,6 +1,6 @@
 // src/context/AuthContext.tsx
 
-import React, { createContext, useState, useContext, useEffect, useCallback, useMemo, ReactNode } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback, useMemo, ReactNode, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Session, Provider } from '@supabase/supabase-js';
 import { supabase } from '../supabaseClient';
@@ -48,6 +48,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const [isAdmin, setIsAdmin] = useState(false); // Direct state, not derived
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingRole, setIsLoadingRole] = useState(true); // Inicializa como true
+    const currentUserRef = useRef<string | null>(null);
     const navigate = useNavigate();
     const DASHBOARD_PATH = '/dashboard';
 
@@ -73,39 +74,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
     }, []);
 
-    // 3. Separate Admin Check (Critical Security) - SECURITY DEFINER RPC
-    const checkAdminRPC = useCallback(async () => {
-        const MAX_RETRIES = 2;
-
-        for (let i = 0; i <= MAX_RETRIES; i++) {
-            console.log(`[AuthContext] Checking Admin RPC (Attempt ${i + 1}/${MAX_RETRIES + 1})...`);
-
-            try {
-                // 15s timeout per attempt to avoid kicking users out on slow connections
-                const timeoutPromise = new Promise((_, reject) => {
-                    setTimeout(() => reject(new Error('RPC Timeout')), 15000);
-                });
-
-                const { data, error } = await Promise.race([
-                    supabase.rpc('is_admin'),
-                    timeoutPromise
-                ]) as any;
-
-                if (error) throw error;
-
-                console.log('[AuthContext] RPC Success:', data);
-                return !!data; // Success
-            } catch (err) {
-                console.warn(`[AuthContext] Attempt ${i + 1} failed:`, err);
-                if (i < MAX_RETRIES) {
-                    await new Promise(r => setTimeout(r, 1000)); // Wait 1s before retry
-                }
-            }
+    // 3. Admin RPC Check
+    const checkAdminRPC = useCallback(async (): Promise<boolean> => {
+        try {
+            const { data, error } = await supabase.rpc('is_admin');
+            return !!data && !error;
+        } catch {
+            return false;
         }
-
-        console.error('[AuthContext] All RPC attempts failed. Defaulting to FALSE.');
-        return false;
     }, []);
+
 
     // 4. Auth Actions
     const login = useCallback(async (email: string, password: string) => {
@@ -168,95 +146,72 @@ export function AuthProvider({ children }: AuthProviderProps) {
     useEffect(() => {
         let mounted = true;
 
-        const initAuth = async () => {
-            console.log('[AuthContext] Initializing Auth...');
-            setIsLoadingRole(true); // Garante que começa true
+        // Helper interno — chamado como fire-and-forget para não bloquear o callback do Supabase
+        const handleSessionLoad = async (session: ReturnType<typeof supabase.auth.getSession> extends Promise<infer T> ? NonNullable<T['data']['session']> : never) => {
+            currentUserRef.current = session.user.id;
+            setAuthToken(session.access_token);
+            setUser(session.user);
+            // Libera a UI IMEDIATAMENTE — não espera o RPC
+            if (mounted) setIsLoading(false);
 
+            setIsLoadingRole(true);
             try {
-                // Check active session
-                const { data: { session } } = await supabase.auth.getSession();
-
-                if (session) {
-                    if (mounted) {
-                        setAuthToken(session.access_token);
-                        setUser(session.user);
-
-                        // CRITICAL: Wait for Admin Check
-                        console.log('[AuthContext] Session found. Checking Admin...');
-                        try {
-                            const adminStatus = await checkAdminRPC(); // This waits!
-                            if (mounted) {
-                                setIsAdmin(adminStatus);
-                                console.log(`[AuthContext] Admin Status Set: ${adminStatus}`);
-                            }
-                        } finally {
-                            if (mounted) setIsLoadingRole(false); // Finaliza loadingRole
-                        }
-
-                        if (mounted) {
-                            // Fetch Profile in Background (Doesn't block UI)
-                            fetchProfile(session.user.id).then(p => {
-                                if (mounted && p) setProfile(p);
-                            });
-                        }
-                    }
-                } else {
-                    console.log('[AuthContext] No active session found.');
-                    if (mounted) setIsLoadingRole(false); // Sem sessão, não está carregando role
-                }
-            } catch (error) {
-                console.error("Auth check failed", error);
-                if (mounted) setIsLoadingRole(false); // Erro, para loading
-            } finally {
+                // Admin check e profile fetch em paralelo
+                const [adminStatus] = await Promise.all([
+                    checkAdminRPC(),
+                    fetchProfile(session.user.id).then(p => { if (mounted && p) setProfile(p); }),
+                ]);
                 if (mounted) {
-                    console.log('[AuthContext] Loading finished.');
-                    setIsLoading(false);
+                    setIsAdmin(adminStatus);
+                    console.log(`[AuthContext] Admin Status Set: ${adminStatus}`);
                 }
+            } catch (err) {
+                console.error('[AuthContext] Erro ao carregar role/perfil:', err);
+                if (mounted) setIsAdmin(false);
+            } finally {
+                // SEMPRE garante que o loading é desativado
+                if (mounted) setIsLoadingRole(false);
             }
         };
 
-        // Run check
-        initAuth();
-
-        const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+        // NÃO usar callback async diretamente — Supabase V2 não aguarda a promise
+        const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
             if (!mounted) return;
             console.log(`[AuthContext] Auth Change: ${event}`);
 
-            if (session) {
-                // If we are already loaded and just refreshing token, don't full reset
-                if (event === 'TOKEN_REFRESHED') {
-                    console.log('[AuthContext] Token refreshed. Updating state.');
-                    setAuthToken(session.access_token);
-                    // We don't strictly need to re-check admin on every refresh unless we suspect revocation
-                    return;
-                }
-
-                if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
-                    // Start role check loading specifically for sign-in event
-                    setIsLoadingRole(true);
-
-                    setAuthToken(session.access_token);
-                    setUser(session.user);
-
-                    // If we just signed in, check admin again to be safe
-                    try {
-                        const adminStatus = await checkAdminRPC();
-                        if (mounted) setIsAdmin(adminStatus);
-                    } finally {
-                        if (mounted) setIsLoadingRole(false); // Terminou check
-                    }
-
-                    fetchProfile(session.user.id).then(p => {
-                        if (mounted && p) setProfile(p);
-                    });
-                }
-            } else if (event === 'SIGNED_OUT') {
+            if (event === 'SIGNED_OUT' || !session) {
                 setAuthToken(null);
                 setUser(null);
                 setProfile(null);
                 setIsAdmin(false);
                 setIsLoadingRole(false);
-                setIsLoading(false); // Ensure we aren't stuck loading
+                setIsLoading(false);
+                currentUserRef.current = null;
+                return;
+            }
+
+            if (event === 'TOKEN_REFRESHED') {
+                console.log('[AuthContext] Token refreshed. Updating state.');
+                setAuthToken(session.access_token);
+                return;
+            }
+
+            if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
+                // Previne re-load ao voltar de outra aba (foco na aba)
+                if (event === 'SIGNED_IN' && currentUserRef.current === session.user.id) {
+                    console.log('[AuthContext] Ignorando SIGNED_IN (foco na aba), utilizador já carregado.');
+                    return;
+                }
+                // Fire-and-forget: não bloquear o callback síncrono do Supabase
+                handleSessionLoad(session);
+            }
+        });
+
+        // Fallback: garante que isLoading/isLoadingRole são desativados se não há sessão
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (!session && mounted) {
+                setIsLoading(false);
+                setIsLoadingRole(false);
             }
         });
 
@@ -275,9 +230,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     if (isLoading) {
         return (
-            <div style={{ padding: 20, textAlign: 'center', backgroundColor: '#f0f0f0', height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <h2>Carregando Autenticação...</h2>
-                <p>Verifique o console se isso demorar.</p>
+            <div className="flex flex-col items-center justify-center h-screen bg-slate-50">
+                <div className="w-10 h-10 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mb-4"></div>
+                <p className="text-sm font-medium text-slate-500 animate-pulse">Carregando...</p>
             </div>
         );
     }
