@@ -13,24 +13,35 @@ export async function uploadFileToBucket(asset: MediaAsset, userId: string): Pro
         const fileNameOnStorage = `${userId}-${Date.now()}.${fileExt}`;
         const filePath = `${userId}/${fileNameOnStorage}`;
 
-        // Lógica Híbrida
+        // Lógica Híbrida: Web envia `File`, Mobile envia `uri`
+        let fileBody: File | Blob;
+
         if (asset.file) {
             // WEB: Upload direto usando o objeto File
-            const { error: uploadError } = await supabase.storage
-                .from('anexos-pmos')
-                .upload(filePath, asset.file, {
-                    cacheControl: '3600',
-                    upsert: false,
-                    contentType: asset.mimeType,
-                });
-
-            if (uploadError) throw uploadError;
+            fileBody = asset.file;
+        } else if (asset.uri) {
+            // MOBILE / NATIVE
+            // A URI pode ser um caminho local ou base64. O fetch resolve ambas para um Blob na maioria dos ambientes.
+            try {
+                const response = await fetch(asset.uri);
+                fileBody = await response.blob();
+            } catch (err) {
+                console.error('Falha ao converter URI para Blob nativamente:', err);
+                throw new Error('Falha ao processar o arquivo para upload nativo.');
+            }
         } else {
-            // MOBILE / NATIVE (Futuro)
-            // TODO: Handle ArrayBuffer/FormData for native platform
-            console.warn('Upload nativo ainda não implementado. Asset sem objeto File.');
-            throw new Error('Upload nativo não suportado nesta versão Web.');
+            throw new Error('Asset não possui file ou uri válido para upload.');
         }
+
+        const { error: uploadError } = await supabase.storage
+            .from('anexos-pmos')
+            .upload(filePath, fileBody, {
+                cacheControl: '3600',
+                upsert: false,
+                contentType: asset.mimeType,
+            });
+
+        if (uploadError) throw uploadError;
 
         // Obter URL Pública
         const { data } = supabase.storage
