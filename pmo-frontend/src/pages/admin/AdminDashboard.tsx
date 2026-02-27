@@ -216,9 +216,9 @@ const AdminDashboard = () => {
 
             {/* TAB 2: AUDIT LOGS */}
             {tabValue === 1 && (
-                <div className="bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm animate-in fade-in duration-300">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm animate-in fade-in duration-300 w-full overflow-hidden">
+                    <div className="w-full overflow-x-auto">
+                        <table className="w-full min-w-[800px] text-left border-collapse">
                             <thead>
                                 <tr className="bg-slate-50/50 border-b border-slate-100">
                                     <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Detalhes</th>
@@ -290,9 +290,9 @@ const AdminDashboard = () => {
 
             {/* TAB 3: TRAINING LOGS */}
             {tabValue === 2 && (
-                <div className="bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm animate-in fade-in duration-300">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm animate-in fade-in duration-300 w-full overflow-hidden">
+                    <div className="w-full overflow-x-auto">
+                        <table className="w-full min-w-[600px] text-left border-collapse">
                             <thead>
                                 <tr className="bg-slate-50/50 border-b border-slate-100">
                                     <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Detalhes</th>

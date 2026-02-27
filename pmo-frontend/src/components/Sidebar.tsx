@@ -162,8 +162,8 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
       {/* Mobile Sidebar - Offcanvas Pattern */}
       <div
         className={cn(
-          "fixed inset-0 z-[100] md:hidden transition-opacity duration-300 ease-in-out",
-          mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          "fixed inset-0 z-40 md:hidden transition-all duration-300 ease-in-out",
+          mobileOpen ? "opacity-100 pointer-events-auto visible" : "opacity-0 pointer-events-none invisible"
         )}
       >
         {/* Backdrop overlay */}
