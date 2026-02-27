@@ -7,6 +7,7 @@ import { supabase } from '../../supabaseClient';
 interface KnowledgeDocument {
     id: string;
     filename: string;
+    title?: string;
     total_chunks: number;
     summary: string | null;
     created_at: string;
@@ -22,7 +23,7 @@ const KnowledgeBaseTab: React.FC = () => {
             try {
                 const { data, error } = await supabase
                     .from('knowledge_documents')
-                    .select('*')
+                    .select('id, filename, title, summary, total_chunks, created_at')
                     .order('created_at', { ascending: false });
 
                 if (error) {
@@ -93,9 +94,12 @@ const KnowledgeBaseTab: React.FC = () => {
                                 <FileText size={22} />
                             </div>
                             <div className="min-w-0 flex-1">
-                                <h4 className="text-sm font-black text-slate-800 truncate" title={doc.filename}>
-                                    {doc.filename}
+                                <h4 className="text-sm font-black text-slate-800 truncate" title={doc.title ? doc.title : doc.filename}>
+                                    {doc.title ? doc.title : doc.filename}
                                 </h4>
+                                <p className="text-xs text-gray-500 truncate mt-0.5" title={doc.filename}>
+                                    {doc.filename}
+                                </p>
                                 <div className="flex items-center gap-3 mt-1.5">
                                     <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-md uppercase tracking-wider">
                                         <Hash size={10} />
