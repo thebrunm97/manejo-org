@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+@layer base {
+
+  input,
+  textarea,
+  select {
+    @apply text-gray-900 bg-white placeholder-gray-400;
+  }
+}
+
 /* ==========================================================================
    PMO FORM STYLES - src/index.css (VERSÃO COMPLETA E CORRIGIDA)
    ========================================================================== */
