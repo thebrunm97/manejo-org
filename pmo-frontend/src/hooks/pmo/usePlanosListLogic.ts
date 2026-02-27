@@ -19,10 +19,10 @@ import type { PmoListItem, UserProfile } from '../../domain/pmo/pmoTypes';
 // Service Functions
 import {
     fetchAllPmos,
+    createPmo,
     deletePmo,
-    fetchUserProfile,
-    setActivePmo
-} from '../../services/pmoService';
+} from "../../services/pmoService";
+import { fetchUserProfile, setActivePmo } from "../../services/profileService";
 
 // ==================================================================
 // ||                         TYPES                                ||

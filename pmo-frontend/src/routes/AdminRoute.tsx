@@ -2,37 +2,33 @@ import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import AdminLayout from '../components/layouts/AdminLayout';
+import { Loader2 } from 'lucide-react';
 
 export const AdminRoute = () => {
-    const { isAdmin, isLoading, isLoadingRole } = useAuth();
+    const { user, isAdmin, isLoading, isLoadingRole } = useAuth();
 
-    console.log('[AdminRoute] Check:', { isLoading, isLoadingRole, isAdmin });
-
-    // 1. Aguarda verificação de sessão
-    if (isLoading) {
+    // 1. Aguarda verificação de sessão E perfil de administrador
+    if (isLoading || isLoadingRole) {
         return (
-            <div className="flex items-center justify-center h-screen">
-                <div className="w-8 h-8 border-4 border-green-200 border-t-green-600 rounded-full animate-spin"></div>
+            <div className="flex flex-col items-center justify-center h-screen w-full bg-slate-50">
+                <Loader2 className="w-10 h-10 text-green-600 animate-spin mb-4" />
+                <p className="text-sm font-medium text-slate-500 animate-pulse">Verificando permissões...</p>
             </div>
         );
     }
 
-    // 2. Aguarda verificação de role (admin RPC)
-    if (isLoadingRole) {
-        return (
-            <div className="flex items-center justify-center h-screen">
-                <div className="w-8 h-8 border-4 border-green-200 border-t-green-600 rounded-full animate-spin"></div>
-            </div>
-        );
+    // 2. Se não estiver logado
+    if (!user) {
+        return <Navigate to="/login" replace />;
     }
 
-    // 3. Only check permissions AFTER both loadings are false
+    // 3. Verifica se é admin (após os loadings concluírem)
     if (!isAdmin) {
         console.warn('[AdminRoute] Access Denied. Redirecting to home.');
-        return <Navigate to="/" replace />;
+        return <Navigate to="/dashboard" replace />;
     }
 
-    // 4. Render Admin Layout
+    // 4. Render Admin Layout (RouteGuard handled by DashboardLayout already in AdminLayout, but we just Outlet here)
     return (
         <AdminLayout>
             <Outlet />

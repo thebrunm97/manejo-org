@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { Tractor, AlertTriangle, Loader2 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
-import { getPmoDetails, fetchUserProperties } from '../services/pmoService';
+import { getPmoDetails } from '../services/pmoService';
+import { fetchUserProperties } from '../services/profileService';
 import PropertyMap from '../components/PropertyMap/PropertyMap';
 
 const MapaPropriedade: React.FC = () => {
