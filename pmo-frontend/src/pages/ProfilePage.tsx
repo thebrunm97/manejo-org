@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Mail, Phone, Shield, Save, Camera, Lock, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { fetchUserProfile, updateUserProfile } from '../services/pmoService';
+import { fetchUserProfile, updateUserProfile } from '../services/profileService';
 import { formatPhoneBR } from '../utils/masks';
 import DashboardLayout from '../components/DashboardLayout';
 import { useAppNavigation } from '../hooks/navigation/useAppNavigation';
