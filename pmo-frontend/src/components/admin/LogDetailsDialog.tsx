@@ -105,7 +105,7 @@ const LogDetailsDialog: React.FC<LogDetailsDialogProps> = ({ open, onClose, log 
 
     return (
         <div className={cn(
-            "fixed inset-0 z-[110] flex items-center justify-center p-4 transition-all duration-300",
+            "fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-300",
             open ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
         )}>
             {/* Backdrop */}
