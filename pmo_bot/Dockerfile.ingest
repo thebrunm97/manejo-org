@@ -1,0 +1,30 @@
+# Usa uma imagem Python oficial mais leve
+FROM python:3.10-slim
+
+# Evita que o Python grave arquivos .pyc no disco
+ENV PYTHONDONTWRITEBYTECODE=1
+# Garante que a saída do Python seja enviada diretamente para o terminal (sem buffer)
+ENV PYTHONUNBUFFERED=1
+
+# Instala as dependências do sistema operacional necessárias para o docling (poppler, tesseract, etc.)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 \
+    libglib2.0-0 \
+    tesseract-ocr \
+    poppler-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+# Configura o diretório de trabalho dentro do container
+WORKDIR /app
+
+# Copia apenas o requirements original primeiro (opcional, dependendo de como preferir)
+# Como o plano instrui a instalar diretamente, faremos via pip install
+# Instala primeiro o PyTorch em versão CPU (reduz drasticamente o tamanho e evita o travamento na exportação de camadas)
+RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu
+
+# Instala o docling e demais bibliotecas
+RUN pip install --no-cache-dir docling langchain-google-genai langchain-community supabase python-dotenv pydantic pydantic-settings
+
+# O código fonte e o arquivo .env serão montados via volume (-v) durante o docker run.
+# Portanto, não precisamos usar COPY aqui. O comando padrão será o script de ingestão.
+CMD ["python", "scripts/ingest_docling.py"]

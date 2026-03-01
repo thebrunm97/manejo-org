@@ -16,26 +16,42 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# Cache for deduplication
-processed_messages_cache = {} 
-processed_messages_lock = threading.Lock()
+import os
+import redis
+
+# Redis config
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379")
+
+def _get_redis():
+    """Returns a sync Redis client."""
+    return redis.from_url(REDIS_URL, decode_responses=True)
+
+# Shared ID extraction (Matches webhook.py)
+def _extract_message_id(data: dict) -> str | None:
+    # 1. Main ID
+    msg_id = data.get("id") or (data.get("message") or {}).get("id")
+    if isinstance(msg_id, dict):
+        msg_id = msg_id.get("_serialized") or msg_id.get("id")
+        
+    if not msg_id and "key" in data:
+        msg_id = data.get("key", {}).get("id")
+    
+    # 2. Chat ID
+    chat_id = data.get("from") or (data.get("message") or {}).get("from")
+    if not chat_id and "key" in data:
+        chat_id = data.get("key", {}).get("remoteJid")
+
+    if not msg_id or not chat_id:
+        return None
+        
+    return f"dup:{chat_id}:{msg_id}"
+
 executor = ThreadPoolExecutor(max_workers=5, thread_name_prefix='watchdog_worker')
 
+# LEGACY: cleanup_message_cache is now handled by Redis TTL (ex=600)
 def cleanup_message_cache():
-    """Remove old messages from cache (>1 hour)."""
-    try:
-        now = datetime.now()
-        with processed_messages_lock:
-            expired = [
-                msg_id for msg_id, ts in processed_messages_cache.items()
-                if isinstance(ts, datetime) and now - ts > timedelta(hours=1)
-            ]
-            for msg_id in expired:
-                del processed_messages_cache[msg_id]
-            if expired:
-                logger.debug(f"🧹 Cache cleaned: {len(expired)} items removed")
-    except Exception as e:
-        logger.error(f"❌ Cache cleanup error: {e}")
+    """No-op: handled by Redis TTL."""
+    pass
 
 def watchdog_routine(orchestrator: 'BotOrchestrator'):
     """
@@ -61,16 +77,18 @@ def watchdog_routine(orchestrator: 'BotOrchestrator'):
         logger.info(f"📬 Watchdog: {len(messages)} unread messages found")
         
         new_messages = []
-        with processed_messages_lock:
-            for msg in messages:
-                # Robust ID extraction
-                msg_id = msg.get('id')
-                if isinstance(msg_id, dict):
-                    msg_id = msg_id.get('_serialized')
-                
-                if msg_id and msg_id not in processed_messages_cache:
-                    new_messages.append(msg)
-                    processed_messages_cache[msg_id] = datetime.now()
+        r = _get_redis()
+        
+        for msg in messages:
+            redis_key = _extract_message_id(msg)
+            if not redis_key:
+                continue
+            
+            # Atomic SET NX EX 600
+            if r.set(redis_key, "1", nx=True, ex=600):
+                new_messages.append(msg)
+            else:
+                logger.info(f"♻️ Watchdog: Duplicada ignorada (Redis): {redis_key}")
         
         if not new_messages:
             return

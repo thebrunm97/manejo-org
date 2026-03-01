@@ -7,6 +7,7 @@ from modules.database import get_supabase_client
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain.chat_models import init_chat_model
 from langchain_core.messages import SystemMessage, HumanMessage
+from langchain_groq import ChatGroq
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -21,14 +22,27 @@ if not GOOGLE_API_KEY:
 
 def get_expert_llm():
     """
-    Instantiates the expert LLM. We use gemini-2.0-flash via the 
-    LangChain unified factory.
+    Instantiates the expert LLM. We use gemini-2.5-flash via the 
+    LangChain unified factory, with a fallback to Groq's LLaMA 3
+    in case of quota limits or unavailability.
     """
-    return init_chat_model(
-        model="gemini-2.0-flash",
+    primary_llm = init_chat_model(
+        model="gemini-2.5-flash",
         model_provider="google_genai",
         temperature=0.2
     )
+    
+    groq_api_key = os.getenv("GROQ_API_KEY")
+    if groq_api_key:
+        fallback_llm = ChatGroq(
+            model_name="llama-3.3-70b-versatile",
+            temperature=0.2,
+            groq_api_key=groq_api_key
+        )
+        return primary_llm.with_fallbacks([fallback_llm])
+    else:
+        logger.warning("⚠️ GROQ_API_KEY não configurada. Fallback desativado.")
+        return primary_llm
 
 def fetch_knowledge_chunks(query: str, match_count: int = 5) -> str:
     """
@@ -72,14 +86,19 @@ def fetch_knowledge_chunks(query: str, match_count: int = 5) -> str:
             content = chunk.get("content", "")
             score = chunk.get("similarity", 0)
             
+            metadata = chunk.get("metadata", {})
+            author = metadata.get("author", "Autor Desconhecido")
+            year = metadata.get("year", "Ano Desconhecido")
+            title = metadata.get("title", doc_name)
+            
             # Formatação limpa para o LLM entender a fonte
-            part = f"[Fonte: {doc_name} | Relevância: {score:.2f}]\n{content}"
+            part = f"[Fonte: {title} | Autor: {author} | Ano: {year} | Arquivo: {doc_name} | Relevância: {score:.2f}]\n{content}"
             context_parts.append(part)
             
         return "\n\n---\n\n".join(context_parts)
             
     except Exception as e:
-        logger.error(f"❌ Erro ao buscar contexto RAG: {e}", exc_info=True)
+        logger.error(f"❌ Erro ao buscar contexto RAG (Embedding/DB): {e}", exc_info=True)
         return ""
 
 def consultar_especialista(query: str) -> dict:
@@ -89,11 +108,12 @@ def consultar_especialista(query: str) -> dict:
     """
     try:
         # 1. Recuperar contexto rico do RAG
+        # Usando 5 chunks para garantir que tabelas de calendário agrícola sejam incluídas no contexto
         rag_context = fetch_knowledge_chunks(query, match_count=5)
         
         # 2. Configurar o LLM
         llm = get_expert_llm()
-        chosen_model_name = "gemini-2.0-flash" 
+        chosen_model_name = "gemini-2.5-flash" 
         
         # 3. Prompt do Sistema (Blindado e Estrito)
         system_prompt = (
@@ -102,9 +122,16 @@ def consultar_especialista(query: str) -> dict:
             "Responda à dúvida do usuário baseando-se ESTRITAMENTE no contexto documental fornecido abaixo. "
             "Se a resposta não estiver clara no contexto ou se não houver contexto suficiente, diga humildemente "
             "que não tem informações suficientes para garantir a precisão legal ou agronômica.\n\n"
-            "HIERARQUIA DE CONHECIMENTO:\n"
+            "REGRAS DE OCR E CALENDÁRIOS AGRÍCOLAS:\n"
+            "1. **Interpretador de Marcadores:** 'X', 'x', '×' e '*' significam OBRIGATORIAMENTE que o mês é RECOMENDADO. Se houver um desses símbolos na coluna de um mês, aquele mês deve ser listado na resposta.\n"
+            "2. **Não seja literal com meses em branco;** se houver marcadores em outros meses, extraia-os. Se não houver marcadores em nenhum mês, aí sim relate a ausência.\n"
+            "3. **Sazonalidade:** Alerte sobre a cultivar (verão vs inverno) se aplicável (ex: cenoura).\n"
+            "4. **Foco no Dado Bruto (Anti-Pedantismo Crítico):** Se a cultura (ex: cenoura) aparece em uma linha de tabela/calendário, extraia os meses marcados (X ou ×) IMEDIATAMENTE. Ignore se a tabela está sob um título contraditório (ex: 'transplantio' para uma cultura de semeadura direta). O conteúdo da linha é a VERDADE ABSOLUTA e sobrepõe qualquer hierarquia de títulos ou conhecimento prévio externo.\n\n"
+            "HIERARQUIA DE CONHECIMENTO E CITAÇÕES:\n"
             "1. **Legislação (Leis, INs, Portarias):** Siga os documentos e cite os artigos explícitos quando aplicável.\n"
-            "2. **Técnica Agronômica:** Utilize os manuais como fonte primária. Não recomende insumos proibidos em orgânicos.\n\n"
+            "2. **Técnica Agronômica:** Utilize os manuais como fonte primária. Não recomende insumos proibidos em orgânicos.\n"
+            "3. **Citações ABNT:** Você DEVE usar os campos 'Autor' e 'Ano' presentes nos metadados de cada Fonte do contexto para fazer citações ao longo do texto no formato ABNT (Autor, Ano).\n"
+            "4. **Referências:** OBRIGATORIAMENTE crie uma seção '## Referências' ao final da sua resposta, listando as fontes usadas (Autor. Título. Ano. Arquivo).\n\n"
             "--- CONTEXTO RECUPERADO DA BASE DE DADOS (RAG) ---\n"
             f"{rag_context if rag_context else 'Nenhum contexto oficial disponível para esta consulta.'}\n"
             "--------------------------------------------------\n\n"
@@ -118,9 +145,18 @@ def consultar_especialista(query: str) -> dict:
 
         logger.info(f"🧠 Consultando Especialista (LangChain LLM): {query}")
         
-        # 4. Generate Response
-        response = llm.invoke(messages)
-        
+        # 4. Generate Response with fallback handling
+        try:
+            response = llm.invoke(messages)
+            chosen_model_name = "gemini-2.5-flash" if "gemini" in str(getattr(response, "response_metadata", {})).lower() else "llama-3.3-70b"
+        except Exception as invoke_err:
+            logger.error(f"⚠️ Primary and Fallback invoke failed. Attempting strict raw groq: {invoke_err}")
+            raw_groq = ChatGroq(model_name="llama-3.3-70b-versatile", temperature=0.2, groq_api_key=os.getenv("GROQ_API_KEY"))
+            # Converte objetos LangChain Message para dicionários primitivos para evitar 400 Bad Request
+            primitive_msgs = [{"role": "system" if isinstance(m, SystemMessage) else "user", "content": m.content} for m in messages]
+            response = raw_groq.invoke(primitive_msgs)
+            chosen_model_name = "llama-3.3-70b (forced)"
+            
         # 5. Extract Token Usage
         input_tokens = 0
         output_tokens = 0
@@ -140,13 +176,8 @@ def consultar_especialista(query: str) -> dict:
         }
 
     except Exception as e:
-        error_msg = str(e).lower()
-        if "429" in error_msg or "quota" in error_msg or "resource_exhausted" in error_msg:
-            friendly_msg = "Desculpe, o limite gratuito da inteligência artificial foi atingido (Cota Excedida). Por favor, aguarde alguns minutos e tente novamente."
-            logger.warning(f"⚠️ [RAG Cota Excedida] {e}")
-        else:
-            friendly_msg = "Desculpe, tive um problema técnico ao consultar os manuais agronômicos. Tente novamente em instantes."
-            logger.error(f"❌ Erro no Agente Especialista: {e}", exc_info=True)
+        friendly_msg = "Desculpe, tive um problema técnico ao consultar os manuais agronômicos. Tente novamente em instantes."
+        logger.error(f"❌ Erro no Agente Especialista: {e}", exc_info=True)
             
         print(f"\n\n❌ [AGENT LANGCHAIN ERRO] ❌\n{str(e)}\n\n")
         return {

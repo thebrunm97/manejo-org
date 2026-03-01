@@ -127,11 +127,30 @@ def _check_ttl(data: Dict[str, Any]) -> float | None:
     return time.time() - ts
 
 
-def _check_admin(authorization: str | None) -> bool:
-    if not authorization:
-        return False
-    token = authorization.replace("Bearer ", "")
-    return token == ADMIN_TOKEN
+def _extract_message_id(data: dict) -> str | None:
+    """
+    Robustly extract a composite key for deduplication: dup:{sender}:{msg_id}.
+    Handled dict type IDs from WPPConnect.
+    """
+    # 1. Main ID extraction
+    msg_id = data.get("id") or (data.get("message") or {}).get("id")
+    
+    # Handle dict-type IDs (common in WPPConnect)
+    if isinstance(msg_id, dict):
+        msg_id = msg_id.get("_serialized") or msg_id.get("id")
+        
+    if not msg_id and "key" in data:
+        msg_id = data.get("key", {}).get("id")
+    
+    # 2. Sender/Chat ID extraction
+    chat_id = data.get("from") or (data.get("message") or {}).get("from")
+    if not chat_id and "key" in data:
+        chat_id = data.get("key", {}).get("remoteJid")
+
+    if not msg_id or not chat_id:
+        return None
+        
+    return f"dup:{chat_id}:{msg_id}"
 
 
 # ---------------------------------------------------------------------------
@@ -232,8 +251,20 @@ async def webhook(
     ):
         return {"status": "ignored_broadcast"}
 
-    # 5. Enqueue to worker
+    # 5. Deduplication (Critical to avoid double-replies)
     redis: ArqRedis = request.app.state.redis
+    redis_key = _extract_message_id(data)
+    
+    if redis_key:
+        # Atomic SET with NX (Set if Not eXists) and EX (Expire in 600s)
+        is_new = await redis.set(redis_key, "1", nx=True, ex=600)
+        if not is_new:
+            logger.info(f"♻️ DUPLICATE IGNORED: {redis_key}")
+            return {"status": "duplicate", "key": redis_key}
+    else:
+        logger.warning(f"⚠️ Could not extract message ID for deduplication from {sender}")
+
+    # 6. Enqueue to worker
     job = await redis.enqueue_job(
         "process_message_task",
         data,

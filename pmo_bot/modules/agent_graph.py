@@ -91,8 +91,8 @@ class ManejoIntent(BaseModel):
 def get_llm():
     """
     Factory to get the best available LLM.
-    RESTORED LEGACY PRIORITY: Google Gemini for Text/Logic.
-    Now with automatic fallback when rate limited, using init_chat_model v1.0.
+    RESTORED LEGACY PRIORITY: Google Gemini for Text/Logic as primary.
+    Groq as fallback.
     """
     global _groq_rate_limited_until
     
@@ -100,28 +100,27 @@ def get_llm():
     groq_key = os.getenv("GROQ_API_KEY")
     google_key = os.getenv("GOOGLE_API_KEY")
     
-    # 1. First priority: Groq 70b (if not rate limited)
+    # 1. First priority: Google Gemini
+    if google_key:
+        try:
+            return init_chat_model(model="gemini-2.5-flash", model_provider="google_genai", temperature=0)
+        except Exception as e:
+            logger.warning(f"⚠️ Google GenAI fail: {e}")
+
+    # 2. Second priority: Groq 70b (if not rate limited)
     if groq_key and current_time > _groq_rate_limited_until:
         return init_chat_model(model="llama-3.3-70b-versatile", model_provider="groq", temperature=0)
     elif groq_key and current_time <= _groq_rate_limited_until:
         remaining = int(_groq_rate_limited_until - current_time)
         logger.info(f"⏳ Groq 70b rate limited, trying fallbacks ({remaining}s remaining)")
 
-    # 2. Second priority: Groq 8b (separate rate limit!)
+    # 3. Third priority: Groq 8b (separate rate limit!)
     if groq_key:
         try:
             logger.info("🔄 Using Groq llama-3.1-8b-instant as fallback")
             return init_chat_model(model="llama-3.1-8b-instant", model_provider="groq", temperature=0)
         except Exception as e:
             logger.warning(f"⚠️ Groq 8b also failed: {e}")
-
-    # 3. Third priority: Google Gemini
-    if google_key:
-        try:
-            logger.info("🔄 Using Google Gemini as LLM provider")
-            return init_chat_model(model="gemini-2.0-flash", model_provider="google_genai", temperature=0)
-        except Exception as e:
-            logger.warning(f"⚠️ Google GenAI fail: {e}")
     
     raise ValueError("❌ No LLM Provider available (Google or Groq needed)")
 
@@ -132,7 +131,7 @@ def mark_groq_rate_limited(seconds: int = 600):
     """Mark Groq as rate limited for X seconds (default 10 min)"""
     global _groq_rate_limited_until
     _groq_rate_limited_until = time.time() + seconds
-    logger.warning(f"🚫 Groq marked as rate limited for {seconds}s")
+    logger.warning(f"🚫 Groq marked as rate limited/unavailable for {seconds}s")
 
 
 
@@ -175,17 +174,17 @@ async def interpreter_node(state: AgentState, config: RunnableConfig):
         response_dict = await structured_llm.ainvoke(msgs)
     except Exception as e:
         error_str = str(e)
-        # Check if it's a rate limit error (429)
-        if "429" in error_str or "rate_limit" in error_str.lower():
-            logger.warning(f"🚫 Rate limit detected, marking Groq as limited and retrying with fallback...")
-            mark_groq_rate_limited(600)  # 10 minutes cooldown
+        # Check if it's a rate limit error (429) or Authentication (401)
+        if "429" in error_str or "rate_limit" in error_str.lower() or "401" in error_str or "unauthorized" in error_str.lower():
+            logger.warning(f"🚫 API Error (429 or 401) detected: {error_str}. Marking as limited and retrying with fallback...")
+            mark_groq_rate_limited(999999)  # Long cooldown for 401/429
             
-            # Retry with fallback provider (should now use Gemini)
+            # Retry with fallback provider
             llm = get_llm()
             structured_llm = llm.with_structured_output(ManejoIntent, include_raw=True)
             response_dict = await structured_llm.ainvoke(msgs)
         else:
-            raise  # Re-raise non-rate-limit errors
+            raise  # Re-raise non-rate-limit/auth errors
             
     raw_res = response_dict.get("raw")
     result: ManejoIntent = response_dict.get("parsed")
