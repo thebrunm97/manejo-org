@@ -15,6 +15,8 @@ Extraia dados estruturados da mensagem do agricultor e retorne APENAS um JSON pu
 5. "unidade": normalizar (quilos→kg, litros→L, pés→muda, unidades→unid)
 6. "localizacao.talhao": Se não mencionado, use "NÃO INFORMADO". "canteiros": array JSON de strings com cada canteiro mencionado. Ex: ["1","2","3"]. Se nenhum canteiro for mencionado, use array vazio [].
 7. "data_relativa": expressão temporal (hoje, ontem, etc.). Se não mencionado, use "hoje".
+8. "houve_descartes": true se o agricultor mencionar que perdeu, descartou, ou que houve morte de mudas/plantas. Caso contrário, false.
+9. "qtd_descartes": valor numérico das perdas mencionadas. Se não mencionado, use 0.
 
 ## REGRAS DE CONFORMIDADE ORGÂNICA (Lei 10.831/2003 + IN 46/2011)
 Marque "alerta_organico": true se a mensagem mencionar QUALQUER um destes:

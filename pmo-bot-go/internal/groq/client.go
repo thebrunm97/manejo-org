@@ -47,6 +47,8 @@ type ExtractionResult struct {
 	AlertaOrganico   bool        `json:"alerta_organico"`
 	TokensPrompt     int         `json:"tokens_prompt"`
 	TokensCompletion int         `json:"tokens_completion"`
+	HouveDescartes   bool        `json:"houve_descartes"`
+	QtdDescartes     float64     `json:"qtd_descartes"`
 }
 
 // ---------------------------------------------------------------------------
