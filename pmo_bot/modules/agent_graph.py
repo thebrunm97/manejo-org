@@ -22,6 +22,8 @@ except ImportError:
 
 from langgraph.checkpoint.memory import MemorySaver
 
+from modules.ner_service import ner_service
+
 # Tools and Modules
 from modules.db_tools import (
     MANEJO_TOOLS,
@@ -146,11 +148,28 @@ async def interpreter_node(state: AgentState, config: RunnableConfig):
     llm = get_llm()
     structured_llm = llm.with_structured_output(ManejoIntent, include_raw=True)
     
+    # Get last user message content
+    last_msg = state['messages'][-1].content
+    current_slots = state.get('slots') or {}
+    previous_intent = state.get('intent')
+    
     # Construct context-aware prompt
     escaped_system_prompt = SYSTEM_PROMPT.replace("{", "{{").replace("}", "}}")
     
+    # === NEW: GLiNER NER Enhancement ===
+    ner_hints = ""
+    try:
+        entities = ner_service.extract_entities(last_msg)
+        if entities:
+            hints = [f"- {e['text']} ({e['label']})" for e in entities]
+            ner_hints = "\nEntidades detectadas pelo sensor NER:\n" + "\n".join(hints)
+            logger.info(f"🧠 NER Hints injected: {len(entities)} entities")
+    except Exception as e_ner:
+        logger.warning(f"⚠️ NER hint extraction failed: {e_ner}")
+
     system_msg = escaped_system_prompt + "\n\n" + (
         "Contexto atual de Slots já preenchidos: {slots}\n"
+        f"{ner_hints}\n"
         "Se o usuário estiver apenas complementando uma informação (ex: 'foi 10kg'), "
         "mescle com o contexto anterior."
     )
@@ -159,11 +178,6 @@ async def interpreter_node(state: AgentState, config: RunnableConfig):
         ("system", system_msg),
         ("human", "{input}")
     ])
-    
-    # Get last user message content
-    last_msg = state['messages'][-1].content
-    current_slots = state.get('slots') or {}
-    previous_intent = state.get('intent')
     
     # Format messages for LLM
     msgs = prompt.format_messages(input=last_msg, slots=str(current_slots))

@@ -1,6 +1,6 @@
-# PMO Bot - Python Dependencies
+﻿# PMO Bot - Python Dependencies
 # Security: Versions are pinned to prevent supply chain attacks
-# Updated: 2026-02-12
+# Updated: 2026-03-01
 
 # Web Framework (FastAPI)
 fastapi>=0.100.0,<1.0.0
@@ -45,3 +45,7 @@ psycopg[binary]
 psycopg-pool
 asgiref>=3.7.0
 APScheduler>=3.10.0
+
+# Zero-shot NER (GLiNER v2.5)
+gliner>=0.1.12
+torch --index-url https://download.pytorch.org/whl/cpu

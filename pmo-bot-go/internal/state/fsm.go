@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
@@ -23,6 +24,7 @@ func ProcessMessage(from string, body string, sbClient *supabase.Client, groqCli
 	log.Printf("🧵 [FSM] Iniciando fluxo para mensagem de: %s", from)
 
 	// Variables for tracking the process outcome and logging
+	startTime := time.Now()
 	var botResponse string
 	var finalIntent string
 	var aiModel = "llama-3.3-70b-versatile" // Default Groq model
@@ -71,7 +73,7 @@ func ProcessMessage(from string, body string, sbClient *supabase.Client, groqCli
 			}
 		}
 
-		recordLog(sbClient, profile, body, botResponse, aiModel, promptTokens, completionTokens, finalIntent, nil)
+		recordLog(sbClient, profile, body, botResponse, aiModel, promptTokens, completionTokens, finalIntent, nil, startTime, true)
 		return ProcessResult{Success: true, Reason: "ignored_intent"}
 	}
 
@@ -86,7 +88,7 @@ func ProcessMessage(from string, body string, sbClient *supabase.Client, groqCli
 			if err := wpClient.SendMessage(from, botResponse); err != nil {
 				log.Printf("❌ [FSM] Falha ao enviar mensagem de erro do especialista via WPP: %v", err)
 			}
-			recordLog(sbClient, profile, body, botResponse, aiModel, promptTokens, completionTokens, finalIntent, nil)
+			recordLog(sbClient, profile, body, botResponse, aiModel, promptTokens, completionTokens, finalIntent, nil, startTime, false)
 			return ProcessResult{Success: false, Reason: "expert_error"}
 		}
 
@@ -96,7 +98,7 @@ func ProcessMessage(from string, body string, sbClient *supabase.Client, groqCli
 			log.Printf("❌ [FSM] Falha ao enviar resposta especialista via WPP: %v", err)
 		}
 
-		recordLog(sbClient, profile, body, botResponse, aiModel, promptTokens, completionTokens, finalIntent, nil)
+		recordLog(sbClient, profile, body, botResponse, aiModel, promptTokens, completionTokens, finalIntent, nil, startTime, true)
 		return ProcessResult{Success: true, Reason: "expert_answered"}
 	}
 
@@ -110,7 +112,7 @@ func ProcessMessage(from string, body string, sbClient *supabase.Client, groqCli
 			log.Printf("❌ [FSM] Falha ao enviar alerta via WPP: %v", err)
 		}
 
-		recordLog(sbClient, profile, body, botResponse, aiModel, promptTokens, completionTokens, finalIntent, nil)
+		recordLog(sbClient, profile, body, botResponse, aiModel, promptTokens, completionTokens, finalIntent, nil, startTime, false)
 		return ProcessResult{Success: false, Reason: "organic_compliance_failure"}
 	}
 
@@ -146,7 +148,7 @@ func ProcessMessage(from string, body string, sbClient *supabase.Client, groqCli
 				"qtd_descartes":      extracted.QtdDescartes,
 				"talhao_canteiro":    fmtLocalizacao(extracted.Localizacao),
 			}
-			recordLog(sbClient, profile, body, botResponse, aiModel, promptTokens, completionTokens, finalIntent, extraidoMap)
+			recordLog(sbClient, profile, body, botResponse, aiModel, promptTokens, completionTokens, finalIntent, extraidoMap, startTime, false)
 			return ProcessResult{Success: false, Reason: "db_insert_error"}
 		}
 
@@ -191,16 +193,16 @@ func ProcessMessage(from string, body string, sbClient *supabase.Client, groqCli
 			"talhao_canteiro":    fmtLocalizacao(extracted.Localizacao),
 		}
 
-		recordLog(sbClient, profile, body, botResponse, aiModel, promptTokens, completionTokens, finalIntent, extraidoMap)
+		recordLog(sbClient, profile, body, botResponse, aiModel, promptTokens, completionTokens, finalIntent, extraidoMap, startTime, true)
 		return ProcessResult{Success: true, Reason: "record_saved"}
 	}
 
-	recordLog(sbClient, profile, body, botResponse, aiModel, promptTokens, completionTokens, finalIntent, nil)
+	recordLog(sbClient, profile, body, botResponse, aiModel, promptTokens, completionTokens, finalIntent, nil, startTime, true)
 	return ProcessResult{Success: true, Reason: "unhandled_intent"}
 }
 
 // recordLog is a helper to consistently log the bot's processing outcome to Audit and Training tables
-func recordLog(sbClient *supabase.Client, profile *supabase.Profile, userMsg, botResp, model string, promptTokens, completionTokens int, intent string, extracted map[string]interface{}) {
+func recordLog(sbClient *supabase.Client, profile *supabase.Profile, userMsg, botResp, model string, promptTokens, completionTokens int, intent string, extracted map[string]interface{}, startTime time.Time, isSuccess bool) {
 	// 1. Audit Log (requested/approved in Phase 2/3)
 	_ = sbClient.InsertLogProcessamento(supabase.LogProcessamentoInsert{
 		PmoID:            profile.PmoAtivoID,
@@ -220,6 +222,31 @@ func recordLog(sbClient *supabase.Client, profile *supabase.Profile, userMsg, bo
 		TipoAtividade: intent,
 		UserID:        profile.ID,
 		ModeloIA:      model,
+	})
+
+	// 3. Financial Audit Log (logs_consumo)
+	var duracaoMs int64
+	if !startTime.IsZero() {
+		duracaoMs = time.Since(startTime).Milliseconds()
+	}
+
+	custoEstimado := (float64(promptTokens) / 1000.0 * 0.00059) + (float64(completionTokens) / 1000.0 * 0.00079)
+	totalTokens := promptTokens + completionTokens
+	status := "success"
+	if !isSuccess {
+		status = "error"
+	}
+
+	_ = sbClient.InsertLogConsumo(supabase.LogConsumoInsert{
+		UserID:           profile.ID,
+		TokensPrompt:     promptTokens,
+		TokensCompletion: completionTokens,
+		TotalTokens:      totalTokens,
+		ModeloIA:         model,
+		Acao:             intent,
+		CustoEstimado:    custoEstimado,
+		DuracaoMs:        duracaoMs,
+		Status:           status,
 	})
 }
 
