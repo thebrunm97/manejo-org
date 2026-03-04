@@ -14,7 +14,7 @@ services:
     environment:
       - PORT=21465
       # Agora ele usa a variável do seu .env!
-      - WEBHOOK_URL=http://pmo-bot:5000/webhook?token=${WPPCONNECT_TOKEN}
+      - WEBHOOK_URL=http://host.docker.internal:8080/webhook?token=${WPPCONNECT_TOKEN}
       - WEBHOOK_ENABLED=true
       - WEBHOOK_GLOBAL_ENABLED=true
       - WEBHOOK_READ_MESSAGES=false
