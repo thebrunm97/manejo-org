@@ -64,6 +64,8 @@ type CadernoCampoInsert struct {
 	QuantidadeUnidade  string                 `json:"quantidade_unidade,omitempty"`
 	ObservacaoOriginal string                 `json:"observacao_original,omitempty"`
 	DetalhesTecnicos   map[string]interface{} `json:"detalhes_tecnicos,omitempty"`
+	HouveDescartes     bool                   `json:"houve_descartes"`
+	QtdDescartes       float64                `json:"qtd_descartes,omitempty"`
 }
 
 type LogProcessamentoInsert struct {
@@ -74,6 +76,15 @@ type LogProcessamentoInsert struct {
 	TokensPrompt     int    `json:"tokens_prompt"`
 	TokensCompletion int    `json:"tokens_completion"`
 	Intencao         string `json:"intencao"`
+}
+
+type LogTreinamentoInsert struct {
+	PmoID         int64                  `json:"pmo_id"`
+	TextoUsuario  string                 `json:"texto_usuario"`
+	JsonExtraido  map[string]interface{} `json:"json_extraido"`
+	TipoAtividade string                 `json:"tipo_atividade"`
+	UserID        string                 `json:"user_id"`
+	ModeloIA      string                 `json:"modelo_ia"`
 }
 
 // ---------------------------------------------------------------------------
@@ -114,35 +125,34 @@ func (c *Client) ResolvePhone(from string) (string, error) {
 	return strings.Split(from, "@")[0], nil
 }
 
-// GetFarmIdByPhone fetches the user's active PMO ID using their phone number
-func (c *Client) GetFarmIdByPhone(phone string) (int64, error) {
+// GetProfileByPhone fetches the user's active profile using their phone number
+func (c *Client) GetProfileByPhone(phone string) (*Profile, error) {
 	// Primeira tentativa: Buscar pelo número exato fornecido
-	reqURL := fmt.Sprintf("%s/rest/v1/profiles?telefone=eq.%s&select=pmo_ativo_id,id", c.config.URL, phone)
+	reqURL := fmt.Sprintf("%s/rest/v1/profiles?telefone=eq.%s&select=*", c.config.URL, phone)
 	body, err := c.doRequest(http.MethodGet, reqURL, nil)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	var profiles []Profile
 	if err := json.Unmarshal(body, &profiles); err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	if len(profiles) > 0 {
-		return profiles[0].PmoAtivoID, nil
+		return &profiles[0], nil
 	}
 
-	// Segunda tentativa: Formato BR sem o 9º dígito (WPPConnect às vezes usa o formato de 8 dígitos)
-	// Ex: 5534997317545 (13 chars) -> 553497317545 (12 chars)
+	// Segunda tentativa: Formato BR sem o 9º dígito
 	if len(phone) == 13 && strings.HasPrefix(phone, "55") {
-		fallbackPhone := phone[:4] + phone[5:] // Remove o 5º caractere (que é o '9' do DDD)
-		reqURL = fmt.Sprintf("%s/rest/v1/profiles?telefone=eq.%s&select=pmo_ativo_id,id", c.config.URL, fallbackPhone)
+		fallbackPhone := phone[:4] + phone[5:]
+		reqURL = fmt.Sprintf("%s/rest/v1/profiles?telefone=eq.%s&select=*", c.config.URL, fallbackPhone)
 
 		body, err = c.doRequest(http.MethodGet, reqURL, nil)
 		if err == nil {
 			var fallbackProfiles []Profile
 			if err := json.Unmarshal(body, &fallbackProfiles); err == nil && len(fallbackProfiles) > 0 {
-				return fallbackProfiles[0].PmoAtivoID, nil
+				return &fallbackProfiles[0], nil
 			}
 		}
 	}
@@ -150,23 +160,45 @@ func (c *Client) GetFarmIdByPhone(phone string) (int64, error) {
 	// Terceira tentativa: Tentar LIKE pegando os ultimos 8 digitos
 	if len(phone) >= 8 {
 		last8 := phone[len(phone)-8:]
-		reqURL = fmt.Sprintf("%s/rest/v1/profiles?telefone=ilike.*%s*&select=pmo_ativo_id,id", c.config.URL, last8)
+		reqURL = fmt.Sprintf("%s/rest/v1/profiles?telefone=ilike.*%s*&select=*", c.config.URL, last8)
 		body, err = c.doRequest(http.MethodGet, reqURL, nil)
 		if err == nil {
 			var fallbackProfiles []Profile
 			if err := json.Unmarshal(body, &fallbackProfiles); err == nil && len(fallbackProfiles) > 0 {
-				return fallbackProfiles[0].PmoAtivoID, nil
+				return &fallbackProfiles[0], nil
 			}
 		}
 	}
 
-	return 0, fmt.Errorf("profile not found for phone %s", phone)
+	return nil, fmt.Errorf("profile not found for phone %s", phone)
 }
 
 // InsertCadernoCampo inserts the LLM parsed record and returns the UUID of the created row.
 // Uses Prefer: return=representation to get the full object back from Supabase.
 func (c *Client) InsertCadernoCampo(record CadernoCampoInsert) (string, error) {
 	reqURL := fmt.Sprintf("%s/rest/v1/caderno_campo", c.config.URL)
+
+	// Lógica de De-Para do JSONB detalhes_tecnicos para paridade com o Frontend React
+	if record.DetalhesTecnicos == nil {
+		record.DetalhesTecnicos = make(map[string]interface{})
+	}
+
+	atividadeUpper := strings.ToUpper(record.TipoAtividade)
+	switch atividadeUpper {
+	case "PLANTIO":
+		record.DetalhesTecnicos["qtd_utilizada"] = record.QuantidadeValor
+		record.DetalhesTecnicos["unidade_medida"] = record.QuantidadeUnidade
+	case "COLHEITA":
+		record.DetalhesTecnicos["qtd"] = record.QuantidadeValor
+		// Usando unidade e unidade_medida para cobrir CadernoTypes e a instrução
+		record.DetalhesTecnicos["unidade"] = record.QuantidadeUnidade
+		record.DetalhesTecnicos["unidade_medida"] = record.QuantidadeUnidade
+	case "MANEJO":
+		record.DetalhesTecnicos["dosagem"] = record.QuantidadeValor
+		// Usando unidade_dosagem e unidade_medida
+		record.DetalhesTecnicos["unidade_dosagem"] = record.QuantidadeUnidade
+		record.DetalhesTecnicos["unidade_medida"] = record.QuantidadeUnidade
+	}
 
 	payload, err := json.Marshal(record)
 	if err != nil {
@@ -346,18 +378,23 @@ func (c *Client) InsertCanteiroVinculos(cadernoID string, canteiroIDs []int64) e
 // InsertLogProcessamento saves AI processing audit data for the admin dashboard.
 func (c *Client) InsertLogProcessamento(logData LogProcessamentoInsert) error {
 	reqURL := fmt.Sprintf("%s/rest/v1/logs_processamento", c.config.URL)
-
 	payload, err := json.Marshal(logData)
 	if err != nil {
-		return fmt.Errorf("failed to marshal log payload: %w", err)
+		return err
 	}
-
 	_, err = c.doRequest(http.MethodPost, reqURL, payload)
-	if err != nil {
-		return fmt.Errorf("log insert failed: %w", err)
-	}
+	return err
+}
 
-	return nil
+// InsertLogTreinamento saves the extraction to the training log table for the LLM Training loop in dashboard.
+func (c *Client) InsertLogTreinamento(logData LogTreinamentoInsert) error {
+	reqURL := fmt.Sprintf("%s/rest/v1/logs_treinamento", c.config.URL)
+	payload, err := json.Marshal(logData)
+	if err != nil {
+		return err
+	}
+	_, err = c.doRequest(http.MethodPost, reqURL, payload)
+	return err
 }
 
 // extractNumbers extracts all integer values from a string.
