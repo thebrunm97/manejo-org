@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net/http"
 	"strconv"
 	"strings"
@@ -85,6 +86,20 @@ type LogTreinamentoInsert struct {
 	TipoAtividade string                 `json:"tipo_atividade"`
 	UserID        string                 `json:"user_id"`
 	ModeloIA      string                 `json:"modelo_ia"`
+}
+
+type LogConsumoInsert struct {
+	UserID           string                 `json:"user_id"`
+	RequestID        string                 `json:"request_id,omitempty"`
+	TokensPrompt     int                    `json:"tokens_prompt"`
+	TokensCompletion int                    `json:"tokens_completion"`
+	TotalTokens      int                    `json:"total_tokens"`
+	ModeloIA         string                 `json:"modelo_ia"`
+	Acao             string                 `json:"acao"`
+	CustoEstimado    float64                `json:"custo_estimado"`
+	DuracaoMs        int64                  `json:"duracao_ms"`
+	Status           string                 `json:"status"`
+	Meta             map[string]interface{} `json:"meta,omitempty"`
 }
 
 // ---------------------------------------------------------------------------
@@ -193,6 +208,10 @@ func (c *Client) InsertCadernoCampo(record CadernoCampoInsert) (string, error) {
 		// Usando unidade e unidade_medida para cobrir CadernoTypes e a instrução
 		record.DetalhesTecnicos["unidade"] = record.QuantidadeUnidade
 		record.DetalhesTecnicos["unidade_medida"] = record.QuantidadeUnidade
+		// Auto-gerar lote para Colheita (paridade com Python e React)
+		loteGerado := GerarCodigoLote()
+		record.DetalhesTecnicos["lote"] = loteGerado
+		log.Printf("🆔 [Supabase] Lote auto-gerado para Colheita: %s", loteGerado)
 	case "MANEJO":
 		record.DetalhesTecnicos["dosagem"] = record.QuantidadeValor
 		// Usando unidade_dosagem e unidade_medida
@@ -364,14 +383,16 @@ func (c *Client) InsertCanteiroVinculos(cadernoID string, canteiroIDs []int64) e
 		return fmt.Errorf("failed to marshal canteiro vinculos: %w", err)
 	}
 
+	log.Printf("🔗 [DB] Inserindo %d vínculos de canteiros para o registro ID %s", len(canteiroIDs), cadernoID)
+
 	reqURL := fmt.Sprintf("%s/rest/v1/caderno_campo_canteiros", c.config.URL)
 	_, err = c.doRequest(http.MethodPost, reqURL, payload)
 	if err != nil {
-		log.Printf("⚠️ [Supabase] Falha ao inserir vínculos de canteiros: %v", err)
-		return err
+		log.Printf("❌ [DB] FALHA ao inserir vínculos de canteiros para registro %s: %v", cadernoID, err)
+		return fmt.Errorf("falha ao inserir vínculos de canteiros para registro %s: %w", cadernoID, err)
 	}
 
-	log.Printf("🔗 [Supabase] %d canteiro(s) vinculado(s) ao registro %s", len(canteiroIDs), cadernoID)
+	log.Printf("✅ [DB] %d canteiro(s) vinculado(s) com sucesso ao registro %s", len(canteiroIDs), cadernoID)
 	return nil
 }
 
@@ -389,6 +410,17 @@ func (c *Client) InsertLogProcessamento(logData LogProcessamentoInsert) error {
 // InsertLogTreinamento saves the extraction to the training log table for the LLM Training loop in dashboard.
 func (c *Client) InsertLogTreinamento(logData LogTreinamentoInsert) error {
 	reqURL := fmt.Sprintf("%s/rest/v1/logs_treinamento", c.config.URL)
+	payload, err := json.Marshal(logData)
+	if err != nil {
+		return err
+	}
+	_, err = c.doRequest(http.MethodPost, reqURL, payload)
+	return err
+}
+
+// InsertLogConsumo saves API usage metrics.
+func (c *Client) InsertLogConsumo(logData LogConsumoInsert) error {
+	reqURL := fmt.Sprintf("%s/rest/v1/logs_consumo", c.config.URL)
 	payload, err := json.Marshal(logData)
 	if err != nil {
 		return err
@@ -420,6 +452,14 @@ func extractNumbers(s string) []int {
 		}
 	}
 	return nums
+}
+
+// GerarCodigoLote gera um código de lote no formato LOTE-YYYYMMDD-XXXX.
+// Usado automaticamente para atividades de Colheita (paridade com Python e React).
+func GerarCodigoLote() string {
+	now := time.Now()
+	suffix := fmt.Sprintf("%04d", rand.Intn(10000))
+	return fmt.Sprintf("LOTE-%s-%s", now.Format("20060102"), suffix)
 }
 
 // ---------------------------------------------------------------------------
