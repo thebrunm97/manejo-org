@@ -1,0 +1,8 @@
+## Regras de Integração com Gemini API (@GeminiExpert)
+- **Documentação Fonte:** Sempre que for implementar chamadas ao Gemini, LEIA OBRIGATORIAMENTE os arquivos em `internal/gemini/docs/` ANTES de gerar o código.
+- **Client Nativo:** Não utilize SDKs de terceiros. Use chamadas `net/http` diretas para a REST API do Gemini.
+- **Versão da API:** Utilize a versão `v1beta` (`https://generativelanguage.googleapis.com/v1beta/...`) para ter acesso a funcionalidades modernas como o `fileSearchStores`.
+- **RAG Simplificado:** Para o Agente Especialista, utilize a File API e o `FileSearchStore` nativos do Gemini, evitando a criação de pipelines vetoriais complexos em Go.
+- **Parâmetros:** Conforme `GEMINI-prompting-strategies.md`, NÃO altere a `temperature` padrão (1.0) a menos que estritamente necessário para testes específicos.
+## Gestão de Mudanças (Changelog)
+- **Atualização Obrigatória:** Toda e qualquer alteração no código (adicionando features, corrigindo bugs ou refatorando) DEVE ser documentada no arquivo `CHANGELOG.md` antes da finalização da tarefa. Utilize o padrão de seções `Added`, `Changed` e `Fixed`.
