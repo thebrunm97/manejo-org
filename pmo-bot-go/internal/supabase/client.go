@@ -8,9 +8,12 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 )
 
 // Config represents the Supabase credentials
@@ -57,6 +60,7 @@ type LidMapping struct {
 
 type CadernoCampoInsert struct {
 	PmoID              int64                  `json:"pmo_id,omitempty"`
+	UsuarioID          string                 `json:"user_id,omitempty"`
 	TipoAtividade      string                 `json:"tipo_atividade"`
 	SecaoOrigem        string                 `json:"secao_origem,omitempty"`
 	Produto            string                 `json:"produto,omitempty"`
@@ -67,10 +71,13 @@ type CadernoCampoInsert struct {
 	DetalhesTecnicos   map[string]interface{} `json:"detalhes_tecnicos,omitempty"`
 	HouveDescartes     bool                   `json:"houve_descartes"`
 	QtdDescartes       float64                `json:"qtd_descartes,omitempty"`
+	Canteiros          []string               `json:"-"` // Used internally to map to JSONB (UUIDs)
+	InsumoAplicado     string                 `json:"-"` // Used internally to map to detalhes_tecnicos
 }
 
 type LogProcessamentoInsert struct {
 	PmoID            int64  `json:"pmo_id"`
+	UserID           string `json:"usuario_id,omitempty"`
 	MensagemUsuario  string `json:"mensagem_usuario"`
 	RespostaBot      string `json:"resposta_bot"`
 	ModeloIA         string `json:"modelo_ia"`
@@ -84,12 +91,12 @@ type LogTreinamentoInsert struct {
 	TextoUsuario  string                 `json:"texto_usuario"`
 	JsonExtraido  map[string]interface{} `json:"json_extraido"`
 	TipoAtividade string                 `json:"tipo_atividade"`
-	UserID        string                 `json:"user_id"`
+	UserID        string                 `json:"usuario_id"`
 	ModeloIA      string                 `json:"modelo_ia"`
 }
 
 type LogConsumoInsert struct {
-	UserID           string                 `json:"user_id"`
+	UserID           string                 `json:"usuario_id"`
 	RequestID        string                 `json:"request_id,omitempty"`
 	TokensPrompt     int                    `json:"tokens_prompt"`
 	TokensCompletion int                    `json:"tokens_completion"`
@@ -102,46 +109,71 @@ type LogConsumoInsert struct {
 	Meta             map[string]interface{} `json:"meta,omitempty"`
 }
 
+type IngestionJob struct {
+	ID              string `json:"id,omitempty"`
+	PmoID           int64  `json:"pmo_id,omitempty"`
+	FileName        string `json:"file_name"`
+	Status          string `json:"status"`
+	TotalChunks     int    `json:"total_chunks"`
+	ProcessedChunks int    `json:"processed_chunks"`
+	ErrorLog        string `json:"error_log,omitempty"`
+}
+
+type FarmDocument struct {
+	PmoID        *int64    `json:"pmo_id"` // Pointer to allow NULL (Global)
+	DocumentName string    `json:"document_name"`
+	Content      string    `json:"content"`
+	Embedding    []float32 `json:"embedding"`
+}
+
+type DocumentMatch struct {
+	ID           int64   `json:"id"`
+	DocumentName string  `json:"document_name"`
+	Content      string  `json:"content"`
+	Similarity   float32 `json:"similarity"`
+	IsGlobal     bool    `json:"is_global"`
+}
+
 // ---------------------------------------------------------------------------
 // Main Methods
 // ---------------------------------------------------------------------------
 
 // ResolvePhone checks lid_mappings for a WPPConnect LID, otherwise assumes it's already a phone.
 func (c *Client) ResolvePhone(from string) (string, error) {
-	// If it's standard WhatsApp format, return just the numbers
-	if strings.Contains(from, "@c.us") {
-		return strings.Split(from, "@")[0], nil
-	}
+	// 1. Sanitize the string right away
+	sanitized := utils.SanitizePhone(from)
 
-	// If it's a LID, check the database
+	// If it's a LID, check the database mapping
 	if strings.Contains(from, "@lid") {
 		lidStr := strings.Split(from, "@")[0]
 
 		reqURL := fmt.Sprintf("%s/rest/v1/lid_mappings?lid_id=eq.%s&select=phone_number", c.config.URL, lidStr)
 		body, err := c.doRequest(http.MethodGet, reqURL, nil)
 		if err != nil {
-			return "", err
+			return sanitized, err
 		}
 
 		var mappings []LidMapping
 		if err := json.Unmarshal(body, &mappings); err != nil {
-			return "", err
+			return sanitized, err
 		}
 
 		if len(mappings) > 0 {
-			return mappings[0].PhoneNumber, nil
+			return utils.SanitizePhone(mappings[0].PhoneNumber), nil
 		}
 
 		// Fallback
-		return lidStr, nil
+		return sanitized, nil
 	}
 
 	// Fallback general
-	return strings.Split(from, "@")[0], nil
+	return sanitized, nil
 }
 
 // GetProfileByPhone fetches the user's active profile using their phone number
 func (c *Client) GetProfileByPhone(phone string) (*Profile, error) {
+	phone = utils.SanitizePhone(phone)
+
 	// Primeira tentativa: Buscar pelo número exato fornecido
 	reqURL := fmt.Sprintf("%s/rest/v1/profiles?telefone=eq.%s&select=*", c.config.URL, phone)
 	body, err := c.doRequest(http.MethodGet, reqURL, nil)
@@ -217,6 +249,13 @@ func (c *Client) InsertCadernoCampo(record CadernoCampoInsert) (string, error) {
 		// Usando unidade_dosagem e unidade_medida
 		record.DetalhesTecnicos["unidade_dosagem"] = record.QuantidadeUnidade
 		record.DetalhesTecnicos["unidade_medida"] = record.QuantidadeUnidade
+		if record.InsumoAplicado != "" {
+			record.DetalhesTecnicos["insumo_utilizado"] = record.InsumoAplicado
+		}
+	}
+
+	if len(record.Canteiros) > 0 {
+		record.DetalhesTecnicos["canteiros"] = record.Canteiros
 	}
 
 	payload, err := json.Marshal(record)
@@ -269,15 +308,17 @@ func (c *Client) InsertCadernoCampo(record CadernoCampoInsert) (string, error) {
 
 // LookupCanteiroIDs resolves canteiro names to their DB IDs.
 // Strategy: find talhao_id by pmoID+name, then lookup each canteiro by talhao_id+name.
-// Best-effort: missing canteiros are logged and skipped.
-func (c *Client) LookupCanteiroIDs(pmoID int64, talhaoNome string, canteiros []string) ([]int64, error) {
+// LookupCanteiroIDs resolves the external names to database IDs (Talhao and Canteiros)
+func (c *Client) LookupCanteiroIDs(pmoID int64, userID string, talhaoNome string, canteiros []string) ([]string, error) {
 	if talhaoNome == "" || talhaoNome == "NÃO INFORMADO" || len(canteiros) == 0 {
-		return nil, nil
+		return nil, nil // Nothing to lookup
 	}
 
-	// Step 1: Resolve talhao_id
-	talhaoURL := fmt.Sprintf("%s/rest/v1/talhoes?pmo_id=eq.%d&nome=ilike.*%s*&select=id",
-		c.config.URL, pmoID, talhaoNome)
+	// Step 1: Resolve Talhao ID
+	// Use an OR condition to find the Talhao by pmo_id or user_id for flexibility
+	escapedTalhao := url.QueryEscape(talhaoNome)
+	log.Printf("🔍 [DB-DEBUG] Querying Talhão: %s (escaped: %s)", talhaoNome, escapedTalhao)
+	talhaoURL := fmt.Sprintf("%s/rest/v1/talhoes?or=(pmo_id.eq.%d,user_id.eq.%s)&nome=ilike.*%s*&select=id", c.config.URL, pmoID, userID, escapedTalhao)
 
 	talhaoBody, err := c.doRequest(http.MethodGet, talhaoURL, nil)
 	if err != nil {
@@ -299,11 +340,12 @@ func (c *Client) LookupCanteiroIDs(pmoID int64, talhaoNome string, canteiros []s
 	log.Printf("📍 [Supabase] Talhão '%s' resolvido para ID %d", talhaoNome, talhaoID)
 
 	// Step 2: Resolve each canteiro name to its ID
-	var canteiroIDs []int64
+	var canteiroIDs []string
 
 	for _, nome := range canteiros {
+		escapedNome := url.QueryEscape(nome)
 		canteiroURL := fmt.Sprintf("%s/rest/v1/canteiros?talhao_id=eq.%d&nome=ilike.*%s*&select=id,nome",
-			c.config.URL, talhaoID, nome)
+			c.config.URL, talhaoID, escapedNome)
 
 		canteiroBody, err := c.doRequest(http.MethodGet, canteiroURL, nil)
 		if err != nil {
@@ -312,7 +354,7 @@ func (c *Client) LookupCanteiroIDs(pmoID int64, talhaoNome string, canteiros []s
 		}
 
 		var candidatos []struct {
-			ID   int64  `json:"id"`
+			ID   string `json:"id"`
 			Nome string `json:"nome"`
 		}
 		if err := json.Unmarshal(canteiroBody, &candidatos); err != nil {
@@ -330,7 +372,7 @@ func (c *Client) LookupCanteiroIDs(pmoID int64, talhaoNome string, canteiros []s
 		if err != nil {
 			// Nome is not purely numeric — use first match directly
 			canteiroIDs = append(canteiroIDs, candidatos[0].ID)
-			log.Printf("✅ [Supabase] Canteiro '%s' → ID %d (match direto)", nome, candidatos[0].ID)
+			log.Printf("✅ [Supabase] Canteiro '%s' → ID %s (match direto)", nome, candidatos[0].ID)
 			continue
 		}
 
@@ -340,7 +382,7 @@ func (c *Client) LookupCanteiroIDs(pmoID int64, talhaoNome string, canteiros []s
 			for _, digitStr := range extractNumbers(cand.Nome) {
 				if digitStr == nomeAlvo {
 					canteiroIDs = append(canteiroIDs, cand.ID)
-					log.Printf("✅ [Supabase] Canteiro '%s' → ID %d (match numérico)", nome, cand.ID)
+					log.Printf("✅ [Supabase] Canteiro '%s' → ID %s (match numérico)", nome, cand.ID)
 					matched = true
 					break
 				}
@@ -360,14 +402,14 @@ func (c *Client) LookupCanteiroIDs(pmoID int64, talhaoNome string, canteiros []s
 
 // InsertCanteiroVinculos batch-inserts rows into the caderno_campo_canteiros junction table.
 // Best-effort: logs errors per-row but does not abort.
-func (c *Client) InsertCanteiroVinculos(cadernoID string, canteiroIDs []int64) error {
+func (c *Client) InsertCanteiroVinculos(cadernoID string, canteiroIDs []string) error {
 	if cadernoID == "" || len(canteiroIDs) == 0 {
 		return nil
 	}
 
 	type vinculo struct {
 		CadernoCampoID string `json:"caderno_campo_id"`
-		CanteiroID     int64  `json:"canteiro_id"`
+		CanteiroID     string `json:"canteiro_id"`
 	}
 
 	var batch []vinculo
@@ -418,6 +460,61 @@ func (c *Client) InsertLogTreinamento(logData LogTreinamentoInsert) error {
 	return err
 }
 
+// InsertFarmDocument inserts a text chunk and its embedding into farm_documents table
+// If pmoID is 0, it is treated as NULL (Global document)
+func (c *Client) InsertFarmDocument(pmoID int64, docName, content string, embedding []float32) error {
+	reqURL := fmt.Sprintf("%s/rest/v1/farm_documents", c.config.URL)
+
+	var pmoPtr *int64
+	if pmoID > 0 {
+		pmoPtr = &pmoID
+	}
+
+	doc := FarmDocument{
+		PmoID:        pmoPtr,
+		DocumentName: docName,
+		Content:      content,
+		Embedding:    embedding,
+	}
+
+	payload, err := json.Marshal(doc)
+	if err != nil {
+		return err
+	}
+
+	_, err = c.doRequest(http.MethodPost, reqURL, payload)
+	return err
+}
+
+// MatchFarmDocuments calls the match_farm_documents RPC to find similar chunks for a specific farm
+func (c *Client) MatchFarmDocuments(pmoID int64, embedding []float32, threshold float32, count int) ([]DocumentMatch, error) {
+	reqURL := fmt.Sprintf("%s/rest/v1/rpc/match_farm_documents", c.config.URL)
+
+	params := map[string]interface{}{
+		"query_embedding": embedding,
+		"match_pmo_id":    pmoID,
+		"match_threshold": threshold,
+		"match_count":     count,
+	}
+
+	payload, err := json.Marshal(params)
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := c.doRequest(http.MethodPost, reqURL, payload)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []DocumentMatch
+	if err := json.Unmarshal(body, &results); err != nil {
+		return nil, fmt.Errorf("failed to parse match results: %w", err)
+	}
+
+	return results, nil
+}
+
 // InsertLogConsumo saves API usage metrics.
 func (c *Client) InsertLogConsumo(logData LogConsumoInsert) error {
 	reqURL := fmt.Sprintf("%s/rest/v1/logs_consumo", c.config.URL)
@@ -427,6 +524,125 @@ func (c *Client) InsertLogConsumo(logData LogConsumoInsert) error {
 	}
 	_, err = c.doRequest(http.MethodPost, reqURL, payload)
 	return err
+}
+
+// CreateIngestionJob initializes a new job in the database.
+func (c *Client) CreateIngestionJob(job IngestionJob) (string, error) {
+	reqURL := fmt.Sprintf("%s/rest/v1/ingestion_jobs", c.config.URL)
+	payload, err := json.Marshal(job)
+	if err != nil {
+		return "", err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewReader(payload))
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Set("apikey", c.config.Key)
+	req.Header.Set("Authorization", "Bearer "+c.config.Key)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Prefer", "return=representation") // Important to get the ID back
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode >= 400 {
+		return "", fmt.Errorf("failed to create job (%d): %s", resp.StatusCode, string(body))
+	}
+
+	var created []IngestionJob
+	if err := json.Unmarshal(body, &created); err != nil || len(created) == 0 {
+		return "", fmt.Errorf("failed to parse created job: %w", err)
+	}
+
+	return created[0].ID, nil
+}
+
+// UpdateJobProgress updates the progress of an existing job.
+func (c *Client) UpdateJobProgress(jobID string, processed int, total int) error {
+	reqURL := fmt.Sprintf("%s/rest/v1/ingestion_jobs?id=eq.%s", c.config.URL, jobID)
+	payload, err := json.Marshal(map[string]interface{}{
+		"processed_chunks": processed,
+		"total_chunks":     total,
+		"status":           "processing",
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = c.doRequest(http.MethodPatch, reqURL, payload)
+	return err
+}
+
+// FinishJob marks the job as completed or failed.
+func (c *Client) FinishJob(jobID string, status string, errorLog string) error {
+	reqURL := fmt.Sprintf("%s/rest/v1/ingestion_jobs?id=eq.%s", c.config.URL, jobID)
+	update := map[string]interface{}{
+		"status": status,
+	}
+	if errorLog != "" {
+		update["error_log"] = errorLog
+	}
+	if status == "completed" {
+		// Ensure processed == total on completion
+		// We could fetch the total first, but usually we know it or just rely on the last update
+	}
+
+	payload, err := json.Marshal(update)
+	if err != nil {
+		return err
+	}
+
+	_, err = c.doRequest(http.MethodPatch, reqURL, payload)
+	return err
+}
+
+// UpsertBotStatus upserts the bot_status table with connection info (heartbeat).
+// Matches the Python bot's _update_bot_status_supabase exactly.
+func (c *Client) UpsertBotStatus(sessionName, status string, details map[string]interface{}) error {
+	reqURL := fmt.Sprintf("%s/rest/v1/bot_status?on_conflict=session_name", c.config.URL)
+
+	if details == nil {
+		details = map[string]interface{}{}
+	}
+
+	payload, err := json.Marshal(map[string]interface{}{
+		"session_name":   sessionName,
+		"status":         status,
+		"last_heartbeat": time.Now().UTC().Format(time.RFC3339),
+		"details":        details,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to marshal bot_status payload: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewReader(payload))
+	if err != nil {
+		return fmt.Errorf("failed to create bot_status request: %w", err)
+	}
+
+	req.Header.Set("apikey", c.config.Key)
+	req.Header.Set("Authorization", "Bearer "+c.config.Key)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Prefer", "resolution=merge-duplicates")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("bot_status upsert HTTP failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("bot_status upsert error (%d): %s", resp.StatusCode, string(body))
+	}
+
+	return nil
 }
 
 // extractNumbers extracts all integer values from a string.
@@ -460,6 +676,59 @@ func GerarCodigoLote() string {
 	now := time.Now()
 	suffix := fmt.Sprintf("%04d", rand.Intn(10000))
 	return fmt.Sprintf("LOTE-%s-%s", now.Format("20060102"), suffix)
+}
+
+// GetIngestionStats returns the plan tier and document count for a pmo_id.
+func (c *Client) GetIngestionStats(pmoID int64) (string, int, error) {
+	// 1. Get Plan Tier via PMO owner
+	// We need to fetch the user_id from pmos and then the plan_tier from profiles
+	reqURL := fmt.Sprintf("%s/rest/v1/pmos?id=eq.%d&select=user_id", c.config.URL, pmoID)
+	body, err := c.doRequest(http.MethodGet, reqURL, nil)
+	if err != nil {
+		return "free", 0, err
+	}
+
+	var pmos []struct {
+		UserID string `json:"user_id"`
+	}
+	if err := json.Unmarshal(body, &pmos); err != nil || len(pmos) == 0 {
+		return "free", 0, nil
+	}
+
+	profileURL := fmt.Sprintf("%s/rest/v1/profiles?id=eq.%s&select=plan_tier", c.config.URL, pmos[0].UserID)
+	profBody, err := c.doRequest(http.MethodGet, profileURL, nil)
+	if err != nil {
+		return "free", 0, err
+	}
+
+	var profiles []struct {
+		PlanTier string `json:"plan_tier"`
+	}
+	json.Unmarshal(profBody, &profiles)
+	tier := "free"
+	if len(profiles) > 0 {
+		tier = profiles[0].PlanTier
+	}
+
+	// 2. Count distinct documents in farm_documents
+	countURL := fmt.Sprintf("%s/rest/v1/farm_documents?pmo_id=eq.%d&select=document_name", c.config.URL, pmoID)
+	countBody, err := c.doRequest(http.MethodGet, countURL, nil)
+	if err != nil {
+		return tier, 0, err
+	}
+
+	var docs []struct {
+		Name string `json:"document_name"`
+	}
+	json.Unmarshal(countBody, &docs)
+
+	// Count unique names
+	uniqueNames := make(map[string]bool)
+	for _, d := range docs {
+		uniqueNames[d.Name] = true
+	}
+
+	return tier, len(uniqueNames), nil
 }
 
 // ---------------------------------------------------------------------------

@@ -7,14 +7,17 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
+	"github.com/thebrunm97/pmo-bot-go/internal/tts"
 	"github.com/thebrunm97/pmo-bot-go/internal/webhook"
 	"github.com/thebrunm97/pmo-bot-go/internal/whatsapp"
 )
 
 func main() {
+	godotenv.Load(".env")
 	loc, err := time.LoadLocation("America/Sao_Paulo")
 	if err != nil {
 		log.Printf("⚠️ Erro ao carregar timezone America/Sao_Paulo: %v. Usando UTC.", err)
@@ -107,6 +110,10 @@ func main() {
 	r := gin.New()
 	r.Use(gin.Recovery()) // Recover from panics without crashing
 
+	// --- Initialize TTS Orchestrator ---
+	ttsClient := tts.NewOrchestrator()
+	log.Println("✅ TTS Orchestrator inicializado")
+
 	// --- Register webhook routes ---
 	handler := webhook.NewHandler(webhook.Config{
 		Token:          token,
@@ -115,12 +122,47 @@ func main() {
 		SupabaseClient: sbClient,
 		WhatsAppClient: wpClient,
 		GeminiClient:   geminiClient,
+		TtsClient:      ttsClient,
 	})
 	handler.RegisterRoutes(r)
+
+	// --- Heartbeat goroutine (updates bot_status in Supabase every 60s) ---
+	go func() {
+		ticker := time.NewTicker(60 * time.Second)
+		defer ticker.Stop()
+
+		// Run immediately on startup
+		sendHeartbeat(wppSession, wpClient, sbClient)
+
+		for range ticker.C {
+			sendHeartbeat(wppSession, wpClient, sbClient)
+		}
+	}()
 
 	// --- Start ---
 	log.Printf("🚀 PMO-Bot-Go v0.3.0 listening on :%s", port)
 	if err := r.Run(":" + port); err != nil {
 		log.Fatalf("❌ Server failed: %v", err)
+	}
+}
+
+// sendHeartbeat checks WPPConnect session and upserts bot_status in Supabase.
+func sendHeartbeat(session string, wp *whatsapp.Client, sb *supabase.Client) {
+	connected, details, err := wp.CheckConnection()
+
+	status := "UNKNOWN"
+	if err != nil {
+		status = "DISCONNECTED"
+		log.Printf("💓 Heartbeat: DISCONNECTED (erro: %v)", err)
+	} else if connected {
+		status = "CONNECTED"
+	} else {
+		status = "DISCONNECTED"
+	}
+
+	if err := sb.UpsertBotStatus(session, status, details); err != nil {
+		log.Printf("❌ Heartbeat upsert falhou: %v", err)
+	} else {
+		log.Printf("💓 Heartbeat: %s", status)
 	}
 }
