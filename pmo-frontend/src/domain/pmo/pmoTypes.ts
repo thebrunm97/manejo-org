@@ -73,6 +73,7 @@ export interface UserProfile {
     pmo_ativo_id: string | null;
     telefone?: string;
     role?: 'user' | 'admin'; // Role based access control
+    plan_tier?: string; // Plan tier (e.g., 'free', 'pro')
 }
 
 // ==================================================================
