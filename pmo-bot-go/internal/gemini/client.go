@@ -98,6 +98,67 @@ type Candidate struct {
 	FinishReason string  `json:"finishReason"`
 }
 
+// EmbeddingRequest represents the payload for Gemini Embedding API
+type EmbeddingRequest struct {
+	Model   string  `json:"model"`
+	Content Content `json:"content"`
+}
+
+// EmbeddingResponse represents the response from Gemini Embedding API
+type EmbeddingResponse struct {
+	Embedding struct {
+		Values []float32 `json:"values"`
+	} `json:"embedding"`
+}
+
+// GenerateEmbedding transforms a text chunk into a 768-dimension vector using gemini-embedding-001
+func (c *Client) GenerateEmbedding(text string) ([]float32, error) {
+	reqURL := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=%s", c.config.APIKey)
+
+	payload := EmbeddingRequest{
+		Model: "models/gemini-embedding-001",
+		Content: Content{
+			Parts: []Part{
+				{Text: text},
+			},
+		},
+	}
+
+	bodyBytes, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("embedding marshal error: %v", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewReader(bodyBytes))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	log.Printf("📡 [GEMINI API] Gerando embedding para chunk (%d chars)...", len(text))
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("embedding request error: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("embedding api error (%d): %s", resp.StatusCode, string(body))
+	}
+
+	var apiResp EmbeddingResponse
+	if err := json.Unmarshal(body, &apiResp); err != nil {
+		return nil, fmt.Errorf("embedding decode error: %v", err)
+	}
+
+	return apiResp.Embedding.Values, nil
+}
+
 // AskExpert asks a question bounded by the organic agriculture system prompt
 func (c *Client) AskExpert(question string) (string, error) {
 	reqURL := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=%s", c.config.APIKey)
@@ -133,19 +194,6 @@ func (c *Client) AskExpert(question string) (string, error) {
 	var finalPayload map[string]interface{}
 	payloadBytes, _ := json.Marshal(payload)
 	json.Unmarshal(payloadBytes, &finalPayload)
-
-	if c.StoreID != "" {
-		// Adiciona a tool de retrieval
-		finalPayload["tools"] = []map[string]interface{}{
-			{
-				"retrieval": map[string]interface{}{
-					"vertexRagStore": map[string]interface{}{
-						"ragCorpora": []string{c.StoreID},
-					},
-				},
-			},
-		}
-	}
 
 	bodyBytes, err := json.Marshal(finalPayload)
 	if err != nil {

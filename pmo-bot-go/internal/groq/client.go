@@ -40,6 +40,8 @@ type ExtractionResult struct {
 	Intencao         string      `json:"intencao"`
 	Atividade        string      `json:"atividade"`
 	InsumoCultura    string      `json:"insumo_cultura"`
+	InsumoAplicado   string      `json:"insumo_aplicado"`
+	InsumoGenerico   bool        `json:"insumo_generico"`
 	Quantidade       float64     `json:"quantidade"`
 	Unidade          string      `json:"unidade"`
 	Localizacao      Localizacao `json:"localizacao"`

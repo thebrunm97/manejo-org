@@ -1,11 +1,11 @@
-// cmd/tester/main.go
+// cmd/tester/e2e/main.go
 // E2E stress tester for the PMO-Bot-Go webhook.
 // Sends 20+ farmer messages and prints pass/fail based on the
 // intencao and alerta_organico returned by the LLM.
 //
 // Usage:
 //
-//	go run cmd/tester/main.go
+//	go run cmd/tester/e2e/main.go
 package main
 
 import (

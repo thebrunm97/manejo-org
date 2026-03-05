@@ -1,0 +1,11 @@
+2026/03/04 23:16:58 ⏰ Horário de Brasília configurado: Wed, 04 Mar 2026 23:16:58 -03
+2026/03/04 23:16:58 ✅ Cliente Groq inicializado
+2026/03/04 23:16:58 ✅ Cliente Gemini inicializado (modelo: gemini-2.5-pro)
+2026/03/04 23:16:58 ✅ Cliente Supabase inicializado
+2026/03/04 23:16:58 ✅ Cliente WhatsApp Outbound inicializado
+2026/03/04 23:16:58 ✅ TTS Orchestrator inicializado
+2026/03/04 23:16:58 🚀 PMO-Bot-Go v0.3.0 listening on :8080
+2026/03/04 23:16:59 💓 Heartbeat: CONNECTED
+2026/03/04 23:18:04 💓 Heartbeat: CONNECTED
+2026/03/04 23:19:09 💓 Heartbeat: CONNECTED
+2026/03/04 23:20:14 💓 Heartbeat: CONNECTED
