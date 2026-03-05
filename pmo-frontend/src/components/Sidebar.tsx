@@ -8,8 +8,9 @@ import {
   ClipboardList,
   LogOut,
   Menu as MenuIcon,
-  Sparkles,
-  User as UserIcon
+  User as UserIcon,
+  Database,
+  Sparkles
 } from 'lucide-react';
 import { useAppNavigation } from '../hooks/navigation/useAppNavigation';
 import { SCREENS, RouteName } from '../routes/routeNames';
@@ -46,6 +47,11 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
       icon: <LayoutDashboard size={22} />,
       path: SCREENS.ADMIN
     });
+    menuItems.push({
+      name: 'Ingestão (RAG)',
+      icon: <Database size={22} />,
+      path: SCREENS.KNOWLEDGE_MONITORING
+    });
   }
 
   const handleLogout = async () => {
@@ -68,6 +74,7 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
       case SCREENS.CROPS: return '/culturas';
       case SCREENS.CHANGELOG: return '/changelog';
       case SCREENS.ADMIN: return '/admin';
+      case SCREENS.KNOWLEDGE_MONITORING: return '/admin/conhecimento';
       case SCREENS.PROFILE: return '/perfil'; // Added path for profile
       default: return '';
     }
@@ -100,6 +107,8 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
 
             if (isHome) {
               active = currentPath === '/dashboard' || currentPath === '/';
+            } else if (targetPath === '/admin') {
+              active = currentPath === '/admin';
             } else {
               active = targetPath.length > 1 && currentPath.startsWith(targetPath);
             }
