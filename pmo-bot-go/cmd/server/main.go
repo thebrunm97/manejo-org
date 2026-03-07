@@ -10,6 +10,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
+	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
 	"github.com/thebrunm97/pmo-bot-go/internal/webhook"
@@ -64,13 +65,24 @@ func main() {
 	log.Println("✅ Cliente Groq inicializado")
 
 	// --- Initialize Gemini client ---
+	geminiModel := os.Getenv("GEMINI_MODEL")
+	if geminiModel == "" {
+		geminiModel = "gemini-2.0-flash"
+	}
+	geminiVersion := os.Getenv("GEMINI_API_VERSION")
+	if geminiVersion == "" {
+		geminiVersion = "v1"
+	}
+
 	geminiClient, err := gemini.NewClient(gemini.Config{
-		APIKey: geminiKey,
+		APIKey:     geminiKey,
+		Model:      geminiModel,
+		APIVersion: geminiVersion,
 	})
 	if err != nil {
 		log.Fatalf("❌ Falha ao criar cliente Gemini: %v", err)
 	}
-	log.Println("✅ Cliente Gemini inicializado (modelo: gemini-2.5-pro)")
+	log.Printf("✅ Cliente Gemini inicializado (modelo: %s, versão: %s)", geminiModel, geminiVersion)
 
 	// --- Initialize Supabase client ---
 	sbURL := os.Getenv("SUPABASE_URL")
@@ -98,9 +110,13 @@ func main() {
 		Session: wppSession,
 	})
 	if err != nil {
-		log.Fatalf("❌ Falha ao criar cliente WhatsApp: %v", err)
+		log.Printf("⚠️ Erro inicial no WPPConnect: %v. O Auto-Reconnect assumirá o controle.", err)
 	}
-	log.Println("✅ Cliente WhatsApp Outbound inicializado")
+
+	// --- Initialize MCP Server ---
+	mcpServer := mcp.NewServer(sbClient, geminiClient)
+	mcpServer.InitializeTools()
+	log.Println("✅ Servidor MCP (Internal) inicializado com Tool RAG")
 
 	// --- Gin setup ---
 	if os.Getenv("GIN_MODE") == "" {
@@ -123,6 +139,7 @@ func main() {
 		WhatsAppClient: wpClient,
 		GeminiClient:   geminiClient,
 		TtsClient:      ttsClient,
+		MCPServer:      mcpServer,
 	})
 	handler.RegisterRoutes(r)
 
@@ -140,14 +157,20 @@ func main() {
 	}()
 
 	// --- Start ---
-	log.Printf("🚀 PMO-Bot-Go v0.3.0 listening on :%s", port)
-	if err := r.Run(":" + port); err != nil {
+	log.Printf("🚀 PMO-Bot-Go v0.3.0 listening on 0.0.0.0:%s", port)
+	if err := r.Run("0.0.0.0:" + port); err != nil {
 		log.Fatalf("❌ Server failed: %v", err)
 	}
 }
 
 // sendHeartbeat checks WPPConnect session and upserts bot_status in Supabase.
 func sendHeartbeat(session string, wp *whatsapp.Client, sb *supabase.Client) {
+	if wp == nil {
+		log.Println("💓 Heartbeat: DISCONNECTED (cliente WPP ainda não inicializado)")
+		_ = sb.UpsertBotStatus(session, "DISCONNECTED", nil)
+		return
+	}
+
 	connected, details, err := wp.CheckConnection()
 
 	status := "UNKNOWN"
