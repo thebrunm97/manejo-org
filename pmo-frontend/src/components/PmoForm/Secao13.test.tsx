@@ -35,7 +35,7 @@ describe('Secao13', () => {
 
     test('deve adicionar item na nutrição animal', () => {
         const mockOnSectionChange = vi.fn();
-        const data = { nutricao_animal: [] };
+        const data = { nutricao_animal: [] } as any;
 
         render(<Secao13 data={data} onSectionChange={mockOnSectionChange} />);
 

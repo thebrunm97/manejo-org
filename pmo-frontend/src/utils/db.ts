@@ -5,15 +5,30 @@ const STORE_NAME = 'pending-pmos';
 const DB_VERSION = 1;
 
 export const CADERNO_STORE = 'pending-caderno';
+export const SYNC_QUEUE_STORE = 'offline-sync-queue';
+
+export interface SyncQueueItem {
+    id: string; // uuid
+    type: 'CADERNO_SAVE' | 'PMODATA_SAVE';
+    payload: any;
+    timestamp: string; // ISO string
+    retries: number;
+    status: 'pending' | 'syncing' | 'failed';
+    error?: string;
+}
 
 interface PMODatabase extends DBSchema {
     [STORE_NAME]: {
         key: string;
-        value: any; // We'll refine this once PMOFormData is defined
+        value: any;
     };
     [CADERNO_STORE]: {
         key: string;
         value: any;
+    };
+    [SYNC_QUEUE_STORE]: {
+        key: string;
+        value: SyncQueueItem;
     };
 }
 
@@ -29,6 +44,11 @@ const dbPromise: Promise<IDBPDatabase<PMODatabase>> = openDB<PMODatabase>(DB_NAM
         if (!db.objectStoreNames.contains(CADERNO_STORE)) {
             db.createObjectStore(CADERNO_STORE, { keyPath: 'id' });
         }
+
+        // Cria store para Fila de Sincronização Unificada
+        if (!db.objectStoreNames.contains(SYNC_QUEUE_STORE)) {
+            db.createObjectStore(SYNC_QUEUE_STORE, { keyPath: 'id' });
+        }
     },
 });
 
@@ -37,37 +57,37 @@ const dbPromise: Promise<IDBPDatabase<PMODatabase>> = openDB<PMODatabase>(DB_NAM
  */
 export const localDb = {
     /**
-     * Obtém um valor pela chave.
+     * Salva um valor na store.
      */
-    async get(key: string, storeName: typeof STORE_NAME | typeof CADERNO_STORE = STORE_NAME) {
-        return (await dbPromise).get(storeName, key);
-    },
-
-    /**
-     * Adiciona ou atualiza um valor. O método 'put' faz um "upsert".
-     */
-    async set(value: any, storeName: typeof STORE_NAME | typeof CADERNO_STORE = STORE_NAME) {
+    async set(value: any, storeName: typeof STORE_NAME | typeof CADERNO_STORE | typeof SYNC_QUEUE_STORE = STORE_NAME) {
         return (await dbPromise).put(storeName, value);
     },
 
     /**
-     * Deleta um valor pela chave.
+     * Obtém um valor pela chave.
      */
-    async delete(key: string, storeName: typeof STORE_NAME | typeof CADERNO_STORE = STORE_NAME) {
-        return (await dbPromise).delete(storeName, key);
+    async get(id: string, storeName: typeof STORE_NAME | typeof CADERNO_STORE | typeof SYNC_QUEUE_STORE = STORE_NAME) {
+        return (await dbPromise).get(storeName, id);
+    },
+
+    /**
+     * Remove um valor da store.
+     */
+    async delete(id: string, storeName: typeof STORE_NAME | typeof CADERNO_STORE | typeof SYNC_QUEUE_STORE = STORE_NAME) {
+        return (await dbPromise).delete(storeName, id);
     },
 
     /**
      * Obtém todos os valores da store.
      */
-    async getAll(storeName: typeof STORE_NAME | typeof CADERNO_STORE = STORE_NAME) {
+    async getAll(storeName: typeof STORE_NAME | typeof CADERNO_STORE | typeof SYNC_QUEUE_STORE = STORE_NAME) {
         return (await dbPromise).getAll(storeName);
     },
 
     /**
      * Limpa todos os valores da store.
      */
-    async clear(storeName: typeof STORE_NAME | typeof CADERNO_STORE = STORE_NAME) {
+    async clear(storeName: typeof STORE_NAME | typeof CADERNO_STORE | typeof SYNC_QUEUE_STORE = STORE_NAME) {
         return (await dbPromise).clear(storeName);
     }
 };
