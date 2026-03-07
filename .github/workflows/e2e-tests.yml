@@ -35,7 +35,7 @@ jobs:
       - name: Create .env.test from secrets
         run: |
           echo "VITE_SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env.test
-          echo "VITE_SUPABASE_ANON_KEY=${{ secrets.SUPABASE_KEY }}" >> .env.test
+          echo "VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}" >> .env.test
           echo "E2E_TEST_USER_EMAIL=${{ secrets.E2E_TEST_USER_EMAIL }}" >> .env.test
           echo "E2E_TEST_USER_PASSWORD=${{ secrets.E2E_TEST_USER_PASSWORD }}" >> .env.test
 
