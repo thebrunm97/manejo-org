@@ -98,7 +98,7 @@ const DiarioDeCampo: React.FC<DiarioDeCampoProps> = ({ pmoId: propPmoId }) => {
         onChangeFiltros={setFilters}
         page={page}
         rowsPerPage={rowsPerPage}
-        onPageChange={(e, newPage) => setPage(newPage)}
+        onPageChange={(_e, newPage) => setPage(newPage)}
         onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
         onVisualizar={handleOpenDetails}
         onEditar={handleEditRecord}

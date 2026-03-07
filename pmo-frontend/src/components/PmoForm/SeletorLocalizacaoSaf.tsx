@@ -1,7 +1,7 @@
 // src/components/PmoForm/SeletorLocalizacaoSaf.tsx
 // Refatorado — Zero MUI. Usa Tailwind + lucide-react.
 
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
     Sprout, TreePine, Plus, Search, MapPin, X, ArrowLeft,
     Droplets, Loader2, Ruler
@@ -47,7 +47,7 @@ interface FormLocalData {
 interface SeletorLocalizacaoSafProps {
     value?: SelectionValue | string | null;
     onChange: (value: SelectionValue) => void;
-    multiple?: boolean;
+    _multiple?: boolean;
     error?: boolean;
     helperText?: string;
 }
@@ -58,7 +58,6 @@ type FilterType = 'todos' | 'canteiro' | 'entrelinha' | 'tanque';
 const SeletorLocalizacaoSaf: React.FC<SeletorLocalizacaoSafProps> = ({
     value,
     onChange,
-    multiple = false,
     error = false,
     helperText = ''
 }) => {

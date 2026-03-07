@@ -56,7 +56,6 @@ export const useVegetalGrouping = (
                 }, 0);
 
                 // Usar unidade do primeiro item com área definida, ou 'ha' como padrão
-                const areaUnidade = items.find(i => i.area_plantada_unidade)?.area_plantada_unidade || 'ha';
 
                 // Somar produção (assume mesma unidade)
                 const totalProducao = items.reduce((sum, item) => {

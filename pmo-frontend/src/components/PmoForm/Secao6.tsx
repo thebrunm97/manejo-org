@@ -1,7 +1,7 @@
 // src/components/PmoForm/Secao6.tsx
 // Clonado do Template Canónico — Zero MUI
 
-import React, { ChangeEvent, useState } from 'react';
+import { ChangeEvent, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 
 import SectionShell from '../Plan/SectionShell';
@@ -54,7 +54,7 @@ const AccordionPanel: React.FC<AccordionPanelProps> = ({ title, defaultOpen = fa
     );
 };
 
-const Secao6: React.FC<Secao6Props> = ({ data, onSectionChange, errors }) => {
+const Secao6: React.FC<Secao6Props> = ({ data, onSectionChange }) => {
     const safeData = data || {};
 
     const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

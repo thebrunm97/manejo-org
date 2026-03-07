@@ -7,10 +7,6 @@ import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
     useRecordFormState,
-    initialPlantioDraft,
-    initialManejoDraft,
-    initialColheitaDraft,
-    initialOutroDraft,
     getNowISO,
     getLoteSuggestion
 } from '../useRecordFormState';

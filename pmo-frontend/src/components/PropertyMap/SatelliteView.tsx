@@ -1,5 +1,5 @@
 // src/components/PropertyMap/SatelliteView.tsx
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     Trash2,
     Loader2,
@@ -10,7 +10,6 @@ import 'leaflet-draw/dist/leaflet.draw.css';
 import L from 'leaflet';
 import 'leaflet-draw';
 import { useTalhaoManager } from '../../hooks/map/useTalhaoManager';
-import { useAuth } from '../../context/AuthContext';
 import TalhaoDetails from '../Map/TalhaoDetails';
 
 // --- ÍCONES LEAFLET FIX ---

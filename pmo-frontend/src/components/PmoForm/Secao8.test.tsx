@@ -1,7 +1,5 @@
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import '@testing-library/jest-dom';
-import { vi } from 'vitest';
+import { describe, test, expect, vi } from 'vitest';
 import Secao8 from './Secao8';
 
 vi.mock('./TabelaDinamica.tsx', () => ({

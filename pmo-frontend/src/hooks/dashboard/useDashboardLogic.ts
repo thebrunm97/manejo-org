@@ -6,10 +6,6 @@ import {
 } from "../../services/dashboardService";
 import { getCurrentWeather, WeatherData } from "../../services/weatherService";
 import { fetchDashboardPmoDetails } from "../../services/pmoService";
-import { fetchUserProfile } from "../../services/profileService";
-import { supabase } from "../../supabaseClient";
-
-console.log("[useDashboardLogic] Imported supabase:", supabase);
 
 // Tipos do Estado do Dashboard
 export interface DashboardData {

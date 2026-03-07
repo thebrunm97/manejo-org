@@ -7,7 +7,6 @@
 
 import { useCallback } from 'react';
 import { cadernoService } from '../../services/cadernoService';
-import { localDb, SYNC_QUEUE_STORE } from '../../utils/db';
 import { CadernoEntry } from '../../types/CadernoTypes';
 
 export interface SaveResult {

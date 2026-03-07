@@ -1,17 +1,15 @@
 // src/components/Map/TalhaoDetails.tsx
 
-import React, { useState, useEffect, ReactNode } from 'react';
+import { useState, useEffect } from 'react';
 import {
     ArrowLeft,
-    FlaskConical,
-    History,
-    Layers,
-    Microscope,
-    Info,
-    ChevronRight,
-    Loader2,
     Plus,
-    Edit2
+    Microscope,
+    History,
+    FlaskConical,
+    Edit2,
+    Layers,
+    Loader2
 } from 'lucide-react';
 import { analiseService } from '../../services/analiseService';
 import { soilLogic } from '../../utils/soilLogic';

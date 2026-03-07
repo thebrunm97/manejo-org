@@ -5,9 +5,6 @@ import {
     LayoutDashboard,
     MessageSquare,
     ShieldCheck,
-    Gauge,
-    ArrowRight,
-    Users,
     CheckCircle2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';

@@ -3,12 +3,10 @@
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import {
     X,
+    Loader2,
     Beaker,
     Calendar,
-    AlertTriangle,
-    CheckCircle2,
-    Info,
-    Loader2
+    AlertTriangle
 } from 'lucide-react';
 import { analiseService } from '../../services/analiseService';
 import { soilLogic } from '../../utils/soilLogic';

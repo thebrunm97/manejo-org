@@ -20,28 +20,12 @@ interface GeneralLogTableProps {
     pmoId: number | undefined | null;
 }
 
-interface EditValues {
-    atividade?: string;
-    local?: string;
-    produto?: string;
-    quantidade?: string | number;
-    valor?: string | number;
-}
-
 const GeneralLogTable: React.FC<GeneralLogTableProps> = ({ pmoId }) => {
     const [registros, setRegistros] = useState<CadernoEntry[]>([]);
     const [loading, setLoading] = useState(false);
     const [showDeleted, setShowDeleted] = useState(false);
 
-    // Responsive check (replaces useMediaQuery)
-    const [isMobile, setIsMobile] = useState(false);
-    useEffect(() => {
-        const mq = window.matchMedia('(max-width: 639px)');
-        setIsMobile(mq.matches);
-        const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-        mq.addEventListener('change', handler);
-        return () => mq.removeEventListener('change', handler);
-    }, []);
+
 
     // Estados do Modal
     const [openDialog, setOpenDialog] = useState(false);
@@ -448,8 +432,8 @@ const GeneralLogTable: React.FC<GeneralLogTableProps> = ({ pmoId }) => {
                                     autoFocus
                                     rows={2}
                                     className={`w-full px-3 py-2 rounded-md border bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 transition-colors ${justificativa.length > 0 && justificativa.length < 5
-                                            ? 'border-red-500 focus:ring-red-500/30 focus:border-red-500'
-                                            : 'border-gray-300 focus:ring-primary-main/30 focus:border-primary-main'
+                                        ? 'border-red-500 focus:ring-red-500/30 focus:border-red-500'
+                                        : 'border-gray-300 focus:ring-primary-main/30 focus:border-primary-main'
                                         }`}
                                     value={justificativa}
                                     onChange={e => setJustificativa(e.target.value)}
@@ -469,8 +453,8 @@ const GeneralLogTable: React.FC<GeneralLogTableProps> = ({ pmoId }) => {
                             <button
                                 type="button"
                                 className={`px-4 py-2 text-sm font-medium text-white rounded-md transition-colors ${actionType === 'DELETE'
-                                        ? 'bg-red-600 hover:bg-red-700'
-                                        : 'bg-primary-main hover:bg-primary-dark'
+                                    ? 'bg-red-600 hover:bg-red-700'
+                                    : 'bg-primary-main hover:bg-primary-dark'
                                     }`}
                                 onClick={handleConfirmAction}
                             >

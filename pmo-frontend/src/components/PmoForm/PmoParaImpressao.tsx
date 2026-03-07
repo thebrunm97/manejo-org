@@ -71,10 +71,7 @@ interface SimpleTableProps {
     rows: (string | number | undefined)[][];
 }
 
-interface FieldValueProps {
-    label: string;
-    value?: string | number | null;
-}
+
 
 interface GroupedVegetal {
     displayName: string;
@@ -200,12 +197,6 @@ const SimpleTable: React.FC<SimpleTableProps> = ({ title, headers, rows }) => {
 };
 
 // Componente Auxiliar de Campo Valor
-const FieldValue: React.FC<FieldValueProps> = ({ label, value }) => (
-    <div style={{ marginBottom: '5px', fontSize: '12px' }}>
-        <strong>{label}:</strong> <span>{value || '-'}</span>
-    </div>
-);
-
 const PmoParaImpressao: React.FC<PmoParaImpressaoProps> = ({ dadosPmo, onClose }) => {
     const handlePrint = () => {
         window.print();

@@ -68,7 +68,14 @@ const MapController: React.FC<MapControllerProps> = ({ talhoes, focusTarget }) =
     return null;
 };
 
-const FarmMap: React.FC<FarmMapProps> = ({ talhoes, focusTarget, onCreated, onEdited, onDeleted, onMapCreated, onSaveTalhao, onTalhaoClick }) => {
+const FarmMap: React.FC<FarmMapProps> = ({
+    talhoes = [],
+    focusTarget,
+    onEdited,
+    onDeleted,
+    onMapCreated,
+    onTalhaoClick
+}) => {
 
     const handleCreated = async (e: any) => {
         const layer = e.layer;

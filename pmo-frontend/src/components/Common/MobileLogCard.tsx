@@ -4,9 +4,6 @@ import { CadernoEntry } from '../../types/CadernoTypes';
 import { formatDateBR, formatComplianceMessage } from '../../utils/formatters';
 import { AlertTriangle } from 'lucide-react';
 
-// Type for activity chip colors
-type ChipColorClass = string;
-
 const getStatusClasses = (tipo: string | undefined): { bg: string; text: string; border: string } => {
     const map: Record<string, { bg: string; text: string; border: string }> = {
         'Insumo': { bg: 'bg-amber-100', text: 'text-amber-800', border: 'border-amber-300' },
@@ -65,8 +62,8 @@ const MobileLogCard: React.FC<MobileLogCardProps> = ({ reg, onEdit, onDelete }) 
                 <div className="flex flex-row justify-between items-center mb-1.5">
                     <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-full text-[0.7rem] font-extrabold ${isCancelado
-                                ? `border ${statusClasses.border} ${statusClasses.text} bg-transparent`
-                                : `${statusClasses.bg} ${statusClasses.text}`
+                            ? `border ${statusClasses.border} ${statusClasses.text} bg-transparent`
+                            : `${statusClasses.bg} ${statusClasses.text}`
                             }`}
                         style={{ height: 24 }}
                     >

@@ -1,7 +1,7 @@
 // src/components/PmoForm/Secao7.tsx
 // Refatorado — Zero MUI. Usa Tailwind + lucide-react + TabelaDinamica standard.
 
-import React, { useState, ChangeEvent } from 'react';
+import { useState, ChangeEvent } from 'react';
 import { ChevronDown } from 'lucide-react';
 import SectionShell from '../Plan/SectionShell';
 import CheckboxGroup from './CheckboxGroup';
@@ -53,7 +53,7 @@ const AccordionPanel: React.FC<{ title: string; defaultOpen?: boolean; children:
 };
 
 
-const Secao7: React.FC<Secao7Props> = ({ data, onSectionChange, errors }) => {
+const Secao7: React.FC<Secao7Props> = ({ data, onSectionChange }) => {
     const safeData = data || {};
 
     // Configuração das colunas para os membros da família
