@@ -1,0 +1,11 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install && npm install -g tsx
+
+COPY scripts/benchmark_bots.ts ./scripts/
+
+# Use tsx for reliable TS execution in ESM environments
+CMD ["tsx", "scripts/benchmark_bots.ts"]
