@@ -17,7 +17,7 @@ import { useNavigate, useParams, useLocation, useSearchParams } from 'react-rout
 
 // Domain Layer
 import type {
-    PmoFormData,
+    PMOFormData,
     PmoPayload,
     SaveResult,
     FormErrors,
@@ -59,7 +59,7 @@ export interface UsePmoFormLogicReturn {
     // ─────────────────────────────────────────────────────────────────
     // STATE (Read-only para View)
     // ─────────────────────────────────────────────────────────────────
-    formData: PmoFormData;
+    formData: PMOFormData;
     nomeIdentificador: string;
     currentStep: number;
     totalSteps: number;
@@ -115,7 +115,7 @@ export function usePmoFormLogic(options: UsePmoFormLogicOptions = {}): UsePmoFor
     // ─────────────────────────────────────────────────────────────────
     // STATE
     // ─────────────────────────────────────────────────────────────────
-    const [formData, setFormData] = useState<PmoFormData>(initialFormData);
+    const [formData, setFormData] = useState<PMOFormData>(initialFormData as PMOFormData);
     const [nomeIdentificador, setNomeIdentificadorState] = useState('');
 
     // Initialize state from URL params
@@ -168,7 +168,7 @@ export function usePmoFormLogic(options: UsePmoFormLogicOptions = {}): UsePmoFor
 
                 if (idStr.startsWith('offline_')) {
                     // New PMO created offline
-                    const result = await createPmo(payload as Omit<PmoPayload, 'id'>);
+                    const result = await createPmo(payload as Omit<PmoPayload, 'id'> & { id?: string });
                     if (!result.success) throw new Error(result.error);
                 } else {
                     // Existing PMO updated offline
@@ -226,7 +226,7 @@ export function usePmoFormLogic(options: UsePmoFormLogicOptions = {}): UsePmoFor
         } else {
             setIsEditMode(false);
             setEditablePmoId(null);
-            setFormData(initialFormData);
+            setFormData(initialFormData as PMOFormData);
             setNomeIdentificadorState('');
             setIsLoading(false);
         }

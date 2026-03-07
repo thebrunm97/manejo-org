@@ -96,7 +96,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
     const handleBatchSave = async () => {
         if (!talhao) return;
         try {
-            const payloads = [];
+            const payloads: any[] = [];
             const w = parseFloat(batchData.width.replace(',', '.')) || 0;
             const l = parseFloat(batchData.length.replace(',', '.')) || 0;
             const area = (w > 0 && l > 0) ? (w * l) : null;
@@ -114,7 +114,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                 }
 
                 payloads.push({
-                    talhao_id: talhao.id,
+                    talhao_id: String(talhao.id),
                     nome: finalName,
                     tipo: batchData.type,
                     largura: w || null,

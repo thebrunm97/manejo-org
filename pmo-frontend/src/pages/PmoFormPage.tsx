@@ -22,6 +22,7 @@ import DesktopStepper from '../components/PmoForm/DesktopStepper';
 import StepperNavigation from '../components/PmoForm/StepperNavigation';
 import MobileBottomNav from '../components/PmoForm/MobileBottomNav';
 import SectionsModal from '../components/PmoForm/SectionsModal';
+import { PMOFormData } from '../domain/pmo/pmoTypes';
 import PmoParaImpressao from '../components/PmoForm/PmoParaImpressao';
 
 // Section Components
@@ -51,9 +52,9 @@ import Secao18 from '../components/PmoForm/Secao18';
 
 interface FormSection {
     id: number;
-    key: string;
+    key: keyof PMOFormData;
     Component: React.FC<any>;
-    validate: (data: any) => boolean;
+    validate: (data: any) => boolean | Record<string, string>;
     label: string;
 }
 
@@ -130,7 +131,7 @@ const PmoFormPage: React.FC = () => {
         { id: 16, key: 'secao_16_sac', Component: Secao16, validate: validations.validateSecao16, label: 'SAC' },
         { id: 17, key: 'secao_17_opiniao', Component: Secao17, validate: validations.validateSecao17, label: 'Opinião' },
         { id: 18, key: 'secao_18_anexos', Component: Secao18, validate: validations.validateSecao18, label: 'Anexos' },
-        { id: 19, key: 'caderno_de_campo', Component: DiarioDeCampo, validate: () => true, label: 'Caderno de Campo' }
+        { id: 19, key: 'id' as any, Component: DiarioDeCampo, validate: () => true, label: 'Caderno de Campo' }
     ], []);
 
     const currentSectionConfig = formSections.find(sec => sec.id === currentStep);
@@ -161,7 +162,7 @@ const PmoFormPage: React.FC = () => {
     // RENDER: Print Mode
     // ─────────────────────────────────────────────────────────────────
     if (isPrintMode) {
-        return <PmoParaImpressao dadosPmo={formData} onClose={() => setIsPrintMode(false)} />;
+        return <PmoParaImpressao dadosPmo={formData as any} onClose={() => setIsPrintMode(false)} />;
     }
 
     // ─────────────────────────────────────────────────────────────────

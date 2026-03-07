@@ -6,7 +6,7 @@ import { EditControl } from 'react-leaflet-draw';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import L, { LatLngExpression } from 'leaflet';
-import { Talhao, GeoJSONGeometry } from '../../services/talhaoService';
+import { Talhao, GeoJSONGeometry } from '../../domain/geo/geoTypes';
 
 interface MapCreatedEvent {
     layer: L.Layer;
@@ -87,9 +87,7 @@ const FarmMap: React.FC<FarmMapProps> = ({ talhoes, focusTarget, onCreated, onEd
     };
 
     return (
-        // @ts-expect-error react-leaflet v5 types incompatibility
         <MapContainer center={[-18.9186, -48.2772] as LatLngExpression} zoom={15} style={{ height: '100%', width: '100%', minHeight: '500px' }}>
-            {/* @ts-expect-error react-leaflet v5 types incompatibility */}
             <TileLayer url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}" attribution="Google Satélite" />
 
             <FeatureGroup>
@@ -130,7 +128,7 @@ const FarmMap: React.FC<FarmMapProps> = ({ talhoes, focusTarget, onCreated, onEd
                             <Popup>
                                 <strong>{t.nome}</strong><br />
                                 <small style={{ color: '#666' }}>{t.tipo ? t.tipo.toUpperCase() : 'TALHÃO'}</small><br />
-                                Área: {t.area_total_m2 || t.area_m2} m²<br />
+                                Área: {t.area_total_m2 || t.area_m2 || 0} m²<br />
                                 {t.cultura && <span>🌱: {t.cultura}<br /></span>}
                                 <hr style={{ margin: '4px 0' }} />
                                 🧪 pH: {t.ph_solo || '-'}<br />

@@ -6,8 +6,12 @@ import CheckboxGroup from './CheckboxGroup';
 import TabelaDinamica, { TableColumn } from './TabelaDinamica';
 
 interface NutricaoItem { animal?: string; identificacao_ingrediente?: string; origem_transgenica?: boolean | null; descricao?: string; procedencia?: string; frequencia?: string; quantidade?: string; }
-interface AlimentoItem { alimento?: string;[key: string]: any; }
-interface Secao13Data { tecnicas_melhoria_pastos?: string; tecnicas_melhoria_pastos_outros?: string; reproducao_animais?: string; reproducao_animais_outros?: string; aquisicao_animais?: any; evolucao_plantel?: any[]; nutricao_animal?: NutricaoItem[]; plano_anual_alimentacao_animal?: AlimentoItem[]; alimentacao_mamiferos_jovens?: { alimentacao_mamiferos_jovens?: string }; bem_estar_animais?: string; manejo_sanitario_animal?: any;[key: string]: any; }
+interface AlimentoItem { alimento: string; Jan: boolean; Fev: boolean; Mar: boolean; Abr: boolean; Mai: boolean; Jun: boolean; Jul: boolean; Ago: boolean; Set: boolean; Out: boolean; Nov: boolean; Dez: boolean;[key: string]: any; }
+import { PMOFormData } from '../../domain/pmo/pmoTypes';
+
+type Secao13Key = 'secao_13_producao_animal';
+type Secao13Data = PMOFormData[Secao13Key];
+
 interface Secao13Props { data: Secao13Data | null | undefined; onSectionChange: (d: Secao13Data) => void; }
 
 const inputCls = "w-full border-b border-gray-300 bg-transparent py-1 text-sm focus:border-green-500 focus:outline-none";
@@ -92,11 +96,11 @@ const PlanoAnual: React.FC<{ data: AlimentoItem[] | undefined; onDataChange: (d:
 };
 
 const Secao13: React.FC<Secao13Props> = ({ data, onSectionChange }) => {
-    const sd = data || {};
-    const hc = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onSectionChange({ ...sd, [e.target.name]: e.target.value });
-    const hcb = (fn: string, nv: string) => onSectionChange({ ...sd, [fn]: nv });
-    const hnc = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onSectionChange({ ...sd, [e.target.name]: { [e.target.name]: e.target.value } });
-    const hms = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onSectionChange({ ...sd, manejo_sanitario_animal: { ...sd.manejo_sanitario_animal, [e.target.name]: { [e.target.name]: e.target.value } } });
+    const sd = data || {} as Secao13Data;
+    const hc = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onSectionChange({ ...sd!, [e.target.name]: e.target.value });
+    const hcb = (fn: string, nv: string) => onSectionChange({ ...sd!, [fn]: nv });
+    const hnc = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onSectionChange({ ...sd!, [e.target.name]: { [e.target.name]: e.target.value } } as Secao13Data);
+    const hms = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onSectionChange({ ...sd!, manejo_sanitario_animal: { ...(sd.manejo_sanitario_animal as any), [e.target.name]: { [e.target.name]: e.target.value } } } as Secao13Data);
 
     const colEvo: TableColumn[] = [{ id: 'tipo_animal', label: 'Tipo de animal', type: 'text' }, { id: 'numero_atual', label: 'Nº atual', type: 'number' }, { id: 'em_1_ano', label: 'Em 1 ano', type: 'number' }, { id: 'em_3_anos', label: 'Em 3 anos', type: 'number' }, { id: 'em_5_anos', label: 'Em 5 anos', type: 'number' }];
     const colTrat: TableColumn[] = [{ id: 'animal_lote', label: 'Animal/Lote', type: 'text' }, { id: 'diagnostico', label: 'Diagnóstico', type: 'text' }, { id: 'tratamento', label: 'Tratamento', type: 'text' }, { id: 'periodo_carencia', label: 'Período de Carência', type: 'text' }];

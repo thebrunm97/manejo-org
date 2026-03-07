@@ -1,17 +1,8 @@
-// src/components/PropertyMap/SatelliteView.jsx
-
+// src/components/PropertyMap/SatelliteView.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import {
     Trash2,
-    Save,
-    Layers,
-    Square,
-    Edit2,
     Loader2,
-    X,
-    Map as MapIcon,
-    Maximize2,
-    Minimize2
 } from 'lucide-react';
 import { MapContainer, TileLayer, FeatureGroup, useMap, ZoomControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -21,21 +12,21 @@ import 'leaflet-draw';
 import { useTalhaoManager } from '../../hooks/map/useTalhaoManager';
 import { useAuth } from '../../context/AuthContext';
 import TalhaoDetails from '../Map/TalhaoDetails';
-import { cn } from '../../utils/cn';
 
 // --- ÍCONES LEAFLET FIX ---
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
-delete L.Icon.Default.prototype._getIconUrl;
+// @ts-ignore - Leaflet internals can be tricky with modern TS
+delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
     iconRetinaUrl: markerIcon2x,
     iconUrl: markerIcon,
     shadowUrl: markerShadow,
 });
 
-const GlobalMapStyles = () => (
+const GlobalMapStyles: React.FC = () => (
     <style>{`
         .leaflet-container {
             font-family: 'Inter', sans-serif !important;
@@ -71,10 +62,16 @@ const GlobalMapStyles = () => (
     `}</style>
 );
 
+interface DrawControlProps {
+    featureGroupRef: React.RefObject<L.FeatureGroup | null>;
+    onCreated: (geoJSON: any, layer: L.Layer) => void;
+    onDeleted?: (layer: L.Layer) => void;
+}
+
 // --- COMPONENTE DE DESENHO ---
-const DrawControl = ({ featureGroupRef, onCreated, onDeleted }) => {
+const DrawControl: React.FC<DrawControlProps> = ({ featureGroupRef, onCreated, onDeleted }) => {
     const map = useMap();
-    const drawControlRef = useRef(null);
+    const drawControlRef = useRef<L.Control.Draw | null>(null);
 
     useEffect(() => {
         if (!map || !featureGroupRef.current) return;
@@ -111,21 +108,23 @@ const DrawControl = ({ featureGroupRef, onCreated, onDeleted }) => {
                 marker: false,
                 polyline: false,
             },
-        });
+        } as any); // Type cast due to leaflet-draw types complexity
 
         map.addControl(drawControl);
         drawControlRef.current = drawControl;
 
-        const handleDrawCreated = (e) => {
+        const handleDrawCreated = (e: any) => {
             const layer = e.layer;
-            featureGroupRef.current.addLayer(layer);
+            if (featureGroupRef.current) {
+                featureGroupRef.current.addLayer(layer);
+            }
             const geoJSON = layer.toGeoJSON();
             onCreated(geoJSON, layer);
         };
 
-        const handleDrawDeleted = (e) => {
+        const handleDrawDeleted = (e: any) => {
             const layers = e.layers;
-            layers.eachLayer((layer) => {
+            layers.eachLayer((layer: L.Layer) => {
                 if (onDeleted) onDeleted(layer);
             });
         };
@@ -143,10 +142,16 @@ const DrawControl = ({ featureGroupRef, onCreated, onDeleted }) => {
     return null;
 };
 
+interface TalhoesRendererProps {
+    talhoes: any[];
+    onTalhaoClick: (id: number) => void;
+    selectedTalhaoId: number | null;
+}
+
 // --- RENDERIZADOR IMPERATIVO ---
-const TalhoesRenderer = ({ talhoes, onTalhaoClick, selectedTalhaoId }) => {
+const TalhoesRenderer: React.FC<TalhoesRendererProps> = ({ talhoes, onTalhaoClick, selectedTalhaoId }) => {
     const map = useMap();
-    const layerGroupRef = useRef(null);
+    const layerGroupRef = useRef<L.FeatureGroup | null>(null);
 
     // Efeito para focar no talhão selecionado
     useEffect(() => {
@@ -171,9 +176,6 @@ const TalhoesRenderer = ({ talhoes, onTalhaoClick, selectedTalhaoId }) => {
 
         if (!layerGroupRef.current) {
             layerGroupRef.current = new L.FeatureGroup();
-        }
-
-        if (!map.hasLayer(layerGroupRef.current)) {
             map.addLayer(layerGroupRef.current);
         }
 
@@ -201,10 +203,10 @@ const TalhoesRenderer = ({ talhoes, onTalhaoClick, selectedTalhaoId }) => {
                         fillOpacity: isSelected ? 0.7 : 0.4,
                         fillColor: t.cor || '#16a34a',
                     },
-                    onEachFeature: (feature, layer) => {
+                    onEachFeature: (_feature, layer) => {
                         layer.on({
                             click: (e) => {
-                                L.DomEvent.stopPropagation(e);
+                                L.DomEvent.stopPropagation(e as any);
                                 if (onTalhaoClick) onTalhaoClick(t.id);
                             }
                         });
@@ -212,8 +214,8 @@ const TalhoesRenderer = ({ talhoes, onTalhaoClick, selectedTalhaoId }) => {
                 });
 
                 geoJsonLayer.eachLayer(l => {
-                    if (l.bindTooltip && t.nome) {
-                        l.bindTooltip(`
+                    if ((l as any).bindTooltip && t.nome) {
+                        (l as any).bindTooltip(`
                             <div style="display: flex; flex-direction: column; align-items: center; pointer-events: none;">
                                 <span style="font-weight: 900; text-transform: uppercase; font-size: 13px; text-shadow: 0px 1px 4px rgba(0,0,0,0.8); color: white; letter-spacing: 0.5px;">${t.nome}</span>
                                 <span style="font-size: 11px; font-weight: 700; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); color: #fff; padding: 1px 8px; border-radius: 99px; margin-top: 2px; border: 1px solid rgba(255,255,255,0.2);">
@@ -233,16 +235,12 @@ const TalhoesRenderer = ({ talhoes, onTalhaoClick, selectedTalhaoId }) => {
                 console.error("Erro ao renderizar talhão:", t, err);
             }
         });
-
-        return () => { };
     }, [map, talhoes, onTalhaoClick, selectedTalhaoId]);
 
     useEffect(() => {
         return () => {
             if (map && layerGroupRef.current) {
-                if (map.hasLayer(layerGroupRef.current)) {
-                    map.removeLayer(layerGroupRef.current);
-                }
+                map.removeLayer(layerGroupRef.current);
             }
         };
     }, [map]);
@@ -250,8 +248,11 @@ const TalhoesRenderer = ({ talhoes, onTalhaoClick, selectedTalhaoId }) => {
     return null;
 };
 
-const SatelliteView = ({ pmoId }) => {
-    const { user } = useAuth();
+interface SatelliteViewProps {
+    pmoId: string;
+}
+
+const SatelliteView: React.FC<SatelliteViewProps> = ({ pmoId }) => {
     const {
         talhoes,
         loading: talhoesLoading,
@@ -259,10 +260,10 @@ const SatelliteView = ({ pmoId }) => {
         removeTalhao
     } = useTalhaoManager(pmoId);
 
-    const [activeCenter, setActiveCenter] = useState([-18.900582, -48.250880]);
+    const [activeCenter, setActiveCenter] = useState<[number, number]>([-18.900582, -48.250880]);
     const [mapReady, setMapReady] = useState(false);
-    const featureGroupRef = useRef(null);
-    const [selectedTalhaoId, setSelectedTalhaoId] = useState(null);
+    const featureGroupRef = useRef<L.FeatureGroup | null>(null);
+    const [selectedTalhaoId, setSelectedTalhaoId] = useState<number | null>(null);
 
     // Initial Geolocation
     useEffect(() => {
@@ -279,13 +280,16 @@ const SatelliteView = ({ pmoId }) => {
         }
     }, []);
 
-    const handleCreated = async (geoJSON, layer) => {
-        const latLngs = layer.getLatLngs()[0];
+    const handleCreated = async (_geoJSON: any, layer: L.Layer) => {
+        const polyLayer = layer as L.Polygon;
+        const latLngs = polyLayer.getLatLngs()[0] as L.LatLng[];
         const coords = latLngs.map(ll => ({ lat: ll.lat, lng: ll.lng }));
 
         const nome = prompt("Nome do novo talhão:", `Talhão ${talhoes.length + 1}`);
         if (!nome) {
-            featureGroupRef.current.removeLayer(layer);
+            if (featureGroupRef.current) {
+                featureGroupRef.current.removeLayer(layer);
+            }
             return;
         }
 
@@ -293,19 +297,23 @@ const SatelliteView = ({ pmoId }) => {
 
         if (!newTalhao) {
             alert('Erro ao salvar talhão.');
-            featureGroupRef.current.removeLayer(layer);
+            if (featureGroupRef.current) {
+                featureGroupRef.current.removeLayer(layer);
+            }
         } else {
-            featureGroupRef.current.removeLayer(layer);
+            if (featureGroupRef.current) {
+                featureGroupRef.current.removeLayer(layer);
+            }
         }
     };
 
-    const handleSelectTalhao = (id) => {
+    const handleSelectTalhao = (id: number) => {
         setSelectedTalhaoId(id);
     };
 
-    const handleDelete = async (id) => {
+    const handleDelete = async (id: number) => {
         if (!confirm("Deletar talhão? Isso excluirá permanentemente todos os dados associados.")) return;
-        const success = await removeTalhao(id);
+        const success = await removeTalhao(String(id));
         if (success) {
             setSelectedTalhaoId(null);
         } else {
@@ -343,7 +351,7 @@ const SatelliteView = ({ pmoId }) => {
                             opacity={0.6}
                         />
 
-                        <FeatureGroup ref={featureGroupRef} />
+                        <FeatureGroup ref={(ref) => { featureGroupRef.current = ref; }} />
 
                         <DrawControl
                             featureGroupRef={featureGroupRef}
@@ -363,7 +371,7 @@ const SatelliteView = ({ pmoId }) => {
                 <div className="w-full md:w-[350px] bg-white border-l border-slate-200 z-20 flex flex-col shadow-[-10px_0_30px_-15px_rgba(0,0,0,0.1)] animate-in slide-in-from-right duration-300">
                     <div className="flex-1 overflow-hidden">
                         <TalhaoDetails
-                            talhao={talhoes.find(t => t.id === selectedTalhaoId)}
+                            talhao={talhoes.find(t => String(t.id) === String(selectedTalhaoId)) as any || null}
                             onBack={() => setSelectedTalhaoId(null)}
                         />
                     </div>

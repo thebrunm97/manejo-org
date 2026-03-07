@@ -13,12 +13,12 @@ export interface HarvestRecord extends CadernoCampoRow {
     // Enforce specific types for fields used in the dashboard to avoid 'any'
     // and handle potential nulls from the database
     id: string;
-    pmo_id: number; // Corrected to match generated Database type (number)
+    pmo_id: number | null; // Match generated Database type
     quantidade_valor: number | null;
     quantidade_unidade: string | null;
     produto: string | null;
-    data_registro: string;
-    tipo_atividade: string | null;
+    data_registro: string | null;
+    tipo_atividade: string;
     talhao_canteiro: string | null;
     // Make detailed technical fields optional or flexible
     detalhes_tecnicos: any | null;

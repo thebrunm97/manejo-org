@@ -68,10 +68,10 @@ export function useTalhaoManager(pmoId: string, propriedadeId?: number) {
         }
     };
 
-    const removeTalhao = async (id: string): Promise<boolean> => {
+    const removeTalhao = async (id: string | number): Promise<boolean> => {
         try {
-            await talhaoService.delete(id);
-            setTalhoes(prev => prev.filter(t => t.id !== id));
+            await talhaoService.delete(id.toString());
+            setTalhoes(prev => prev.filter(t => Number(t.id) !== Number(id)));
             return true;
         } catch (err) {
             console.error("Erro ao deletar talhão:", err);

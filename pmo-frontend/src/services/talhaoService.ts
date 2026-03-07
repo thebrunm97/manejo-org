@@ -95,9 +95,9 @@ export const talhaoService = {
         // Prepara payload para o banco (tabela talhoes)
         const payload: Record<string, unknown> = {
             nome: talhao.nome,
-            geometry: convertPointsToGeoJson(talhao.geometria),
+            geometry: convertPointsToGeoJson(talhao.geometria || []),
             area_ha: talhao.area_hectares,
-            area_total_m2: talhao.area_hectares * 10000,
+            area_total_m2: (talhao.area_hectares || 0) * 10000,
             cor: talhao.cor,
             cultura: talhao.cultura,
             user_id: talhao.user_id,
