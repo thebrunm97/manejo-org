@@ -183,7 +183,7 @@ const SeletorLocalizacaoSaf: React.FC<SeletorLocalizacaoSafProps> = ({
                 tipo: formLocal.tipo, largura: larg, comprimento: comp,
                 linhas: formLocal.linhas, area: areaCalc > 0 ? areaCalc.toFixed(2) : null
             };
-            const novoCanteiro = await locationService.createCanteiro(selectedTalhaoId, formLocal.nome, metadata);
+            const novoCanteiro = await locationService.createCanteiro(Number(selectedTalhaoId), formLocal.nome, metadata);
             setCanteiros(prev => [novoCanteiro, ...prev]);
             handleSelect(novoCanteiro);
             setViewMode('list');

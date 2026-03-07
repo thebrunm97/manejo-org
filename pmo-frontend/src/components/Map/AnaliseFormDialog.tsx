@@ -49,7 +49,7 @@ interface AnaliseFormData {
 interface AnaliseFormDialogProps {
     open: boolean;
     onClose: () => void;
-    talhaoId: string;
+    talhaoId: string | number;
     onSaveSuccess: () => void;
     initialData?: AnaliseData | null;
 }
@@ -116,7 +116,7 @@ const AnaliseFormDialog: React.FC<AnaliseFormDialogProps> = ({ open, onClose, ta
         if (isTextureInvalid()) return;
         setLoading(true);
         try {
-            const payload = { ...formData, talhao_id: talhaoId, ph: formData.ph, saturacao_bases: formData.saturacao_bases };
+            const payload = { ...formData, talhao_id: talhaoId } as any;
             await analiseService.saveAnalise(payload);
             onSaveSuccess();
             onClose();

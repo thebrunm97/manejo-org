@@ -16,18 +16,11 @@ import Historico from './Historico';
 import Situacao from './Situacao';
 import SeparacaoAreasProducaoParalela from './SeparacaoAreasProducaoParalela';
 
+import { PMOFormData } from '../../domain/pmo/pmoTypes';
+
 // Types
-interface Secao1Data {
-    dados_cadastrais?: Record<string, any>;
-    roteiro_acesso_propriedade?: Record<string, any>;
-    mapa_propriedade_croqui?: Record<string, any>;
-    coordenadas_geograficas?: Record<string, any>;
-    area_propriedade?: Record<string, any>;
-    historico_propriedade_producao_organica?: Record<string, any>;
-    situacao_propriedade_relacao_producao_organica?: Record<string, any>;
-    separacao_areas_producao_paralela?: Record<string, any>;
-    [key: string]: any;
-}
+type Secao1Key = 'secao_1_descricao_propriedade';
+type Secao1Data = PMOFormData[Secao1Key];
 
 interface Secao1Props {
     data: Secao1Data | null | undefined;
@@ -62,11 +55,11 @@ const AccordionPanel: React.FC<AccordionPanelProps> = ({ title, defaultOpen = fa
 
 const Secao1: React.FC<Secao1Props> = ({ data, onSectionChange, errors }) => {
     const handleSubSectionChange = (subSectionName: string, subSectionData: any) => {
-        onSectionChange({ ...data, [subSectionName]: subSectionData });
+        onSectionChange({ ...safeData!, [subSectionName]: subSectionData });
     };
 
-    const safeData = data || {};
-    const safeErrors = errors || {};
+    const safeData = data || {} as Secao1Data;
+    const safeErrors = (errors || {}) as any;
 
     return (
         <SectionShell sectionLabel="Seção 1" title="Descrição da Propriedade">
@@ -76,7 +69,7 @@ const Secao1: React.FC<Secao1Props> = ({ data, onSectionChange, errors }) => {
                 <AccordionPanel title="1.1 Dados Cadastrais" defaultOpen>
                     <div className="w-full">
                         <DadosCadastrais
-                            data={safeData.dados_cadastrais}
+                            data={safeData.dados_cadastrais as any}
                             onDataChange={(newData) => handleSubSectionChange('dados_cadastrais', newData)}
                             errors={safeErrors.dados_cadastrais}
                         />
@@ -87,12 +80,12 @@ const Secao1: React.FC<Secao1Props> = ({ data, onSectionChange, errors }) => {
                 <AccordionPanel title="1.2 Roteiro de Acesso e Croqui">
                     <div className="w-full flex flex-col gap-6">
                         <RoteiroAcesso
-                            data={safeData.roteiro_acesso_propriedade}
+                            data={safeData.roteiro_acesso_propriedade as any}
                             onDataChange={(newData) => handleSubSectionChange('roteiro_acesso_propriedade', newData)}
                             errors={safeErrors.roteiro_acesso_propriedade}
                         />
                         <MapaCroqui
-                            data={safeData.mapa_propriedade_croqui}
+                            data={safeData.mapa_propriedade_croqui as any}
                             onDataChange={(newData) => handleSubSectionChange('mapa_propriedade_croqui', newData)}
                             errors={safeErrors.mapa_propriedade_croqui}
                         />
@@ -107,7 +100,7 @@ const Secao1: React.FC<Secao1Props> = ({ data, onSectionChange, errors }) => {
                                 Coordenadas Geográficas
                             </h4>
                             <Coordenadas
-                                data={safeData.coordenadas_geograficas}
+                                data={safeData.coordenadas_geograficas as any}
                                 onDataChange={(newData) => handleSubSectionChange('coordenadas_geograficas', newData)}
                                 errors={safeErrors.coordenadas_geograficas}
                             />
@@ -117,7 +110,7 @@ const Secao1: React.FC<Secao1Props> = ({ data, onSectionChange, errors }) => {
 
                         <div>
                             <AreaPropriedade
-                                data={safeData.area_propriedade}
+                                data={safeData.area_propriedade as any}
                                 onDataChange={(newData) => handleSubSectionChange('area_propriedade', newData)}
                                 errors={safeErrors.area_propriedade}
                             />
@@ -129,7 +122,7 @@ const Secao1: React.FC<Secao1Props> = ({ data, onSectionChange, errors }) => {
                 <AccordionPanel title="1.4 Histórico da Propriedade">
                     <div className="w-full">
                         <Historico
-                            data={safeData.historico_propriedade_producao_organica}
+                            data={safeData.historico_propriedade_producao_organica as any}
                             onDataChange={(newData) => handleSubSectionChange('historico_propriedade_producao_organica', newData)}
                             errors={safeErrors.historico_propriedade_producao_organica}
                         />
@@ -140,7 +133,7 @@ const Secao1: React.FC<Secao1Props> = ({ data, onSectionChange, errors }) => {
                 <AccordionPanel title="1.5 Situação da Propriedade">
                     <div className="w-full">
                         <Situacao
-                            data={safeData.situacao_propriedade_relacao_producao_organica}
+                            data={safeData.situacao_propriedade_relacao_producao_organica as any}
                             onDataChange={(newData) => handleSubSectionChange('situacao_propriedade_relacao_producao_organica', newData)}
                             errors={safeErrors.situacao_propriedade_producao_organica}
                         />
@@ -151,7 +144,7 @@ const Secao1: React.FC<Secao1Props> = ({ data, onSectionChange, errors }) => {
                 <AccordionPanel title="1.6 Separação de Áreas (Produção Paralela)">
                     <div className="w-full">
                         <SeparacaoAreasProducaoParalela
-                            data={safeData.separacao_areas_producao_paralela}
+                            data={safeData.separacao_areas_producao_paralela as any}
                             onDataChange={(newData) => handleSubSectionChange('separacao_areas_producao_paralela', newData)}
                             errors={safeErrors.separacao_areas_producao_paralela}
                         />

@@ -112,8 +112,8 @@ const TalhaoDetails: React.FC<TalhaoDetailsProps> = ({ talhao, onBack }) => {
         if (!talhao?.id) return;
         setLoading(true);
         try {
-            const data = await analiseService.getLatestAnalise(talhao.id);
-            setAnalise(data);
+            const data = await analiseService.getLatestAnalise(talhao.id as any);
+            setAnalise(data as any);
         } catch (error) {
             console.error("Erro ao carregar análise:", error);
         } finally {
@@ -129,7 +129,7 @@ const TalhaoDetails: React.FC<TalhaoDetailsProps> = ({ talhao, onBack }) => {
     if (!talhao) return null;
 
     const targets = soilLogic.getCropTargets(talhao.cultura);
-    const classificacaoSolo = analise ? soilLogic.getClassificacaoTextural(analise.argila) : '';
+    const classificacaoSolo = analise ? soilLogic.getClassificacaoTextural(analise.argila as any) : '';
 
     const getNutrientesList = (dados: Analise | null): NutrientGaugeProps[] => {
         if (!dados) return [];
@@ -162,7 +162,7 @@ const TalhaoDetails: React.FC<TalhaoDetailsProps> = ({ talhao, onBack }) => {
                         <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-2">
                             {talhao.cultura || 'Sem cultura'}
                             <span className="w-1 h-1 bg-slate-300 rounded-full" />
-                            {Number(talhao.area_ha).toFixed(2)} ha
+                            {Number((talhao as any).area_ha || 0).toFixed(2)} ha
                         </p>
                     </div>
                 </div>
@@ -372,7 +372,7 @@ const TalhaoDetails: React.FC<TalhaoDetailsProps> = ({ talhao, onBack }) => {
             <AnaliseFormDialog
                 open={openForm}
                 onClose={() => setOpenForm(false)}
-                talhaoId={talhao.id}
+                talhaoId={String(talhao.id)}
                 initialData={editingData}
                 onSaveSuccess={() => { fetchAnalise(); setOpenForm(false); }}
             />

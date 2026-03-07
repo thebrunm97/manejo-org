@@ -24,7 +24,7 @@ import { cn } from '../../utils/cn';
 import FarmMap from '../Map/FarmMap';
 import TalhaoDetailsDrawer from './TalhaoDetailsDrawer';
 import { locationService } from '../../services/locationService';
-import { Talhao } from '../../services/talhaoService';
+import { Talhao } from '../../domain/geo/geoTypes';
 
 const formatArea = (m2: number) => {
     if (!m2) return '0 m²';
@@ -77,7 +77,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
         try {
             setLoading(true);
             const data = await locationService.getTalhoes();
-            setTalhoes(data || []);
+            setTalhoes((data || []) as unknown as Talhao[]);
         } catch (error) {
             console.error("Erro ao buscar talhões", error);
         } finally {
@@ -100,9 +100,9 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
         setSelectedTalhao(null);
     };
 
-    const handleUpdateTalhao = async (id: string, data: any) => {
+    const handleUpdateTalhao = async (id: string | number, data: any) => {
         try {
-            await locationService.updateTalhao(String(id), data);
+            await locationService.updateTalhao(id as any, data);
             await loadTalhoes();
             setSelectedTalhao(prev => prev ? { ...prev, ...data } : null);
         } catch (error) {
@@ -123,7 +123,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
             await loadTalhoes();
 
             if (selectedTalhao && selectedTalhao.canteiros) {
-                const updatedCanteiros = selectedTalhao.canteiros.filter(c => String(c.id) !== canteiroToDelete);
+                const updatedCanteiros = selectedTalhao.canteiros.filter(c => String(c.id) !== String(canteiroToDelete));
                 setSelectedTalhao({ ...selectedTalhao, canteiros: updatedCanteiros });
             }
             setSnackbar({ open: true, message: 'Canteiro removido com sucesso!', severity: 'success' });
@@ -289,7 +289,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
                                         <div className="flex justify-between items-start mb-4">
                                             <div>
                                                 <h3 className="text-lg font-black text-slate-900 tracking-tight leading-tight">{talhao.nome}</h3>
-                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">{formatArea(talhao.area_total_m2)}</p>
+                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">{formatArea(talhao.area_total_m2 || 0)}</p>
                                             </div>
                                             <div className={cn(
                                                 "px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border",
@@ -359,7 +359,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
                 open={isDrawerOpen}
                 onClose={handleCloseDrawer}
                 talhao={selectedTalhao}
-                onDeleteCanteiro={handleDeleteCanteiro}
+                onDeleteCanteiro={handleDeleteCanteiro as any}
                 onUpdateStart={loadTalhoes}
             />
 

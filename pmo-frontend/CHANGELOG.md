@@ -1,6 +1,13 @@
-# Changelog
+## [v0.6.0] - Março 2026
 
-Visão geral das atualizações para o produtor rural.
+### A Cruzada do TypeScript
+**Foco:** Migração completa para TypeScript e limpeza do código.
+
+- **Novidades:**
+  - Migração de ficheiros `.js`/`.jsx` para `.ts`/`.tsx`.
+  - Ativação de tipagem estrita (modo pragmático).
+  - Remoção de bibliotecas legadas e foco exclusivo em Tailwind CSS.
+  - Implementação de aliases de importação (`@/*`).
 
 ## [v0.5.0] - Fevereiro 2026
 

@@ -11,7 +11,7 @@ interface FormSection {
     key: string;
     label: string;
     Component: React.ComponentType<any>;
-    validate: (data: any) => boolean;
+    validate: (data: any) => boolean | Record<string, string>;
 }
 
 type SectionStatus = 'completo' | 'em-progresso' | 'pendente' | undefined;
@@ -83,8 +83,8 @@ const DesktopStepper: React.FC<DesktopStepperProps> = ({
                             key={section.id}
                             onClick={() => goToStep(section.id)}
                             className={`flex flex-col items-center gap-1.5 min-w-[120px] px-3 py-2 shrink-0 rounded-lg transition-colors ${isActive
-                                    ? 'bg-green-50'
-                                    : 'hover:bg-gray-50'
+                                ? 'bg-green-50'
+                                : 'hover:bg-gray-50'
                                 }`}
                         >
                             <StepIcon

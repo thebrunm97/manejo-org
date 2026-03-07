@@ -14,7 +14,7 @@
  */
 
 import type {
-    PmoFormData,
+    PMOFormData,
     CulturaAnual,
     ManejoInsumo,
     TableConfig
@@ -136,7 +136,7 @@ export function processSectionTables(
  * @param data - form_data bruto do formulário
  * @returns form_data limpo pronto para persistência
  */
-export function cleanFormDataForSubmission(data: PmoFormData): PmoFormData {
+export function cleanFormDataForSubmission(data: PMOFormData): PMOFormData {
     // Deep clone para não mutar o original
     const cleanedData = JSON.parse(JSON.stringify(data)) as Record<string, unknown>;
 
@@ -258,7 +258,7 @@ export function cleanFormDataForSubmission(data: PmoFormData): PmoFormData {
         }
     }
 
-    return cleanedData as PmoFormData;
+    return cleanedData as unknown as PMOFormData;
 }
 
 // ==================================================================
@@ -272,7 +272,7 @@ export function cleanFormDataForSubmission(data: PmoFormData): PmoFormData {
  * @param pmoId - ID do PMO (FK)
  * @returns Array de CulturaAnual prontos para insert
  */
-export function extractCulturasAnuais(formData: PmoFormData, pmoId: string): CulturaAnual[] {
+export function extractCulturasAnuais(formData: PMOFormData, pmoId: string): CulturaAnual[] {
     const secao2 = formData.secao_2_atividades_produtivas_organicas as Record<string, unknown>;
     const producaoVegetal = secao2?.producao_primaria_vegetal as Record<string, unknown>;
     const produtos = producaoVegetal?.produtos_primaria_vegetal as Record<string, unknown>[];
@@ -302,7 +302,7 @@ export function extractCulturasAnuais(formData: PmoFormData, pmoId: string): Cul
  * @param pmoId - ID do PMO (FK)
  * @returns Array de ManejoInsumo prontos para upsert
  */
-export function extractManejoInsumos(formData: PmoFormData, pmoId: string): ManejoInsumo[] {
+export function extractManejoInsumos(formData: PMOFormData, pmoId: string): ManejoInsumo[] {
     const secao8 = formData.secao_8_insumos_equipamentos as Record<string, unknown>;
     const insumos = secao8?.insumos_melhorar_fertilidade as Record<string, unknown>[];
 

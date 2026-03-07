@@ -14,7 +14,7 @@ export interface GeoJSONGeometry {
 }
 
 export interface Talhao {
-    id: string;
+    id: number;
     nome: string;
     tipo?: string;
     geometry?: string | GeoJSONGeometry;

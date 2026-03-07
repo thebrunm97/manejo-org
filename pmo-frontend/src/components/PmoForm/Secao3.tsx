@@ -7,23 +7,11 @@ import { ChevronDown } from 'lucide-react';
 import SectionShell from '../Plan/SectionShell';
 import TabelaDinamica, { TableColumn } from './TabelaDinamica';
 
+import { PMOFormData } from '../../domain/pmo/pmoTypes';
+
 // Types
-interface Secao3Data {
-    produtos_nao_certificados?: boolean;
-    producao_primaria_vegetal_nao_organica?: {
-        produtos_primaria_vegetal_nao_organica?: any[];
-    };
-    producao_primaria_animal_nao_organica?: {
-        animais_primaria_animal_nao_organica?: any[];
-    };
-    processamento_produtos_origem_vegetal_nao_organico?: {
-        produtos_processamento_vegetal_nao_organico?: any[];
-    };
-    processamento_produtos_origem_animal_nao_organico?: {
-        produtos_processamento_animal_nao_organico?: any[];
-    };
-    [key: string]: any;
-}
+type Secao3Key = 'secao_3_atividades_produtivas_nao_organicas';
+type Secao3Data = PMOFormData[Secao3Key];
 
 interface Secao3Props {
     data: Secao3Data | null | undefined;
@@ -56,22 +44,22 @@ const AccordionPanel: React.FC<AccordionPanelProps> = ({ title, defaultOpen = fa
 };
 
 const Secao3: React.FC<Secao3Props> = ({ data, onSectionChange }) => {
-    const safeData = data || {};
+    const safeData = data || {} as Secao3Data;
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        const newValue = value === 'true';
-        onSectionChange({ ...safeData, [name]: newValue });
+        // In PMOFormData, produtos_nao_certificados is string
+        onSectionChange({ ...safeData!, [name]: value });
     };
 
     const handleArrayChange = (objKey: string, arrayKey: string, novoArray: any[]) => {
         onSectionChange({
-            ...safeData,
+            ...safeData!,
             [objKey]: {
-                ...safeData[objKey],
+                ...(safeData as any)[objKey],
                 [arrayKey]: novoArray
             }
-        });
+        } as Secao3Data);
     };
 
     const columnsVegetal: TableColumn[] = [
@@ -110,14 +98,14 @@ const Secao3: React.FC<Secao3Props> = ({ data, onSectionChange }) => {
                 <div className="flex items-center gap-4">
                     <label className="flex items-center gap-2 cursor-pointer">
                         <input type="radio" name="produtos_nao_certificados" value="true"
-                            checked={safeData.produtos_nao_certificados === true}
+                            checked={safeData.produtos_nao_certificados === 'true'}
                             onChange={handleChange}
                             className="h-4 w-4 text-green-600 border-gray-300 focus:ring-green-500" />
                         <span className="text-sm text-gray-700">Sim</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
                         <input type="radio" name="produtos_nao_certificados" value="false"
-                            checked={safeData.produtos_nao_certificados === false}
+                            checked={safeData.produtos_nao_certificados === 'false'}
                             onChange={handleChange}
                             className="h-4 w-4 text-green-600 border-gray-300 focus:ring-green-500" />
                         <span className="text-sm text-gray-700">Não</span>
@@ -125,7 +113,7 @@ const Secao3: React.FC<Secao3Props> = ({ data, onSectionChange }) => {
                 </div>
             </fieldset>
 
-            {safeData.produtos_nao_certificados && (
+            {safeData.produtos_nao_certificados === 'true' && (
                 <div className="flex flex-col gap-4 mt-2">
                     <AccordionPanel title="3.1. Produção Primária Vegetal Não Orgânica" defaultOpen>
                         <TabelaDinamica
