@@ -7,7 +7,7 @@ export const config: { [key: string]: any } = {
     tokenStoreType: 'file',
     customUserDataDir: './userDataDir/',
     webhook: {
-        url: process.env.WEBHOOK_URL || null,
+        url: process.env.WEBHOOK_URL || 'http://pmo-bot-go:8080/webhook/wppconnect',
         enabled: true,
         readMessage: true,
         allEvents: true,
@@ -34,7 +34,18 @@ export const config: { [key: string]: any } = {
     },
     createOptions: {
         autoClose: 0,
-        browserArgs: ['--no-sandbox']
+        browserArgs: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-renderer-backgrounding'
+        ]
     }
 };
 

@@ -2,11 +2,13 @@ package whatsapp
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
@@ -21,6 +23,7 @@ type Config struct {
 // Client wraps HTTP communication with WPPConnect Server
 type Client struct {
 	config     Config
+	secretKey  string
 	httpClient *http.Client
 }
 
@@ -31,21 +34,60 @@ func NewClient(cfg Config) (*Client, error) {
 	}
 
 	c := &Client{
-		config: cfg,
+		config:    cfg,
+		secretKey: cfg.Token, // cfg.Token initally holds the SECRET_KEY from env
 		httpClient: &http.Client{
-			Timeout: 15 * time.Second,
+			Timeout: 60 * time.Second,
 		},
 	}
 
-	// WPPCONNECT_TOKEN in .env is actually the SECRET_KEY
-	// We need to generate a valid JWT token before making requests
-	token, err := c.generateToken(cfg.Token)
+	// Try to generate token initially
+	token, err := c.generateToken(c.secretKey)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate WPPConnect JWT token: %v", err)
+		log.Printf("⚠️ Falha inicial ao conectar no WPPConnect: %v. Auto-Reconnect tentará em background.", err)
+	} else {
+		c.config.Token = token // Replace SecretKey with actual JWT Token
+		log.Println("✅ [WPP] Conectado e Token JWT gerado com sucesso!")
+
+		// 🚀 Proactively start session on startup
+		ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+		defer cancel()
+		if err := c.StartSession(ctx); err != nil {
+			log.Printf("⚠️ [WPP] Aviso ao iniciar sessão: %v (Pode já estar aberta)", err)
+		}
 	}
 
-	c.config.Token = token // Replace SecretKey with actual JWT Token
+	// Start auto-reconnect loop in background
+	go c.autoReconnectLoop()
+
 	return c, nil
+}
+
+func (c *Client) autoReconnectLoop() {
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		// We only care about errors (API unreachable or 401/404), not the connected boolean.
+		// If connected is false but err is nil, it means WPPConnect API is working,
+		// but the phone is disconnected. We don't need a new JWT token in that case.
+		_, _, err := c.CheckConnection()
+
+		if err != nil || c.config.Token == c.secretKey || c.config.Token == "" {
+			token, genErr := c.generateToken(c.secretKey)
+			if genErr == nil && token != "" {
+				c.config.Token = token
+				log.Println("✅ [WPP] Cliente WhatsApp reconectado (Novo Token JWT) com sucesso!")
+
+				// 🚀 Proactively start session after token refresh
+				ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+				if err := c.StartSession(ctx); err != nil {
+					log.Printf("⚠️ [WPP] Aviso ao iniciar sessão pós-refresh: %v", err)
+				}
+				cancel()
+			}
+		}
+	}
 }
 
 func (c *Client) generateToken(secretKey string) (string, error) {
@@ -75,6 +117,69 @@ func (c *Client) generateToken(secretKey string) (string, error) {
 	}
 
 	return result.Token, nil
+}
+
+// StartSession initiates the WPPConnect session for the configured session name.
+// It injects the webhook URL automatically as part of the startup payload.
+func (c *Client) StartSession(ctx context.Context) error {
+	reqURL := fmt.Sprintf("%s/api/%s/start-session", c.config.URL, c.config.Session)
+
+	// Inject the webhook URL targeting the Go bot's handler
+	webhookURL := os.Getenv("WEBHOOK_URL")
+	if webhookURL == "" {
+		webhookURL = "http://pmo-bot-go:8080/webhook/wppconnect"
+	}
+
+	// Append security token if present
+	if token := os.Getenv("WPPCONNECT_TOKEN"); token != "" {
+		if strings.Contains(webhookURL, "?") {
+			webhookURL += "&token=" + token
+		} else {
+			webhookURL += "?token=" + token
+		}
+	}
+
+	payload := map[string]interface{}{
+		"webhook":    webhookURL,
+		"waitQrCode": true,
+	}
+
+	bodyBytes, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("🚀 [WPP] Enviando comando start-session para %s (webhook: %s)...", c.config.Session, webhookURL)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewReader(bodyBytes))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+c.config.Token)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+
+	// Idempotency: 200/201 is success.
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		log.Printf("ℹ️ [WPP] Resposta do start-session (%d): %s", resp.StatusCode, string(body))
+
+		// If it's a 400, it's likely already active or logged in, so we consider it "OK enough" to continue
+		if resp.StatusCode == http.StatusBadRequest {
+			return nil
+		}
+		return fmt.Errorf("start-session fail (HTTP %d): %s", resp.StatusCode, string(body))
+	}
+
+	log.Printf("✅ [WPP] Sessão iniciada com webhook: %s", webhookURL)
+	return nil
 }
 
 // SendMessageRequest represents the payload to send a text message
@@ -191,6 +296,10 @@ func (c *Client) CheckConnection() (bool, map[string]interface{}, error) {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return false, nil, err
+	}
+
+	if resp.StatusCode >= 400 {
+		return false, nil, fmt.Errorf("wppconnect server error (%d): %s", resp.StatusCode, string(body))
 	}
 
 	var result map[string]interface{}

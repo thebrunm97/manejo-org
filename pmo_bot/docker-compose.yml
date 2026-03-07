@@ -4,6 +4,7 @@ services:
   wppconnect:
     container_name: wppconnect
     restart: always
+    shm_size: '1gb'
     build:
       context: .
       dockerfile: Dockerfile.wppconnect
@@ -14,7 +15,7 @@ services:
     environment:
       - PORT=21465
       # Webhook aponta para o container Go via rede Docker
-      - WEBHOOK_URL=http://pmo-bot-go:8080/webhook?token=${WPPCONNECT_TOKEN}
+      - WEBHOOK_URL=http://pmo-bot-go:8080/webhook/wppconnect?token=$${WPPCONNECT_TOKEN}
       - WEBHOOK_ENABLED=true
       - WEBHOOK_GLOBAL_ENABLED=true
       - WEBHOOK_READ_MESSAGES=false
@@ -35,8 +36,14 @@ services:
       - ./tokens:/usr/src/wpp-server/tokens
       - ./wpp_entrypoint.sh:/entrypoint.sh
     entrypoint: [ "/bin/sh", "/entrypoint.sh" ]
-    depends_on:
-      - pmo-bot-go
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:21465/api-docs/" ]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+    networks:
+      - pmo-net
 
   # =========================================================================
   # PMO-Bot-Go — Motor principal (substitui pmo-bot Python + pmo-worker)
@@ -56,9 +63,21 @@ services:
       - GIN_MODE=release
       - WPPCONNECT_URL=http://wppconnect:21465
       - TZ=America/Sao_Paulo
+    depends_on:
+      wppconnect:
+        condition: service_healthy
     healthcheck:
       test: [ "CMD", "wget", "--spider", "-q", "http://localhost:8080/health" ]
       interval: 15s
       timeout: 5s
       retries: 3
       start_period: 10s
+    networks:
+      pmo-net:
+        aliases:
+          - pmo-bot-go
+    hostname: pmo-bot-go
+
+networks:
+  pmo-net:
+    driver: bridge
