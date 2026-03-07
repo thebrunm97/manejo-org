@@ -50,8 +50,7 @@ const DebouncedTextField: React.FC<DebouncedTextFieldProps> = ({
     variant: _variant,
     fullWidth: _fullWidth,
     InputLabelProps: _inputLabelProps,
-    size: _size,
-    ...rest
+    size: _size
 }) => {
     // Estado local para feedback instantâneo enquanto digita
     const [localValue, setLocalValue] = useState(value || '');

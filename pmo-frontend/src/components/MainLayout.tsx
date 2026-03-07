@@ -8,7 +8,7 @@ interface MainLayoutProps {
     pageTitle?: string;
 }
 
-const MainLayout: React.FC<MainLayoutProps> = ({ children, pageTitle }) => {
+const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     const { logout } = useAuth();
 
     return (

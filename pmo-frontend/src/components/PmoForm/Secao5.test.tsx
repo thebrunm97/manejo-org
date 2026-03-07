@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
@@ -31,7 +30,7 @@ describe('Secao5', () => {
             ]
         };
 
-        const { debug } = render(<Secao5 data={data} onSectionChange={mockOnSectionChange} />);
+        render(<Secao5 data={data} onSectionChange={mockOnSectionChange} />);
 
         // Wait for the sync effect to run
         const tomato = await screen.findByText(/Tomate/i);

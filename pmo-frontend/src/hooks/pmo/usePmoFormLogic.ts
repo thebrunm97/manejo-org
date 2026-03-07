@@ -12,7 +12,7 @@
  *   - Estilos ou CSS
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom';
 
 // Domain Layer
@@ -20,7 +20,6 @@ import type {
     PMOFormData,
     PmoPayload,
     SaveResult,
-    FormErrors,
     SectionStatusMap,
     PmoStatus
 } from '../../domain/pmo/pmoTypes';
@@ -107,7 +106,7 @@ export function usePmoFormLogic(options: UsePmoFormLogicOptions = {}): UsePmoFor
     const navigate = useNavigate();
     const { pmoId: routePmoId } = useParams<{ pmoId: string }>();
     const location = useLocation();
-    const [searchParams, setSearchParams] = useSearchParams();
+    const [searchParams] = useSearchParams();
 
     // Use route param if available, otherwise use options
     const pmoId = routePmoId || optionsPmoId;
@@ -142,7 +141,7 @@ export function usePmoFormLogic(options: UsePmoFormLogicOptions = {}): UsePmoFor
 
     const [saveStatus, setSaveStatus] = useState('');
     const [error, setError] = useState<string | null>(null);
-    const [sectionStatus, setSectionStatus] = useState<SectionStatusMap>({});
+    const [sectionStatus] = useState<SectionStatusMap>({});
 
     // ─────────────────────────────────────────────────────────────────
     // DERIVED VALUES

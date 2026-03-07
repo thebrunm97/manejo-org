@@ -1,6 +1,5 @@
 ﻿// src/components/PmoForm/Coordenadas.test.jsx (versão com mock corrigido)
 
-import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
@@ -54,8 +53,8 @@ describe('Componente Coordenadas', () => {
     const mockOnDataChange = vi.fn();
 
     // Agora, nosso mock de getCurrentPosition pode ser mais simples
-    vi.mocked(navigator.geolocation.getCurrentPosition).mockImplementation((success) =>
-      success({
+    vi.mocked(navigator.geolocation.getCurrentPosition).mockImplementation((_success) =>
+      _success({
         coords: {
           latitude: -18.9113,
           longitude: -48.2622,
@@ -78,7 +77,7 @@ describe('Componente Coordenadas', () => {
 
   test('deve exibir uma mensagem de erro se o usuário negar a permissão (falha)', async () => {
     // Mock para o caso de falha (permissão negada)
-    vi.mocked(navigator.geolocation.getCurrentPosition).mockImplementation((success, error) =>
+    vi.mocked(navigator.geolocation.getCurrentPosition).mockImplementation((_success, error) =>
       error!({
         code: 1, // PERMISSION_DENIED
         message: "User denied Geolocation"

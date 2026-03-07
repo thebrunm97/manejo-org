@@ -20,13 +20,7 @@ export interface RecordDetailsDialogProps {
     record: CadernoCampoRecord | null;
 }
 
-// Fallback icon for Manejo if needed, or reuse one
-const SprayCanIcon = () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 3h18v18H3z" stroke="none" />
-        <path d="M12 2v4M8 6h8M8 10h8M12 10v6M9 16c-1.5 0-2 1.5-2 3v3h10v-3c0-1.5-.5-3-2-3" />
-    </svg>
-);
+
 
 
 

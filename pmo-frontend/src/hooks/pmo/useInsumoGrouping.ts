@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 // import { PmoInsumoItem } from '../../domain/pmo/pmoTypes';
 
 // Interface local se não existir global
@@ -34,7 +34,7 @@ export const useInsumoGrouping = (
     }, [data]);
 
     // Handlers
-    const handleAccordionChange = (panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
+    const handleAccordionChange = (panel: string) => (_event: React.SyntheticEvent, isExpanded: boolean) => {
         setExpandedGroup(isExpanded ? panel : false);
     };
 

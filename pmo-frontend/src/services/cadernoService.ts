@@ -4,8 +4,7 @@ import {
     ActivityType,
     DetalhesPlantioSchema,
     DetalhesManejoSchema,
-    DetalhesColheitaSchema,
-    DetalhesGenericoSchema
+    DetalhesColheitaSchema
 } from '../types/CadernoTypes';
 
 export const getRegistros = async (pmoId?: number | null, propriedadeId?: number): Promise<CadernoEntry[]> => {

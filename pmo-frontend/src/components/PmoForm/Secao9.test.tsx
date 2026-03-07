@@ -1,7 +1,5 @@
-import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
-import { vi } from 'vitest';
+import { describe, test, expect, vi } from 'vitest';
 import Secao9 from './Secao9';
 
 // Mock PropagacaoCard to simplify list view

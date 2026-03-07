@@ -11,7 +11,6 @@ import type {
     PmoPayload,
     PmoRecord,
     PmoListItem,
-    UserProfile,
     SaveResult,
     FetchResult,
     CulturaAnual,

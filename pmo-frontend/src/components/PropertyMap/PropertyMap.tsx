@@ -9,13 +9,10 @@ import {
     Plus,
     Sprout,
     X,
-    Trash2,
     CheckCircle2,
     AlertCircle,
     Loader2,
-    Droplets,
-    TreePine,
-    Maximize2
+    Droplets
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { cn } from '../../utils/cn';
@@ -100,15 +97,6 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
         setSelectedTalhao(null);
     };
 
-    const handleUpdateTalhao = async (id: string | number, data: any) => {
-        try {
-            await locationService.updateTalhao(id as any, data);
-            await loadTalhoes();
-            setSelectedTalhao(prev => prev ? { ...prev, ...data } : null);
-        } catch (error) {
-            console.error("Erro ao atualizar", error);
-        }
-    };
 
     const handleDeleteCanteiro = async (canteiroId: string) => {
         setCanteiroToDelete(String(canteiroId));

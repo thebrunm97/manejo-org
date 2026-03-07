@@ -11,7 +11,6 @@ import PlanoAtualCard from "../components/Dashboard/PlanoAtualCard";
 import ManualRecordDialog from "../components/Dashboard/ManualRecordDialog";
 import WhatsappConnectDialog from "../components/Dashboard/WhatsappConnectDialog";
 
-import { supabase } from "../supabaseClient";
 
 import {
   Plus,
@@ -92,23 +91,11 @@ const WeatherWidget: React.FC<{
 };
 
 const DashboardPage: React.FC = () => {
-  const { user, profile: authProfile } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [openRecordDialog, setOpenRecordDialog] = useState(false);
   const [openWhatsappDialog, setOpenWhatsappDialog] = useState(false);
 
-  // DB Probe for Debugging
-  const [dbProbe, setDbProbe] = useState<any>(null);
-  React.useEffect(() => {
-    if (user?.id) {
-      supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single()
-        .then((res) => setDbProbe(res));
-    }
-  }, [user]);
 
   // Conectando o cérebro
   const {

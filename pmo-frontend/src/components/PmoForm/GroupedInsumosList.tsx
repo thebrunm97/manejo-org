@@ -2,7 +2,7 @@
 // Refatorado — Zero MUI. Usa Tailwind + lucide-react.
 // Segue o padrão visual de Cards/Accordions da Secao 2.1.
 
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState } from 'react';
 import { ChevronDown, Trash2, PlusCircle, FlaskConical, MapPin, X, Info } from 'lucide-react';
 
 import { useInsumoGrouping } from '../../hooks/pmo/useInsumoGrouping';
@@ -19,16 +19,7 @@ interface GroupedInsumosListProps {
 
 const DOSE_UNITS = ['kg', 'g', 'L', 'ml', 'ton', 'unid', 'sc', 'kg/ha', 'L/ha', 'm³/ha', 'g/m²', 'L/m²', 'ml/m²', 'm³/m²', 'kg/cova'];
 
-function useIsMobile() {
-    const [isMobile, setIsMobile] = useState(false);
-    useEffect(() => {
-        const check = () => setIsMobile(window.innerWidth < 640);
-        check();
-        window.addEventListener('resize', check);
-        return () => window.removeEventListener('resize', check);
-    }, []);
-    return isMobile;
-}
+
 
 /**
  * Componente de Seleção Múltipla customizado (Tailwind)
@@ -130,7 +121,7 @@ const MultiSelectCulturas: React.FC<{
 };
 
 const GroupedInsumosList: React.FC<GroupedInsumosListProps> = ({ data, onDataChange, readOnly = false, opcoesCulturas = [] }) => {
-    const isMobile = useIsMobile();
+
 
     const {
         groupedData,

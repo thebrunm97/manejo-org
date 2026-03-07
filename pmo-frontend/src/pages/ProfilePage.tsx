@@ -3,7 +3,6 @@ import { User, Mail, Phone, Shield, Save, Camera, Lock, ArrowLeft } from 'lucide
 import { useAuth } from '../context/AuthContext';
 import { fetchUserProfile, updateUserProfile } from '../services/profileService';
 import { formatPhoneBR } from '../utils/masks';
-import DashboardLayout from '../components/DashboardLayout';
 import { useAppNavigation } from '../hooks/navigation/useAppNavigation';
 import { toast } from 'react-toastify';
 

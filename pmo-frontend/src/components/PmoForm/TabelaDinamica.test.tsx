@@ -1,6 +1,5 @@
 // src/components/PmoForm/TabelaDinamica.test.jsx
 
-import React from 'react';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import TabelaDinamica, { TableColumn } from './TabelaDinamica';
@@ -78,7 +77,7 @@ describe('Componente TabelaDinamica (Cards/Accordion)', () => {
 
   test('novo item deve nascer com card expandido (campos visíveis)', () => {
     const mockOnDataChange = vi.fn();
-    const { rerender } = render(
+    render(
       <TabelaDinamica
         columns={mockColumns}
         data={[]}

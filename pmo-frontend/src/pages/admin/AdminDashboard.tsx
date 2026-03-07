@@ -9,9 +9,6 @@ import {
     AlertCircle,
     Eye,
     Loader2,
-    Search,
-    ChevronLeft,
-    ChevronRight,
     CheckCircle2,
     XCircle,
     BookOpen

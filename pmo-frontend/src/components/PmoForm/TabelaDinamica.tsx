@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { PlusCircle, Trash2, ChevronDown, X } from 'lucide-react';
+import { PlusCircle, Trash2, ChevronDown } from 'lucide-react';
 
 // @ts-ignore
 import LocalizacaoSafInput from './LocalizacaoSafInput';

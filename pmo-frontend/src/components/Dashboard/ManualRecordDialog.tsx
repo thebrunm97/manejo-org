@@ -16,8 +16,6 @@ import {
     MapPin,
     X,
     AlertTriangle,
-    Check,
-    Calendar,
     ChevronDown
 } from 'lucide-react';
 import LocationSelectorDialog from '../Common/LocationSelectorDialog';

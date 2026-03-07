@@ -1,7 +1,7 @@
 // src/components/PmoForm/SuggestionReviewDialog.tsx
 // Refatorado — Zero MUI. Usa Tailwind + lucide-react.
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { TableColumn } from './TabelaDinamica';
 

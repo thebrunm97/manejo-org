@@ -1,5 +1,5 @@
 // src/components/ErrorBoundary.tsx — Zero MUI
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle } from 'lucide-react';
 
 interface ErrorBoundaryProps {

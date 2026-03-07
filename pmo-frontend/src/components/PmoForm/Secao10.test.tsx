@@ -1,5 +1,4 @@
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import Secao10 from './Secao10';
@@ -48,12 +47,8 @@ describe('Secao10', () => {
 
         render(<Secao10 data={data} onSectionChange={mockOnSectionChange} />);
 
-        // Find Edit Icon (by arial label or role button inside the card)
-        // Since we are not mocking the Card fully, we can find the button inside it.
-        // There are multiple buttons, let's find by icon logic or structure.
-        // The edit button has color='primary' and usually <EditIcon/>.
         // Let's rely on the fact there is only one item.
-        const buttons = screen.getAllByRole('button');
+
         // Filter for the one that looks like edit (or try click the first icon button that is not 'Adicionar' or 'Ver detalhes')
 
         // Actually, we can look for the edit/delete buttons logic. 

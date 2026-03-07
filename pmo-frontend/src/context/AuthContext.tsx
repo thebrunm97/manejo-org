@@ -1,6 +1,6 @@
 // src/context/AuthContext.tsx
 
-import React, { createContext, useState, useContext, useEffect, useCallback, useMemo, ReactNode, useRef } from 'react';
+import { createContext, useState, useContext, useEffect, useCallback, useMemo, ReactNode, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Session, Provider } from '@supabase/supabase-js';
 import { supabase } from '../supabaseClient';

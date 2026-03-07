@@ -1,10 +1,10 @@
 // src/components/PmoForm/Secao8.tsx
 // Refatorado — Zero MUI. Usa Tailwind + lucide-react.
 
-import React, { ChangeEvent, useState } from 'react';
+import { ChangeEvent, useState, useMemo, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 import SectionShell from '../Plan/SectionShell';
-import TabelaDinamica, { TableColumn } from './TabelaDinamica';
+import { TableColumn } from './TabelaDinamica';
 import SuggestionReviewDialog from './SuggestionReviewDialog';
 import { logFeedback } from '../../services/pmoService';
 import GroupedInsumosList from './GroupedInsumosList';
@@ -46,7 +46,7 @@ const Secao8: React.FC<Secao8Props> = ({ data, formData, onSectionChange }) => {
     const insumosFertilidade = safeData.insumos_melhorar_fertilidade || [];
 
     // Extração de culturas da Secao 2.1 para o Multi-Select "Onde"
-    const culturasRegistradas = React.useMemo(() => {
+    const culturasRegistradas = useMemo(() => {
         const produtosPPV = formData?.secao_2_atividades_produtivas_organicas?.producao_primaria_vegetal?.produtos_primaria_vegetal || [];
         // Filtra nomes vazios e remove duplicatas
         const nomes = produtosPPV
@@ -56,7 +56,7 @@ const Secao8: React.FC<Secao8Props> = ({ data, formData, onSectionChange }) => {
     }, [formData]);
 
     // Debug para verificar atualização
-    React.useEffect(() => {
+    useEffect(() => {
         console.log('🔄 Secao8 Update:', insumosFertilidade.length, 'items');
     }, [insumosFertilidade]);
 

@@ -1,6 +1,6 @@
 // src/components/DebugErrorBoundary.tsx
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, ErrorInfo, ReactNode } from 'react';
 
 interface DebugErrorBoundaryProps {
     children: ReactNode;

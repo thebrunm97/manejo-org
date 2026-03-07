@@ -1,7 +1,5 @@
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import '@testing-library/jest-dom';
-import { vi } from 'vitest';
+import { describe, test, expect, vi } from 'vitest';
 import Secao7 from './Secao7';
 
 vi.mock('./CheckboxGroup', () => ({

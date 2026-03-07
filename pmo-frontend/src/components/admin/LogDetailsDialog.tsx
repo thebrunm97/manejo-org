@@ -9,9 +9,6 @@ import {
     DollarSign,
     Activity,
     Clock,
-    CheckCircle2,
-    AlertCircle,
-    Info,
     Loader2
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
