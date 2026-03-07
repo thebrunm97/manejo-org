@@ -199,7 +199,7 @@ describe('useUnitSelection', () => {
 
             expect(result.current.availableUnits).toEqual(UNIDADES_PLANTIO);
 
-            rerender({ category: 'manejo' });
+            rerender({ category: 'manejo' as any });
 
             expect(result.current.availableUnits).toEqual(UNIDADES_MANEJO);
         });

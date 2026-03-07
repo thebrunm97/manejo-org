@@ -126,7 +126,7 @@ describe('Componente TabelaDinamica (Cards/Accordion)', () => {
     fireEvent.click(removeButton);
 
     // Confirm deletion in the modal — isolate the modal context
-    const modal = screen.getByText('Confirmar Exclusão').closest('div');
+    const modal = screen.getByText('Confirmar Exclusão').closest('div') as HTMLElement;
     const confirmButton = within(modal).getByRole('button', { name: /^remover$/i });
     fireEvent.click(confirmButton);
 
