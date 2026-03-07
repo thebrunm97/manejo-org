@@ -3,6 +3,10 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import tailwindcss from '@tailwindcss/vite'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -81,13 +85,35 @@ export default defineConfig({
         setupFiles: './src/setupTests.js',
     },
     resolve: {
-        alias: {
-            '@': '/src',
-            '@utils': '/src/utils',
-            '@services': '/src/services',
-            '@components': '/src/components',
-            '@hooks': '/src/hooks',
-            '@types': '/src/types'
+        alias: [
+            { find: '@', replacement: path.resolve(__dirname, './src') },
+            { find: '@utils', replacement: path.resolve(__dirname, './src/utils') },
+            { find: '@services', replacement: path.resolve(__dirname, './src/services') },
+            { find: '@components', replacement: path.resolve(__dirname, './src/components') },
+            { find: '@hooks', replacement: path.resolve(__dirname, './src/hooks') },
+            { find: '@types', replacement: path.resolve(__dirname, './src/types') },
+            { find: /^leaflet-draw$/, replacement: path.resolve(__dirname, './src/leaflet-draw-shim.js') }
+        ]
+    },
+    build: {
+        chunkSizeWarningLimit: 600,
+        commonjsOptions: {
+            include: [/node_modules/],
+            transformMixedEsModules: true,
+        },
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+                    'vendor-ui': ['lucide-react', 'clsx', 'tailwind-merge'],
+                    'vendor-maps': ['leaflet', 'react-leaflet', 'leaflet-draw'],
+                    'vendor-charts': ['recharts'],
+                    'vendor-supabase': ['@supabase/supabase-js']
+                }
+            }
         }
+    },
+    optimizeDeps: {
+        include: ['leaflet', 'leaflet-draw']
     }
 })
