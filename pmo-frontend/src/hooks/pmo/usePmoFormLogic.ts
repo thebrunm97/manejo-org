@@ -40,7 +40,7 @@ import {
 } from '../../services/pmoService';
 
 // Utils
-import { localDb } from '../../utils/db';
+import { localDb, SYNC_QUEUE_STORE } from '../../utils/db';
 import { initialFormData } from '../../utils/formData';
 import { deepMerge } from '../../utils/deepMerge';
 
@@ -152,43 +152,13 @@ export function usePmoFormLogic(options: UsePmoFormLogicOptions = {}): UsePmoFor
     // ─────────────────────────────────────────────────────────────────
     // OFFLINE SYNC
     // ─────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────
+    // OFFLINE SYNC (REFACTORED: Now uses SYNC_QUEUE_STORE)
+    // ─────────────────────────────────────────────────────────────────
     const syncPendingChanges = useCallback(async () => {
-        if (!navigator.onLine) return;
-
-        const pendingUpdates = await localDb.getAll();
-        if (pendingUpdates.length === 0) return;
-
-        setSaveStatus(`Sincronizando ${pendingUpdates.length} plano(s)...`);
-        setIsLoading(true);
-
-        for (const update of pendingUpdates) {
-            try {
-                const { id, ...payload } = update;
-                const idStr = String(id);
-
-                if (idStr.startsWith('offline_')) {
-                    // New PMO created offline
-                    const result = await createPmo(payload as Omit<PmoPayload, 'id'> & { id?: string });
-                    if (!result.success) throw new Error(result.error);
-                } else {
-                    // Existing PMO updated offline
-                    const result = await updatePmo(idStr, payload as Partial<PmoPayload>);
-                    if (!result.success) throw new Error(result.error);
-                }
-                await localDb.delete(id);
-            } catch (err) {
-                console.error(`Falha ao sincronizar o PMO ${update.id}:`, err);
-            }
-        }
-
-        setIsLoading(false);
-        setSaveStatus('Sincronização concluída!');
-        setTimeout(() => setSaveStatus(''), 5000);
-
-        if (pmoId) {
-            navigate(0); // Refresh page
-        }
-    }, [pmoId, navigate]);
+        // Redundância opcional: Força trigger no sync global
+        // Mas o useSyncEngine já lida com 'online'.
+    }, []);
 
     // ─────────────────────────────────────────────────────────────────
     // EFFECTS
@@ -340,6 +310,9 @@ export function usePmoFormLogic(options: UsePmoFormLogicOptions = {}): UsePmoFor
         // ─────────────────────────────────────────────────────────────
         // ONLINE PATH
         // ─────────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────────────
+        // ONLINE PATH
+        // ─────────────────────────────────────────────────────────────
         if (navigator.onLine) {
             setSaveStatus('Salvando na nuvem...');
 
@@ -366,7 +339,7 @@ export function usePmoFormLogic(options: UsePmoFormLogicOptions = {}): UsePmoFor
 
                         // Clean up offline entry if exists
                         if (typeof pmoIdToSave === 'string' && pmoIdToSave.startsWith('offline_')) {
-                            await localDb.delete(pmoIdToSave);
+                            await localDb.delete(pmoIdToSave, SYNC_QUEUE_STORE);
                         }
 
                         // Navigate to edit mode
@@ -382,27 +355,18 @@ export function usePmoFormLogic(options: UsePmoFormLogicOptions = {}): UsePmoFor
                     throw new Error(result.error);
                 }
 
-                // Sync related tables (non-blocking - errors are logged but don't fail the save)
+                // Sync related tables (non-blocking)
                 if (newPmoId && typeof newPmoId === 'string' && !newPmoId.startsWith('offline_')) {
                     setSaveStatus('Sincronizando tabelas...');
-
                     try {
                         const culturas = extractCulturasAnuais(formData, newPmoId);
-                        if (culturas.length > 0) {
-                            await syncCulturasAnuais(newPmoId, culturas);
-                        }
-                    } catch (syncError) {
-                        console.warn('[usePmoFormLogic] Erro ao sincronizar culturas_anuais (ignorado):', syncError);
-                    }
+                        if (culturas.length > 0) await syncCulturasAnuais(newPmoId, culturas);
+                    } catch (e) { }
 
                     try {
                         const insumos = extractManejoInsumos(formData, newPmoId);
-                        if (insumos.length > 0) {
-                            await syncManejoInsumos(newPmoId, insumos);
-                        }
-                    } catch (syncError) {
-                        console.warn('[usePmoFormLogic] Erro ao sincronizar manejo_insumos (ignorado):', syncError);
-                    }
+                        if (insumos.length > 0) await syncManejoInsumos(newPmoId, insumos);
+                    } catch (e) { }
                 }
 
                 setSaveStatus(status === 'RASCUNHO' ? 'Rascunho salvo com sucesso!' : 'Plano finalizado!');
@@ -418,10 +382,17 @@ export function usePmoFormLogic(options: UsePmoFormLogicOptions = {}): UsePmoFor
                 const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
                 console.error('Erro ao salvar:', err);
 
-                // Fallback to offline storage
-                setSaveStatus('Falha na nuvem. Salvando localmente...');
-                await localDb.set(payload);
-                setError(`Falha na conexão. Dados salvos offline. (${errorMessage})`);
+                // Fallback to offline queue
+                setSaveStatus('Falha na nuvem. Agendando sincronização local...');
+                await localDb.set({
+                    id: pmoIdToSave,
+                    type: 'PMODATA_SAVE',
+                    payload: payload,
+                    timestamp: new Date().toISOString(),
+                    retries: 0,
+                    status: 'pending'
+                }, SYNC_QUEUE_STORE);
+                setError(`Falha na conexão. Dados agendados para sync.`);
 
                 return { success: false, error: errorMessage, isOffline: true };
             } finally {
@@ -433,11 +404,18 @@ export function usePmoFormLogic(options: UsePmoFormLogicOptions = {}): UsePmoFor
         // ─────────────────────────────────────────────────────────────
         // OFFLINE PATH
         // ─────────────────────────────────────────────────────────────
-        setSaveStatus('Você está offline. Salvando localmente...');
+        setSaveStatus('Você está offline. Agendando sincronização local...');
         try {
-            await localDb.set(payload);
+            await localDb.set({
+                id: pmoIdToSave,
+                type: 'PMODATA_SAVE',
+                payload: payload,
+                timestamp: new Date().toISOString(),
+                retries: 0,
+                status: 'pending'
+            }, SYNC_QUEUE_STORE);
             setIsDirty(false);
-            setSaveStatus('Salvo localmente! Será sincronizado quando houver conexão.');
+            setSaveStatus('Salvo localmente! Sincronização agendada.');
             return { success: true, isOffline: true };
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Erro ao salvar offline';

@@ -7,7 +7,7 @@
 
 import { useCallback } from 'react';
 import { cadernoService } from '../../services/cadernoService';
-import { localDb, CADERNO_STORE } from '../../utils/db';
+import { localDb, SYNC_QUEUE_STORE } from '../../utils/db';
 import { CadernoEntry } from '../../types/CadernoTypes';
 
 export interface SaveResult {
@@ -62,24 +62,31 @@ export function useCadernoOfflineLogic() {
     }, []);
 
     /**
-     * Helper Interno para salvar no IndexedDB
+     * Helper Interno para salvar na Fila de Sincronização (IndexedDB)
      */
     const _saveLocal = async (payload: any): Promise<SaveResult> => {
         try {
-            // Ensure we have an ID for IndexedDB
-            // If editing an existing cloud record, keep the real ID.
-            // If new, generate a temp 'offline_' ID.
             const offlineId = payload.id || `offline_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-            const offlineRecord = {
-                ...payload,
+            const syncItem = {
                 id: offlineId,
-                synced: false,
-                updated_at: new Date().toISOString() // For sorting/sync logic
+                type: 'CADERNO_SAVE' as const,
+                payload: {
+                    ...payload,
+                    id: offlineId,
+                    updated_at: new Date().toISOString()
+                },
+                timestamp: new Date().toISOString(),
+                retries: 0,
+                status: 'pending' as const
             };
 
-            await localDb.set(offlineRecord, CADERNO_STORE);
+            // Salva na fila unificada
+            const { localDb, SYNC_QUEUE_STORE } = await import('../../utils/db');
+            await localDb.set(syncItem, SYNC_QUEUE_STORE);
 
+            // Mantém compatibilidade momentânea com a store legada se necessário, 
+            // mas o Sync deve priorizar a Queue agora.
             return { success: true, isOffline: true };
         } catch (err: any) {
             console.error('[CadernoOffline] Erro FATAL ao salvar local:', err);

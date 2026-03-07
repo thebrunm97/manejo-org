@@ -5,7 +5,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { RouteGuard } from './routes/RouteGuard';
 import { SCREENS } from './routes/routeNames'; // Imported as requested, useful for future refactoring or route matching
 import DebugErrorBoundary from './components/DebugErrorBoundary';
-import { useCadernoSync } from './hooks/offline/useCadernoSync';
+import { useSyncEngine } from './hooks/offline/useSyncEngine';
 
 // Layout
 import DashboardLayout from './components/DashboardLayout';
@@ -31,7 +31,7 @@ import ChangelogPage from './pages/ChangelogPage';
 
 const App: React.FC = () => {
     // Global Sync Hook - Runs in background
-    useCadernoSync();
+    useSyncEngine();
 
     return (
         <Routes>
