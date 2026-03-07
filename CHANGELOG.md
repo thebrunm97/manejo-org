@@ -1,6 +1,36 @@
 # Changelog
 Este arquivo documenta as mudanças importantes e refatorações realizadas no Pmo Bot Go Backend.
 
+## [1.1.0] - 2026-03-07
+### Added
+- **Final Legacy Purge**: Remoção completa de todos os scripts Python obsoletos, diretórios de configuração e binários legados da PoC anterior.
+- **Gemini 3.1 Migration**: Transição para o modelo `gemini-3.1-flash-lite` para otimização de cotas e melhor performance em multimodularidade.
+- **WPPConnect Session Automation**: Implementação de sistema de recuperação automática de sessão e atualização dinâmica de webhooks sem intervenção manual.
+
+### Changed
+- **TypeScript Strict Mode**: Refatoração completa de 19 arquivos do frontend para suporte a `strict: true`, unificando os tipos de `Talhão` e `CadernoEntry`.
+- **CSS Architecture**: Resolução de conflitos de regras `@apply` no Tailwind CSS e padronização do `index.css`.
+- **PWA & Offline-First Sync**:
+  - Migração para `vite-plugin-pwa` com estratégias de cache Workbox (Fontes, Assets, Navigation).
+  - Implementação da `offline_sync_queue` no IndexedDB para sincronização agnóstica de dados.
+  - Refatoração total do motor de sincronização (`useSyncEngine.ts`) com migração automática de dados legados.
+  - Disponibilidade offline garantida para Planos de Manejo (PMO) e Caderno de Campo.
+
+## [1.0.5] - 2026-03-06
+### Added
+- **Gemini Tool Calling**: Integração nativa do SDK da Gemini com suporte a chamadas de função (MCP), permitindo transações complexas via linguagem natural.
+- **RAG Performance Optimization**: Implementação de Worker Pool e Channels em Go para ingestão paralela de documentos PDF com controle de concorrência.
+- **Rate Limit Resilience**: Sistema de retry com backoff exponencial e tratamento de erro 429 para a API da Gemini.
+
+### Changed
+- **Go Engine Stability**: Finalização da migração do motor principal de processamento de mensagens para Go, substituindo permanentemente o middleware em Python.
+- **Improved Webhook Logic**: Injeção nativa de webhooks e melhor tratamento de networking no Docker.
+
+## [1.0.1] - 2026-03-05
+### Added
+- **Ingestion Versioning**: Tag `v1.0.0-python-legacy` criada como snapshot de segurança pré-migração total.
+- **Enhanced Logging**: Implementação de logs de ingestão detalhados para monitoramento do processo de RAG.
+
 ## [1.0.0] - 2026-03-04
 ### Added
 - **Paridade de Dados & Extração de Descartes**:
