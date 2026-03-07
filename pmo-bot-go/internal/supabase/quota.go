@@ -15,6 +15,11 @@ const FREE_TIER_DAILY_LIMIT = 100
 // CheckAndDeductQuota verifica o saldo do perfil e deduz os créditos equivalentes (15 para áudio, 5 para texto).
 // Retorna (true, saldo) se autorizado, ou (false, saldo) se o limite for estourado.
 func (c *Client) CheckAndDeductQuota(profileID string, pmoAtivoID int64, isAudio bool) (bool, int, error) {
+	// Bypass de Quota para o uduário Benchmark (PMO 524)
+	if pmoAtivoID == 524 {
+		return true, 99999, nil
+	}
+
 	custo := 5
 	if isAudio {
 		custo = 15
