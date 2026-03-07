@@ -1,14 +1,12 @@
 package gemini
 
 import (
-	"bytes"
-	"encoding/json"
+	"context"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
-	"os"
-	"time"
+
+	"github.com/google/generative-ai-go/genai"
+	"google.golang.org/api/option"
 
 	_ "embed"
 )
@@ -18,223 +16,108 @@ var systemPrompt string
 
 // Config holds Gemini API configuration
 type Config struct {
-	APIKey string
+	APIKey     string
+	Model      string
+	APIVersion string
 }
 
-// Client wraps HTTP communication with Gemini v1beta REST API
+// Client wraps communication with Gemini using the official SDK
 type Client struct {
-	config     Config
-	StoreID    string
-	httpClient *http.Client
+	Config Config
+	client *genai.Client
 }
 
-// NewClient initializes the Gemini client
+// NewClient initializes the Gemini client using the official SDK
 func NewClient(cfg Config) (*Client, error) {
 	if cfg.APIKey == "" {
 		return nil, fmt.Errorf("GEMINI_API_KEY is missing")
 	}
 
-	storeID := os.Getenv("GEMINI_STORE_ID")
+	if cfg.Model == "" {
+		cfg.Model = "gemini-3.1-flash-lite-preview"
+	}
+
+	ctx := context.Background()
+	client, err := genai.NewClient(ctx, option.WithAPIKey(cfg.APIKey))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create genai client: %w", err)
+	}
 
 	return &Client{
-		config:  cfg,
-		StoreID: storeID,
-		httpClient: &http.Client{
-			Timeout: 60 * time.Second, // Generation can take a while
-		},
+		Config: cfg,
+		client: client,
 	}, nil
 }
 
-// GenerateContentRequest represents the payload for Gemini API
-type GenerateContentRequest struct {
-	SystemInstruction *Content   `json:"systemInstruction,omitempty"`
-	Contents          []Content  `json:"contents"`
-	Tools             []Tool     `json:"tools,omitempty"`
-	GenerationConfig  *GenConfig `json:"generationConfig,omitempty"`
+// Close closes the underlying genai client
+func (c *Client) Close() error {
+	return c.client.Close()
 }
 
-type Tool struct {
-	Retrieval *Retrieval `json:"retrieval,omitempty"`
-}
-
-type Retrieval struct {
-	DynamicRetrievalConfig *DynamicRetrievalConfig `json:"dynamicRetrievalConfig,omitempty"`
-	VertexRagStore         *VertexRagStore         `json:"vertexRagStore,omitempty"`
-}
-
-type VertexRagStore struct {
-	RagCorpora []string `json:"ragCorpora,omitempty"`
-}
-
-// In v1beta, FileSearch is supported natively by passing a corpus array or by simple retrieval
-type DynamicRetrievalConfig struct {
-	Mode             string  `json:"mode,omitempty"`
-	DynamicThreshold float64 `json:"dynamicThreshold,omitempty"`
-}
-
-// NOTE: For gemini-1.5-flash with File Search Store, the tool has `retrieval` config that targets `fileSearchStore`
-// We'll map the exact json required by the v1beta endpoint
-
-type Content struct {
-	Role  string `json:"role,omitempty"`
-	Parts []Part `json:"parts"`
-}
-
-type Part struct {
-	Text string `json:"text,omitempty"`
-}
-
-type GenConfig struct {
-	Temperature *float64 `json:"temperature,omitempty"`
-}
-
-// GenerateContentResponse represents the response from Gemini API
-type GenerateContentResponse struct {
-	Candidates []Candidate `json:"candidates"`
-}
-
-type Candidate struct {
-	Content      Content `json:"content"`
-	FinishReason string  `json:"finishReason"`
-}
-
-// EmbeddingRequest represents the payload for Gemini Embedding API
-type EmbeddingRequest struct {
-	Model   string  `json:"model"`
-	Content Content `json:"content"`
-}
-
-// EmbeddingResponse represents the response from Gemini Embedding API
-type EmbeddingResponse struct {
-	Embedding struct {
-		Values []float32 `json:"values"`
-	} `json:"embedding"`
-}
-
-// GenerateEmbedding transforms a text chunk into a 768-dimension vector using gemini-embedding-001
+// GenerateEmbedding transforms a text chunk into a vector
 func (c *Client) GenerateEmbedding(text string) ([]float32, error) {
-	reqURL := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=%s", c.config.APIKey)
+	ctx := context.Background()
+	model := c.client.EmbeddingModel("text-embedding-004")
 
-	payload := EmbeddingRequest{
-		Model: "models/gemini-embedding-001",
-		Content: Content{
-			Parts: []Part{
-				{Text: text},
-			},
-		},
-	}
-
-	bodyBytes, err := json.Marshal(payload)
+	log.Printf("📡 [GEMINI SDK] Gerando embedding para texto (%d chars)...", len(text))
+	res, err := model.EmbedContent(ctx, genai.Text(text))
 	if err != nil {
-		return nil, fmt.Errorf("embedding marshal error: %v", err)
+		return nil, fmt.Errorf("embedding error: %w", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewReader(bodyBytes))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	log.Printf("📡 [GEMINI API] Gerando embedding para chunk (%d chars)...", len(text))
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("embedding request error: %v", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("embedding api error (%d): %s", resp.StatusCode, string(body))
-	}
-
-	var apiResp EmbeddingResponse
-	if err := json.Unmarshal(body, &apiResp); err != nil {
-		return nil, fmt.Errorf("embedding decode error: %v", err)
-	}
-
-	return apiResp.Embedding.Values, nil
+	return res.Embedding.Values, nil
 }
 
-// AskExpert asks a question bounded by the organic agriculture system prompt
+// AskExpert asks a question using the legacy simple flow (for backward compatibility if needed)
 func (c *Client) AskExpert(question string) (string, error) {
-	reqURL := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=%s", c.config.APIKey)
+	ctx := context.Background()
+	model := c.client.GenerativeModel(c.Config.Model)
 
-	temp := 0.2 // Low temperature for factual agricultural advice
-	payload := GenerateContentRequest{
-		SystemInstruction: &Content{
-			Parts: []Part{
-				{Text: systemPrompt},
-			},
-		},
-		Contents: []Content{
-			{
-				Role: "user",
-				Parts: []Part{
-					{Text: question},
-				},
-			},
-		},
-		GenerationConfig: &GenConfig{
-			Temperature: &temp,
-		},
+	// Set system instruction
+	model.SystemInstruction = &genai.Content{
+		Parts: []genai.Part{genai.Text(systemPrompt)},
 	}
 
-	if c.StoreID != "" {
-		log.Printf("📚 [GEMINI API] Usando Knowledge Base. Store ID: %s", c.StoreID)
-		// No v1beta, para atrelar a busca aos documentos enviados (FileSearch API)
-		// nós injetamos o tool apropriado. O JSON gerado será:
-		// "tools": [{"retrieval": {"vertexRagStore": { "ragCorpora": [ "fileSearchStores/..."] }}}]
-		// O formato exato depende da lib mas usando a estrutura dinâmica é comum enviarmos como map para evitar structs grandes
-	}
+	model.SetTemperature(0.2)
 
-	var finalPayload map[string]interface{}
-	payloadBytes, _ := json.Marshal(payload)
-	json.Unmarshal(payloadBytes, &finalPayload)
-
-	bodyBytes, err := json.Marshal(finalPayload)
+	log.Println("📡 [GEMINI SDK] Chamada simples para o oráculo.")
+	resp, err := model.GenerateContent(ctx, genai.Text(question))
 	if err != nil {
-		return "", fmt.Errorf("gemini marshal error: %v", err)
+		return "", fmt.Errorf("generate content error: %w", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewReader(bodyBytes))
+	if len(resp.Candidates) == 0 || len(resp.Candidates[0].Content.Parts) == 0 {
+		return "", fmt.Errorf("empty response from gemini")
+	}
+
+	// Extract text from parts
+	var result string
+	for _, part := range resp.Candidates[0].Content.Parts {
+		if text, ok := part.(genai.Text); ok {
+			result += string(text)
+		}
+	}
+
+	return result, nil
+}
+
+// GenerateContentWithTools handles the interactive tool calling flow
+// It returns the model and a session to maintain state if needed, but for now we'll do one-shot or multi-turn internally.
+func (c *Client) GenerateContentWithTools(ctx context.Context, question string, tools []*genai.Tool) (*genai.GenerateContentResponse, *genai.ChatSession, error) {
+	model := c.client.GenerativeModel(c.Config.Model)
+	model.Tools = tools
+	model.SystemInstruction = &genai.Content{
+		Parts: []genai.Part{genai.Text(systemPrompt)},
+	}
+	model.SetTemperature(0.2)
+
+	session := model.StartChat()
+
+	log.Printf("📡 [GEMINI SDK] Chamada com Tools para: %s", question)
+	resp, err := session.SendMessage(ctx, genai.Text(question))
 	if err != nil {
-		return "", err
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	log.Println("📡 [GEMINI API] Iniciando chamada para o oráculo. Atenção ao limite de 20 Requisições por Dia (RPD).")
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("gemini request error: %v", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
+		return nil, nil, fmt.Errorf("send message error: %w", err)
 	}
 
-	if resp.StatusCode == http.StatusTooManyRequests {
-		log.Println("⚠️ [GEMINI API] Erro 429: Rate Limit (Limite de requisições excedido).")
-		return "No momento estou consultando muitos manuais. Tente novamente em alguns minutos.", nil
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("gemini api error (%d): %s", resp.StatusCode, string(body))
-	}
-
-	var apiResp GenerateContentResponse
-	if err := json.Unmarshal(body, &apiResp); err != nil {
-		return "", fmt.Errorf("gemini decode response error: %v. Body raw: %s", err, string(body))
-	}
-
-	if len(apiResp.Candidates) == 0 || len(apiResp.Candidates[0].Content.Parts) == 0 {
-		return "", fmt.Errorf("gemini empty response. raw: %s", string(body))
-	}
-
-	return apiResp.Candidates[0].Content.Parts[0].Text, nil
+	return resp, session, nil
 }
