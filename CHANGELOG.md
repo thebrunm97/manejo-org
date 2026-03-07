@@ -7,14 +7,22 @@ Este arquivo documenta as mudanças importantes e refatorações realizadas no P
 - **Gemini 3.1 Migration**: Transição para o modelo `gemini-3.1-flash-lite` para otimização de cotas e melhor performance em multimodularidade.
 - **WPPConnect Session Automation**: Implementação de sistema de recuperação automática de sessão e atualização dinâmica de webhooks sem intervenção manual.
 
-### Changed
-- **TypeScript Strict Mode**: Refatoração completa de 19 arquivos do frontend para suporte a `strict: true`, unificando os tipos de `Talhão` e `CadernoEntry`.
-- **CSS Architecture**: Resolução de conflitos de regras `@apply` no Tailwind CSS e padronização do `index.css`.
+### Added
 - **PWA & Offline-First Sync**:
   - Migração para `vite-plugin-pwa` com estratégias de cache Workbox (Fontes, Assets, Navigation).
   - Implementação da `offline_sync_queue` no IndexedDB para sincronização agnóstica de dados.
   - Refatoração total do motor de sincronização (`useSyncEngine.ts`) com migração automática de dados legados.
   - Disponibilidade offline garantida para Planos de Manejo (PMO) e Caderno de Campo.
+
+### Changed
+- **TypeScript Strict Mode**: Migração completa do Frontend para TypeScript Estrito (`strict: true`), unificando os tipos de `Talhão` e `CadernoEntry`.
+- **CSS Architecture**: Resolução de conflitos de regras `@apply` no Tailwind CSS e padronização do `index.css`.
+
+### Performance
+- **Code Splitting & Lazy Loading**: Otimização agressiva das rotas no `App.tsx`, reduzindo o bundle inicial de ~1.2MB para **< 300kB** (294kB).
+
+### Fixed
+- **Vite Path Resolution**: Correção de caminhos (aliases) para compatibilidade com Windows e preservação do CSS do `leaflet-draw` via regex alias.
 
 ## [1.0.5] - 2026-03-06
 ### Added
