@@ -7,8 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/generative-ai-go/genai"
 	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
+	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
 	"github.com/thebrunm97/pmo-bot-go/internal/whatsapp"
@@ -22,7 +24,7 @@ type ProcessResult struct {
 
 // ProcessMessage orchestrates the flow:
 // LID -> Phone -> PMO ID -> LLM Extraction -> Organic Alert Check -> Save to Supabase -> Feedback
-func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClient *supabase.Client, groqClient *groq.Client, wpClient *whatsapp.Client, gemClient *gemini.Client, ttsClient *tts.Orchestrator) ProcessResult {
+func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClient *supabase.Client, groqClient *groq.Client, wpClient *whatsapp.Client, gemClient *gemini.Client, ttsClient *tts.Orchestrator, mcpServer *mcp.Server) ProcessResult {
 	log.Printf("🧵 [FSM] Iniciando fluxo para mensagem de: %s (isAudio=%v)", from, isAudio)
 
 	// Variables for tracking the process outcome and logging
@@ -167,72 +169,79 @@ func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClie
 		return ProcessResult{Success: true, Reason: "ignored_intent"}
 	}
 
-	// If intent is "duvida", use Gemini to answer with Custom RAG
+	// If intent is "duvida", use Gemini with MCP Tool Calling
 	if extracted.Intencao == "duvida" {
-		log.Printf("🧠 [FSM] Dúvida detectada. Iniciando fluxo Custom RAG para PMO %d...", pmoID)
+		log.Printf("🧠 [FSM] Dúvida detectada. Iniciando Tool Calling para PMO %d...", pmoID)
 
-		// 1. Transformar a pergunta do agricultor num vetor usando o Gemini
-		queryEmbedding, err := gemClient.GenerateEmbedding(body)
+		ctx := context.Background()
+		tools := mcpServer.GetToolDeclarations()
+
+		resp, session, err := gemClient.GenerateContentWithTools(ctx, body, tools)
 		if err != nil {
-			log.Printf("❌ [FSM] Erro ao gerar embedding da pergunta: %v", err)
+			log.Printf("❌ [FSM] Erro inicial no Gemini Tool Calling: %v", err)
 			return handleDuvidaFallback(wpClient, ttsClient, from, gemClient, body, respondWithAudio, sbClient, profile, startTime, promptTokens, completionTokens, finalIntent)
 		}
 
-		// 2. Procurar no Supabase os 3 parágrafos mais parecidos com a pergunta (Multitenant!)
-		searchResults, err := sbClient.MatchFarmDocuments(pmoID, queryEmbedding, 0.5, 3)
-		if err != nil {
-			log.Printf("⚠️ [FSM] Erro na busca vetorial (usando fallback sem contexto): %v", err)
-			return handleDuvidaFallback(wpClient, ttsClient, from, gemClient, body, respondWithAudio, sbClient, profile, startTime, promptTokens, completionTokens, finalIntent)
-		}
-
-		// 3. Montar o "Contexto" com identificação de origem
-		contextText := ""
-		if len(searchResults) > 0 {
-			log.Printf("📚 [FSM] %d trechos encontrados. Injetando contexto no Gemini.", len(searchResults))
-			for _, res := range searchResults {
-				prefix := "[DADOS PRIVADOS DA SUA FAZENDA]"
-				if res.IsGlobal {
-					prefix = "[FONTE GERAL DO AGRO]"
-				}
-				contextText += fmt.Sprintf("%s (Documento: %s): %s\n\n", prefix, res.DocumentName, res.Content)
+		// Tool Loop (limited to 5 turns to avoid infinite loops)
+		for i := 0; i < 5; i++ {
+			if len(resp.Candidates) == 0 {
+				break
 			}
-		} else {
-			log.Printf("🔍 [FSM] Nenhum documento específico encontrado para esta fazenda. Usando conhecimento base.")
+
+			candidate := resp.Candidates[0]
+			var toolCalls []*genai.FunctionCall
+			for _, part := range candidate.Content.Parts {
+				if fnCall, ok := part.(genai.FunctionCall); ok {
+					toolCalls = append(toolCalls, &fnCall)
+				}
+			}
+
+			if len(toolCalls) == 0 {
+				// No more tools requested, we have a final text answer
+				var textResp strings.Builder
+				for _, part := range candidate.Content.Parts {
+					if t, ok := part.(genai.Text); ok {
+						textResp.WriteString(string(t))
+					}
+				}
+				botResponse = fmt.Sprintf("📚 *Consultor Orgânico RESPONDE:*\n\n%s", textResp.String())
+				sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio)
+				recordLog(sbClient, profile, body, botResponse, gemClient.Config.Model+"-mcp", promptTokens, completionTokens, finalIntent, nil, startTime, true)
+				return ProcessResult{Success: true, Reason: "expert_answered_mcp"}
+			}
+
+			// Handle Tool Calls
+			var toolResponses []genai.Part
+			for _, tc := range toolCalls {
+				log.Printf("🛠️ [FSM] Gemini solicitou tool: %s com args: %v", tc.Name, tc.Args)
+
+				// Injetar pmo_id se for a ferramenta de base de conhecimento
+				if tc.Name == "consultar_base_conhecimento" {
+					tc.Args["pmo_id"] = float64(pmoID)
+				}
+
+				result, err := mcpServer.CallTool(tc.Name, tc.Args)
+				if err != nil {
+					log.Printf("⚠️ [FSM] Erro ao executar tool %s: %v", tc.Name, err)
+					result = fmt.Sprintf("Erro ao executar ferramenta: %v", err)
+				}
+
+				toolResponses = append(toolResponses, genai.FunctionResponse{
+					Name:     tc.Name,
+					Response: map[string]interface{}{"result": result},
+				})
+			}
+
+			// Send responses back to Gemini
+			resp, err = session.SendMessage(ctx, toolResponses...)
+			if err != nil {
+				log.Printf("❌ [FSM] Erro ao enviar resultado da tool para o Gemini: %v", err)
+				break
+			}
 		}
 
-		// 4. Pedir ao Gemini para responder COM BASE nesse contexto (RAG)
-		ragPrompt := body
-		if contextText != "" {
-			ragPrompt = fmt.Sprintf(`Você é a Ana, assistente técnica de campo. Use as informações abaixo para responder ao agricultor.
-
-INSTRUÇÕES CRÍTICAS:
-1. Comece sua resposta citando a origem da informação (ex: "De acordo com os manuais gerais..." ou "Conforme os registros da sua fazenda...").
-2. Se a informação vier de "[FONTE GERAL DO AGRO]", trate como diretriz técnica ou lei.
-3. Se vier de "[DADOS PRIVADOS DA SUA FAZENDA]", trate como histórico ou regra específica da propriedade dele.
-4. Se a resposta não estiver nos dados abaixo, use seu conhecimento geral, mas deixe claro que não encontrou nos documentos específicos.
-
-CONHECIMENTO DISPONÍVEL:
-%s
-
-PERGUNTA DO AGRICULTOR: %s`, contextText, body)
-		}
-
-		aiModel = "gemini-1.5-flash-rag"
-		answer, err := gemClient.AskExpert(ragPrompt)
-		if err != nil {
-			log.Printf("❌ [FSM] Erro ao consultar Gemini RAG: %v", err)
-			botResponse = "⚠️ Tive um problema ao consultar as normas. Tente de novo."
-			sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio)
-			recordLog(sbClient, profile, body, botResponse, aiModel, promptTokens, completionTokens, finalIntent, nil, startTime, false)
-			return ProcessResult{Success: false, Reason: "expert_error"}
-		}
-
-		log.Printf("✅ [FSM] Resposta RAG gerada. Enviando via WPPConnect.")
-		botResponse = fmt.Sprintf("📚 *Consultor Orgânico RESPONDE:*\n\n%s", answer)
-		sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio)
-
-		recordLog(sbClient, profile, body, botResponse, aiModel, promptTokens, completionTokens, finalIntent, nil, startTime, true)
-		return ProcessResult{Success: true, Reason: "expert_answered_rag"}
+		// If loop finished without returning, something went wrong or too complex
+		return handleDuvidaFallback(wpClient, ttsClient, from, gemClient, body, respondWithAudio, sbClient, profile, startTime, promptTokens, completionTokens, finalIntent)
 	}
 
 	// Step 6: Strict Input Validation for Manejo Activities
@@ -462,7 +471,7 @@ func sendFeedback(wpClient *whatsapp.Client, ttsClient *tts.Orchestrator, to str
 
 // handleDuvidaFallback is a helper for cases where RAG fails but we still want to try answering
 func handleDuvidaFallback(wpClient *whatsapp.Client, ttsClient *tts.Orchestrator, from string, gemClient *gemini.Client, body string, respondAudio bool, sbClient *supabase.Client, profile *supabase.Profile, startTime time.Time, pTokens, cTokens int, intent string) ProcessResult {
-	aiModel := "gemini-1.5-flash-fallback"
+	aiModel := gemClient.Config.Model + "-fallback"
 	answer, err := gemClient.AskExpert(body)
 	if err != nil {
 		botResponse := "⚠️ Tive um problema ao consultar as normas. Tente de novo."

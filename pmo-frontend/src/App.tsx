@@ -25,6 +25,7 @@ import MinhasCulturas from './pages/MinhasCulturas';
 import DesignLab from './pages/DesignLab';
 import { AdminRoute } from './routes/AdminRoute';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import KnowledgeMonitoringPage from './pages/admin/KnowledgeMonitoringPage';
 import ChangelogPage from './pages/ChangelogPage';
 
 
@@ -150,6 +151,7 @@ const App: React.FC = () => {
             {/* Rotas Admin (Protected by Role) */}
             <Route element={<AdminRoute />}>
                 <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/conhecimento" element={<KnowledgeMonitoringPage />} />
             </Route>
 
             {/* 404 - Página não encontrada */}

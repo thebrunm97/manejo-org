@@ -2,11 +2,14 @@ package webhook
 
 import (
 	"bytes"
+	"context"
 	"crypto/hmac"
 	"fmt"
 	"log"
 	"net/http"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"os"
@@ -17,10 +20,12 @@ import (
 	"github.com/ledongthuc/pdf"
 	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
+	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
 	"github.com/thebrunm97/pmo-bot-go/internal/state"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
 	"github.com/thebrunm97/pmo-bot-go/internal/whatsapp"
+	"golang.org/x/time/rate"
 )
 
 // ---------------------------------------------------------------------------
@@ -136,6 +141,7 @@ type Config struct {
 	WhatsAppClient *whatsapp.Client
 	GeminiClient   *gemini.Client
 	TtsClient      *tts.Orchestrator
+	MCPServer      *mcp.Server
 }
 
 // ---------------------------------------------------------------------------
@@ -144,7 +150,8 @@ type Config struct {
 
 // Handler is the webhook HTTP handler.
 type Handler struct {
-	cfg Config
+	cfg     Config
+	limiter *rate.Limiter
 }
 
 // NewHandler creates a new webhook handler with the given config and Groq client.
@@ -153,15 +160,23 @@ func NewHandler(cfg Config) *Handler {
 		cfg.MaxMessageAge = 600
 	}
 	return &Handler{
-		cfg: cfg,
+		cfg:     cfg,
+		limiter: rate.NewLimiter(rate.Every(4*time.Second), 1), // 1 req a cada 4s = 15 RPM
 	}
 }
 
 // RegisterRoutes registers the webhook routes on the Gin engine.
 func (h *Handler) RegisterRoutes(r *gin.Engine) {
 	r.POST("/webhook", h.handleWebhook)
+	r.POST("/webhook/wppconnect", h.handleWebhook)   // Direct match for WEBHOOK_URL
+	r.POST("/api/:session/webhook", h.handleWebhook) // Fallback for session-prefixed webhooks
 	r.POST("/knowledge/upload", h.handleKnowledgeUpload)
 	r.GET("/health", h.handleHealth)
+}
+
+// SetWhatsAppClient updates the WhatsApp client (used for lazy reconnection).
+func (h *Handler) SetWhatsAppClient(c *whatsapp.Client) {
+	h.cfg.WhatsAppClient = c
 }
 
 // handleWebhook processes incoming WPPConnect messages.
@@ -225,7 +240,7 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 	go func(msg WPPMessage) {
 		// Asynchronously process the message. We don't block the webhook response on this.
 		// A background goroutine ensures WPPConnect receives the 200 OK immediately, avoiding retries/timeouts.
-		result := state.ProcessMessage(msg.From, msg.Body, msg.MessageID(), msg.IsAudio(), h.cfg.SupabaseClient, h.cfg.GroqClient, h.cfg.WhatsAppClient, h.cfg.GeminiClient, h.cfg.TtsClient)
+		result := state.ProcessMessage(msg.From, msg.Body, msg.MessageID(), msg.IsAudio(), h.cfg.SupabaseClient, h.cfg.GroqClient, h.cfg.WhatsAppClient, h.cfg.GeminiClient, h.cfg.TtsClient, h.cfg.MCPServer)
 		if !result.Success {
 			log.Printf("⚠️ [FSM] Background processing completed with issues: %s", result.Reason)
 		}
@@ -327,7 +342,7 @@ func (h *Handler) handleKnowledgeUpload(c *gin.Context) {
 	})
 }
 
-// processKnowledgePDF reads, extracts, chunks, embeds and inserts document data.
+// processKnowledgePDF reads, extracts, chunks, embeds and inserts document data using a worker pool.
 func (h *Handler) processKnowledgePDF(path string, originalName string, pmoID int64, jobID string) {
 	defer os.Remove(path) // Cleanup temp file
 
@@ -354,49 +369,112 @@ func (h *Handler) processKnowledgePDF(path string, originalName string, pmoID in
 		return
 	}
 
-	// Simple Chunking Strategy: ~1000 characters with overlap
+	// Simple Chunking Strategy: ~1200 characters with 200 overlap
 	chunks := simpleChunking(content, 1200, 200)
 	totalChunks := len(chunks)
-	log.Printf("🧩 [ASYNC-RAG] Texto extraído. Gerando %d chunks...", totalChunks)
+	log.Printf("🧩 [ASYNC-RAG] Texto extraído. Gerando %d chunks em Worker Pool...", totalChunks)
 
 	if jobID != "" {
 		h.cfg.SupabaseClient.UpdateJobProgress(jobID, 0, totalChunks)
 	}
 
-	processedCount := 0
-	for i, chunk := range chunks {
-		if strings.TrimSpace(chunk) == "" {
-			continue
-		}
-
-		embedding, err := h.cfg.GeminiClient.GenerateEmbedding(chunk)
-		if err != nil {
-			log.Printf("⚠️ [ASYNC-RAG] Erro ao gerar embedding para chunk %d: %v", i, err)
-			continue
-		}
-
-		err = h.cfg.SupabaseClient.InsertFarmDocument(pmoID, originalName, chunk, embedding)
-		if err != nil {
-			log.Printf("⚠️ [ASYNC-RAG] Erro ao inserir chunk %d no Supabase: %v", i, err)
-			continue
-		}
-
-		processedCount++
-
-		// Update progress every 5 chunks
-		if jobID != "" && (processedCount%5 == 0 || processedCount == totalChunks) {
-			h.cfg.SupabaseClient.UpdateJobProgress(jobID, processedCount, totalChunks)
-		}
-
-		// Rate limit protection for Gemini (Free tier is generous but let's be safe)
-		time.Sleep(500 * time.Millisecond)
+	// Worker Pool Setup
+	const numWorkers = 3
+	type job struct {
+		index int
+		chunk string
 	}
+
+	jobs := make(chan job, totalChunks)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	var wg sync.WaitGroup
+	var processedCount int64
+
+	// Start Workers
+	for w := 1; w <= numWorkers; w++ {
+		wg.Add(1)
+		go func(workerID int) {
+			defer wg.Done()
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case j, ok := <-jobs:
+					if !ok {
+						return
+					}
+
+					chunk := strings.TrimSpace(j.chunk)
+					if chunk == "" {
+						atomic.AddInt64(&processedCount, 1)
+						continue
+					}
+
+					// Rate Limiting
+					if err := h.limiter.Wait(ctx); err != nil {
+						log.Printf("⚠️ [Worker-%d] Rate limiter error: %v", workerID, err)
+						cancel() // Fail-fast
+						return
+					}
+
+					// Generate Embedding
+					embedding, err := h.cfg.GeminiClient.GenerateEmbedding(chunk)
+					if err != nil {
+						log.Printf("⚠️ [Worker-%d] Erro ao gerar embedding para chunk %d: %v", workerID, j.index, err)
+						// Check if it's a rate limit error (simplified check)
+						if strings.Contains(err.Error(), "429") {
+							log.Printf("🚫 [Worker-%d] Rate limit hit (429). Retrying after brief pause...", workerID)
+							time.Sleep(2 * time.Second)
+							// Retry once or just log and continue
+							embedding, err = h.cfg.GeminiClient.GenerateEmbedding(chunk)
+							if err != nil {
+								log.Printf("❌ [Worker-%d] Retry failed for chunk %d: %v", workerID, j.index, err)
+								continue
+							}
+						} else {
+							continue
+						}
+					}
+
+					// Insert into Supabase
+					err = h.cfg.SupabaseClient.InsertFarmDocument(pmoID, originalName, chunk, embedding)
+					if err != nil {
+						log.Printf("⚠️ [Worker-%d] Erro ao inserir chunk %d no Supabase: %v", workerID, j.index, err)
+						continue
+					}
+
+					newCount := atomic.AddInt64(&processedCount, 1)
+
+					// Update progress periodically or on completion
+					if jobID != "" && (newCount%5 == 0 || int(newCount) == totalChunks) {
+						h.cfg.SupabaseClient.UpdateJobProgress(jobID, int(newCount), totalChunks)
+					}
+				}
+			}
+		}(w)
+	}
+
+	// Feed Jobs
+	for i, chunk := range chunks {
+		jobs <- job{index: i, chunk: chunk}
+	}
+	close(jobs)
+
+	// Wait for completion
+	wg.Wait()
 
 	if jobID != "" {
-		h.cfg.SupabaseClient.FinishJob(jobID, "completed", "")
+		status := "completed"
+		if int(atomic.LoadInt64(&processedCount)) < totalChunks {
+			// Optional: mark as partial or completed if most chunks succeeded
+			log.Printf("⚠️ [ASYNC-RAG] Processamento concluído com lacunas: %d/%d", processedCount, totalChunks)
+		}
+		h.cfg.SupabaseClient.FinishJob(jobID, status, "")
 	}
 
-	log.Printf("✅ [ASYNC-RAG] Documento %s processado com sucesso!", originalName)
+	log.Printf("✅ [ASYNC-RAG] Documento %s processado (Total Chunks: %d)", originalName, totalChunks)
 }
 
 // extractTextFromPDF uses ledongthuc/pdf to get all text from document.
