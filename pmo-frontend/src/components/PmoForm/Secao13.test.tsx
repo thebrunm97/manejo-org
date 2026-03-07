@@ -19,7 +19,7 @@ vi.mock('./CheckboxGroup', () => ({
 describe('Secao13', () => {
     test('deve atualizar técnicas de melhoria de pastos', () => {
         const mockOnSectionChange = vi.fn();
-        const data = {};
+        const data = { canteiros: {} } as any;
 
         render(<Secao13 data={data} onSectionChange={mockOnSectionChange} />);
 

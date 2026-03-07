@@ -28,7 +28,7 @@ describe('Secao1', () => {
         const mockOnSectionChange = vi.fn();
         const data = { dados_cadastrais: { nome: 'Antigo' } };
 
-        render(<Secao1 data={data} onSectionChange={mockOnSectionChange} />);
+        render(<Secao1 data={data as any} onSectionChange={mockOnSectionChange} />);
 
         expect(screen.getByText('1.1 Dados Cadastrais')).toBeInTheDocument();
 

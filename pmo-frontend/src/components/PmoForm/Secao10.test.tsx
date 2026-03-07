@@ -71,7 +71,7 @@ describe('Secao10', () => {
         // We can find the button by its child SVG if we know the test id.
         // By default MUI icons have `data-testid="XIcon"`.
         const editButton = screen.getByTestId('EditIcon').closest('button');
-        fireEvent.click(editButton);
+        fireEvent.click(editButton!);
 
         expect(screen.getByText('Editar Manejo')).toBeInTheDocument();
 

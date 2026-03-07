@@ -48,7 +48,7 @@ describe('Secao18', () => {
         // The component has <input type="file" hidden ... />
         // FireEvent change on it
         const fileInput = document.querySelector('input[type="file"]');
-        fireEvent.change(fileInput, { target: { files: [file] } });
+        fireEvent.change(fileInput!, { target: { files: [file] } });
 
         expect(screen.getByText('documento.pdf')).toBeInTheDocument();
 
