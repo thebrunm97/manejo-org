@@ -26,6 +26,8 @@ docs
 
 # Outros
 *.log
+*.txt
+!requirements.txt
 .env.local
 # Python
 .venv
