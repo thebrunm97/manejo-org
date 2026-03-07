@@ -2,7 +2,7 @@ import { openDB, DBSchema, IDBPDatabase } from 'idb';
 
 const DB_NAME = 'pmo-digital-db';
 const STORE_NAME = 'pending-pmos';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export const CADERNO_STORE = 'pending-caderno';
 export const SYNC_QUEUE_STORE = 'offline-sync-queue';

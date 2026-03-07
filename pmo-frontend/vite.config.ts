@@ -93,7 +93,8 @@ export default defineConfig({
             { find: '@hooks', replacement: path.resolve(__dirname, './src/hooks') },
             { find: '@types', replacement: path.resolve(__dirname, './src/types') },
             { find: /^leaflet-draw$/, replacement: path.resolve(__dirname, './src/leaflet-draw-shim.js') }
-        ]
+        ],
+        dedupe: ['react', 'react-dom', 'react-router-dom']
     },
     build: {
         chunkSizeWarningLimit: 600,
