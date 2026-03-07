@@ -229,7 +229,7 @@ const KnowledgeMonitoringPage: React.FC = () => {
                 <div className="flex items-center gap-3">
                     {/* Botão de Upload RAG */}
                     <label className={`
-                        flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-brand-500/20 cursor-pointer
+                        flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-semibold transition-all shadow-sm cursor-pointer
                         ${isUploading ? 'opacity-50 cursor-wait' : ''}
                     `}>
                         {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}

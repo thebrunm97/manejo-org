@@ -12,6 +12,7 @@ export const SCREENS = {
     ADMIN: 'ADMIN', // New protected route
     CHANGELOG: 'CHANGELOG',
     PROFILE: 'PROFILE',
+    KNOWLEDGE_MONITORING: 'KNOWLEDGE_MONITORING',
 } as const;
 
 
@@ -31,5 +32,6 @@ export type RootStackParamList = {
     [SCREENS.ADMIN]: undefined;
     [SCREENS.CHANGELOG]: undefined;
     [SCREENS.PROFILE]: undefined;
+    [SCREENS.KNOWLEDGE_MONITORING]: undefined;
 };
 
