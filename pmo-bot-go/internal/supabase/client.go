@@ -77,7 +77,6 @@ type CadernoCampoInsert struct {
 
 type LogProcessamentoInsert struct {
 	PmoID            int64  `json:"pmo_id"`
-	UserID           string `json:"user_id,omitempty"`
 	MensagemUsuario  string `json:"mensagem_usuario"`
 	RespostaBot      string `json:"resposta_bot"`
 	ModeloIA         string `json:"modelo_ia"`
@@ -91,12 +90,11 @@ type LogTreinamentoInsert struct {
 	TextoUsuario  string                 `json:"texto_usuario"`
 	JsonExtraido  map[string]interface{} `json:"json_extraido"`
 	TipoAtividade string                 `json:"tipo_atividade"`
-	UserID        string                 `json:"usuario_id"`
 	ModeloIA      string                 `json:"modelo_ia"`
 }
 
 type LogConsumoInsert struct {
-	UserID           string                 `json:"usuario_id"`
+	PmoID            int64                  `json:"pmo_id"`
 	RequestID        string                 `json:"request_id,omitempty"`
 	TokensPrompt     int                    `json:"tokens_prompt"`
 	TokensCompletion int                    `json:"tokens_completion"`
