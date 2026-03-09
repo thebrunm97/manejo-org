@@ -732,6 +732,55 @@ func (c *Client) GetIngestionStats(pmoID int64) (string, int, error) {
 }
 
 // ---------------------------------------------------------------------------
+// Structured Data Fetching Methods (Sprint 1)
+// ---------------------------------------------------------------------------
+
+// FetchTalhoes returns all talhoes for a given PMO
+func (c *Client) FetchTalhoes(pmoID int64) ([]map[string]interface{}, error) {
+	reqURL := fmt.Sprintf("%s/rest/v1/talhoes?pmo_id=eq.%d&select=id,nome,area_total,descricao", c.config.URL, pmoID)
+	body, err := c.doRequest(http.MethodGet, reqURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []map[string]interface{}
+	if err := json.Unmarshal(body, &results); err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
+// FetchCanteiros returns all canteiros for a given Talhao
+func (c *Client) FetchCanteiros(talhaoID int64) ([]map[string]interface{}, error) {
+	reqURL := fmt.Sprintf("%s/rest/v1/canteiros?talhao_id=eq.%d&select=id,nome,largura,comprimento,area", c.config.URL, talhaoID)
+	body, err := c.doRequest(http.MethodGet, reqURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []map[string]interface{}
+	if err := json.Unmarshal(body, &results); err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
+// FetchCadernoRecentes returns the last N records from Caderno de Campo for a PMO
+func (c *Client) FetchCadernoRecentes(pmoID int64, limit int) ([]map[string]interface{}, error) {
+	reqURL := fmt.Sprintf("%s/rest/v1/caderno_campo?pmo_id=eq.%d&order=created_at.desc&limit=%d&select=id,created_at,tipo_atividade,produto,talhao_canteiro,quantidade_valor,quantidade_unidade", c.config.URL, pmoID, limit)
+	body, err := c.doRequest(http.MethodGet, reqURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []map[string]interface{}
+	if err := json.Unmarshal(body, &results); err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
+// ---------------------------------------------------------------------------
 // HTTP Helper
 // ---------------------------------------------------------------------------
 

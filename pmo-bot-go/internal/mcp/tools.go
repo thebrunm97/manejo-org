@@ -1,6 +1,7 @@
 package mcp
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -27,6 +28,76 @@ func (s *Server) InitializeTools() {
 		},
 		Handler: s.handleConsultarBaseConhecimento,
 	})
+
+	s.RegisterTool(Tool{
+		Name:        "consultar_dados_fazenda",
+		Description: "Usa esta ferramenta para consultar dados estruturados da fazenda como talhões, canteiros ativos e registros recentes do caderno de campo.",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"pmo_id": map[string]interface{}{
+					"type":        "integer",
+					"description": "ID do PMO (fazenda) do usuário.",
+				},
+				"tabela": map[string]interface{}{
+					"type":        "string",
+					"enum":        []string{"talhoes", "canteiros", "caderno_recente"},
+					"description": "A categoria de dados que deseja consultar.",
+				},
+				"talhao_id": map[string]interface{}{
+					"type":        "integer",
+					"description": "Obrigatório se a tabela for 'canteiros'. ID do talhão para filtrar canteiros.",
+				},
+			},
+			"required": []string{"pmo_id", "tabela"},
+		},
+		Handler: s.handleConsultarDadosFazenda,
+	})
+}
+
+func (s *Server) handleConsultarDadosFazenda(args map[string]interface{}) (interface{}, error) {
+	pmoIDFloat, ok := args["pmo_id"].(float64)
+	if !ok {
+		return nil, fmt.Errorf("pmo_id is required and must be an integer")
+	}
+	pmoID := int64(pmoIDFloat)
+
+	tabela, ok := args["tabela"].(string)
+	if !ok {
+		return nil, fmt.Errorf("tabela is required and must be a string")
+	}
+
+	log.Printf("📊 [MCP-TOOL] Consultando dados estruturados (%s) para PMO %d", tabela, pmoID)
+
+	var data interface{}
+	var err error
+
+	switch tabela {
+	case "talhoes":
+		data, err = s.supabase.FetchTalhoes(pmoID)
+	case "canteiros":
+		talhaoIDFloat, ok := args["talhao_id"].(float64)
+		if !ok {
+			return nil, fmt.Errorf("talhao_id is required for canteiros table")
+		}
+		data, err = s.supabase.FetchCanteiros(int64(talhaoIDFloat))
+	case "caderno_recente":
+		data, err = s.supabase.FetchCadernoRecentes(pmoID, 10)
+	default:
+		return nil, fmt.Errorf("tabela desconhecida: %s", tabela)
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("erro ao buscar dados no Supabase: %w", err)
+	}
+
+	// Format as JSON string for the AI
+	jsonBytes, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("erro ao formatar resposta: %w", err)
+	}
+
+	return string(jsonBytes), nil
 }
 
 func (s *Server) handleConsultarBaseConhecimento(args map[string]interface{}) (interface{}, error) {

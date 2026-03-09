@@ -20,6 +20,7 @@ import (
 	"github.com/ledongthuc/pdf"
 	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
+	"github.com/thebrunm97/pmo-bot-go/internal/history"
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
 	"github.com/thebrunm97/pmo-bot-go/internal/state"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
@@ -142,6 +143,7 @@ type Config struct {
 	GeminiClient   *gemini.Client
 	TtsClient      *tts.Orchestrator
 	MCPServer      *mcp.Server
+	HistoryManager *history.Manager
 }
 
 // ---------------------------------------------------------------------------
@@ -240,7 +242,7 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 	go func(msg WPPMessage) {
 		// Asynchronously process the message. We don't block the webhook response on this.
 		// A background goroutine ensures WPPConnect receives the 200 OK immediately, avoiding retries/timeouts.
-		result := state.ProcessMessage(msg.From, msg.Body, msg.MessageID(), msg.IsAudio(), h.cfg.SupabaseClient, h.cfg.GroqClient, h.cfg.WhatsAppClient, h.cfg.GeminiClient, h.cfg.TtsClient, h.cfg.MCPServer)
+		result := state.ProcessMessage(msg.From, msg.Body, msg.MessageID(), msg.IsAudio(), h.cfg.SupabaseClient, h.cfg.GroqClient, h.cfg.WhatsAppClient, h.cfg.GeminiClient, h.cfg.TtsClient, h.cfg.MCPServer, h.cfg.HistoryManager)
 		if !result.Success {
 			log.Printf("⚠️ [FSM] Background processing completed with issues: %s", result.Reason)
 		}

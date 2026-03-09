@@ -10,6 +10,7 @@ import (
 	"github.com/google/generative-ai-go/genai"
 	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
+	"github.com/thebrunm97/pmo-bot-go/internal/history"
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
@@ -24,7 +25,7 @@ type ProcessResult struct {
 
 // ProcessMessage orchestrates the flow:
 // LID -> Phone -> PMO ID -> LLM Extraction -> Organic Alert Check -> Save to Supabase -> Feedback
-func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClient *supabase.Client, groqClient *groq.Client, wpClient *whatsapp.Client, gemClient *gemini.Client, ttsClient *tts.Orchestrator, mcpServer *mcp.Server) ProcessResult {
+func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClient *supabase.Client, groqClient *groq.Client, wpClient *whatsapp.Client, gemClient *gemini.Client, ttsClient *tts.Orchestrator, mcpServer *mcp.Server, historyManager *history.Manager) ProcessResult {
 	log.Printf("🧵 [FSM] Iniciando fluxo para mensagem de: %s (isAudio=%v)", from, isAudio)
 
 	// Variables for tracking the process outcome and logging
@@ -173,10 +174,22 @@ func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClie
 	if extracted.Intencao == "duvida" {
 		log.Printf("🧠 [FSM] Dúvida detectada. Iniciando Tool Calling para PMO %d...", pmoID)
 
+		// Prepare History for Gemini
+		var geminiHistory []*genai.Content
+		if historyManager != nil {
+			rawHistory := historyManager.GetHistory(from)
+			for _, h := range rawHistory {
+				geminiHistory = append(geminiHistory, &genai.Content{
+					Role:  h.Role,
+					Parts: []genai.Part{genai.Text(h.Content)},
+				})
+			}
+		}
+
 		ctx := context.Background()
 		tools := mcpServer.GetToolDeclarations()
 
-		resp, session, err := gemClient.GenerateContentWithTools(ctx, body, tools)
+		resp, session, err := gemClient.GenerateContentWithTools(ctx, body, geminiHistory, tools)
 		if err != nil {
 			log.Printf("❌ [FSM] Erro inicial no Gemini Tool Calling: %v", err)
 			return handleDuvidaFallback(wpClient, ttsClient, from, gemClient, body, respondWithAudio, sbClient, profile, startTime, promptTokens, completionTokens, finalIntent)
@@ -206,6 +219,13 @@ func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClie
 				}
 				botResponse = fmt.Sprintf("📚 *Consultor Orgânico RESPONDE:*\n\n%s", textResp.String())
 				sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio)
+
+				// Save to History (User Query + Bot Answer)
+				if historyManager != nil {
+					historyManager.AddMessage(from, "user", body)
+					historyManager.AddMessage(from, "model", textResp.String())
+				}
+
 				recordLog(sbClient, profile, body, botResponse, gemClient.Config.Model+"-mcp", promptTokens, completionTokens, finalIntent, nil, startTime, true)
 				return ProcessResult{Success: true, Reason: "expert_answered_mcp"}
 			}

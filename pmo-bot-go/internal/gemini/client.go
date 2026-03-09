@@ -101,9 +101,8 @@ func (c *Client) AskExpert(question string) (string, error) {
 	return result, nil
 }
 
-// GenerateContentWithTools handles the interactive tool calling flow
-// It returns the model and a session to maintain state if needed, but for now we'll do one-shot or multi-turn internally.
-func (c *Client) GenerateContentWithTools(ctx context.Context, question string, tools []*genai.Tool) (*genai.GenerateContentResponse, *genai.ChatSession, error) {
+// GenerateContentWithTools handles the interactive tool calling flow with history support
+func (c *Client) GenerateContentWithTools(ctx context.Context, question string, history []*genai.Content, tools []*genai.Tool) (*genai.GenerateContentResponse, *genai.ChatSession, error) {
 	model := c.client.GenerativeModel(c.Config.Model)
 	model.Tools = tools
 	model.SystemInstruction = &genai.Content{
@@ -112,8 +111,11 @@ func (c *Client) GenerateContentWithTools(ctx context.Context, question string, 
 	model.SetTemperature(0.2)
 
 	session := model.StartChat()
+	if len(history) > 0 {
+		session.History = history
+	}
 
-	log.Printf("📡 [GEMINI SDK] Chamada com Tools para: %s", question)
+	log.Printf("📡 [GEMINI SDK] Chamada com Tools e Memória (%d msgs) para: %s", len(history), question)
 	resp, err := session.SendMessage(ctx, genai.Text(question))
 	if err != nil {
 		return nil, nil, fmt.Errorf("send message error: %w", err)
