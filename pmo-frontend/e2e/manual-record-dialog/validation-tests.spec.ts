@@ -27,20 +27,20 @@ test.describe('ManualRecordDialog - Validações', () => {
     test.beforeEach(async ({ page }) => {
         await loginViaBrowser(page);
         await page.waitForLoadState('networkidle');
-        await page.locator('button:has-text("Novo Registro")').click();
+        await page.getByRole('button', { name: "Novo Registro" }).click();
         await page.waitForTimeout(500);
     });
 
     test('PLANTIO: deve exigir campos obrigatórios', async ({ page }) => {
         // Já está na aba Plantio por padrão
-        await expect(page.locator('text=DETALHES DO PLANTIO')).toBeVisible();
+        await expect(page.locator('text=Detalhes do Plantio')).toBeVisible();
 
         // Limpar campo de cultura e tentar salvar
-        const culturaInput = page.locator('input[placeholder*="Alface"]');
+        const culturaInput = page.getByLabel(/Cultura|Produto/);
         await culturaInput.fill('');
 
         // Tentar salvar sem preencher campos obrigatórios
-        await page.locator('button:has-text("Salvar Registro")').click();
+        await page.getByRole('button', { name: "Salvar Registro" }).click();
 
         // Verificar que há erros de validação (o dialog não fecha)
         const dialog = page.locator('[role="dialog"]');
@@ -49,37 +49,34 @@ test.describe('ManualRecordDialog - Validações', () => {
 
     test('MANEJO: campos específicos aparecem ao selecionar subtipo', async ({ page }) => {
         // Ir para aba Manejo
-        await page.locator('button:has-text("MANEJO")').click();
+        await page.getByRole('tab', { name: /Manejo/i }).click();
         await page.waitForTimeout(300);
 
-        await expect(page.locator('text=OPERAÇÃO DE MANEJO')).toBeVisible();
+        await expect(page.locator('text=Operação de Manejo')).toBeVisible();
 
-        // Verificar que label de Tipo de Operação existe usando locator específico
-        await expect(page.locator('#subtipo-manejo-label')).toBeVisible();
+        // Verificar que label de Tipo de Operação existe via getByLabel
+        await expect(page.getByLabel('Tipo de Operação')).toBeVisible();
     });
 
     test('COLHEITA: campos de rastreabilidade visíveis', async ({ page }) => {
         // Ir para aba Colheita
-        await page.locator('button:has-text("COLHEITA")').click();
+        await page.getByRole('tab', { name: /Colheita/i }).click();
         await page.waitForTimeout(300);
 
-        await expect(page.locator('text=RASTREABILIDADE DA COLHEITA')).toBeVisible();
+        await expect(page.locator('text=Rastreabilidade da Colheita')).toBeVisible();
 
-        // Verificar campo de LOTE usando input
-        const loteInput = page.locator('input').filter({ hasText: /LOTE/i }).or(
-            page.locator('label').filter({ hasText: /LOTE/i })
-        );
-        await expect(loteInput.first()).toBeVisible();
+        // Verificar campo de LOTE
+        await expect(page.getByLabel(/LOTE/i)).toBeVisible();
     });
 
     test('OUTRO: dropdown de Subtipo está visível', async ({ page }) => {
         // Ir para aba Outro
-        await page.locator('button:has-text("OUTRO")').click();
+        await page.getByRole('tab', { name: /Outro/i }).click();
         await page.waitForTimeout(300);
 
-        await expect(page.locator('text=TIPO DE REGISTRO OUTRO')).toBeVisible();
+        await expect(page.locator('text=Tipo de Registro Outro')).toBeVisible();
 
-        // Verificar usando ID específico do label
-        await expect(page.locator('#tipo-outro-label')).toBeVisible();
+        // Verificar usando label
+        await expect(page.getByLabel('Subtipo')).toBeVisible();
     });
 });

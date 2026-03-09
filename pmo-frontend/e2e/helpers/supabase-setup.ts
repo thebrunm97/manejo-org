@@ -56,6 +56,8 @@ export async function loginViaBrowser(page: Page) {
     const dashboardElement = page.locator('button:has-text("Novo Registro"), button:has-text("Gerenciar Planos")');
     if (await dashboardElement.isVisible({ timeout: 2000 }).catch(() => false)) {
         console.log('✅ Already logged in');
+        // Garantir que o tour está desabilitado
+        await page.evaluate(() => localStorage.setItem('hasSeenTour', 'true'));
         return;
     }
 
@@ -83,8 +85,30 @@ export async function loginViaBrowser(page: Page) {
     await loginButton.click();
 
     // Aguardar redirecionamento para o dashboard
-    await page.waitForURL('**/', { timeout: 15000 });
+    // Aguardar redirecionamento para o dashboard ou home
+    try {
+        await page.waitForURL(url => url.pathname === '/' || url.pathname.includes('dashboard'), { timeout: 30000 });
+    } catch (err) {
+        const errorText = await page.locator('.text-red-500, .bg-red-50').textContent().catch(() => '');
+        if (errorText) {
+            console.error(`❌ Login failed with error visible on page: ${errorText.trim()}`);
+        }
+        throw err;
+    }
     await page.waitForLoadState('networkidle');
+
+    // Desabilitar tour via localStorage
+    await page.evaluate(() => localStorage.setItem('hasSeenTour', 'true'));
+
+    // Fechar tour de onboarding (driver.js) se ainda assim aparecer (fallback)
+    const driverClose = page.locator('.driver-popover-close-btn, button[aria-label="Close tour"]').first();
+    try {
+        await driverClose.waitFor({ state: 'visible', timeout: 5000 });
+        await driverClose.click();
+        console.log('👋 Dismissed onboarding tour');
+    } catch (e) {
+        // Ignorar se não aparecer
+    }
 
     console.log('✅ Logged in via browser');
 }
@@ -198,7 +222,17 @@ export async function cleanupTestData(pmoId: number) {
         }
     }
 
-    // 1. Deletar registros do diário de campo
+    // 1. Deletar talhões (que deletam canteiros via cascade ou precisam ser limpos)
+    const { error: talhoesError } = await supabase
+        .from('talhoes')
+        .delete()
+        .eq('pmo_id', pmoId);
+
+    if (talhoesError) {
+        console.warn(`⚠️ Failed to delete talhoes: ${talhoesError.message}`);
+    }
+
+    // 2. Deletar registros do diário de campo
     const { error: diarioError } = await supabase
         .from('caderno_campo')
         .delete()
@@ -289,6 +323,7 @@ export async function createRecord(
         detalhes_tecnicos?: any;
         observacao_original?: string;
         data_registro?: string;
+        talhao_canteiro?: string;
     }
 ) {
     const { data: record, error } = await supabase
@@ -302,6 +337,7 @@ export async function createRecord(
             detalhes_tecnicos: data.detalhes_tecnicos || {},
             observacao_original: data.observacao_original || 'Registro criado via API de teste',
             data_registro: data.data_registro || new Date().toISOString(),
+            talhao_canteiro: data.talhao_canteiro || 'Canteiro E2E',
         })
         .select()
         .single();
@@ -312,4 +348,58 @@ export async function createRecord(
 
     console.log(`✅ Created record: ${data.tipo_atividade} - ${data.produto}`);
     return record;
+}
+
+/**
+ * Cria infraestrutura de teste (Talhão e Canteiro) para um PMO
+ */
+export async function createInfrastructure(pmoId: number, talhaoNome = 'Talhão E2E', canteiroNome = 'Canteiro E2E') {
+    const { data: session } = await supabase.auth.getSession();
+    const userId = session.session?.user?.id;
+
+    if (!userId) {
+        throw new Error('No authenticated user');
+    }
+
+    // 1. Criar Talhão
+    const { data: talhao, error: talhaoError } = await supabase
+        .from('talhoes')
+        .insert({
+            pmo_id: pmoId,
+            user_id: userId,
+            nome: talhaoNome,
+            active: true,
+            geometry: {
+                type: "Feature",
+                geometry: {
+                    type: "Polygon",
+                    coordinates: [[[0, 0], [0, 1], [1, 1], [1, 0], [0, 0]]]
+                },
+                properties: {}
+            }
+        })
+        .select()
+        .single();
+
+    if (talhaoError) {
+        throw new Error(`Failed to create test talhao: ${talhaoError.message}`);
+    }
+
+    // 2. Criar Canteiro
+    const { data: canteiro, error: canteiroError } = await supabase
+        .from('canteiros')
+        .insert({
+            talhao_id: talhao.id,
+            nome: canteiroNome,
+            status: 'livre'
+        })
+        .select()
+        .single();
+
+    if (canteiroError) {
+        throw new Error(`Failed to create test canteiro: ${canteiroError.message}`);
+    }
+
+    console.log(`✅ Created infrastructure: ${talhaoNome} > ${canteiroNome}`);
+    return { talhao, canteiro };
 }
