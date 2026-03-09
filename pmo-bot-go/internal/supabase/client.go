@@ -87,6 +87,7 @@ type LogProcessamentoInsert struct {
 
 type LogTreinamentoInsert struct {
 	PmoID         int64                  `json:"pmo_id"`
+	UserID        string                 `json:"user_id"`
 	TextoUsuario  string                 `json:"texto_usuario"`
 	JsonExtraido  map[string]interface{} `json:"json_extraido"`
 	TipoAtividade string                 `json:"tipo_atividade"`
@@ -94,7 +95,7 @@ type LogTreinamentoInsert struct {
 }
 
 type LogConsumoInsert struct {
-	PmoID            int64                  `json:"pmo_id"`
+	UserID           string                 `json:"user_id"`
 	RequestID        string                 `json:"request_id,omitempty"`
 	TokensPrompt     int                    `json:"tokens_prompt"`
 	TokensCompletion int                    `json:"tokens_completion"`
