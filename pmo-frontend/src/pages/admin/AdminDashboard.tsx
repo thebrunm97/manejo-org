@@ -75,8 +75,8 @@ const AdminDashboard = () => {
                 .limit(100);
             const trainingPromise = supabase
                 .from('logs_treinamento')
-                .select('id, criado_em, texto_usuario, json_corrigido, json_extraido')
-                .order('criado_em', { ascending: false })
+                .select('id, created_at, texto_usuario, json_corrigido, json_extraido')
+                .order('created_at', { ascending: false })
                 .limit(50);
             const botStatusPromise = fetchBotStatus();
 
@@ -318,7 +318,7 @@ const AdminDashboard = () => {
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="text-sm font-bold text-slate-700">
-                                                    {new Date(log.criado_em).toLocaleDateString()}
+                                                    {new Date(log.created_at).toLocaleDateString()}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 max-w-md">
