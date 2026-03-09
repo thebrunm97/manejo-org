@@ -397,7 +397,7 @@ func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClie
 // recordLog is a helper to consistently log the bot's processing outcome to Audit and Training tables
 func recordLog(sbClient *supabase.Client, profile *supabase.Profile, userMsg, botResp, model string, promptTokens, completionTokens int, intent string, extracted map[string]interface{}, startTime time.Time, isSuccess bool) {
 	// 1. Audit Log (requested/approved in Phase 2/3)
-	_ = sbClient.InsertLogProcessamento(supabase.LogProcessamentoInsert{
+	if err := sbClient.InsertLogProcessamento(supabase.LogProcessamentoInsert{
 		PmoID:            profile.PmoAtivoID,
 		UserID:           profile.ID,
 		MensagemUsuario:  userMsg,
@@ -406,17 +406,21 @@ func recordLog(sbClient *supabase.Client, profile *supabase.Profile, userMsg, bo
 		TokensPrompt:     promptTokens,
 		TokensCompletion: completionTokens,
 		Intencao:         intent,
-	})
+	}); err != nil {
+		log.Printf("❌ [FSM] Erro ao gravar LogProcessamento: %v", err)
+	}
 
 	// 2. Training Log (Dashboard visibility)
-	_ = sbClient.InsertLogTreinamento(supabase.LogTreinamentoInsert{
+	if err := sbClient.InsertLogTreinamento(supabase.LogTreinamentoInsert{
 		PmoID:         profile.PmoAtivoID,
 		TextoUsuario:  userMsg,
 		JsonExtraido:  extracted,
 		TipoAtividade: intent,
 		UserID:        profile.ID,
 		ModeloIA:      model,
-	})
+	}); err != nil {
+		log.Printf("❌ [FSM] Erro ao gravar LogTreinamento: %v", err)
+	}
 
 	// 3. Financial Audit Log (logs_consumo)
 	var duracaoMs int64
@@ -431,7 +435,7 @@ func recordLog(sbClient *supabase.Client, profile *supabase.Profile, userMsg, bo
 		status = "error"
 	}
 
-	_ = sbClient.InsertLogConsumo(supabase.LogConsumoInsert{
+	if err := sbClient.InsertLogConsumo(supabase.LogConsumoInsert{
 		UserID:           profile.ID,
 		TokensPrompt:     promptTokens,
 		TokensCompletion: completionTokens,
@@ -441,7 +445,9 @@ func recordLog(sbClient *supabase.Client, profile *supabase.Profile, userMsg, bo
 		CustoEstimado:    custoEstimado,
 		DuracaoMs:        duracaoMs,
 		Status:           status,
-	})
+	}); err != nil {
+		log.Printf("❌ [FSM] Erro ao gravar LogConsumo: %v", err)
+	}
 }
 
 // fmtLocalizacao is a quick helper to combine talhao and canteiros

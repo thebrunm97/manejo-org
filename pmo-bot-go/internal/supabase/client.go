@@ -77,7 +77,7 @@ type CadernoCampoInsert struct {
 
 type LogProcessamentoInsert struct {
 	PmoID            int64  `json:"pmo_id"`
-	UserID           string `json:"usuario_id,omitempty"`
+	UserID           string `json:"user_id,omitempty"`
 	MensagemUsuario  string `json:"mensagem_usuario"`
 	RespostaBot      string `json:"resposta_bot"`
 	ModeloIA         string `json:"modelo_ia"`
