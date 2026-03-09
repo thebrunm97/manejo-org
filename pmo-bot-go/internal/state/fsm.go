@@ -69,18 +69,64 @@ func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClie
 		log.Printf("📝 [FSM] Transcrição concluída: \"%s\"", body)
 	}
 
-	// Step 1: Resolve the sender's phone number
+	// Step 1: Resolve the sender's phone number as early as possible for telemetry
 	phone, err := sbClient.ResolvePhone(from)
 	if err != nil {
 		log.Printf("⚠️ [FSM] Erro ao resolver LID/telefone (%s): %v", from, err)
 		phone = from
 	}
 
-	// Step 2: Ensure we know which farm (PMO) this user belongs to
-	profile, err := sbClient.GetProfileByPhone(phone)
-	if err != nil {
-		log.Printf("🚫 [FSM] Usuário não encontrado ou sem PMO ativo: %s", phone)
+	// Step 2: Resolve profile to have UserID for all consumption logs
+	profile, errP := sbClient.GetProfileByPhone(phone)
+	if errP != nil {
+		log.Printf("🚫 [FSM] Perfil não encontrado ou sem PMO ativo para %s: %v", phone, errP)
+	}
 
+	if isAudio {
+		log.Printf("🎤 [FSM] Áudio detectado. Baixando media %s...", msgID)
+		audioBytes, err := wpClient.DownloadAudio(msgID)
+		if err != nil {
+			log.Printf("❌ [FSM] Falha ao baixar áudio: %v", err)
+			wpClient.SendMessage(from, "⚠️ Não consegui baixar seu áudio. Tente enviar de novo ou digite a mensagem.")
+			return ProcessResult{Success: false, Reason: "audio_download_error"}
+		}
+
+		log.Printf("⬇️ [FSM] Áudio baixado (%d bytes). Iniciando transcrição Whisper...", len(audioBytes))
+
+		ctxSTT, cancelSTT := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancelSTT()
+
+		sttReq := groq.AudioTranscriptionRequest{
+			FileData: audioBytes,
+			FileName: "audio.ogg",
+		}
+
+		transcription, err := groqClient.Transcribe(ctxSTT, sttReq)
+		if err != nil {
+			log.Printf("❌ [FSM] Falha na transcrição STT: %v", err)
+			wpClient.SendMessage(from, "⚠️ Não consegui entender seu áudio. Pode digitar a mensagem?")
+			return ProcessResult{Success: false, Reason: "audio_transcription_error"}
+		}
+
+		// Log immediate Whisper consumption if profile exists
+		if profile != nil {
+			log.Printf("📊 [Telemetry] Gravando consumo Whisper para usuário %s", profile.ID)
+			_ = sbClient.InsertLogConsumo(supabase.LogConsumoInsert{
+				UserID:   profile.ID,
+				ModeloIA: "groq-whisper",
+				Acao:     "stt",
+				Status:   "success",
+			})
+		}
+
+		body = transcription.Text
+		respondWithAudio = true
+		aiModel = "whisper-large-v3-turbo"
+		log.Printf("📝 [FSM] Transcrição concluída: \"%s\"", body)
+	}
+
+	// Step 2b: Handle unauthenticated flow (Link Device)
+	if profile == nil {
 		// Let's check if the user is trying to connect their device
 		if strings.HasPrefix(strings.ToUpper(body), "CONECTAR ") {
 			code := strings.TrimSpace(body[9:])
@@ -152,6 +198,18 @@ func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClie
 		return ProcessResult{Success: false, Reason: "llm_error"}
 	}
 
+	// Log immediate Groq Llama extraction consumption
+	log.Printf("📊 [Telemetry] Gravando consumo Groq Llama para usuário %s", profile.ID)
+	_ = sbClient.InsertLogConsumo(supabase.LogConsumoInsert{
+		UserID:           profile.ID,
+		TokensPrompt:     extracted.TokensPrompt,
+		TokensCompletion: extracted.TokensCompletion,
+		TotalTokens:      extracted.TokensPrompt + extracted.TokensCompletion,
+		ModeloIA:         "groq-llama-3.3-70b",
+		Acao:             extracted.Intencao,
+		Status:           "success",
+	})
+
 	promptTokens = extracted.TokensPrompt
 	completionTokens = extracted.TokensCompletion
 	finalIntent = extracted.Intencao
@@ -193,6 +251,20 @@ func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClie
 		if err != nil {
 			log.Printf("❌ [FSM] Erro inicial no Gemini Tool Calling: %v", err)
 			return handleDuvidaFallback(wpClient, ttsClient, from, gemClient, body, respondWithAudio, sbClient, profile, startTime, promptTokens, completionTokens, finalIntent)
+		}
+
+		// Log Gemini usage for first turn
+		if resp != nil && resp.UsageMetadata != nil {
+			log.Printf("📊 [Telemetry] Gravando consumo Gemini (turn 1) para usuário %s", profile.ID)
+			_ = sbClient.InsertLogConsumo(supabase.LogConsumoInsert{
+				UserID:           profile.ID,
+				TokensPrompt:     int(resp.UsageMetadata.PromptTokenCount),
+				TokensCompletion: int(resp.UsageMetadata.CandidatesTokenCount),
+				TotalTokens:      int(resp.UsageMetadata.TotalTokenCount),
+				ModeloIA:         gemClient.Config.Model,
+				Acao:             "duvida",
+				Status:           "success",
+			})
 		}
 
 		// Tool Loop (limited to 5 turns to avoid infinite loops)
@@ -257,6 +329,20 @@ func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClie
 			if err != nil {
 				log.Printf("❌ [FSM] Erro ao enviar resultado da tool para o Gemini: %v", err)
 				break
+			}
+
+			// Log Gemini usage for this turn
+			if resp != nil && resp.UsageMetadata != nil {
+				log.Printf("📊 [Telemetry] Gravando consumo Gemini (follow-up) para usuário %s", profile.ID)
+				_ = sbClient.InsertLogConsumo(supabase.LogConsumoInsert{
+					UserID:           profile.ID,
+					TokensPrompt:     int(resp.UsageMetadata.PromptTokenCount),
+					TokensCompletion: int(resp.UsageMetadata.CandidatesTokenCount),
+					TotalTokens:      int(resp.UsageMetadata.TotalTokenCount),
+					ModeloIA:         gemClient.Config.Model,
+					Acao:             "duvida",
+					Status:           "success",
+				})
 			}
 		}
 
@@ -394,7 +480,8 @@ func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClie
 	return ProcessResult{Success: true, Reason: "unhandled_intent"}
 }
 
-// recordLog is a helper to consistently log the bot's processing outcome to Audit and Training tables
+// recordLog is a helper to consistently log the bot's processing outcome to Audit and Training tables.
+// NOTE: Financial consumption (LogConsumo) is now handled incrementally at the call site for Groq/Whisper/Gemini.
 func recordLog(sbClient *supabase.Client, profile *supabase.Profile, userMsg, botResp, model string, promptTokens, completionTokens int, intent string, extracted map[string]interface{}, startTime time.Time, isSuccess bool) {
 	// 1. Audit Log (requested/approved in Phase 2/3)
 	if err := sbClient.InsertLogProcessamento(supabase.LogProcessamentoInsert{
@@ -420,33 +507,6 @@ func recordLog(sbClient *supabase.Client, profile *supabase.Profile, userMsg, bo
 		ModeloIA:      model,
 	}); err != nil {
 		log.Printf("❌ [FSM] Erro ao gravar LogTreinamento: %v", err)
-	}
-
-	// 3. Financial Audit Log (logs_consumo)
-	var duracaoMs int64
-	if !startTime.IsZero() {
-		duracaoMs = time.Since(startTime).Milliseconds()
-	}
-
-	custoEstimado := (float64(promptTokens) / 1000.0 * 0.00059) + (float64(completionTokens) / 1000.0 * 0.00079)
-	totalTokens := promptTokens + completionTokens
-	status := "success"
-	if !isSuccess {
-		status = "error"
-	}
-
-	if err := sbClient.InsertLogConsumo(supabase.LogConsumoInsert{
-		UserID:           profile.ID,
-		TokensPrompt:     promptTokens,
-		TokensCompletion: completionTokens,
-		TotalTokens:      totalTokens,
-		ModeloIA:         model,
-		Acao:             intent,
-		CustoEstimado:    custoEstimado,
-		DuracaoMs:        duracaoMs,
-		Status:           status,
-	}); err != nil {
-		log.Printf("❌ [FSM] Erro ao gravar LogConsumo: %v", err)
 	}
 }
 
@@ -507,6 +567,15 @@ func handleDuvidaFallback(wpClient *whatsapp.Client, ttsClient *tts.Orchestrator
 
 	botResponse := fmt.Sprintf("📚 *Consultor Orgânico RESPONDE (Base):*\n\n%s", answer)
 	sendFeedback(wpClient, ttsClient, from, botResponse, respondAudio)
+
+	// Log consumption for AskExpert fallback
+	_ = sbClient.InsertLogConsumo(supabase.LogConsumoInsert{
+		UserID:   profile.ID,
+		ModeloIA: aiModel,
+		Acao:     intent,
+		Status:   "success",
+	})
+
 	recordLog(sbClient, profile, body, botResponse, aiModel, pTokens, cTokens, intent, nil, startTime, true)
 	return ProcessResult{Success: true, Reason: "expert_answered_fallback"}
 }
