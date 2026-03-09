@@ -1,6 +1,24 @@
 # Changelog
 Este arquivo documenta as mudanças importantes e refatorações realizadas no Pmo Bot Go Backend.
 
+## [1.2.0] - 2026-03-09
+### Added
+- **E2E Test Hardening (Playwright)**: 
+  - Refatoração completa do `ManualRecord` com foco em acessibilidade (a11y) e seletores robustos.
+  - Estabilização de +20 testes E2E garantindo o funcionamento "no verde" para operações críticas de campo.
+  - Configuração do Playwright para testar o bundle de produção (`vite preview`), validando Service Worker e IndexedDB.
+- **Unit Test Coverage**: 
+  - Expansão massiva da cobertura de testes unitários para o Frontend:
+    - **Services**: `ragService`, `storageBucketService`, `botStatusService`.
+    - **Hooks**: `useSyncEngine`, `useCadernoOfflineLogic`.
+    - **Utils**: `soilLogic`, `formatters`, `masks`, `deepMerge`, `cn`.
+
+### Fixed
+- **Hydration & Regressions**: Correção de erros de `Invalid Hook Call` via deduplicação de instâncias do React e incremento da versão do banco IndexedDB (`v5`) para evitar conflitos de esquema.
+
+### CI/CD
+- **Production-Ready Tests**: Otimização do pipeline de CI/CD para validar o bundle final de produção em vez do servidor de desenvolvimento.
+
 ## [1.1.0] - 2026-03-07
 ### Added
 - **Final Legacy Purge**: Remoção completa de todos os scripts Python obsoletos, diretórios de configuração e binários legados da PoC anterior.
