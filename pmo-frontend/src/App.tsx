@@ -29,6 +29,7 @@ const ChangelogPage = lazy(() => import('./pages/ChangelogPage'));
 
 const DiarioDeCampo = lazy(() => import('./components/DiarioDeCampo'));
 import { AdminRoute } from './routes/AdminRoute';
+import ReloadPrompt from './components/ReloadPrompt';
 
 const LoadingFallback = () => (
     <div className="flex items-center justify-center min-h-screen bg-slate-50">
@@ -166,6 +167,7 @@ const App: React.FC = () => {
                 <Route path="*" element={<h2>Página não encontrada</h2>} />
             </Routes>
             <ToastContainer position="bottom-right" theme="colored" pauseOnHover />
+            <ReloadPrompt />
         </Suspense>
     );
 };
