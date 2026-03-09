@@ -8,6 +8,8 @@ import { useSyncEngine } from './hooks/offline/useSyncEngine';
 import { Suspense, lazy } from 'react';
 
 // Layout
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Páginas (Lazy Loaded)
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
@@ -163,6 +165,7 @@ const App: React.FC = () => {
                 {/* 404 - Página não encontrada */}
                 <Route path="*" element={<h2>Página não encontrada</h2>} />
             </Routes>
+            <ToastContainer position="bottom-right" theme="colored" pauseOnHover />
         </Suspense>
     );
 };
