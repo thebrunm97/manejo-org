@@ -10,6 +10,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
+	"github.com/thebrunm97/pmo-bot-go/internal/history"
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
@@ -56,6 +57,10 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
+
+	// --- Initialize History Manager ---
+	historyManager := history.NewManager(45*time.Minute, 10) // 5 interações = 10 mensagens (user+model)
+	log.Println("✅ Gerenciador de Histórico (In-Memory) inicializado")
 
 	// --- Initialize Groq client ---
 	groqClient, err := groq.NewClient(groqKey)
@@ -140,6 +145,7 @@ func main() {
 		GeminiClient:   geminiClient,
 		TtsClient:      ttsClient,
 		MCPServer:      mcpServer,
+		HistoryManager: historyManager,
 	})
 	handler.RegisterRoutes(r)
 
