@@ -110,9 +110,9 @@ func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClie
 
 		// Log immediate Whisper consumption if profile exists
 		if profile != nil {
-			log.Printf("📊 [Telemetry] Gravando consumo Whisper para PMO %d", profile.PmoAtivoID)
+			log.Printf("📊 [Telemetry] Gravando consumo Whisper para usuário %s", profile.ID)
 			_ = sbClient.InsertLogConsumo(supabase.LogConsumoInsert{
-				PmoID:    profile.PmoAtivoID,
+				UserID:   profile.ID,
 				ModeloIA: "groq-whisper",
 				Acao:     "stt",
 				Status:   "success",
@@ -199,9 +199,9 @@ func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClie
 	}
 
 	// Log immediate Groq Llama extraction consumption
-	log.Printf("📊 [Telemetry] Gravando consumo Groq Llama para PMO %d", profile.PmoAtivoID)
+	log.Printf("📊 [Telemetry] Gravando consumo Groq Llama para usuário %s", profile.ID)
 	_ = sbClient.InsertLogConsumo(supabase.LogConsumoInsert{
-		PmoID:            profile.PmoAtivoID,
+		UserID:           profile.ID,
 		TokensPrompt:     extracted.TokensPrompt,
 		TokensCompletion: extracted.TokensCompletion,
 		TotalTokens:      extracted.TokensPrompt + extracted.TokensCompletion,
@@ -221,6 +221,12 @@ func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClie
 			botResponse = "Olá! Sou seu assistente de Caderno de Campo Orgânico 🌱.\nDiga o que você plantou, aplicou hoje, ou qual é sua dúvida sobre orgânicos."
 			if err := sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio); err != nil {
 				log.Printf("❌ [FSM] Falha ao enviar saudação via WPP: %v", err)
+			}
+		} else if extracted.Intencao == "ignorar" {
+			// UX Improvement: No more silence when the model doesn't understand or loses context
+			botResponse = "Desculpe, como o meu sistema acabou de ser atualizado, acabei perdendo o histórico da nossa conversa. Pode repetir a sua dúvida completa?"
+			if err := sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio); err != nil {
+				log.Printf("❌ [FSM] Falha ao enviar resposta de 'ignorar' via WPP: %v", err)
 			}
 		}
 
@@ -255,9 +261,9 @@ func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClie
 
 		// Log Gemini usage for first turn
 		if resp != nil && resp.UsageMetadata != nil {
-			log.Printf("📊 [Telemetry] Gravando consumo Gemini (turn 1) para PMO %d", profile.PmoAtivoID)
+			log.Printf("📊 [Telemetry] Gravando consumo Gemini (turn 1) para usuário %s", profile.ID)
 			_ = sbClient.InsertLogConsumo(supabase.LogConsumoInsert{
-				PmoID:            profile.PmoAtivoID,
+				UserID:           profile.ID,
 				TokensPrompt:     int(resp.UsageMetadata.PromptTokenCount),
 				TokensCompletion: int(resp.UsageMetadata.CandidatesTokenCount),
 				TotalTokens:      int(resp.UsageMetadata.TotalTokenCount),
@@ -333,9 +339,9 @@ func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClie
 
 			// Log Gemini usage for this turn
 			if resp != nil && resp.UsageMetadata != nil {
-				log.Printf("📊 [Telemetry] Gravando consumo Gemini (follow-up) para PMO %d", profile.PmoAtivoID)
+				log.Printf("📊 [Telemetry] Gravando consumo Gemini (follow-up) para usuário %s", profile.ID)
 				_ = sbClient.InsertLogConsumo(supabase.LogConsumoInsert{
-					PmoID:            profile.PmoAtivoID,
+					UserID:           profile.ID,
 					TokensPrompt:     int(resp.UsageMetadata.PromptTokenCount),
 					TokensCompletion: int(resp.UsageMetadata.CandidatesTokenCount),
 					TotalTokens:      int(resp.UsageMetadata.TotalTokenCount),
@@ -499,6 +505,7 @@ func recordLog(sbClient *supabase.Client, profile *supabase.Profile, userMsg, bo
 	// 2. Training Log (Dashboard visibility)
 	if err := sbClient.InsertLogTreinamento(supabase.LogTreinamentoInsert{
 		PmoID:         profile.PmoAtivoID,
+		UserID:        profile.ID,
 		TextoUsuario:  userMsg,
 		JsonExtraido:  extracted,
 		TipoAtividade: intent,
@@ -568,7 +575,7 @@ func handleDuvidaFallback(wpClient *whatsapp.Client, ttsClient *tts.Orchestrator
 
 	// Log consumption for AskExpert fallback
 	_ = sbClient.InsertLogConsumo(supabase.LogConsumoInsert{
-		PmoID:    profile.PmoAtivoID,
+		UserID:   profile.ID,
 		ModeloIA: aiModel,
 		Acao:     intent,
 		Status:   "success",
