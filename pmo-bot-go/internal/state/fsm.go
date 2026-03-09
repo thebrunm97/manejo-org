@@ -110,9 +110,9 @@ func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClie
 
 		// Log immediate Whisper consumption if profile exists
 		if profile != nil {
-			log.Printf("📊 [Telemetry] Gravando consumo Whisper para usuário %s", profile.ID)
+			log.Printf("📊 [Telemetry] Gravando consumo Whisper para PMO %d", profile.PmoAtivoID)
 			_ = sbClient.InsertLogConsumo(supabase.LogConsumoInsert{
-				UserID:   profile.ID,
+				PmoID:    profile.PmoAtivoID,
 				ModeloIA: "groq-whisper",
 				Acao:     "stt",
 				Status:   "success",
@@ -199,9 +199,9 @@ func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClie
 	}
 
 	// Log immediate Groq Llama extraction consumption
-	log.Printf("📊 [Telemetry] Gravando consumo Groq Llama para usuário %s", profile.ID)
+	log.Printf("📊 [Telemetry] Gravando consumo Groq Llama para PMO %d", profile.PmoAtivoID)
 	_ = sbClient.InsertLogConsumo(supabase.LogConsumoInsert{
-		UserID:           profile.ID,
+		PmoID:            profile.PmoAtivoID,
 		TokensPrompt:     extracted.TokensPrompt,
 		TokensCompletion: extracted.TokensCompletion,
 		TotalTokens:      extracted.TokensPrompt + extracted.TokensCompletion,
@@ -255,9 +255,9 @@ func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClie
 
 		// Log Gemini usage for first turn
 		if resp != nil && resp.UsageMetadata != nil {
-			log.Printf("📊 [Telemetry] Gravando consumo Gemini (turn 1) para usuário %s", profile.ID)
+			log.Printf("📊 [Telemetry] Gravando consumo Gemini (turn 1) para PMO %d", profile.PmoAtivoID)
 			_ = sbClient.InsertLogConsumo(supabase.LogConsumoInsert{
-				UserID:           profile.ID,
+				PmoID:            profile.PmoAtivoID,
 				TokensPrompt:     int(resp.UsageMetadata.PromptTokenCount),
 				TokensCompletion: int(resp.UsageMetadata.CandidatesTokenCount),
 				TotalTokens:      int(resp.UsageMetadata.TotalTokenCount),
@@ -333,9 +333,9 @@ func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClie
 
 			// Log Gemini usage for this turn
 			if resp != nil && resp.UsageMetadata != nil {
-				log.Printf("📊 [Telemetry] Gravando consumo Gemini (follow-up) para usuário %s", profile.ID)
+				log.Printf("📊 [Telemetry] Gravando consumo Gemini (follow-up) para PMO %d", profile.PmoAtivoID)
 				_ = sbClient.InsertLogConsumo(supabase.LogConsumoInsert{
-					UserID:           profile.ID,
+					PmoID:            profile.PmoAtivoID,
 					TokensPrompt:     int(resp.UsageMetadata.PromptTokenCount),
 					TokensCompletion: int(resp.UsageMetadata.CandidatesTokenCount),
 					TotalTokens:      int(resp.UsageMetadata.TotalTokenCount),
@@ -486,7 +486,6 @@ func recordLog(sbClient *supabase.Client, profile *supabase.Profile, userMsg, bo
 	// 1. Audit Log (requested/approved in Phase 2/3)
 	if err := sbClient.InsertLogProcessamento(supabase.LogProcessamentoInsert{
 		PmoID:            profile.PmoAtivoID,
-		UserID:           profile.ID,
 		MensagemUsuario:  userMsg,
 		RespostaBot:      botResp,
 		ModeloIA:         model,
@@ -503,7 +502,6 @@ func recordLog(sbClient *supabase.Client, profile *supabase.Profile, userMsg, bo
 		TextoUsuario:  userMsg,
 		JsonExtraido:  extracted,
 		TipoAtividade: intent,
-		UserID:        profile.ID,
 		ModeloIA:      model,
 	}); err != nil {
 		log.Printf("❌ [FSM] Erro ao gravar LogTreinamento: %v", err)
@@ -570,7 +568,7 @@ func handleDuvidaFallback(wpClient *whatsapp.Client, ttsClient *tts.Orchestrator
 
 	// Log consumption for AskExpert fallback
 	_ = sbClient.InsertLogConsumo(supabase.LogConsumoInsert{
-		UserID:   profile.ID,
+		PmoID:    profile.PmoAtivoID,
 		ModeloIA: aiModel,
 		Acao:     intent,
 		Status:   "success",
