@@ -48,34 +48,34 @@ test.describe('ManualRecordDialog - Salvamento', () => {
         await page.waitForTimeout(500);
 
         // Verificar seção Plantio
-        await expect(page.locator('text=DETALHES DO PLANTIO')).toBeVisible();
+        await expect(page.locator('text=Detalhes do Plantio')).toBeVisible();
     });
 
     test('deve navegar para aba MANEJO', async ({ page }) => {
         await page.waitForLoadState('networkidle');
 
-        await page.locator('button:has-text("Novo Registro")').click();
+        await page.getByRole('button', { name: "Novo Registro" }).click();
         await page.waitForTimeout(500);
 
         // Ir para aba Manejo
-        await page.locator('button:has-text("MANEJO")').click();
+        await page.getByRole('tab', { name: /Manejo/i }).click();
         await page.waitForTimeout(300);
 
         // Verificar conteúdo
-        await expect(page.locator('text=OPERAÇÃO DE MANEJO')).toBeVisible();
+        await expect(page.locator('text=Operação de Manejo')).toBeVisible();
     });
 
     test('deve navegar para aba COLHEITA', async ({ page }) => {
         await page.waitForLoadState('networkidle');
 
-        await page.locator('button:has-text("Novo Registro")').click();
+        await page.getByRole('button', { name: "Novo Registro" }).click();
         await page.waitForTimeout(500);
 
         // Ir para aba Colheita
-        await page.locator('button:has-text("COLHEITA")').click();
+        await page.getByRole('tab', { name: /Colheita/i }).click();
         await page.waitForTimeout(300);
 
         // Verificar conteúdo
-        await expect(page.locator('text=RASTREABILIDADE DA COLHEITA')).toBeVisible();
+        await expect(page.locator('text=Rastreabilidade da Colheita')).toBeVisible();
     });
 });

@@ -44,7 +44,7 @@ test.describe('ManualRecordDialog - Abertura', () => {
         await expect(dialog).toBeVisible();
 
         // Verificar título no dialog (usando locator dentro do dialog)
-        await expect(dialog.locator('h6:has-text("NOVO REGISTRO"), h2:has-text("NOVO REGISTRO")')).toBeVisible();
+        await expect(dialog.locator('h3:has-text("Novo Registro")')).toBeVisible();
     });
 
     test('deve mostrar 4 abas (Plantio, Manejo, Colheita, Outro)', async ({ page }) => {
@@ -54,11 +54,11 @@ test.describe('ManualRecordDialog - Abertura', () => {
         await page.locator('button:has-text("Novo Registro")').click();
         await page.waitForTimeout(500);
 
-        // Verificar existência das abas
-        await expect(page.locator('button:has-text("PLANTIO")')).toBeVisible();
-        await expect(page.locator('button:has-text("MANEJO")')).toBeVisible();
-        await expect(page.locator('button:has-text("COLHEITA")')).toBeVisible();
-        await expect(page.locator('button:has-text("OUTRO")')).toBeVisible();
+        // Verificar existência das abas (com exatidão para não pegar labels internos)
+        await expect(page.getByRole('tab', { name: /Plantio/i })).toBeVisible();
+        await expect(page.getByRole('tab', { name: /Manejo/i })).toBeVisible();
+        await expect(page.getByRole('tab', { name: /Colheita/i })).toBeVisible();
+        await expect(page.getByRole('tab', { name: /Outro/i })).toBeVisible();
     });
 
     test('deve fechar diálogo ao clicar em Cancelar', async ({ page }) => {
@@ -72,7 +72,7 @@ test.describe('ManualRecordDialog - Abertura', () => {
         await expect(dialog).toBeVisible();
 
         // Clicar em cancelar
-        await page.locator('button:has-text("Cancelar")').click();
+        await page.getByRole('button', { name: 'Cancelar', exact: true }).click();
 
         // Verificar que o diálogo fechou
         await expect(dialog).not.toBeVisible();
@@ -85,19 +85,19 @@ test.describe('ManualRecordDialog - Abertura', () => {
         await page.waitForTimeout(500);
 
         // Clicar na aba MANEJO
-        await page.locator('button:has-text("MANEJO")').click();
-        await expect(page.locator('text=OPERAÇÃO DE MANEJO')).toBeVisible();
+        await page.getByRole('tab', { name: /Manejo/i }).click();
+        await expect(page.locator('text=Operação de Manejo')).toBeVisible();
 
         // Clicar na aba COLHEITA
-        await page.locator('button:has-text("COLHEITA")').click();
-        await expect(page.locator('text=RASTREABILIDADE DA COLHEITA')).toBeVisible();
+        await page.getByRole('tab', { name: /Colheita/i }).click();
+        await expect(page.locator('text=Rastreabilidade da Colheita')).toBeVisible();
 
         // Clicar na aba OUTRO
-        await page.locator('button:has-text("OUTRO")').click();
-        await expect(page.locator('text=TIPO DE REGISTRO OUTRO')).toBeVisible();
+        await page.getByRole('tab', { name: /Outro/i }).click();
+        await expect(page.locator('text=Tipo de Registro Outro')).toBeVisible();
 
         // Voltar para PLANTIO
-        await page.locator('button:has-text("PLANTIO")').click();
-        await expect(page.locator('text=DETALHES DO PLANTIO')).toBeVisible();
+        await page.getByRole('tab', { name: /Plantio/i }).click();
+        await expect(page.locator('text=Detalhes do Plantio')).toBeVisible();
     });
 });

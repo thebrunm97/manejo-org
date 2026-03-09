@@ -18,6 +18,7 @@ import {
     AlertTriangle,
     ChevronDown
 } from 'lucide-react';
+import { toast } from 'react-toastify';
 import LocationSelectorDialog from '../Common/LocationSelectorDialog';
 import {
     ActivityType,
@@ -256,17 +257,19 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                 clearAllErrors();
 
                 if (result.isOffline) {
-                    alert(`Registro salvo OFFLINE! ☁️❌\n\nEle será sincronizado automaticamente quando a internet voltar.`);
+                    toast.info(`💾 Salvo OFFLINE! ☁️❌\n\nSincronização pendente.`);
+                } else {
+                    toast.success("✅ Registro salvo com sucesso!");
                 }
 
                 onRecordSaved();
                 onClose();
             } else {
-                alert(`Erro ao salvar: ${result.error}`);
+                toast.error(`❌ Erro ao salvar: ${result.error}`);
             }
         } catch (error: any) {
             console.error(error);
-            alert(`Erro crítico ao salvar: ${error.message}`);
+            toast.error(`💥 Erro crítico ao salvar: ${error.message}`);
         } finally {
             setLoading(false);
             setOpenJustification(false);
@@ -278,7 +281,8 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
         value: UnitType | string,
         fieldName: string,
         options: UnitType[],
-        label: string = "Unid"
+        label: string = "Unid",
+        id?: string
     ) => {
         const isCustomValue = value && !options.includes(value as UnitType);
         const effectiveOptions = isCustomValue ? [value, ...options] : options;
@@ -286,9 +290,10 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
 
         return (
             <div className="min-w-[100px]">
-                <label className="block text-xs font-medium text-gray-700 mb-1">{label}</label>
+                <label htmlFor={id} className="block text-xs font-medium text-gray-700 mb-1">{label}</label>
                 <div className="relative">
                     <select
+                        id={id}
                         value={safeValue}
                         onChange={e => updateDraft(fieldName, e.target.value)}
                         className="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm px-3 py-2 border bg-white appearance-none pr-8"
@@ -359,7 +364,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
 
                 {/* Tabs */}
                 <div className="bg-white border-b border-gray-200">
-                    <nav className="-mb-px flex" aria-label="Tabs">
+                    <nav className="-mb-px flex" aria-label="Tabs" role="tablist">
                         {[
                             { id: 'plantio', label: 'PLANTIO', icon: Sprout, color: 'text-green-600', activeBorder: 'border-green-500' },
                             { id: 'manejo', label: 'MANEJO', icon: FlaskConical, color: 'text-blue-600', activeBorder: 'border-blue-500' },
@@ -373,6 +378,8 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                             return (
                                 <button
                                     key={tab.id}
+                                    role="tab"
+                                    aria-selected={isActive}
                                     onClick={() => !disabled && setActiveTab(tab.id as any)}
                                     disabled={disabled}
                                     className={`
@@ -412,8 +419,9 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                     {/* Common Fields: Data & Produto */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Data e Hora</label>
+                            <label htmlFor="data-hora-input" className="block text-sm font-medium text-gray-700 mb-1">Data e Hora</label>
                             <input
+                                id="data-hora-input"
                                 type="datetime-local"
                                 value={common.dataHora}
                                 onChange={e => updateDraft('dataHora', e.target.value)}
@@ -426,15 +434,16 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
 
                         {!(activeTab === 'manejo' && mDraft.subtipoManejo === ManejoSubtype.HIGIENIZACAO) && (
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">{labelProduto}</label>
+                                <label htmlFor="produto-input" className="block text-sm font-medium text-gray-700 mb-1">{labelProduto}</label>
                                 <input
+                                    id="produto-input"
                                     type="text"
                                     value={common.produto}
                                     onChange={e => updateDraft('produto', e.target.value)}
                                     placeholder="Ex: Alface Americana"
                                     className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm px-3 py-2 border 
-                                        ${errors.produto ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-green-500 focus:ring-green-500'}
-                                    `}
+                                         ${errors.produto ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-green-500 focus:ring-green-500'}
+                                     `}
                                 />
                                 {errors.produto && <p className="mt-1 text-xs text-red-600">{errors.produto}</p>}
                             </div>
@@ -490,8 +499,9 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
 
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div className="sm:col-span-1">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Método</label>
+                                    <label htmlFor="metodo-propagacao-select" className="block text-sm font-medium text-gray-700 mb-1">Método</label>
                                     <select
+                                        id="metodo-propagacao-select"
                                         value={pDraft.metodoPropagacao}
                                         onChange={e => updateDraft('metodoPropagacao', e.target.value)}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm px-3 py-2 border bg-white"
@@ -502,8 +512,9 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                                     </select>
                                 </div>
                                 <div className="sm:col-span-1">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Quantidade</label>
+                                    <label htmlFor="qtd-plantio" className="block text-sm font-medium text-gray-700 mb-1">Quantidade</label>
                                     <input
+                                        id="qtd-plantio"
                                         type="number"
                                         value={pDraft.qtdPlantio}
                                         onChange={e => updateDraft('qtdPlantio', e.target.value)}
@@ -511,21 +522,21 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                                     />
                                 </div>
                                 <div className="sm:col-span-1">
-                                    {renderUnitSelect(pDraft.unidadePlantio, 'unidadePlantio', UNIDADES_PLANTIO)}
+                                    {renderUnitSelect(pDraft.unidadePlantio, 'unidadePlantio', UNIDADES_PLANTIO, "Unid.", "unidade-plantio-select")}
                                 </div>
                             </div>
 
                             {/* Perda / Descarte */}
-                            <div className="space-y-2 pt-2 border-t border-green-200">
+                            <div className="space-y-2">
                                 <div className="flex items-center">
                                     <input
-                                        id="houveDescartes"
+                                        id="houve-descartes-plantio-check"
                                         type="checkbox"
                                         checked={pDraft.houveDescartes}
                                         onChange={e => updateDraft('houveDescartes', e.target.checked)}
                                         className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
                                     />
-                                    <label htmlFor="houveDescartes" className="ml-2 block text-sm text-gray-900 cursor-pointer select-none">
+                                    <label htmlFor="houve-descartes-plantio-check" className="ml-2 block text-sm text-gray-900 cursor-pointer select-none">
                                         Houve descartes (perdas) no plantio?
                                     </label>
                                 </div>
@@ -533,8 +544,9 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                                 {pDraft.houveDescartes && (
                                     <div className="pl-6 grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Qtd. Descartes</label>
+                                            <label htmlFor="qtd-descartes-plantio-input" className="block text-sm font-medium text-gray-700 mb-1">Qtd. Descartes</label>
                                             <input
+                                                id="qtd-descartes-plantio-input"
                                                 type="number"
                                                 value={pDraft.qtdDescartes}
                                                 onChange={e => updateDraft('qtdDescartes', e.target.value)}
@@ -549,7 +561,8 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                                                 pDraft.unidadeDescartes,
                                                 'unidadeDescartes',
                                                 UNIDADES_PLANTIO,
-                                                "Unid."
+                                                "Unid.",
+                                                "unidade-descartes-plantio-select"
                                             )}
                                         </div>
                                     </div>
@@ -566,8 +579,9 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                             </h4>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Operação</label>
+                                <label htmlFor="subtipo-manejo-select" className="block text-sm font-medium text-gray-700 mb-1">Tipo de Operação</label>
                                 <select
+                                    id="subtipo-manejo-select"
                                     value={mDraft.subtipoManejo}
                                     onChange={(e) => updateDraft('subtipoManejo', e.target.value)}
                                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border bg-white"
@@ -586,8 +600,9 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                                 <>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Insumo Utilizado</label>
+                                            <label htmlFor="insumo-input" className="block text-sm font-medium text-gray-700 mb-1">Insumo Utilizado</label>
                                             <input
+                                                id="insumo-input"
                                                 type="text"
                                                 value={mDraft.insumo}
                                                 onChange={e => {
@@ -596,14 +611,15 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                                                 }}
                                                 placeholder="Ex: Bokashi, Calda Bordalesa"
                                                 className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm px-3 py-2 border 
-                                                    ${errors.insumo ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'}
-                                                `}
+                                                     ${errors.insumo ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'}
+                                                 `}
                                             />
                                             {errors.insumo && <p className="mt-1 text-xs text-red-600">{errors.insumo}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Equipamento</label>
+                                            <label htmlFor="equipamento-input" className="block text-sm font-medium text-gray-700 mb-1">Equipamento</label>
                                             <input
+                                                id="equipamento-input"
                                                 type="text"
                                                 value={mDraft.equipamento}
                                                 onChange={e => updateDraft('equipamento', e.target.value)}
@@ -621,8 +637,9 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
 
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Dosagem</label>
+                                            <label htmlFor="dosagem-input" className="block text-sm font-medium text-gray-700 mb-1">Dosagem</label>
                                             <input
+                                                id="dosagem-input"
                                                 type="text"
                                                 value={mDraft.dosagem}
                                                 onChange={e => updateDraft('dosagem', e.target.value)}
@@ -633,13 +650,14 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                                             {errors.dosagem && <p className="mt-1 text-xs text-red-600">{errors.dosagem}</p>}
                                         </div>
                                         <div>
-                                            {renderUnitSelect(mDraft.unidadeDosagem, 'unidadeDosagem', UNIDADES_MANEJO)}
+                                            {renderUnitSelect(mDraft.unidadeDosagem, 'unidadeDosagem', UNIDADES_MANEJO, "Unid.", "unidade-dosagem-manejo-select")}
                                         </div>
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Categoria (Opcional)</label>
+                                        <label htmlFor="tipo-manejo-select" className="block text-sm font-medium text-gray-700 mb-1">Categoria (Opcional)</label>
                                         <select
+                                            id="tipo-manejo-select"
                                             value={mDraft.tipoManejo}
                                             onChange={e => updateDraft('tipoManejo', e.target.value)}
                                             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border bg-white"
@@ -656,8 +674,9 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                             {mDraft.subtipoManejo === ManejoSubtype.HIGIENIZACAO && (
                                 <>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Item Higienizado</label>
+                                        <label htmlFor="item-higienizado-input" className="block text-sm font-medium text-gray-700 mb-1">Item Higienizado</label>
                                         <input
+                                            id="item-higienizado-input"
                                             type="text"
                                             value={mDraft.itemHigienizado}
                                             onChange={e => updateDraft('itemHigienizado', e.target.value)}
@@ -669,8 +688,9 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                                         {errors.itemHigienizado && <p className="mt-1 text-xs text-red-600">{errors.itemHigienizado}</p>}
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Produto Utilizado</label>
+                                        <label htmlFor="produto-utilizado-input" className="block text-sm font-medium text-gray-700 mb-1">Produto Utilizado</label>
                                         <input
+                                            id="produto-utilizado-input"
                                             type="text"
                                             value={mDraft.produtoUtilizado}
                                             onChange={e => updateDraft('produtoUtilizado', e.target.value)}
@@ -687,8 +707,9 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                             {mDraft.subtipoManejo === ManejoSubtype.MANEJO_CULTURAL && (
                                 <>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Atividade Realizada</label>
+                                        <label htmlFor="atividade-cultural-input" className="block text-sm font-medium text-gray-700 mb-1">Atividade Realizada</label>
                                         <input
+                                            id="atividade-cultural-input"
                                             type="text"
                                             value={mDraft.atividadeCultural}
                                             onChange={e => updateDraft('atividadeCultural', e.target.value)}
@@ -700,8 +721,9 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                                         {errors.atividadeCultural && <p className="mt-1 text-xs text-red-600">{errors.atividadeCultural}</p>}
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Qtd. Trabalhadores</label>
+                                        <label htmlFor="qtd-trabalhadores-input" className="block text-sm font-medium text-gray-700 mb-1">Qtd. Trabalhadores</label>
                                         <input
+                                            id="qtd-trabalhadores-input"
                                             type="number"
                                             value={mDraft.qtdTrabalhadores}
                                             onChange={e => updateDraft('qtdTrabalhadores', e.target.value)}
@@ -712,8 +734,9 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                             )}
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Responsável Técnico / Operador</label>
+                                <label htmlFor="responsavel-input" className="block text-sm font-medium text-gray-700 mb-1">Responsável Técnico / Operador</label>
                                 <input
+                                    id="responsavel-input"
                                     type="text"
                                     value={mDraft.responsavel}
                                     onChange={e => updateDraft('responsavel', e.target.value)}
@@ -731,8 +754,9 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                             </h4>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">LOTE (Auto-Gerado)</label>
+                                <label htmlFor="lote-input" className="block text-sm font-medium text-gray-700 mb-1">LOTE (Auto-Gerado)</label>
                                 <input
+                                    id="lote-input"
                                     type="text"
                                     value={cDraft.lote}
                                     onChange={e => updateDraft('lote', e.target.value)}
@@ -743,24 +767,27 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Quantidade Colhida</label>
+                                    <label htmlFor="qtd-colheita" className="block text-sm font-medium text-gray-700 mb-1">Quantidade Colhida</label>
                                     <input
+                                        id="qtd-colheita"
                                         type="number"
                                         value={cDraft.qtdColheita}
                                         onChange={e => updateDraft('qtdColheita', e.target.value)}
+                                        placeholder="0.00"
                                         className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm px-3 py-2 border 
-                                            ${errors.qtdColheita ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-orange-500 focus:ring-orange-500'}
-                                        `}
+                                             ${errors.qtdColheita ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-orange-500 focus:ring-orange-500'}
+                                         `}
                                     />
                                     {errors.qtdColheita && <p className="mt-1 text-xs text-red-600">{errors.qtdColheita}</p>}
                                 </div>
-                                <div>{renderUnitSelect(cDraft.unidadeColheita, 'unidadeColheita', UNIDADES_COLHEITA)}</div>
+                                <div>{renderUnitSelect(cDraft.unidadeColheita, 'unidadeColheita', UNIDADES_COLHEITA, "Unid.", "unidade-colheita-select")}</div>
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Destino</label>
+                                    <label htmlFor="destino-colheita-select" className="block text-sm font-medium text-gray-700 mb-1">Destino</label>
                                     <select
+                                        id="destino-colheita-select"
                                         value={cDraft.destino}
                                         onChange={e => updateDraft('destino', e.target.value)}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm px-3 py-2 border bg-white"
@@ -771,8 +798,9 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Classificação</label>
+                                    <label htmlFor="classificacao-colheita-select" className="block text-sm font-medium text-gray-700 mb-1">Classificação</label>
                                     <select
+                                        id="classificacao-colheita-select"
                                         value={cDraft.classificacao}
                                         onChange={e => updateDraft('classificacao', e.target.value)}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm px-3 py-2 border bg-white"
@@ -802,8 +830,9 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                                 {cDraft.houveDescartes && (
                                     <div className="pl-6 grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Qtd. Descartes</label>
+                                            <label htmlFor="qtd-descartes-colheita" className="block text-sm font-medium text-gray-700 mb-1">Qtd. Descartes</label>
                                             <input
+                                                id="qtd-descartes-colheita"
                                                 type="number"
                                                 value={cDraft.qtdDescartes}
                                                 onChange={e => updateDraft('qtdDescartes', e.target.value)}
@@ -818,7 +847,8 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                                                 cDraft.unidadeDescartes,
                                                 'unidadeDescartes',
                                                 UNIDADES_COLHEITA,
-                                                "Unid."
+                                                "Unid.",
+                                                "unidade-descartes-colheita-select"
                                             )}
                                         </div>
                                     </div>
@@ -835,8 +865,9 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                             </h4>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Subtipo</label>
+                                <label htmlFor="tipo-outro-select" className="block text-sm font-medium text-gray-700 mb-1">Subtipo</label>
                                 <select
+                                    id="tipo-outro-select"
                                     value={oDraft.tipoOutro}
                                     onChange={e => updateDraft('tipoOutro', e.target.value)}
                                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm px-3 py-2 border bg-white"
@@ -851,8 +882,9 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                                 <>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Quantidade</label>
+                                            <label htmlFor="qtd-outro-compra" className="block text-sm font-medium text-gray-700 mb-1">Quantidade</label>
                                             <input
+                                                id="qtd-outro-compra"
                                                 type="number"
                                                 value={oDraft.quantidade}
                                                 onChange={e => updateDraft('quantidade', e.target.value)}
@@ -872,8 +904,9 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Fornecedor</label>
+                                        <label htmlFor="fornecedor-input" className="block text-sm font-medium text-gray-700 mb-1">Fornecedor</label>
                                         <input
+                                            id="fornecedor-input"
                                             type="text"
                                             value={oDraft.fornecedor}
                                             onChange={e => updateDraft('fornecedor', e.target.value)}
@@ -886,8 +919,9 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
 
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Origem</label>
+                                            <label htmlFor="tipo-origem-select" className="block text-sm font-medium text-gray-700 mb-1">Origem</label>
                                             <select
+                                                id="tipo-origem-select"
                                                 value={oDraft.tipoOrigem}
                                                 onChange={e => updateDraft('tipoOrigem', e.target.value)}
                                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm px-3 py-2 border bg-white"
@@ -898,8 +932,9 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Nº. Documento / NF</label>
+                                            <label htmlFor="numero-documento-compra-input" className="block text-sm font-medium text-gray-700 mb-1">Nº. Documento / NF</label>
                                             <input
+                                                id="numero-documento-compra-input"
                                                 type="text"
                                                 value={oDraft.numeroDocumento}
                                                 onChange={e => updateDraft('numeroDocumento', e.target.value)}
@@ -914,8 +949,9 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                                 <>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Quantidade Vendida</label>
+                                            <label htmlFor="qtd-outro-venda" className="block text-sm font-medium text-gray-700 mb-1">Quantidade Vendida</label>
                                             <input
+                                                id="qtd-outro-venda"
                                                 type="number"
                                                 value={oDraft.quantidade}
                                                 onChange={e => updateDraft('quantidade', e.target.value)}
@@ -934,8 +970,9 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Destino / Cliente</label>
+                                        <label htmlFor="destino-venda-input" className="block text-sm font-medium text-gray-700 mb-1">Destino / Cliente</label>
                                         <input
+                                            id="destino-venda-input"
                                             type="text"
                                             value={oDraft.destinoVenda}
                                             onChange={e => updateDraft('destinoVenda', e.target.value)}
@@ -946,8 +983,9 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                                         {errors.destinoVenda && <p className="mt-1 text-xs text-red-600">{errors.destinoVenda}</p>}
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Nº. Documento / NF</label>
+                                        <label htmlFor="numero-documento-venda-input" className="block text-sm font-medium text-gray-700 mb-1">Nº. Documento / NF</label>
                                         <input
+                                            id="numero-documento-venda-input"
                                             type="text"
                                             value={oDraft.numeroDocumento}
                                             onChange={e => updateDraft('numeroDocumento', e.target.value)}
@@ -961,14 +999,15 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
 
                     {/* Campo de Observação Geral */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Observações Adicionais</label>
+                        <label htmlFor="obs-geral" className="block text-sm font-medium text-gray-700 mb-1">Observações Adicionais</label>
                         <textarea
+                            id="obs-geral"
                             value={common.observacao}
                             onChange={e => updateDraft('observacao', e.target.value)}
                             rows={3}
                             className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm px-3 py-2 border 
-                                ${errors.observacao ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-green-500 focus:ring-green-500'}
-                            `}
+                                 ${errors.observacao ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-green-500 focus:ring-green-500'}
+                             `}
                         />
                         {errors.observacao && <p className="mt-1 text-xs text-red-600">{errors.observacao}</p>}
                     </div>

@@ -41,37 +41,32 @@ test.describe('ManualRecordDialog - Unidades Legadas', () => {
     test('não deve mostrar unidades legadas ao criar novo registro', async ({ page }) => {
         await page.waitForLoadState('networkidle');
 
-        await page.locator('button:has-text("Novo Registro")').click();
+        await page.getByRole('button', { name: "Novo Registro" }).click();
         await page.waitForTimeout(500);
 
         // Verificar que é NOVO REGISTRO
         const dialog = page.locator('[role="dialog"]');
         await expect(dialog).toBeVisible();
-        await expect(dialog.locator('h6:has-text("NOVO REGISTRO"), h2:has-text("NOVO REGISTRO")')).toBeVisible();
+        await expect(page.getByRole('heading', { name: "Novo Registro" })).toBeVisible();
 
         // Verificar que campo de unidade existe
-        await expect(page.locator('label:has-text("Unid")')).toBeVisible();
+        await expect(page.getByLabel('Unid.', { exact: true })).toBeVisible();
     });
 
     test('deve mostrar opções de unidade padrão', async ({ page }) => {
         await page.waitForLoadState('networkidle');
 
-        await page.locator('button:has-text("Novo Registro")').click();
+        await page.getByRole('button', { name: "Novo Registro" }).click();
         await page.waitForTimeout(500);
 
-        // Abrir select de unidades na aba Plantio
-        const unitSelect = page.locator('label:has-text("Unid")').locator('..').locator('[role="combobox"]');
+        // Verificar que o select de unidades está visível
+        const unitSelect = page.getByLabel('Unid.', { exact: true });
+        await expect(unitSelect).toBeVisible();
 
-        if (await unitSelect.isVisible({ timeout: 2000 })) {
-            await unitSelect.click();
-            await page.waitForTimeout(300);
-
-            // Verificar opções padrão existem
-            const options = page.locator('[role="option"]');
-            await expect(options.first()).toBeVisible();
-
-            // Fechar dropdown
-            await page.keyboard.press('Escape');
-        }
+        // No Playwright, para verificar opções de um <select> nativo, podemos usar querySelectorAll ou apenas selectOption
+        // Como o ManualRecordDialog usa <select> nativo agora, não "abrimos" o dropdown com click() para ver opções como se fossem li/div
+        const options = unitSelect.locator('option');
+        const count = await options.count();
+        expect(count).toBeGreaterThan(0);
     });
 });
