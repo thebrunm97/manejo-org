@@ -1,18 +1,22 @@
-import React, { useEffect, useState, MouseEvent } from 'react';
+import React, { useEffect, useState, Suspense, MouseEvent } from 'react';
 import L from 'leaflet';
 
-// Garantia absoluta de objeto global para o EditControl da react-leaflet-draw
-// Deve ocorrer ANTES de qualquer import que utilize L.Event
+// Garantia Máxima: Registro Global Imediato (fora de qualquer ciclo de vida)
 if (typeof window !== 'undefined') {
     (window as any).L = L;
 }
 
-import '../../leaflet-draw-shim'; // Deve ser o PRIMEIRO import de Leaflet após a injeção
+import '../../leaflet-draw-shim'; // Deve vir após o registro global
 import { MapContainer, TileLayer, Polygon, Popup, FeatureGroup, useMap } from 'react-leaflet';
-import { EditControl } from 'react-leaflet-draw';
+
+// Import Lazy para evitar que o módulo seja avaliado antes do L global estar pronto
+const EditControl = React.lazy(async () => {
+    const mod = await import('react-leaflet-draw');
+    return { default: mod.EditControl };
+});
+
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
-
 import { Talhao, GeoJSONGeometry } from '../../domain/geo/geoTypes';
 
 interface MapCreatedEvent {
@@ -118,20 +122,22 @@ const FarmMap: React.FC<FarmMapProps> = ({
 
             <FeatureGroup>
                 {isDrawReady && (
-                    <EditControl
-                        position="topright"
-                        onCreated={handleCreated}
-                        onEdited={onEdited}
-                        onDeleted={onDeleted}
-                        draw={{
-                            rectangle: false,
-                            circle: false,
-                            circlemarker: false,
-                            marker: false,
-                            polyline: false,
-                            polygon: { allowIntersection: true, showArea: true, shapeOptions: { color: '#97009c' } }
-                        }}
-                    />
+                    <Suspense fallback={null}>
+                        <EditControl
+                            position="topright"
+                            onCreated={handleCreated}
+                            onEdited={onEdited}
+                            onDeleted={onDeleted}
+                            draw={{
+                                rectangle: false,
+                                circle: false,
+                                circlemarker: false,
+                                marker: false,
+                                polyline: false,
+                                polygon: { allowIntersection: true, showArea: true, shapeOptions: { color: '#97009c' } }
+                            }}
+                        />
+                    </Suspense>
                 )}
 
                 {talhoes.map(t => {
