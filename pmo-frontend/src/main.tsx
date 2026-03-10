@@ -1,6 +1,7 @@
 // src/main.tsx — Zero MUI
 
 import React from 'react';
+import './leaflet-draw-shim'; // Injeta L globalmente antes de qualquer outro import que dependa dele
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
