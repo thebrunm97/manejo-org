@@ -1,35 +1,45 @@
 import { useEffect, useState } from 'react';
 import L from 'leaflet';
 
-// Importante: Não importar EditControl diretamente aqui.
-// Este wrapper cuida do carregamento dinâmico para evitar race conditions no Vite.
-
+// SOLUÇÃO NUCLEAR V2: Força a ordem de execução dos side-effects do Leaflet Draw
 export const SafeEditControl = (props: any) => {
     const [Control, setControl] = useState<any>(null);
 
     useEffect(() => {
-        // 1. Garante que o Leaflet Global está disponível
-        if (typeof window !== 'undefined') {
-            (window as any).L = L;
-        }
-
-        // 2. Importa o CSS do Leaflet Draw (pode ser redundante mas garante estilo)
-        import('leaflet-draw/dist/leaflet.draw.css');
-
-        // 3. Importa o componente dinamicamente apenas após o Leaflet estar pronto
-        const loadDraw = async () => {
+        const initialize = async () => {
             try {
-                // Forçamos a espera pela injeção global e garantimos que o Leaflet está completo
+                // 1. Setup Global
+                if (typeof window !== 'undefined') {
+                    (window as any).L = L;
+                }
+
+                // 2. Import do CSS
+                await import('leaflet-draw/dist/leaflet.draw.css');
+
+                // 3. Import do SHIM/PLUGIN explicitamente antes do wrapper
+                // Isso garante que L.Draw e L.Edit estão anexados ao objeto L global
+                await import('../../leaflet-draw-shim');
+
+                // 4. Pequeno delay para garantir propagação de side-effects em ambiente Vite HMR
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                // 5. Verificação de Sanidade: Só prossegue se o Leaflet Draw injetou o que precisamos
+                if (!(window as any).L.Draw || !(window as any).L.Draw.Event) {
+                    console.warn("Leaflet Draw ainda não está pronto, tentando carregar wrapper mesmo assim...");
+                }
+
+                // 6. Import dinâmico do wrapper que consome o L global
                 const mod = await import('react-leaflet-draw');
+
                 if (mod && mod.EditControl) {
                     setControl(() => mod.EditControl);
                 }
             } catch (err) {
-                console.error("Erro ao carregar react-leaflet-draw dinamicamente:", err);
+                console.error("Erro crítico ao inicializar SafeEditControl:", err);
             }
         };
 
-        loadDraw();
+        initialize();
     }, []);
 
     if (!Control) return null;

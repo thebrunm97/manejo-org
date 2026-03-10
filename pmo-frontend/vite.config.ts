@@ -115,6 +115,6 @@ export default defineConfig({
         }
     },
     optimizeDeps: {
-        include: ['leaflet', 'leaflet-draw']
+        exclude: ['leaflet', 'leaflet-draw', 'react-leaflet-draw']
     }
 })
