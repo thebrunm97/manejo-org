@@ -92,9 +92,9 @@ export default defineConfig({
             { find: '@components', replacement: path.resolve(__dirname, './src/components') },
             { find: '@hooks', replacement: path.resolve(__dirname, './src/hooks') },
             { find: '@types', replacement: path.resolve(__dirname, './src/types') },
-            { find: /^leaflet-draw$/, replacement: path.resolve(__dirname, './src/leaflet-draw-shim.js') }
+            { find: /^leaflet-draw$/, replacement: path.resolve(__dirname, './node_modules/leaflet-draw/dist/leaflet.draw.js') }
         ],
-        dedupe: ['react', 'react-dom', 'react-router-dom']
+        dedupe: ['react', 'react-dom', 'react-router-dom', 'leaflet']
     },
     build: {
         chunkSizeWarningLimit: 600,
@@ -115,6 +115,6 @@ export default defineConfig({
         }
     },
     optimizeDeps: {
-        exclude: ['leaflet', 'leaflet-draw', 'react-leaflet-draw']
+        exclude: ['leaflet-draw', 'react-leaflet-draw']
     }
 })
