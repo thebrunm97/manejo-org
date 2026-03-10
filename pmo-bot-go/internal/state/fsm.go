@@ -326,10 +326,10 @@ func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClie
 				log.Printf("🛠️ [FSM] Gemini solicitou tool: %s com args: %v", tc.Name, tc.Args)
 
 				// Injeção de Segurança Mestra: Injetar pmo_id e user_id da sessão, ignorando o que a IA mandou
-				if tc.Name == "consultar_base_conhecimento" || tc.Name == "consultar_dados_fazenda" || tc.Name == "criar_novo_talhao" || tc.Name == "criar_novos_canteiros" {
+				if tc.Name == "consultar_base_conhecimento" || tc.Name == "consultar_dados_fazenda" || tc.Name == "criar_novo_talhao" || tc.Name == "criar_novos_canteiros" || tc.Name == "criar_infraestrutura_fazenda" {
 					tc.Args["pmo_id"] = float64(pmoID)
 				}
-				if tc.Name == "criar_novo_talhao" {
+				if tc.Name == "criar_novo_talhao" || tc.Name == "criar_infraestrutura_fazenda" {
 					tc.Args["user_id"] = profile.ID
 				}
 
