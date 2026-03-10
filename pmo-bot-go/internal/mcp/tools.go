@@ -57,53 +57,6 @@ func (s *Server) InitializeTools() {
 	})
 
 	s.RegisterTool(Tool{
-		Name:        "criar_novo_talhao",
-		Description: "Cria um novo talhão na fazenda com suporte a desenho de mapa posterior.",
-		InputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"nome_talhao": map[string]interface{}{
-					"type":        "string",
-					"description": "Nome descritivo do talhão (ex: Gleba A, Horta Norte).",
-				},
-				"area_hectares": map[string]interface{}{
-					"type":        "number",
-					"description": "Área total do talhão em hectares.",
-				},
-				"cultura": map[string]interface{}{
-					"type":        "string",
-					"description": "Cultura principal plantada neste talhão (opcional).",
-				},
-			},
-			"required": []string{"nome_talhao", "area_hectares"},
-		},
-		Handler: s.handleCriarNovoTalhao,
-	})
-
-	s.RegisterTool(Tool{
-		Name:        "criar_novos_canteiros",
-		Description: "Cria uma sequência de canteiros numerados dentro de um talhão existente.",
-		InputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"talhao_id": map[string]interface{}{
-					"type":        "integer",
-					"description": "ID do talhão pai onde os canteiros serão criados.",
-				},
-				"quantidade": map[string]interface{}{
-					"type":        "integer",
-					"description": "Quantidade de canteiros a serem criados.",
-				},
-				"identificador_inicial": map[string]interface{}{
-					"type":        "integer",
-					"description": "Número do primeiro canteiro da sequência (ex: 1).",
-				},
-			},
-			"required": []string{"talhao_id", "quantidade", "identificador_inicial"},
-		},
-		Handler: s.handleCriarNovosCanteiros,
-	})
-	s.RegisterTool(Tool{
 		Name:        "criar_infraestrutura_fazenda",
 		Description: "Cria um talhão completo e opcionalmente uma sequência de canteiros em um único passo. Use esta ferramenta sempre que o usuário pedir para 'criar a fazenda', 'adicionar talhão com canteiros' ou 'montar infraestrutura'.",
 		InputSchema: map[string]interface{}{
