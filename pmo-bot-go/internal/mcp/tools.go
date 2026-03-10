@@ -74,10 +74,6 @@ func (s *Server) InitializeTools() {
 					"type":        "integer",
 					"description": "Número de canteiros a serem gerados dentro do talhão (opcional, default 0).",
 				},
-				"cultura": map[string]interface{}{
-					"type":        "string",
-					"description": "Cultura principal (opcional).",
-				},
 			},
 			"required": []string{"nome_talhao", "area_hectares"},
 		},
