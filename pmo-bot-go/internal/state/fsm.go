@@ -289,6 +289,14 @@ func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClie
 
 			if len(toolCalls) == 0 {
 				// No more tools requested, we have a final text answer
+				if extracted.Intencao == "configurar_infraestrutura" {
+					// ABORT: Prevent JSON leakage or plain text advice for infrastructure
+					botResponse = "⚠️ O meu sistema de engenharia está com instabilidade no momento e não consegui executar a obra. Por favor, aguarde alguns minutos e tente novamente."
+					sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio)
+					recordLog(sbClient, profile, body, botResponse, gemClient.Config.Model+"-mcp-aborted", promptTokens, completionTokens, finalIntent, nil, startTime, false)
+					return ProcessResult{Success: false, Reason: "infrastructure_aborted_safety"}
+				}
+
 				var textResp strings.Builder
 				for _, part := range candidate.Content.Parts {
 					if t, ok := part.(genai.Text); ok {
