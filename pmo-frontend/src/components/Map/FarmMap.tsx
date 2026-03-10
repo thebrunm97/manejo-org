@@ -1,11 +1,17 @@
 // src/components/Map/FarmMap.tsx
 
 import React, { useEffect, MouseEvent } from 'react';
+import '../../leaflet-draw-shim'; // Deve ser o PRIMEIRO import de Leaflet
 import { MapContainer, TileLayer, Polygon, Popup, FeatureGroup, useMap } from 'react-leaflet';
 import { EditControl } from 'react-leaflet-draw';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import L, { LatLngExpression } from 'leaflet';
+
+// Garantia adicional de objeto global para o EditControl da react-leaflet-draw
+if (typeof window !== 'undefined') {
+    (window as any).L = L;
+}
 import { Talhao, GeoJSONGeometry } from '../../domain/geo/geoTypes';
 
 interface MapCreatedEvent {
