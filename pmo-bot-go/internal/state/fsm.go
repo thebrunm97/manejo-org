@@ -234,9 +234,9 @@ func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClie
 		return ProcessResult{Success: true, Reason: "ignored_intent"}
 	}
 
-	// If intent is "duvida", use Gemini with MCP Tool Calling
-	if extracted.Intencao == "duvida" {
-		log.Printf("🧠 [FSM] Dúvida detectada. Iniciando Tool Calling para PMO %d...", pmoID)
+	// If intent is "duvida" or "configurar_infraestrutura", use Gemini with MCP Tool Calling
+	if extracted.Intencao == "duvida" || extracted.Intencao == "configurar_infraestrutura" {
+		log.Printf("🧠 [FSM] Intenção '%s' detectada. Iniciando Tool Calling para PMO %d...", extracted.Intencao, pmoID)
 
 		// Prepare History for Gemini
 		var geminiHistory []*genai.Content
@@ -295,7 +295,11 @@ func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClie
 						textResp.WriteString(string(t))
 					}
 				}
-				botResponse = fmt.Sprintf("📚 *Consultor Orgânico RESPONDE:*\n\n%s", textResp.String())
+				if extracted.Intencao == "configurar_infraestrutura" {
+					botResponse = fmt.Sprintf("🏗️ *Engenharia da Fazenda:*\n\n%s", textResp.String())
+				} else {
+					botResponse = fmt.Sprintf("📚 *Consultor Orgânico RESPONDE:*\n\n%s", textResp.String())
+				}
 				sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio)
 
 				// Save to History (User Query + Bot Answer)
@@ -313,9 +317,12 @@ func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClie
 			for _, tc := range toolCalls {
 				log.Printf("🛠️ [FSM] Gemini solicitou tool: %s com args: %v", tc.Name, tc.Args)
 
-				// Injetar pmo_id se for a ferramenta de base de conhecimento
-				if tc.Name == "consultar_base_conhecimento" {
+				// Injeção de Segurança Mestra: Injetar pmo_id e user_id da sessão, ignorando o que a IA mandou
+				if tc.Name == "consultar_base_conhecimento" || tc.Name == "consultar_dados_fazenda" || tc.Name == "criar_novo_talhao" || tc.Name == "criar_novos_canteiros" {
 					tc.Args["pmo_id"] = float64(pmoID)
+				}
+				if tc.Name == "criar_novo_talhao" {
+					tc.Args["user_id"] = profile.ID
 				}
 
 				result, err := mcpServer.CallTool(tc.Name, tc.Args)
@@ -570,7 +577,12 @@ func handleDuvidaFallback(wpClient *whatsapp.Client, ttsClient *tts.Orchestrator
 		return ProcessResult{Success: false, Reason: "expert_error"}
 	}
 
-	botResponse := fmt.Sprintf("📚 *Consultor Orgânico RESPONDE (Base):*\n\n%s", answer)
+	var botResponse string
+	if intent == "configurar_infraestrutura" {
+		botResponse = fmt.Sprintf("🏗️ *Engenharia da Fazenda (Base):*\n\n%s", answer)
+	} else {
+		botResponse = fmt.Sprintf("📚 *Consultor Orgânico RESPONDE (Base):*\n\n%s", answer)
+	}
 	sendFeedback(wpClient, ttsClient, from, botResponse, respondAudio)
 
 	// Log consumption for AskExpert fallback
