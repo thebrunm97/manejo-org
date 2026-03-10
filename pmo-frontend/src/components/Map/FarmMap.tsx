@@ -1,19 +1,14 @@
-import React, { useEffect, useState, Suspense, MouseEvent } from 'react';
+import React, { useEffect, MouseEvent } from 'react';
 import L from 'leaflet';
 
-// Garantia Máxima: Registro Global Imediato (fora de qualquer ciclo de vida)
+// Injeção Global Prioritária
 if (typeof window !== 'undefined') {
     (window as any).L = L;
 }
 
-import '../../leaflet-draw-shim'; // Deve vir após o registro global
+import '../../leaflet-draw-shim';
 import { MapContainer, TileLayer, Polygon, Popup, FeatureGroup, useMap } from 'react-leaflet';
-
-// Import Lazy para evitar que o módulo seja avaliado antes do L global estar pronto
-const EditControl = React.lazy(async () => {
-    const mod = await import('react-leaflet-draw');
-    return { default: mod.EditControl };
-});
+import { SafeEditControl } from './SafeEditControl';
 
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
@@ -87,19 +82,6 @@ const FarmMap: React.FC<FarmMapProps> = ({
     onMapCreated,
     onTalhaoClick
 }) => {
-    const [isDrawReady, setIsDrawReady] = useState(false);
-
-    useEffect(() => {
-        // Garante que o L global está disponível e inicializado (com Event) antes de liberar o desenho
-        if (typeof window !== 'undefined' && (window as any).L && (window as any).L.Event) {
-            setIsDrawReady(true);
-        } else {
-            // Pequeno atraso para garantir que plugins do Leaflet (como o Draw) tiveram tempo de anexar ao L global
-            const timer = setTimeout(() => setIsDrawReady(true), 200);
-            return () => clearTimeout(timer);
-        }
-    }, []);
-
     const handleCreated = async (e: any) => {
         const layer = e.layer;
 
@@ -121,24 +103,20 @@ const FarmMap: React.FC<FarmMapProps> = ({
             <TileLayer url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}" attribution="Google Satélite" />
 
             <FeatureGroup>
-                {isDrawReady && (
-                    <Suspense fallback={null}>
-                        <EditControl
-                            position="topright"
-                            onCreated={handleCreated}
-                            onEdited={onEdited}
-                            onDeleted={onDeleted}
-                            draw={{
-                                rectangle: false,
-                                circle: false,
-                                circlemarker: false,
-                                marker: false,
-                                polyline: false,
-                                polygon: { allowIntersection: true, showArea: true, shapeOptions: { color: '#97009c' } }
-                            }}
-                        />
-                    </Suspense>
-                )}
+                <SafeEditControl
+                    position="topright"
+                    onCreated={handleCreated}
+                    onEdited={onEdited}
+                    onDeleted={onDeleted}
+                    draw={{
+                        rectangle: false,
+                        circle: false,
+                        circlemarker: false,
+                        marker: false,
+                        polyline: false,
+                        polygon: { allowIntersection: true, showArea: true, shapeOptions: { color: '#97009c' } }
+                    }}
+                />
 
                 {talhoes.map(t => {
                     if (!t.geometry) return null;
