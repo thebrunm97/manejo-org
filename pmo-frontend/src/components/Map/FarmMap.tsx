@@ -1,17 +1,18 @@
-// src/components/Map/FarmMap.tsx
+import React, { useEffect, useState, MouseEvent } from 'react';
+import L from 'leaflet';
 
-import React, { useEffect, MouseEvent } from 'react';
-import '../../leaflet-draw-shim'; // Deve ser o PRIMEIRO import de Leaflet
+// Garantia absoluta de objeto global para o EditControl da react-leaflet-draw
+// Deve ocorrer ANTES de qualquer import que utilize L.Event
+if (typeof window !== 'undefined') {
+    (window as any).L = L;
+}
+
+import '../../leaflet-draw-shim'; // Deve ser o PRIMEIRO import de Leaflet após a injeção
 import { MapContainer, TileLayer, Polygon, Popup, FeatureGroup, useMap } from 'react-leaflet';
 import { EditControl } from 'react-leaflet-draw';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
-import L, { LatLngExpression } from 'leaflet';
 
-// Garantia adicional de objeto global para o EditControl da react-leaflet-draw
-if (typeof window !== 'undefined') {
-    (window as any).L = L;
-}
 import { Talhao, GeoJSONGeometry } from '../../domain/geo/geoTypes';
 
 interface MapCreatedEvent {
@@ -82,6 +83,18 @@ const FarmMap: React.FC<FarmMapProps> = ({
     onMapCreated,
     onTalhaoClick
 }) => {
+    const [isDrawReady, setIsDrawReady] = useState(false);
+
+    useEffect(() => {
+        // Garante que o L global está disponível e inicializado (com Event) antes de liberar o desenho
+        if (typeof window !== 'undefined' && (window as any).L && (window as any).L.Event) {
+            setIsDrawReady(true);
+        } else {
+            // Pequeno atraso para garantir que plugins do Leaflet (como o Draw) tiveram tempo de anexar ao L global
+            const timer = setTimeout(() => setIsDrawReady(true), 200);
+            return () => clearTimeout(timer);
+        }
+    }, []);
 
     const handleCreated = async (e: any) => {
         const layer = e.layer;
@@ -100,24 +113,26 @@ const FarmMap: React.FC<FarmMapProps> = ({
     };
 
     return (
-        <MapContainer center={[-18.9186, -48.2772] as LatLngExpression} zoom={15} style={{ height: '100%', width: '100%', minHeight: '500px' }}>
+        <MapContainer center={[-18.9186, -48.2772] as any} zoom={15} style={{ height: '100%', width: '100%', minHeight: '500px' }}>
             <TileLayer url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}" attribution="Google Satélite" />
 
             <FeatureGroup>
-                <EditControl
-                    position="topright"
-                    onCreated={handleCreated}
-                    onEdited={onEdited}
-                    onDeleted={onDeleted}
-                    draw={{
-                        rectangle: false,
-                        circle: false,
-                        circlemarker: false,
-                        marker: false,
-                        polyline: false,
-                        polygon: { allowIntersection: true, showArea: true, shapeOptions: { color: '#97009c' } }
-                    }}
-                />
+                {isDrawReady && (
+                    <EditControl
+                        position="topright"
+                        onCreated={handleCreated}
+                        onEdited={onEdited}
+                        onDeleted={onDeleted}
+                        draw={{
+                            rectangle: false,
+                            circle: false,
+                            circlemarker: false,
+                            marker: false,
+                            polyline: false,
+                            polygon: { allowIntersection: true, showArea: true, shapeOptions: { color: '#97009c' } }
+                        }}
+                    />
+                )}
 
                 {talhoes.map(t => {
                     if (!t.geometry) return null;
