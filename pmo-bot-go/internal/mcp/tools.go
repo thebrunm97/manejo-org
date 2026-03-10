@@ -2,8 +2,10 @@ package mcp
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 )
 
@@ -104,9 +106,9 @@ func (s *Server) InitializeTools() {
 }
 
 func (s *Server) handleConsultarDadosFazenda(args map[string]interface{}) (interface{}, error) {
-	pmoIDFloat, ok := args["pmo_id"].(float64)
-	if !ok {
-		return nil, fmt.Errorf("pmo_id is required and must be an integer")
+	pmoIDFloat, err := parseArgToFloat(args["pmo_id"])
+	if err != nil {
+		return nil, fmt.Errorf("pmo_id is required and must be numeric: %w", err)
 	}
 	pmoID := int64(pmoIDFloat)
 
@@ -118,15 +120,14 @@ func (s *Server) handleConsultarDadosFazenda(args map[string]interface{}) (inter
 	log.Printf("📊 [MCP-TOOL] Consultando dados estruturados (%s) para PMO %d", tabela, pmoID)
 
 	var data interface{}
-	var err error
 
 	switch tabela {
 	case "talhoes":
 		data, err = s.supabase.FetchTalhoes(pmoID)
 	case "canteiros":
-		talhaoIDFloat, ok := args["talhao_id"].(float64)
-		if !ok {
-			return nil, fmt.Errorf("talhao_id is required for canteiros table")
+		talhaoIDFloat, err := parseArgToFloat(args["talhao_id"])
+		if err != nil {
+			return nil, fmt.Errorf("talhao_id is required for canteiros table: %w", err)
 		}
 		data, err = s.supabase.FetchCanteiros(int64(talhaoIDFloat))
 	case "caderno_recente":
@@ -149,9 +150,9 @@ func (s *Server) handleConsultarDadosFazenda(args map[string]interface{}) (inter
 }
 
 func (s *Server) handleConsultarBaseConhecimento(args map[string]interface{}) (interface{}, error) {
-	pmoIDFloat, ok := args["pmo_id"].(float64)
-	if !ok {
-		return nil, fmt.Errorf("pmo_id is required and must be an integer")
+	pmoIDFloat, err := parseArgToFloat(args["pmo_id"])
+	if err != nil {
+		return nil, fmt.Errorf("pmo_id is required and must be numeric: %w", err)
 	}
 	pmoID := int64(pmoIDFloat)
 
@@ -193,26 +194,24 @@ func (s *Server) handleConsultarBaseConhecimento(args map[string]interface{}) (i
 
 	return sb.String(), nil
 }
-
 func (s *Server) handleCriarNovoTalhao(args map[string]interface{}) (interface{}, error) {
 	nome, ok := args["nome_talhao"].(string)
 	if !ok {
 		return nil, fmt.Errorf("nome_talhao é obrigatório")
 	}
 
-	areaHectaresVal := args["area_hectares"]
-	if areaHectaresVal == nil {
-		return nil, fmt.Errorf("area_hectares é obrigatório")
-	}
-	areaHectares, ok := areaHectaresVal.(float64)
-	if !ok {
-		return nil, fmt.Errorf("area_hectares deve ser numérico")
+	areaHectares, err := parseArgToFloat(args["area_hectares"])
+	if err != nil {
+		return nil, fmt.Errorf("area_hectares é obrigatório e deve ser numérico: %w", err)
 	}
 
 	cultura, _ := args["cultura"].(string)
 
 	// Estes valores são injetados pelo FSM por segurança
-	pmoIDFloat, _ := args["pmo_id"].(float64)
+	pmoIDFloat, err := parseArgToFloat(args["pmo_id"])
+	if err != nil {
+		return nil, fmt.Errorf("pmo_id is required: %w", err)
+	}
 	userID, _ := args["user_id"].(string)
 
 	log.Printf("🏗️ [MCP-TOOL] Criando novo talhão '%s' para PMO %d", nome, int64(pmoIDFloat))
@@ -226,27 +225,48 @@ func (s *Server) handleCriarNovoTalhao(args map[string]interface{}) (interface{}
 }
 
 func (s *Server) handleCriarNovosCanteiros(args map[string]interface{}) (interface{}, error) {
-	talhaoID, ok := args["talhao_id"].(float64)
-	if !ok {
-		return nil, fmt.Errorf("talhao_id é obrigatório e deve ser numérico")
+	talhaoIDFloat, err := parseArgToFloat(args["talhao_id"])
+	if err != nil {
+		return nil, fmt.Errorf("talhao_id é obrigatório e deve ser numérico: %w", err)
 	}
 
-	quantidadeVal, ok := args["quantidade"].(float64)
-	if !ok {
-		return nil, fmt.Errorf("quantidade é obrigatória e deve ser numérica")
+	quantidadeFloat, err := parseArgToFloat(args["quantidade"])
+	if err != nil {
+		return nil, fmt.Errorf("quantidade é obrigatória e deve ser numérica: %w", err)
 	}
 
-	idInicialVal, ok := args["identificador_inicial"].(float64)
-	if !ok {
-		return nil, fmt.Errorf("identificador_inicial é obrigatório e deve ser numérico")
+	idInicialFloat, err := parseArgToFloat(args["identificador_inicial"])
+	if err != nil {
+		return nil, fmt.Errorf("identificador_inicial é obrigatório e deve ser numérico: %w", err)
 	}
 
-	log.Printf("🏗️ [MCP-TOOL] Criando %d canteiros para talhão %d", int(quantidadeVal), int64(talhaoID))
+	log.Printf("🏗️ [MCP-TOOL] Criando %d canteiros para talhão %d", int(quantidadeFloat), int64(talhaoIDFloat))
 
-	err := s.supabase.CriarCanteirosEmLote(int64(talhaoID), int(quantidadeVal), int(idInicialVal))
+	err = s.supabase.CriarCanteirosEmLote(int64(talhaoIDFloat), int(quantidadeFloat), int(idInicialFloat))
 	if err != nil {
 		return nil, fmt.Errorf("erro ao criar canteiros em lote: %w", err)
 	}
 
-	return fmt.Sprintf("%d canteiros criados com sucesso para o talhão ID %d.", int(quantidadeVal), int64(talhaoID)), nil
+	return fmt.Sprintf("%d canteiros criados com sucesso para o talhão ID %d.", int(quantidadeFloat), int64(talhaoIDFloat)), nil
+}
+
+func parseArgToFloat(val interface{}) (float64, error) {
+	if val == nil {
+		return 0, errors.New("value is nil")
+	}
+	switch v := val.(type) {
+	case float64:
+		return v, nil
+	case float32:
+		return float64(v), nil
+	case int:
+		return float64(v), nil
+	case int64:
+		return float64(v), nil
+	case string:
+		return strconv.ParseFloat(strings.ReplaceAll(v, ",", "."), 64)
+	default:
+		strVal := fmt.Sprintf("%v", val)
+		return strconv.ParseFloat(strings.ReplaceAll(strVal, ",", "."), 64)
+	}
 }
