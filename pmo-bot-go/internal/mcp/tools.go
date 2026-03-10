@@ -103,6 +103,33 @@ func (s *Server) InitializeTools() {
 		},
 		Handler: s.handleCriarNovosCanteiros,
 	})
+	s.RegisterTool(Tool{
+		Name:        "criar_infraestrutura_fazenda",
+		Description: "Cria um talhão completo e opcionalmente uma sequência de canteiros em um único passo. Use esta ferramenta sempre que o usuário pedir para 'criar a fazenda', 'adicionar talhão com canteiros' ou 'montar infraestrutura'.",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"nome_talhao": map[string]interface{}{
+					"type":        "string",
+					"description": "Nome do talhão (ex: Gleba A).",
+				},
+				"area_hectares": map[string]interface{}{
+					"type":        "number",
+					"description": "Área do talhão em hectares.",
+				},
+				"quantidade_canteiros": map[string]interface{}{
+					"type":        "integer",
+					"description": "Número de canteiros a serem gerados dentro do talhão (opcional, default 0).",
+				},
+				"cultura": map[string]interface{}{
+					"type":        "string",
+					"description": "Cultura principal (opcional).",
+				},
+			},
+			"required": []string{"nome_talhao", "area_hectares"},
+		},
+		Handler: s.handleCriarInfraestruturaFazenda,
+	})
 }
 
 func (s *Server) handleConsultarDadosFazenda(args map[string]interface{}) (interface{}, error) {
@@ -248,6 +275,37 @@ func (s *Server) handleCriarNovosCanteiros(args map[string]interface{}) (interfa
 	}
 
 	return fmt.Sprintf("%d canteiros criados com sucesso para o talhão ID %d.", int(quantidadeFloat), int64(talhaoIDFloat)), nil
+}
+
+func (s *Server) handleCriarInfraestruturaFazenda(args map[string]interface{}) (interface{}, error) {
+	nome, ok := args["nome_talhao"].(string)
+	if !ok {
+		return nil, fmt.Errorf("nome_talhao é obrigatório")
+	}
+
+	areaHectares, err := parseArgToFloat(args["area_hectares"])
+	if err != nil {
+		return nil, fmt.Errorf("area_hectares é obrigatório e deve ser numérico: %w", err)
+	}
+
+	qtdCanteirosFloat, _ := parseArgToFloat(args["quantidade_canteiros"])
+	cultura, _ := args["cultura"].(string)
+
+	// Injeção de segurança do FSM
+	pmoIDFloat, err := parseArgToFloat(args["pmo_id"])
+	if err != nil {
+		return nil, fmt.Errorf("pmo_id is required: %w", err)
+	}
+	userID, _ := args["user_id"].(string)
+
+	log.Printf("🏗️ [MCP-TOOL] Criando infraestrutura unificada para PMO %d: %s", int64(pmoIDFloat), nome)
+
+	res, err := s.supabase.CriarInfraestruturaCompleta(nome, areaHectares, cultura, int64(pmoIDFloat), userID, int(qtdCanteirosFloat))
+	if err != nil {
+		return nil, fmt.Errorf("erro na infraestrutura unificada: %w", err)
+	}
+
+	return res, nil
 }
 
 func parseArgToFloat(val interface{}) (float64, error) {

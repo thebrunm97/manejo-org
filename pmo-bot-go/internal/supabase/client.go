@@ -118,6 +118,20 @@ type IngestionJob struct {
 	ErrorLog        string `json:"error_log,omitempty"`
 }
 
+type TalhaoInsert struct {
+	PmoID       int64                  `json:"pmo_id"`
+	UserID      string                 `json:"user_id"`
+	Nome        string                 `json:"nome"`
+	AreaTotalM2 float64                `json:"area_total_m2"`
+	Cultura     string                 `json:"cultura,omitempty"`
+	Geometry    map[string]interface{} `json:"geometry"`
+}
+
+type CanteiroInsert struct {
+	TalhaoID int64  `json:"talhao_id"`
+	Nome     string `json:"nome"`
+}
+
 type FarmDocument struct {
 	PmoID        *int64    `json:"pmo_id"` // Pointer to allow NULL (Global)
 	DocumentName string    `json:"document_name"`
@@ -777,6 +791,128 @@ func (c *Client) FetchCadernoRecentes(pmoID int64, limit int) ([]map[string]inte
 		return nil, err
 	}
 	return results, nil
+}
+
+// CriarTalhao inserts a new talhão and returns its generated ID.
+func (c *Client) CriarTalhao(nome string, areaHectares float64, cultura string, pmoID int64, userID string) (int64, error) {
+	areaM2 := areaHectares * 10000
+	geometry := map[string]interface{}{
+		"type":        "Polygon",
+		"coordinates": []interface{}{},
+	}
+
+	record := TalhaoInsert{
+		PmoID:       pmoID,
+		UserID:      userID,
+		Nome:        nome,
+		AreaTotalM2: areaM2,
+		Cultura:     cultura,
+		Geometry:    geometry,
+	}
+
+	payload, err := json.Marshal(record)
+	if err != nil {
+		return 0, fmt.Errorf("failed to marshal talhao payload: %w", err)
+	}
+
+	reqURL := fmt.Sprintf("%s/rest/v1/talhoes", c.config.URL)
+	req, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewReader(payload))
+	if err != nil {
+		return 0, fmt.Errorf("failed to create talhao request: %w", err)
+	}
+
+	req.Header.Set("apikey", c.config.Key)
+	req.Header.Set("Authorization", "Bearer "+c.config.Key)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Prefer", "return=representation")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return 0, fmt.Errorf("talhao insert HTTP failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return 0, fmt.Errorf("failed to read talhao response: %w", err)
+	}
+
+	if resp.StatusCode >= 400 {
+		return 0, fmt.Errorf("supabase talhao insert error (%d): %s", resp.StatusCode, string(body))
+	}
+
+	var created []struct {
+		ID int64 `json:"id"`
+	}
+	if err := json.Unmarshal(body, &created); err != nil || len(created) == 0 {
+		return 0, fmt.Errorf("failed to parse created talhao: %w", err)
+	}
+
+	return created[0].ID, nil
+}
+
+// CriarInfraestruturaCompleta cria um talhão e, opcionalmente, uma sequência de canteiros vinculados.
+func (c *Client) CriarInfraestruturaCompleta(nomeTalhao string, areaHectares float64, cultura string, pmoID int64, userID string, qtdCanteiros int) (string, error) {
+	log.Printf("🏗️ [Supabase] Iniciando criação unificada: %s (%g ha) com %d canteiros", nomeTalhao, areaHectares, qtdCanteiros)
+
+	// 1. Criar o Talhão
+	talhaoID, err := c.CriarTalhao(nomeTalhao, areaHectares, cultura, pmoID, userID)
+	if err != nil {
+		return "", fmt.Errorf("falha ao criar talhão na infraestrutura unificada: %w", err)
+	}
+
+	resumo := fmt.Sprintf("Talhão '%s' (ID: %d) criado com sucesso.", nomeTalhao, talhaoID)
+
+	// 2. Criar Canteiros se solicitado
+	if qtdCanteiros > 0 {
+		err = c.CriarCanteirosEmLote(talhaoID, qtdCanteiros, 1) // Sempre iniciando do 1 para nova infraestrutura
+		if err != nil {
+			return resumo + " ⚠️ No entanto, houve um erro ao criar os canteiros: " + err.Error(), nil
+		}
+		resumo += fmt.Sprintf(" Além disso, %d canteiros foram gerados e vinculados automaticamente.", qtdCanteiros)
+	}
+
+	return resumo + " A infraestrutura já está disponível no painel web para detalhamento geográfico.", nil
+}
+
+// CriarCanteirosEmLote performs a batch insert of canteiros.
+func (c *Client) CriarCanteirosEmLote(talhaoID int64, quantidade int, idInicial int) error {
+	var batch []CanteiroInsert
+	for i := 0; i < quantidade; i++ {
+		idAtual := idInicial + i
+		batch = append(batch, CanteiroInsert{
+			TalhaoID: talhaoID,
+			Nome:     fmt.Sprintf("Canteiro %02d", idAtual),
+		})
+	}
+
+	payload, err := json.Marshal(batch)
+	if err != nil {
+		return fmt.Errorf("failed to marshal canteiros batch: %w", err)
+	}
+
+	reqURL := fmt.Sprintf("%s/rest/v1/canteiros", c.config.URL)
+	req, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewReader(payload))
+	if err != nil {
+		return fmt.Errorf("failed to create canteiros request: %w", err)
+	}
+
+	req.Header.Set("apikey", c.config.Key)
+	req.Header.Set("Authorization", "Bearer "+c.config.Key)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("canteiros batch insert HTTP failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("supabase canteiros batch insert error (%d): %s", resp.StatusCode, string(body))
+	}
+
+	return nil
 }
 
 // ---------------------------------------------------------------------------
