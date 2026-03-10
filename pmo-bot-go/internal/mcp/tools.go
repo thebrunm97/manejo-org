@@ -53,6 +53,54 @@ func (s *Server) InitializeTools() {
 		},
 		Handler: s.handleConsultarDadosFazenda,
 	})
+
+	s.RegisterTool(Tool{
+		Name:        "criar_novo_talhao",
+		Description: "Cria um novo talhão na fazenda com suporte a desenho de mapa posterior.",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"nome_talhao": map[string]interface{}{
+					"type":        "string",
+					"description": "Nome descritivo do talhão (ex: Gleba A, Horta Norte).",
+				},
+				"area_hectares": map[string]interface{}{
+					"type":        "number",
+					"description": "Área total do talhão em hectares.",
+				},
+				"cultura": map[string]interface{}{
+					"type":        "string",
+					"description": "Cultura principal plantada neste talhão (opcional).",
+				},
+			},
+			"required": []string{"nome_talhao", "area_hectares"},
+		},
+		Handler: s.handleCriarNovoTalhao,
+	})
+
+	s.RegisterTool(Tool{
+		Name:        "criar_novos_canteiros",
+		Description: "Cria uma sequência de canteiros numerados dentro de um talhão existente.",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"talhao_id": map[string]interface{}{
+					"type":        "integer",
+					"description": "ID do talhão pai onde os canteiros serão criados.",
+				},
+				"quantidade": map[string]interface{}{
+					"type":        "integer",
+					"description": "Quantidade de canteiros a serem criados.",
+				},
+				"identificador_inicial": map[string]interface{}{
+					"type":        "integer",
+					"description": "Número do primeiro canteiro da sequência (ex: 1).",
+				},
+			},
+			"required": []string{"talhao_id", "quantidade", "identificador_inicial"},
+		},
+		Handler: s.handleCriarNovosCanteiros,
+	})
 }
 
 func (s *Server) handleConsultarDadosFazenda(args map[string]interface{}) (interface{}, error) {
@@ -144,4 +192,61 @@ func (s *Server) handleConsultarBaseConhecimento(args map[string]interface{}) (i
 	}
 
 	return sb.String(), nil
+}
+
+func (s *Server) handleCriarNovoTalhao(args map[string]interface{}) (interface{}, error) {
+	nome, ok := args["nome_talhao"].(string)
+	if !ok {
+		return nil, fmt.Errorf("nome_talhao é obrigatório")
+	}
+
+	areaHectaresVal := args["area_hectares"]
+	if areaHectaresVal == nil {
+		return nil, fmt.Errorf("area_hectares é obrigatório")
+	}
+	areaHectares, ok := areaHectaresVal.(float64)
+	if !ok {
+		return nil, fmt.Errorf("area_hectares deve ser numérico")
+	}
+
+	cultura, _ := args["cultura"].(string)
+
+	// Estes valores são injetados pelo FSM por segurança
+	pmoIDFloat, _ := args["pmo_id"].(float64)
+	userID, _ := args["user_id"].(string)
+
+	log.Printf("🏗️ [MCP-TOOL] Criando novo talhão '%s' para PMO %d", nome, int64(pmoIDFloat))
+
+	id, err := s.supabase.CriarTalhao(nome, areaHectares, cultura, int64(pmoIDFloat), userID)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao criar talhão: %w", err)
+	}
+
+	return fmt.Sprintf("Talhão '%s' criado com sucesso com ID %d. Você já pode visualizar e desenhar o polígono no painel web.", nome, id), nil
+}
+
+func (s *Server) handleCriarNovosCanteiros(args map[string]interface{}) (interface{}, error) {
+	talhaoID, ok := args["talhao_id"].(float64)
+	if !ok {
+		return nil, fmt.Errorf("talhao_id é obrigatório e deve ser numérico")
+	}
+
+	quantidadeVal, ok := args["quantidade"].(float64)
+	if !ok {
+		return nil, fmt.Errorf("quantidade é obrigatória e deve ser numérica")
+	}
+
+	idInicialVal, ok := args["identificador_inicial"].(float64)
+	if !ok {
+		return nil, fmt.Errorf("identificador_inicial é obrigatório e deve ser numérico")
+	}
+
+	log.Printf("🏗️ [MCP-TOOL] Criando %d canteiros para talhão %d", int(quantidadeVal), int64(talhaoID))
+
+	err := s.supabase.CriarCanteirosEmLote(int64(talhaoID), int(quantidadeVal), int(idInicialVal))
+	if err != nil {
+		return nil, fmt.Errorf("erro ao criar canteiros em lote: %w", err)
+	}
+
+	return fmt.Sprintf("%d canteiros criados com sucesso para o talhão ID %d.", int(quantidadeVal), int64(talhaoID)), nil
 }
