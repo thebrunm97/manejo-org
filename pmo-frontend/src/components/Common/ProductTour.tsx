@@ -30,16 +30,28 @@ export const ProductTour: React.FC<ProductTourProps> = ({ ready = true }) => {
             ],
             onDestroyStarted: () => {
                 localStorage.setItem('hasSeenTour', 'true');
-                driverObj.destroy();
+                if (driverObj) {
+                    driverObj.destroy();
+                }
             }
         });
 
-        // Delay seguro para evitar layout shift
+        // Use a timeout to avoid layout shifts, but ensure it completes before any unmount
+        let isMounted = true;
         const timer = setTimeout(() => {
-            driverObj.drive();
+            if (isMounted) {
+                driverObj.drive();
+            }
         }, 1500);
 
-        return () => clearTimeout(timer);
+        return () => {
+            isMounted = false;
+            clearTimeout(timer);
+            // Crucial for React Strict Mode and unmounts: obliterate the driver instance
+            if (driverObj) {
+                driverObj.destroy();
+            }
+        };
     }, [ready]);
 
     return null;

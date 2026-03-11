@@ -454,3 +454,20 @@ body {
     display: none;
   }
 }
+
+/* ======================================================== */
+/* ||     CORREÇÕES GLOBAIS PARA O DRIVER.JS (TOUR)        || */
+/* ======================================================== */
+/* Garante que o driver.js renderize perfeitamente sobre todos os elementos */
+.driver-popover {
+  z-index: 1000000 !important;
+  pointer-events: auto !important;
+}
+
+.driver-overlay {
+  z-index: 999999 !important;
+}
+
+.driver-popover-footer button {
+  pointer-events: auto !important;
+}
