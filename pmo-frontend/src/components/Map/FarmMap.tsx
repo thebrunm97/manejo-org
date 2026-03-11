@@ -28,8 +28,9 @@ interface MapControllerProps {
 interface FarmMapProps {
     talhoes: Talhao[];
     focusTarget?: Talhao | null;
+    editingCanteiroId?: string | null;
     onCreated?: (e: any) => void;
-    onEdited?: (e: any) => void;
+    onEdited?: (event: { layer: any; geometry: string }) => void;
     onDeleted?: (e: any) => void;
     onMapCreated?: (event: MapCreatedEvent) => void;
     onSaveTalhao?: (talhao: Talhao) => void;
@@ -77,11 +78,22 @@ const MapController: React.FC<MapControllerProps> = ({ talhoes, focusTarget }) =
 const FarmMap: React.FC<FarmMapProps> = ({
     talhoes = [],
     focusTarget,
+    editingCanteiroId,
     onEdited,
     onDeleted,
     onMapCreated,
     onTalhaoClick
 }) => {
+    const handleEdited = (e: any) => {
+        if (!e || !e.layers) return;
+        e.layers.eachLayer((layer: any) => {
+            if (onEdited) {
+                const geoJSON = layer.toGeoJSON();
+                onEdited({ layer, geometry: JSON.stringify(geoJSON.geometry) });
+            }
+        });
+    };
+
     const handleCreated = async (e: any) => {
         if (!e || !e.layer) return;
         const { layerType, layer } = e;
@@ -119,7 +131,7 @@ const FarmMap: React.FC<FarmMapProps> = ({
                 <SafeEditControl
                     position="topright"
                     onCreated={handleCreated}
-                    onEdited={onEdited}
+                    onEdited={handleEdited}
                     onDeleted={onDeleted}
                     draw={{
                         rectangle: true,
@@ -138,15 +150,19 @@ const FarmMap: React.FC<FarmMapProps> = ({
                     if (!geo.coordinates || !geo.coordinates[0]) return null;
                     const positions: L.LatLngTuple[] = geo.coordinates[0].map(c => [c[1], c[0]] as L.LatLngTuple);
 
+                    // Se estivermos em modo de edição de um canteiro específico dentro deste talhão, não habilitamos clique do talhão
+                    // Porém, vamos manter renderizado apenas com baixa opacidade para referencial
+                    const isFaded = editingCanteiroId && focusTarget?.id !== t.id;
+
                     return (
                         <Polygon
-                            key={t.id}
+                            key={`talhao-${t.id}`}
                             positions={positions}
-                            pathOptions={{ color: t.cor || '#FFF', fillColor: t.cor, fillOpacity: 0.5 }}
+                            pathOptions={{ color: t.cor || '#FFF', fillColor: t.cor, fillOpacity: isFaded ? 0.2 : 0.5 }}
                             eventHandlers={{
                                 click: (e) => {
                                     L.DomEvent.stopPropagation(e);
-                                    if (onTalhaoClick) onTalhaoClick(t);
+                                    if (onTalhaoClick && !editingCanteiroId) onTalhaoClick(t);
                                 }
                             }}
                         >
@@ -175,6 +191,48 @@ const FarmMap: React.FC<FarmMapProps> = ({
                             </Popup>
                         </Polygon>
                     )
+                })}
+
+                {/* Renderizar Canteiros do Focus Target se tiver geometry */}
+                {focusTarget?.canteiros?.map((canteiro: any) => {
+                    if (!canteiro.geometry) return null;
+                    try {
+                        const geo: GeoJSONGeometry = typeof canteiro.geometry === 'string' ? JSON.parse(canteiro.geometry) : canteiro.geometry;
+                        if (!geo.coordinates || !geo.coordinates[0]) return null;
+                        
+                        // Polygon required format
+                        let positions: L.LatLngTuple[] | L.LatLngTuple[][] = [];
+                        if (geo.type === 'Polygon') {
+                            positions = geo.coordinates[0].map((c: any) => [c[1], c[0]] as L.LatLngTuple);
+                        } else {
+                            return null;
+                        }
+
+                        // Destacar se for o canteiro em edição
+                        const isEditingThis = String(canteiro.id) === String(editingCanteiroId);
+
+                        return (
+                            <Polygon
+                                key={`canteiro-${canteiro.id}`}
+                                positions={positions}
+                                pathOptions={{ 
+                                    color: isEditingThis ? '#f59e0b' : '#3b82f6', 
+                                    fillColor: isEditingThis ? '#fcd34d' : '#93c5fd', 
+                                    fillOpacity: isEditingThis ? 0.8 : 0.6,
+                                    weight: isEditingThis ? 3 : 2,
+                                    dashArray: isEditingThis ? '4, 4' : undefined
+                                }}
+                            >
+                                <Popup>
+                                    <strong>{canteiro.nome}</strong><br />
+                                    <small style={{ color: '#666' }}>ESTRUTURA / CANTEIRO</small><br />
+                                    {isEditingThis && <span style={{color: '#f59e0b', fontWeight: 'bold'}}>Modo de Edição Ativo</span>}
+                                </Popup>
+                            </Polygon>
+                        );
+                    } catch(e) {
+                         return null;
+                    }
                 })}
             </FeatureGroup>
             <MapController talhoes={talhoes} focusTarget={focusTarget} />
