@@ -90,9 +90,8 @@ export default defineConfig({
             { find: '@utils', replacement: path.resolve(__dirname, './src/utils') },
             { find: '@services', replacement: path.resolve(__dirname, './src/services') },
             { find: '@components', replacement: path.resolve(__dirname, './src/components') },
-            { find: '@hooks', replacement: path.resolve(__dirname, './src/hooks') },
             { find: '@types', replacement: path.resolve(__dirname, './src/types') },
-            { find: /^leaflet-draw$/, replacement: path.resolve(__dirname, './node_modules/leaflet-draw/dist/leaflet.draw.js') }
+            { find: /^leaflet-draw$/, replacement: path.resolve(__dirname, './src/leaflet-draw-shim.js') }
         ],
         dedupe: ['react', 'react-dom', 'react-router-dom', 'leaflet']
     },
@@ -115,6 +114,6 @@ export default defineConfig({
         }
     },
     optimizeDeps: {
-        exclude: ['leaflet-draw', 'react-leaflet-draw']
+        include: ['leaflet-draw', 'react-leaflet-draw']
     }
 })
