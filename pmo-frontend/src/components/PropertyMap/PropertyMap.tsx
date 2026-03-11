@@ -479,14 +479,14 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
                             ) : (
                                 <div className="divide-y divide-slate-50">
                                     {talhoes.map((talhao) => (
-                                        <button
+                                        <div
                                             key={talhao.id}
                                             onClick={() => {
                                                 setSelectedTalhao(talhao);
                                                 setPanelTab('detalhes');
                                             }}
                                             className={cn(
-                                                "w-full flex items-center gap-3 px-4 py-3.5 hover:bg-slate-50 transition-colors text-left",
+                                                "w-full flex items-center gap-3 px-4 py-3.5 hover:bg-slate-50 transition-colors text-left cursor-pointer",
                                                 selectedTalhao?.id === talhao.id && "bg-green-50/50"
                                             )}
                                         >
@@ -522,7 +522,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
                                                     {talhao.canteiros?.length ?? 0} est.
                                                 </span>
                                             )}
-                                        </button>
+                                        </div>
                                     ))}
                                 </div>
                             )}
