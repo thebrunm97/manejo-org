@@ -17,6 +17,7 @@ import {
     TreePine,
     Trash2,
     MapPin,
+    PenTool,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { cn } from '../../utils/cn';
@@ -477,7 +478,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
                                     <p className="text-xs text-slate-300">Use a ferramenta de desenho no mapa para criar o primeiro.</p>
                                 </div>
                             ) : (
-                                <div className="divide-y divide-slate-50">
+                                <div className="p-4 flex flex-col gap-3">
                                     {talhoes.map((talhao) => (
                                         <div
                                             key={talhao.id}
@@ -486,22 +487,45 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
                                                 setPanelTab('detalhes');
                                             }}
                                             className={cn(
-                                                "w-full flex items-center gap-3 px-4 py-3.5 hover:bg-slate-50 transition-colors text-left cursor-pointer",
-                                                selectedTalhao?.id === talhao.id && "bg-green-50/50"
+                                                "p-4 bg-white border border-slate-200 rounded-xl hover:shadow-md hover:border-slate-300 cursor-pointer transition-all flex flex-col gap-3 relative group",
+                                                selectedTalhao?.id === talhao.id && "ring-2 ring-indigo-500 border-indigo-500 shadow-md"
                                             )}
                                         >
-                                            <div className={cn(
-                                                "w-2.5 h-2.5 rounded-full flex-shrink-0",
-                                                talhao.tipo === 'agua' ? "bg-blue-500" : !hasValidGeometry(talhao.geometry) ? "bg-amber-400" : "bg-emerald-500"
-                                            )} />
-                                            <div className="flex-1 overflow-hidden">
-                                                <p className="text-sm font-semibold text-gray-800 truncate">{talhao.nome}</p>
-                                                <p className="text-xs text-gray-400">
-                                                    {formatArea(talhao.area_total_m2 || 0)}
-                                                    {talhao.cultura && ` · ${talhao.cultura}`}
-                                                </p>
+                                            {/* Cabeçalho do Card */}
+                                            <div className="flex items-center justify-between w-full">
+                                                <div className="flex items-center gap-2">
+                                                    <MapPin size={16} className={talhao.tipo === 'agua' ? "text-blue-500" : "text-emerald-500"} />
+                                                    <span className="text-sm font-semibold text-gray-800 truncate">{talhao.nome}</span>
+                                                </div>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDeleteTalhao(talhao.id);
+                                                    }}
+                                                    className="text-slate-300 hover:text-red-500 transition-colors p-1 opacity-0 group-hover:opacity-100"
+                                                    title="Excluir talhão"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
                                             </div>
-                                            {!hasValidGeometry(talhao.geometry) ? (
+
+                                            {/* Badges de Status (Pill Shape) e Dados */}
+                                            <div className="flex items-center gap-2">
+                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                                                    {formatArea(talhao.area_total_m2 || 0)}
+                                                </span>
+                                                {talhao.cultura && (
+                                                    <span className="text-xs text-slate-500">· {talhao.cultura}</span>
+                                                )}
+                                                {hasValidGeometry(talhao.geometry) && (
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-50 text-slate-600 border border-slate-200 ml-auto">
+                                                        {talhao.canteiros?.length ?? 0} est.
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {/* O Botão de Ação (Call to Action "Desenhar") */}
+                                            {!hasValidGeometry(talhao.geometry) && (
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
@@ -512,15 +536,11 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
                                                             severity: 'alert'
                                                         });
                                                     }}
-                                                    className="mt-2 text-xs bg-blue-50 text-blue-600 border border-blue-200 px-2 py-1 rounded hover:bg-blue-100 flex items-center gap-1 flex-shrink-0"
+                                                    className="w-full flex items-center justify-center gap-2 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-semibold rounded-lg transition-colors mt-1"
                                                 >
-                                                    <MapPin size={12} />
+                                                    <PenTool size={14} />
                                                     Desenhar no Mapa
                                                 </button>
-                                            ) : (
-                                                <span className="text-xs text-gray-300 flex-shrink-0">
-                                                    {talhao.canteiros?.length ?? 0} est.
-                                                </span>
                                             )}
                                         </div>
                                     ))}
