@@ -288,7 +288,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
         if (!editingCanteiroData) setDrawingForCanteiroTalhaoId(null);
     }, [editingCanteiroData, pendingCanteiroGeometry]);
 
-    const handleMapEdited = useCallback(async (data: { layer: any; geometry: string }) => {
+    const handleMapEdited = useCallback(async (_data: { layer: any; geometry: string }) => {
         // Nenhuma ação para geometria de canteiros ainda. Apenas metadados.
     }, []);
 
@@ -730,7 +730,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
                 MODAL: NOVO TALHÃO
                 ========================================= */}
             <div className={cn(
-                "fixed inset-0 z-[130] flex items-center justify-center p-4 transition-all duration-200",
+                "fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-all duration-200",
                 createModalOpen ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
             )}>
                 <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={handleCancelNewTalhao} />
@@ -806,7 +806,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
                 MODAL: CONFIRMAR EXCLUSÃO DE CANTEIRO
                 ========================================= */}
             <div className={cn(
-                "fixed inset-0 z-[130] flex items-center justify-center p-4 transition-all duration-200",
+                "fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-all duration-200",
                 deleteConfirmOpen ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
             )}>
                 <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setDeleteConfirmOpen(false)} />
@@ -834,7 +834,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
                 MODAL: CONFIRMAR EXCLUSÃO DE TALHÃO
                 ========================================= */}
             <div className={cn(
-                "fixed inset-0 z-[130] flex items-center justify-center p-4 transition-all duration-200",
+                "fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-all duration-200",
                 deleteTalhaoConfirmOpen ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
             )}>
                 <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setDeleteTalhaoConfirmOpen(false)} />
