@@ -862,7 +862,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
                 SNACKBAR
                 ========================================= */}
             {snackbar.open && (
-                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] animate-in slide-in-from-bottom-5 fade-in duration-300 px-4 w-full max-w-md">
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] animate-in slide-in-from-bottom-5 fade-in duration-300 px-4 w-full max-w-md">
                     <div className={cn(
                         "flex items-center gap-4 px-6 py-4 rounded-3xl shadow-2xl border backdrop-blur-md",
                         snackbar.severity === 'success'
