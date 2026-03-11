@@ -85,9 +85,15 @@ const FarmMap: React.FC<FarmMapProps> = ({
     const handleCreated = async (e: any) => {
         const layer = e.layer;
 
-        // Calculate area immediately to pass to parent
         const geoJSON = layer.toGeoJSON();
-        const areaM2 = (L as any).GeometryUtil?.geodesicArea(layer.getLatLngs()[0]) || 0;
+
+        // Normaliza coordenadas: Rectangle retorna [[LatLng[]]], Polygon retorna [LatLng[]]
+        // Precisamos chegar no array plano de LatLng para GeometryUtil.geodesicArea()
+        let latLngs = layer.getLatLngs();
+        while (Array.isArray(latLngs) && latLngs.length > 0 && Array.isArray(latLngs[0])) {
+            latLngs = latLngs[0];
+        }
+        const areaM2 = (L as any).GeometryUtil?.geodesicArea(latLngs) || 0;
 
         if (onMapCreated) {
             onMapCreated({
@@ -109,10 +115,10 @@ const FarmMap: React.FC<FarmMapProps> = ({
                     onEdited={onEdited}
                     onDeleted={onDeleted}
                     draw={{
-                        rectangle: false,
+                        rectangle: true,
                         circle: false,
                         circlemarker: false,
-                        marker: false,
+                        marker: true,
                         polyline: false,
                         polygon: { allowIntersection: true, showArea: true, shapeOptions: { color: '#97009c' } }
                     }}

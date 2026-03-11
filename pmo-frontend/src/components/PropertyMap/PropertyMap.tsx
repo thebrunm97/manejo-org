@@ -16,6 +16,7 @@ import {
     Layers,
     TreePine,
     Trash2,
+    MapPin,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { cn } from '../../utils/cn';
@@ -68,6 +69,9 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
     const [pendingTalhao, setPendingTalhao] = useState<{ layer: any; geometry: string; areaM2: number } | null>(null);
     const [newTalhaoData, setNewTalhaoData] = useState({ nome: '', cultura: '' });
     const [savingNew, setSavingNew] = useState(false);
+
+    // Vincular Geometria a Talhão Existente (WhatsApp/Bot)
+    const [drawingForTalhaoId, setDrawingForTalhaoId] = useState<number | null>(null);
 
     // Deletar Canteiro State
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -136,12 +140,40 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
         }
     }, [canteiroToDelete, selectedTalhao, loadTalhoes]);
 
+    // --- Vincular Geometria a Talhão Existente ---
+    const handleLinkGeometry = useCallback(async (
+        talhaoId: number,
+        data: { layer: any; geometry: string; areaM2: number }
+    ) => {
+        try {
+            const geometryObj = JSON.parse(data.geometry);
+            await locationService.updateTalhao(talhaoId, {
+                geometry: geometryObj,
+                area_total_m2: parseFloat(data.areaM2.toFixed(2)),
+                area_ha: parseFloat((data.areaM2 / 10000).toFixed(2)),
+            });
+            if (data.layer?.remove) data.layer.remove();
+            setDrawingForTalhaoId(null);
+            await loadTalhoes();
+            setSnackbar({ open: true, message: 'Geometria vinculada com sucesso!', severity: 'success' });
+        } catch (error) {
+            console.error('Erro ao vincular geometria:', error);
+            setSnackbar({ open: true, message: 'Erro ao vincular geometria.', severity: 'error' });
+        }
+    }, [loadTalhoes]);
+
     // --- Criar Talhão Handlers ---
     const handleMapCreated = useCallback((data: { layer: any; geometry: string; areaM2: number }) => {
-        setPendingTalhao(data);
-        setNewTalhaoData({ nome: `Talhão ${talhoes.length + 1}`, cultura: '' });
-        setCreateModalOpen(true);
-    }, [talhoes.length]);
+        if (drawingForTalhaoId) {
+            // Fluxo de vinculação: UPDATE no talhão existente
+            handleLinkGeometry(drawingForTalhaoId, data);
+        } else {
+            // Fluxo normal: criar novo talhão
+            setPendingTalhao(data);
+            setNewTalhaoData({ nome: `Talhão ${talhoes.length + 1}`, cultura: '' });
+            setCreateModalOpen(true);
+        }
+    }, [talhoes.length, drawingForTalhaoId, handleLinkGeometry]);
 
     const handleCancelNewTalhao = useCallback(() => {
         if (pendingTalhao?.layer?.remove) pendingTalhao.layer.remove();
@@ -392,7 +424,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
                                         >
                                             <div className={cn(
                                                 "w-2.5 h-2.5 rounded-full flex-shrink-0",
-                                                talhao.tipo === 'agua' ? "bg-blue-500" : "bg-emerald-500"
+                                                talhao.tipo === 'agua' ? "bg-blue-500" : !talhao.geometry ? "bg-amber-400" : "bg-emerald-500"
                                             )} />
                                             <div className="flex-1 overflow-hidden">
                                                 <p className="text-sm font-semibold text-gray-800 truncate">{talhao.nome}</p>
@@ -401,9 +433,32 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
                                                     {talhao.cultura && ` · ${talhao.cultura}`}
                                                 </p>
                                             </div>
-                                            <span className="text-xs text-gray-300 flex-shrink-0">
-                                                {talhao.canteiros?.length ?? 0} est.
-                                            </span>
+                                            {!talhao.geometry ? (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setDrawingForTalhaoId(talhao.id);
+                                                        setSnackbar({
+                                                            open: true,
+                                                            message: `Desenhe a geometria de "${talhao.nome}" no mapa agora.`,
+                                                            severity: 'alert'
+                                                        });
+                                                    }}
+                                                    className={cn(
+                                                        "text-[10px] font-bold px-2 py-1 rounded-lg transition-colors flex-shrink-0 flex items-center gap-1",
+                                                        drawingForTalhaoId === talhao.id
+                                                            ? "text-white bg-amber-500"
+                                                            : "text-amber-600 bg-amber-50 hover:bg-amber-100"
+                                                    )}
+                                                >
+                                                    <MapPin size={10} />
+                                                    {drawingForTalhaoId === talhao.id ? 'Ativo...' : 'Desenhar'}
+                                                </button>
+                                            ) : (
+                                                <span className="text-xs text-gray-300 flex-shrink-0">
+                                                    {talhao.canteiros?.length ?? 0} est.
+                                                </span>
+                                            )}
                                         </button>
                                     ))}
                                 </div>
@@ -428,6 +483,26 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
                 PAINEL DIREITO — MAPA LEAFLET (flex-1)
                 ========================================= */}
             <main className="flex-1 relative z-0 overflow-hidden">
+                {/* Banner: Modo de vinculação ativo */}
+                {drawingForTalhaoId && (
+                    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top-2 fade-in duration-300">
+                        <div className="flex items-center gap-3 px-5 py-3 bg-amber-500 text-white rounded-2xl shadow-2xl shadow-amber-900/20 border border-amber-400/50">
+                            <MapPin size={18} className="animate-pulse" />
+                            <div>
+                                <p className="text-xs font-black tracking-tight">
+                                    Desenhando para: {talhoes.find(t => t.id === drawingForTalhaoId)?.nome || 'Talhão'}
+                                </p>
+                                <p className="text-[10px] text-amber-100">Desenhe um polígono ou retângulo no mapa.</p>
+                            </div>
+                            <button
+                                onClick={() => setDrawingForTalhaoId(null)}
+                                className="p-1.5 hover:bg-amber-600 rounded-lg transition-colors"
+                            >
+                                <X size={14} />
+                            </button>
+                        </div>
+                    </div>
+                )}
                 <FarmMap
                     talhoes={talhoes}
                     focusTarget={selectedTalhao}
