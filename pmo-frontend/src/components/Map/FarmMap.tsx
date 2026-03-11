@@ -83,24 +83,31 @@ const FarmMap: React.FC<FarmMapProps> = ({
     onTalhaoClick
 }) => {
     const handleCreated = async (e: any) => {
-        const layer = e.layer;
+        if (!e || !e.layer) return;
+        const { layerType, layer } = e;
 
-        const geoJSON = layer.toGeoJSON();
+        if (layerType === 'polygon' || layerType === 'rectangle') {
+            const geoJSON = layer.toGeoJSON();
 
-        // Normaliza coordenadas: Rectangle retorna [[LatLng[]]], Polygon retorna [LatLng[]]
-        // Precisamos chegar no array plano de LatLng para GeometryUtil.geodesicArea()
-        let latLngs = layer.getLatLngs();
-        while (Array.isArray(latLngs) && latLngs.length > 0 && Array.isArray(latLngs[0])) {
-            latLngs = latLngs[0];
-        }
-        const areaM2 = (L as any).GeometryUtil?.geodesicArea(latLngs) || 0;
+            // Usa as coordenadas do próprio GeoJSON para calcular a área de forma segura
+            let areaM2 = 0;
+            try {
+                if (geoJSON.geometry && geoJSON.geometry.coordinates && geoJSON.geometry.coordinates[0]) {
+                    const coords = geoJSON.geometry.coordinates[0];
+                    const latLngs = coords.map((c: any) => L.latLng(c[1], c[0]));
+                    areaM2 = (L as any).GeometryUtil?.geodesicArea(latLngs) || 0;
+                }
+            } catch (err) {
+                console.error("Erro ao calcular area:", err);
+            }
 
-        if (onMapCreated) {
-            onMapCreated({
-                layer,
-                geometry: JSON.stringify(geoJSON.geometry),
-                areaM2: areaM2
-            });
+            if (onMapCreated) {
+                onMapCreated({
+                    layer,
+                    geometry: JSON.stringify(geoJSON.geometry),
+                    areaM2: Math.round(areaM2)
+                });
+            }
         }
     };
 
