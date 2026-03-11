@@ -357,6 +357,27 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
                                             </span>
                                         </div>
 
+                                        {/* Call to Action para Talhões sem Geometria */}
+                                        {!selectedTalhao.geometry && (
+                                            <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-lg text-center">
+                                                <p className="text-sm font-medium text-blue-800 mb-3">Este talhão ainda não possui área demarcada.</p>
+                                                <button
+                                                    onClick={() => {
+                                                        setDrawingForTalhaoId(selectedTalhao.id);
+                                                        setSnackbar({
+                                                            open: true,
+                                                            message: `Desenhe a geometria de "${selectedTalhao.nome}" no mapa agora.`,
+                                                            severity: 'alert'
+                                                        });
+                                                    }}
+                                                    className="w-full justify-center py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-sm transition-colors flex items-center gap-2"
+                                                >
+                                                    <MapPin size={16} />
+                                                    Iniciar Desenho
+                                                </button>
+                                            </div>
+                                        )}
+
                                         {/* Structures Section */}
                                         {selectedTalhao.canteiros && selectedTalhao.canteiros.length > 0 && (
                                             <>
@@ -444,15 +465,10 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
                                                             severity: 'alert'
                                                         });
                                                     }}
-                                                    className={cn(
-                                                        "text-[10px] font-bold px-2 py-1 rounded-lg transition-colors flex-shrink-0 flex items-center gap-1",
-                                                        drawingForTalhaoId === talhao.id
-                                                            ? "text-white bg-amber-500"
-                                                            : "text-amber-600 bg-amber-50 hover:bg-amber-100"
-                                                    )}
+                                                    className="mt-2 text-xs bg-blue-50 text-blue-600 border border-blue-200 px-2 py-1 rounded hover:bg-blue-100 flex items-center gap-1 flex-shrink-0"
                                                 >
-                                                    <MapPin size={10} />
-                                                    {drawingForTalhaoId === talhao.id ? 'Ativo...' : 'Desenhar'}
+                                                    <MapPin size={12} />
+                                                    Desenhar no Mapa
                                                 </button>
                                             ) : (
                                                 <span className="text-xs text-gray-300 flex-shrink-0">
