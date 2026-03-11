@@ -43,6 +43,16 @@ const getStrIcon = (nome: string): React.ReactElement => {
     return <Sprout className="text-emerald-500" size={16} />;
 };
 
+const hasValidGeometry = (geometry?: string | any): boolean => {
+    if (!geometry) return false;
+    try {
+        const geo = typeof geometry === 'string' ? JSON.parse(geometry) : geometry;
+        return !!(geo && Array.isArray(geo.coordinates) && geo.coordinates.length > 0 && geo.coordinates[0]?.length > 0);
+    } catch {
+        return false;
+    }
+};
+
 // --- Types ---
 interface PropertyMapProps {
     propriedadeId?: number | null;
@@ -358,7 +368,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
                                         </div>
 
                                         {/* Call to Action para Talhões sem Geometria */}
-                                        {!selectedTalhao.geometry && (
+                                        {!hasValidGeometry(selectedTalhao.geometry) && (
                                             <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-lg text-center">
                                                 <p className="text-sm font-medium text-blue-800 mb-3">Este talhão ainda não possui área demarcada.</p>
                                                 <button
@@ -445,7 +455,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
                                         >
                                             <div className={cn(
                                                 "w-2.5 h-2.5 rounded-full flex-shrink-0",
-                                                talhao.tipo === 'agua' ? "bg-blue-500" : !talhao.geometry ? "bg-amber-400" : "bg-emerald-500"
+                                                talhao.tipo === 'agua' ? "bg-blue-500" : !hasValidGeometry(talhao.geometry) ? "bg-amber-400" : "bg-emerald-500"
                                             )} />
                                             <div className="flex-1 overflow-hidden">
                                                 <p className="text-sm font-semibold text-gray-800 truncate">{talhao.nome}</p>
@@ -454,7 +464,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
                                                     {talhao.cultura && ` · ${talhao.cultura}`}
                                                 </p>
                                             </div>
-                                            {!talhao.geometry ? (
+                                            {!hasValidGeometry(talhao.geometry) ? (
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
