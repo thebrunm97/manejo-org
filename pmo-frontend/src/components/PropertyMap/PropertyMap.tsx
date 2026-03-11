@@ -18,6 +18,7 @@ import {
     Trash2,
     MapPin,
     PenTool,
+    ArrowLeft,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { cn } from '../../utils/cn';
@@ -265,307 +266,11 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
 
     // --- RENDER ---
     return (
-        <div className="flex h-full w-full overflow-hidden">
-
+        <div className="relative h-full w-full overflow-hidden">
             {/* =========================================
-                PAINEL ESQUERDO (Desktop Inline Sidebar)
-                Oculto em mobile — o drawer cobre isso
+                PAINEL DIREITO — MAPA LEAFLET (100% Full Screen)
                 ========================================= */}
-            <aside className="hidden lg:flex w-96 flex-shrink-0 bg-white border-r border-slate-100 shadow-xl z-10 flex-col overflow-hidden">
-
-                {/* --- Header --- */}
-                <div className="px-5 py-4 border-b border-slate-100 flex-shrink-0">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-green-50 rounded-lg flex-shrink-0">
-                            <Tractor size={18} className="text-green-600" />
-                        </div>
-                        <div className="overflow-hidden">
-                            <h1 className="text-sm font-semibold text-gray-800 leading-tight">Gestão Agrícola</h1>
-                            {nomePropriedade && (
-                                <p className="text-xs text-gray-400 truncate mt-0.5">{nomePropriedade}</p>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* --- Tabs --- */}
-                <div className="flex border-b border-slate-100 flex-shrink-0">
-                    <button
-                        onClick={() => setPanelTab('detalhes')}
-                        className={cn(
-                            "flex-1 py-3 text-xs font-semibold border-b-2 transition-all flex items-center justify-center gap-2",
-                            panelTab === 'detalhes'
-                                ? "text-green-600 border-green-600"
-                                : "text-gray-400 border-transparent hover:text-gray-500"
-                        )}
-                    >
-                        <FlaskConical size={14} />
-                        Detalhes do Talhão
-                    </button>
-                    <button
-                        onClick={() => setPanelTab('lista')}
-                        className={cn(
-                            "flex-1 py-3 text-xs font-semibold border-b-2 transition-all flex items-center justify-center gap-2",
-                            panelTab === 'lista'
-                                ? "text-green-600 border-green-600"
-                                : "text-gray-400 border-transparent hover:text-gray-500"
-                        )}
-                    >
-                        <Layers size={14} />
-                        Todos os Talhões
-                    </button>
-                </div>
-
-                {/* --- Corpo do Painel (scroll) --- */}
-                <div className="flex-1 overflow-y-auto">
-
-                    {/* Tab: Detalhes */}
-                    {panelTab === 'detalhes' && (
-                        <div className="h-full">
-                            {!selectedTalhao ? (
-                                /* Estado Vazio */
-                                <div className="flex flex-col items-center justify-center h-full text-center gap-3 p-8">
-                                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center">
-                                        <MapIcon size={28} className="text-slate-200" />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-semibold text-slate-500">Nenhum talhão selecionado</p>
-                                        <p className="text-xs text-slate-400 mt-1">Clique num polígono no mapa para ver os detalhes.</p>
-                                    </div>
-                                </div>
-                            ) : (
-                                /* Data Grid do Talhão */
-                                <div className="animate-in fade-in duration-200">
-                                    {/* Talhão Identity Header */}
-                                    <div className="p-4 border-b border-slate-50 bg-slate-50/50">
-                                        <div className="flex items-start justify-between gap-2">
-                                            <div>
-                                                <h2 className="text-base font-bold text-gray-900 leading-tight">{selectedTalhao.nome}</h2>
-                                                <p className="text-xs text-gray-400 mt-0.5 capitalize">{selectedTalhao.tipo || 'produtivo'}</p>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className={cn(
-                                                    "px-2 py-0.5 text-[10px] font-bold rounded-md flex-shrink-0",
-                                                    selectedTalhao.tipo === 'agua'
-                                                        ? "bg-blue-50 text-blue-600"
-                                                        : "bg-green-50 text-green-700"
-                                                )}>
-                                                    {formatArea(selectedTalhao.area_total_m2 || 0)}
-                                                </span>
-                                                <button
-                                                    onClick={() => handleDeleteTalhao(selectedTalhao.id)}
-                                                    className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                    title="Excluir talhão"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Key-Value Data Grid */}
-                                    <div className="px-4 pt-2 pb-4">
-                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest py-2">Informações Gerais</p>
-
-                                        <div className="flex justify-between py-2.5 border-b border-slate-50">
-                                            <span className="text-sm text-gray-400">Cultura</span>
-                                            <span className="text-sm font-medium text-gray-900">{selectedTalhao.cultura || '—'}</span>
-                                        </div>
-                                        <div className="flex justify-between py-2.5 border-b border-slate-50">
-                                            <span className="text-sm text-gray-400">Área</span>
-                                            <span className="text-sm font-medium text-gray-900">{formatArea(selectedTalhao.area_total_m2 || 0)}</span>
-                                        </div>
-                                        <div className="flex justify-between py-2.5 border-b border-slate-50">
-                                            <span className="text-sm text-gray-400">Tipo</span>
-                                            <span className="text-sm font-medium text-gray-900 capitalize">{selectedTalhao.tipo || '—'}</span>
-                                        </div>
-
-                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pt-4 pb-2">Análise de Solo</p>
-
-                                        <div className="flex justify-between py-2.5 border-b border-slate-50">
-                                            <span className="text-sm text-gray-400">pH Solo</span>
-                                            <span className="text-sm font-medium text-gray-900">{selectedTalhao.ph_solo ?? '—'}</span>
-                                        </div>
-                                        <div className="flex justify-between py-2.5 border-b border-slate-50">
-                                            <span className="text-sm text-gray-400">V%</span>
-                                            <span className="text-sm font-medium text-gray-900">
-                                                {selectedTalhao.v_percent != null ? `${selectedTalhao.v_percent}%` : '—'}
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between py-2.5 border-b border-slate-50">
-                                            <span className="text-sm text-gray-400">M.O.</span>
-                                            <span className="text-sm font-medium text-gray-900">
-                                                {selectedTalhao.materia_organica != null ? `${selectedTalhao.materia_organica}%` : '—'}
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between py-2.5 border-b border-slate-50">
-                                            <span className="text-sm text-gray-400">Argila</span>
-                                            <span className="text-sm font-medium text-gray-900">
-                                                {selectedTalhao.teor_argila != null ? `${selectedTalhao.teor_argila}%` : '—'}
-                                            </span>
-                                        </div>
-
-                                        {/* Call to Action para Talhões sem Geometria */}
-                                        {!hasValidGeometry(selectedTalhao.geometry) && (
-                                            <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-lg text-center">
-                                                <p className="text-sm font-medium text-blue-800 mb-3">Este talhão ainda não possui área demarcada.</p>
-                                                <button
-                                                    onClick={() => {
-                                                        setDrawingForTalhaoId(selectedTalhao.id);
-                                                        setSnackbar({
-                                                            open: true,
-                                                            message: `Desenhe a geometria de "${selectedTalhao.nome}" no mapa agora.`,
-                                                            severity: 'alert'
-                                                        });
-                                                    }}
-                                                    className="w-full justify-center py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-sm transition-colors flex items-center gap-2"
-                                                >
-                                                    <MapPin size={16} />
-                                                    Iniciar Desenho
-                                                </button>
-                                            </div>
-                                        )}
-
-                                        {/* Structures Section */}
-                                        {selectedTalhao.canteiros && selectedTalhao.canteiros.length > 0 && (
-                                            <>
-                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pt-4 pb-2">
-                                                    Estruturas ({selectedTalhao.canteiros.length})
-                                                </p>
-                                                <div className="space-y-1">
-                                                    {selectedTalhao.canteiros.map((canteiro: any) => (
-                                                        <div
-                                                            key={canteiro.id}
-                                                            className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-slate-50 group transition-colors"
-                                                        >
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="p-1.5 bg-white rounded-lg shadow-sm border border-slate-100">
-                                                                    {getStrIcon(canteiro.nome)}
-                                                                </div>
-                                                                <span className="text-sm font-medium text-gray-700">{canteiro.nome}</span>
-                                                            </div>
-                                                            <button
-                                                                onClick={() => handleDeleteCanteiro(canteiro.id)}
-                                                                className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                                                                title="Excluir canteiro"
-                                                            >
-                                                                <Trash2 size={14} />
-                                                            </button>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Tab: Todos os Talhões */}
-                    {panelTab === 'lista' && (
-                        <div className="animate-in fade-in duration-200">
-                            {loading ? (
-                                <div className="flex items-center justify-center py-12">
-                                    <Loader2 className="animate-spin text-green-600" size={28} />
-                                </div>
-                            ) : talhoes.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-16 text-center px-6 gap-3">
-                                    <div className="w-14 h-14 bg-slate-50 rounded-full flex items-center justify-center">
-                                        <LayoutGrid size={24} className="text-slate-200" />
-                                    </div>
-                                    <p className="text-sm text-slate-400 font-medium">Nenhum talhão cadastrado.</p>
-                                    <p className="text-xs text-slate-300">Use a ferramenta de desenho no mapa para criar o primeiro.</p>
-                                </div>
-                            ) : (
-                                <div className="p-4 flex flex-col gap-3">
-                                    {talhoes.map((talhao) => (
-                                        <div
-                                            key={talhao.id}
-                                            onClick={() => {
-                                                setSelectedTalhao(talhao);
-                                                setPanelTab('detalhes');
-                                            }}
-                                            className={cn(
-                                                "p-4 bg-white border border-slate-200 rounded-xl hover:shadow-md hover:border-slate-300 cursor-pointer transition-all flex flex-col gap-3 relative group",
-                                                selectedTalhao?.id === talhao.id && "ring-2 ring-indigo-500 border-indigo-500 shadow-md"
-                                            )}
-                                        >
-                                            {/* Cabeçalho do Card */}
-                                            <div className="flex items-center justify-between w-full">
-                                                <div className="flex items-center gap-2">
-                                                    <MapPin size={16} className={talhao.tipo === 'agua' ? "text-blue-500" : "text-emerald-500"} />
-                                                    <span className="text-sm font-semibold text-gray-800 truncate">{talhao.nome}</span>
-                                                </div>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleDeleteTalhao(talhao.id);
-                                                    }}
-                                                    className="text-slate-300 hover:text-red-500 transition-colors p-1 opacity-0 group-hover:opacity-100"
-                                                    title="Excluir talhão"
-                                                >
-                                                    <Trash2 size={14} />
-                                                </button>
-                                            </div>
-
-                                            {/* Badges de Status (Pill Shape) e Dados */}
-                                            <div className="flex items-center gap-2">
-                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
-                                                    {formatArea(talhao.area_total_m2 || 0)}
-                                                </span>
-                                                {talhao.cultura && (
-                                                    <span className="text-xs text-slate-500">· {talhao.cultura}</span>
-                                                )}
-                                                {hasValidGeometry(talhao.geometry) && (
-                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-50 text-slate-600 border border-slate-200 ml-auto">
-                                                        {talhao.canteiros?.length ?? 0} est.
-                                                    </span>
-                                                )}
-                                            </div>
-
-                                            {/* O Botão de Ação (Call to Action "Desenhar") */}
-                                            {!hasValidGeometry(talhao.geometry) && (
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setDrawingForTalhaoId(talhao.id);
-                                                        setSnackbar({
-                                                            open: true,
-                                                            message: `Desenhe a geometria de "${talhao.nome}" no mapa agora.`,
-                                                            severity: 'alert'
-                                                        });
-                                                    }}
-                                                    className="w-full flex items-center justify-center gap-2 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-semibold rounded-lg transition-colors mt-1"
-                                                >
-                                                    <PenTool size={14} />
-                                                    Desenhar no Mapa
-                                                </button>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
-
-                {/* --- Footer CTA --- */}
-                <div className="p-4 border-t border-slate-100 flex-shrink-0 bg-white">
-                    <button
-                        onClick={() => setCreateModalOpen(true)}
-                        className="w-full flex items-center justify-center gap-2 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-md shadow-sm transition-colors"
-                    >
-                        <Plus size={16} />
-                        Adicionar Talhão
-                    </button>
-                </div>
-            </aside>
-
-            {/* =========================================
-                PAINEL DIREITO — MAPA LEAFLET (flex-1)
-                ========================================= */}
-            <main className="flex-1 relative z-0 overflow-hidden">
+            <main className="absolute inset-0 z-0">
                 {/* Banner: Modo de vinculação ativo */}
                 {drawingForTalhaoId && (
                     <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top-2 fade-in duration-300">
@@ -598,6 +303,252 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
                     onTalhaoClick={handleTalhaoClick}
                 />
             </main>
+
+            {/* =========================================
+                PAINEL FLUTUANTE ESQUERDO (Floating over Map)
+                Oculto em mobile — o drawer cobre isso
+                ========================================= */}
+            <aside className="hidden lg:flex absolute top-4 left-4 z-[1000] w-[380px] max-h-[calc(100vh-2rem)] flex-col bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl shadow-slate-900/10 border border-slate-100/50 overflow-hidden">
+
+                {/* --- Header Fixo do Painel --- */}
+                <div className="px-5 py-4 border-b border-slate-100/50 flex-shrink-0 bg-white/50">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-green-50 rounded-xl flex-shrink-0">
+                            <Tractor size={18} className="text-green-600" />
+                        </div>
+                        <div className="overflow-hidden">
+                            <h1 className="text-sm font-semibold text-gray-800 leading-tight">Gestão Agrícola</h1>
+                            {nomePropriedade && (
+                                <p className="text-xs text-gray-400 truncate mt-0.5">{nomePropriedade}</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* --- Corpo do Painel (Scroll Interno) --- */}
+                <div className="flex-1 overflow-y-auto">
+
+                    {/* View: Lista de Todos os Talhões */}
+                    {panelTab === 'lista' && (
+                        <div className="animate-in fade-in duration-200">
+                            {loading ? (
+                                <div className="flex items-center justify-center py-12">
+                                    <Loader2 className="animate-spin text-green-600" size={28} />
+                                </div>
+                            ) : talhoes.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-16 text-center px-6 gap-3">
+                                    <div className="w-14 h-14 bg-slate-50 rounded-full flex items-center justify-center">
+                                        <LayoutGrid size={24} className="text-slate-200" />
+                                    </div>
+                                    <p className="text-sm text-slate-400 font-medium">Nenhum talhão cadastrado.</p>
+                                    <p className="text-xs text-slate-300">Use a ferramenta de desenho no mapa para criar o primeiro.</p>
+                                </div>
+                            ) : (
+                                <div className="p-4 flex flex-col gap-3">
+                                    {talhoes.map((talhao) => (
+                                        <div
+                                            key={talhao.id}
+                                            onClick={() => {
+                                                setSelectedTalhao(talhao);
+                                                setPanelTab('detalhes');
+                                            }}
+                                            className={cn(
+                                                "p-4 bg-white border border-slate-200 rounded-xl hover:shadow-md hover:border-slate-300 cursor-pointer transition-all flex flex-col gap-3 relative group",
+                                                selectedTalhao?.id === talhao.id && "ring-2 ring-indigo-500 border-indigo-500 shadow-md"
+                                            )}
+                                        >
+                                            <div className="flex items-center justify-between w-full">
+                                                <div className="flex items-center gap-2">
+                                                    <MapPin size={16} className={talhao.tipo === 'agua' ? "text-blue-500" : "text-emerald-500"} />
+                                                    <span className="text-sm font-semibold text-gray-800 truncate">{talhao.nome}</span>
+                                                </div>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDeleteTalhao(talhao.id);
+                                                    }}
+                                                    className="text-slate-300 hover:text-red-500 transition-colors p-1 opacity-0 group-hover:opacity-100"
+                                                    title="Excluir talhão"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
+
+                                            <div className="flex items-center gap-2">
+                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                                                    {formatArea(talhao.area_total_m2 || 0)}
+                                                </span>
+                                                {talhao.cultura && (
+                                                    <span className="text-xs text-slate-500">· {talhao.cultura}</span>
+                                                )}
+                                                {hasValidGeometry(talhao.geometry) && (
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-50 text-slate-600 border border-slate-200 ml-auto">
+                                                        {talhao.canteiros?.length ?? 0} est.
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {!hasValidGeometry(talhao.geometry) && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setDrawingForTalhaoId(talhao.id);
+                                                        setSnackbar({
+                                                            open: true,
+                                                            message: `Desenhe a geometria de "${talhao.nome}" no mapa agora.`,
+                                                            severity: 'alert'
+                                                        });
+                                                    }}
+                                                    className="w-full flex items-center justify-center gap-2 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-semibold rounded-lg transition-colors mt-1"
+                                                >
+                                                    <PenTool size={14} />
+                                                    Desenhar no Mapa
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* View: Detalhes do Talhão (Drill-down) */}
+                    {panelTab === 'detalhes' && selectedTalhao && (
+                        <div className="animate-in slide-in-from-right-4 fade-in duration-300">
+                            {/* Navegação e Título do Talhão */}
+                            <div className="p-4 border-b border-slate-100 bg-slate-50/50 sticky top-0 z-10 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <button 
+                                        onClick={() => setPanelTab('lista')}
+                                        className="p-2 -ml-2 text-slate-400 hover:text-slate-800 hover:bg-slate-200/50 rounded-xl transition-colors"
+                                    >
+                                        <ArrowLeft size={18} />
+                                    </button>
+                                    <div>
+                                        <h2 className="text-base font-bold text-gray-900 leading-tight truncate max-w-[200px]">{selectedTalhao.nome}</h2>
+                                        <p className="text-xs text-gray-400 mt-0.5 capitalize">{selectedTalhao.tipo || 'produtivo'}</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => handleDeleteTalhao(selectedTalhao.id)}
+                                    className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors shrink-0"
+                                    title="Excluir talhão"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                            </div>
+
+                            <div className="p-4 space-y-4">
+                                {/* Engagement Status Bar */}
+                                <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden flex">
+                                    <div 
+                                        className={cn(
+                                            "h-full rounded-full",
+                                            selectedTalhao.tipo === 'agua' ? "bg-blue-500 w-full" : 
+                                            !hasValidGeometry(selectedTalhao.geometry) ? "bg-amber-400 w-1/3" : "bg-emerald-500 w-[85%]"
+                                        )}
+                                    />
+                                    {hasValidGeometry(selectedTalhao.geometry) && selectedTalhao.tipo !== 'agua' && (
+                                        <div className="h-full bg-emerald-200 w-[15%] rounded-r-full" />
+                                    )}
+                                </div>
+
+                                {/* KPI Grid */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex flex-col justify-between">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Área Total</p>
+                                        <p className="text-2xl font-black text-slate-800">{formatArea(selectedTalhao.area_total_m2 || 0)}</p>
+                                    </div>
+                                    <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex flex-col justify-between">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Cultura</p>
+                                        <p className="text-xl font-bold text-slate-800 truncate" title={selectedTalhao.cultura || 'Não definida'}>
+                                            {selectedTalhao.cultura || '—'}
+                                        </p>
+                                    </div>
+                                    <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex flex-col justify-between">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">pH do Solo</p>
+                                        <p className="text-xl font-bold text-slate-800">{selectedTalhao.ph_solo ?? '—'}</p>
+                                    </div>
+                                    <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex flex-col justify-between">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Teor Argila</p>
+                                        <p className="text-xl font-bold text-slate-800">
+                                            {selectedTalhao.teor_argila != null ? `${selectedTalhao.teor_argila}%` : '—'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Call to Action para Talhões sem Geometria */}
+                                {!hasValidGeometry(selectedTalhao.geometry) && (
+                                    <div className="mt-2 p-4 bg-indigo-50/50 border border-indigo-100 rounded-2xl text-center">
+                                        <div className="w-10 h-10 mx-auto bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mb-3">
+                                            <MapPin size={18} />
+                                        </div>
+                                        <p className="text-sm font-medium text-indigo-900 mb-3">Ainda não possui área desenhada no mapa.</p>
+                                        <button
+                                            onClick={() => {
+                                                setDrawingForTalhaoId(selectedTalhao.id);
+                                                setSnackbar({
+                                                    open: true,
+                                                    message: `Desenhe a geometria de "${selectedTalhao.nome}" no mapa agora.`,
+                                                    severity: 'alert'
+                                                });
+                                            }}
+                                            className="w-full justify-center py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-colors flex items-center gap-2"
+                                        >
+                                            <PenTool size={16} />
+                                            Desenhar Polígono
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* Secção de Estruturas (Lista Contida) */}
+                                {selectedTalhao.canteiros && selectedTalhao.canteiros.length > 0 && (
+                                    <div className="pt-2">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">
+                                            Estruturas ({selectedTalhao.canteiros.length})
+                                        </p>
+                                        <div className="space-y-2">
+                                            {selectedTalhao.canteiros.map((canteiro: any) => (
+                                                <div
+                                                    key={canteiro.id}
+                                                    className="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl hover:border-slate-200 group transition-all"
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="p-2 bg-slate-50 rounded-lg shrink-0">
+                                                            {getStrIcon(canteiro.nome)}
+                                                        </div>
+                                                        <span className="text-sm font-medium text-slate-700">{canteiro.nome}</span>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => handleDeleteCanteiro(canteiro.id)}
+                                                        className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100 shrink-0"
+                                                        title="Excluir canteiro"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* --- Footer CTA Absoluto/Fixo do Painel --- */}
+                {panelTab === 'lista' && (
+                    <div className="p-4 border-t border-slate-100/50 bg-white/80 backdrop-blur-md flex-shrink-0 z-10">
+                        <button
+                            onClick={() => setCreateModalOpen(true)}
+                            className="w-full flex items-center justify-center gap-2 py-3 bg-slate-900 hover:bg-black text-white text-sm font-semibold rounded-2xl shadow-xl shadow-slate-900/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                        >
+                            <Plus size={16} />
+                            Adicionar Talhão
+                        </button>
+                    </div>
+                )}
+            </aside>
 
             {/* =========================================
                 DRAWER LATERAL — Mobile only (lg:hidden)
