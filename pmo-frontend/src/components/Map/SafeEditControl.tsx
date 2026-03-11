@@ -1,28 +1,18 @@
-import { useEffect, useState } from 'react';
 import L from 'leaflet';
 
+// 1. SHIM SÍNCRONO: Injetar L no window antes de qualquer outro import
+if (typeof window !== 'undefined') {
+    (window as any).L = L;
+}
+
+// 2. Importar o núcleo do desenho e o CSS
+import 'leaflet-draw';
+import 'leaflet-draw/dist/leaflet.draw.css';
+
+// 3. Importar o componente React
+import { EditControl } from 'react-leaflet-draw';
+
 export const SafeEditControl = (props: any) => {
-    const [Control, setControl] = useState<any>(null);
-
-    useEffect(() => {
-        // 1. Injetar Leaflet Global
-        (window as any).L = L;
-
-        // 2. IMPORTANTE: Carregar a lógica de desenho JS e o CSS
-        // Sem 'leaflet-draw', o L.Draw fica undefined e causa o erro de 'Event'
-        import('leaflet-draw');
-        import('leaflet-draw/dist/leaflet.draw.css');
-
-        // 3. Carregar o wrapper React dinamicamente
-        import('react-leaflet-draw').then((mod) => {
-            setControl(() => mod.EditControl);
-        });
-    }, []);
-
-    if (!Control) return null;
-    const EditControl = Control;
-
-    // Garante que retângulo e polígono estão ativos se não passados via props
     return (
         <EditControl
             {...props}
