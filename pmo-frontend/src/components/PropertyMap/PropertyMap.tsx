@@ -85,7 +85,12 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
 
     // Manipular Geometria Canteiro
     const [drawingForCanteiroTalhaoId, setDrawingForCanteiroTalhaoId] = useState<number | null>(null);
-    const [editingCanteiroId, setEditingCanteiroId] = useState<string | null>(null);
+    
+    // Modal de Canteiro
+    const [canteiroModalOpen, setCanteiroModalOpen] = useState(false);
+    const [editingCanteiroData, setEditingCanteiroData] = useState<any>(null);
+    const [canteiroFormData, setCanteiroFormData] = useState({ nome: '' });
+    const [pendingCanteiroGeometry, setPendingCanteiroGeometry] = useState<any>(null);
 
     // Deletar Canteiro State
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -204,34 +209,15 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
         }
     }, [loadTalhoes]);
 
-    // --- Criar Talhão Handlers ---
-    const handleMapCreated = useCallback(async (data: { layer: any; geometry: string; areaM2: number }) => {
+    // --- Criar Talhão / Canteiro Handlers ---
+    const handleMapCreated = useCallback((data: { layer: any; geometry: string; areaM2: number }) => {
         if (drawingForCanteiroTalhaoId) {
-            // Fluxo Canteiro Novo
-            setSavingNew(true);
-            try {
-                const canteiroCount = talhoes.find(t => t.id === drawingForCanteiroTalhaoId)?.canteiros?.length || 0;
-                await locationService.createCanteiro(drawingForCanteiroTalhaoId, `Estrutura ${canteiroCount + 1}`, {
-                    geometry: JSON.parse(data.geometry)
-                });
-                if (data.layer?.remove) data.layer.remove();
-                setDrawingForCanteiroTalhaoId(null);
-                await loadTalhoes();
-                
-                // Recarrega tbm o selectedTalhao para atualizar contagem
-                if (selectedTalhao && selectedTalhao.id === drawingForCanteiroTalhaoId) {
-                   const updated = await locationService.getTalhoes();
-                   const novoSelecionado = updated.find(t => t.id === drawingForCanteiroTalhaoId);
-                   if (novoSelecionado) setSelectedTalhao(novoSelecionado as Talhao);
-                }
-                
-                setSnackbar({ open: true, message: 'Canteiro criado com sucesso!', severity: 'success' });
-            } catch (err) {
-                console.error("Erro ao criar canteiro", err);
-                setSnackbar({ open: true, message: 'Erro ao criar canteiro.', severity: 'error' });
-            } finally {
-                setSavingNew(false);
-            }
+            // Fluxo Canteiro Novo - Após desenhar, abre o Modal para preencher metadados
+            setPendingCanteiroGeometry(data);
+            const canteiroCount = talhoes.find(t => t.id === drawingForCanteiroTalhaoId)?.canteiros?.length || 0;
+            setCanteiroFormData({ nome: `Estrutura ${canteiroCount + 1}` });
+            setEditingCanteiroData(null); // null indica que é criação
+            setCanteiroModalOpen(true);
         } else if (drawingForTalhaoId) {
             // Fluxo de vinculação: UPDATE no talhão existente
             handleLinkGeometry(drawingForTalhaoId, data);
@@ -241,7 +227,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
             setNewTalhaoData({ nome: `Talhão ${talhoes.length + 1}`, cultura: '' });
             setCreateModalOpen(true);
         }
-    }, [talhoes, drawingForTalhaoId, drawingForCanteiroTalhaoId, handleLinkGeometry, loadTalhoes, selectedTalhao]);
+    }, [talhoes, drawingForTalhaoId, drawingForCanteiroTalhaoId, handleLinkGeometry]);
 
     // --- Canteiro Helpers ---
     const handleAddCanteiroInit = useCallback(() => {
@@ -250,15 +236,31 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
         setSnackbar({ open: true, message: `Desenhe a estrutura para o talhão ${selectedTalhao.nome}`, severity: 'alert' });
     }, [selectedTalhao]);
 
-    const handleEditCanteiroStart = useCallback((canteiroId: string) => {
-        setEditingCanteiroId(canteiroId);
-        setSnackbar({ open: true, message: 'Edite o canteiro no mapa. Ao modificar, salva automaticamente.', severity: 'alert' });
+    const handleEditCanteiroStart = useCallback((canteiro: any) => {
+        setEditingCanteiroData(canteiro);
+        setCanteiroFormData({ nome: canteiro.nome || '' });
+        setCanteiroModalOpen(true);
     }, []);
 
-    const handleMapEdited = useCallback(async (data: { layer: any; geometry: string }) => {
-        if (!editingCanteiroId) return;
+    const handleSaveCanteiroMetadata = async () => {
+        if (!canteiroFormData.nome.trim()) return;
+        setSavingNew(true);
         try {
-            await locationService.updateCanteiro(editingCanteiroId, { geometry: JSON.parse(data.geometry) });
+            if (editingCanteiroData) {
+                // UPDATE
+                await locationService.updateCanteiro(editingCanteiroData.id, { nome: canteiroFormData.nome.trim() });
+                setSnackbar({ open: true, message: 'Estrutura atualizada com sucesso!', severity: 'success' });
+            } else if (pendingCanteiroGeometry && drawingForCanteiroTalhaoId) {
+                // INSERT
+                await locationService.createCanteiro(drawingForCanteiroTalhaoId, canteiroFormData.nome.trim(), {
+                    geometry: JSON.parse(pendingCanteiroGeometry.geometry)
+                });
+                if (pendingCanteiroGeometry.layer?.remove) pendingCanteiroGeometry.layer.remove();
+                setDrawingForCanteiroTalhaoId(null);
+                setPendingCanteiroGeometry(null);
+                setSnackbar({ open: true, message: 'Estrutura criada com sucesso!', severity: 'success' });
+            }
+            
             await loadTalhoes();
             
             // Recarrega tbm o selectedTalhao
@@ -268,14 +270,27 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
                if (novoSelecionado) setSelectedTalhao(novoSelecionado as Talhao);
             }
             
-            setSnackbar({ open: true, message: 'Geometria do canteiro atualizada!', severity: 'success' });
+            setCanteiroModalOpen(false);
         } catch (error) {
-            console.error('Erro ao editar canteiro:', error);
-            setSnackbar({ open: true, message: 'Erro ao atualizar canteiro.', severity: 'error' });
+            console.error('Erro ao salvar estrutura:', error);
+            setSnackbar({ open: true, message: 'Erro ao salvar estrutura.', severity: 'error' });
         } finally {
-            setEditingCanteiroId(null); // Sai do modo de edição após salvar 1 alteração
+            setSavingNew(false);
         }
-    }, [editingCanteiroId, loadTalhoes, selectedTalhao]);
+    };
+
+    const handleCancelCanteiroModal = useCallback(() => {
+        if (!editingCanteiroData && pendingCanteiroGeometry?.layer?.remove) {
+            pendingCanteiroGeometry.layer.remove();
+        }
+        setCanteiroModalOpen(false);
+        setPendingCanteiroGeometry(null);
+        if (!editingCanteiroData) setDrawingForCanteiroTalhaoId(null);
+    }, [editingCanteiroData, pendingCanteiroGeometry]);
+
+    const handleMapEdited = useCallback(async (data: { layer: any; geometry: string }) => {
+        // Nenhuma ação para geometria de canteiros ainda. Apenas metadados.
+    }, []);
 
     const handleCancelNewTalhao = useCallback(() => {
         if (pendingTalhao?.layer?.remove) pendingTalhao.layer.remove();
@@ -334,26 +349,25 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
                 ========================================= */}
             <main className="absolute inset-0 z-0">
                 {/* Banner: Modo de vinculação ativo ou Canteiro Edition */}
-                {(drawingForTalhaoId || drawingForCanteiroTalhaoId || editingCanteiroId) && (
+                {(drawingForTalhaoId || drawingForCanteiroTalhaoId) && !canteiroModalOpen && (
                     <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top-2 fade-in duration-300">
                         <div className="flex items-center gap-3 px-5 py-3 bg-amber-500 text-white rounded-2xl shadow-2xl shadow-amber-900/20 border border-amber-400/50">
                             <MapPin size={18} className="animate-pulse shrink-0" />
                             <div>
                                 <p className="text-xs font-black tracking-tight">
-                                    {editingCanteiroId 
-                                        ? `Editando canteiro...` 
-                                        : drawingForCanteiroTalhaoId ? `Desenhando Canteiro para: ${selectedTalhao?.nome}` : `Desenhando para: ${talhoes.find(t => t.id === drawingForTalhaoId)?.nome || 'Talhão'}`
-                                    }
+                                    {drawingForCanteiroTalhaoId ? `Desenhando Canteiro para: ${selectedTalhao?.nome}` : `Desenhando para: ${talhoes.find(t => t.id === drawingForTalhaoId)?.nome || 'Talhão'}`}
                                 </p>
                                 <p className="text-[10px] text-amber-100">
-                                    {editingCanteiroId ? 'Arraste os vértices no mapa.' : 'Desenhe um polígono no mapa.'}
+                                    Desenhe um polígono no mapa.
                                 </p>
                             </div>
                             <button
                                 onClick={() => {
                                     setDrawingForTalhaoId(null);
-                                    setDrawingForCanteiroTalhaoId(null);
-                                    setEditingCanteiroId(null);
+                                    if (drawingForCanteiroTalhaoId) {
+                                        setDrawingForCanteiroTalhaoId(null);
+                                        setPendingCanteiroGeometry(null);
+                                    }
                                 }}
                                 className="p-1.5 hover:bg-amber-600 rounded-lg transition-colors shrink-0"
                                 title="Cancelar"
@@ -366,7 +380,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
                 <FarmMap
                     talhoes={talhoes}
                     focusTarget={selectedTalhao}
-                    editingCanteiroId={editingCanteiroId}
+                    editingCanteiroId={null} // geometria isolada de canteiro desativada pra editar
                     // @ts-ignore
                     onMapCreated={handleMapCreated}
                     onCreated={() => { }}
@@ -587,10 +601,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
                                         {selectedTalhao.canteiros?.map((canteiro: any) => (
                                             <div
                                                 key={canteiro.id}
-                                                className={cn(
-                                                    "flex items-center justify-between p-2.5 bg-white border border-slate-100 rounded-xl hover:border-slate-200 hover:shadow-sm group transition-all",
-                                                    editingCanteiroId === canteiro.id && "ring-2 ring-amber-500 border-amber-500"
-                                                )}
+                                                className="flex items-center justify-between p-2.5 bg-white border border-slate-100 rounded-xl hover:border-slate-200 hover:shadow-sm group transition-all"
                                             >
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-white group-hover:text-indigo-500 group-hover:shadow-sm transition-all border border-transparent group-hover:border-slate-100 shrink-0">
@@ -598,17 +609,11 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
                                                     </div>
                                                     <span className="text-sm font-bold text-slate-700 truncate max-w-[120px]">{canteiro.nome}</span>
                                                 </div>
-                                                <div className={cn(
-                                                    "flex items-center gap-1 transition-opacity shrink-0",
-                                                    editingCanteiroId === canteiro.id ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                                                )}>
+                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                                                     <button
-                                                        onClick={() => editingCanteiroId === canteiro.id ? setEditingCanteiroId(null) : handleEditCanteiroStart(canteiro.id)}
-                                                        className={cn(
-                                                            "p-1.5 rounded-md transition-all",
-                                                            editingCanteiroId === canteiro.id ? "text-amber-600 bg-amber-50" : "text-slate-400 hover:text-indigo-600 hover:bg-indigo-50"
-                                                        )}
-                                                        title="Editar Geometria do Canteiro"
+                                                        onClick={() => handleEditCanteiroStart(canteiro)}
+                                                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-all"
+                                                        title="Editar Dados da Estrutura"
                                                     >
                                                         <PenTool size={16} /> 
                                                     </button>
@@ -656,6 +661,57 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
                     </div>
                 )}
             </aside>
+
+            {/* Modal: Adicionar/Editar Canteiro (Metadados) */}
+            {canteiroModalOpen && (
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
+                        <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                <Hexagon size={20} className="text-indigo-500" />
+                                {editingCanteiroData ? 'Editar Estrutura' : 'Nova Estrutura'}
+                            </h3>
+                            <button
+                                onClick={handleCancelCanteiroModal}
+                                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 rounded-xl transition-colors"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+                        <div className="p-6">
+                            <label className="block text-sm font-bold text-slate-700 mb-2">
+                                Nome / Identificação
+                            </label>
+                            <input
+                                type="text"
+                                value={canteiroFormData.nome}
+                                onChange={(e) => setCanteiroFormData({ ...canteiroFormData, nome: e.target.value })}
+                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-800 font-medium transition-shadow placeholder:text-slate-300"
+                                placeholder="Ex: Canteiro 01"
+                                autoFocus
+                            />
+                            <p className="mt-2 text-xs text-slate-400 font-medium">Você poderá editar o tamanho/geometria pelo painel principal posteriormente.</p>
+                        </div>
+                        <div className="p-5 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3">
+                            <button
+                                onClick={handleCancelCanteiroModal}
+                                disabled={savingNew}
+                                className="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-200/50 rounded-xl transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleSaveCanteiroMetadata}
+                                disabled={savingNew || !canteiroFormData.nome.trim()}
+                                className="px-5 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all shadow-sm shadow-indigo-600/20 disabled:opacity-50 flex items-center gap-2"
+                            >
+                                {savingNew ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+                                Salvar Estrutura
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* =========================================
                 DRAWER LATERAL — Mobile only (lg:hidden)
