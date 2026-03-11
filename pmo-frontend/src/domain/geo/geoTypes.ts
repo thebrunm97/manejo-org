@@ -27,7 +27,12 @@ export interface Talhao {
     cultura?: string;
     ph_solo?: number;
     v_percent?: number;
+    materia_organica?: number;
+    fosforo?: number;
+    potassio?: number;
     teor_argila?: number;
+    silte?: number;
+    areia?: number;
     pmo_id?: string;
     propriedade_id?: number;
     user_id?: string;

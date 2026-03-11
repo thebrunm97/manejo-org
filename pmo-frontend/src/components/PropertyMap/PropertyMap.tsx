@@ -2,17 +2,20 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-    LayoutGrid,
     Map as MapIcon,
-    Edit2,
-    Navigation,
     Plus,
     Sprout,
     X,
     CheckCircle2,
     AlertCircle,
     Loader2,
-    Droplets
+    Droplets,
+    Tractor,
+    LayoutGrid,
+    FlaskConical,
+    Layers,
+    TreePine,
+    Trash2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { cn } from '../../utils/cn';
@@ -23,43 +26,56 @@ import TalhaoDetailsDrawer from './TalhaoDetailsDrawer';
 import { locationService } from '../../services/locationService';
 import { Talhao } from '../../domain/geo/geoTypes';
 
-const formatArea = (m2: number) => {
+// --- Helpers ---
+const formatArea = (m2: number): string => {
     if (!m2) return '0 m²';
-    if (m2 >= 10000) {
-        return `${(m2 / 10000).toFixed(2)} ha`;
-    }
+    if (m2 >= 10000) return `${(m2 / 10000).toFixed(2)} ha`;
     return `${Math.round(m2)} m²`;
 };
 
+const getStrIcon = (nome: string): React.ReactElement => {
+    const lower = nome.toLowerCase();
+    if (lower.includes('tanque') || lower.includes('água'))
+        return <Droplets className="text-blue-500" size={16} />;
+    if (lower.includes('linha') || lower.includes('saf'))
+        return <TreePine className="text-amber-600" size={16} />;
+    return <Sprout className="text-emerald-500" size={16} />;
+};
+
+// --- Types ---
 interface PropertyMapProps {
     propriedadeId?: number | null;
+    nomePropriedade?: string;
 }
 
-const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
+// --- Component ---
+const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedade }) => {
     const { user } = useAuth();
 
-    // Estados
-    const [viewMode, setViewMode] = useState<'croqui' | 'mapa'>('croqui');
+    // Data State
     const [talhoes, setTalhoes] = useState<Talhao[]>([]);
     const [selectedTalhao, setSelectedTalhao] = useState<Talhao | null>(null);
-    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [loading, setLoading] = useState(true);
 
-    // Estado para Novo Talhão
+    // Panel Tab State
+    const [panelTab, setPanelTab] = useState<'detalhes' | 'lista'>('detalhes');
+
+    // Mobile Drawer State (lg:hidden)
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+    // Criar Talhão State
     const [createModalOpen, setCreateModalOpen] = useState(false);
-    const [pendingTalhao, setPendingTalhao] = useState<{ layer: any, geometry: string, areaM2: number } | null>(null);
+    const [pendingTalhao, setPendingTalhao] = useState<{ layer: any; geometry: string; areaM2: number } | null>(null);
     const [newTalhaoData, setNewTalhaoData] = useState({ nome: '', cultura: '' });
     const [savingNew, setSavingNew] = useState(false);
 
-    // Estado para Deleção
+    // Deletar Canteiro State
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [canteiroToDelete, setCanteiroToDelete] = useState<string | null>(null);
 
-    // Snackbar State
-    const [snackbar, setSnackbar] = useState<{ open: boolean, message: string, severity: 'success' | 'alert' | 'error' }>({
-        open: false,
-        message: '',
-        severity: 'success'
+    // Snackbar
+    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'alert' | 'error' }>({
+        open: false, message: '', severity: 'success',
     });
 
     useEffect(() => {
@@ -69,7 +85,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
         }
     }, [snackbar.open]);
 
-    // Carregar dados
+    // --- Data Loading ---
     const loadTalhoes = useCallback(async () => {
         try {
             setLoading(true);
@@ -82,35 +98,31 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
         }
     }, []);
 
-    useEffect(() => {
-        loadTalhoes();
-    }, [loadTalhoes]);
+    useEffect(() => { loadTalhoes(); }, [loadTalhoes]);
 
-    // Handlers
-    const handleOpenDrawer = (talhao: Talhao) => {
+    // --- Handlers ---
+    const handleTalhaoClick = useCallback((talhao: Talhao) => {
         setSelectedTalhao(talhao);
+        setPanelTab('detalhes');
+        // On mobile, also open the drawer overlay
         setIsDrawerOpen(true);
-    };
+    }, []);
 
-    const handleCloseDrawer = () => {
+    const handleCloseDrawer = useCallback(() => {
         setIsDrawerOpen(false);
-        setSelectedTalhao(null);
-    };
+    }, []);
 
-
-    const handleDeleteCanteiro = async (canteiroId: string) => {
+    const handleDeleteCanteiro = useCallback(async (canteiroId: string) => {
         setCanteiroToDelete(String(canteiroId));
         setDeleteConfirmOpen(true);
-    };
+    }, []);
 
-    const confirmDeleteCanteiro = async () => {
+    const confirmDeleteCanteiro = useCallback(async () => {
         if (!canteiroToDelete) return;
-
         try {
             await locationService.deleteCanteiro(canteiroToDelete);
             await loadTalhoes();
-
-            if (selectedTalhao && selectedTalhao.canteiros) {
+            if (selectedTalhao?.canteiros) {
                 const updatedCanteiros = selectedTalhao.canteiros.filter(c => String(c.id) !== String(canteiroToDelete));
                 setSelectedTalhao({ ...selectedTalhao, canteiros: updatedCanteiros });
             }
@@ -122,41 +134,31 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
             setDeleteConfirmOpen(false);
             setCanteiroToDelete(null);
         }
-    };
+    }, [canteiroToDelete, selectedTalhao, loadTalhoes]);
 
-    const handleViewOnMap = (talhao: Talhao) => {
-        setSelectedTalhao(talhao);
-        setViewMode('mapa');
-    };
-
-    // --- CRIAÇÃO DE TALHÃO ---
-    const handleMapCreated = (data: { layer: any, geometry: string, areaM2: number }) => {
+    // --- Criar Talhão Handlers ---
+    const handleMapCreated = useCallback((data: { layer: any; geometry: string; areaM2: number }) => {
         setPendingTalhao(data);
         setNewTalhaoData({ nome: `Talhão ${talhoes.length + 1}`, cultura: '' });
         setCreateModalOpen(true);
-    };
+    }, [talhoes.length]);
 
-    const handleCancelNewTalhao = () => {
-        if (pendingTalhao?.layer?.remove) {
-            pendingTalhao.layer.remove();
-        }
+    const handleCancelNewTalhao = useCallback(() => {
+        if (pendingTalhao?.layer?.remove) pendingTalhao.layer.remove();
         setCreateModalOpen(false);
         setPendingTalhao(null);
-    };
+    }, [pendingTalhao]);
 
-    const handleSaveNewTalhao = async () => {
+    const handleSaveNewTalhao = useCallback(async () => {
         if (!pendingTalhao) return;
-
         if (!propriedadeId) {
             setSnackbar({ open: true, message: 'Erro: Propriedade não identificada.', severity: 'error' });
             return;
         }
-
         if (!user?.id) {
             setSnackbar({ open: true, message: 'Erro: Usuário não identificado.', severity: 'error' });
             return;
         }
-
         setSavingNew(true);
         try {
             const areaHa = pendingTalhao.areaM2 / 10000;
@@ -167,24 +169,18 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
                 geometry: pendingTalhao.geometry,
                 area_total_m2: parseFloat(pendingTalhao.areaM2.toFixed(2)),
                 area_ha: parseFloat(areaHa.toFixed(2)),
-                cor: '#16a34a', // Sucesso Green
+                cor: '#16a34a',
                 propriedade_id: propriedadeId,
-                user_id: user.id
+                user_id: user.id,
             };
-
             if (locationService.createTalhao) {
                 await locationService.createTalhao(payload);
                 await loadTalhoes();
             }
-
-            if (pendingTalhao.layer?.remove) {
-                pendingTalhao.layer.remove();
-            }
-
+            if (pendingTalhao.layer?.remove) pendingTalhao.layer.remove();
             setCreateModalOpen(false);
             setPendingTalhao(null);
             setSnackbar({ open: true, message: 'Talhão salvo com sucesso!', severity: 'success' });
-
         } catch (error: any) {
             console.error("Erro ao salvar novo talhão", error);
             const msg = error.message?.includes('violates row-level security')
@@ -194,164 +190,273 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
         } finally {
             setSavingNew(false);
         }
-    };
+    }, [pendingTalhao, propriedadeId, user?.id, newTalhaoData, loadTalhoes]);
 
+    // --- RENDER ---
     return (
-        <div className="p-4 md:p-6 pb-20 h-full flex flex-col bg-slate-50/50">
-            {/* Header / Switcher */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-                <div>
-                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Mapa da Propriedade</h2>
-                    <p className="text-sm font-medium text-slate-500">Gestão espacial e infraestrutura produtiva.</p>
+        <div className="flex h-full w-full overflow-hidden">
+
+            {/* =========================================
+                PAINEL ESQUERDO (Desktop Inline Sidebar)
+                Oculto em mobile — o drawer cobre isso
+                ========================================= */}
+            <aside className="hidden lg:flex w-96 flex-shrink-0 bg-white border-r border-slate-100 shadow-xl z-10 flex-col overflow-hidden">
+
+                {/* --- Header --- */}
+                <div className="px-5 py-4 border-b border-slate-100 flex-shrink-0">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-green-50 rounded-lg flex-shrink-0">
+                            <Tractor size={18} className="text-green-600" />
+                        </div>
+                        <div className="overflow-hidden">
+                            <h1 className="text-sm font-semibold text-gray-800 leading-tight">Gestão Agrícola</h1>
+                            {nomePropriedade && (
+                                <p className="text-xs text-gray-400 truncate mt-0.5">{nomePropriedade}</p>
+                            )}
+                        </div>
+                    </div>
                 </div>
 
-                <div className="flex bg-white p-1 rounded-2xl shadow-sm border border-slate-200">
+                {/* --- Tabs --- */}
+                <div className="flex border-b border-slate-100 flex-shrink-0">
                     <button
-                        onClick={() => setViewMode('croqui')}
+                        onClick={() => setPanelTab('detalhes')}
                         className={cn(
-                            "flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all",
-                            viewMode === 'croqui'
-                                ? "bg-green-600 text-white shadow-lg shadow-green-900/10"
-                                : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                            "flex-1 py-3 text-xs font-semibold border-b-2 transition-all flex items-center justify-center gap-2",
+                            panelTab === 'detalhes'
+                                ? "text-green-600 border-green-600"
+                                : "text-gray-400 border-transparent hover:text-gray-500"
                         )}
                     >
-                        <LayoutGrid size={16} />
-                        Croqui
+                        <FlaskConical size={14} />
+                        Detalhes do Talhão
                     </button>
                     <button
-                        onClick={() => setViewMode('mapa')}
+                        onClick={() => setPanelTab('lista')}
                         className={cn(
-                            "flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all",
-                            viewMode === 'mapa'
-                                ? "bg-green-600 text-white shadow-lg shadow-green-900/10"
-                                : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                            "flex-1 py-3 text-xs font-semibold border-b-2 transition-all flex items-center justify-center gap-2",
+                            panelTab === 'lista'
+                                ? "text-green-600 border-green-600"
+                                : "text-gray-400 border-transparent hover:text-gray-500"
                         )}
                     >
-                        <MapIcon size={16} />
-                        Satélite
+                        <Layers size={14} />
+                        Todos os Talhões
                     </button>
                 </div>
-            </div>
 
-            {/* CONTEÚDO PRINCIPAL */}
-            <div className="flex-1 relative">
+                {/* --- Corpo do Painel (scroll) --- */}
+                <div className="flex-1 overflow-y-auto">
 
-                {/* MODO CROQUI (CARDS) */}
-                {viewMode === 'croqui' && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        {/* Botão de Adicionar */}
-                        <button
-                            onClick={() => setViewMode('mapa')}
-                            className="group relative min-h-[220px] rounded-3xl border-2 border-dashed border-slate-200 bg-white flex flex-col items-center justify-center gap-4 transition-all hover:border-green-500 hover:bg-green-50/30 overflow-hidden"
-                        >
-                            {/* Decorative background circle */}
-                            <div className="absolute inset-0 bg-green-500/0 group-hover:bg-green-500/5 transition-colors opacity-0 group-hover:opacity-100" />
-
-                            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 group-hover:text-green-500 group-hover:bg-green-100 transition-all">
-                                <Plus size={32} />
-                            </div>
-                            <div className="text-center z-10">
-                                <p className="text-sm font-black text-slate-800 uppercase tracking-tighter">Novo Talhão</p>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Desenhar no Mapa</p>
-                            </div>
-                        </button>
-
-                        {/* Cards dos Talhões Existentes */}
-                        {loading ? (
-                            Array.from({ length: 3 }).map((_, i) => (
-                                <div key={i} className="min-h-[220px] rounded-3xl bg-slate-200 animate-pulse" />
-                            ))
-                        ) : (
-                            talhoes.map((talhao) => (
-                                <div
-                                    key={talhao.id}
-                                    className="group relative bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 hover:border-slate-200 transition-all duration-300 flex flex-col overflow-hidden"
-                                >
-                                    {/* Top Indicator */}
-                                    <div className={cn(
-                                        "h-1.5 w-full",
-                                        talhao.tipo === 'agua' ? "bg-blue-500" : "bg-emerald-500"
-                                    )} />
-
-                                    <div className="p-6 flex-1">
-                                        <div className="flex justify-between items-start mb-4">
-                                            <div>
-                                                <h3 className="text-lg font-black text-slate-900 tracking-tight leading-tight">{talhao.nome}</h3>
-                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">{formatArea(talhao.area_total_m2 || 0)}</p>
-                                            </div>
-                                            <div className={cn(
-                                                "px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border",
-                                                talhao.tipo === 'agua'
-                                                    ? "bg-blue-50 text-blue-600 border-blue-100"
-                                                    : "bg-emerald-50 text-emerald-600 border-emerald-100"
-                                            )}>
-                                                {talhao.tipo === 'agua' ? 'Recurso Hídrico' : 'Produtivo'}
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-3 bg-slate-50/80 p-3 rounded-2xl border border-slate-100 mb-4 group-hover:bg-white transition-colors">
-                                            <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100">
-                                                {talhao.tipo === 'agua' ? <Droplets size={16} className="text-blue-500" /> : <Sprout size={16} className="text-emerald-500" />}
-                                            </div>
-                                            <span className="text-sm font-bold text-slate-600 truncate">{talhao.cultura || "Sem cultura definida"}</span>
-                                        </div>
-
-                                        <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                            <LayoutGrid size={12} />
-                                            {talhao.canteiros?.length || 0} Estruturas
-                                        </div>
+                    {/* Tab: Detalhes */}
+                    {panelTab === 'detalhes' && (
+                        <div className="h-full">
+                            {!selectedTalhao ? (
+                                /* Estado Vazio */
+                                <div className="flex flex-col items-center justify-center h-full text-center gap-3 p-8">
+                                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center">
+                                        <MapIcon size={28} className="text-slate-200" />
                                     </div>
-
-                                    <div className="p-4 pt-0 mt-auto flex gap-2">
-                                        <button
-                                            onClick={() => handleViewOnMap(talhao)}
-                                            className="flex-1 flex items-center justify-center gap-2 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all"
-                                        >
-                                            <Navigation size={14} />
-                                            No Mapa
-                                        </button>
-                                        <button
-                                            onClick={() => handleOpenDrawer(talhao)}
-                                            className="flex-[1.5] flex items-center justify-center gap-2 py-2.5 bg-green-600 hover:bg-green-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-green-100 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                                        >
-                                            <Edit2 size={14} />
-                                            Gerenciar
-                                        </button>
+                                    <div>
+                                        <p className="text-sm font-semibold text-slate-500">Nenhum talhão selecionado</p>
+                                        <p className="text-xs text-slate-400 mt-1">Clique num polígono no mapa para ver os detalhes.</p>
                                     </div>
                                 </div>
-                            ))
-                        )}
-                    </div>
-                )}
+                            ) : (
+                                /* Data Grid do Talhão */
+                                <div className="animate-in fade-in duration-200">
+                                    {/* Talhão Identity Header */}
+                                    <div className="p-4 border-b border-slate-50 bg-slate-50/50">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div>
+                                                <h2 className="text-base font-bold text-gray-900 leading-tight">{selectedTalhao.nome}</h2>
+                                                <p className="text-xs text-gray-400 mt-0.5 capitalize">{selectedTalhao.tipo || 'produtivo'}</p>
+                                            </div>
+                                            <span className={cn(
+                                                "px-2 py-0.5 text-[10px] font-bold rounded-md flex-shrink-0",
+                                                selectedTalhao.tipo === 'agua'
+                                                    ? "bg-blue-50 text-blue-600"
+                                                    : "bg-green-50 text-green-700"
+                                            )}>
+                                                {formatArea(selectedTalhao.area_total_m2 || 0)}
+                                            </span>
+                                        </div>
+                                    </div>
 
-                {/* MODO MAPA (SATÉLITE) */}
-                {viewMode === 'mapa' && (
-                    <div className="h-[75vh] w-full bg-slate-200 rounded-3xl overflow-hidden shadow-2xl border border-slate-200 relative animate-in zoom-in duration-500">
-                        <FarmMap
-                            talhoes={talhoes}
-                            focusTarget={selectedTalhao}
-                            // @ts-ignore
-                            onMapCreated={handleMapCreated}
-                            onCreated={() => { }}
-                            onEdited={() => { }}
-                            onDeleted={() => { }}
-                            onSaveTalhao={undefined}
-                            onTalhaoClick={handleOpenDrawer}
-                        />
-                    </div>
-                )}
+                                    {/* Key-Value Data Grid */}
+                                    <div className="px-4 pt-2 pb-4">
+                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest py-2">Informações Gerais</p>
+
+                                        <div className="flex justify-between py-2.5 border-b border-slate-50">
+                                            <span className="text-sm text-gray-400">Cultura</span>
+                                            <span className="text-sm font-medium text-gray-900">{selectedTalhao.cultura || '—'}</span>
+                                        </div>
+                                        <div className="flex justify-between py-2.5 border-b border-slate-50">
+                                            <span className="text-sm text-gray-400">Área</span>
+                                            <span className="text-sm font-medium text-gray-900">{formatArea(selectedTalhao.area_total_m2 || 0)}</span>
+                                        </div>
+                                        <div className="flex justify-between py-2.5 border-b border-slate-50">
+                                            <span className="text-sm text-gray-400">Tipo</span>
+                                            <span className="text-sm font-medium text-gray-900 capitalize">{selectedTalhao.tipo || '—'}</span>
+                                        </div>
+
+                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pt-4 pb-2">Análise de Solo</p>
+
+                                        <div className="flex justify-between py-2.5 border-b border-slate-50">
+                                            <span className="text-sm text-gray-400">pH Solo</span>
+                                            <span className="text-sm font-medium text-gray-900">{selectedTalhao.ph_solo ?? '—'}</span>
+                                        </div>
+                                        <div className="flex justify-between py-2.5 border-b border-slate-50">
+                                            <span className="text-sm text-gray-400">V%</span>
+                                            <span className="text-sm font-medium text-gray-900">
+                                                {selectedTalhao.v_percent != null ? `${selectedTalhao.v_percent}%` : '—'}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between py-2.5 border-b border-slate-50">
+                                            <span className="text-sm text-gray-400">M.O.</span>
+                                            <span className="text-sm font-medium text-gray-900">
+                                                {selectedTalhao.materia_organica != null ? `${selectedTalhao.materia_organica}%` : '—'}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between py-2.5 border-b border-slate-50">
+                                            <span className="text-sm text-gray-400">Argila</span>
+                                            <span className="text-sm font-medium text-gray-900">
+                                                {selectedTalhao.teor_argila != null ? `${selectedTalhao.teor_argila}%` : '—'}
+                                            </span>
+                                        </div>
+
+                                        {/* Structures Section */}
+                                        {selectedTalhao.canteiros && selectedTalhao.canteiros.length > 0 && (
+                                            <>
+                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pt-4 pb-2">
+                                                    Estruturas ({selectedTalhao.canteiros.length})
+                                                </p>
+                                                <div className="space-y-1">
+                                                    {selectedTalhao.canteiros.map((canteiro: any) => (
+                                                        <div
+                                                            key={canteiro.id}
+                                                            className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-slate-50 group transition-colors"
+                                                        >
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="p-1.5 bg-white rounded-lg shadow-sm border border-slate-100">
+                                                                    {getStrIcon(canteiro.nome)}
+                                                                </div>
+                                                                <span className="text-sm font-medium text-gray-700">{canteiro.nome}</span>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => handleDeleteCanteiro(canteiro.id)}
+                                                                className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                                                title="Excluir canteiro"
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Tab: Todos os Talhões */}
+                    {panelTab === 'lista' && (
+                        <div className="animate-in fade-in duration-200">
+                            {loading ? (
+                                <div className="flex items-center justify-center py-12">
+                                    <Loader2 className="animate-spin text-green-600" size={28} />
+                                </div>
+                            ) : talhoes.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-16 text-center px-6 gap-3">
+                                    <div className="w-14 h-14 bg-slate-50 rounded-full flex items-center justify-center">
+                                        <LayoutGrid size={24} className="text-slate-200" />
+                                    </div>
+                                    <p className="text-sm text-slate-400 font-medium">Nenhum talhão cadastrado.</p>
+                                    <p className="text-xs text-slate-300">Use a ferramenta de desenho no mapa para criar o primeiro.</p>
+                                </div>
+                            ) : (
+                                <div className="divide-y divide-slate-50">
+                                    {talhoes.map((talhao) => (
+                                        <button
+                                            key={talhao.id}
+                                            onClick={() => {
+                                                setSelectedTalhao(talhao);
+                                                setPanelTab('detalhes');
+                                            }}
+                                            className={cn(
+                                                "w-full flex items-center gap-3 px-4 py-3.5 hover:bg-slate-50 transition-colors text-left",
+                                                selectedTalhao?.id === talhao.id && "bg-green-50/50"
+                                            )}
+                                        >
+                                            <div className={cn(
+                                                "w-2.5 h-2.5 rounded-full flex-shrink-0",
+                                                talhao.tipo === 'agua' ? "bg-blue-500" : "bg-emerald-500"
+                                            )} />
+                                            <div className="flex-1 overflow-hidden">
+                                                <p className="text-sm font-semibold text-gray-800 truncate">{talhao.nome}</p>
+                                                <p className="text-xs text-gray-400">
+                                                    {formatArea(talhao.area_total_m2 || 0)}
+                                                    {talhao.cultura && ` · ${talhao.cultura}`}
+                                                </p>
+                                            </div>
+                                            <span className="text-xs text-gray-300 flex-shrink-0">
+                                                {talhao.canteiros?.length ?? 0} est.
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* --- Footer CTA --- */}
+                <div className="p-4 border-t border-slate-100 flex-shrink-0 bg-white">
+                    <button
+                        onClick={() => setCreateModalOpen(true)}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-md shadow-sm transition-colors"
+                    >
+                        <Plus size={16} />
+                        Adicionar Talhão
+                    </button>
+                </div>
+            </aside>
+
+            {/* =========================================
+                PAINEL DIREITO — MAPA LEAFLET (flex-1)
+                ========================================= */}
+            <main className="flex-1 relative z-0 overflow-hidden">
+                <FarmMap
+                    talhoes={talhoes}
+                    focusTarget={selectedTalhao}
+                    // @ts-ignore
+                    onMapCreated={handleMapCreated}
+                    onCreated={() => { }}
+                    onEdited={() => { }}
+                    onDeleted={() => { }}
+                    onSaveTalhao={undefined}
+                    onTalhaoClick={handleTalhaoClick}
+                />
+            </main>
+
+            {/* =========================================
+                DRAWER LATERAL — Mobile only (lg:hidden)
+                ========================================= */}
+            <div className="lg:hidden">
+                <TalhaoDetailsDrawer
+                    open={isDrawerOpen}
+                    onClose={handleCloseDrawer}
+                    talhao={selectedTalhao}
+                    onDeleteCanteiro={handleDeleteCanteiro as any}
+                    onUpdateStart={loadTalhoes}
+                />
             </div>
 
-            {/* DRAWER LATERAL (GERENCIADOR) */}
-            <TalhaoDetailsDrawer
-                open={isDrawerOpen}
-                onClose={handleCloseDrawer}
-                talhao={selectedTalhao}
-                onDeleteCanteiro={handleDeleteCanteiro as any}
-                onUpdateStart={loadTalhoes}
-            />
-
-            {/* MODAL: NOVO TALHÃO */}
+            {/* =========================================
+                MODAL: NOVO TALHÃO
+                ========================================= */}
             <div className={cn(
                 "fixed inset-0 z-[130] flex items-center justify-center p-4 transition-all duration-200",
                 createModalOpen ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
@@ -361,28 +466,29 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
                     "relative bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 transform",
                     createModalOpen ? "scale-100 translate-y-0" : "scale-95 translate-y-4"
                 )}>
-                    {/* Header */}
                     <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-green-100 text-green-600 rounded-xl">
                                 <Plus size={20} />
                             </div>
-                            <h3 className="text-xl font-black text-slate-900 tracking-tight">Novo Talhão Detectado</h3>
+                            <h3 className="text-xl font-black text-slate-900 tracking-tight">
+                                {pendingTalhao ? 'Novo Talhão Detectado' : 'Novo Talhão'}
+                            </h3>
                         </div>
                         <button onClick={handleCancelNewTalhao} className="p-2 text-slate-400 hover:text-slate-600 rounded-full transition-colors">
                             <X size={20} />
                         </button>
                     </div>
 
-                    {/* Content */}
                     <div className="p-8 space-y-6">
-                        <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center justify-center gap-4">
-                            <div className="text-center">
-                                <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Área Estimada</p>
-                                <p className="text-2xl font-black text-emerald-700">{pendingTalhao ? formatArea(pendingTalhao.areaM2) : '0 m²'}</p>
+                        {pendingTalhao && (
+                            <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center justify-center">
+                                <div className="text-center">
+                                    <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Área Estimada</p>
+                                    <p className="text-2xl font-black text-emerald-700">{formatArea(pendingTalhao.areaM2)}</p>
+                                </div>
                             </div>
-                        </div>
-
+                        )}
                         <div className="space-y-4">
                             <div className="space-y-1.5">
                                 <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Nome do Talhão</label>
@@ -408,12 +514,8 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
                         </div>
                     </div>
 
-                    {/* Footer */}
                     <div className="p-6 border-t border-slate-50 bg-slate-50/50 flex gap-3">
-                        <button
-                            onClick={handleCancelNewTalhao}
-                            className="flex-1 py-3.5 text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-2xl transition-all"
-                        >
+                        <button onClick={handleCancelNewTalhao} className="flex-1 py-3.5 text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-2xl transition-all">
                             Cancelar
                         </button>
                         <button
@@ -428,7 +530,9 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
                 </div>
             </div>
 
-            {/* MODAL: CONFIRMAR EXCLUSÃO */}
+            {/* =========================================
+                MODAL: CONFIRMAR EXCLUSÃO DE CANTEIRO
+                ========================================= */}
             <div className={cn(
                 "fixed inset-0 z-[130] flex items-center justify-center p-4 transition-all duration-200",
                 deleteConfirmOpen ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
@@ -442,26 +546,21 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
                         <AlertCircle size={40} />
                     </div>
                     <h3 className="text-xl font-black text-slate-900 tracking-tight mb-2">Excluir Canteiro?</h3>
-                    <p className="text-sm text-slate-500 mb-8 font-medium">Tem certeza que deseja excluir esta estrutura? Esta ação não pode ser desfeita.</p>
-
+                    <p className="text-sm text-slate-500 mb-8 font-medium">Esta ação não pode ser desfeita.</p>
                     <div className="w-full flex flex-col gap-2">
-                        <button
-                            onClick={confirmDeleteCanteiro}
-                            className="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-black text-sm rounded-2xl shadow-xl shadow-red-900/10 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                        >
+                        <button onClick={confirmDeleteCanteiro} className="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-black text-sm rounded-2xl shadow-xl shadow-red-900/10 transition-all hover:scale-[1.02] active:scale-[0.98]">
                             Sim, Excluir
                         </button>
-                        <button
-                            onClick={() => setDeleteConfirmOpen(false)}
-                            className="w-full py-3 text-xs font-bold text-slate-400 hover:text-slate-600 transition-all"
-                        >
+                        <button onClick={() => setDeleteConfirmOpen(false)} className="w-full py-3 text-xs font-bold text-slate-400 hover:text-slate-600 transition-all">
                             Cancelar
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* CUSTOM SNACKBAR */}
+            {/* =========================================
+                SNACKBAR
+                ========================================= */}
             {snackbar.open && (
                 <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] animate-in slide-in-from-bottom-5 fade-in duration-300 px-4 w-full max-w-md">
                     <div className={cn(
@@ -482,7 +581,6 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
                     </div>
                 </div>
             )}
-
         </div>
     );
 };
