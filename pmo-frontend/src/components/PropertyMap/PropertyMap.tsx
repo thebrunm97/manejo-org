@@ -87,6 +87,10 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [canteiroToDelete, setCanteiroToDelete] = useState<string | null>(null);
 
+    // Deletar Talhão State
+    const [deleteTalhaoConfirmOpen, setDeleteTalhaoConfirmOpen] = useState(false);
+    const [talhaoToDelete, setTalhaoToDelete] = useState<number | null>(null);
+
     // Snackbar
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'alert' | 'error' }>({
         open: false, message: '', severity: 'success',
@@ -149,6 +153,30 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
             setCanteiroToDelete(null);
         }
     }, [canteiroToDelete, selectedTalhao, loadTalhoes]);
+
+    const handleDeleteTalhao = useCallback((talhaoId: number) => {
+        setTalhaoToDelete(talhaoId);
+        setDeleteTalhaoConfirmOpen(true);
+    }, []);
+
+    const confirmDeleteTalhao = useCallback(async () => {
+        if (!talhaoToDelete) return;
+        try {
+            await locationService.deleteTalhao(talhaoToDelete);
+            await loadTalhoes();
+            if (selectedTalhao?.id === talhaoToDelete) {
+                setSelectedTalhao(null);
+                setPanelTab('lista');
+            }
+            setSnackbar({ open: true, message: 'Talhão removido com sucesso!', severity: 'success' });
+        } catch (error) {
+            console.error("Erro ao deletar talhão", error);
+            setSnackbar({ open: true, message: 'Erro ao remover talhão.', severity: 'error' });
+        } finally {
+            setDeleteTalhaoConfirmOpen(false);
+            setTalhaoToDelete(null);
+        }
+    }, [talhaoToDelete, selectedTalhao, loadTalhoes]);
 
     // --- Vincular Geometria a Talhão Existente ---
     const handleLinkGeometry = useCallback(async (
@@ -314,14 +342,23 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
                                                 <h2 className="text-base font-bold text-gray-900 leading-tight">{selectedTalhao.nome}</h2>
                                                 <p className="text-xs text-gray-400 mt-0.5 capitalize">{selectedTalhao.tipo || 'produtivo'}</p>
                                             </div>
-                                            <span className={cn(
-                                                "px-2 py-0.5 text-[10px] font-bold rounded-md flex-shrink-0",
-                                                selectedTalhao.tipo === 'agua'
-                                                    ? "bg-blue-50 text-blue-600"
-                                                    : "bg-green-50 text-green-700"
-                                            )}>
-                                                {formatArea(selectedTalhao.area_total_m2 || 0)}
-                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                <span className={cn(
+                                                    "px-2 py-0.5 text-[10px] font-bold rounded-md flex-shrink-0",
+                                                    selectedTalhao.tipo === 'agua'
+                                                        ? "bg-blue-50 text-blue-600"
+                                                        : "bg-green-50 text-green-700"
+                                                )}>
+                                                    {formatArea(selectedTalhao.area_total_m2 || 0)}
+                                                </span>
+                                                <button
+                                                    onClick={() => handleDeleteTalhao(selectedTalhao.id)}
+                                                    className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                    title="Excluir talhão"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -653,6 +690,34 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
                             Sim, Excluir
                         </button>
                         <button onClick={() => setDeleteConfirmOpen(false)} className="w-full py-3 text-xs font-bold text-slate-400 hover:text-slate-600 transition-all">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* =========================================
+                MODAL: CONFIRMAR EXCLUSÃO DE TALHÃO
+                ========================================= */}
+            <div className={cn(
+                "fixed inset-0 z-[130] flex items-center justify-center p-4 transition-all duration-200",
+                deleteTalhaoConfirmOpen ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
+            )}>
+                <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setDeleteTalhaoConfirmOpen(false)} />
+                <div className={cn(
+                    "relative bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden p-8 flex flex-col items-center text-center transition-all duration-300 transform",
+                    deleteTalhaoConfirmOpen ? "scale-100 translate-y-0" : "scale-95 translate-y-4"
+                )}>
+                    <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
+                        <AlertCircle size={40} />
+                    </div>
+                    <h3 className="text-xl font-black text-slate-900 tracking-tight mb-2">Excluir Talhão?</h3>
+                    <p className="text-sm text-slate-500 mb-8 font-medium">Esta ação removerá o talhão e estrutura/registros vinculados. Não pode ser desfeita.</p>
+                    <div className="w-full flex flex-col gap-2">
+                        <button onClick={confirmDeleteTalhao} className="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-black text-sm rounded-2xl shadow-xl shadow-red-900/10 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                            Sim, Excluir Talhão
+                        </button>
+                        <button onClick={() => setDeleteTalhaoConfirmOpen(false)} className="w-full py-3 text-xs font-bold text-slate-400 hover:text-slate-600 transition-all">
                             Cancelar
                         </button>
                     </div>
