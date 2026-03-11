@@ -33,7 +33,7 @@ export interface Talhao {
     teor_argila?: number;
     silte?: number;
     areia?: number;
-    pmo_id?: string;
+    pmo_id?: number | null;
     propriedade_id?: number;
     user_id?: string;
     canteiros?: any[];

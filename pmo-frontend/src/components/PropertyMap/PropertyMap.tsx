@@ -117,7 +117,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
         try {
             setLoading(true);
             const data = await locationService.getTalhoes();
-            setTalhoes((data || []) as unknown as Talhao[]);
+            setTalhoes(data || []);
         } catch (error) {
             console.error("Erro ao buscar talhões", error);
         } finally {
@@ -267,7 +267,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId, nomePropriedad
             if (selectedTalhao) {
                const updated = await locationService.getTalhoes();
                const novoSelecionado = updated.find(t => t.id === selectedTalhao.id);
-               if (novoSelecionado) setSelectedTalhao(novoSelecionado as Talhao);
+               if (novoSelecionado) setSelectedTalhao(novoSelecionado);
             }
             
             setCanteiroModalOpen(false);
