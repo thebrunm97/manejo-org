@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
+	"github.com/google/generative-ai-go/genai"
 	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 )
@@ -35,7 +36,7 @@ func main() {
 
 	// 1. Ingest Global Knowledge
 	contentGlobal := "DICA GLOBAL: O manejo orgânico exige certificação anual."
-	embGlobal, err := gemClient.GenerateEmbedding(contentGlobal)
+	embGlobal, err := gemClient.GenerateEmbedding(nil, genai.Text(contentGlobal))
 	if err != nil {
 		log.Fatalf("Failed to gen embedding Global: %v", err)
 	}
@@ -47,7 +48,7 @@ func main() {
 
 	// 2. Ingest for Farm A
 	contentA := "PRIVADO A: O segredo da Fazenda A é plantar sob a lua cheia."
-	embA, err := gemClient.GenerateEmbedding(contentA)
+	embA, err := gemClient.GenerateEmbedding(nil, genai.Text(contentA))
 	if err != nil {
 		log.Fatalf("Failed to gen embedding A: %v", err)
 	}
@@ -59,7 +60,7 @@ func main() {
 
 	// 3. Search as Farm A
 	fmt.Println("\n🔍 Buscando como Fazenda A: 'Como funciona o manejo e qual o segredo?'")
-	queryEmb, err := gemClient.GenerateEmbedding("Como funciona o manejo e qual o segredo?")
+	queryEmb, err := gemClient.GenerateEmbedding(nil, genai.Text("Como funciona o manejo e qual o segredo?"))
 	if err != nil {
 		log.Fatalf("Failed to gen query embedding: %v", err)
 	}

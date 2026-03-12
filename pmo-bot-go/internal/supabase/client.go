@@ -601,10 +601,6 @@ func (c *Client) FinishJob(jobID string, status string, errorLog string) error {
 	if errorLog != "" {
 		update["error_log"] = errorLog
 	}
-	if status == "completed" {
-		// Ensure processed == total on completion
-		// We could fetch the total first, but usually we know it or just rely on the last update
-	}
 
 	payload, err := json.Marshal(update)
 	if err != nil {
@@ -612,6 +608,41 @@ func (c *Client) FinishJob(jobID string, status string, errorLog string) error {
 	}
 
 	_, err = c.doRequest(http.MethodPatch, reqURL, payload)
+	return err
+}
+
+// GetJobByID fetches an ingestion job by its ID.
+func (c *Client) GetJobByID(jobID string) (*IngestionJob, error) {
+	reqURL := fmt.Sprintf("%s/rest/v1/ingestion_jobs?id=eq.%s&select=*", c.config.URL, jobID)
+	body, err := c.doRequest(http.MethodGet, reqURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var jobs []IngestionJob
+	if err := json.Unmarshal(body, &jobs); err != nil {
+		return nil, err
+	}
+
+	if len(jobs) == 0 {
+		return nil, fmt.Errorf("job %s not found", jobID)
+	}
+
+	return &jobs[0], nil
+}
+
+// DeleteDocumentChunks removes all vectorized chunks for a specific document and PMO.
+func (c *Client) DeleteDocumentChunks(pmoID int64, docName string) error {
+	encodedDocName := url.QueryEscape(docName)
+	reqURL := fmt.Sprintf("%s/rest/v1/farm_documents?document_name=eq.%s", c.config.URL, encodedDocName)
+
+	if pmoID > 0 {
+		reqURL += fmt.Sprintf("&pmo_id=eq.%d", pmoID)
+	} else {
+		reqURL += "&pmo_id=is.null"
+	}
+
+	_, err := c.doRequest(http.MethodDelete, reqURL, nil)
 	return err
 }
 

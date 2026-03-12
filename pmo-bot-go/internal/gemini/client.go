@@ -34,10 +34,11 @@ func NewClient(cfg Config) (*Client, error) {
 	}
 
 	if cfg.Model == "" {
-		cfg.Model = "gemini-3.1-flash-lite-preview"
+		cfg.Model = "gemini-2.0-flash-exp" // Default chat model
 	}
 
 	ctx := context.Background()
+	// Using default endpoint (SDK should handle versioning or hit v1)
 	client, err := genai.NewClient(ctx, option.WithAPIKey(cfg.APIKey))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create genai client: %w", err)
@@ -54,13 +55,16 @@ func (c *Client) Close() error {
 	return c.client.Close()
 }
 
-// GenerateEmbedding transforms a text chunk into a vector
-func (c *Client) GenerateEmbedding(text string) ([]float32, error) {
-	ctx := context.Background()
-	model := c.client.EmbeddingModel("text-embedding-004")
+// GenerateEmbedding transforms text or multimodal parts into a 3072d vector
+func (c *Client) GenerateEmbedding(ctx context.Context, parts ...genai.Part) ([]float32, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	// Use the new multimodal embedding model
+	model := c.client.EmbeddingModel("gemini-embedding-2-preview")
 
-	log.Printf("📡 [GEMINI SDK] Gerando embedding para texto (%d chars)...", len(text))
-	res, err := model.EmbedContent(ctx, genai.Text(text))
+	log.Printf("📡 [GEMINI SDK] Gerando embedding multimodal (%d partes)...", len(parts))
+	res, err := model.EmbedContent(ctx, parts...)
 	if err != nil {
 		return nil, fmt.Errorf("embedding error: %w", err)
 	}

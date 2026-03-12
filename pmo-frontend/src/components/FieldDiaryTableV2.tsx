@@ -424,10 +424,9 @@ const FieldDiaryTableV2: React.FC<FieldDiaryTableV2Props> = ({
                 </div>
             </div>
 
-            {/* 3. CONTENT AREA */}
             {loading ? (
                 <div className="flex justify-center p-5">
-                    <div className="w-8 h-8 border-4 border-green-200 border-t-green-600 rounded-full animate-spin"></div>
+                    <div role="progressbar" className="w-8 h-8 border-4 border-green-200 border-t-green-600 rounded-full animate-spin"></div>
                 </div>
             ) : registros.length === 0 ? (
                 <div className="p-4 text-center bg-white rounded-lg border border-gray-200 shadow-sm">

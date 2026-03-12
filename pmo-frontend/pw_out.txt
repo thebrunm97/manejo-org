@@ -1,0 +1,31 @@
+[dotenv@17.2.3] injecting env (4) from .env.test -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+
+Running 1 test using 1 worker
+
+[dotenv@17.2.3] injecting env (0) from .env.test -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+✅ Authenticated as test user: teste-e2e@manejo-org.dev
+✅ Created test PMO: PMO Submissão E2E (ID: 818)
+✅ Set active PMO to: 818
+🔗 Unlinked PMO 818 from user 0085247c-033e-4b42-8f12-b0530d7f6f7c
+🗑️ Cleaned up test PMO: 818
+  ✘  1 [chromium] › e2e\manual-record-dialog\form-submission.spec.ts:31:5 › ManualRecordDialog - Fluxo de Submissão › deve preencher e salvar um registro de PLANTIO com sucesso (10ms)
+
+
+  1) [chromium] › e2e\manual-record-dialog\form-submission.spec.ts:31:5 › ManualRecordDialog - Fluxo de Submissão › deve preencher e salvar um registro de PLANTIO com sucesso 
+
+    Error: Failed to create test talhao: null value in column "geometry" of relation "talhoes" violates not-null constraint
+
+       at helpers\supabase-setup.ts:349
+
+      347 |
+      348 |     if (talhaoError) {
+    > 349 |         throw new Error(`Failed to create test talhao: ${talhaoError.message}`);
+          |               ^
+      350 |     }
+      351 |
+      352 |     // 2. Criar Canteiro
+        at createInfrastructure (C:\Users\brunn\Documents\PROGRAMAÇÃO\manejo-org-app-clean\pmo-frontend\e2e\helpers\supabase-setup.ts:349:15)
+        at C:\Users\brunn\Documents\PROGRAMAÇÃO\manejo-org-app-clean\pmo-frontend\e2e\manual-record-dialog\form-submission.spec.ts:21:9
+
+  1 failed
+    [chromium] › e2e\manual-record-dialog\form-submission.spec.ts:31:5 › ManualRecordDialog - Fluxo de Submissão › deve preencher e salvar um registro de PLANTIO com sucesso 

@@ -5,8 +5,9 @@ Extraia dados estruturados da mensagem do agricultor e retorne APENAS um JSON pu
 
 ## REGRAS DE EXTRAÇÃO
 1. "intencao" deve ser:
-   - "registro" → quando o agricultor relata algo que FEZ (plantou, colheu, aplicou, capinou)
-   - "duvida" → quando pergunta algo técnico
+   - "registro" → quando o agricultor relata algo que FEZ (plantou, colheu, aplicou, capinou). NÃO use para criação de estrutura (talhão/canteiro).
+   - "configurar_infraestrutura" → APENAS quando o utilizador quer criar ou configurar a estrutura da fazenda (ex: criar um talhão, adicionar canteiros, arrendar nova área).
+   - "duvida" → quando pergunta algo técnico ou sobre dados da fazenda.
    - "saudacao" → cumprimentos simples (oi, bom dia)
    - "ignorar" → mensagens sem conteúdo útil (ex: "vou almoçar", "tchau")
 2. "atividade": deduzir do contexto (Plantio se plantou/semeou, Colheita se colheu, Manejo se aplicou/capinou/podou, Outro para o resto)

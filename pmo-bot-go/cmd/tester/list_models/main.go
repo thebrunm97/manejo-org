@@ -1,32 +1,41 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 
+	"github.com/google/generative-ai-go/genai"
 	"github.com/joho/godotenv"
+	"google.golang.org/api/iterator"
+	"google.golang.org/api/option"
 )
 
 func main() {
-	godotenv.Load(".env")
+	_ = godotenv.Load(".env")
 	apiKey := os.Getenv("GEMINI_API_KEY")
-	url := "https://generativelanguage.googleapis.com/v1beta/models?key=" + apiKey
 
-	resp, err := http.Get(url)
+	ctx := context.Background()
+	client, err := genai.NewClient(ctx, 
+		option.WithAPIKey(apiKey),
+		option.WithEndpoint("https://generativelanguage.googleapis.com/v1beta"),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer resp.Body.Close()
+	defer client.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatal(err)
+	fmt.Println("Listing models in v1beta...")
+	iter := client.ListModels(ctx)
+	for {
+		m, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("- %s (Methods: %v)\n", m.Name, m.SupportedGenerationMethods)
 	}
-
-	fmt.Println("--- RAW OUTPUT (Filtered for 'embed') ---")
-	// Simplistic filter to avoid importing encoding/json for a quick check
-	fmt.Println(string(body))
 }

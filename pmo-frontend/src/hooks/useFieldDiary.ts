@@ -131,7 +131,7 @@ export const useFieldDiary = (pmoId?: number): UseFieldDiaryReturn => {
             }
 
             return true;
-        });
+        }).sort((a, b) => new Date(b.data_registro).getTime() - new Date(a.data_registro).getTime());
     }, [rawRegistros, filters]);
 
     // Apply Pagination

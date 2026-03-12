@@ -9,15 +9,15 @@ RUN go mod download
 
 # Copy source and build
 COPY . .
-RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /pmo-bot-go ./cmd/server
+RUN CGO_ENABLED=0 go build -ldflags="-w -s" -o /pmo-bot-go ./cmd/server
 
 # ---- Runtime Stage ----
-FROM alpine:3.21
+FROM gcr.io/distroless/static-debian12
 
-# CA certificates for HTTPS calls and tzdata for Brazil Timezone
-RUN apk --no-cache add ca-certificates tzdata
+# Environment variables for the bot
 ENV TZ=America/Sao_Paulo
 
+# Copy binary from builder
 COPY --from=builder /pmo-bot-go /pmo-bot-go
 
 EXPOSE 8080

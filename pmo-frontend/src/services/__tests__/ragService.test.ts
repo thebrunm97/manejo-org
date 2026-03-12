@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
-import { uploadKnowledgePDF } from '../ragService';
+import { uploadKnowledgeMedia } from '../ragService';
 
 vi.mock('axios');
 
@@ -16,7 +16,7 @@ describe('ragService', () => {
         const file = new File(['dummy content'], 'test.pdf', { type: 'application/pdf' });
         const pmoId = 1;
 
-        const result = await uploadKnowledgePDF(file, pmoId);
+        const result = await uploadKnowledgeMedia(file, pmoId);
 
         expect(axios.post).toHaveBeenCalledWith(
             expect.stringContaining('/knowledge/upload'),
@@ -41,7 +41,7 @@ describe('ragService', () => {
 
         const file = new File(['dummy content'], 'test.pdf', { type: 'application/pdf' });
 
-        await uploadKnowledgePDF(file);
+        await uploadKnowledgeMedia(file);
 
         const callArgs = vi.mocked(axios.post).mock.calls[0];
         const sentFormData = callArgs[1] as FormData;
@@ -53,6 +53,6 @@ describe('ragService', () => {
 
         const file = new File(['dummy content'], 'test.pdf', { type: 'application/pdf' });
 
-        await expect(uploadKnowledgePDF(file)).rejects.toThrow('Network Error');
+        await expect(uploadKnowledgeMedia(file)).rejects.toThrow('Network Error');
     });
 });

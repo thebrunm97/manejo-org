@@ -14,7 +14,7 @@ import {
     UploadCloud
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { uploadKnowledgePDF } from '../../services/ragService';
+import { uploadKnowledgeMedia, cancelIngestionJob, retryIngestionJob } from '../../services/ragService';
 import { toast } from 'react-toastify';
 
 interface IngestionJob {
@@ -119,7 +119,7 @@ const KnowledgeMonitoringPage: React.FC = () => {
 
         setIsUploading(true);
         try {
-            const result = await uploadKnowledgePDF(file, profile?.pmo_ativo_id || undefined);
+            const result = await uploadKnowledgeMedia(file, profile?.pmo_ativo_id || undefined);
             toast.success(`Upload aceito! Job ID: ${result.job_id}`);
             // Reset input so the same file can be uploaded again if needed
             e.target.value = '';
@@ -131,6 +131,26 @@ const KnowledgeMonitoringPage: React.FC = () => {
             toast.error(errorMsg);
         } finally {
             setIsUploading(false);
+        }
+    };
+
+    const handleCancel = async (jobId: string) => {
+        try {
+            await cancelIngestionJob(jobId);
+            toast.info('Solicitação de cancelamento enviada.');
+            fetchJobs();
+        } catch (error: any) {
+            toast.error('Erro ao cancelar job.');
+        }
+    };
+
+    const handleRetry = async (jobId: string) => {
+        try {
+            const result = await retryIngestionJob(jobId);
+            toast.success(result.message || 'Job resetado com sucesso.');
+            fetchJobs();
+        } catch (error: any) {
+            toast.error('Erro ao reiniciar job.');
         }
     };
 
@@ -343,15 +363,37 @@ const KnowledgeMonitoringPage: React.FC = () => {
                                                 </div>
                                             </td>
                                             <td className="py-4 px-6 text-right">
-                                                {job.status === 'failed' && job.error_log && (
-                                                    <button
-                                                        onClick={() => setSelectedError(job.error_log)}
-                                                        className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 dark:bg-rose-900/30 dark:text-rose-400 dark:hover:bg-rose-900/50 transition-colors"
-                                                        title="Ver log de erro"
-                                                    >
-                                                        <AlertTriangle className="w-4 h-4" />
-                                                    </button>
-                                                )}
+                                                <div className="flex items-center justify-end gap-2">
+                                                    {job.status === 'processing' && (
+                                                        <button
+                                                            onClick={() => handleCancel(job.id)}
+                                                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 dark:bg-rose-900/30 dark:text-rose-400 dark:hover:bg-rose-900/50 transition-colors"
+                                                            title="Interromper Ingestão"
+                                                        >
+                                                            <XCircle className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+
+                                                    {(job.status === 'failed' || job.status === 'completed') && (
+                                                        <button
+                                                            onClick={() => handleRetry(job.id)}
+                                                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 dark:hover:bg-amber-900/50 transition-colors"
+                                                            title="Reiniciar (Limpar e Resetar)"
+                                                        >
+                                                            <RefreshCw className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+
+                                                    {job.status === 'failed' && job.error_log && (
+                                                        <button
+                                                            onClick={() => setSelectedError(job.error_log)}
+                                                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600 transition-colors"
+                                                            title="Ver log de erro"
+                                                        >
+                                                            <AlertTriangle className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     );

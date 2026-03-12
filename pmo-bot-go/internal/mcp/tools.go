@@ -7,6 +7,8 @@ import (
 	"log"
 	"strconv"
 	"strings"
+
+	"github.com/google/generative-ai-go/genai"
 )
 
 // InitializeTools registers the initial set of tools to the MCP server
@@ -139,8 +141,8 @@ func (s *Server) handleConsultarBaseConhecimento(args map[string]interface{}) (i
 
 	log.Printf("🔍 [MCP-TOOL] Consultando base para PMO %d: %s", pmoID, pergunta)
 
-	// 1. Gerar Embedding usando o Gemini
-	embedding, err := s.gemini.GenerateEmbedding(pergunta)
+	// 1. Gerar Embedding usando o Gemini (agora com 3072 dimensões)
+	embedding, err := s.gemini.GenerateEmbedding(nil, genai.Text(pergunta))
 	if err != nil {
 		return nil, fmt.Errorf("erro ao gerar embedding: %w", err)
 	}

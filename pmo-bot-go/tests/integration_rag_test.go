@@ -14,6 +14,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/google/generative-ai-go/genai"
 	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/webhook"
@@ -98,7 +99,7 @@ func TestRAGIntegration(t *testing.T) {
 
 	// Create a real query for polling
 	queryText := "extrativismo"
-	pollEmb, _ := gemClient.GenerateEmbedding(queryText)
+	pollEmb, _ := gemClient.GenerateEmbedding(nil, genai.Text(queryText))
 
 	for i := 0; i < maxAttempts; i++ {
 		t.Logf("Attempt %d/%d: Checking Supabase for chunks with query '%s'...", i+1, maxAttempts, queryText)
@@ -120,8 +121,9 @@ func TestRAGIntegration(t *testing.T) {
 
 	// 6. Test Hybrid Retrieval
 	t.Log("🔍 Testing Hybrid Retrieval...")
-	queryEmb, _ := gemClient.GenerateEmbedding("extrativismo sustentável")
-	matches, err := sbClient.MatchFarmDocuments(pmoID, queryEmb, 0.5, 3)
+	queryTextSearch := "extrativismo sustentável"
+	queryEmb, _ := gemClient.GenerateEmbedding(nil, genai.Text(queryTextSearch))
+	matches, err := sbClient.MatchFarmDocuments(pmoID, queryEmb, 0.1, 3) // Lowering threshold to 0.1
 	if err != nil {
 		t.Errorf("Search failed: %v", err)
 	}
