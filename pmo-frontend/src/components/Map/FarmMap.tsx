@@ -7,7 +7,7 @@ if (typeof window !== 'undefined') {
 }
 
 import '../../leaflet-draw-shim';
-import { MapContainer, TileLayer, Polygon, Popup, FeatureGroup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Polygon, Popup, FeatureGroup, useMap, ZoomControl } from 'react-leaflet';
 import { SafeEditControl } from './SafeEditControl';
 
 import 'leaflet/dist/leaflet.css';
@@ -124,7 +124,8 @@ const FarmMap: React.FC<FarmMapProps> = ({
     };
 
     return (
-        <MapContainer center={[-18.9186, -48.2772] as any} zoom={15} style={{ height: '100%', width: '100%', minHeight: '500px' }}>
+        <MapContainer center={[-18.9186, -48.2772] as any} zoom={15} zoomControl={false} style={{ height: '100%', width: '100%', minHeight: '500px' }}>
+            <ZoomControl position="topright" />
             <TileLayer url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}" attribution="Google Satélite" />
 
             <FeatureGroup>
