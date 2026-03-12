@@ -16,8 +16,8 @@ export interface GeoJSONGeometry {
 export interface Talhao {
     id: number;
     nome: string;
-    tipo?: string;
-    geometry?: string | GeoJSONGeometry;
+    tipo?: string | null;
+    geometry?: any;
     geometria?: GeoPoint[]; // For internal state/services
     cor?: string;
     area_total_m2?: number;

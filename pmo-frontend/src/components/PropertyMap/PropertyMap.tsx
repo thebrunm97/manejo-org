@@ -3,15 +3,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     Plus,
-    Sprout,
     X,
     CheckCircle2,
     AlertCircle,
     Loader2,
-    Droplets,
     Tractor,
     LayoutGrid,
-    TreePine,
     Trash2,
     MapPin,
     PenTool,
@@ -32,15 +29,6 @@ const formatArea = (m2: number): string => {
     if (!m2) return '0 m²';
     if (m2 >= 10000) return `${(m2 / 10000).toFixed(2)} ha`;
     return `${Math.round(m2)} m²`;
-};
-
-const getStrIcon = (nome: string): React.ReactElement => {
-    const lower = nome.toLowerCase();
-    if (lower.includes('tanque') || lower.includes('água'))
-        return <Droplets className="text-blue-500" size={16} />;
-    if (lower.includes('linha') || lower.includes('saf'))
-        return <TreePine className="text-amber-600" size={16} />;
-    return <Sprout className="text-emerald-500" size={16} />;
 };
 
 const hasValidGeometry = (geometry?: string | any): boolean => {
