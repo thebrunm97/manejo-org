@@ -227,6 +227,7 @@ func (h *Handler) SetWhatsAppClient(c *whatsapp.Client) {
 // handleWebhook processes incoming WPPConnect messages.
 // REGRA DE OURO: Always returns HTTP 200 to avoid sender retry loops.
 func (h *Handler) handleWebhook(c *gin.Context) {
+	log.Println("=== MENSAGEM RECEBIDA ===")
 	// 1. Token validation (query param ?token= or Authorization: Bearer ...)
 	token := c.Query("token")
 	if token == "" {
@@ -237,7 +238,11 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 	}
 
 	if !h.verifyToken(token) {
-		log.Println("🔒 Token inválido — acesso negado")
+		if token == "" {
+			log.Println("🔒 Token em falta — webhook rejeitado")
+		} else {
+			log.Printf("🔒 Token inválido (%s) — acesso negado", token)
+		}
 		c.JSON(http.StatusOK, gin.H{"status": "token_invalid", "error": "Access Denied"})
 		return
 	}
@@ -249,6 +254,7 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "invalid_json", "error": err.Error()})
 		return
 	}
+	log.Printf("🔍 Webhook recebido com sucesso! Evento: %s, Body: %s", payload.Event, payload.Body)
 
 	// 3. Broadcast filter
 	if payload.IsBroadcast() {
@@ -282,12 +288,14 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 	}
 
 	// Delegate business logic orchestration to FSM
+	log.Printf("🚀 Iniciando processamento em background (goroutine) para: %s", payload.From)
 	go func(msg WPPMessage) {
+		log.Printf("⚙️  Goroutine em execução para: %s", msg.From)
 		// Asynchronously process the message. We don't block the webhook response on this.
 		// A background goroutine ensures WPPConnect receives the 200 OK immediately, avoiding retries/timeouts.
 		result := state.ProcessMessage(msg.From, msg.Body, msg.MessageID(), msg.IsAudio(), h.cfg.SupabaseClient, h.cfg.GroqClient, h.cfg.WhatsAppClient, h.cfg.GeminiClient, h.cfg.TtsClient, h.cfg.MCPServer, h.cfg.HistoryManager)
 		if !result.Success {
-			log.Printf("⚠️ [FSM] Background processing completed with issues: %s", result.Reason)
+			log.Printf("ERRO FATAL NA IA: %s", result.Reason)
 		}
 	}(payload)
 

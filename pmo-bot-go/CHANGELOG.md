@@ -4,6 +4,18 @@ Todas as mudanças notáveis deste projeto serão documentadas neste arquivo.
 
 O formato baseia-se no [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/), e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [v0.1.10] - 2026-03-16
+
+### 🚀 Added
+- **Modelo Gemini 3.1 Flash Lite**: Configuração da string oficial `gemini-3.1-flash-lite-preview` para suporte a 15 RPM.
+- **Persistência de Sessão**: Integração com volumes Azure File para armazenamento definitivo de tokens WPP.
+- **Timeout Estendido**: Configuração de 3600s para o `autoClose` do Puppeteer, permitindo cold-starts resilientes.
+
+### 🛠 Refactored / Fixed
+- **FSM Dynamic Config**: Remoção de strings de modelo fixas no `fsm.go`, agora consome do `Config.Model` do cliente Gemini.
+- **Network Stability**: Substituição de `localhost` por `127.0.0.1` nos webhooks para evitar erros de SSRF e falhas de entrega silenciosas.
+- **Versioning**: Adoção oficial de `0.x` para builds de pré-lançamento.
+
 ## [v1.1.0] - 2026-03-05
 
 ### 🚀 Added

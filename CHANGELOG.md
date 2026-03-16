@@ -1,5 +1,20 @@
 # Changelog
-Este arquivo documenta as mudanças importantes e refatorações realizadas no Pmo Bot Go Backend.
+Este arquivo documenta as mudanças importantes e refatorações realizadas no projeto Manejo Orgânico.
+
+## [0.1.x] - 2026-03-16
+### Added
+- **Strict SemVer Adoption**: Transição para versionamento semântico estrito `0.x.y` para a fase de pré-lançamento/infraestrutura.
+- **WPPConnect Persistence**: Mapeamento de persistência de tokens via Azure File Share (`/usr/src/wpp-server/tokens`), garantindo que a sessão não seja perdida em reinícios do ACI.
+- **QR Code Stability**: Implementado timeout de 1 hora (`autoClose: 3600000`) para cold starts lentos na Azure e tempo de pareamento manual.
+
+### Changed
+- **WPPConnect v0.1.9-final**: Upgrade para a biblioteca base `1.41.0` e movimento do `userDataDir` para `/tmp` para mitigar erros de trava de arquivo (SQLite/SMB) nos discos da Azure.
+- **Go Backend v0.1.10**: Correção crítica no fluxo de RAG/Especialista. O modelo foi ajustado para a string oficial `gemini-3.1-flash-lite-preview`.
+- **Infrastructure Unification**: Consolidação dos contêineres e variáveis de ambiente no mesmo grupo ACI para eliminação de problemas de rede interna.
+
+### Fixed
+- **SSRF & Network Binding**: Correção de falhas silenciosas de webhook substituindo `localhost` por `127.0.0.1` e binding explícito em `0.0.0.0`.
+- **RAG Error Path**: Remoção de hardcodes de modelos inválidos no `fsm.go`, permitindo configuração dinâmica via environment.
 
 ## [1.2.0] - 2026-03-09
 ### Added

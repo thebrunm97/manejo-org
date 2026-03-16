@@ -34,7 +34,7 @@ func NewClient(cfg Config) (*Client, error) {
 	}
 
 	if cfg.Model == "" {
-		cfg.Model = "gemini-2.0-flash-exp" // Default chat model
+		cfg.Model = "gemini-3.1-flash-lite-preview" // Default chat model
 	}
 
 	ctx := context.Background()
@@ -87,11 +87,12 @@ func (c *Client) AskExpert(question string) (string, error) {
 	log.Println("📡 [GEMINI SDK] Chamada simples para o oráculo.")
 	resp, err := model.GenerateContent(ctx, genai.Text(question))
 	if err != nil {
+		log.Printf("❌ [GEMINI SDK] Erro fatal em GenerateContent: %v", err)
 		return "", fmt.Errorf("generate content error: %w", err)
 	}
 
 	if len(resp.Candidates) == 0 || len(resp.Candidates[0].Content.Parts) == 0 {
-		return "", fmt.Errorf("empty response from gemini")
+		return "", fmt.Errorf("empty response from gemini (finish_reason: %v)", resp.Candidates[0].FinishReason)
 	}
 
 	// Extract text from parts
@@ -122,6 +123,7 @@ func (c *Client) GenerateContentWithTools(ctx context.Context, question string, 
 	log.Printf("📡 [GEMINI SDK] Chamada com Tools e Memória (%d msgs) para: %s", len(history), question)
 	resp, err := session.SendMessage(ctx, genai.Text(question))
 	if err != nil {
+		log.Printf("❌ [GEMINI SDK] Erro fatal em SendMessage (Tool Calling): %v", err)
 		return nil, nil, fmt.Errorf("send message error: %w", err)
 	}
 

@@ -127,7 +127,7 @@ func (c *Client) StartSession(ctx context.Context) error {
 	// Inject the webhook URL targeting the Go bot's handler
 	webhookURL := os.Getenv("WEBHOOK_URL")
 	if webhookURL == "" {
-		webhookURL = "http://pmo-bot-go:8080/webhook/wppconnect"
+		webhookURL = "http://127.0.0.1:8080/webhook/wppconnect"
 	}
 
 	// Append security token if present

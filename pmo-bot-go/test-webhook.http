@@ -1,0 +1,38 @@
+### Simulação de Webhook WPPConnect
+### Rode 'go run cmd/server/main.go' antes de disparar este teste.
+
+@port = 8080
+@token = SUA_WPPCONNECT_TOKEN_AQUI
+
+### Teste de Mensagem de Texto (Registro de Manejo)
+POST http://localhost:{{port}}/webhook/wppconnect?token={{token}}
+Content-Type: application/json
+
+{
+    "event": "onmessage",
+    "from": "5511999999999@c.us",
+    "fromMe": false,
+    "id": "MSG_ID_123456",
+    "type": "chat",
+    "body": "Apliquei 10kg de esterco no talhão 1 agora de manhã",
+    "chatId": "5511999999999@c.us",
+    "timestamp": 1710356000
+}
+
+### Teste de Mensagem de Texto (Dúvida Técnica)
+POST http://localhost:{{port}}/webhook/wppconnect?token={{token}}
+Content-Type: application/json
+
+{
+    "event": "onmessage",
+    "from": "5511999999999@c.us",
+    "fromMe": false,
+    "id": "MSG_ID_789012",
+    "type": "chat",
+    "body": "Quais são as regras para uso de esterco bovino na produção orgânica?",
+    "chatId": "5511999999999@c.us",
+    "timestamp": 1710356500
+}
+
+### Teste de Health Check
+GET http://localhost:{{port}}/health

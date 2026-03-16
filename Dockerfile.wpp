@@ -1,0 +1,48 @@
+# Usando Debian (Bookworm) para compatibilidade nativa (glibc)
+FROM node:20-bookworm-slim
+
+# Instala dependências de build, Git, certificados, Chromium e bibliotecas
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    git \
+    python3 \
+    make \
+    g++ \
+    chromium \
+    libnss3 \
+    libatk-bridge2.0-0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    libgbm1 \
+    libasound2 \
+    libpangocairo-1.0-0 \
+    libgtk-3-0 \
+    libxshmfence1 \
+    --no-install-recommends && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /usr/src/wpp-server
+
+# Copia os arquivos locais para o container (em vez de clonar)
+# Certifique-se de que a pasta 'wppconnect-server' está presente no contexto de build
+COPY wppconnect-server/ .
+
+# Configura o Corepack e muda o Yarn para o modo clássico de node_modules
+RUN corepack enable
+RUN yarn config set nodeLinker node-modules
+
+# Força o Puppeteer a pular o download do Chrome durante o yarn install
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+
+# Instala dependências (ignorando scripts de pós-instalação que quebram) e compila
+RUN yarn install --immutable
+RUN yarn build
+
+# Executável do sistema
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+
+EXPOSE 21465
+
+CMD ["yarn", "start"]

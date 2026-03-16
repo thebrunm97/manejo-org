@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -19,7 +20,10 @@ import (
 )
 
 func main() {
-	godotenv.Load(".env")
+	fmt.Println("=== BOT INICIANDO ===")
+	if err := godotenv.Load(".env"); err != nil {
+		log.Printf("ℹ️ Arquivo .env não encontrado, usando variáveis de ambiente do sistema")
+	}
 	loc, err := time.LoadLocation("America/Sao_Paulo")
 	if err != nil {
 		log.Printf("⚠️ Erro ao carregar timezone America/Sao_Paulo: %v. Usando UTC.", err)

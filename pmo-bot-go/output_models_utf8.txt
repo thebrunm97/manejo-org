@@ -1,0 +1,6 @@
+﻿
+--- Embedding models for endpoint: https://generativelanguage.googleapis.com/ ---
+ID: models/gemini-embedding-001 | Methods: [embedContent countTextTokens countTokens asyncBatchEmbedContent]
+ID: models/gemini-embedding-2-preview | Methods: [embedContent countTextTokens countTokens asyncBatchEmbedContent]
+
+--- Embedding models for endpoint: https://generativelanguage.googleapis.com/v1beta ---

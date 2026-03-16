@@ -1,0 +1,26 @@
+﻿=== RUN   TestRAGIntegration
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] POST   /webhook                  --> github.com/thebrunm97/pmo-bot-go/internal/webhook.(*Handler).handleWebhook-fm (1 handlers)
+[GIN-debug] POST   /webhook/wppconnect       --> github.com/thebrunm97/pmo-bot-go/internal/webhook.(*Handler).handleWebhook-fm (1 handlers)
+[GIN-debug] POST   /api/:session/webhook     --> github.com/thebrunm97/pmo-bot-go/internal/webhook.(*Handler).handleWebhook-fm (1 handlers)
+[GIN-debug] POST   /knowledge/upload         --> github.com/thebrunm97/pmo-bot-go/internal/webhook.(*Handler).handleKnowledgeUpload-fm (1 handlers)
+[GIN-debug] GET    /health                   --> github.com/thebrunm97/pmo-bot-go/internal/webhook.(*Handler).handleHealth-fm (1 handlers)
+­ƒôé [Ingestion] Received file: integration_test_doc.pdf (Detected: application/pdf)
+­ƒôÑ [ASYNC-RAG] Iniciando processamento MULITMODAL: integration_test_doc.pdf (application/pdf)
+­ƒôä [ASYNC-RAG] Splitting PDF: C:\Users\brunn\AppData\Local\Temp\upload-1773333362-integration_test_doc.pdf
+    integration_rag_test.go:94: Ô£à Upload accepted. Starting polling for PMO 999999...
+2026/03/12 13:36:02 ­ƒôí [GEMINI SDK] Gerando embedding multimodal (1 partes)...
+­ƒôä [ASYNC-RAG] PDF split into 8 pages
+2026/03/12 13:36:02 ­ƒôí [GEMINI SDK] Gerando embedding multimodal (1 partes)...
+    integration_rag_test.go:105: Attempt 1/15: Checking Supabase for chunks with query 'extrativismo'...
+    integration_rag_test.go:111: Ô£à Successfully found 1 chunks in Supabase!
+    integration_rag_test.go:123: ­ƒöì Testing Hybrid Retrieval...
+2026/03/12 13:36:03 ­ƒôí [GEMINI SDK] Gerando embedding multimodal (1 partes)...
+    integration_rag_test.go:134: Ô£à Match found: integration_test_doc.pdf (Similarity: 0.457635)
+    integration_rag_test.go:143: ÔÜá´©Å Remember to cleanup PMO_ID 999999 in Supabase later.
+--- PASS: TestRAGIntegration (5.05s)
+PASS
+ok  	command-line-arguments	7.080s

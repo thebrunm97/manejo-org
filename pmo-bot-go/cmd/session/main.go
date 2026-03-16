@@ -36,12 +36,11 @@ func loadConfig() Config {
 	secretKey := os.Getenv("WPPCONNECT_TOKEN") // in .env WPPCONNECT_TOKEN stores the secret key string
 	wppURL := os.Getenv("WPPCONNECT_URL")
 	if wppURL == "" {
-		wppURL = "http://localhost:21465"
+		wppURL = "http://127.0.0.1:21465"
 	}
 
-	// Assuming webhook runs on host port 8080. If inside docker to docker, might be different, but for WPPConnect it's usually defined.
-	// We'll set a default webhook URL for locahost, you can adjust it if WPPConnect needs a different routable address.
-	webhookURL := fmt.Sprintf("http://host.docker.internal:8080/webhook?token=%s", secretKey)
+	// Assuming webhook runs on host port 8080. Since they share the same network namespace in ACI, use 127.0.0.1.
+	webhookURL := fmt.Sprintf("http://127.0.0.1:8080/webhook?token=%s", secretKey)
 
 	return Config{
 		SessionName:  sessionName,

@@ -81,6 +81,11 @@ func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClie
 	if errP != nil {
 		log.Printf("🚫 [FSM] Perfil não encontrado ou sem PMO ativo para %s: %v", phone, errP)
 	}
+	if profile == nil {
+		log.Printf("⚠️ [FSM] Perfil retornou NULL. O bot vai ignorar a mensagem por segurança.")
+	} else {
+		log.Printf("👤 [FSM] Perfil encontrado: %s (PMO_ID: %d)", profile.Nome, profile.PmoAtivoID)
+	}
 
 	if isAudio {
 		log.Printf("🎤 [FSM] Áudio detectado. Baixando media %s...", msgID)
@@ -197,6 +202,7 @@ func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClie
 		}
 		return ProcessResult{Success: false, Reason: "llm_error"}
 	}
+	log.Printf("🤖 [FSM] IA extraiu intenção: %s (Cultura: %s, Atividade: %s)", extracted.Intencao, extracted.InsumoCultura, extracted.Atividade)
 
 	// Log immediate Groq Llama extraction consumption
 	log.Printf("📊 [Telemetry] Gravando consumo Groq Llama para usuário %s", profile.ID)
@@ -552,6 +558,7 @@ func fmtLocalizacao(loc groq.Localizacao) string {
 
 // sendFeedback applies hybrid outbound flow routing. Text stays Text. Audio goes to TTS then Voice message.
 func sendFeedback(wpClient *whatsapp.Client, ttsClient *tts.Orchestrator, to string, text string, respondAudio bool) error {
+	log.Printf("📤 [Feedback] Enviando resposta para %s: %.50s...", to, text)
 	if !respondAudio {
 		return wpClient.SendMessage(to, text)
 	}
@@ -577,11 +584,17 @@ func sendFeedback(wpClient *whatsapp.Client, ttsClient *tts.Orchestrator, to str
 
 // handleDuvidaFallback is a helper for cases where RAG fails but we still want to try answering
 func handleDuvidaFallback(wpClient *whatsapp.Client, ttsClient *tts.Orchestrator, from string, gemClient *gemini.Client, body string, respondAudio bool, sbClient *supabase.Client, profile *supabase.Profile, startTime time.Time, pTokens, cTokens int, intent string) ProcessResult {
-	aiModel := gemClient.Config.Model + "-fallback"
+	aiModel := gemClient.Config.Model
+	if aiModel == "" {
+		aiModel = "gemini-3.1-flash-lite-preview"
+	}
 	answer, err := gemClient.AskExpert(body)
 	if err != nil {
 		botResponse := "⚠️ Tive um problema ao consultar as normas. Tente de novo."
 		sendFeedback(wpClient, ttsClient, from, botResponse, respondAudio)
+		
+		// CRITICAL: Log failure even on fallback error
+		recordLog(sbClient, profile, body, botResponse, aiModel, pTokens, cTokens, intent, nil, startTime, false)
 		return ProcessResult{Success: false, Reason: "expert_error"}
 	}
 

@@ -1,0 +1,14 @@
+.git
+.gitignore
+node_modules
+pmo_bot/wppconnect-data
+wppconnect-server/userDataDir
+wppconnect-server/tokens
+wppconnect-server/wppconnect_tokens
+pmo-bot-go/pmo-bot-go
+debug_logs_go.txt
+debug_logs_wpp.txt
+*.log
+.venv
+__pycache__
+tmp/
