@@ -1,93 +1,90 @@
-# 🌿 Manejo Orgânico - PMO Bot 🤖
+# 🌿 Manejo Orgânico Inteligente - Ecossistema Multiplataforma 🤖
 
-![Go](https://img.shields.io/badge/Go-00ADD8?style=for-the-badge&logo=go&logoColor=white)
-![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
-![PWA](https://img.shields.io/badge/PWA-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
-![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
+[![Go](https://img.shields.io/badge/Go-00ADD8?style=for-the-badge&logo=go&logoColor=white)](https://go.dev/)
+[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev/)
+[![PWA](https://img.shields.io/badge/PWA-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)](https://web.dev/progressive-web-apps/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
+[![Azure](https://img.shields.io/badge/Azure-0078D4?style=for-the-badge&logo=microsoft-azure&logoColor=white)](https://azure.microsoft.com/)
 
-Plataforma de **Inteligência Artificial de Grau Enterprise** para automação e gestão do manejo orgânico. O ecossistema integra um assistente inteligente via WhatsApp, um motor de processamento robusto em GoLang e um Dashboard administrativo moderno para visualização e compliance.
+O **Ecossistema Multiplataforma de Manejo Orgânico Inteligente** é uma solução avançada para a gestão estratégica da produção orgânica brasileira. Utilizando Inteligência Artificial (RAG) e uma arquitetura resiliente, o sistema simplifica a burocracia do **Plano de Manejo Orgânico (PMO)** e oferece suporte técnico em tempo real para os produtores no campo.
 
 ---
 
-## 📐 Visão Geral da Arquitetura
+## 📐 Arquitetura do Sistema (v2.0)
 
-O sistema utiliza uma arquitetura distribuída e baseada em eventos, garantindo alta disponibilidade e respostas em tempo real.
+A plataforma opera em uma arquitetura de microserviços em containers, orquestrada para alta performance e baixa latência.
 
 ```mermaid
 graph TD
-    User([Produtor/Usuário]) <-->|WhatsApp| WPP[WPPConnect Gateway]
-    WPP <-->|Webhook/REST| BE[Backend GoLang - PMO Bot]
-    BE <-->|FSM & Roteamento| LLM[Motor Cognitivo - Groq/Gemini]
-    BE <-->|Persistência| DB[(Supabase - PostgreSQL)]
-    FE[Frontend React PWA] <-->|Real-time App| DB
-    FE <-->|Offline Sync| IDB[(IndexedDB)]
+    User([Produtor]) <-->|WhatsApp| WPP[WPPConnect Sidecar]
+    WPP <-->|Webhooks| BE[Backend Go Engine]
+    BE <-->|FSM & RAG| LLM[Gemini 3.1 Flash Lite]
+    BE <-->|Persistência| DB[(Supabase + pgvector)]
+    FE[Frontend PWA] <-->|Dashboard| DB
 ```
 
-### O Fluxo de Inteligência
-1. **Frontend PWA**: Interface principal do usuário para gestão de talhões, canteiros e registros manuais. Opera em modo *Offline-first*.
-2. **WhatsApp Bot**: Interface conversacional para agilidade no campo (textos e áudios).
-3. **Backend GoLang**: O "Cérebro" do sistema. Orquestra sessões, gerencia a Máquina de Estados (FSM) e executa o roteamento cognitivo.
-4. **LLMs & MCP**: 
-   - **Groq (Llama 3)**: Responsável pelo roteamento cognitivo ultrarrápido de intenções.
-   - **Gemini**: Utilizado para *Tool Calling* rigoroso e integração baseada em **MCP (Model Context Protocol)** para criação de infraestrutura.
+### Componentes Principais
+1.  **Backend Go Engine (`pmo-bot-go`)**: O núcleo de processamento. Escrito em Go para máxima concorrência e eficiência. Gerencia a **Máquina de Estados (FSM)** e o **Motor RAG**.
+2.  **WhatsApp Gateway (`wppconnect`)**: Sidecar em Node.js que faz o bridge entre o WhatsApp e o nosso backend via Webhooks.
+3.  **Inteligência Artificial**: 
+    - **Google Gemini 3.1 Flash Lite**: Motor principal para análise documental e suporte à decisão.
+    - **RAG (Retrieval-Augmented Generation)**: Consulta dinâmica de normas técnicas e históricos da fazenda.
+4.  **Frontend PWA (`pmo-frontend`)**: Interface administrativa e de monitoramento para produtores e consultores.
 
 ---
 
-## 📦 Módulos do Sistema
-
-### 🖥️ Frontend (PWA)
-Desenvolvido com **React 19 + Vite**, focado em performance e usabilidade no campo.
-- **Offline-first**: Sincronização robusta via `idb` (IndexedDB) e Workbox.
-- **Geolocalização**: Mapas interativos via **Leaflet** com estratégia de *GeoJSON Placeholder* para visualização precisa de talhões e canteiros.
-- **Design System**: UI premium baseada na estética moderna com Tailwind CSS v4.
-
-### ⚙️ Backend (GoLang)
-Motor de alta performance substituindo a arquitetura Python legada.
-- **FSM (Finite State Machine)**: Controle rigoroso dos estados da conversa, garantindo fluxos lineares e sem perda de contexto.
-- **Roteamento Cognitivo**: Camada de inteligência via Groq que decide entre consultas técnicas, registro de atividades ou configuração de infraestrutura.
-- **Ferramentas MCP**: Automação técnica para criação em lote de talhões e canteiros diretamente via prompt de comando.
-
-### 📊 Auditoria e Telemetria
-- **Rigor Financeiro**: Logs de consumo detalhados por PMO ID e User ID.
-- **Monitoramento**: Rastreabilidade total de tokens utilizados e tempos de resposta das LLMs.
-- **Compliance**: Validação automática de insumos contra as normas de certificação orgânica.
+## 🛠️ Tecnologias
+- **Backend:** Golang (Gin, Gorm)
+- **WhatsApp:** WPPConnect (Server & Sidecar)
+- **Database:** Supabase (PostgreSQL, pgvector para Embeddings)
+- **Infraestrutura:** Azure Container Instances (ACI)
+- **AI/ML:** Google Gemini 3.1 Flash Lite, Groq (Whisper para áudio)
 
 ---
 
-## 🛠️ Setup Local (Orquestração Docker)
+## 🚀 Setup Local (Docker Compose)
 
-Para rodar o ecossistema completo localmente, siga os passos abaixo:
+Siga os passos abaixo para rodar o ambiente completo de desenvolvimento:
 
 ### 1. Pré-requisitos
-- Docker & Docker Compose v2+
-- Variáveis de ambiente configuradas (`.env` no backend e frontend)
+- Docker & Docker Compose v2.20+
+- Conta no Supabase (ou instância local)
+- Chaves de API (Gemini, Groq, Supabase)
 
-### 2. Inicialização
+### 2. Configuração de Ambiente
+Crie um ficheiro `.env` na raiz (e em `pmo-bot-go/.env`) baseado no `.env.example`:
+```ini
+SUPABASE_URL=seua_url
+SUPABASE_KEY=sua_secret_key
+GEMINI_API_KEY=sua_chave
+WPPCONNECT_TOKEN=configue_um_segredo
+```
 
-Os serviços de infraestrutura e o motor Go estão centralizados no diretório `pmo_bot`.
-
+### 3. Inicialização
+Na raiz do projeto, execute:
 ```bash
-# Navegue até o diretório do motor
-cd pmo_bot
-
-# Derrube qualquer instância anterior e limpe volumes se necessário
-docker-compose down
-
-# Suba os containers com rebuild forçado
+# Sobe o Backend (Go) e o WhatsApp Gateway
 docker-compose up -d --build
 ```
 
-### 3. Serviços Disponíveis
-- **API (pmo-bot-go)**: `http://localhost:8080/health`
-- **WPPConnect Gateway**: `http://localhost:21465` (Porta do webhook central)
-- **Frontend (Dev)**: `cd pmo-frontend && npm run dev`
+### 4. Verificação
+- **Backend Check**: `http://localhost:8080/health`
+- **WPPConnect Logs**: `docker logs -f wppconnect`
 
 ---
 
-## 📄 Licença e Uso
-
-Este projeto é de uso restrito e privado. Todos os direitos reservados.
+## 📊 Estrutura do Projeto
+- `pmo-bot-go/`: Código fonte do motor em Go.
+- `pmo-frontend/`: Aplicação web administrativa.
+- `wppconnect-server/`: Gateway de integração WhatsApp.
+- `legacy_python/`: Ficheiros e scripts da versão anterior (arquivados).
+- `.agent/`: Workflows e regras de desenvolvimento da IA.
 
 ---
-**Desenvolvido com 💚 para o Futuro do Manejo Orgânico.**
+
+## 📄 Licença
+Propriedade privada de Bruno Batista Soares. Todos os direitos reservados.
+
+---
+**Desenvolvido com 💚 para o futuro da agricultura orgânica.**

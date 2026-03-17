@@ -193,8 +193,9 @@ func ProcessMessage(from string, body string, msgID string, isAudio bool, sbClie
 		return ProcessResult{Success: false, Reason: "quota_exceeded"}
 	}
 
-	// Step 5: Call Groq LLM for entity extraction
-	extracted, err := groqClient.Extract(body)
+	// Step 5: Call Groq LLM for entity extraction with history context
+	chatHistory := historyManager.GetHistory(from)
+	extracted, err := groqClient.Extract(body, chatHistory)
 	if err != nil {
 		log.Printf("❌ [FSM] Falha na extração NER: %v", err)
 		if err := sendFeedback(wpClient, ttsClient, from, "⚠️ Ocorreu um erro técnico ao processar sua mensagem. Tente novamente.", respondWithAudio); err != nil {

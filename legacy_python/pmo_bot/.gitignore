@@ -1,0 +1,12 @@
+﻿node_modules/
+.venv/
+__pycache__/
+*.ogg
+*.json
+.env
+
+tests/
+manual_tools/
+qrcode.html
+latest_qrcode.html
+

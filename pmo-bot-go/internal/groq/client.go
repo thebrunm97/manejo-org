@@ -9,7 +9,10 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
+
+	"github.com/thebrunm97/pmo-bot-go/internal/history"
 )
 
 // ---------------------------------------------------------------------------
@@ -130,12 +133,32 @@ func NewClient(apiKey string) (*Client, error) {
 
 // Extract sends the farmer's message to the Groq API and returns
 // a structured ExtractionResult with intent, activity, and organic alert.
-func (c *Client) Extract(farmerMessage string) (*ExtractionResult, error) {
+// It includes the recent chat history as context to improve NER accuracy.
+func (c *Client) Extract(farmerMessage string, chatHistory []history.Message) (*ExtractionResult, error) {
+	var promptBuilder strings.Builder
+
+	if len(chatHistory) > 0 {
+		promptBuilder.WriteString("## CONTEXTO RECENTE DA CONVERSA:\n")
+		for _, msg := range chatHistory {
+			role := "Usuário"
+			if msg.Role == "model" {
+				role = "Assistente"
+			}
+			promptBuilder.WriteString(fmt.Sprintf("[%s]: %s\n", role, msg.Content))
+		}
+		promptBuilder.WriteString("\n")
+	}
+
+	promptBuilder.WriteString("## MENSAGEM ATUAL A SER ANALISADA:\n")
+	promptBuilder.WriteString(farmerMessage)
+
+	fullMessage := promptBuilder.String()
+
 	reqBody := chatRequest{
 		Model: modelName,
 		Messages: []chatMessage{
 			{Role: "system", Content: systemPrompt},
-			{Role: "user", Content: farmerMessage},
+			{Role: "user", Content: fullMessage},
 		},
 		Temperature:    0,
 		ResponseFormat: responseFormat{Type: "json_object"},

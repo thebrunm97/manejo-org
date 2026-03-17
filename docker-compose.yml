@@ -1,0 +1,46 @@
+services:
+  # Backend Go Engine
+  pmo-bot-go:
+    build:
+      context: ./pmo-bot-go
+      dockerfile: Dockerfile
+    container_name: pmo-bot-go
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      - PORT=8080
+      - WPPCONNECT_URL=http://wppconnect:21465
+      - WEBHOOK_URL=http://pmo-bot-go:8080/webhook/wppconnect?token=${WPPCONNECT_TOKEN}
+    depends_on:
+      - wppconnect
+    restart: always
+
+  # WhatsApp Gateway
+  wppconnect:
+    build:
+      context: .
+      dockerfile: Dockerfile.wpp
+    container_name: wppconnect
+    ports:
+      - "21465:21465"
+    environment:
+      - SECRET_KEY=${WPPCONNECT_TOKEN}
+      - WEBHOOK_URL=http://pmo-bot-go:8080/webhook/wppconnect?token=${WPPCONNECT_TOKEN}
+      - LOG_LEVEL=info
+      - PUPPETEER_ARGS=--no-sandbox,--disable-setuid-sandbox,--disable-dev-shm-usage,--disable-gpu
+    volumes:
+      - ./wppconnect_tokens:/usr/src/app/tokens
+    restart: always
+
+  # Frontend (Opcional no compose, pode ser rodado localmente)
+  # pmo-frontend:
+  #   build: ./pmo-frontend
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - pmo-bot-go
+
+volumes:
+  wppconnect_tokens:
