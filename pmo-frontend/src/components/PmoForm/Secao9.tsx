@@ -1,10 +1,11 @@
 // src/components/PmoForm/Secao9.tsx — Zero MUI
-import React, { useState, ChangeEvent } from 'react';
-import { ChevronDown, PlusCircle, Sprout, X, AlertTriangle } from 'lucide-react';
+import React, { useState, ChangeEvent, useEffect } from 'react';
+import { ChevronDown, PlusCircle, Sprout, X, AlertTriangle, CheckCircle, Edit2 } from 'lucide-react';
 import SectionShell from '../Plan/SectionShell';
 import PropagacaoCard from './cards/PropagacaoCard';
+import { supabase } from '../../supabaseClient';
 
-interface PropagacaoItem { _id: string; tipo?: string; especies?: string; origem?: string; quantidade?: string; sistema_organico?: boolean; data_compra?: string; }
+interface PropagacaoItem { id?: string; _id: string; tipo?: string; especies?: string; origem?: string; quantidade?: string; sistema_organico?: boolean; data_compra?: string; }
 interface Secao9Data { sementes_mudas_organicas?: PropagacaoItem[]; sementes_mudas_nao_organicas?: PropagacaoItem[]; tratamento_sementes_mudas?: { tratamento_sementes_mudas?: string }; manejo_producao_propria?: { manejo_producao_propria?: string }; postura_uso_materiais_transgenicos_organica?: { postura_uso_materiais_transgenicos_organica?: string }; cuidados_uso_materiais_transgenicos_nao_organica?: { cuidados_uso_materiais_transgenicos_nao_organica?: string };[key: string]: any; }
 interface Secao9Props { data: Secao9Data | null | undefined; onSectionChange: (d: Secao9Data) => void; }
 
@@ -27,21 +28,194 @@ const Secao9: React.FC<Secao9Props> = ({ data, onSectionChange }) => {
     const [ei, setEi] = useState<PropagacaoItem | null>(null);
     const [dOpen, setDOpen] = useState(false);
     const [dItem, setDItem] = useState<{ lk: string; id: string } | null>(null);
+    const [sugestoes, setSugestoes] = useState<any[]>([]);
+    const [sugestaoAtual, setSugestaoAtual] = useState<any | null>(null); // To track which suggestion is being edited
+    const [loading, setLoading] = useState(false);
+    const [errorMsg, setErrorMsg] = useState('');
+
+    // Supondo pmoId = 1 para testes, na realidade viria via params ou props
+    const pmoId = 1; 
+
+    const loadData = async () => {
+        setLoading(true);
+        setErrorMsg('');
+        try {
+            // 1. Carregar itens confirmados de pmo_propagacao
+            const { data: propData, error: propErr } = await supabase
+                .from('pmo_propagacao')
+                .select('*')
+                .eq('pmo_id', pmoId);
+                
+            if (propErr) throw propErr;
+
+            const organicas: PropagacaoItem[] = [];
+            const naoOrganicas: PropagacaoItem[] = [];
+
+            if (propData) {
+                propData.forEach((row: any) => {
+                    const item: PropagacaoItem = {
+                        id: row.id,
+                        _id: row.id,
+                        tipo: row.tipo,
+                        especies: row.especies,
+                        origem: row.origem,
+                        quantidade: row.quantidade,
+                        sistema_organico: row.sistema_organico,
+                        data_compra: row.data_compra
+                    };
+                    if (row.sistema_organico) organicas.push(item);
+                    else naoOrganicas.push(item);
+                });
+            }
+
+            onSectionChange({
+                ...sd,
+                sementes_mudas_organicas: organicas,
+                sementes_mudas_nao_organicas: naoOrganicas
+            });
+
+            // 2. Carregar Sugestões
+            const { data: sugData, error: sugErr } = await supabase
+                .from('logs_treinamento')
+                .select('*')
+                .eq('pmo_id', pmoId)
+                .eq('processado', false); // Ideally we filter by tipo_atividade too, but let's grab all pending
+
+            if (sugErr) throw sugErr;
+            if (sugData) {
+                setSugestoes(sugData);
+            }
+        } catch (err: any) {
+            console.error('Erro ao buscar dados:', err);
+            setErrorMsg('Falha ao carregar dados do banco de dados.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        loadData();
+    }, []);
 
     const hc = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => { onSectionChange({ ...sd, [e.target.name]: { [e.target.name]: e.target.value } }); };
 
-    const addNew = (lk: string) => { setListKey(lk); setEi({ _id: genId(), tipo: 'semente', especies: '', origem: '', quantidade: '', sistema_organico: true, data_compra: '' }); setMOpen(true); };
-    const edit = (lk: string, it: PropagacaoItem) => { setListKey(lk); setEi({ ...it }); setMOpen(true); };
-    const del = (lk: string, id: string) => { setDItem({ lk, id }); setDOpen(true); };
-    const confirmDel = () => { if (dItem) { const l = (sd[dItem.lk] as PropagacaoItem[]) || []; onSectionChange({ ...sd, [dItem.lk]: l.filter(i => i._id !== dItem.id) }); } setDOpen(false); setDItem(null); };
+    const addNew = (lk: string) => { 
+        setListKey(lk); 
+        setEi({ _id: genId(), tipo: 'semente', especies: '', origem: '', quantidade: '', sistema_organico: lk === 'sementes_mudas_organicas', data_compra: '' }); 
+        setSugestaoAtual(null);
+        setMOpen(true); 
+    };
 
-    const saveModal = () => {
+    const edit = (lk: string, it: PropagacaoItem) => { 
+        setListKey(lk); 
+        setEi({ ...it }); 
+        setSugestaoAtual(null);
+        setMOpen(true); 
+    };
+
+    const revisarSugestao = (sug: any) => {
+        setSugestaoAtual(sug);
+        const json = sug.json_extraido || {};
+        const isOrg = json.sistema_organico !== false;
+        setListKey(isOrg ? 'sementes_mudas_organicas' : 'sementes_mudas_nao_organicas');
+        setEi({
+            _id: genId(),
+            tipo: json.tipo || 'semente',
+            especies: json.especies || json.especie_cultivar || '',
+            origem: json.origem || json.origem_fornecedor || '',
+            quantidade: json.quantidade || '',
+            sistema_organico: isOrg,
+            data_compra: json.data_compra || ''
+        });
+        setMOpen(true);
+    };
+
+    const del = (lk: string, id: string) => { setDItem({ lk, id }); setDOpen(true); };
+    
+    const confirmDel = async () => { 
+        if (dItem) { 
+            // Optional: delete from DB if it has an id
+            const l = (sd[dItem.lk] as PropagacaoItem[]) || []; 
+            const item = l.find(i => i._id === dItem.id);
+            if (item && item.id) {
+                await supabase.from('pmo_propagacao').delete().eq('id', item.id);
+            }
+            onSectionChange({ ...sd, [dItem.lk]: l.filter(i => i._id !== dItem.id) }); 
+        } 
+        setDOpen(false); 
+        setDItem(null); 
+    };
+
+    const isDifferent = (a: any, b: any) => {
+        return a.tipo !== b.tipo || a.especies !== b.especies || a.origem !== b.origem || a.quantidade !== b.quantidade || a.sistema_organico !== b.sistema_organico;
+    };
+
+    const saveModal = async () => {
         if (!ei?.especies) { alert('Informe a espécie/cultivar.'); return; }
         if (!listKey) return;
-        const l = Array.isArray(sd[listKey]) ? [...(sd[listKey] as PropagacaoItem[])] : [];
-        const idx = l.findIndex(i => i._id === ei._id);
-        if (idx >= 0) l[idx] = ei; else l.push(ei);
-        onSectionChange({ ...sd, [listKey]: l }); setMOpen(false); setEi(null);
+        setLoading(true);
+
+        try {
+            // Save to pmo_propagacao
+            const rowTarget = {
+                pmo_id: pmoId,
+                tipo: ei.tipo,
+                especies: ei.especies,
+                origem: ei.origem,
+                quantidade: ei.quantidade,
+                sistema_organico: ei.sistema_organico,
+                data_compra: ei.data_compra ? ei.data_compra : null
+            };
+
+            let insertedId = ei.id;
+
+            if (ei.id) {
+                await supabase.from('pmo_propagacao').update(rowTarget).eq('id', ei.id);
+            } else {
+                const { data: newRow, error: insErr } = await supabase.from('pmo_propagacao').insert(rowTarget).select().single();
+                if (insErr) throw insErr;
+                if (newRow) insertedId = newRow.id;
+            }
+
+            // GATILHO DE TREINAMENTO (RLHF)
+            if (sugestaoAtual) {
+                const originalJson = sugestaoAtual.json_extraido || {};
+                const currentJson = { ...ei }; delete currentJson._id; delete currentJson.id;
+                
+                // Compare to see if human corrected
+                const editado = isDifferent(originalJson, currentJson);
+                
+                // Update logs_treinamento or Insert a new one
+                const updatePayload = {
+                    processado: true,
+                    json_corrigido: currentJson,
+                    foi_editado: editado,
+                    status_validacao: editado ? 'corrigido_humano' : 'validado_humano'
+                };
+                
+                await supabase.from('logs_treinamento')
+                    .update(updatePayload)
+                    .eq('id', sugestaoAtual.id);
+                    
+                setSugestoes(sugestoes.filter(s => s.id !== sugestaoAtual.id));
+            }
+
+            // Update local state
+            const l = Array.isArray(sd[listKey]) ? [...(sd[listKey] as PropagacaoItem[])] : [];
+            const idx = l.findIndex(i => i._id === ei._id);
+            const finalEi = { ...ei, id: insertedId };
+            if (idx >= 0) l[idx] = finalEi; else l.push(finalEi);
+            onSectionChange({ ...sd, [listKey]: l }); 
+            
+            setMOpen(false); 
+            setEi(null);
+            setSugestaoAtual(null);
+        } catch (err) {
+            console.error('Erro ao salvar item:', err);
+            alert('Ocorreu um erro ao salvar o item.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const renderCards = (lk: string) => {
@@ -60,6 +234,43 @@ const Secao9: React.FC<Secao9Props> = ({ data, onSectionChange }) => {
 
     return (
         <SectionShell sectionLabel="Seção 9" title="Propagação Vegetal">
+            {errorMsg && (
+                <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg mb-4 text-sm text-red-800">
+                    <AlertTriangle size={18} />
+                    <span>{errorMsg}</span>
+                </div>
+            )}
+
+            {loading && <div className="text-sm text-green-700 font-medium mb-4 animate-pulse">Carregando dados e sincronizando com a base...</div>}
+
+            {sugestoes.length > 0 && (
+                <div className="mb-6 border-2 border-green-200 bg-green-50 rounded-lg overflow-hidden">
+                    <div className="px-4 py-3 bg-green-100 flex items-center justify-between border-b border-green-200">
+                        <h4 className="font-bold text-green-800 flex items-center gap-2">
+                            <CheckCircle size={18} className="text-green-600" /> 
+                            📝 Sugestões do AgroVivo para Revisar
+                        </h4>
+                        <span className="bg-green-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">{sugestoes.length}</span>
+                    </div>
+                    <div className="p-4 flex flex-col gap-3">
+                        {sugestoes.map((sug) => {
+                            const params = sug.json_extraido || {};
+                            return (
+                                <div key={sug.id} className="flex flex-col sm:flex-row sm:items-center justify-between bg-white border border-green-100 p-3 rounded-md shadow-sm gap-3">
+                                    <div className="text-sm">
+                                        <div className="font-semibold text-gray-800">Espécie: <span className="text-green-700">{params.especies || params.especie_cultivar || 'Desconhecida'}</span></div>
+                                        <div className="text-gray-600">Tipo: {params.tipo || 'N/A'} | Qtd: {params.quantidade || 'N/A'} | {params.sistema_organico !== false ? 'Orgânico' : 'Convencional'}</div>
+                                    </div>
+                                    <button onClick={() => revisarSugestao(sug)} className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 transition">
+                                        <Edit2 size={14} /> Revisar
+                                    </button>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
             <div className="flex flex-col gap-3">
                 <AP title="9.1. Origem das sementes/mudas (Produção Orgânica)" defaultOpen>
                     <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg mb-3 text-sm text-amber-800"><AlertTriangle size={18} className="mt-0.5 shrink-0" /><span>Atenção: O uso de sementes não orgânicas requer justificativa e autorização prévia.</span></div>
@@ -74,8 +285,13 @@ const Secao9: React.FC<Secao9Props> = ({ data, onSectionChange }) => {
             </div>
 
             {mOpen && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"><div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-                <div className="flex items-center justify-between px-5 py-4 bg-green-600 text-white rounded-t-xl"><h3 className="text-lg font-bold">{ei?._id ? 'Editar Item' : 'Novo Item'}</h3><button type="button" onClick={() => setMOpen(false)} className="p-1 hover:bg-white/20 rounded"><X size={20} /></button></div>
+                <div className="flex items-center justify-between px-5 py-4 bg-green-600 text-white rounded-t-xl"><h3 className="text-lg font-bold">{ei?._id ? (sugestaoAtual ? 'Revisar Sugestão' : 'Editar Item') : 'Novo Item'}</h3><button type="button" onClick={() => { setMOpen(false); setSugestaoAtual(null); }} className="p-1 hover:bg-white/20 rounded"><X size={20} /></button></div>
                 <div className="p-5 space-y-4">
+                    {sugestaoAtual && (
+                        <div className="bg-green-50 text-green-800 p-3 rounded flex items-center gap-2 text-sm border border-green-200">
+                            <CheckCircle size={16} /> Verifique os dados e corrija se necessário. Suas correções treinam o nosso Agro-Bot!
+                        </div>
+                    )}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div><label className={lCls}>Tipo</label><select value={ei?.tipo || 'semente'} onChange={e => setEi(p => p ? { ...p, tipo: e.target.value } : null)} className={iCls}>{TIPOS.map(t => <option key={t.v} value={t.v}>{t.l}</option>)}</select></div>
                         <div><label className={lCls}>Data da Compra</label><input type="date" value={ei?.data_compra ? ei.data_compra.split('T')[0] : ''} onChange={e => setEi(p => p ? { ...p, data_compra: e.target.value } : null)} className={iCls} /></div>
@@ -87,7 +303,7 @@ const Secao9: React.FC<Secao9Props> = ({ data, onSectionChange }) => {
                         {listKey === 'sementes_mudas_organicas' && <div><label className={lCls}>Certificação Orgânica?</label><div className="flex gap-4 mt-2"><label className="flex items-center gap-1.5 cursor-pointer text-sm"><input type="radio" checked={ei?.sistema_organico === true} onChange={() => setEi(p => p ? { ...p, sistema_organico: true } : null)} className="w-4 h-4 accent-green-600" />Sim</label><label className="flex items-center gap-1.5 cursor-pointer text-sm"><input type="radio" checked={ei?.sistema_organico === false} onChange={() => setEi(p => p ? { ...p, sistema_organico: false } : null)} className="w-4 h-4" />Não</label></div></div>}
                     </div>
                 </div>
-                <div className="flex justify-end gap-2 px-5 py-4 border-t border-gray-200"><button type="button" onClick={() => setMOpen(false)} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md">Cancelar</button><button type="button" onClick={saveModal} className="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 font-medium">Salvar</button></div>
+                <div className="flex justify-end gap-2 px-5 py-4 border-t border-gray-200"><button type="button" onClick={() => { setMOpen(false); setSugestaoAtual(null); }} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md">Cancelar</button><button type="button" onClick={saveModal} disabled={loading} className="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 font-medium disabled:opacity-50">{loading ? 'Salvando...' : 'Salvar'}</button></div>
             </div></div>)}
 
             {dOpen && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"><div className="bg-white rounded-xl shadow-xl w-full max-w-sm">
