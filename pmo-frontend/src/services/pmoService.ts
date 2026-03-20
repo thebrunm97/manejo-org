@@ -72,10 +72,8 @@ export const savePmoSection = async (
             rawIdStr.startsWith('temp_') ||
             rawIdStr.startsWith('new_');
 
-        // Base payload com FK
-        const payload: Record<string, unknown> = {
-            pmo_id: pmoId
-        };
+        // Base payload (ID será removido se for temporário)
+        const payload: Record<string, unknown> = {};
 
         if (!isTemporaryId && rawId) {
             payload.id = rawId;

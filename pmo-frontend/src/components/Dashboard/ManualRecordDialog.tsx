@@ -129,7 +129,6 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
             // Base Payload
             const payloadBase = {
                 id: isEditMode && recordToEdit ? recordToEdit.id : undefined,
-                pmo_id: pmoId,
                 data_registro: new Date((draft as CommonDraft).dataHora).toISOString(),
                 talhao_canteiro: shouldShowLocation ? (draft as CommonDraft).locais.join('; ') : '',
                 produto: (draft as CommonDraft).produto,

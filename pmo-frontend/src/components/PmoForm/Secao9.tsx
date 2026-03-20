@@ -149,7 +149,6 @@ const Secao9: React.FC<Secao9Props> = ({ data, onSectionChange }) => {
         try {
             // Save to pmo_propagacao
             const rowTarget = {
-                pmo_id: pmoId,
                 tipo: ei.tipo,
                 especies: ei.especies,
                 origem: ei.origem,

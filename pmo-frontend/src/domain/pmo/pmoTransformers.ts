@@ -284,7 +284,6 @@ export function extractCulturasAnuais(formData: PMOFormData, pmoId: string): Cul
     return produtos
         .filter(item => !isRowEmpty(item))
         .map(item => ({
-            pmo_id: pmoId,
             produto: String(item.produto || ''),
             area_plantada: parseToFloatOrNull(item.area_plantada) ?? 0,
             unidade_area: String(item.area_plantada_unidade || ''),
@@ -314,7 +313,6 @@ export function extractManejoInsumos(formData: PMOFormData, pmoId: string): Mane
         .filter(item => !isRowEmpty(item))
         .map(item => ({
             id: (item.id || item._id) as string | undefined,
-            pmo_id: pmoId,
             insumo: String(item.produto_ou_manejo || ''),
             fonte: String(item.procedencia || ''),
             quantidade: String(item.dosagem || ''),
