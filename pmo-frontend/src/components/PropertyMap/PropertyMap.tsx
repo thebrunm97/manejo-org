@@ -168,8 +168,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
                 area_total_m2: parseFloat(pendingTalhao.areaM2.toFixed(2)),
                 area_ha: parseFloat(areaHa.toFixed(2)),
                 cor: '#16a34a', // Sucesso Green
-                propriedade_id: propriedadeId,
-                user_id: user.id
+                propriedade_id: propriedadeId
             };
 
             if (locationService.createTalhao) {
