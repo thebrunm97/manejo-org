@@ -54,28 +54,78 @@ func (s *Server) GetToolDeclarations() []*genai.Tool {
 	var declarations []*genai.FunctionDeclaration
 
 	for _, t := range s.tools {
+		// 1. Safe extraction of required fields (handling []string or []interface{})
+		var required []string
+		if reqVal, ok := t.InputSchema["required"]; ok {
+			if reqList, ok := reqVal.([]string); ok {
+				required = reqList
+			} else if reqList, ok := reqVal.([]interface{}); ok {
+				for _, r := range reqList {
+					if s, ok := r.(string); ok {
+						required = append(required, s)
+					}
+				}
+			}
+		}
+
 		decl := &genai.FunctionDeclaration{
 			Name:        t.Name,
 			Description: t.Description,
 			Parameters: &genai.Schema{
 				Type:       genai.TypeObject,
 				Properties: make(map[string]*genai.Schema),
-				Required:   t.InputSchema["required"].([]string),
+				Required:   required,
 			},
 		}
 
-		// Map properties (simplified for now, assuming string/int)
-		props := t.InputSchema["properties"].(map[string]interface{})
+		// 2. Safe extraction of properties
+		props, _ := t.InputSchema["properties"].(map[string]interface{})
+		if props == nil {
+			props = make(map[string]interface{})
+		}
+
 		for k, v := range props {
-			propMap := v.(map[string]interface{})
+			propMap, ok := v.(map[string]interface{})
+			if !ok {
+				continue
+			}
+
 			propType := genai.TypeString
-			if propMap["type"] == "integer" {
-				propType = genai.TypeInteger
+			if pType, ok := propMap["type"].(string); ok {
+				switch pType {
+				case "integer":
+					propType = genai.TypeInteger
+				case "number":
+					propType = genai.TypeNumber
+				case "boolean":
+					propType = genai.TypeBoolean
+				}
 			}
-			decl.Parameters.Properties[k] = &genai.Schema{
+
+			desc, _ := propMap["description"].(string)
+
+			propSchema := &genai.Schema{
 				Type:        propType,
-				Description: propMap["description"].(string),
+				Description: desc,
 			}
+
+			// Handle Enums manually
+			if enumVal, exists := propMap["enum"]; exists {
+				if enumList, ok := enumVal.([]string); ok {
+					propSchema.Enum = enumList
+				} else if enumList, ok := enumVal.([]interface{}); ok {
+					// Handle cases where we get []interface{} from JSON
+					var strList []string
+					for _, item := range enumList {
+						if s, ok := item.(string); ok {
+							strList = append(strList, s)
+						}
+					}
+					propSchema.Enum = strList
+				}
+			}
+
+			decl.Parameters.Properties[k] = propSchema
 		}
 		declarations = append(declarations, decl)
 	}
