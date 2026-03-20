@@ -7,6 +7,8 @@ import (
 	"log"
 	"strconv"
 	"strings"
+
+	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 )
 
 // InitializeTools registers the initial set of tools to the MCP server
@@ -78,6 +80,85 @@ func (s *Server) InitializeTools() {
 			"required": []string{"nome_talhao", "area_hectares"},
 		},
 		Handler: s.handleCriarInfraestruturaFazenda,
+	})
+
+	s.RegisterTool(Tool{
+		Name:        "adicionar_insumo_pmo",
+		Description: "Usa esta ferramenta para cadastrar insumos e equipamentos (Seção 8 do PMO) como fertilizantes, sementes compradas, substratos ou ferramentas novas.",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"pmo_id": map[string]interface{}{"type": "integer"},
+				"produto_manejo": map[string]interface{}{
+					"type":        "string",
+					"description": "Nome do insumo ou equipamento (Ex: Esterco de curral, Enxada, Substrato).",
+				},
+				"cultura_destino": map[string]interface{}{
+					"type":        "string",
+					"description": "Para qual cultura este insumo será usado (Ex: Alface, Milho).",
+				},
+				"epoca_frequencia": map[string]interface{}{
+					"type":        "string",
+					"description": "Quando é aplicado (Ex: No plantio, Mensalmente).",
+				},
+				"procedencia": map[string]interface{}{
+					"type":        "string",
+					"description": "Origem do insumo (Ex: Compra comercial, Produção própria).",
+				},
+				"composicao": map[string]interface{}{
+					"type":        "string",
+					"description": "Do que é feito (Ex: NPK, Orgânico 100%).",
+				},
+				"marca": map[string]interface{}{
+					"type":        "string",
+					"description": "Marca comercial, se houver.",
+				},
+				"dosagem": map[string]interface{}{
+					"type":        "string",
+					"description": "OBRIGATÓRIO. Quantidade ou dose recomendada (Ex: 10kg/ha). Se o usuário não informou, NÃO invente e NÃO chame a função. Pergunte primeiro.",
+				},
+			},
+			"required": []string{"pmo_id", "produto_manejo", "dosagem"},
+		},
+		Handler: s.handleAdicionarInsumoPMO,
+	})
+
+	s.RegisterTool(Tool{
+		Name:        "registrar_propagacao_vegetal",
+		Description: "Usa esta ferramenta para registrar a origem de sementes, mudas ou material propagativo (Seção 9 do PMO).",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"pmo_id": map[string]interface{}{"type": "integer"},
+				"tipo": map[string]interface{}{
+					"type":        "string",
+					"description": "Atividade realizada: Compra/Aquisição (se apenas comprou), Plantio (se colocou na terra), Semeadura ou Transplante.",
+					"enum":        []string{"Compra/Aquisição", "Plantio", "Semeadura", "Transplante"},
+				},
+				"especies": map[string]interface{}{
+					"type":        "string",
+					"description": "Espécie ou cultivar (Ex: Alface Crespa, Tomate Cereja).",
+				},
+				"origem": map[string]interface{}{
+					"type":        "string",
+					"description": "Fornecedor ou origem (Ex: Sementes Isla, Produção Própria).",
+				},
+				"quantidade": map[string]interface{}{
+					"type":        "string",
+					"description": "OBRIGATÓRIO. A quantidade exata (ex: 50 mudas, 2 kg). Se o utilizador não mencionou, NÃO adivinhe e NÃO chame a função. Pergunte primeiro.",
+				},
+				"sistema_organico": map[string]interface{}{
+					"type":        "boolean",
+					"description": "Indica se o material é certificado orgânico.",
+				},
+				"data_compra": map[string]interface{}{
+					"type":        "string",
+					"description": "Data no formato YYYY-MM-DD.",
+				},
+			},
+			"required": []string{"pmo_id", "tipo", "especies", "quantidade"},
+		},
+		Handler: s.handleRegistrarPropagacaoVegetal,
 	})
 }
 
@@ -255,6 +336,99 @@ func (s *Server) handleCriarInfraestruturaFazenda(args map[string]interface{}) (
 	}
 
 	return res, nil
+}
+
+func (s *Server) handleAdicionarInsumoPMO(args map[string]interface{}) (interface{}, error) {
+	log.Printf("🚨 [DEBUG TOOL] handleAdicionarInsumoPMO Args recebidos do LLM: %+v", args)
+
+	pmoIDFloat, _ := parseArgToFloat(args["pmo_id"])
+	pmoID := int64(pmoIDFloat)
+
+	record := supabase.PmoInsumoInsert{
+		PmoID:           pmoID,
+		ProdutoManejo:   sanitize(args["produto_manejo"]),
+		CulturaDestino:  sanitize(args["cultura_destino"]),
+		EpocaFrequencia: sanitize(args["epoca_frequencia"]),
+		Procedencia:     sanitize(args["procedencia"]),
+		Composicao:      sanitize(args["composicao"]),
+		Marca:           sanitize(args["marca"]),
+		Dosagem:         sanitize(args["dosagem"]),
+	}
+
+	log.Printf("🧪 [MCP-TOOL] Registrando insumo '%s' para PMO %d", record.ProdutoManejo, pmoID)
+
+	qtd := strings.TrimSpace(strings.ToUpper(record.Dosagem))
+	if record.ProdutoManejo == "" || qtd == "" || qtd == "0" || qtd == "NÃO INFORMADO" || qtd == "NULL" || qtd == "NENHUM" || strings.Contains(qtd, "0 ") {
+		return "ERRO FATAL: O usuário não informou a quantidade/dosagem exata. Não adivinhe, não use zeros. Pergunte a ele: 'Qual a quantidade que você usou ou comprou?'", nil
+	}
+
+	err := s.supabase.InsertPMOInsumo(record)
+	if err != nil {
+		return fmt.Sprintf("Erro ao inserir insumo: %v", err), nil
+	}
+
+	return fmt.Sprintf("Insumo '%s' registrado com sucesso na Seção 8 do seu plano.", record.ProdutoManejo), nil
+}
+
+func (s *Server) handleRegistrarPropagacaoVegetal(args map[string]interface{}) (interface{}, error) {
+	log.Printf("🚨 [DEBUG TOOL] handleRegistrarPropagacaoVegetal Args recebidos do LLM: %+v", args)
+
+	pmoIDFloat, _ := parseArgToFloat(args["pmo_id"])
+	pmoID := int64(pmoIDFloat)
+
+	sistemaOrganico := true
+	if val, ok := args["sistema_organico"].(bool); ok {
+		sistemaOrganico = val
+	}
+
+	record := supabase.PmoPropagacaoInsert{
+		PmoID:           pmoID,
+		Tipo:            sanitize(args["tipo"]),
+		Especies:        sanitize(args["especies"]),
+		Origem:          sanitize(args["origem"]),
+		Quantidade:      sanitize(args["quantidade"]),
+		SistemaOrganico: sistemaOrganico,
+		DataCompra:      sanitize(args["data_compra"]),
+	}
+
+	log.Printf("🌱 [MCP-TOOL] Registrando propagação '%s' para PMO %d", record.Especies, pmoID)
+
+	qtd := strings.TrimSpace(strings.ToUpper(record.Quantidade))
+	if record.Especies == "" || record.Tipo == "" || qtd == "" || qtd == "0" || qtd == "NÃO INFORMADO" || qtd == "NULL" || qtd == "NENHUM" || strings.Contains(qtd, "0 ") {
+		return "ERRO FATAL: O usuário não informou a quantidade exata. Não adivinhe nem use zeros. Pergunte a ele: 'Quantas mudas/sementes você comprou ou plantou?'", nil
+	}
+
+	err := s.supabase.InsertPMOPropagacao(record)
+	if err != nil {
+		return fmt.Sprintf("Erro ao inserir propagação: %v", err), nil
+	}
+
+	return fmt.Sprintf("Material de propagação '%s' (%s) registrado com sucesso na Seção 9 do seu plano.", record.Especies, record.Tipo), nil
+}
+
+// sanitize cleans and truncates string inputs from the LLM.
+// Prevents stored XSS, oversized payloads, and control character injection.
+const maxInputLen = 500
+
+func sanitize(val interface{}) string {
+	s, ok := val.(string)
+	if !ok {
+		return ""
+	}
+	// 1. Trim whitespace
+	s = strings.TrimSpace(s)
+	// 2. Truncate to prevent oversized payloads
+	if len(s) > maxInputLen {
+		s = s[:maxInputLen]
+	}
+	// 3. Remove control characters (keep newlines for legitimate multi-line input)
+	var clean strings.Builder
+	for _, r := range s {
+		if r == '\n' || r == '\r' || (r >= 32 && r != 127) {
+			clean.WriteRune(r)
+		}
+	}
+	return clean.String()
 }
 
 func parseArgToFloat(val interface{}) (float64, error) {

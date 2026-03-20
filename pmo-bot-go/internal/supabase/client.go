@@ -71,6 +71,8 @@ type CadernoCampoInsert struct {
 	DetalhesTecnicos   map[string]interface{} `json:"detalhes_tecnicos,omitempty"`
 	HouveDescartes     bool                   `json:"houve_descartes"`
 	QtdDescartes       float64                `json:"qtd_descartes,omitempty"`
+	Fornecedor         string                 `json:"fornecedor,omitempty"`
+	NotaFiscal         string                 `json:"nota_fiscal,omitempty"`
 	Canteiros          []string               `json:"-"` // Used internally to map to JSONB (UUIDs)
 	InsumoAplicado     string                 `json:"-"` // Used internally to map to detalhes_tecnicos
 }
@@ -145,6 +147,38 @@ type DocumentMatch struct {
 	Content      string  `json:"content"`
 	Similarity   float32 `json:"similarity"`
 	IsGlobal     bool    `json:"is_global"`
+}
+
+type PmoInsumoInsert struct {
+	PmoID           int64  `json:"pmo_id"`
+	ProdutoManejo   string `json:"produto_manejo"`
+	CulturaDestino  string `json:"cultura_destino,omitempty"`
+	EpocaFrequencia string `json:"epoca_frequencia,omitempty"`
+	Procedencia     string `json:"procedencia,omitempty"`
+	Composicao      string `json:"composicao,omitempty"`
+	Marca           string `json:"marca,omitempty"`
+	Dosagem         string `json:"dosagem,omitempty"`
+}
+
+type PmoPropagacaoInsert struct {
+	PmoID           int64  `json:"pmo_id"`
+	Tipo            string `json:"tipo"` // semente, muda, etc
+	Especies        string `json:"especies"`
+	Origem          string `json:"origem,omitempty"`
+	Quantidade      string `json:"quantidade,omitempty"`
+	SistemaOrganico bool   `json:"sistema_organico"`
+	DataCompra      string `json:"data_compra,omitempty"` // "YYYY-MM-DD"
+}
+
+type PmoLimpezaInsert struct {
+	PmoID            int64  `json:"pmo_id"`
+	DataLimpeza      string `json:"data_limpeza"`
+	ItemArea         string `json:"item_area"`
+	TipoLimpeza      string `json:"tipo_limpeza"`
+	ProdutoUtilizado string `json:"produto_utilizado,omitempty"`
+	Dosagem          string `json:"dosagem,omitempty"`
+	Responsavel      string `json:"responsavel"`
+	Observacao       string `json:"observacao,omitempty"`
 }
 
 // ---------------------------------------------------------------------------
@@ -236,6 +270,11 @@ func (c *Client) GetProfileByPhone(phone string) (*Profile, error) {
 // InsertCadernoCampo inserts the LLM parsed record and returns the UUID of the created row.
 // Uses Prefer: return=representation to get the full object back from Supabase.
 func (c *Client) InsertCadernoCampo(record CadernoCampoInsert) (string, error) {
+	// DATA SAFETY LOCK: Refuse to insert records with zero or negative quantity.
+	if record.QuantidadeValor <= 0 {
+		return "", fmt.Errorf("[Safety Lock] Refusing to save record for '%s' with zero quantity", record.TipoAtividade)
+	}
+
 	reqURL := fmt.Sprintf("%s/rest/v1/caderno_campo", c.config.URL)
 
 	// Lógica de De-Para do JSONB detalhes_tecnicos para paridade com o Frontend React
@@ -263,7 +302,8 @@ func (c *Client) InsertCadernoCampo(record CadernoCampoInsert) (string, error) {
 		record.DetalhesTecnicos["unidade_dosagem"] = record.QuantidadeUnidade
 		record.DetalhesTecnicos["unidade_medida"] = record.QuantidadeUnidade
 		if record.InsumoAplicado != "" {
-			record.DetalhesTecnicos["insumo_utilizado"] = record.InsumoAplicado
+			// Padronização Sprint 1: Usar apenas insumo_aplicado
+			record.DetalhesTecnicos["insumo_aplicado"] = record.InsumoAplicado
 		}
 	}
 
@@ -913,6 +953,39 @@ func (c *Client) CriarCanteirosEmLote(talhaoID int64, quantidade int, idInicial 
 	}
 
 	return nil
+}
+
+// InsertPMOInsumo inserts Section 8 (Insumos) data for PMO.
+func (c *Client) InsertPMOInsumo(record PmoInsumoInsert) error {
+	reqURL := fmt.Sprintf("%s/rest/v1/pmo_insumos", c.config.URL)
+	payload, err := json.Marshal(record)
+	if err != nil {
+		return err
+	}
+	_, err = c.doRequest(http.MethodPost, reqURL, payload)
+	return err
+}
+
+// InsertPMOPropagacao inserts Section 9 (Propagação Vegetal) data for PMO.
+func (c *Client) InsertPMOPropagacao(record PmoPropagacaoInsert) error {
+	reqURL := fmt.Sprintf("%s/rest/v1/pmo_propagacao", c.config.URL)
+	payload, err := json.Marshal(record)
+	if err != nil {
+		return err
+	}
+	_, err = c.doRequest(http.MethodPost, reqURL, payload)
+	return err
+}
+
+// InsertPMOLimpeza inserts Form 04 (Controle de Limpeza) data for PMO.
+func (c *Client) InsertPMOLimpeza(record PmoLimpezaInsert) error {
+	reqURL := fmt.Sprintf("%s/rest/v1/pmo_limpeza", c.config.URL)
+	payload, err := json.Marshal(record)
+	if err != nil {
+		return err
+	}
+	_, err = c.doRequest(http.MethodPost, reqURL, payload)
+	return err
 }
 
 // ---------------------------------------------------------------------------
