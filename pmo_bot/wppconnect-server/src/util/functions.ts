@@ -122,14 +122,17 @@ export async function callWebHook(
 ) {
   const webhook =
     client?.config.webhook || req.serverOptions.webhook.url || false;
+  console.log(`[DEBUG-WEBHOOK] event=${event} webhook=${webhook} client.config.webhook=${client?.config?.webhook} serverOptions.webhook.url=${req.serverOptions?.webhook?.url}`);
   if (webhook) {
     if (
       req.serverOptions.webhook?.ignore &&
       (req.serverOptions.webhook.ignore.includes(event) ||
         req.serverOptions.webhook.ignore.includes(data?.from) ||
         req.serverOptions.webhook.ignore.includes(data?.type))
-    )
+    ) {
+      console.log(`[DEBUG-WEBHOOK] IGNORED event=${event}`);
       return;
+    }
     if (req.serverOptions.webhook.autoDownload)
       await autoDownload(client, req, data);
     try {
@@ -140,9 +143,11 @@ export async function callWebHook(
       data = Object.assign({ event: event, session: client.session }, data);
       if (req.serverOptions.mapper.enable)
         data = await convert(req.serverOptions.mapper.prefix, data);
+      console.log(`[DEBUG-WEBHOOK] POSTING to ${webhook} event=${event}`);
       api
         .post(webhook, data)
         .then(() => {
+          console.log(`[DEBUG-WEBHOOK] POST SUCCESS event=${event}`);
           try {
             const events = ['unreadmessages', 'onmessage'];
             if (events.includes(event) && req.serverOptions.webhook.readMessage)
@@ -150,11 +155,15 @@ export async function callWebHook(
           } catch (e) {}
         })
         .catch((e) => {
+          console.log(`[DEBUG-WEBHOOK] POST FAILED event=${event} error=${e?.message || e}`);
           req.logger.warn('Error calling Webhook.', e);
         });
     } catch (e) {
+      console.log(`[DEBUG-WEBHOOK] EXCEPTION event=${event} error=${e}`);
       req.logger.error(e);
     }
+  } else {
+    console.log(`[DEBUG-WEBHOOK] NO WEBHOOK URL - event=${event} skipped`);
   }
 }
 

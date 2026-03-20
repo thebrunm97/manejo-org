@@ -1,63 +1,61 @@
 /**
- * Patch WPPConnect - Ignora status broadcasts
+ * Patch WPPConnect - Ignora status broadcasts e injeta configurações dinâmicas
  * Aplicado em runtime antes do servidor iniciar
  */
 
 console.log('🔧 [PATCH] Carregando patch para WPPConnect...');
 
-// Função para aplicar patch
 function applyPatch() {
     try {
-        // Interceptar módulo wa-js antes de carregar
         const Module = require('module');
         const originalRequire = Module.prototype.require;
 
         Module.prototype.require = function (id) {
             const module = originalRequire.apply(this, arguments);
 
-            // Interceptar @wppconnect/wa-js
-            if (id === '@wppconnect/wa-js' || id.includes('wa-js')) {
-                console.log('✅ [PATCH] Módulo wa-js detectado, aplicando override...');
+            // 1. Interceptar CONFIG (injetar webhook do env)
+            if (id === './config' || id.endsWith('/config.js') || id.endsWith('/config')) {
+                const configObj = module.default || module;
+                if (configObj && configObj.webhook) {
+                    console.log('✅ [PATCH] Injetando configuração de webhook via patch...');
+                    
+                    configObj.webhook.url = process.env.WEBHOOK_URL || configObj.webhook.url;
+                    configObj.webhook.readMessage = true;
+                    configObj.webhook.listenAcks = true;
+                    
+                    if (process.env.SECRET_KEY) {
+                        configObj.secretKey = process.env.SECRET_KEY;
+                    }
 
-                // Aguardar WPP estar disponível
+                    console.log('✅ [PATCH] Webhook URL injetada:', configObj.webhook.url);
+                }
+            }
+
+            // 2. Interceptar wa-js (filtro de broadcast)
+            if (id === '@wppconnect/wa-js' || id.includes('wa-js')) {
                 if (module.WPP && module.WPP.chat) {
+                    console.log('✅ [PATCH] Módulo wa-js detectado, aplicando override...');
                     const originalMarkIsRead = module.WPP.chat.markIsRead;
 
-                    // Sobrescrever função markIsRead
                     module.WPP.chat.markIsRead = function (chatId) {
                         const chatIdStr = String(chatId?._serialized || chatId || '');
-
-                        // Validar se é status broadcast
-                        if (chatIdStr.includes('status') ||
-                            chatIdStr.includes('broadcast') ||
-                            chatIdStr === 'status@broadcast') {
-                            console.log(`❌ [PATCH] Bloqueado markIsRead para: ${chatIdStr}`);
-                            return Promise.resolve({
-                                status: 'ignored',
-                                reason: 'status_broadcast'
-                            });
+                        if (chatIdStr.includes('status') || chatIdStr.includes('broadcast') || chatIdStr === 'status@broadcast') {
+                            return Promise.resolve({ status: 'ignored', reason: 'status_broadcast' });
                         }
-
-                        // Processar normalmente
-                        console.log(`✅ [PATCH] Permitido markIsRead para: ${chatIdStr}`);
                         return originalMarkIsRead.call(this, chatId);
                     };
-
-                    console.log('✅ [PATCH] Override aplicado em WPP.chat.markIsRead');
                 }
             }
 
             return module;
         };
 
-        console.log('✅ [PATCH] Module.require interceptado');
+        console.log('✅ [PATCH] Module.require interceptado (Config & wa-js)');
 
     } catch (error) {
         console.error('❌ [PATCH] Erro ao aplicar patch:', error);
     }
 }
 
-// Aplicar patch
 applyPatch();
-
 console.log('✅ [PATCH] Patch carregado com sucesso!');

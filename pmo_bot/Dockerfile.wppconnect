@@ -58,7 +58,7 @@ RUN echo "=== Verificando dist/config.js após compilação ===" && \
 RUN mkdir -p /usr/src/wpp-server/patches
 
 # Copiar arquivo de patch
-COPY wppconnect-patch.js /usr/src/wpp-server/patches/wppconnect-patch.js
+COPY pmo_bot/wppconnect-patch.js /usr/src/wpp-server/patches/wppconnect-patch.js
 
 # Criar script de inicialização com patch e limpeza de locks
 RUN echo '#!/bin/bash\n\
