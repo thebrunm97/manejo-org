@@ -358,12 +358,12 @@ export function usePmoFormLogic(options: UsePmoFormLogicOptions = {}): UsePmoFor
                 if (newPmoId && typeof newPmoId === 'string' && !newPmoId.startsWith('offline_')) {
                     setSaveStatus('Sincronizando tabelas...');
                     try {
-                        const culturas = extractCulturasAnuais(formData, newPmoId);
+                        const culturas = extractCulturasAnuais(formData);
                         if (culturas.length > 0) await syncCulturasAnuais(newPmoId, culturas);
                     } catch (e) { }
 
                     try {
-                        const insumos = extractManejoInsumos(formData, newPmoId);
+                        const insumos = extractManejoInsumos(formData);
                         if (insumos.length > 0) await syncManejoInsumos(newPmoId, insumos);
                     } catch (e) { }
                 }
