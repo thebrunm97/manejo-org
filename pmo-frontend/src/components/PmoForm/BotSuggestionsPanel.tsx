@@ -33,6 +33,40 @@ const BotSuggestionsPanel: React.FC<BotSuggestionsPanelProps> = ({ sectionId, on
                                 return Number(data.secao_pmo) === Number(sectionId);
                             }
 
+                            if (sectionId === 8) {
+                                const unid = String(data?.unidade || '').toLowerCase();
+                                const atividade = String(data?.atividade || '').toLowerCase();
+                                const textoOriginal = String(s.texto_usuario || '').toLowerCase();
+                                // Seção 8 rejeita mudas/sementes e aceita insumos
+                                const isMudaOuSemente = unid.includes('muda') || unid.includes('semente') || 
+                                                        textoOriginal.includes('muda') || textoOriginal.includes('semente') ||
+                                                        atividade.includes('planti') || atividade.includes('semead');
+                                
+                                if (isMudaOuSemente) return false;
+                                
+                                const isInsumo = data?.atividade === 'Compra/Aquisição' || data?.atividade === 'Manejo';
+                                return isInsumo;
+                            }
+
+                            if (sectionId === 9) {
+                                const unid = String(data?.unidade || '').toLowerCase();
+                                const atividade = String(data?.atividade || '').toLowerCase();
+                                const textoOriginal = String(s.texto_usuario || '').toLowerCase();
+                                const item = String(data?.insumo_cultura || data?.especies || data?.insumo_aplicado || '').toLowerCase();
+
+                                const blockedWords = ['esterco', 'adubo', 'fertilizante', 'calcário', 'calcario', 'calda', 'npk', 'defensivo', 'torta', 'farinha', 'biofertilizante', 'ureia', 'uréia'];
+                                const blockedActivities = ['aduba', 'aplica', 'pulveriza', 'preparo', 'manejo'];
+
+                                if (blockedWords.some(w => textoOriginal.includes(w) || item.includes(w))) return false;
+                                if (blockedActivities.some(a => atividade.includes(a))) return false;
+
+                                const isMudaOuSemente = unid.includes('muda') || unid.includes('semente') || 
+                                                        textoOriginal.includes('muda') || textoOriginal.includes('semente') ||
+                                                        atividade.includes('planti') || atividade.includes('semead');
+                                
+                                return isMudaOuSemente;
+                            }
+
                             if (sectionId === 10) {
                                 const isFitossanidade =
                                     !!data?.alvo_praga_doenca ||

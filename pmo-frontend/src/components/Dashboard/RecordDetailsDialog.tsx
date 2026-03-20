@@ -31,6 +31,7 @@ const RecordDetailsDialog: React.FC<RecordDetailsDialogProps> = ({ open, onClose
     const tipo = rawTipo.toLowerCase();
     const details = record.detalhes_tecnicos || {};
     const complianceMsg = formatComplianceMessage(record.observacao_original);
+    const shouldShowLocation = tipo !== 'outro';
 
     const getIconByType = (tipo: string) => {
         switch (tipo) {
@@ -122,20 +123,22 @@ const RecordDetailsDialog: React.FC<RecordDetailsDialogProps> = ({ open, onClose
                         )}
 
                         {/* Localização */}
-                        <div className="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
-                            <dt className="text-xs font-bold text-gray-400 uppercase tracking-wider self-center">Localização</dt>
-                            <dd className="mt-1 text-sm font-semibold text-gray-900 sm:col-span-2 sm:mt-0 flex flex-wrap gap-1.5">
-                                {locais.length > 0 ? (
-                                    locais.map((l, i) => (
-                                        <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-700 rounded border border-slate-200 text-xs">
-                                            <MapPin className="w-3 h-3" /> {l}
-                                        </span>
-                                    ))
-                                ) : (
-                                    <span className="text-gray-400 italic font-normal">Geral / Não informado</span>
-                                )}
-                            </dd>
-                        </div>
+                        {shouldShowLocation && (
+                            <div className="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                                <dt className="text-xs font-bold text-gray-400 uppercase tracking-wider self-center">Localização</dt>
+                                <dd className="mt-1 text-sm font-semibold text-gray-900 sm:col-span-2 sm:mt-0 flex flex-wrap gap-1.5">
+                                    {locais.length > 0 ? (
+                                        locais.map((l, i) => (
+                                            <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-700 rounded border border-slate-200 text-xs">
+                                                <MapPin className="w-3 h-3" /> {l}
+                                            </span>
+                                        ))
+                                    ) : (
+                                        <span className="text-gray-400 italic font-normal">Geral / Não informado</span>
+                                    )}
+                                </dd>
+                            </div>
+                        )}
 
                         {/* Quantidade (Se houver) */}
                         {Number(record.quantidade_valor) > 0 && (

@@ -20,6 +20,7 @@ import {
     ManejoDraft,
     ColheitaDraft,
     OutroDraft,
+    LimpezaDraft,
     AnyDraft
 } from './useRecordValidation';
 
@@ -90,6 +91,15 @@ export const initialOutroDraft: OutroDraft = {
     destinoVenda: ''
 };
 
+export const initialLimpezaDraft: LimpezaDraft = {
+    ...initialCommon,
+    itemArea: '',
+    tipoLimpeza: 'Seca',
+    produtoUtilizado: '',
+    dosagem: '',
+    responsavel: ''
+};
+
 interface UseRecordFormStateProps {
     /** Whether the dialog is open */
     open: boolean;
@@ -107,6 +117,7 @@ interface UseRecordFormStateReturn {
     manejoDraft: ManejoDraft;
     colheitaDraft: ColheitaDraft;
     outroDraft: OutroDraft;
+    limpezaDraft: LimpezaDraft;
 
     // Actions
     setActiveTab: (tab: TipoRegistro) => void;
@@ -120,6 +131,7 @@ interface UseRecordFormStateReturn {
     setManejoDraft: React.Dispatch<React.SetStateAction<ManejoDraft>>;
     setColheitaDraft: React.Dispatch<React.SetStateAction<ColheitaDraft>>;
     setOutroDraft: React.Dispatch<React.SetStateAction<OutroDraft>>;
+    setLimpezaDraft: React.Dispatch<React.SetStateAction<LimpezaDraft>>;
 }
 
 /**
@@ -161,6 +173,10 @@ export const useRecordFormState = ({
         ...initialOutroDraft,
         dataHora: getNowISO()
     }));
+    const [limpezaDraft, setLimpezaDraft] = useState<LimpezaDraft>(() => ({
+        ...initialLimpezaDraft,
+        dataHora: getNowISO()
+    }));
 
     /**
      * Gets the current draft based on active tab.
@@ -171,8 +187,9 @@ export const useRecordFormState = ({
             case 'manejo': return manejoDraft;
             case 'colheita': return colheitaDraft;
             case 'outro': return outroDraft;
+            case 'limpeza': return limpezaDraft;
         }
-    }, [activeTab, plantioDraft, manejoDraft, colheitaDraft, outroDraft]);
+    }, [activeTab, plantioDraft, manejoDraft, colheitaDraft, outroDraft, limpezaDraft]);
 
     /**
      * Updates a field in the current draft.
@@ -190,6 +207,9 @@ export const useRecordFormState = ({
                 break;
             case 'outro':
                 setOutroDraft(prev => ({ ...prev, [field]: value } as OutroDraft));
+                break;
+            case 'limpeza':
+                setLimpezaDraft(prev => ({ ...prev, [field]: value } as LimpezaDraft));
                 break;
         }
     }, [activeTab]);
@@ -212,6 +232,9 @@ export const useRecordFormState = ({
             case 'outro':
                 setOutroDraft({ ...initialOutroDraft, dataHora: now });
                 break;
+            case 'limpeza':
+                setLimpezaDraft({ ...initialLimpezaDraft, dataHora: now });
+                break;
         }
     }, []);
 
@@ -224,6 +247,7 @@ export const useRecordFormState = ({
         setManejoDraft({ ...initialManejoDraft, dataHora: now });
         setColheitaDraft({ ...initialColheitaDraft, dataHora: now, lote: getLoteSuggestion() });
         setOutroDraft({ ...initialOutroDraft, dataHora: now });
+        setLimpezaDraft({ ...initialLimpezaDraft, dataHora: now });
         setActiveTab('plantio');
     }, []);
 
@@ -327,6 +351,7 @@ export const useRecordFormState = ({
         manejoDraft,
         colheitaDraft,
         outroDraft,
+        limpezaDraft,
         setActiveTab,
         getCurrentDraft,
         updateDraft,
@@ -335,7 +360,8 @@ export const useRecordFormState = ({
         setPlantioDraft,
         setManejoDraft,
         setColheitaDraft,
-        setOutroDraft
+        setOutroDraft,
+        setLimpezaDraft
     };
 };
 
