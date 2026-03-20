@@ -35,22 +35,30 @@ type Localizacao struct {
 }
 
 // ExtractionResult is the structured JSON returned by the LLM.
-// Derived from records.py (AtividadeItem, BaseRecord, PlanejamentoRecord).
+// Includes NecessitaMaisInfo/PerguntaAoUsuario for Active Interview pattern.
 type ExtractionResult struct {
-	Intencao         string      `json:"intencao"`
-	Atividade        string      `json:"atividade"`
-	InsumoCultura    string      `json:"insumo_cultura"`
-	InsumoAplicado   string      `json:"insumo_aplicado"`
-	InsumoGenerico   bool        `json:"insumo_generico"`
-	Quantidade       float64     `json:"quantidade"`
-	Unidade          string      `json:"unidade"`
-	Localizacao      Localizacao `json:"localizacao"`
-	DataRelativa     string      `json:"data_relativa"`
-	AlertaOrganico   bool        `json:"alerta_organico"`
-	TokensPrompt     int         `json:"tokens_prompt"`
-	TokensCompletion int         `json:"tokens_completion"`
-	HouveDescartes   bool        `json:"houve_descartes"`
-	QtdDescartes     float64     `json:"qtd_descartes"`
+	Intencao          string      `json:"intencao"`
+	Atividade         string      `json:"atividade"`
+	InsumoCultura     string      `json:"insumo_cultura"`
+	InsumoAplicado    string      `json:"insumo_aplicado"`
+	InsumoGenerico    bool        `json:"insumo_generico"`
+	Quantidade        interface{} `json:"quantidade"`
+	Unidade           string      `json:"unidade"`
+	Localizacao       Localizacao `json:"localizacao"`
+	DataRelativa      string      `json:"data_relativa"`
+	AlertaOrganico    bool        `json:"alerta_organico"`
+	TokensPrompt      int         `json:"tokens_prompt"`
+	TokensCompletion  int         `json:"tokens_completion"`
+	HouveDescartes    bool        `json:"houve_descartes"`
+	QtdDescartes      interface{} `json:"qtd_descartes"`
+	NecessitaMaisInfo bool        `json:"necessita_mais_info"`
+	PerguntaAoUsuario string      `json:"pergunta_ao_usuario"`
+	Fornecedor        string      `json:"fornecedor"`
+	ItemArea          string      `json:"item_area"`
+	TipoLimpeza       string      `json:"tipo_limpeza"`
+	ProdutoUtilizado  string      `json:"produto_utilizado"`
+	Dosagem           string      `json:"dosagem"`
+	Responsavel       string      `json:"responsavel"`
 }
 
 // ---------------------------------------------------------------------------
@@ -213,6 +221,7 @@ func (c *Client) doRequest(payload []byte) (*ExtractionResult, error) {
 		chatResp.Usage.CompletionTokens,
 		chatResp.Usage.TotalTokens,
 	)
+	log.Printf("🚨 [DEBUG GROQ] JSON bruto do LLM: %s", content)
 
 	// Parse the LLM's JSON output into our struct
 	var result ExtractionResult
