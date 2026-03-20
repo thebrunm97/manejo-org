@@ -272,7 +272,7 @@ export function cleanFormDataForSubmission(data: PMOFormData): PMOFormData {
  * @param pmoId - ID do PMO (FK)
  * @returns Array de CulturaAnual prontos para insert
  */
-export function extractCulturasAnuais(formData: PMOFormData, pmoId: string): CulturaAnual[] {
+export function extractCulturasAnuais(formData: PMOFormData): CulturaAnual[] {
     const secao2 = formData.secao_2_atividades_produtivas_organicas as Record<string, unknown>;
     const producaoVegetal = secao2?.producao_primaria_vegetal as Record<string, unknown>;
     const produtos = producaoVegetal?.produtos_primaria_vegetal as Record<string, unknown>[];
@@ -301,7 +301,7 @@ export function extractCulturasAnuais(formData: PMOFormData, pmoId: string): Cul
  * @param pmoId - ID do PMO (FK)
  * @returns Array de ManejoInsumo prontos para upsert
  */
-export function extractManejoInsumos(formData: PMOFormData, pmoId: string): ManejoInsumo[] {
+export function extractManejoInsumos(formData: PMOFormData): ManejoInsumo[] {
     const secao8 = formData.secao_8_insumos_equipamentos as Record<string, unknown>;
     const insumos = secao8?.insumos_melhorar_fertilidade as Record<string, unknown>[];
 
