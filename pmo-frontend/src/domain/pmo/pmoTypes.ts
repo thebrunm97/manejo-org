@@ -296,7 +296,7 @@ export interface UserProfile {
  * Cultura anual extraída da Seção 2 para tabela `culturas_anuais`.
  */
 export interface CulturaAnual {
-    pmo_id: string;
+    pmo_id?: string;
     produto: string;
     area_plantada: number;
     unidade_area: string;
@@ -311,7 +311,7 @@ export interface CulturaAnual {
  */
 export interface ManejoInsumo {
     id?: string;
-    pmo_id: string;
+    pmo_id?: string;
     insumo: string;
     fonte: string;
     quantidade: string;
