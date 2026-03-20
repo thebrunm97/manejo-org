@@ -23,6 +23,7 @@ import {
     Droplets
 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { useAuthProfile } from '../../context/AuthContext';
 import LocationSelectorDialog from '../Common/LocationSelectorDialog';
 import {
     ActivityType,
@@ -55,7 +56,6 @@ import { useCadernoOfflineLogic } from '../../hooks/offline/useCadernoOfflineLog
 interface ManualRecordDialogProps {
     open: boolean;
     onClose: () => void;
-    pmoId: number;
     recordToEdit?: CadernoCampoRecord | null;
     onRecordSaved: () => void;
 }
@@ -63,7 +63,6 @@ interface ManualRecordDialogProps {
 const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
     open,
     onClose,
-    pmoId,
     recordToEdit,
     onRecordSaved
 }) => {
@@ -311,7 +310,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
             setLoading(false);
             setOpenJustification(false);
         }
-    }, [getCurrentDraft, activeTab, isEditMode, recordToEdit, pmoId, justificativa, clearDraft, clearAllErrors, onRecordSaved, onClose, saveRecord]);
+    }, [getCurrentDraft, activeTab, isEditMode, recordToEdit, justificativa, clearDraft, clearAllErrors, onRecordSaved, onClose, saveRecord]);
 
     // --- Helper: Render Unit Select ---
     const renderUnitSelect = (
@@ -353,6 +352,8 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
     const currentDraft = getCurrentDraft();
     const common = currentDraft as CommonDraft;
     const pDraft = plantioDraft;
+    const { pmoAtivoId: pmoId } = useAuthProfile();
+    const isPmoActive = !!pmoId;
     const mDraft = manejoDraft;
     const cDraft = colheitaDraft;
     const oDraft = outroDraft;

@@ -3,6 +3,7 @@ import React, { useState, ChangeEvent, useEffect } from 'react';
 import { ChevronDown, PlusCircle, Sprout, X, AlertTriangle, CheckCircle } from 'lucide-react';
 import SectionShell from '../Plan/SectionShell';
 import PropagacaoCard from './cards/PropagacaoCard';
+import { useAuthProfile } from '../../context/AuthContext';
 import { supabase } from '../../supabaseClient';
 
 interface PropagacaoItem { id?: string; _id: string; tipo?: string; especies?: string; origem?: string; quantidade?: string; sistema_organico?: boolean; data_compra?: string; }
@@ -34,7 +35,7 @@ const Secao9: React.FC<Secao9Props> = ({ data, onSectionChange }) => {
     const [errorMsg, setErrorMsg] = useState('');
 
     // Supondo pmoId = 1 para testes, na realidade viria via params ou props
-    const pmoId = 1; 
+    const { pmoAtivoId: pmoId } = useAuthProfile();
 
     const loadData = async () => {
         setLoading(true);

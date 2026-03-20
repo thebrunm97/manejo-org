@@ -14,7 +14,7 @@ import {
     Loader2,
     Droplets
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuthCore } from '../../context/AuthContext';
 import { cn } from '../../utils/cn';
 
 // Componentes Internos
@@ -36,7 +36,7 @@ interface PropertyMapProps {
 }
 
 const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
-    const { user } = useAuth();
+    const { user } = useAuthCore();
 
     // Estados
     const [viewMode, setViewMode] = useState<'croqui' | 'mapa'>('croqui');
