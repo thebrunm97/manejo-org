@@ -16,7 +16,11 @@ import {
     MapPin,
     X,
     AlertTriangle,
-    ChevronDown
+    ChevronDown,
+    Wrench,
+    Sparkles,
+    ShieldCheck,
+    Droplets
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import LocationSelectorDialog from '../Common/LocationSelectorDialog';
@@ -42,7 +46,8 @@ import {
     PlantioDraft,
     ManejoDraft,
     ColheitaDraft,
-    OutroDraft
+    OutroDraft,
+    LimpezaDraft
 } from '../../hooks/manual-record';
 import { useCadernoOfflineLogic } from '../../hooks/offline/useCadernoOfflineLogic';
 
@@ -70,6 +75,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
         manejoDraft,
         colheitaDraft,
         outroDraft,
+        limpezaDraft,
         setActiveTab,
         getCurrentDraft,
         updateDraft: updateDraftBase,
@@ -125,7 +131,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                 id: isEditMode && recordToEdit ? recordToEdit.id : undefined,
                 pmo_id: pmoId,
                 data_registro: new Date((draft as CommonDraft).dataHora).toISOString(),
-                talhao_canteiro: (draft as CommonDraft).locais.join('; '),
+                talhao_canteiro: shouldShowLocation ? (draft as CommonDraft).locais.join('; ') : '',
                 produto: (draft as CommonDraft).produto,
                 observacao_original: (draft as CommonDraft).observacao || `Registro de ${activeTab.toUpperCase()}`,
             };
@@ -160,7 +166,14 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                 };
 
                 if (d.subtipoManejo === ManejoSubtype.APLICACAO_INSUMO) {
-                    detalhes = { ...detalhes, insumo: d.insumo, dosagem: d.dosagem, unidade_dosagem: d.unidadeDosagem, equipamento: d.equipamento };
+                    detalhes = { 
+                        ...detalhes, 
+                        insumo_aplicado: d.insumo, 
+                        insumo: d.insumo, 
+                        dosagem: d.dosagem, 
+                        unidade_dosagem: d.unidadeDosagem, 
+                        equipamento: d.equipamento 
+                    };
                 } else if (d.subtipoManejo === ManejoSubtype.HIGIENIZACAO) {
                     detalhes = { ...detalhes, item_higienizado: d.itemHigienizado, produto_utilizado: d.produtoUtilizado };
                 } else {
@@ -201,6 +214,26 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                     unidade_descartes: d.houveDescartes ? d.unidadeDescartes : undefined
                 } as CadernoEntry;
             }
+            else if (activeTab === 'limpeza') {
+                const d = draft as LimpezaDraft;
+                // Nota: Registros de limpeza vão para uma tabela SEPARADA pmo_limpeza no DB real via API,
+                // mas aqui no frontend estamos simulando via CadernoEntry para manter o fluxo offline/sync.
+                // O hook useCadernoOfflineLogic precisará tratar este redirecionamento.
+                finalPayload = {
+                    ...payloadBase,
+                    tipo_atividade: 'Limpeza',
+                    produto: `${d.itemArea} (${d.tipoLimpeza})`,
+                    responsavel: d.responsavel,
+                    // Mapeamento extra para o hook de salvamento identificar a tabela
+                    is_pmo_limpeza: true, 
+                    data_limpeza: new Date(d.dataHora).toISOString().split('T')[0],
+                    item_area: d.itemArea,
+                    tipo_limpeza: d.tipoLimpeza,
+                    produto_utilizado: d.produtoUtilizado,
+                    dosagem: d.dosagem,
+                    observacao: d.observacao
+                } as any;
+            }
             else {
                 // Outro
                 const d = draft as OutroDraft;
@@ -214,6 +247,11 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                         fornecedor: d.fornecedor,
                         tipo_origem: d.tipoOrigem,
                         numero_documento: d.numeroDocumento
+                    });
+                    // Sprint 1: Mapear para colunas nativas no payloadBase (através do spread posterior)
+                    Object.assign(payloadBase, {
+                        fornecedor: d.fornecedor,
+                        nota_fiscal: d.numeroDocumento
                     });
                 } else if (d.tipoOutro === 'venda') {
                     Object.assign(detalhes, {
@@ -319,6 +357,8 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
     const mDraft = manejoDraft;
     const cDraft = colheitaDraft;
     const oDraft = outroDraft;
+    const lDraft = limpezaDraft;
+    const shouldShowLocation = activeTab !== 'outro' && activeTab !== 'limpeza';
 
     // --- Derived UI vars ---
     const labelProduto =
@@ -326,7 +366,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
             ? 'Cultura/Produto'
             : mDraft.subtipoManejo === ManejoSubtype.APLICACAO_INSUMO ||
                 mDraft.subtipoManejo === ManejoSubtype.MANEJO_CULTURAL
-                ? 'Cultura Alvo'
+                ? 'Cultura Alvo / Item'
                 : 'Cultura/Produto';
 
     const labelLocais =
@@ -369,6 +409,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                             { id: 'plantio', label: 'PLANTIO', icon: Sprout, color: 'text-green-600', activeBorder: 'border-green-500' },
                             { id: 'manejo', label: 'MANEJO', icon: FlaskConical, color: 'text-blue-600', activeBorder: 'border-blue-500' },
                             { id: 'colheita', label: 'COLHEITA', icon: Scissors, color: 'text-amber-600', activeBorder: 'border-amber-500' },
+                            { id: 'limpeza', label: 'LIMPEZA', icon: Sparkles, color: 'text-cyan-600', activeBorder: 'border-cyan-500' },
                             { id: 'outro', label: 'OUTRO', icon: Package, color: 'text-gray-600', activeBorder: 'border-gray-500' },
                         ].map((tab) => {
                             const Icon = tab.icon;
@@ -383,7 +424,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                                     onClick={() => !disabled && setActiveTab(tab.id as any)}
                                     disabled={disabled}
                                     className={`
-                                        w-1/4 py-4 px-1 text-center border-b-2 font-medium text-sm flex flex-col items-center justify-center gap-1 transition-colors duration-200
+                                        w-1/5 py-4 px-1 text-center border-b-2 font-medium text-sm flex flex-col items-center justify-center gap-1 transition-colors duration-200
                                         ${isActive
                                             ? `${tab.activeBorder} ${tab.color} bg-gray-50`
                                             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50'}
@@ -416,9 +457,9 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                         </div>
                     )}
 
-                    {/* Common Fields: Data & Produto */}
+                    {/* Common Fields: Data & Produto (Produto Oculto na Limpeza) */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                        <div>
+                        <div className={activeTab === 'limpeza' ? 'sm:col-span-2' : ''}>
                             <label htmlFor="data-hora-input" className="block text-sm font-medium text-gray-700 mb-1">Data e Hora</label>
                             <input
                                 id="data-hora-input"
@@ -432,7 +473,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                             {errors.data && <p className="mt-1 text-xs text-red-600">{errors.data}</p>}
                         </div>
 
-                        {!(activeTab === 'manejo' && mDraft.subtipoManejo === ManejoSubtype.HIGIENIZACAO) && (
+                        {activeTab !== 'limpeza' && !(activeTab === 'manejo' && mDraft.subtipoManejo === ManejoSubtype.HIGIENIZACAO) && (
                             <div>
                                 <label htmlFor="produto-input" className="block text-sm font-medium text-gray-700 mb-1">{labelProduto}</label>
                                 <input
@@ -451,44 +492,46 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                     </div>
 
                     {/* Location Selector */}
-                    <div>
-                        <label className={`block text-xs font-bold uppercase mb-1 ${errors.locais ? 'text-red-600' : 'text-gray-500'}`}>
-                            {labelLocais} {errors.locais && `(${errors.locais})`}
-                        </label>
-                        <div
-                            onClick={() => {
-                                setOpenLocation(true);
-                                if (errors.locais) clearError('locais');
-                            }}
-                            className={`
-                                flex flex-wrap gap-2 p-3 border border-dashed rounded-md min-h-[60px] items-center cursor-pointer transition-colors
-                                ${errors.locais ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:bg-gray-50 hover:border-green-500'}
-                            `}
-                        >
-                            {common.locais.length === 0 && (
-                                <div className="flex items-center text-gray-500 text-sm pl-1">
-                                    <MapPin size={18} className={`mr-2 ${errors.locais ? 'text-red-500' : 'text-gray-400'}`} />
-                                    <span>Clique para selecionar Talhões ou Canteiros...</span>
-                                </div>
-                            )}
-                            {common.locais.map(l => (
-                                <span key={l} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
-                                    {l}
-                                    <button
-                                        type="button"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            updateDraft('locais', common.locais.filter(x => x !== l));
-                                        }}
-                                        className="ml-1.5 inline-flex items-center justify-center h-4 w-4 rounded-full text-green-400 hover:bg-green-200 hover:text-green-600 focus:outline-none"
-                                    >
-                                        <span className="sr-only">Remover</span>
-                                        <X size={12} />
-                                    </button>
-                                </span>
-                            ))}
+                    {shouldShowLocation && (
+                        <div>
+                            <label className={`block text-xs font-bold uppercase mb-1 ${errors.locais ? 'text-red-600' : 'text-gray-500'}`}>
+                                {labelLocais} {errors.locais && `(${errors.locais})`}
+                            </label>
+                            <div
+                                onClick={() => {
+                                    setOpenLocation(true);
+                                    if (errors.locais) clearError('locais');
+                                }}
+                                className={`
+                                    flex flex-wrap gap-2 p-3 border border-dashed rounded-md min-h-[60px] items-center cursor-pointer transition-colors
+                                    ${errors.locais ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:bg-gray-50 hover:border-green-500'}
+                                `}
+                            >
+                                {common.locais.length === 0 && (
+                                    <div className="flex items-center text-gray-500 text-sm pl-1">
+                                        <MapPin size={18} className={`mr-2 ${errors.locais ? 'text-red-500' : 'text-gray-400'}`} />
+                                        <span>Clique para selecionar Talhões ou Canteiros...</span>
+                                    </div>
+                                )}
+                                {common.locais.map(l => (
+                                    <span key={l} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                                        {l}
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                updateDraft('locais', common.locais.filter(x => x !== l));
+                                            }}
+                                            className="ml-1.5 inline-flex items-center justify-center h-4 w-4 rounded-full text-green-400 hover:bg-green-200 hover:text-green-600 focus:outline-none"
+                                        >
+                                            <span className="sr-only">Remover</span>
+                                            <X size={12} />
+                                        </button>
+                                    </span>
+                                ))}
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* --- TAB CONTENT: PLANTIO --- */}
                     {activeTab === 'plantio' && (
@@ -994,6 +1037,98 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                                     </div>
                                 </>
                             )}
+                        </div>
+                    )}
+                    {/* --- TAB CONTENT: LIMPEZA --- */}
+                    {activeTab === 'limpeza' && (
+                        <div className="p-4 bg-cyan-50 rounded-lg border border-cyan-100 space-y-4 shadow-sm">
+                            <h4 className="text-sm font-bold text-cyan-800 uppercase tracking-wide flex items-center gap-2">
+                                <Sparkles size={16} /> Controle de Limpeza (Form. 04)
+                            </h4>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label htmlFor="item-area-input" className="block text-sm font-medium text-gray-700 mb-1">Item ou Área Higienizada</label>
+                                    <input
+                                        id="item-area-input"
+                                        type="text"
+                                        list="item-area-suggestions"
+                                        value={lDraft.itemArea}
+                                        onChange={e => updateDraft('itemArea', e.target.value)}
+                                        placeholder="Ex: Trator, Galpão, Caixa d'água"
+                                        className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm px-3 py-2 border 
+                                            ${errors.itemArea ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-cyan-500 focus:ring-cyan-500'}
+                                        `}
+                                    />
+                                    <datalist id="item-area-suggestions">
+                                        <option value="Trator" />
+                                        <option value="Pulverizador" />
+                                        <option value="Caixas de Colheita" />
+                                        <option value="Galpão de Insumos" />
+                                        <option value="Ferramentas Manuais" />
+                                        <option value="Caminhão / Veículo" />
+                                        <option value="Instalações (Banheiros/Copa)" />
+                                    </datalist>
+                                    {errors.itemArea && <p className="mt-1 text-xs text-red-600">{errors.itemArea}</p>}
+                                </div>
+                                <div>
+                                    <label htmlFor="tipo-limpeza-select" className="block text-sm font-medium text-gray-700 mb-1">Tipo de Limpeza</label>
+                                    <select
+                                        id="tipo-limpeza-select"
+                                        value={lDraft.tipoLimpeza}
+                                        onChange={e => updateDraft('tipoLimpeza', e.target.value)}
+                                        className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm px-3 py-2 border bg-white
+                                            ${errors.tipoLimpeza ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-cyan-500 focus:ring-cyan-500'}
+                                        `}
+                                    >
+                                        <option value="">Selecione...</option>
+                                        <option value="Seca / Varrição">Seca / Varrição</option>
+                                        <option value="Úmida / Lavagem">Úmida / Lavagem</option>
+                                        <option value="Desinfecção">Desinfecção</option>
+                                    </select>
+                                    {errors.tipoLimpeza && <p className="mt-1 text-xs text-red-600">{errors.tipoLimpeza}</p>}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label htmlFor="produto-limpeza-input" className="block text-sm font-medium text-gray-700 mb-1">Produto Utilizado</label>
+                                    <input
+                                        id="produto-limpeza-input"
+                                        type="text"
+                                        value={lDraft.produtoUtilizado}
+                                        onChange={e => updateDraft('produtoUtilizado', e.target.value)}
+                                        placeholder="Ex: Sabão Neutro, Cloro, Água"
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm px-3 py-2 border"
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="dosagem-limpeza-input" className="block text-sm font-medium text-gray-700 mb-1">Dosagem</label>
+                                    <input
+                                        id="dosagem-limpeza-input"
+                                        type="text"
+                                        value={lDraft.dosagem}
+                                        onChange={e => updateDraft('dosagem', e.target.value)}
+                                        placeholder="Ex: 10ml / Litro ou 'Puro'"
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm px-3 py-2 border"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label htmlFor="responsavel-limpeza-input" className="block text-sm font-medium text-gray-700 mb-1">Responsável (Assinatura)</label>
+                                <input
+                                    id="responsavel-limpeza-input"
+                                    type="text"
+                                    value={lDraft.responsavel}
+                                    onChange={e => updateDraft('responsavel', e.target.value)}
+                                    placeholder="Nome de quem executou"
+                                    className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm px-3 py-2 border 
+                                        ${errors.responsavel ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-cyan-500 focus:ring-cyan-500'}
+                                    `}
+                                />
+                                {errors.responsavel && <p className="mt-1 text-xs text-red-600">{errors.responsavel}</p>}
+                            </div>
                         </div>
                     )}
 
