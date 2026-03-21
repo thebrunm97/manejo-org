@@ -16,11 +16,7 @@ import {
     MapPin,
     X,
     AlertTriangle,
-    ChevronDown,
-    Wrench,
-    Sparkles,
-    ShieldCheck,
-    Droplets
+    Sparkles
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useAuthProfile } from '../../context/AuthContext';
@@ -36,13 +32,9 @@ import {
     ManejoSubtype
 } from '../../types/CadernoTypes';
 
-// --- Custom Hooks ---
 import {
     useRecordValidation,
     useRecordFormState,
-    UNIDADES_PLANTIO,
-    UNIDADES_MANEJO,
-    UNIDADES_COLHEITA,
     CommonDraft,
     PlantioDraft,
     ManejoDraft,
@@ -51,6 +43,13 @@ import {
     LimpezaDraft
 } from '../../hooks/manual-record';
 import { useCadernoOfflineLogic } from '../../hooks/offline/useCadernoOfflineLogic';
+
+// --- Tab Components ---
+import PlantioTab from './ManualRecord/Tabs/PlantioTab';
+import ManejoTab from './ManualRecord/Tabs/ManejoTab';
+import ColheitaTab from './ManualRecord/Tabs/ColheitaTab';
+import OutroTab from './ManualRecord/Tabs/OutroTab';
+import LimpezaTab from './ManualRecord/Tabs/LimpezaTab';
 
 // --- Component Props ---
 interface ManualRecordDialogProps {
@@ -80,6 +79,9 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
         updateDraft: updateDraftBase,
         clearDraft
     } = useRecordFormState({ open, recordToEdit });
+
+    const { pmoAtivoId } = useAuthProfile();
+    const pmoId = pmoAtivoId ? Number(pmoAtivoId) : 0;
 
     const {
         validate,
@@ -128,6 +130,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
             // Base Payload
             const payloadBase = {
                 id: isEditMode && recordToEdit ? recordToEdit.id : undefined,
+                pmo_id: pmoId, // INJECTED: Essential for RLS and data association
                 data_registro: new Date((draft as CommonDraft).dataHora).toISOString(),
                 talhao_canteiro: shouldShowLocation ? (draft as CommonDraft).locais.join('; ') : '',
                 produto: (draft as CommonDraft).produto,
@@ -312,69 +315,25 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
         }
     }, [getCurrentDraft, activeTab, isEditMode, recordToEdit, justificativa, clearDraft, clearAllErrors, onRecordSaved, onClose, saveRecord]);
 
-    // --- Helper: Render Unit Select ---
-    const renderUnitSelect = (
-        value: UnitType | string,
-        fieldName: string,
-        options: UnitType[],
-        label: string = "Unid",
-        id?: string
-    ) => {
-        const isCustomValue = value && !options.includes(value as UnitType);
-        const effectiveOptions = isCustomValue ? [value, ...options] : options;
-        const safeValue = value || '';
-
-        return (
-            <div className="min-w-[100px]">
-                <label htmlFor={id} className="block text-xs font-medium text-gray-700 mb-1">{label}</label>
-                <div className="relative">
-                    <select
-                        id={id}
-                        value={safeValue}
-                        onChange={e => updateDraft(fieldName, e.target.value)}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm px-3 py-2 border bg-white appearance-none pr-8"
-                    >
-                        {effectiveOptions.map(opt => (
-                            <option key={opt} value={opt}>
-                                {opt === value && isCustomValue ? `${opt} (Legado)` : opt}
-                            </option>
-                        ))}
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                        <ChevronDown size={14} />
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
     // --- Prepare drafts for render ---
-    const currentDraft = getCurrentDraft();
-    const common = currentDraft as CommonDraft;
-    const pDraft = plantioDraft;
-    const { pmoAtivoId: pmoId } = useAuthProfile();
-    const isPmoActive = !!pmoId;
-    const mDraft = manejoDraft;
-    const cDraft = colheitaDraft;
-    const oDraft = outroDraft;
-    const lDraft = limpezaDraft;
+    const common = getCurrentDraft() as CommonDraft;
     const shouldShowLocation = activeTab !== 'outro' && activeTab !== 'limpeza';
 
     // --- Derived UI vars ---
     const labelProduto =
         activeTab !== 'manejo'
             ? 'Cultura/Produto'
-            : mDraft.subtipoManejo === ManejoSubtype.APLICACAO_INSUMO ||
-                mDraft.subtipoManejo === ManejoSubtype.MANEJO_CULTURAL
+            : manejoDraft.subtipoManejo === ManejoSubtype.APLICACAO_INSUMO ||
+                manejoDraft.subtipoManejo === ManejoSubtype.MANEJO_CULTURAL
                 ? 'Cultura Alvo / Item'
                 : 'Cultura/Produto';
 
     const labelLocais =
         activeTab !== 'manejo'
             ? 'Talhões / Canteiros'
-            : mDraft.subtipoManejo === ManejoSubtype.APLICACAO_INSUMO
+            : manejoDraft.subtipoManejo === ManejoSubtype.APLICACAO_INSUMO
                 ? 'Locais de aplicação (Talhões/Canteiros)'
-                : mDraft.subtipoManejo === ManejoSubtype.HIGIENIZACAO
+                : manejoDraft.subtipoManejo === ManejoSubtype.HIGIENIZACAO
                     ? 'Locais / Áreas Higienizadas'
                     : 'Talhões / Canteiros';
 
@@ -473,7 +432,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                             {errors.data && <p className="mt-1 text-xs text-red-600">{errors.data}</p>}
                         </div>
 
-                        {activeTab !== 'limpeza' && !(activeTab === 'manejo' && mDraft.subtipoManejo === ManejoSubtype.HIGIENIZACAO) && (
+                        {activeTab !== 'limpeza' && !(activeTab === 'manejo' && manejoDraft.subtipoManejo === ManejoSubtype.HIGIENIZACAO) && (
                             <div>
                                 <label htmlFor="produto-input" className="block text-sm font-medium text-gray-700 mb-1">{labelProduto}</label>
                                 <input
@@ -535,601 +494,54 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
 
                     {/* --- TAB CONTENT: PLANTIO --- */}
                     {activeTab === 'plantio' && (
-                        <div className="p-4 bg-green-50 rounded-lg border border-green-100 space-y-4 shadow-sm">
-                            <h4 className="text-sm font-bold text-green-800 uppercase tracking-wide flex items-center gap-2">
-                                <Sprout size={16} /> Detalhes do Plantio
-                            </h4>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                <div className="sm:col-span-1">
-                                    <label htmlFor="metodo-propagacao-select" className="block text-sm font-medium text-gray-700 mb-1">Método</label>
-                                    <select
-                                        id="metodo-propagacao-select"
-                                        value={pDraft.metodoPropagacao}
-                                        onChange={e => updateDraft('metodoPropagacao', e.target.value)}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm px-3 py-2 border bg-white"
-                                    >
-                                        <option value="Muda">Muda (Transplante)</option>
-                                        <option value="Semente">Semente (Semeadura)</option>
-                                        <option value="Estaca">Estaca/Bulbo</option>
-                                    </select>
-                                </div>
-                                <div className="sm:col-span-1">
-                                    <label htmlFor="qtd-plantio" className="block text-sm font-medium text-gray-700 mb-1">Quantidade</label>
-                                    <input
-                                        id="qtd-plantio"
-                                        type="number"
-                                        value={pDraft.qtdPlantio}
-                                        onChange={e => updateDraft('qtdPlantio', e.target.value)}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm px-3 py-2 border"
-                                    />
-                                </div>
-                                <div className="sm:col-span-1">
-                                    {renderUnitSelect(pDraft.unidadePlantio, 'unidadePlantio', UNIDADES_PLANTIO, "Unid.", "unidade-plantio-select")}
-                                </div>
-                            </div>
-
-                            {/* Perda / Descarte */}
-                            <div className="space-y-2">
-                                <div className="flex items-center">
-                                    <input
-                                        id="houve-descartes-plantio-check"
-                                        type="checkbox"
-                                        checked={pDraft.houveDescartes}
-                                        onChange={e => updateDraft('houveDescartes', e.target.checked)}
-                                        className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                                    />
-                                    <label htmlFor="houve-descartes-plantio-check" className="ml-2 block text-sm text-gray-900 cursor-pointer select-none">
-                                        Houve descartes (perdas) no plantio?
-                                    </label>
-                                </div>
-
-                                {pDraft.houveDescartes && (
-                                    <div className="pl-6 grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label htmlFor="qtd-descartes-plantio-input" className="block text-sm font-medium text-gray-700 mb-1">Qtd. Descartes</label>
-                                            <input
-                                                id="qtd-descartes-plantio-input"
-                                                type="number"
-                                                value={pDraft.qtdDescartes}
-                                                onChange={e => updateDraft('qtdDescartes', e.target.value)}
-                                                className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm px-3 py-2 border 
-                                                    ${errors.qtdDescartes ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-green-500 focus:ring-green-500'}
-                                                `}
-                                            />
-                                            {errors.qtdDescartes && <p className="mt-1 text-xs text-red-600">{errors.qtdDescartes}</p>}
-                                        </div>
-                                        <div>
-                                            {renderUnitSelect(
-                                                pDraft.unidadeDescartes,
-                                                'unidadeDescartes',
-                                                UNIDADES_PLANTIO,
-                                                "Unid.",
-                                                "unidade-descartes-plantio-select"
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                        <PlantioTab
+                            draft={plantioDraft}
+                            updateDraft={updateDraft}
+                            errors={errors}
+                            isEditMode={isEditMode}
+                        />
                     )}
 
                     {/* --- TAB CONTENT: MANEJO --- */}
                     {activeTab === 'manejo' && (
-                        <div className="p-4 bg-blue-50 rounded-lg border border-blue-100 space-y-4 shadow-sm">
-                            <h4 className="text-sm font-bold text-blue-800 uppercase tracking-wide flex items-center gap-2">
-                                <FlaskConical size={16} /> Operação de Manejo
-                            </h4>
-
-                            <div>
-                                <label htmlFor="subtipo-manejo-select" className="block text-sm font-medium text-gray-700 mb-1">Tipo de Operação</label>
-                                <select
-                                    id="subtipo-manejo-select"
-                                    value={mDraft.subtipoManejo}
-                                    onChange={(e) => updateDraft('subtipoManejo', e.target.value)}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border bg-white"
-                                >
-                                    <option value={ManejoSubtype.MANEJO_CULTURAL}>Manejo Cultural</option>
-                                    <option value={ManejoSubtype.APLICACAO_INSUMO}>Aplicação de Insumos</option>
-                                    <option value={ManejoSubtype.HIGIENIZACAO}>Higienização</option>
-                                </select>
-                            </div>
-
-                            <p className="text-xs text-gray-500 italic border-l-2 border-blue-200 pl-2">
-                                Preencha os dados abaixo conforme a operação:
-                            </p>
-
-                            {mDraft.subtipoManejo === ManejoSubtype.APLICACAO_INSUMO && (
-                                <>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div>
-                                            <label htmlFor="insumo-input" className="block text-sm font-medium text-gray-700 mb-1">Insumo Utilizado</label>
-                                            <input
-                                                id="insumo-input"
-                                                type="text"
-                                                value={mDraft.insumo}
-                                                onChange={e => {
-                                                    updateDraft('insumo', e.target.value);
-                                                    checkInsumoOrganico(e.target.value);
-                                                }}
-                                                placeholder="Ex: Bokashi, Calda Bordalesa"
-                                                className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm px-3 py-2 border 
-                                                     ${errors.insumo ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'}
-                                                 `}
-                                            />
-                                            {errors.insumo && <p className="mt-1 text-xs text-red-600">{errors.insumo}</p>}
-                                        </div>
-                                        <div>
-                                            <label htmlFor="equipamento-input" className="block text-sm font-medium text-gray-700 mb-1">Equipamento</label>
-                                            <input
-                                                id="equipamento-input"
-                                                type="text"
-                                                value={mDraft.equipamento}
-                                                onChange={e => updateDraft('equipamento', e.target.value)}
-                                                placeholder="Ex: Pulverizador Costal"
-                                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {organicWarning && (
-                                        <div className="bg-amber-50 border-l-4 border-amber-400 p-2 rounded-r-md">
-                                            <p className="text-xs text-amber-700">{organicWarning.msg}</p>
-                                        </div>
-                                    )}
-
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
-                                        <div>
-                                            <label htmlFor="dosagem-input" className="block text-sm font-medium text-gray-700 mb-1">Dosagem</label>
-                                            <input
-                                                id="dosagem-input"
-                                                type="text"
-                                                value={mDraft.dosagem}
-                                                onChange={e => updateDraft('dosagem', e.target.value)}
-                                                className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm px-3 py-2 border 
-                                                    ${errors.dosagem ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'}
-                                                `}
-                                            />
-                                            {errors.dosagem && <p className="mt-1 text-xs text-red-600">{errors.dosagem}</p>}
-                                        </div>
-                                        <div>
-                                            {renderUnitSelect(mDraft.unidadeDosagem, 'unidadeDosagem', UNIDADES_MANEJO, "Unid.", "unidade-dosagem-manejo-select")}
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label htmlFor="tipo-manejo-select" className="block text-sm font-medium text-gray-700 mb-1">Categoria (Opcional)</label>
-                                        <select
-                                            id="tipo-manejo-select"
-                                            value={mDraft.tipoManejo}
-                                            onChange={e => updateDraft('tipoManejo', e.target.value)}
-                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border bg-white"
-                                        >
-                                            <option value="Adubação">Adubação</option>
-                                            <option value="Fitossanitário">Fitossanitário</option>
-                                            <option value="Irrigação">Irrigação</option>
-                                            <option value="Outro">Outro</option>
-                                        </select>
-                                    </div>
-                                </>
-                            )}
-
-                            {mDraft.subtipoManejo === ManejoSubtype.HIGIENIZACAO && (
-                                <>
-                                    <div>
-                                        <label htmlFor="item-higienizado-input" className="block text-sm font-medium text-gray-700 mb-1">Item Higienizado</label>
-                                        <input
-                                            id="item-higienizado-input"
-                                            type="text"
-                                            value={mDraft.itemHigienizado}
-                                            onChange={e => updateDraft('itemHigienizado', e.target.value)}
-                                            placeholder="Ex: Caixas Colheita, Ferramentas"
-                                            className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm px-3 py-2 border 
-                                                ${errors.itemHigienizado ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'}
-                                            `}
-                                        />
-                                        {errors.itemHigienizado && <p className="mt-1 text-xs text-red-600">{errors.itemHigienizado}</p>}
-                                    </div>
-                                    <div>
-                                        <label htmlFor="produto-utilizado-input" className="block text-sm font-medium text-gray-700 mb-1">Produto Utilizado</label>
-                                        <input
-                                            id="produto-utilizado-input"
-                                            type="text"
-                                            value={mDraft.produtoUtilizado}
-                                            onChange={e => updateDraft('produtoUtilizado', e.target.value)}
-                                            placeholder="Ex: Hipoclorito, Detergente neutro"
-                                            className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm px-3 py-2 border 
-                                                ${errors.produtoUtilizado ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'}
-                                            `}
-                                        />
-                                        {errors.produtoUtilizado && <p className="mt-1 text-xs text-red-600">{errors.produtoUtilizado}</p>}
-                                    </div>
-                                </>
-                            )}
-
-                            {mDraft.subtipoManejo === ManejoSubtype.MANEJO_CULTURAL && (
-                                <>
-                                    <div>
-                                        <label htmlFor="atividade-cultural-input" className="block text-sm font-medium text-gray-700 mb-1">Atividade Realizada</label>
-                                        <input
-                                            id="atividade-cultural-input"
-                                            type="text"
-                                            value={mDraft.atividadeCultural}
-                                            onChange={e => updateDraft('atividadeCultural', e.target.value)}
-                                            placeholder="Ex: Capina, Poda, Desbaste"
-                                            className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm px-3 py-2 border 
-                                                ${errors.atividadeCultural ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'}
-                                            `}
-                                        />
-                                        {errors.atividadeCultural && <p className="mt-1 text-xs text-red-600">{errors.atividadeCultural}</p>}
-                                    </div>
-                                    <div>
-                                        <label htmlFor="qtd-trabalhadores-input" className="block text-sm font-medium text-gray-700 mb-1">Qtd. Trabalhadores</label>
-                                        <input
-                                            id="qtd-trabalhadores-input"
-                                            type="number"
-                                            value={mDraft.qtdTrabalhadores}
-                                            onChange={e => updateDraft('qtdTrabalhadores', e.target.value)}
-                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
-                                        />
-                                    </div>
-                                </>
-                            )}
-
-                            <div>
-                                <label htmlFor="responsavel-input" className="block text-sm font-medium text-gray-700 mb-1">Responsável Técnico / Operador</label>
-                                <input
-                                    id="responsavel-input"
-                                    type="text"
-                                    value={mDraft.responsavel}
-                                    onChange={e => updateDraft('responsavel', e.target.value)}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
-                                />
-                            </div>
-                        </div>
+                        <ManejoTab
+                            draft={manejoDraft}
+                            updateDraft={updateDraft}
+                            errors={errors}
+                            isEditMode={isEditMode}
+                            checkInsumoOrganico={checkInsumoOrganico}
+                            organicWarning={organicWarning}
+                        />
                     )}
 
                     {/* --- TAB CONTENT: COLHEITA --- */}
                     {activeTab === 'colheita' && (
-                        <div className="p-4 bg-orange-50 rounded-lg border border-orange-100 space-y-4 shadow-sm">
-                            <h4 className="text-sm font-bold text-orange-800 uppercase tracking-wide flex items-center gap-2">
-                                <Scissors size={16} /> Rastreabilidade da Colheita
-                            </h4>
-
-                            <div>
-                                <label htmlFor="lote-input" className="block text-sm font-medium text-gray-700 mb-1">LOTE (Auto-Gerado)</label>
-                                <input
-                                    id="lote-input"
-                                    type="text"
-                                    value={cDraft.lote}
-                                    onChange={e => updateDraft('lote', e.target.value)}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm px-3 py-2 border bg-gray-100 text-gray-600 cursor-not-allowed"
-                                    readOnly
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
-                                <div>
-                                    <label htmlFor="qtd-colheita" className="block text-sm font-medium text-gray-700 mb-1">Quantidade Colhida</label>
-                                    <input
-                                        id="qtd-colheita"
-                                        type="number"
-                                        value={cDraft.qtdColheita}
-                                        onChange={e => updateDraft('qtdColheita', e.target.value)}
-                                        placeholder="0.00"
-                                        className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm px-3 py-2 border 
-                                             ${errors.qtdColheita ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-orange-500 focus:ring-orange-500'}
-                                         `}
-                                    />
-                                    {errors.qtdColheita && <p className="mt-1 text-xs text-red-600">{errors.qtdColheita}</p>}
-                                </div>
-                                <div>{renderUnitSelect(cDraft.unidadeColheita, 'unidadeColheita', UNIDADES_COLHEITA, "Unid.", "unidade-colheita-select")}</div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label htmlFor="destino-colheita-select" className="block text-sm font-medium text-gray-700 mb-1">Destino</label>
-                                    <select
-                                        id="destino-colheita-select"
-                                        value={cDraft.destino}
-                                        onChange={e => updateDraft('destino', e.target.value)}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm px-3 py-2 border bg-white"
-                                    >
-                                        <option value="Mercado Interno">Mercado Interno</option>
-                                        <option value="Exportação">Exportação</option>
-                                        <option value="Processamento">Processamento</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label htmlFor="classificacao-colheita-select" className="block text-sm font-medium text-gray-700 mb-1">Classificação</label>
-                                    <select
-                                        id="classificacao-colheita-select"
-                                        value={cDraft.classificacao}
-                                        onChange={e => updateDraft('classificacao', e.target.value)}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm px-3 py-2 border bg-white"
-                                    >
-                                        <option value="Extra">Extra</option>
-                                        <option value="Primeira">Primeira</option>
-                                        <option value="Segunda">Segunda</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            {/* Perda / Descarte Colheita */}
-                            <div className="space-y-2 pt-2 border-t border-orange-200">
-                                <div className="flex items-center">
-                                    <input
-                                        id="houveDescartesC"
-                                        type="checkbox"
-                                        checked={cDraft.houveDescartes}
-                                        onChange={e => updateDraft('houveDescartes', e.target.checked)}
-                                        className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
-                                    />
-                                    <label htmlFor="houveDescartesC" className="ml-2 block text-sm text-gray-900 cursor-pointer select-none">
-                                        Houve descartes (perdas) na colheita?
-                                    </label>
-                                </div>
-
-                                {cDraft.houveDescartes && (
-                                    <div className="pl-6 grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label htmlFor="qtd-descartes-colheita" className="block text-sm font-medium text-gray-700 mb-1">Qtd. Descartes</label>
-                                            <input
-                                                id="qtd-descartes-colheita"
-                                                type="number"
-                                                value={cDraft.qtdDescartes}
-                                                onChange={e => updateDraft('qtdDescartes', e.target.value)}
-                                                className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm px-3 py-2 border 
-                                                    ${errors.qtdDescartes ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-orange-500 focus:ring-orange-500'}
-                                                `}
-                                            />
-                                            {errors.qtdDescartes && <p className="mt-1 text-xs text-red-600">{errors.qtdDescartes}</p>}
-                                        </div>
-                                        <div>
-                                            {renderUnitSelect(
-                                                cDraft.unidadeDescartes,
-                                                'unidadeDescartes',
-                                                UNIDADES_COLHEITA,
-                                                "Unid.",
-                                                "unidade-descartes-colheita-select"
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                        <ColheitaTab
+                            draft={colheitaDraft}
+                            updateDraft={updateDraft}
+                            errors={errors}
+                            isEditMode={isEditMode}
+                        />
                     )}
 
                     {/* --- TAB CONTENT: OUTRO --- */}
                     {activeTab === 'outro' && (
-                        <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 space-y-4 shadow-sm">
-                            <h4 className="text-sm font-bold text-gray-700 uppercase tracking-wide flex items-center gap-2">
-                                <Package size={16} /> Tipo de Registro Outro
-                            </h4>
-
-                            <div>
-                                <label htmlFor="tipo-outro-select" className="block text-sm font-medium text-gray-700 mb-1">Subtipo</label>
-                                <select
-                                    id="tipo-outro-select"
-                                    value={oDraft.tipoOutro}
-                                    onChange={e => updateDraft('tipoOutro', e.target.value)}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm px-3 py-2 border bg-white"
-                                >
-                                    <option value="outro">Genérico / Outro</option>
-                                    <option value="compra">Compra de Insumo/Produto</option>
-                                    <option value="venda">Venda / Saída</option>
-                                </select>
-                            </div>
-
-                            {oDraft.tipoOutro === 'compra' && (
-                                <>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div>
-                                            <label htmlFor="qtd-outro-compra" className="block text-sm font-medium text-gray-700 mb-1">Quantidade</label>
-                                            <input
-                                                id="qtd-outro-compra"
-                                                type="number"
-                                                value={oDraft.quantidade}
-                                                onChange={e => updateDraft('quantidade', e.target.value)}
-                                                className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm px-3 py-2 border 
-                                                    ${errors.quantidade ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-gray-500 focus:ring-gray-500'}
-                                                `}
-                                            />
-                                            {errors.quantidade && <p className="mt-1 text-xs text-red-600">{errors.quantidade}</p>}
-                                        </div>
-                                        <div>
-                                            {renderUnitSelect(
-                                                oDraft.unidade,
-                                                'unidade',
-                                                [UnitType.UNID, UnitType.L, UnitType.KG, UnitType.CX, UnitType.MACO, UnitType.TON] as any[]
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label htmlFor="fornecedor-input" className="block text-sm font-medium text-gray-700 mb-1">Fornecedor</label>
-                                        <input
-                                            id="fornecedor-input"
-                                            type="text"
-                                            value={oDraft.fornecedor}
-                                            onChange={e => updateDraft('fornecedor', e.target.value)}
-                                            className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm px-3 py-2 border 
-                                                ${errors.fornecedor ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-gray-500 focus:ring-gray-500'}
-                                            `}
-                                        />
-                                        {errors.fornecedor && <p className="mt-1 text-xs text-red-600">{errors.fornecedor}</p>}
-                                    </div>
-
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div>
-                                            <label htmlFor="tipo-origem-select" className="block text-sm font-medium text-gray-700 mb-1">Origem</label>
-                                            <select
-                                                id="tipo-origem-select"
-                                                value={oDraft.tipoOrigem}
-                                                onChange={e => updateDraft('tipoOrigem', e.target.value)}
-                                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm px-3 py-2 border bg-white"
-                                            >
-                                                <option value="compra">Compra</option>
-                                                <option value="doação">Doação</option>
-                                                <option value="produção própria">Produção Própria</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label htmlFor="numero-documento-compra-input" className="block text-sm font-medium text-gray-700 mb-1">Nº. Documento / NF</label>
-                                            <input
-                                                id="numero-documento-compra-input"
-                                                type="text"
-                                                value={oDraft.numeroDocumento}
-                                                onChange={e => updateDraft('numeroDocumento', e.target.value)}
-                                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm px-3 py-2 border"
-                                            />
-                                        </div>
-                                    </div>
-                                </>
-                            )}
-
-                            {oDraft.tipoOutro === 'venda' && (
-                                <>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div>
-                                            <label htmlFor="qtd-outro-venda" className="block text-sm font-medium text-gray-700 mb-1">Quantidade Vendida</label>
-                                            <input
-                                                id="qtd-outro-venda"
-                                                type="number"
-                                                value={oDraft.quantidade}
-                                                onChange={e => updateDraft('quantidade', e.target.value)}
-                                                className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm px-3 py-2 border 
-                                                    ${errors.quantidade ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-gray-500 focus:ring-gray-500'}
-                                                `}
-                                            />
-                                            {errors.quantidade && <p className="mt-1 text-xs text-red-600">{errors.quantidade}</p>}
-                                        </div>
-                                        <div>
-                                            {renderUnitSelect(
-                                                oDraft.unidade,
-                                                'unidade',
-                                                [UnitType.UNID, UnitType.L, UnitType.KG, UnitType.CX, UnitType.MACO, UnitType.TON] as any[]
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label htmlFor="destino-venda-input" className="block text-sm font-medium text-gray-700 mb-1">Destino / Cliente</label>
-                                        <input
-                                            id="destino-venda-input"
-                                            type="text"
-                                            value={oDraft.destinoVenda}
-                                            onChange={e => updateDraft('destinoVenda', e.target.value)}
-                                            className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm px-3 py-2 border 
-                                                ${errors.destinoVenda ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-gray-500 focus:ring-gray-500'}
-                                            `}
-                                        />
-                                        {errors.destinoVenda && <p className="mt-1 text-xs text-red-600">{errors.destinoVenda}</p>}
-                                    </div>
-                                    <div>
-                                        <label htmlFor="numero-documento-venda-input" className="block text-sm font-medium text-gray-700 mb-1">Nº. Documento / NF</label>
-                                        <input
-                                            id="numero-documento-venda-input"
-                                            type="text"
-                                            value={oDraft.numeroDocumento}
-                                            onChange={e => updateDraft('numeroDocumento', e.target.value)}
-                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 sm:text-sm px-3 py-2 border"
-                                        />
-                                    </div>
-                                </>
-                            )}
-                        </div>
+                        <OutroTab
+                            draft={outroDraft}
+                            updateDraft={updateDraft}
+                            errors={errors}
+                            isEditMode={isEditMode}
+                        />
                     )}
+
                     {/* --- TAB CONTENT: LIMPEZA --- */}
                     {activeTab === 'limpeza' && (
-                        <div className="p-4 bg-cyan-50 rounded-lg border border-cyan-100 space-y-4 shadow-sm">
-                            <h4 className="text-sm font-bold text-cyan-800 uppercase tracking-wide flex items-center gap-2">
-                                <Sparkles size={16} /> Controle de Limpeza (Form. 04)
-                            </h4>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label htmlFor="item-area-input" className="block text-sm font-medium text-gray-700 mb-1">Item ou Área Higienizada</label>
-                                    <input
-                                        id="item-area-input"
-                                        type="text"
-                                        list="item-area-suggestions"
-                                        value={lDraft.itemArea}
-                                        onChange={e => updateDraft('itemArea', e.target.value)}
-                                        placeholder="Ex: Trator, Galpão, Caixa d'água"
-                                        className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm px-3 py-2 border 
-                                            ${errors.itemArea ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-cyan-500 focus:ring-cyan-500'}
-                                        `}
-                                    />
-                                    <datalist id="item-area-suggestions">
-                                        <option value="Trator" />
-                                        <option value="Pulverizador" />
-                                        <option value="Caixas de Colheita" />
-                                        <option value="Galpão de Insumos" />
-                                        <option value="Ferramentas Manuais" />
-                                        <option value="Caminhão / Veículo" />
-                                        <option value="Instalações (Banheiros/Copa)" />
-                                    </datalist>
-                                    {errors.itemArea && <p className="mt-1 text-xs text-red-600">{errors.itemArea}</p>}
-                                </div>
-                                <div>
-                                    <label htmlFor="tipo-limpeza-select" className="block text-sm font-medium text-gray-700 mb-1">Tipo de Limpeza</label>
-                                    <select
-                                        id="tipo-limpeza-select"
-                                        value={lDraft.tipoLimpeza}
-                                        onChange={e => updateDraft('tipoLimpeza', e.target.value)}
-                                        className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm px-3 py-2 border bg-white
-                                            ${errors.tipoLimpeza ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-cyan-500 focus:ring-cyan-500'}
-                                        `}
-                                    >
-                                        <option value="">Selecione...</option>
-                                        <option value="Seca / Varrição">Seca / Varrição</option>
-                                        <option value="Úmida / Lavagem">Úmida / Lavagem</option>
-                                        <option value="Desinfecção">Desinfecção</option>
-                                    </select>
-                                    {errors.tipoLimpeza && <p className="mt-1 text-xs text-red-600">{errors.tipoLimpeza}</p>}
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label htmlFor="produto-limpeza-input" className="block text-sm font-medium text-gray-700 mb-1">Produto Utilizado</label>
-                                    <input
-                                        id="produto-limpeza-input"
-                                        type="text"
-                                        value={lDraft.produtoUtilizado}
-                                        onChange={e => updateDraft('produtoUtilizado', e.target.value)}
-                                        placeholder="Ex: Sabão Neutro, Cloro, Água"
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm px-3 py-2 border"
-                                    />
-                                </div>
-                                <div>
-                                    <label htmlFor="dosagem-limpeza-input" className="block text-sm font-medium text-gray-700 mb-1">Dosagem</label>
-                                    <input
-                                        id="dosagem-limpeza-input"
-                                        type="text"
-                                        value={lDraft.dosagem}
-                                        onChange={e => updateDraft('dosagem', e.target.value)}
-                                        placeholder="Ex: 10ml / Litro ou 'Puro'"
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm px-3 py-2 border"
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label htmlFor="responsavel-limpeza-input" className="block text-sm font-medium text-gray-700 mb-1">Responsável (Assinatura)</label>
-                                <input
-                                    id="responsavel-limpeza-input"
-                                    type="text"
-                                    value={lDraft.responsavel}
-                                    onChange={e => updateDraft('responsavel', e.target.value)}
-                                    placeholder="Nome de quem executou"
-                                    className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm px-3 py-2 border 
-                                        ${errors.responsavel ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-cyan-500 focus:ring-cyan-500'}
-                                    `}
-                                />
-                                {errors.responsavel && <p className="mt-1 text-xs text-red-600">{errors.responsavel}</p>}
-                            </div>
-                        </div>
+                        <LimpezaTab
+                            draft={limpezaDraft}
+                            updateDraft={updateDraft}
+                            errors={errors}
+                            isEditMode={isEditMode}
+                        />
                     )}
 
                     {/* Campo de Observação Geral */}
