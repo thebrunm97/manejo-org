@@ -4,6 +4,17 @@ Todas as mudanças notáveis deste projeto serão documentadas neste arquivo.
 
 O formato baseia-se no [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/), e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.4.0] - 2026-03-20
+
+### 🚀 Added
+- **AI Tools (Form 04 & Sections 8/9)**: Novas ferramentas MCP para automatizar registros de Limpeza, Propagação e Insumos.
+- **Session-Level Mutex**: Implementação de `sync.Map` para gerenciar concorrência por sessão de usuário.
+- **Message Deduplication**: Deduplicador de IDs de mensagem para evitar processamento redundante de webhooks.
+
+### 🛠 Refactored / Fixed
+- **FSM Context Management**: Introdução de timeouts de 90s/30s e propagação segura de `context.Context`.
+- **Supabase Mapping**: Suporte robusto para mapeamento JSONB de detalhes técnicos via Go client.
+
 ## [v0.11.5] - 2026-03-19
 
 ### 🚀 Added
