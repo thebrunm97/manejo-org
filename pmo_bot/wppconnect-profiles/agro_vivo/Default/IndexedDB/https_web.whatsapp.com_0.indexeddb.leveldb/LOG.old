@@ -1,0 +1,24 @@
+2026/03/20-16:50:05.486 31 Reusing MANIFEST /tmp/browser_profile/agro_vivo/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/03/20-16:50:05.617 31 Recovering log #240
+2026/03/20-16:50:05.696 31 Reusing old log /tmp/browser_profile/agro_vivo/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/000240.log 
+2026/03/20-16:50:07.595 33 Compacting 1@1 + 3@2 files
+2026/03/20-16:50:10.133 33 Generated table #243@1: 41757 keys, 2197433 bytes
+2026/03/20-16:50:12.147 33 Generated table #244@1: 27103 keys, 2187660 bytes
+2026/03/20-16:50:15.781 33 Generated table #245@1: 79171 keys, 2073007 bytes
+2026/03/20-16:50:15.782 33 Compacted 1@1 + 3@2 files => 6458100 bytes
+2026/03/20-16:50:15.852 33 compacted to: files[ 0 0 3 0 0 0 0 ]
+2026/03/20-16:50:15.971 33 Delete type=2 #237
+2026/03/20-16:50:15.980 33 Delete type=2 #238
+2026/03/20-16:50:15.981 33 Delete type=2 #239
+2026/03/20-16:50:15.982 33 Delete type=2 #241
+2026/03/20-17:21:58.545 38 Level-0 table #247: started
+2026/03/20-17:21:59.798 38 Level-0 table #247: 3256442 bytes OK
+2026/03/20-17:21:59.824 38 Delete type=0 #240
+2026/03/20-17:24:32.531 31 Compacting 1@1 + 2@2 files
+2026/03/20-17:24:34.672 31 Generated table #248@1: 43459 keys, 2200853 bytes
+2026/03/20-17:24:35.719 31 Generated table #249@1: 26679 keys, 2172999 bytes
+2026/03/20-17:24:35.720 31 Compacted 1@1 + 2@2 files => 4373852 bytes
+2026/03/20-17:24:35.728 31 compacted to: files[ 0 0 3 0 0 0 0 ]
+2026/03/20-17:24:35.744 31 Delete type=2 #243
+2026/03/20-17:24:35.745 31 Delete type=2 #244
+2026/03/20-17:24:35.746 31 Delete type=2 #247

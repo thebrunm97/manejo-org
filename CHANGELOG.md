@@ -1,7 +1,23 @@
 # Changelog
 Este arquivo documenta as mudanças importantes e refatorações realizadas no Pmo Bot Go Backend.
 
-## [1.2.0] - 2026-03-09
+## [1.4.0] - 2026-03-20
+### Added
+- **AI Tools Expansion**: Novas ferramentas para Registro de Limpeza (Form 04), Propagação Vegetal (Seção 9) e Insumos (Seção 8).
+- **ManualRecordDialog Modularization**: Refatoração completa do componente de UI para arquitetura baseada em abas especializadas.
+- **E2E Playwright Suite**: Novas specs para auditoria de RLS, sincronização offline e regressão de autenticação.
+
+### Fixed
+- **Concurrency & Race Conditions**: Implementação de Session Mutex e Deduplicação de Webhooks no Go Backend.
+- **Chrome Lock Lifecycle**: Correção de deadlock na inicialização do WPPConnect via patches de infraestrutura.
+- **Offline Sync Engine**: Melhoria no rastreamento de metadados e `pmo_id` para itens enfileirados localmente.
+
+## [0.11.5] - 2026-03-19
+### Added
+- **FSM State Persistence (Bot Backend)**: Implementação de Máquina de Estados Finita (FSM) com persistência in-memory por telefone. O bot agora retém o contexto de registros incompletos (Atividade, Item, Local) e aguarda informações faltantes (ex: Quantidade) sem amnésia conversacional.
+- **Entrevista Ativa**: Fluxo de diálogo guiado para "Compra/Aquisição" e registros bloqueados pelo Choke Point.
+
+## [0.11.4] - 2026-03-09
 ### Added
 - **E2E Test Hardening (Playwright)**: 
   - Refatoração completa do `ManualRecord` com foco em acessibilidade (a11y) e seletores robustos.
@@ -19,7 +35,7 @@ Este arquivo documenta as mudanças importantes e refatorações realizadas no P
 ### CI/CD
 - **Production-Ready Tests**: Otimização do pipeline de CI/CD para validar o bundle final de produção em vez do servidor de desenvolvimento.
 
-## [1.1.0] - 2026-03-07
+## [0.11.3] - 2026-03-07
 ### Added
 - **Final Legacy Purge**: Remoção completa de todos os scripts Python obsoletos, diretórios de configuração e binários legados da PoC anterior.
 - **Gemini 3.1 Migration**: Transição para o modelo `gemini-3.1-flash-lite` para otimização de cotas e melhor performance em multimodularidade.
@@ -42,7 +58,7 @@ Este arquivo documenta as mudanças importantes e refatorações realizadas no P
 ### Fixed
 - **Vite Path Resolution**: Correção de caminhos (aliases) para compatibilidade com Windows e preservação do CSS do `leaflet-draw` via regex alias.
 
-## [1.0.5] - 2026-03-06
+## [0.11.2] - 2026-03-06
 ### Added
 - **Gemini Tool Calling**: Integração nativa do SDK da Gemini com suporte a chamadas de função (MCP), permitindo transações complexas via linguagem natural.
 - **RAG Performance Optimization**: Implementação de Worker Pool e Channels em Go para ingestão paralela de documentos PDF com controle de concorrência.
@@ -52,12 +68,12 @@ Este arquivo documenta as mudanças importantes e refatorações realizadas no P
 - **Go Engine Stability**: Finalização da migração do motor principal de processamento de mensagens para Go, substituindo permanentemente o middleware em Python.
 - **Improved Webhook Logic**: Injeção nativa de webhooks e melhor tratamento de networking no Docker.
 
-## [1.0.1] - 2026-03-05
+## [0.11.1] - 2026-03-05
 ### Added
 - **Ingestion Versioning**: Tag `v1.0.0-python-legacy` criada como snapshot de segurança pré-migração total.
 - **Enhanced Logging**: Implementação de logs de ingestão detalhados para monitoramento do processo de RAG.
 
-## [1.0.0] - 2026-03-04
+## [0.11.0] - 2026-03-04
 ### Added
 - **Paridade de Dados & Extração de Descartes**:
   - `internal/groq/client.go`: Adicionados campos `HouveDescartes` e `QtdDescartes` à extração.
