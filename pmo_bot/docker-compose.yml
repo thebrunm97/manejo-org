@@ -14,6 +14,7 @@ services:
       - "21465:21465"
     environment:
       - PORT=21465
+      - WPP_USER_DATA_DIR=/data/wppconnect
       # Webhook aponta para o container Go via rede Docker
       - WEBHOOK_URL=http://pmo-bot-go:8080/webhook/wppconnect?token=${WPPCONNECT_TOKEN}
       - WEBHOOK_ENABLED=true
@@ -33,9 +34,8 @@ services:
     env_file:
       - ../.env
     volumes:
-      - ./wppconnect-data:/usr/src/wpp-server/userDataDir
+      - ./wpp-data:/data/wppconnect
       - ./tokens:/usr/src/wpp-server/tokens
-      - ./wppconnect-profiles:/tmp/browser_profile
       - ./wpp_entrypoint.sh:/entrypoint.sh
     entrypoint: [ "/bin/sh", "/entrypoint.sh" ]
     healthcheck:

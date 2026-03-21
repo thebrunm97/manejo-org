@@ -4,19 +4,17 @@ set -e
 echo "🧹 Realizando limpeza agressiva de locks do Chrome..."
 
 # Caminhos definidos no docker-compose.yml
-USER_DATA_DIR="/usr/src/wpp-server/userDataDir"
-BROWSER_PROFILE="/tmp/browser_profile"
+USER_DATA_DIR="${WPP_USER_DATA_DIR:-/data/wppconnect}"
 
 # Limpeza recursiva e agressiva
-for DIR in "$USER_DATA_DIR" "$BROWSER_PROFILE"; do
-  if [ -d "$DIR" ]; then
-    echo "Limpando locks em: $DIR"
-    find "$DIR" -name "Singleton*" -delete 2>/dev/null || true
-    find "$DIR" -name "Lock" -delete 2>/dev/null || true
-    find "$DIR" -name ".org.chromium.*" -delete 2>/dev/null || true
-    find "$DIR" -name "*.lock" -delete 2>/dev/null || true
-  fi
-done
+if [ -d "$USER_DATA_DIR" ]; then
+  echo "Limpando locks em: $USER_DATA_DIR"
+  find "$USER_DATA_DIR" -name "Singleton*" -delete 2>/dev/null || true
+  find "$USER_DATA_DIR" -name "lock" -delete 2>/dev/null || true
+  find "$USER_DATA_DIR" -name "Lock" -delete 2>/dev/null || true
+  find "$USER_DATA_DIR" -name ".org.chromium.*" -delete 2>/dev/null || true
+  find "$USER_DATA_DIR" -name "*.lock" -delete 2>/dev/null || true
+fi
 
 # Garantir que o Webhook URL está preenchido (Fallback de segurança)
 export WPPCONNECT_TOKEN=${WPPCONNECT_TOKEN:-${SECRET_KEY}}
@@ -33,7 +31,7 @@ cat <<EOF > /usr/src/wpp-server/config.json
   "startAllSession": true,
   "tokenStoreType": "file",
   "maxListeners": 15,
-  "customUserDataDir": "./userDataDir/",
+  "customUserDataDir": "${USER_DATA_DIR}",
   "webhook": {
     "url": "${WEBHOOK_URL}",
     "autoDownload": true,
