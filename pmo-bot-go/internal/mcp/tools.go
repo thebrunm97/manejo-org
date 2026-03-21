@@ -179,6 +179,37 @@ func (s *Server) InitializeTools() {
 		},
 		Handler: s.handleRegistrarLimpeza,
 	})
+
+	s.RegisterTool(Tool{
+		Name:        "criar_talhao",
+		Description: "Usa esta ferramenta para criar um novo talhão (área produtiva) na fazenda.",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"pmo_id":        map[string]interface{}{"type": "integer"},
+				"nome_talhao":   map[string]interface{}{"type": "string", "description": "Nome descritivo (Ex: Gleba 01, Horta dos Pomares)."},
+				"area_hectares": map[string]interface{}{"type": "number", "description": "Tamanho da área em hectares (Ex: 0.5, 1.2)."},
+				"cultura":       map[string]interface{}{"type": "string", "description": "Cultura principal plantada (Opcional)."},
+			},
+			"required": []string{"pmo_id", "nome_talhao", "area_hectares"},
+		},
+		Handler: s.handleCriarNovoTalhao,
+	})
+
+	s.RegisterTool(Tool{
+		Name:        "criar_canteiros",
+		Description: "Cria canteiros em lote dentro de um talhão existente.",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"talhao_id":            map[string]interface{}{"type": "integer"},
+				"quantidade":           map[string]interface{}{"type": "integer", "description": "Número de canteiros a criar."},
+				"identificador_inicial": map[string]interface{}{"type": "integer", "description": "Número do primeiro canteiro (Ex: 1)."},
+			},
+			"required": []string{"talhao_id", "quantidade", "identificador_inicial"},
+		},
+		Handler: s.handleCriarNovosCanteiros,
+	})
 }
 
 func (s *Server) handleConsultarDadosFazenda(args map[string]interface{}) (interface{}, error) {
