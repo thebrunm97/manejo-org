@@ -7,6 +7,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 )
@@ -159,6 +160,24 @@ func (s *Server) InitializeTools() {
 			"required": []string{"pmo_id", "tipo", "especies", "quantidade"},
 		},
 		Handler: s.handleRegistrarPropagacaoVegetal,
+	})
+
+	s.RegisterTool(Tool{
+		Name:        "registrar_limpeza",
+		Description: "Usa esta ferramenta para registrar a higienização de instalações, equipamentos ou ferramentas (Seção 4 / Formulário 04 do PMO).",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"pmo_id":            map[string]interface{}{"type": "integer"},
+				"item_area":          map[string]interface{}{"type": "string", "description": "O que foi limpo (Ex: Trator, Galpão, Enxadas)."},
+				"tipo_limpeza":       map[string]interface{}{"type": "string", "description": "Como foi feito (Ex: Lavagem, Varrição, Desinfecção)."},
+				"produto_utilizado":  map[string]interface{}{"type": "string", "description": "Produto usado, se houver (Ex: Sabão neutro, Álcool 70%)."},
+				"dosagem":            map[string]interface{}{"type": "string", "description": "Quantidade do produto usado."},
+				"responsavel":        map[string]interface{}{"type": "string", "description": "Quem realizou a limpeza (Default: Produtor)."},
+			},
+			"required": []string{"pmo_id", "item_area", "tipo_limpeza"},
+		},
+		Handler: s.handleRegistrarLimpeza,
 	})
 }
 
@@ -368,6 +387,36 @@ func (s *Server) handleAdicionarInsumoPMO(args map[string]interface{}) (interfac
 	}
 
 	return fmt.Sprintf("Insumo '%s' registrado com sucesso na Seção 8 do seu plano.", record.ProdutoManejo), nil
+}
+
+func (s *Server) handleRegistrarLimpeza(args map[string]interface{}) (interface{}, error) {
+	log.Printf("🧽 [MCP-TOOL] handleRegistrarLimpeza Args: %+v", args)
+
+	pmoIDFloat, _ := parseArgToFloat(args["pmo_id"])
+	pmoID := int64(pmoIDFloat)
+
+	record := supabase.PmoLimpezaInsert{
+		PmoID:            pmoID,
+		DataLimpeza:      time.Now().Format("2006-01-02"),
+		ItemArea:         sanitize(args["item_area"]),
+		TipoLimpeza:      sanitize(args["tipo_limpeza"]),
+		ProdutoUtilizado: sanitize(args["produto_utilizado"]),
+		Dosagem:          sanitize(args["dosagem"]),
+		Responsavel:      sanitize(args["responsavel"]),
+	}
+
+	if record.Responsavel == "" {
+		record.Responsavel = "Produtor"
+	}
+
+	log.Printf("🧽 [MCP-TOOL] Registrando limpeza de '%s' para PMO %d", record.ItemArea, pmoID)
+
+	err := s.supabase.InsertPMOLimpeza(record)
+	if err != nil {
+		return fmt.Sprintf("Erro ao inserir registro de limpeza: %v", err), nil
+	}
+
+	return fmt.Sprintf("Registro de limpeza para '%s' (%s) salvo com sucesso.", record.ItemArea, record.TipoLimpeza), nil
 }
 
 func (s *Server) handleRegistrarPropagacaoVegetal(args map[string]interface{}) (interface{}, error) {
