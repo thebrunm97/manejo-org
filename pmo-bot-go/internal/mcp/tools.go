@@ -210,6 +210,24 @@ func (s *Server) InitializeTools() {
 		},
 		Handler: s.handleCriarNovosCanteiros,
 	})
+
+	s.RegisterTool(Tool{
+		Name:        "registrar_compostagem",
+		Description: "Usa esta ferramenta para registrar a montagem, revirada, controle de temperatura, adição de água ou uso de lotes de compostagem (Formulário 05).",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"pmo_id":              map[string]interface{}{"type": "integer"},
+				"acao":                map[string]interface{}{"type": "string", "description": "Ação realizada: 'Nova Pilha', 'Revirada', 'Temperatura', 'Agua' ou 'Uso'.", "enum": []string{"Nova Pilha", "Revirada", "Temperatura", "Agua", "Uso"}},
+				"identificador_pilha": map[string]interface{}{"type": "string", "description": "Identificador ou número da pilha (ex: 'Pilha 01')."},
+				"materiais":           map[string]interface{}{"type": "string", "description": "Apenas se acao = 'Nova Pilha'. Ingredientes adicionados."},
+				"temperatura":         map[string]interface{}{"type": "number", "description": "Apenas se fornecida temperatura (em ºC)."},
+				"observacao":          map[string]interface{}{"type": "string", "description": "Observações adicionais ou notas."},
+			},
+			"required": []string{"pmo_id", "acao", "identificador_pilha"},
+		},
+		Handler: s.handleRegistrarCompostagem,
+	})
 }
 
 func (s *Server) handleConsultarDadosFazenda(args map[string]interface{}) (interface{}, error) {
@@ -484,6 +502,12 @@ func (s *Server) handleRegistrarPropagacaoVegetal(args map[string]interface{}) (
 	}
 
 	return fmt.Sprintf("Material de propagação '%s' (%s) registrado com sucesso na Seção 9 do seu plano.", record.Especies, record.Tipo), nil
+}
+
+func (s *Server) handleRegistrarCompostagem(args map[string]interface{}) (interface{}, error) {
+	// Stub para registrar compostagem (será implementado no Commit #2)
+	log.Printf("🍂 [MCP-TOOL] handleRegistrarCompostagem acionado - args: %+v", args)
+	return "Ferramenta registrar_compostagem invocada (implementação pendente no backend).", nil
 }
 
 // sanitize cleans and truncates string inputs from the LLM.
