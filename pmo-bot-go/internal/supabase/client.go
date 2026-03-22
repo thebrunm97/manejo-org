@@ -1027,6 +1027,35 @@ func (c *Client) InsertPMOCompostagemEvento(record PmoCompostagemEventoInsert) e
 	return err
 }
 
+// LookupCompostagemID resolves the n_pilha string to its DB UUID.
+func (c *Client) LookupCompostagemID(pmoID int64, userID string, nPilha string) (string, error) {
+	escapedNPilha := url.QueryEscape(nPilha)
+
+	userFilter := ""
+	if userID != "" {
+		userFilter = fmt.Sprintf("&user_id=eq.%s", userID)
+	}
+
+	reqURL := fmt.Sprintf("%s/rest/v1/pmo_compostagem?pmo_id=eq.%d%s&n_pilha=ilike.*%s*&select=id", c.config.URL, pmoID, userFilter, escapedNPilha)
+
+	body, err := c.doRequest(http.MethodGet, reqURL, nil)
+	if err != nil {
+		return "", fmt.Errorf("falha ao buscar compostagem: %w", err)
+	}
+
+	var pilhas []struct {
+		ID string `json:"id"`
+	}
+	if err := json.Unmarshal(body, &pilhas); err != nil {
+		return "", fmt.Errorf("falha ao interpretar resposta da compostagem: %w", err)
+	}
+	if len(pilhas) == 0 {
+		return "", fmt.Errorf("pilha '%s' não encontrada", nPilha)
+	}
+
+	return pilhas[0].ID, nil
+}
+
 // ---------------------------------------------------------------------------
 // HTTP Helper
 // ---------------------------------------------------------------------------
