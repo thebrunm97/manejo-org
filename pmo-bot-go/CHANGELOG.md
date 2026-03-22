@@ -4,7 +4,7 @@ Todas as mudanças notáveis deste projeto serão documentadas neste arquivo.
 
 O formato baseia-se no [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/), e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
-## [1.4.0] - 2026-03-20
+## [0.12.0] - 2026-03-20
 
 ### 🚀 Added
 - **AI Tools (Form 04 & Sections 8/9)**: Novas ferramentas MCP para automatizar registros de Limpeza, Propagação e Insumos.
