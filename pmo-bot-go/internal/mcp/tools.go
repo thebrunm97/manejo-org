@@ -505,9 +505,80 @@ func (s *Server) handleRegistrarPropagacaoVegetal(args map[string]interface{}) (
 }
 
 func (s *Server) handleRegistrarCompostagem(args map[string]interface{}) (interface{}, error) {
-	// Stub para registrar compostagem (será implementado no Commit #2)
-	log.Printf("🍂 [MCP-TOOL] handleRegistrarCompostagem acionado - args: %+v", args)
-	return "Ferramenta registrar_compostagem invocada (implementação pendente no backend).", nil
+	log.Printf("🍂 [DEBUG TOOL] handleRegistrarCompostagem Args: %+v", args)
+
+	pmoIDFloat, _ := parseArgToFloat(args["pmo_id"])
+	pmoID := int64(pmoIDFloat)
+
+	// UserID is injected by the FSM
+	userID, _ := args["user_id"].(string)
+
+	acao := sanitize(args["acao"])
+	identificador := sanitize(args["identificador_pilha"])
+
+	if acao == "" || identificador == "" {
+		return "ERRO FATAL: Ação e identificador da pilha são obrigatórios.", nil
+	}
+
+	if acao == "Nova Pilha" {
+		record := supabase.PmoCompostagemInsert{
+			PmoID:        pmoID,
+			UserID:       userID,
+			NPilha:       identificador,
+			Ingredientes: sanitize(args["materiais"]),
+			DataMontagem: time.Now().Format("2006-01-02"),
+			Status:       "ativo",
+		}
+		err := s.supabase.InsertPMOCompostagem(record)
+		if err != nil {
+			return fmt.Sprintf("Erro ao criar nova pilha de compostagem no Supabase: %v", err), nil
+		}
+		return fmt.Sprintf("Nova pilha '%s' registrada com sucesso de forma estruturada.", identificador), nil
+	}
+
+	// For Revirada, Temperatura, Agua, Uso -> Fetch the pile UUID
+	pilhaID, err := s.supabase.LookupCompostagemID(pmoID, userID, identificador)
+	if err != nil {
+		return fmt.Sprintf("Aviso: %v. Responda ao usuário que a pilha não existe e pergunte se ele deseja iniciar uma 'Nova Pilha' antes de registrar eventos nela.", err), nil
+	}
+
+	var temp float64
+	if val, ok := args["temperatura"]; ok && val != nil {
+		temp, _ = parseArgToFloat(val)
+	}
+
+	evtType := ""
+	switch acao {
+	case "Revirada":
+		evtType = "revirada"
+	case "Temperatura":
+		evtType = "temperatura"
+	case "Agua":
+		evtType = "agua"
+	case "Uso":
+		evtType = "uso"
+	default:
+		evtType = strings.ToLower(acao) // fallback
+	}
+
+	evt := supabase.PmoCompostagemEventoInsert{
+		PilhaID:          pilhaID,
+		TipoEvento:       evtType,
+		ValorTemperatura: temp,
+		DataEvento:       time.Now().Format("2006-01-02"),
+		Observacao:       sanitize(args["observacao"]),
+	}
+
+	err = s.supabase.InsertPMOCompostagemEvento(evt)
+	if err != nil {
+		return fmt.Sprintf("Erro ao inserir evento na compostagem: %v", err), nil
+	}
+
+	msg := fmt.Sprintf("Evento '%s' registrado com sucesso na pilha '%s'.", evtType, identificador)
+	if temp > 0 {
+		msg += fmt.Sprintf(" Temperatura informada: %.1f°C.", temp)
+	}
+	return msg, nil
 }
 
 // sanitize cleans and truncates string inputs from the LLM.
