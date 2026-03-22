@@ -9,6 +9,7 @@ export enum ActivityType {
     MANEJO = 'Manejo',
     COLHEITA = 'Colheita',
     INSUMO = 'Insumo',
+    COMPOSTAGEM = 'Compostagem',
     OUTRO = 'Outro',
     CANCELADO = 'CANCELADO'
 }
@@ -95,6 +96,15 @@ export const DetalhesColheitaSchema = z.object({
     unidade: z.nativeEnum(UnitType).or(z.string()).optional()
 });
 
+// --- Detalhes Compostagem ---
+export const DetalhesCompostagemSchema = z.object({
+    acao: z.enum(['Nova Pilha', 'Revirada', 'Temperatura', 'Agua', 'Uso']).optional(),
+    n_pilha: z.string().optional(),
+    ingredientes: z.string().optional(),
+    temperatura: z.number().optional(),
+    responsavel: z.string().optional()
+});
+
 // --- Detalhes Genéricos (Para 'Outro' ou legado) ---
 export const DetalhesGenericoSchema = z.record(z.string(), z.any());
 
@@ -105,6 +115,7 @@ export const DetalhesGenericoSchema = z.record(z.string(), z.any());
 export type DetalhesPlantio = z.infer<typeof DetalhesPlantioSchema>;
 export type DetalhesManejo = z.infer<typeof DetalhesManejoSchema>;
 export type DetalhesColheita = z.infer<typeof DetalhesColheitaSchema>;
+export type DetalhesCompostagem = z.infer<typeof DetalhesCompostagemSchema>;
 export type DetalhesGenerico = z.infer<typeof DetalhesGenericoSchema>;
 
 // Discriminated Unions para Runtime Check seguro
@@ -112,6 +123,7 @@ export type DetalhesTecnicos =
     | DetalhesPlantio
     | DetalhesManejo
     | DetalhesColheita
+    | DetalhesCompostagem
     | DetalhesGenerico;
 
 export interface BaseRegistro {
@@ -193,12 +205,17 @@ export interface RegistroColheita extends BaseRegistro {
     detalhes_tecnicos: DetalhesColheita;
 }
 
+export interface RegistroCompostagem extends BaseRegistro {
+    tipo_atividade: ActivityType.COMPOSTAGEM | 'Compostagem';
+    detalhes_tecnicos: DetalhesCompostagem;
+}
+
 export interface RegistroOutro extends BaseRegistro {
     tipo_atividade: ActivityType.OUTRO | ActivityType.INSUMO | ActivityType.CANCELADO | string;
     detalhes_tecnicos: DetalhesGenerico;
 }
 
-export type CadernoEntry = RegistroPlantio | RegistroManejo | RegistroColheita | RegistroLimpeza | RegistroOutro;
+export type CadernoEntry = RegistroPlantio | RegistroManejo | RegistroColheita | RegistroCompostagem | RegistroLimpeza | RegistroOutro;
 
 // Alias para compatibilidade com código existente
 export type CadernoRegistro = CadernoEntry;

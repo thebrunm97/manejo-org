@@ -67,10 +67,11 @@ export function useCadernoOfflineLogic() {
         try {
             const offlineId = payload.id || `offline_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
             const isLimpeza = !!payload.is_pmo_limpeza;
+            const isCompostagem = !!payload.is_pmo_compostagem;
 
             const syncItem = {
                 id: offlineId,
-                type: isLimpeza ? 'LIMPEZA_SAVE' : 'CADERNO_SAVE',
+                type: isLimpeza ? 'LIMPEZA_SAVE' : (isCompostagem ? 'COMPOSTAGEM_SAVE' : 'CADERNO_SAVE'),
                 payload: {
                     ...payload,
                     id: offlineId,
