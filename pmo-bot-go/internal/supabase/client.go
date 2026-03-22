@@ -181,6 +181,23 @@ type PmoLimpezaInsert struct {
 	Observacao       string `json:"observacao,omitempty"`
 }
 
+type PmoCompostagemInsert struct {
+	PmoID        int64  `json:"pmo_id"`
+	UserID       string `json:"user_id"`
+	NPilha       string `json:"n_pilha"`
+	Ingredientes string `json:"ingredientes,omitempty"`
+	DataMontagem string `json:"data_montagem"`
+	Status       string `json:"status"`
+}
+
+type PmoCompostagemEventoInsert struct {
+	PilhaID          string  `json:"pilha_id"`
+	TipoEvento       string  `json:"tipo_evento"`
+	ValorTemperatura float64 `json:"valor_temperatura,omitempty"`
+	DataEvento       string  `json:"data_evento"`
+	Observacao       string  `json:"observacao,omitempty"`
+}
+
 // ---------------------------------------------------------------------------
 // Main Methods
 // ---------------------------------------------------------------------------
@@ -980,6 +997,28 @@ func (c *Client) InsertPMOPropagacao(record PmoPropagacaoInsert) error {
 // InsertPMOLimpeza inserts Form 04 (Controle de Limpeza) data for PMO.
 func (c *Client) InsertPMOLimpeza(record PmoLimpezaInsert) error {
 	reqURL := fmt.Sprintf("%s/rest/v1/pmo_limpeza", c.config.URL)
+	payload, err := json.Marshal(record)
+	if err != nil {
+		return err
+	}
+	_, err = c.doRequest(http.MethodPost, reqURL, payload)
+	return err
+}
+
+// InsertPMOCompostagem inserts Form 05 (Compostagem) Lote data for PMO.
+func (c *Client) InsertPMOCompostagem(record PmoCompostagemInsert) error {
+	reqURL := fmt.Sprintf("%s/rest/v1/pmo_compostagem", c.config.URL)
+	payload, err := json.Marshal(record)
+	if err != nil {
+		return err
+	}
+	_, err = c.doRequest(http.MethodPost, reqURL, payload)
+	return err
+}
+
+// InsertPMOCompostagemEvento inserts an event into the Form 05 (Compostagem) Lote.
+func (c *Client) InsertPMOCompostagemEvento(record PmoCompostagemEventoInsert) error {
+	reqURL := fmt.Sprintf("%s/rest/v1/pmo_compostagem_eventos", c.config.URL)
 	payload, err := json.Marshal(record)
 	if err != nil {
 		return err
