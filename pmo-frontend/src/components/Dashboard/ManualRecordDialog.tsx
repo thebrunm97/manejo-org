@@ -16,7 +16,8 @@ import {
     MapPin,
     X,
     AlertTriangle,
-    Sparkles
+    Sparkles,
+    Recycle
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useAuthProfile } from '../../context/AuthContext';
@@ -28,6 +29,7 @@ import {
     DetalhesPlantio,
     DetalhesManejo,
     DetalhesColheita,
+    DetalhesCompostagem,
     CadernoCampoRecord,
     ManejoSubtype
 } from '../../types/CadernoTypes';
@@ -40,7 +42,8 @@ import {
     ManejoDraft,
     ColheitaDraft,
     OutroDraft,
-    LimpezaDraft
+    LimpezaDraft,
+    CompostagemDraft
 } from '../../hooks/manual-record';
 import { useCadernoOfflineLogic } from '../../hooks/offline/useCadernoOfflineLogic';
 
@@ -50,6 +53,7 @@ import ManejoTab from './ManualRecord/Tabs/ManejoTab';
 import ColheitaTab from './ManualRecord/Tabs/ColheitaTab';
 import OutroTab from './ManualRecord/Tabs/OutroTab';
 import LimpezaTab from './ManualRecord/Tabs/LimpezaTab';
+import CompostagemTab from './ManualRecord/Tabs/CompostagemTab';
 
 // --- Component Props ---
 interface ManualRecordDialogProps {
@@ -74,6 +78,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
         colheitaDraft,
         outroDraft,
         limpezaDraft,
+        compostagemDraft,
         setActiveTab,
         getCurrentDraft,
         updateDraft: updateDraftBase,
@@ -215,6 +220,24 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                     unidade_descartes: d.houveDescartes ? d.unidadeDescartes : undefined
                 } as CadernoEntry;
             }
+            else if (activeTab === 'compostagem') {
+                const d = draft as CompostagemDraft;
+                const detalhes: DetalhesCompostagem = {
+                    acao: d.acao,
+                    n_pilha: d.nPilha,
+                    ingredientes: d.ingredientes,
+                    temperatura: parseFloat(d.temperatura) || undefined,
+                    responsavel: d.responsavel
+                };
+                finalPayload = {
+                    ...payloadBase,
+                    tipo_atividade: ActivityType.COMPOSTAGEM,
+                    id: payloadBase.id!,
+                    produto: `${d.nPilha} (${d.acao})`,
+                    detalhes_tecnicos: detalhes,
+                    is_pmo_compostagem: true
+                } as any;
+            }
             else if (activeTab === 'limpeza') {
                 const d = draft as LimpezaDraft;
                 // Nota: Registros de limpeza vão para uma tabela SEPARADA pmo_limpeza no DB real via API,
@@ -317,7 +340,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
 
     // --- Prepare drafts for render ---
     const common = getCurrentDraft() as CommonDraft;
-    const shouldShowLocation = activeTab !== 'outro' && activeTab !== 'limpeza';
+    const shouldShowLocation = activeTab !== 'outro' && activeTab !== 'limpeza' && activeTab !== 'compostagem';
 
     // --- Derived UI vars ---
     const labelProduto =
@@ -369,6 +392,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                             { id: 'manejo', label: 'MANEJO', icon: FlaskConical, color: 'text-blue-600', activeBorder: 'border-blue-500' },
                             { id: 'colheita', label: 'COLHEITA', icon: Scissors, color: 'text-amber-600', activeBorder: 'border-amber-500' },
                             { id: 'limpeza', label: 'LIMPEZA', icon: Sparkles, color: 'text-cyan-600', activeBorder: 'border-cyan-500' },
+                            { id: 'compostagem', label: 'COMPOSTO', icon: Recycle, color: 'text-emerald-600', activeBorder: 'border-emerald-500' },
                             { id: 'outro', label: 'OUTRO', icon: Package, color: 'text-gray-600', activeBorder: 'border-gray-500' },
                         ].map((tab) => {
                             const Icon = tab.icon;
@@ -383,7 +407,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                                     onClick={() => !disabled && setActiveTab(tab.id as any)}
                                     disabled={disabled}
                                     className={`
-                                        w-1/5 py-4 px-1 text-center border-b-2 font-medium text-sm flex flex-col items-center justify-center gap-1 transition-colors duration-200
+                                        w-1/6 py-4 px-1 text-center border-b-2 font-medium text-sm flex flex-col items-center justify-center gap-1 transition-colors duration-200
                                         ${isActive
                                             ? `${tab.activeBorder} ${tab.color} bg-gray-50`
                                             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50'}
@@ -416,9 +440,9 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                         </div>
                     )}
 
-                    {/* Common Fields: Data & Produto (Produto Oculto na Limpeza) */}
+                    {/* Common Fields: Data & Produto (Produto Oculto na Limpeza e Compostagem) */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                        <div className={activeTab === 'limpeza' ? 'sm:col-span-2' : ''}>
+                        <div className={(activeTab === 'limpeza' || activeTab === 'compostagem') ? 'sm:col-span-2' : ''}>
                             <label htmlFor="data-hora-input" className="block text-sm font-medium text-gray-700 mb-1">Data e Hora</label>
                             <input
                                 id="data-hora-input"
@@ -432,7 +456,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                             {errors.data && <p className="mt-1 text-xs text-red-600">{errors.data}</p>}
                         </div>
 
-                        {activeTab !== 'limpeza' && !(activeTab === 'manejo' && manejoDraft.subtipoManejo === ManejoSubtype.HIGIENIZACAO) && (
+                        {activeTab !== 'limpeza' && activeTab !== 'compostagem' && !(activeTab === 'manejo' && manejoDraft.subtipoManejo === ManejoSubtype.HIGIENIZACAO) && (
                             <div>
                                 <label htmlFor="produto-input" className="block text-sm font-medium text-gray-700 mb-1">{labelProduto}</label>
                                 <input
@@ -538,6 +562,16 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                     {activeTab === 'limpeza' && (
                         <LimpezaTab
                             draft={limpezaDraft}
+                            updateDraft={updateDraft}
+                            errors={errors}
+                            isEditMode={isEditMode}
+                        />
+                    )}
+
+                    {/* --- TAB CONTENT: COMPOSTAGEM --- */}
+                    {activeTab === 'compostagem' && (
+                        <CompostagemTab
+                            draft={compostagemDraft}
                             updateDraft={updateDraft}
                             errors={errors}
                             isEditMode={isEditMode}

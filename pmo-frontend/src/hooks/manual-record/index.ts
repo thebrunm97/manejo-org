@@ -23,6 +23,7 @@ export type {
     ColheitaDraft,
     OutroDraft,
     LimpezaDraft,
+    CompostagemDraft,
     AnyDraft,
     ValidationErrors,
     ValidationResult
@@ -47,5 +48,6 @@ export {
     initialManejoDraft,
     initialColheitaDraft,
     initialOutroDraft,
-    initialLimpezaDraft
+    initialLimpezaDraft,
+    initialCompostagemDraft
 } from './useRecordFormState';

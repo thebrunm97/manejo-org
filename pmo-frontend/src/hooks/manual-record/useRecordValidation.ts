@@ -11,7 +11,7 @@ import {
 } from '../../types/CadernoTypes';
 
 // --- Types ---
-export type TipoRegistro = 'plantio' | 'manejo' | 'colheita' | 'outro' | 'limpeza';
+export type TipoRegistro = 'plantio' | 'manejo' | 'colheita' | 'outro' | 'limpeza' | 'compostagem';
 export type OutroSubtype = 'compra' | 'venda' | 'outro';
 
 export interface CommonDraft {
@@ -73,7 +73,15 @@ export interface LimpezaDraft extends CommonDraft {
     responsavel: string;
 }
 
-export type AnyDraft = PlantioDraft | ManejoDraft | ColheitaDraft | OutroDraft | LimpezaDraft;
+export interface CompostagemDraft extends CommonDraft {
+    acao: 'Nova Pilha' | 'Revirada' | 'Temperatura' | 'Agua' | 'Uso';
+    nPilha: string;
+    ingredientes: string;
+    temperatura: string;
+    responsavel: string;
+}
+
+export type AnyDraft = PlantioDraft | ManejoDraft | ColheitaDraft | OutroDraft | LimpezaDraft | CompostagemDraft;
 
 export interface ValidationErrors {
     [key: string]: string;
@@ -194,6 +202,25 @@ export const useRecordValidation = () => {
         return newErrors;
     }, []);
 
+    /**
+     * Validates a Compostagem (composting) draft.
+     */
+    const validateCompostagem = useCallback((draft: CompostagemDraft): ValidationErrors => {
+        const newErrors: ValidationErrors = {};
+
+        if (!draft.dataHora) newErrors.data = 'Data é obrigatória';
+        if (!draft.nPilha.trim()) newErrors.nPilha = 'Identificador da pilha é obrigatório';
+        if (!draft.acao) newErrors.acao = 'Ação é obrigatória';
+
+        if (draft.acao === 'Temperatura') {
+            if (!draft.temperatura || parseFloat(draft.temperatura) <= 0) {
+                newErrors.temperatura = 'Informe a temperatura';
+            }
+        }
+
+        return newErrors;
+    }, []);
+
     const validateOutro = useCallback((draft: OutroDraft): ValidationErrors => {
         const newErrors: ValidationErrors = {};
 
@@ -247,6 +274,9 @@ export const useRecordValidation = () => {
                 break;
             case 'limpeza':
                 newErrors = validateLimpeza(draft as LimpezaDraft);
+                break;
+            case 'compostagem':
+                newErrors = validateCompostagem(draft as CompostagemDraft);
                 break;
         }
 
@@ -305,7 +335,8 @@ export const useRecordValidation = () => {
         validatePlantio,
         validateManejo,
         validateColheita,
-        validateOutro
+        validateOutro,
+        validateCompostagem
     };
 };
 
