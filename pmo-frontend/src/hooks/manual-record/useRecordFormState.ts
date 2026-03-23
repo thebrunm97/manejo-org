@@ -23,6 +23,7 @@ import {
     OutroDraft,
     LimpezaDraft,
     CompostagemDraft,
+    ComprasDraft,
     AnyDraft
 } from './useRecordValidation';
 
@@ -111,6 +112,14 @@ export const initialCompostagemDraft: CompostagemDraft = {
     responsavel: ''
 };
 
+export const initialComprasDraft: ComprasDraft = {
+    ...initialCommon,
+    quantidade: '',
+    unidade: UnitType.UNID,
+    fornecedor: '',
+    nfRecibo: ''
+};
+
 interface UseRecordFormStateProps {
     /** Whether the dialog is open */
     open: boolean;
@@ -130,6 +139,7 @@ interface UseRecordFormStateReturn {
     outroDraft: OutroDraft;
     limpezaDraft: LimpezaDraft;
     compostagemDraft: CompostagemDraft;
+    comprasDraft: ComprasDraft;
 
     // Actions
     setActiveTab: (tab: TipoRegistro) => void;
@@ -145,6 +155,7 @@ interface UseRecordFormStateReturn {
     setOutroDraft: React.Dispatch<React.SetStateAction<OutroDraft>>;
     setLimpezaDraft: React.Dispatch<React.SetStateAction<LimpezaDraft>>;
     setCompostagemDraft: React.Dispatch<React.SetStateAction<CompostagemDraft>>;
+    setComprasDraft: React.Dispatch<React.SetStateAction<ComprasDraft>>;
 }
 
 /**
@@ -194,6 +205,10 @@ export const useRecordFormState = ({
         ...initialCompostagemDraft,
         dataHora: getNowISO()
     }));
+    const [comprasDraft, setComprasDraft] = useState<ComprasDraft>(() => ({
+        ...initialComprasDraft,
+        dataHora: getNowISO()
+    }));
 
     /**
      * Gets the current draft based on active tab.
@@ -206,8 +221,9 @@ export const useRecordFormState = ({
             case 'outro': return outroDraft;
             case 'limpeza': return limpezaDraft;
             case 'compostagem': return compostagemDraft;
+            case 'compras': return comprasDraft;
         }
-    }, [activeTab, plantioDraft, manejoDraft, colheitaDraft, outroDraft, limpezaDraft]);
+    }, [activeTab, plantioDraft, manejoDraft, colheitaDraft, outroDraft, limpezaDraft, compostagemDraft, comprasDraft]);
 
     /**
      * Updates a field in the current draft.
@@ -231,6 +247,9 @@ export const useRecordFormState = ({
                 break;
             case 'compostagem':
                 setCompostagemDraft(prev => ({ ...prev, [field]: value } as CompostagemDraft));
+                break;
+            case 'compras':
+                setComprasDraft(prev => ({ ...prev, [field]: value } as ComprasDraft));
                 break;
         }
     }, [activeTab]);
@@ -259,6 +278,9 @@ export const useRecordFormState = ({
             case 'compostagem':
                 setCompostagemDraft({ ...initialCompostagemDraft, dataHora: now });
                 break;
+            case 'compras':
+                setComprasDraft({ ...initialComprasDraft, dataHora: now });
+                break;
         }
     }, []);
 
@@ -273,6 +295,7 @@ export const useRecordFormState = ({
         setOutroDraft({ ...initialOutroDraft, dataHora: now });
         setLimpezaDraft({ ...initialLimpezaDraft, dataHora: now });
         setCompostagemDraft({ ...initialCompostagemDraft, dataHora: now });
+        setComprasDraft({ ...initialComprasDraft, dataHora: now });
         setActiveTab('plantio');
     }, []);
 
@@ -290,6 +313,7 @@ export const useRecordFormState = ({
             const isManejo = tipoRaw === ActivityType.MANEJO || tipoRaw === 'Manejo' || tipoRaw === ActivityType.INSUMO;
             const isColheita = tipoRaw === ActivityType.COLHEITA || tipoRaw === 'Colheita';
             const isCompostagem = tipoRaw === ActivityType.COMPOSTAGEM || tipoRaw === 'Compostagem';
+            const isCompras = tipoRaw === ActivityType.INSUMO || tipoRaw === 'Insumo';
 
             // Base fields
             const common: CommonDraft = {
@@ -368,6 +392,15 @@ export const useRecordFormState = ({
                     temperatura: d.temperatura ? String(d.temperatura) : '',
                     responsavel: d.responsavel || ''
                 });
+            } else if (isCompras) {
+                setActiveTab('compras');
+                setComprasDraft({
+                    ...common,
+                    quantidade: recordToEdit.quantidade_valor ? String(recordToEdit.quantidade_valor) : '',
+                    unidade: (recordToEdit.quantidade_unidade as UnitType) || UnitType.UNID,
+                    fornecedor: recordToEdit.fornecedor || (details as any)?.fornecedor || '',
+                    nfRecibo: recordToEdit.nota_fiscal || (details as any)?.nota_fiscal || ''
+                });
             } else {
                 setActiveTab('outro');
                 setOutroDraft({ ...initialOutroDraft, ...common });
@@ -390,6 +423,7 @@ export const useRecordFormState = ({
         outroDraft,
         limpezaDraft,
         compostagemDraft,
+        comprasDraft,
         setActiveTab,
         getCurrentDraft,
         updateDraft,
@@ -400,7 +434,8 @@ export const useRecordFormState = ({
         setColheitaDraft,
         setOutroDraft,
         setLimpezaDraft,
-        setCompostagemDraft
+        setCompostagemDraft,
+        setComprasDraft
     };
 };
 
