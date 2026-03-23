@@ -62,6 +62,7 @@ type CadernoCampoInsert struct {
 	PmoID              int64                  `json:"pmo_id,omitempty"`
 	UsuarioID          string                 `json:"user_id,omitempty"`
 	TipoAtividade      string                 `json:"tipo_atividade"`
+	DataRegistro       string                 `json:"data_registro,omitempty"`
 	SecaoOrigem        string                 `json:"secao_origem,omitempty"`
 	Produto            string                 `json:"produto,omitempty"`
 	TalhaoCanteiro     string                 `json:"talhao_canteiro,omitempty"`
