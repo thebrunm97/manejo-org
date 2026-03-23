@@ -228,6 +228,43 @@ func (s *Server) InitializeTools() {
 		},
 		Handler: s.handleRegistrarCompostagem,
 	})
+
+	s.RegisterTool(Tool{
+		Name:        "registrar_compra_insumo",
+		Description: "Usa esta ferramenta para registrar a compra ou aquisição de um insumo, produto, semente, ferramenta ou serviço (Formulário 06 da certificação orgânica). Obrigatório quando o agricultor relatar que 'comprou' algo ou recebeu 'nota fiscal'.",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"pmo_id": map[string]interface{}{"type": "integer"},
+				"produto": map[string]interface{}{
+					"type":        "string",
+					"description": "Nome do produto/insumo adquirido (Ex: Esterco, Enxada, Semente de Alface, Adubo orgânico).",
+				},
+				"fornecedor": map[string]interface{}{
+					"type":        "string",
+					"description": "Nome do fornecedor, loja ou agropecuária onde foi comprado.",
+				},
+				"nota_fiscal": map[string]interface{}{
+					"type":        "string",
+					"description": "Número da Nota Fiscal (NF) ou recibo, se mencionado.",
+				},
+				"quantidade_valor": map[string]interface{}{
+					"type":        "number",
+					"description": "Valor numérico da quantidade comprada (Ex: 10, 50.5).",
+				},
+				"quantidade_unidade": map[string]interface{}{
+					"type":        "string",
+					"description": "Unidade de medida (Ex: kg, L, sacos, unidades, mudas).",
+				},
+				"data_compra": map[string]interface{}{
+					"type":        "string",
+					"description": "Data da compra no formato YYYY-MM-DD. Se o usuário não disser a data específica, deixe vazio para usar hoje.",
+				},
+			},
+			"required": []string{"pmo_id", "produto", "quantidade_valor", "quantidade_unidade"},
+		},
+		Handler: s.handleRegistrarCompraInsumo,
+	})
 }
 
 func (s *Server) handleConsultarDadosFazenda(args map[string]interface{}) (interface{}, error) {
@@ -625,4 +662,45 @@ func parseArgToFloat(val interface{}) (float64, error) {
 		strVal := fmt.Sprintf("%v", val)
 		return strconv.ParseFloat(strings.ReplaceAll(strVal, ",", "."), 64)
 	}
+}
+
+func (s *Server) handleRegistrarCompraInsumo(args map[string]interface{}) (interface{}, error) {
+	log.Printf("🛒 [MCP-TOOL] handleRegistrarCompraInsumo Args: %+v", args)
+
+	pmoIDFloat, _ := parseArgToFloat(args["pmo_id"])
+	pmoID := int64(pmoIDFloat)
+	userID, _ := args["user_id"].(string)
+
+	qtdValor, _ := parseArgToFloat(args["quantidade_valor"])
+	qtdUnidade := sanitize(args["quantidade_unidade"])
+
+	dataCompra := sanitize(args["data_compra"])
+	if dataCompra == "" {
+		dataCompra = time.Now().Format("2006-01-02")
+	}
+
+	record := supabase.CadernoCampoInsert{
+		PmoID:             pmoID,
+		UsuarioID:         userID,
+		TipoAtividade:     "Insumo",
+		DataRegistro:      dataCompra,
+		Produto:           sanitize(args["produto"]),
+		QuantidadeValor:   qtdValor,
+		QuantidadeUnidade: qtdUnidade,
+		Fornecedor:        sanitize(args["fornecedor"]),
+		NotaFiscal:        sanitize(args["nota_fiscal"]),
+	}
+
+	if record.Produto == "" || qtdValor <= 0 || qtdUnidade == "" {
+		return "ERRO FATAL: O usuário não informou o produto, a quantidade exata ou a unidade. Pergunte a ele os detalhes da compra.", nil
+	}
+
+	log.Printf("🛒 [MCP-TOOL] Registrando compra de '%s' para PMO %d", record.Produto, pmoID)
+
+	id, err := s.supabase.InsertCadernoCampo(record)
+	if err != nil {
+		return fmt.Sprintf("Erro ao registrar compra na Tabela de Compras: %v", err), nil
+	}
+
+	return fmt.Sprintf("Compra de '%s' registrada com sucesso (Formulário 06).", record.Produto), nil
 }
