@@ -17,7 +17,8 @@ import {
     X,
     AlertTriangle,
     Sparkles,
-    Recycle
+    Recycle,
+    ShoppingCart
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useAuthProfile } from '../../context/AuthContext';
@@ -43,7 +44,8 @@ import {
     ColheitaDraft,
     OutroDraft,
     LimpezaDraft,
-    CompostagemDraft
+    CompostagemDraft,
+    ComprasDraft
 } from '../../hooks/manual-record';
 import { useCadernoOfflineLogic } from '../../hooks/offline/useCadernoOfflineLogic';
 
@@ -54,6 +56,7 @@ import ColheitaTab from './ManualRecord/Tabs/ColheitaTab';
 import OutroTab from './ManualRecord/Tabs/OutroTab';
 import LimpezaTab from './ManualRecord/Tabs/LimpezaTab';
 import CompostagemTab from './ManualRecord/Tabs/CompostagemTab';
+import ComprasTab from './ManualRecord/Tabs/ComprasTab';
 
 // --- Component Props ---
 interface ManualRecordDialogProps {
@@ -79,6 +82,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
         outroDraft,
         limpezaDraft,
         compostagemDraft,
+        comprasDraft,
         setActiveTab,
         getCurrentDraft,
         updateDraft: updateDraftBase,
@@ -238,6 +242,23 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                     is_pmo_compostagem: true
                 } as any;
             }
+            else if (activeTab === 'compras') {
+                const d = draft as ComprasDraft;
+                const detalhes: any = {
+                    tipo_registro: 'compra'
+                };
+                finalPayload = {
+                    ...payloadBase,
+                    tipo_atividade: ActivityType.INSUMO || 'Insumo',
+                    id: payloadBase.id!,
+                    produto: d.produto,
+                    quantidade_valor: parseFloat(d.quantidade) || 0,
+                    quantidade_unidade: d.unidade,
+                    fornecedor: d.fornecedor,
+                    nota_fiscal: d.nfRecibo,
+                    detalhes_tecnicos: detalhes
+                } as CadernoEntry;
+            }
             else if (activeTab === 'limpeza') {
                 const d = draft as LimpezaDraft;
                 // Nota: Registros de limpeza vão para uma tabela SEPARADA pmo_limpeza no DB real via API,
@@ -340,11 +361,12 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
 
     // --- Prepare drafts for render ---
     const common = getCurrentDraft() as CommonDraft;
-    const shouldShowLocation = activeTab !== 'outro' && activeTab !== 'limpeza' && activeTab !== 'compostagem';
+    const shouldShowLocation = activeTab !== 'outro' && activeTab !== 'limpeza' && activeTab !== 'compostagem' && activeTab !== 'compras';
 
     // --- Derived UI vars ---
     const labelProduto =
-        activeTab !== 'manejo'
+        activeTab === 'compras' ? 'Produto Adquirido'
+        : activeTab !== 'manejo'
             ? 'Cultura/Produto'
             : manejoDraft.subtipoManejo === ManejoSubtype.APLICACAO_INSUMO ||
                 manejoDraft.subtipoManejo === ManejoSubtype.MANEJO_CULTURAL
@@ -393,6 +415,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                             { id: 'colheita', label: 'COLHEITA', icon: Scissors, color: 'text-amber-600', activeBorder: 'border-amber-500' },
                             { id: 'limpeza', label: 'LIMPEZA', icon: Sparkles, color: 'text-cyan-600', activeBorder: 'border-cyan-500' },
                             { id: 'compostagem', label: 'COMPOSTO', icon: Recycle, color: 'text-emerald-600', activeBorder: 'border-emerald-500' },
+                            { id: 'compras', label: 'COMPRAS', icon: ShoppingCart, color: 'text-indigo-600', activeBorder: 'border-indigo-500' },
                             { id: 'outro', label: 'OUTRO', icon: Package, color: 'text-gray-600', activeBorder: 'border-gray-500' },
                         ].map((tab) => {
                             const Icon = tab.icon;
@@ -572,6 +595,16 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                     {activeTab === 'compostagem' && (
                         <CompostagemTab
                             draft={compostagemDraft}
+                            updateDraft={updateDraft}
+                            errors={errors}
+                            isEditMode={isEditMode}
+                        />
+                    )}
+
+                    {/* --- TAB CONTENT: COMPRAS --- */}
+                    {activeTab === 'compras' && (
+                        <ComprasTab
+                            draft={comprasDraft}
                             updateDraft={updateDraft}
                             errors={errors}
                             isEditMode={isEditMode}

@@ -11,7 +11,7 @@ import {
 } from '../../types/CadernoTypes';
 
 // --- Types ---
-export type TipoRegistro = 'plantio' | 'manejo' | 'colheita' | 'outro' | 'limpeza' | 'compostagem';
+export type TipoRegistro = 'plantio' | 'manejo' | 'colheita' | 'outro' | 'limpeza' | 'compostagem' | 'compras';
 export type OutroSubtype = 'compra' | 'venda' | 'outro';
 
 export interface CommonDraft {
@@ -81,7 +81,14 @@ export interface CompostagemDraft extends CommonDraft {
     responsavel: string;
 }
 
-export type AnyDraft = PlantioDraft | ManejoDraft | ColheitaDraft | OutroDraft | LimpezaDraft | CompostagemDraft;
+export interface ComprasDraft extends CommonDraft {
+    quantidade: string;
+    unidade: UnitType | string;
+    fornecedor: string;
+    nfRecibo: string;
+}
+
+export type AnyDraft = PlantioDraft | ManejoDraft | ColheitaDraft | OutroDraft | LimpezaDraft | CompostagemDraft | ComprasDraft;
 
 export interface ValidationErrors {
     [key: string]: string;
@@ -221,6 +228,15 @@ export const useRecordValidation = () => {
         return newErrors;
     }, []);
 
+    const validateCompras = useCallback((draft: ComprasDraft): ValidationErrors => {
+        const newErrors: ValidationErrors = {};
+        if (!draft.dataHora) newErrors.data = 'Data é obrigatória';
+        if (!draft.produto.trim()) newErrors.produto = 'Produto adquirido é obrigatório';
+        if (!draft.quantidade || parseFloat(draft.quantidade) <= 0) newErrors.quantidade = 'Qtd obrigatória';
+        if (!draft.fornecedor.trim()) newErrors.fornecedor = 'Fornecedor obrigatório';
+        return newErrors;
+    }, []);
+
     const validateOutro = useCallback((draft: OutroDraft): ValidationErrors => {
         const newErrors: ValidationErrors = {};
 
@@ -277,6 +293,9 @@ export const useRecordValidation = () => {
                 break;
             case 'compostagem':
                 newErrors = validateCompostagem(draft as CompostagemDraft);
+                break;
+            case 'compras':
+                newErrors = validateCompras(draft as ComprasDraft);
                 break;
         }
 
