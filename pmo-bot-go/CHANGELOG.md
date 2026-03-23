@@ -4,6 +4,11 @@ Todas as mudanças notáveis deste projeto serão documentadas neste arquivo.
 
 O formato baseia-se no [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/), e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [Unreleased]
+
+### 🚀 Added
+- **Compras (Formulário 06)**: Novo módulo E2E para registro de Compras de Insumos. Integração frontend na aba \`ComprasTab\` com submissão off-line ready. Nova ferramenta MCP \`registrar_compra_insumo\` inclusa no backend para captura via WhatsApp.
+
 ## [0.12.0] - 2026-03-20
 
 ### 🚀 Added
