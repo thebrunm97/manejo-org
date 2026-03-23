@@ -235,7 +235,6 @@ export const dashboardService = {
     },
 
     async saveRegistro(payload: any) {
-        if (!payload.pmo_id) throw new Error("ID do Plano de Manejo inválido.");
         if (!payload.data_registro) throw new Error("Data é obrigatória.");
 
         let error: PostgrestError | null = null;
@@ -261,9 +260,8 @@ export const dashboardService = {
         return true;
     },
 
-    async saveRecord(tipo: string, form: any, anexo: string | null, pmoId: string | number) {
-        if (!pmoId) throw new Error("ID do Plano de Manejo é obrigatório.");
-        const payload = { ...form, pmo_id: pmoId, tipo_atividade: tipo };
+    async saveRecord(tipo: string, form: any, anexo: string | null) {
+        const payload = { ...form, tipo_atividade: tipo };
         if (anexo && payload.detalhes_tecnicos) {
             payload.detalhes_tecnicos.anexo_url = anexo;
         }

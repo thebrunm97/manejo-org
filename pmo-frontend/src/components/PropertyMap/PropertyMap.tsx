@@ -14,7 +14,7 @@ import {
     Loader2,
     Droplets
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuthCore } from '../../context/AuthContext';
 import { cn } from '../../utils/cn';
 
 // Componentes Internos
@@ -36,7 +36,7 @@ interface PropertyMapProps {
 }
 
 const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
-    const { user } = useAuth();
+    const { user } = useAuthCore();
 
     // Estados
     const [viewMode, setViewMode] = useState<'croqui' | 'mapa'>('croqui');
@@ -168,8 +168,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
                 area_total_m2: parseFloat(pendingTalhao.areaM2.toFixed(2)),
                 area_ha: parseFloat(areaHa.toFixed(2)),
                 cor: '#16a34a', // Sucesso Green
-                propriedade_id: propriedadeId,
-                user_id: user.id
+                propriedade_id: propriedadeId
             };
 
             if (locationService.createTalhao) {

@@ -100,12 +100,10 @@ export const talhaoService = {
             area_total_m2: (talhao.area_hectares || 0) * 10000,
             cor: talhao.cor,
             cultura: talhao.cultura,
-            user_id: talhao.user_id,
             tipo: 'produtivo'
         };
 
-        // Adiciona FKs apenas se definidas
-        if (talhao.pmo_id) payload.pmo_id = talhao.pmo_id;
+        // Adiciona FK da propriedade apenas se definida
         if (talhao.propriedade_id) payload.propriedade_id = talhao.propriedade_id;
 
         const { data, error } = await supabase

@@ -51,10 +51,10 @@ test.describe('ManualRecordDialog - Fluxo de Submissão', () => {
         await produtoInput.fill(testProduto);
 
         // 4. Preencher Quantidade e Unidade
-        const qtdInput = page.getByLabel('Quantidade');
+        const qtdInput = page.locator('#qtd-plantio');
         await qtdInput.fill('100');
 
-        const unidadeSelect = page.getByLabel('Unid.', { exact: true });
+        const unidadeSelect = page.getByLabel('Unid.', { exact: true }).first();
         await unidadeSelect.selectOption('unid');
 
         // 5. Selecionar Localização
@@ -90,5 +90,29 @@ test.describe('ManualRecordDialog - Fluxo de Submissão', () => {
         // 9. Verificar no Banco de Dados (Supabase)
         const found = await waitForRecordInDatabase(pmoId, testProduto);
         expect(found).toBe(true);
+    });
+
+    test('deve preencher e salvar um registro de LIMPEZA com sucesso', async ({ page }) => {
+        test.setTimeout(60000);
+        await loginViaBrowser(page);
+
+        // 1. Abrir diálogo
+        await page.locator('button:has-text("Novo Registro")').click();
+
+        // 2. Ir para aba LIMPEZA
+        await page.getByRole('tab', { name: "Limpeza" }).click();
+
+        // 3. Preencher Campos de Limpeza
+        await page.getByLabel('Item ou Área Higienizada').fill('Paredes do Galpão');
+        await page.getByLabel('Tipo de Limpeza').selectOption('Desinfecção');
+        await page.getByLabel('Responsável (Assinatura)').fill('QA Specialist');
+        await page.getByLabel('Dosagem').fill('N/A');
+
+        // 4. Salvar
+        const saveButton = page.locator('button:has-text("Salvar Registro")');
+        await saveButton.click();
+
+        // 5. Verificar feedback
+        await expect(page.locator('text=salvo').first()).toBeVisible({ timeout: 20000 });
     });
 });

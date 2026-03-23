@@ -1,8 +1,9 @@
 // src/components/PmoForm/Secao9.tsx — Zero MUI
 import React, { useState, ChangeEvent, useEffect } from 'react';
-import { ChevronDown, PlusCircle, Sprout, X, AlertTriangle, CheckCircle, Edit2 } from 'lucide-react';
+import { ChevronDown, PlusCircle, Sprout, X, AlertTriangle, CheckCircle } from 'lucide-react';
 import SectionShell from '../Plan/SectionShell';
 import PropagacaoCard from './cards/PropagacaoCard';
+import { useAuthProfile } from '../../context/AuthContext';
 import { supabase } from '../../supabaseClient';
 
 interface PropagacaoItem { id?: string; _id: string; tipo?: string; especies?: string; origem?: string; quantidade?: string; sistema_organico?: boolean; data_compra?: string; }
@@ -28,13 +29,13 @@ const Secao9: React.FC<Secao9Props> = ({ data, onSectionChange }) => {
     const [ei, setEi] = useState<PropagacaoItem | null>(null);
     const [dOpen, setDOpen] = useState(false);
     const [dItem, setDItem] = useState<{ lk: string; id: string } | null>(null);
-    const [sugestoes, setSugestoes] = useState<any[]>([]);
-    const [sugestaoAtual, setSugestaoAtual] = useState<any | null>(null); // To track which suggestion is being edited
+    const [sugestaoAtual, setSugestaoAtual] = useState<any | null>(null);
+    const [pendingSuggestionRemove, setPendingSuggestionRemove] = useState<(() => void) | null>(null);
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
 
     // Supondo pmoId = 1 para testes, na realidade viria via params ou props
-    const pmoId = 1; 
+    const { pmoAtivoId: pmoId } = useAuthProfile();
 
     const loadData = async () => {
         setLoading(true);
@@ -73,18 +74,6 @@ const Secao9: React.FC<Secao9Props> = ({ data, onSectionChange }) => {
                 sementes_mudas_organicas: organicas,
                 sementes_mudas_nao_organicas: naoOrganicas
             });
-
-            // 2. Carregar Sugestões
-            const { data: sugData, error: sugErr } = await supabase
-                .from('logs_treinamento')
-                .select('*')
-                .eq('pmo_id', pmoId)
-                .eq('processado', false); // Ideally we filter by tipo_atividade too, but let's grab all pending
-
-            if (sugErr) throw sugErr;
-            if (sugData) {
-                setSugestoes(sugData);
-            }
         } catch (err: any) {
             console.error('Erro ao buscar dados:', err);
             setErrorMsg('Falha ao carregar dados do banco de dados.');
@@ -113,19 +102,24 @@ const Secao9: React.FC<Secao9Props> = ({ data, onSectionChange }) => {
         setMOpen(true); 
     };
 
-    const revisarSugestao = (sug: any) => {
-        setSugestaoAtual(sug);
-        const json = sug.json_extraido || {};
-        const isOrg = json.sistema_organico !== false;
+    const handleApplySuggestion = (suggestion: any, onRemove?: () => void) => {
+        setSugestaoAtual(suggestion);
+        setPendingSuggestionRemove(() => onRemove || null);
+        
+        const isOrg = suggestion.sistema_organico !== false; // Padrão orgânico se não especificado
         setListKey(isOrg ? 'sementes_mudas_organicas' : 'sementes_mudas_nao_organicas');
+        
+        let inferredType = suggestion.tipo || 'semente';
+        if (suggestion.unidade === 'mudas' || suggestion.unidade === 'muda') inferredType = 'muda';
+
         setEi({
             _id: genId(),
-            tipo: json.tipo || 'semente',
-            especies: json.especies || json.especie_cultivar || '',
-            origem: json.origem || json.origem_fornecedor || '',
-            quantidade: json.quantidade || '',
+            tipo: inferredType,
+            especies: suggestion.insumo_cultura || suggestion.especies || '',
+            origem: suggestion.fornecedor || suggestion.origem || '',
+            quantidade: suggestion.quantidade ? `${suggestion.quantidade} ${suggestion.unidade || ''}`.trim() : '',
             sistema_organico: isOrg,
-            data_compra: json.data_compra || ''
+            data_compra: suggestion.data_compra || new Date().toISOString().split('T')[0]
         });
         setMOpen(true);
     };
@@ -146,9 +140,7 @@ const Secao9: React.FC<Secao9Props> = ({ data, onSectionChange }) => {
         setDItem(null); 
     };
 
-    const isDifferent = (a: any, b: any) => {
-        return a.tipo !== b.tipo || a.especies !== b.especies || a.origem !== b.origem || a.quantidade !== b.quantidade || a.sistema_organico !== b.sistema_organico;
-    };
+
 
     const saveModal = async () => {
         if (!ei?.especies) { alert('Informe a espécie/cultivar.'); return; }
@@ -158,7 +150,6 @@ const Secao9: React.FC<Secao9Props> = ({ data, onSectionChange }) => {
         try {
             // Save to pmo_propagacao
             const rowTarget = {
-                pmo_id: pmoId,
                 tipo: ei.tipo,
                 especies: ei.especies,
                 origem: ei.origem,
@@ -177,27 +168,9 @@ const Secao9: React.FC<Secao9Props> = ({ data, onSectionChange }) => {
                 if (newRow) insertedId = newRow.id;
             }
 
-            // GATILHO DE TREINAMENTO (RLHF)
-            if (sugestaoAtual) {
-                const originalJson = sugestaoAtual.json_extraido || {};
-                const currentJson = { ...ei }; delete currentJson._id; delete currentJson.id;
-                
-                // Compare to see if human corrected
-                const editado = isDifferent(originalJson, currentJson);
-                
-                // Update logs_treinamento or Insert a new one
-                const updatePayload = {
-                    processado: true,
-                    json_corrigido: currentJson,
-                    foi_editado: editado,
-                    status_validacao: editado ? 'corrigido_humano' : 'validado_humano'
-                };
-                
-                await supabase.from('logs_treinamento')
-                    .update(updatePayload)
-                    .eq('id', sugestaoAtual.id);
-                    
-                setSugestoes(sugestoes.filter(s => s.id !== sugestaoAtual.id));
+            if (pendingSuggestionRemove) {
+                pendingSuggestionRemove();
+                setPendingSuggestionRemove(null);
             }
 
             // Update local state
@@ -233,7 +206,12 @@ const Secao9: React.FC<Secao9Props> = ({ data, onSectionChange }) => {
     };
 
     return (
-        <SectionShell sectionLabel="Seção 9" title="Propagação Vegetal">
+        <SectionShell 
+            sectionLabel="Seção 9" 
+            title="Propagação Vegetal"
+            sectionId={9}
+            onApplySuggestion={handleApplySuggestion}
+        >
             {errorMsg && (
                 <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg mb-4 text-sm text-red-800">
                     <AlertTriangle size={18} />
@@ -242,34 +220,6 @@ const Secao9: React.FC<Secao9Props> = ({ data, onSectionChange }) => {
             )}
 
             {loading && <div className="text-sm text-green-700 font-medium mb-4 animate-pulse">Carregando dados e sincronizando com a base...</div>}
-
-            {sugestoes.length > 0 && (
-                <div className="mb-6 border-2 border-green-200 bg-green-50 rounded-lg overflow-hidden">
-                    <div className="px-4 py-3 bg-green-100 flex items-center justify-between border-b border-green-200">
-                        <h4 className="font-bold text-green-800 flex items-center gap-2">
-                            <CheckCircle size={18} className="text-green-600" /> 
-                            📝 Sugestões do AgroVivo para Revisar
-                        </h4>
-                        <span className="bg-green-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">{sugestoes.length}</span>
-                    </div>
-                    <div className="p-4 flex flex-col gap-3">
-                        {sugestoes.map((sug) => {
-                            const params = sug.json_extraido || {};
-                            return (
-                                <div key={sug.id} className="flex flex-col sm:flex-row sm:items-center justify-between bg-white border border-green-100 p-3 rounded-md shadow-sm gap-3">
-                                    <div className="text-sm">
-                                        <div className="font-semibold text-gray-800">Espécie: <span className="text-green-700">{params.especies || params.especie_cultivar || 'Desconhecida'}</span></div>
-                                        <div className="text-gray-600">Tipo: {params.tipo || 'N/A'} | Qtd: {params.quantidade || 'N/A'} | {params.sistema_organico !== false ? 'Orgânico' : 'Convencional'}</div>
-                                    </div>
-                                    <button onClick={() => revisarSugestao(sug)} className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 transition">
-                                        <Edit2 size={14} /> Revisar
-                                    </button>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
 
             <div className="flex flex-col gap-3">
                 <AP title="9.1. Origem das sementes/mudas (Produção Orgânica)" defaultOpen>

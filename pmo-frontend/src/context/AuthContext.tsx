@@ -32,6 +32,10 @@ interface AuthProviderProps {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+/**
+ * Legacy hook - provides everything. 
+ * Use useAuthCore or useAuthProfile for better performance/separation.
+ */
 export function useAuth(): AuthContextType {
     const context = useContext(AuthContext);
     if (!context) {
@@ -39,6 +43,53 @@ export function useAuth(): AuthContextType {
         throw new Error('useAuth must be used within an AuthProvider');
     }
     return context;
+}
+
+/**
+ * Specialized hook for core authentication state and actions.
+ */
+export function useAuthCore() {
+    const { 
+        user, 
+        authToken: session, 
+        isLoading, 
+        login, 
+        logout, 
+        signUp, 
+        loginWithGoogle, 
+        loginWithFacebook 
+    } = useAuth();
+    
+    return {
+        user,
+        session,
+        isLoading,
+        login,
+        logout,
+        signUp,
+        loginWithGoogle,
+        loginWithFacebook
+    };
+}
+
+/**
+ * Specialized hook for profile and PMO-related data.
+ */
+export function useAuthProfile() {
+    const { 
+        profile, 
+        isAdmin, 
+        isLoadingRole, 
+        refreshProfile 
+    } = useAuth();
+    
+    return {
+        profile,
+        isAdmin,
+        isLoadingRole,
+        refreshProfile,
+        pmoAtivoId: profile?.pmo_ativo_id || null
+    };
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {

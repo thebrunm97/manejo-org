@@ -1,6 +1,5 @@
-﻿import React, { useEffect, useState } from 'react';
-import { supabase } from '../supabaseClient';
-import { useAuth } from '../context/AuthContext';
+import React, { useState } from 'react';
+import { useAuthProfile } from '../context/AuthContext';
 import { useSearchParams } from 'react-router-dom';
 import { X } from 'lucide-react';
 
@@ -16,18 +15,13 @@ import ManualRecordDialog from './Dashboard/ManualRecordDialog';
 import RecordDetailsDialog from './Dashboard/RecordDetailsDialog';
 import FieldDiaryTableV2 from './FieldDiaryTableV2';
 
-interface DiarioDeCampoProps {
-  pmoId?: number;
-}
-
-const DiarioDeCampo: React.FC<DiarioDeCampoProps> = ({ pmoId: propPmoId }) => {
-  const auth = useAuth() as any;
-  const user = auth?.user;
-
-  const [searchParams] = useSearchParams();
-  const queryPmoId = searchParams.get('pmoId');
-
-  const [internalPmoId, setInternalPmoId] = useState<number | undefined>(propPmoId);
+const DiarioDeCampo: React.FC = () => {
+    const { pmoAtivoId: authPmoId } = useAuthProfile();
+    const [searchParams] = useSearchParams();
+    const queryPmoId = searchParams.get('pmoId');
+    
+    // Prioridade: Query Param > Auth Profile
+    const internalPmoId = queryPmoId ? Number(queryPmoId) : (authPmoId ? Number(authPmoId) : undefined);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [recordToDelete, setRecordToDelete] = useState<CadernoCampoRecord | null>(null);
   const [deleteReason, setDeleteReason] = useState('');
@@ -38,22 +32,6 @@ const DiarioDeCampo: React.FC<DiarioDeCampoProps> = ({ pmoId: propPmoId }) => {
   const [selectedRecord, setSelectedRecord] = useState<CadernoCampoRecord | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
 
-  // 1. Resolver PMO ID (Priority: Prop > Query > User Profile)
-  useEffect(() => {
-    const resolvePmo = async () => {
-      if (propPmoId) {
-        setInternalPmoId(propPmoId);
-      } else if (queryPmoId) {
-        setInternalPmoId(Number(queryPmoId));
-      } else if (user) {
-        try {
-          const { data } = await supabase.from('profiles').select('pmo_ativo_id').eq('id', user.id).single();
-          if (data?.pmo_ativo_id) setInternalPmoId(data.pmo_ativo_id);
-        } catch (e) { console.error(e); }
-      }
-    };
-    resolvePmo();
-  }, [propPmoId, user, queryPmoId]);
 
   // 2. Use Custom Hook for Logic
   const {
@@ -111,7 +89,6 @@ const DiarioDeCampo: React.FC<DiarioDeCampoProps> = ({ pmoId: propPmoId }) => {
       <ManualRecordDialog
         open={openManualDialog}
         onClose={handleCloseManualDialog}
-        pmoId={internalPmoId || 0}
         recordToEdit={recordToEdit}
         onRecordSaved={() => refresh()}
       />

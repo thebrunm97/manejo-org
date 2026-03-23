@@ -11,10 +11,12 @@ type Message struct {
 	Content string
 }
 
-// Conversation holds the history for a specific phone number
+// Conversation holds the history and FSM state for a specific phone number
 type Conversation struct {
 	Messages   []Message
 	LastUpdate time.Time
+	FSMState   string
+	FSMContext map[string]interface{}
 }
 
 // Manager handles in-memory conversation history with TTL
@@ -41,15 +43,14 @@ func NewManager(ttl time.Duration, maxMessages int) *Manager {
 
 // GetHistory retrieves the last messages for a phone number
 func (m *Manager) GetHistory(phone string) []Message {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
+	m.mu.Lock() // Full lock because we mutate conv.LastUpdate
+	defer m.mu.Unlock()
 
 	conv, ok := m.conversations[phone]
 	if !ok {
 		return nil
 	}
 
-	// Update last access time (optional, but keeps conversations alive if active)
 	conv.LastUpdate = time.Now()
 
 	// Create a copy to avoid race conditions when reading
@@ -84,6 +85,57 @@ func (m *Manager) startCleanup() {
 	ticker := time.NewTicker(5 * time.Minute)
 	for range ticker.C {
 		m.Cleanup()
+	}
+}
+
+// GetFSMState returns the current state and context for a phone number
+func (m *Manager) GetFSMState(phone string) (string, map[string]interface{}) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	conv, ok := m.conversations[phone]
+	if !ok {
+		return "", nil
+	}
+
+	// Clone the map to prevent concurrent mutation outside the lock
+	if conv.FSMContext == nil {
+		return conv.FSMState, nil
+	}
+	ctxClone := make(map[string]interface{}, len(conv.FSMContext))
+	for k, v := range conv.FSMContext {
+		ctxClone[k] = v
+	}
+	return conv.FSMState, ctxClone
+}
+
+// SetFSMState updates the state and context for a phone number
+func (m *Manager) SetFSMState(phone string, state string, ctx map[string]interface{}) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	conv, ok := m.conversations[phone]
+	if !ok {
+		conv = &Conversation{
+			Messages: make([]Message, 0),
+		}
+		m.conversations[phone] = conv
+	}
+	conv.FSMState = state
+	conv.FSMContext = ctx
+	conv.LastUpdate = time.Now()
+}
+
+// ClearFSMState resets the FSM state for a phone number
+func (m *Manager) ClearFSMState(phone string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	conv, ok := m.conversations[phone]
+	if ok {
+		conv.FSMState = ""
+		conv.FSMContext = nil
+		conv.LastUpdate = time.Now()
 	}
 }
 

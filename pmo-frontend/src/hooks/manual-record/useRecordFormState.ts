@@ -11,7 +11,8 @@ import {
     ActivityType,
     DetalhesPlantio,
     DetalhesManejo,
-    DetalhesColheita
+    DetalhesColheita,
+    DetalhesCompostagem
 } from '../../types/CadernoTypes';
 import {
     TipoRegistro,
@@ -20,6 +21,8 @@ import {
     ManejoDraft,
     ColheitaDraft,
     OutroDraft,
+    LimpezaDraft,
+    CompostagemDraft,
     AnyDraft
 } from './useRecordValidation';
 
@@ -90,6 +93,24 @@ export const initialOutroDraft: OutroDraft = {
     destinoVenda: ''
 };
 
+export const initialLimpezaDraft: LimpezaDraft = {
+    ...initialCommon,
+    itemArea: '',
+    tipoLimpeza: 'Seca',
+    produtoUtilizado: '',
+    dosagem: '',
+    responsavel: ''
+};
+
+export const initialCompostagemDraft: CompostagemDraft = {
+    ...initialCommon,
+    acao: 'Revirada',
+    nPilha: '',
+    ingredientes: '',
+    temperatura: '',
+    responsavel: ''
+};
+
 interface UseRecordFormStateProps {
     /** Whether the dialog is open */
     open: boolean;
@@ -107,6 +128,8 @@ interface UseRecordFormStateReturn {
     manejoDraft: ManejoDraft;
     colheitaDraft: ColheitaDraft;
     outroDraft: OutroDraft;
+    limpezaDraft: LimpezaDraft;
+    compostagemDraft: CompostagemDraft;
 
     // Actions
     setActiveTab: (tab: TipoRegistro) => void;
@@ -120,6 +143,8 @@ interface UseRecordFormStateReturn {
     setManejoDraft: React.Dispatch<React.SetStateAction<ManejoDraft>>;
     setColheitaDraft: React.Dispatch<React.SetStateAction<ColheitaDraft>>;
     setOutroDraft: React.Dispatch<React.SetStateAction<OutroDraft>>;
+    setLimpezaDraft: React.Dispatch<React.SetStateAction<LimpezaDraft>>;
+    setCompostagemDraft: React.Dispatch<React.SetStateAction<CompostagemDraft>>;
 }
 
 /**
@@ -161,6 +186,14 @@ export const useRecordFormState = ({
         ...initialOutroDraft,
         dataHora: getNowISO()
     }));
+    const [limpezaDraft, setLimpezaDraft] = useState<LimpezaDraft>(() => ({
+        ...initialLimpezaDraft,
+        dataHora: getNowISO()
+    }));
+    const [compostagemDraft, setCompostagemDraft] = useState<CompostagemDraft>(() => ({
+        ...initialCompostagemDraft,
+        dataHora: getNowISO()
+    }));
 
     /**
      * Gets the current draft based on active tab.
@@ -171,8 +204,10 @@ export const useRecordFormState = ({
             case 'manejo': return manejoDraft;
             case 'colheita': return colheitaDraft;
             case 'outro': return outroDraft;
+            case 'limpeza': return limpezaDraft;
+            case 'compostagem': return compostagemDraft;
         }
-    }, [activeTab, plantioDraft, manejoDraft, colheitaDraft, outroDraft]);
+    }, [activeTab, plantioDraft, manejoDraft, colheitaDraft, outroDraft, limpezaDraft]);
 
     /**
      * Updates a field in the current draft.
@@ -190,6 +225,12 @@ export const useRecordFormState = ({
                 break;
             case 'outro':
                 setOutroDraft(prev => ({ ...prev, [field]: value } as OutroDraft));
+                break;
+            case 'limpeza':
+                setLimpezaDraft(prev => ({ ...prev, [field]: value } as LimpezaDraft));
+                break;
+            case 'compostagem':
+                setCompostagemDraft(prev => ({ ...prev, [field]: value } as CompostagemDraft));
                 break;
         }
     }, [activeTab]);
@@ -212,6 +253,12 @@ export const useRecordFormState = ({
             case 'outro':
                 setOutroDraft({ ...initialOutroDraft, dataHora: now });
                 break;
+            case 'limpeza':
+                setLimpezaDraft({ ...initialLimpezaDraft, dataHora: now });
+                break;
+            case 'compostagem':
+                setCompostagemDraft({ ...initialCompostagemDraft, dataHora: now });
+                break;
         }
     }, []);
 
@@ -224,6 +271,8 @@ export const useRecordFormState = ({
         setManejoDraft({ ...initialManejoDraft, dataHora: now });
         setColheitaDraft({ ...initialColheitaDraft, dataHora: now, lote: getLoteSuggestion() });
         setOutroDraft({ ...initialOutroDraft, dataHora: now });
+        setLimpezaDraft({ ...initialLimpezaDraft, dataHora: now });
+        setCompostagemDraft({ ...initialCompostagemDraft, dataHora: now });
         setActiveTab('plantio');
     }, []);
 
@@ -240,6 +289,7 @@ export const useRecordFormState = ({
             const isPlantio = tipoRaw === ActivityType.PLANTIO || tipoRaw === 'Plantio';
             const isManejo = tipoRaw === ActivityType.MANEJO || tipoRaw === 'Manejo' || tipoRaw === ActivityType.INSUMO;
             const isColheita = tipoRaw === ActivityType.COLHEITA || tipoRaw === 'Colheita';
+            const isCompostagem = tipoRaw === ActivityType.COMPOSTAGEM || tipoRaw === 'Compostagem';
 
             // Base fields
             const common: CommonDraft = {
@@ -307,6 +357,17 @@ export const useRecordFormState = ({
                     qtdDescartes: recordToEdit.qtd_descartes ? String(recordToEdit.qtd_descartes) : '',
                     unidadeDescartes: (recordToEdit.unidade_descartes as UnitType) || UnitType.KG
                 });
+            } else if (isCompostagem) {
+                setActiveTab('compostagem');
+                const d = details as DetalhesCompostagem;
+                setCompostagemDraft({
+                    ...common,
+                    acao: d.acao || 'Revirada',
+                    nPilha: d.n_pilha || '',
+                    ingredientes: d.ingredientes || '',
+                    temperatura: d.temperatura ? String(d.temperatura) : '',
+                    responsavel: d.responsavel || ''
+                });
             } else {
                 setActiveTab('outro');
                 setOutroDraft({ ...initialOutroDraft, ...common });
@@ -327,6 +388,8 @@ export const useRecordFormState = ({
         manejoDraft,
         colheitaDraft,
         outroDraft,
+        limpezaDraft,
+        compostagemDraft,
         setActiveTab,
         getCurrentDraft,
         updateDraft,
@@ -335,7 +398,9 @@ export const useRecordFormState = ({
         setPlantioDraft,
         setManejoDraft,
         setColheitaDraft,
-        setOutroDraft
+        setOutroDraft,
+        setLimpezaDraft,
+        setCompostagemDraft
     };
 };
 

@@ -11,7 +11,7 @@ import {
 } from '../../types/CadernoTypes';
 
 // --- Types ---
-export type TipoRegistro = 'plantio' | 'manejo' | 'colheita' | 'outro';
+export type TipoRegistro = 'plantio' | 'manejo' | 'colheita' | 'outro' | 'limpeza' | 'compostagem';
 export type OutroSubtype = 'compra' | 'venda' | 'outro';
 
 export interface CommonDraft {
@@ -65,7 +65,23 @@ export interface OutroDraft extends CommonDraft {
     destinoVenda: string;
 }
 
-export type AnyDraft = PlantioDraft | ManejoDraft | ColheitaDraft | OutroDraft;
+export interface LimpezaDraft extends CommonDraft {
+    itemArea: string;
+    tipoLimpeza: string;
+    produtoUtilizado: string;
+    dosagem: string;
+    responsavel: string;
+}
+
+export interface CompostagemDraft extends CommonDraft {
+    acao: 'Nova Pilha' | 'Revirada' | 'Temperatura' | 'Agua' | 'Uso';
+    nPilha: string;
+    ingredientes: string;
+    temperatura: string;
+    responsavel: string;
+}
+
+export type AnyDraft = PlantioDraft | ManejoDraft | ColheitaDraft | OutroDraft | LimpezaDraft | CompostagemDraft;
 
 export interface ValidationErrors {
     [key: string]: string;
@@ -172,6 +188,39 @@ export const useRecordValidation = () => {
     /**
      * Validates an Outro (other) draft including compra/venda subtypes.
      */
+    /**
+     * Validates a Limpeza (cleaning) draft.
+     */
+    const validateLimpeza = useCallback((draft: LimpezaDraft): ValidationErrors => {
+        const newErrors: ValidationErrors = {};
+
+        if (!draft.dataHora) newErrors.data = 'Data é obrigatória';
+        if (!draft.itemArea.trim()) newErrors.itemArea = 'Item/Área é obrigatório';
+        if (!draft.tipoLimpeza.trim()) newErrors.tipoLimpeza = 'Tipo é obrigatório';
+        if (!draft.responsavel.trim()) newErrors.responsavel = 'Responsável é obrigatório';
+
+        return newErrors;
+    }, []);
+
+    /**
+     * Validates a Compostagem (composting) draft.
+     */
+    const validateCompostagem = useCallback((draft: CompostagemDraft): ValidationErrors => {
+        const newErrors: ValidationErrors = {};
+
+        if (!draft.dataHora) newErrors.data = 'Data é obrigatória';
+        if (!draft.nPilha.trim()) newErrors.nPilha = 'Identificador da pilha é obrigatório';
+        if (!draft.acao) newErrors.acao = 'Ação é obrigatória';
+
+        if (draft.acao === 'Temperatura') {
+            if (!draft.temperatura || parseFloat(draft.temperatura) <= 0) {
+                newErrors.temperatura = 'Informe a temperatura';
+            }
+        }
+
+        return newErrors;
+    }, []);
+
     const validateOutro = useCallback((draft: OutroDraft): ValidationErrors => {
         const newErrors: ValidationErrors = {};
 
@@ -187,10 +236,9 @@ export const useRecordValidation = () => {
             if (!draft.destinoVenda.trim()) newErrors.destinoVenda = 'Destino obrigatório';
         } else {
             // Outro genérico
-            if (!draft.produto.trim() && draft.locais.length === 0 && !draft.observacao.trim()) {
+            if (!draft.produto.trim() && !draft.observacao.trim()) {
                 newErrors.observacao = 'Preencha ao menos um campo';
                 newErrors.produto = 'Obrigatório';
-                newErrors.locais = 'Obrigatório';
             }
         }
 
@@ -223,6 +271,12 @@ export const useRecordValidation = () => {
                 break;
             case 'outro':
                 newErrors = validateOutro(draft as OutroDraft);
+                break;
+            case 'limpeza':
+                newErrors = validateLimpeza(draft as LimpezaDraft);
+                break;
+            case 'compostagem':
+                newErrors = validateCompostagem(draft as CompostagemDraft);
                 break;
         }
 
@@ -281,7 +335,8 @@ export const useRecordValidation = () => {
         validatePlantio,
         validateManejo,
         validateColheita,
-        validateOutro
+        validateOutro,
+        validateCompostagem
     };
 };
 

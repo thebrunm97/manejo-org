@@ -58,30 +58,10 @@ RUN echo "=== Verificando dist/config.js após compilação ===" && \
 RUN mkdir -p /usr/src/wpp-server/patches
 
 # Copiar arquivo de patch
-COPY wppconnect-patch.js /usr/src/wpp-server/patches/wppconnect-patch.js
+COPY pmo_bot/wppconnect-patch.js /usr/src/wpp-server/patches/wppconnect-patch.js
 
-# Criar script de inicialização com patch e limpeza de locks
-RUN echo '#!/bin/bash\n\
-    set -e\n\
-    \n\
-    echo "🚀 Iniciando WPPConnect Server com patch..."\n\
-    echo "🔑 DEBUG: SECRET_KEY=${SECRET_KEY}"\n\
-    \n\
-    echo "🧹 Limpando locks do Chrome..."\n\
-    SESSION_NAME=${SESSION_NAME:-agro_vivo}\n\
-    rm -f /usr/src/wpp-server/userDataDir/${SESSION_NAME}/.local-chromium/*/lock 2>/dev/null || true\n\
-    rm -f /usr/src/wpp-server/userDataDir/${SESSION_NAME}/SingletonLock 2>/dev/null || true\n\
-    rm -f /usr/src/wpp-server/userDataDir/${SESSION_NAME}/SingletonSocket 2>/dev/null || true\n\
-    rm -f /usr/src/wpp-server/userDataDir/${SESSION_NAME}/SingletonCookie 2>/dev/null || true\n\
-    rm -f /usr/src/wpp-server/userDataDir/${SESSION_NAME}/Default/SingletonLock 2>/dev/null || true\n\
-    rm -f /usr/src/wpp-server/userDataDir/${SESSION_NAME}/Default/SingletonSocket 2>/dev/null || true\n\
-    rm -f /usr/src/wpp-server/userDataDir/${SESSION_NAME}/Default/SingletonCookie 2>/dev/null || true\n\
-    echo "✅ Locks limpos com sucesso"\n\
-    \n\
-    # Aplicar patch carregando módulo antes\n\
-    node -r /usr/src/wpp-server/patches/wppconnect-patch.js /usr/src/wpp-server/dist/server.js\n\
-    ' > /usr/src/wpp-server/start-with-patch.sh && \
-    chmod +x /usr/src/wpp-server/start-with-patch.sh
+# Garantir permissões e diretório unificado
+RUN mkdir -p /data/wppconnect && chmod 777 /data/wppconnect
 
 # Expor porta
 EXPOSE 21465
@@ -96,4 +76,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD wget --quiet --tries=1 --spider http://localhost:21465/api-docs || exit 1
 
 # Comando de inicialização
-CMD ["/bin/bash", "/usr/src/wpp-server/start-with-patch.sh"]
+CMD ["/bin/bash", "/entrypoint.sh"]

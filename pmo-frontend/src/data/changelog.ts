@@ -11,6 +11,51 @@ export interface ChangelogEntry {
 
 export const changelogData: ChangelogEntry[] = [
     {
+        version: "0.12.0",
+        date: "20 de Março de 2026",
+        title: "A Era da Segurança e Formulários Inteligentes",
+        description: "O maior salto de estabilidade e segurança até hoje. Protegemos seus dados com criptografia de ponta e organizamos a casa para o crescimento da fazenda.",
+        sections: [
+            {
+                type: "New",
+                items: [
+                    "Novos Registros no WhatsApp: Agora você pode registrar limpezas de áreas e o uso de mudas/sementes apenas conversando com o assistente.",
+                    "Abas Organizadoras: O formulário de registro no computador foi dividido em abas (Plantio, Manejo, Colheita), ficando muito mais limpo e rápido.",
+                    "Proteção Anti-Perda: Adicionamos um sistema que te avisa se você tentar fechar o app antes de salvar o seu trabalho no campo."
+                ]
+            },
+            {
+                type: "Improvements",
+                items: [
+                    "Segurança Blindada: Seus dados de produção agora contam com proteção individualizada no banco de dados.",
+                    "Conversas sem Fila: O bot agora atende múltiplos produtores simultaneamente sem se confundir."
+                ]
+            }
+        ]
+    },
+    {
+        version: "0.11.0",
+        date: "10 de Março de 2026",
+        title: "Inteligência com Memória e Entrevistas",
+        description: "O Consultor Orgânico aprendeu a lembrar do que vocês estavam conversando e a fazer perguntas para completar seus registros.",
+        sections: [
+            {
+                type: "New",
+                items: [
+                    "Memória de Curto Prazo: Se você começar um registro e parar no meio, o bot lembrará onde parou quando você voltar.",
+                    "Entrevistas Ativas: Se faltar alguma informação (como a quantidade ou o talhão), o assistente te perguntará educadamente em vez de dar erro.",
+                    "Busca em Manuais: O bot agora consulta manuais técnicos em tempo real para te dar respostas mais precisas sobre pragas e adubação."
+                ]
+            },
+            {
+                type: "Improvements",
+                items: [
+                    "Transcrição de Áudio Superior: Melhoramos a clareza com que o bot entende sotaques e termos técnicos da roça."
+                ]
+            }
+        ]
+    },
+    {
         version: "0.6.1",
         date: "26 de Fevereiro de 2026",
         title: "O Doutor Agrônomo e o Painel Mais Rápido",

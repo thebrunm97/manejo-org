@@ -35,7 +35,7 @@ export function useCadernoOfflineLogic() {
             } else {
                 // Remove ID se for temp/undefined para o Supabase gerar
                 const { id, ...newPayload } = payload;
-                await cadernoService.addRegistro(newPayload as any);
+                await cadernoService.addRegistro(newPayload);
             }
 
             return { success: true, isOffline: false };
@@ -65,11 +65,13 @@ export function useCadernoOfflineLogic() {
      */
     const _saveLocal = async (payload: any): Promise<SaveResult> => {
         try {
-            const offlineId = payload.id || `offline_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const offlineId = payload.id || `offline_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+            const isLimpeza = !!payload.is_pmo_limpeza;
+            const isCompostagem = !!payload.is_pmo_compostagem;
 
             const syncItem = {
                 id: offlineId,
-                type: 'CADERNO_SAVE' as const,
+                type: isLimpeza ? 'LIMPEZA_SAVE' : (isCompostagem ? 'COMPOSTAGEM_SAVE' : 'CADERNO_SAVE'),
                 payload: {
                     ...payload,
                     id: offlineId,
@@ -84,8 +86,8 @@ export function useCadernoOfflineLogic() {
             const { localDb, SYNC_QUEUE_STORE } = await import('../../utils/db');
             await localDb.set(syncItem, SYNC_QUEUE_STORE);
 
-            // Mantém compatibilidade momentânea com a store legada se necessário, 
-            // mas o Sync deve priorizar a Queue agora.
+            console.log(`[CadernoOffline] Registro ${isLimpeza ? 'Limpeza' : 'Caderno'} enfileirado localmente:`, offlineId);
+
             return { success: true, isOffline: true };
         } catch (err: any) {
             console.error('[CadernoOffline] Erro FATAL ao salvar local:', err);
