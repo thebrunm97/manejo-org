@@ -103,7 +103,6 @@ const DashboardPage: React.FC = () => {
     harvestStats,
     lastActivity,
     recentActivities,
-    pmoId,
     pmoName,
     pmoVersion,
     userProfile,
@@ -119,7 +118,6 @@ const DashboardPage: React.FC = () => {
   });
   const saudacao = obterSaudacao();
 
-  const pmoIdNumber = pmoId ? Number(pmoId) : 0; // Adaptação para props legadas
 
   const isPageReady = !isLoading;
 
@@ -130,7 +128,6 @@ const DashboardPage: React.FC = () => {
       <ManualRecordDialog
         open={openRecordDialog}
         onClose={() => setOpenRecordDialog(false)}
-        pmoId={pmoIdNumber}
         onRecordSaved={refreshDashboard}
       />
 

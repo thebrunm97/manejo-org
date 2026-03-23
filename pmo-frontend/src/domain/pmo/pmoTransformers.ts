@@ -272,7 +272,7 @@ export function cleanFormDataForSubmission(data: PMOFormData): PMOFormData {
  * @param pmoId - ID do PMO (FK)
  * @returns Array de CulturaAnual prontos para insert
  */
-export function extractCulturasAnuais(formData: PMOFormData, pmoId: string): CulturaAnual[] {
+export function extractCulturasAnuais(formData: PMOFormData): CulturaAnual[] {
     const secao2 = formData.secao_2_atividades_produtivas_organicas as Record<string, unknown>;
     const producaoVegetal = secao2?.producao_primaria_vegetal as Record<string, unknown>;
     const produtos = producaoVegetal?.produtos_primaria_vegetal as Record<string, unknown>[];
@@ -284,7 +284,6 @@ export function extractCulturasAnuais(formData: PMOFormData, pmoId: string): Cul
     return produtos
         .filter(item => !isRowEmpty(item))
         .map(item => ({
-            pmo_id: pmoId,
             produto: String(item.produto || ''),
             area_plantada: parseToFloatOrNull(item.area_plantada) ?? 0,
             unidade_area: String(item.area_plantada_unidade || ''),
@@ -302,7 +301,7 @@ export function extractCulturasAnuais(formData: PMOFormData, pmoId: string): Cul
  * @param pmoId - ID do PMO (FK)
  * @returns Array de ManejoInsumo prontos para upsert
  */
-export function extractManejoInsumos(formData: PMOFormData, pmoId: string): ManejoInsumo[] {
+export function extractManejoInsumos(formData: PMOFormData): ManejoInsumo[] {
     const secao8 = formData.secao_8_insumos_equipamentos as Record<string, unknown>;
     const insumos = secao8?.insumos_melhorar_fertilidade as Record<string, unknown>[];
 
@@ -314,7 +313,6 @@ export function extractManejoInsumos(formData: PMOFormData, pmoId: string): Mane
         .filter(item => !isRowEmpty(item))
         .map(item => ({
             id: (item.id || item._id) as string | undefined,
-            pmo_id: pmoId,
             insumo: String(item.produto_ou_manejo || ''),
             fonte: String(item.procedencia || ''),
             quantidade: String(item.dosagem || ''),

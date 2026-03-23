@@ -9,6 +9,7 @@ export enum ActivityType {
     MANEJO = 'Manejo',
     COLHEITA = 'Colheita',
     INSUMO = 'Insumo',
+    COMPOSTAGEM = 'Compostagem',
     OUTRO = 'Outro',
     CANCELADO = 'CANCELADO'
 }
@@ -67,12 +68,15 @@ export const DetalhesManejoSchema = z.object({
     periodo_carencia: z.string().optional(),
 
     // Campos APLICACAO_INSUMO
-    insumo: z.string().optional(),
+    insumo_aplicado: z.string().optional(), // Padronização Sprint 1
+    insumo: z.string().optional(), // Alias legado
     nome_insumo: z.string().optional(), // Alias legado
     dosagem: z.union([z.number(), z.string()]).optional(),
     unidade_dosagem: z.nativeEnum(UnitType).or(z.string()).optional(),
     equipamento: z.string().optional(),
     metodo_aplicacao: z.string().optional(), // ex: 'Pulverização', 'Fertirrigação', 'Aplicação manual'
+    nota_fiscal_insumo: z.string().optional(), // Compliance SEBRAE
+    cultura_alvo: z.string().optional(), // Compliance SEBRAE
 
     // Campos HIGIENIZACAO
     item_higienizado: z.string().optional(),
@@ -92,6 +96,15 @@ export const DetalhesColheitaSchema = z.object({
     unidade: z.nativeEnum(UnitType).or(z.string()).optional()
 });
 
+// --- Detalhes Compostagem ---
+export const DetalhesCompostagemSchema = z.object({
+    acao: z.enum(['Nova Pilha', 'Revirada', 'Temperatura', 'Agua', 'Uso']).optional(),
+    n_pilha: z.string().optional(),
+    ingredientes: z.string().optional(),
+    temperatura: z.number().optional(),
+    responsavel: z.string().optional()
+});
+
 // --- Detalhes Genéricos (Para 'Outro' ou legado) ---
 export const DetalhesGenericoSchema = z.record(z.string(), z.any());
 
@@ -102,6 +115,7 @@ export const DetalhesGenericoSchema = z.record(z.string(), z.any());
 export type DetalhesPlantio = z.infer<typeof DetalhesPlantioSchema>;
 export type DetalhesManejo = z.infer<typeof DetalhesManejoSchema>;
 export type DetalhesColheita = z.infer<typeof DetalhesColheitaSchema>;
+export type DetalhesCompostagem = z.infer<typeof DetalhesCompostagemSchema>;
 export type DetalhesGenerico = z.infer<typeof DetalhesGenericoSchema>;
 
 // Discriminated Unions para Runtime Check seguro
@@ -109,6 +123,7 @@ export type DetalhesTecnicos =
     | DetalhesPlantio
     | DetalhesManejo
     | DetalhesColheita
+    | DetalhesCompostagem
     | DetalhesGenerico;
 
 export interface BaseRegistro {
@@ -119,6 +134,8 @@ export interface BaseRegistro {
     talhao_canteiro?: string;
     produto?: string;
     observacao_original?: string;
+    fornecedor?: string; // Sprint 1: Coluna nativa
+    nota_fiscal?: string; // Sprint 1: Coluna nativa
 
     // Quantitativos Macro (Denormalized for legacy compatibility)
     quantidade_valor?: number;
@@ -137,6 +154,19 @@ export interface BaseRegistro {
     qtd_descartes?: number;
     unidade_descartes?: string;
     caderno_campo_canteiros?: { canteiros: { id: number; nome: string } }[];
+}
+
+export interface RegistroLimpeza extends BaseRegistro {
+    tipo_atividade: ActivityType.OUTRO | 'Limpeza'; // Usaremos 'outro' com subtipo ou nova categoria
+    data_limpeza: string;
+    item_area: string;
+    tipo_limpeza: string;
+    produto_utilizado?: string;
+    dosagem?: string;
+    responsavel: string;
+    observacao?: string;
+    // Campo opcional para satisfazer restrições de união em CadernoEntry se necessário
+    detalhes_tecnicos?: null; 
 }
 
 // Lite version of AtividadeItem for embedding in CadernoEntry
@@ -175,12 +205,17 @@ export interface RegistroColheita extends BaseRegistro {
     detalhes_tecnicos: DetalhesColheita;
 }
 
+export interface RegistroCompostagem extends BaseRegistro {
+    tipo_atividade: ActivityType.COMPOSTAGEM | 'Compostagem';
+    detalhes_tecnicos: DetalhesCompostagem;
+}
+
 export interface RegistroOutro extends BaseRegistro {
     tipo_atividade: ActivityType.OUTRO | ActivityType.INSUMO | ActivityType.CANCELADO | string;
     detalhes_tecnicos: DetalhesGenerico;
 }
 
-export type CadernoEntry = RegistroPlantio | RegistroManejo | RegistroColheita | RegistroOutro;
+export type CadernoEntry = RegistroPlantio | RegistroManejo | RegistroColheita | RegistroCompostagem | RegistroLimpeza | RegistroOutro;
 
 // Alias para compatibilidade com código existente
 export type CadernoRegistro = CadernoEntry;

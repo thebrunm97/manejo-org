@@ -1,3 +1,19 @@
+## [v0.7.0] - Março 2026
+
+### Hardening & Security (Sprint 1)
+**Foco:** Reforço da segurança, integridade de dados e Row Level Security (RLS).
+
+- **Segurança (Zero Trust):**
+  - Remoção completa da injeção manual de `user_id` e `pmo_id` nos payloads do frontend.
+  - Alinhamento do sistema com as políticas de Supabase RLS.
+- **Integridade de Dados:**
+  - Implementação de guardiões de saída para prevenir perda de dados durante a sincronização.
+  - Nova estratégia "Claim-then-Delete" para garantir que registros offline só sejam removidos após sucesso na nuvem.
+  - Implementação de backoff exponencial para recuperação de falhas de rede.
+- **Refatoração de Infraestrutura:**
+  - Divisão do `AuthContext` em hooks especializados (`useAuthCore`, `useAuthProfile`) para melhor separação de responsabilidades.
+  - Limpeza técnica de ficheiros legados e normalização de payloads.
+
 ## [v0.6.0] - Março 2026
 
 ### A Cruzada do TypeScript

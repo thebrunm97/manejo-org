@@ -167,6 +167,21 @@ func NewHandler(cfg Config) *Handler {
 	}
 }
 
+// ---------------------------------------------------------------------------
+// Session-Level Mutex & Message Deduplication (Security Fix)
+// ---------------------------------------------------------------------------
+
+var (
+	sessionMu   sync.Map // map[phone]*sync.Mutex — one lock per session
+	processedMu sync.Map // map[msgID]struct{} — dedup by message ID
+)
+
+// getSessionMutex returns a dedicated mutex for each phone/session.
+func getSessionMutex(phone string) *sync.Mutex {
+	mu, _ := sessionMu.LoadOrStore(phone, &sync.Mutex{})
+	return mu.(*sync.Mutex)
+}
+
 // RegisterRoutes registers the webhook routes on the Gin engine.
 func (h *Handler) RegisterRoutes(r *gin.Engine) {
 	r.POST("/webhook", h.handleWebhook)
@@ -184,7 +199,9 @@ func (h *Handler) SetWhatsAppClient(c *whatsapp.Client) {
 // handleWebhook processes incoming WPPConnect messages.
 // REGRA DE OURO: Always returns HTTP 200 to avoid sender retry loops.
 func (h *Handler) handleWebhook(c *gin.Context) {
-	// 1. Token validation (query param ?token= or Authorization: Bearer ...)
+	log.Println("🔍 [DEBUG] handleWebhook ENTERED")
+
+	// 1. Token validation
 	token := c.Query("token")
 	if token == "" {
 		auth := c.GetHeader("Authorization")
@@ -232,24 +249,45 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 		payload.Event, payload.From, payload.Type, payload.Body)
 
 	// 7. Skip non-text messages if not audio
-	if payload.Body == "" && !payload.IsAudio() { // CHANGE: Continue if it's audio
-		log.Println("⏭️  Mensagem sem texto (mídia não-audio) — ignorando por agora")
+	if payload.Body == "" && !payload.IsAudio() {
+		log.Println("⏭️  Mensagem sem texto (mídia não-audio) — ignorando")
 		c.JSON(http.StatusOK, gin.H{"status": "received", "note": "media not supported yet"})
 		return
 	}
 
-	// Delegate business logic orchestration to FSM
+	// 8. Session-Level Mutex & Message Deduplication
+	msgID := payload.MessageID()
+	if msgID != "" {
+		if _, loaded := processedMu.LoadOrStore(msgID, struct{}{}); loaded {
+			log.Printf("🔁 [DEDUP] Mensagem %s já em processamento — ignorando duplicata", msgID)
+			c.JSON(http.StatusOK, gin.H{"status": "duplicate"})
+			return
+		}
+		// Cleanup: remove after 5 min
+		go func(id string) {
+			time.Sleep(5 * time.Minute)
+			processedMu.Delete(id)
+		}(msgID)
+	}
+
+	// Delegate business logic orchestration to FSM asynchronously
 	go func(msg WPPMessage) {
-		// Asynchronously process the message. We don't block the webhook response on this.
-		// A background goroutine ensures WPPConnect receives the 200 OK immediately, avoiding retries/timeouts.
-		result := state.ProcessMessage(msg.From, msg.Body, msg.MessageID(), msg.IsAudio(), h.cfg.SupabaseClient, h.cfg.GroqClient, h.cfg.WhatsAppClient, h.cfg.GeminiClient, h.cfg.TtsClient, h.cfg.MCPServer, h.cfg.HistoryManager)
+		// Layer 2: Session-Level Mutex — serialize processing per phone number
+		mu := getSessionMutex(msg.From)
+		mu.Lock()
+		defer mu.Unlock()
+
+		// Layer 3: Context with timeout — prevent goroutine leaks (90s)
+		ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+		defer cancel()
+
+		result := state.ProcessMessage(ctx, msg.From, msg.Body, msg.MessageID(), msg.IsAudio(), h.cfg.SupabaseClient, h.cfg.GroqClient, h.cfg.WhatsAppClient, h.cfg.GeminiClient, h.cfg.TtsClient, h.cfg.MCPServer, h.cfg.HistoryManager)
 		if !result.Success {
 			log.Printf("⚠️ [FSM] Background processing completed with issues: %s", result.Reason)
 		}
 	}(payload)
 
-	// 8. Always Respond 200 OK
-	// To prevent WPPConnect from looping on retries
+	// 9. Always Respond 200 OK
 	c.JSON(http.StatusOK, gin.H{
 		"status": "processed",
 		"from":   payload.From,

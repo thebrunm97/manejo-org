@@ -4,7 +4,30 @@ Todas as mudanças notáveis deste projeto serão documentadas neste arquivo.
 
 O formato baseia-se no [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/), e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
-## [v1.1.0] - 2026-03-05
+## [0.12.0] - 2026-03-20
+
+### 🚀 Added
+- **AI Tools (Form 04 & Sections 8/9)**: Novas ferramentas MCP para automatizar registros de Limpeza, Propagação e Insumos.
+- **Session-Level Mutex**: Implementação de `sync.Map` para gerenciar concorrência por sessão de usuário.
+- **Message Deduplication**: Deduplicador de IDs de mensagem para evitar processamento redundante de webhooks.
+
+### 🛠 Refactored / Fixed
+- **FSM Context Management**: Introdução de timeouts de 90s/30s e propagação segura de `context.Context`.
+- **Supabase Mapping**: Suporte robusto para mapeamento JSONB de detalhes técnicos via Go client.
+
+## [v0.11.5] - 2026-03-19
+
+### 🚀 Added
+- **FSM State Persistence (Context Retention)**: Implementação de Máquina de Estados Finita (FSM) com persistência in-memory por telefone. Agora o bot retém o contexto de registros incompletos (Atividade, Item, Local) e aguarda informações faltantes (ex: Quantidade) sem sofrer de "amnésia".
+- **Entrevista Ativa (Interactive Dialogue)**: Fluxo de diálogo inteligente para "Compra/Aquisição" e registros bloqueados pelo Choke Point, guiando o usuário até a conclusão do dado obrigatório.
+- **Global Guardrail (Choke Point)**: Barreira universal ativada imediatamente após extração NER, impedindo salvamentos prematuros no Supabase e redirecionando o fluxo para estados de espera.
+
+### 🛠 Refactored / Fixed
+- **FSM Logic Execution Order**: Reordenamento crítico da resolução de perfis e telefones. Agora os dados do usuário são resolvidos ANTES do processamento de áudio STT e vinculação de dispositivos, garantindo telemetria e logs precisos em todos os cenários.
+- **Audio Redundancy Cleanup**: Remoção de blocos duplicados de processamento de áudio e transcrição Whisper na `fsm.go`.
+- **Typing & Compilation**: Corrigidos erros de tipagem de tempo (`time.Time`) e variáveis de contexto não utilizadas no orquestrador da FSM.
+
+## [v0.11.1] - 2026-03-05
 
 ### 🚀 Added
 - **Observabilidade (Ingestão RAG)**: Nova tabela `ingestion_jobs` e sistema de rastreamento no backend para monitorar estados de processamento (pendente, processando, concluído, falhou).
@@ -25,7 +48,7 @@ O formato baseia-se no [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0
 - **Comando Onboarding (`CONECTAR`)**: Reparado o ponteiro de pesquisa na vinculação de dispositivos web. A query passou de `codigo_vinculacao` para a tabela exata de produção `codigo_vinculo`.
 - **Áudio TTS Rejeitado (`WPPConnect`)**: Substituído o MIME header pré-fixado gerado pelo fallback do HTGoTTS (Google) de `data:audio/mp3;base64,` para `data:audio/mpeg;base64,`. Previne o erro `InvalidMediaCheckRepairFailedType` originado por rejeição na stream formatada do ffmpeg inserida no core do WhatsApp.
 
-## [v1.0.0-beta.1] - 2026-03-04
+## [v0.11.0-beta.1] - 2026-03-04
 
 ### 🚀 Added
 - **Audio Hands-Free Pipeline**: Fluxo híbrido (Inbound Voice -> Text / Outbound Text -> TTS Voice).

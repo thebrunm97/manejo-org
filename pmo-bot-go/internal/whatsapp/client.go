@@ -272,7 +272,7 @@ func (c *Client) SendReply(to, message, replyToMessageId string) error {
 
 // RenderVoiceText formats a text message to look like a premium transcription card.
 func RenderVoiceText(text string) string {
-	return fmt.Sprintf("🗣️ *Voz da Ana (Transcrição)*\n────────────────────\n╰─➤ %s", text)
+	return fmt.Sprintf("🌿 %s", text)
 }
 
 // CheckConnection checks the WPPConnect session status.

@@ -163,7 +163,7 @@ func main() {
 	}()
 
 	// --- Start ---
-	log.Printf("🚀 PMO-Bot-Go v0.3.0 listening on 0.0.0.0:%s", port)
+	log.Printf("🚀 PMO-Bot-Go v0.11.5 listening on 0.0.0.0:%s", port)
 	if err := r.Run("0.0.0.0:" + port); err != nil {
 		log.Fatalf("❌ Server failed: %v", err)
 	}

@@ -8,14 +8,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { talhaoService, Talhao } from '../../services/talhaoService';
 import { calculatePolygonArea } from '../../domain/geo/geoUtils';
 import { GeoPoint } from '../../domain/geo/geoTypes';
-import { useAuth } from '../../context/AuthContext';
 
 export function useTalhaoManager(pmoId: string, propriedadeId?: number) {
     const [talhoes, setTalhoes] = useState<Talhao[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const { user } = useAuth();
 
     // Carrega talhões
     const loadTalhoes = useCallback(async () => {
@@ -48,14 +46,12 @@ export function useTalhaoManager(pmoId: string, propriedadeId?: number) {
 
             // 3. Usa Service para salvar
             const newTalhao = await talhaoService.create({
-                pmo_id: pmoId,
                 propriedade_id: propriedadeId, // ← NOVO: Inclui propriedade_id
                 geometria: coords,
                 nome,
                 area_hectares: area,
                 cor: '#16a34a',
-                cultura: 'Diversos',
-                user_id: user?.id
+                cultura: 'Diversos'
             });
 
             // Atualiza estado local (optimistic update like, but with confirmed data)
