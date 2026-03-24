@@ -58,6 +58,7 @@ services:
       - PORT=8080
       - WPPCONNECT_URL=http://benchmark-runner:3333
       - GIN_MODE=release
+      - MOCK_WHATSAPP=true
     networks:
       - benchmark-net
 
