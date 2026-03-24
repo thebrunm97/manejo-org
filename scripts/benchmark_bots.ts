@@ -7,21 +7,19 @@ const app = express();
 app.use(express.json());
 
 const PORT = 3333;
-const TEST_TOKEN = 'TY6oMv4d20a3';
+const TEST_TOKEN = 'benchmark_secret';
 const SESSION_NAME = 'agro_vivo';
+const GO_BOT_URL = process.env.GO_BOT_URL || 'http://localhost:8081';
 
 interface BenchmarkResult {
     vuId: string;
     scenario: string;
-    pythonTime: string;
     goTime: string;
-    winner: string;
     goResponse: string;
 }
 
 const results: BenchmarkResult[] = [];
-const PYTHON_BOT_URL = process.env.PYTHON_BOT_URL || 'http://bot-python:5000';
-const GO_BOT_URL = process.env.GO_BOT_URL || 'http://bot-go:8080';
+// Use the global GO_BOT_URL defined above
 
 // Mock WPPConnect Routes
 app.post('/api/:session/:secret/generate-token', (req, res) => {
@@ -32,27 +30,26 @@ app.get('/api/:session/check-connection-session', (req, res) => {
     res.json({ status: true, message: 'Connected' });
 });
 
+app.all('/api/*', (req, res) => {
+    // console.log(`[MOCK-WPP] Catch-all handled ${req.method} ${req.path}`);
+    res.status(200).json({ status: 'ok', message: 'Mock handled' });
+});
+
 // Map to track responses by phone number for multi-VU support
 const pendingResponses = new Map<string, {
-    python?: { text: string; time: number };
     go?: { text: string; time: number };
     resolver: () => void;
 }>();
 
 app.post('/api/:session/send-message', (req, res) => {
     const { message, phone } = req.body;
-    const botType = req.headers['user-agent']?.includes('python') ? 'Python' : 'Go';
     const cleanPhone = phone.split('@')[0];
-
-    // console.log(chalk.gray(`[Mock] Received ${botType} for ${cleanPhone}: "${message.substring(0, 20)}..."`));
 
     const state = pendingResponses.get(cleanPhone);
     if (state) {
         const duration = Math.round(performance.now() - (state as any).startTime);
-        if (botType === 'Python') state.python = { text: message, time: duration };
-        else state.go = { text: message, time: duration };
-
-        if (state.python && state.go) state.resolver();
+        state.go = { text: message, time: duration };
+        state.resolver();
     }
 
     res.json({ status: 'success', response: { id: 'mock-id' } });
@@ -81,19 +78,15 @@ async function runVU(vuId: number) {
         pendingResponses.set(phone, {
             resolver: () => {
                 const state = pendingResponses.get(phone)!;
-                const pyTime = state.python?.time || 99999;
                 const goTime = state.go?.time || 99999;
-                const winner = goTime < pyTime ? 'Go' : 'Python';
 
                 results.push({
                     vuId: `VU-${vuId}`,
                     scenario: scenario.name,
-                    pythonTime: state.python ? `${pyTime}ms` : 'TIMEOUT',
                     goTime: state.go ? `${goTime}ms` : 'TIMEOUT',
-                    winner: winner,
                     goResponse: state.go?.text.substring(0, 40) + '...' || 'N/A'
                 });
-                console.log(chalk.green(`[VU-${vuId}] ✅ Finalizado em ${goTime}ms (Winner: ${winner})`));
+                console.log(chalk.green(`[VU-${vuId}] ✅ Finalizado em ${goTime}ms`));
                 resolve();
             }
         });
@@ -113,16 +106,14 @@ async function runVU(vuId: number) {
 
         const config = { headers: { 'Authorization': `Bearer ${TEST_TOKEN}` } };
 
-        axios.post(`${PYTHON_BOT_URL}/webhook`, payload, config).catch(() => {});
-        axios.post(`${GO_BOT_URL}/webhook`, payload, config).catch(() => {});
+        axios.post(`${GO_BOT_URL}/webhook/wppconnect`, payload, config).catch(() => {});
 
-        // Safety timeout
+        // Safety timeout (increased for concurrent Mutex/AI load)
         setTimeout(() => {
             if (pendingResponses.has(phone)) {
-                // console.log(chalk.red(`[VU-${vuId}] ❌ Timeout`));
                 pendingResponses.get(phone)?.resolver();
             }
-        }, 30000);
+        }, 60000);
     });
 }
 
@@ -141,13 +132,12 @@ async function waitForBot(url: string, name: string) {
 }
 
 async function main() {
-    console.log(chalk.bold.cyan('\n🚀 INICIANDO STRESS TEST CONCORRENTE (v0.12.0)\n'));
+    console.log(chalk.bold.cyan('\n🚀 INICIANDO STRESS TEST CONCORRENTE (v0.12.0) - GO BOT ONLY\n'));
 
-    const pyReady = await waitForBot(PYTHON_BOT_URL, 'Python');
     const goReady = await waitForBot(GO_BOT_URL, 'Go');
 
-    if (!pyReady || !goReady) {
-        console.error(chalk.red('❌ Bots não estão prontos. Abortando.'));
+    if (!goReady) {
+        console.error(chalk.red('❌ Bot Go não está pronto. Abortando.'));
         process.exit(1);
     }
 

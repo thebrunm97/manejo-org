@@ -54,8 +54,6 @@ func ProcessMessage(ctx context.Context, from string, body string, msgID string,
 
 	// Step 2: Resolve profile to have UserID for all consumption logs
 	profile, errP := sbClient.GetProfileByPhone(phone)
-	if errP != nil {
-		log.Printf("🚫 [FSM] Perfil não encontrado ou sem PMO ativo para %s: %v", phone, errP)
 	}
 
 	if isAudio {

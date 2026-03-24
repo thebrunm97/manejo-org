@@ -1,0 +1,67 @@
+2026/03/24 11:45:34 ⏰ Horário de Brasília configurado: Tue, 24 Mar 2026 11:45:34 -03
+2026/03/24 11:45:34 ✅ Gerenciador de Histórico (In-Memory) inicializado
+2026/03/24 11:45:34 ✅ Cliente Groq inicializado
+2026/03/24 11:45:34 ✅ Cliente Gemini inicializado (modelo: gemini-3.1-flash-lite-preview, versão: v1)
+2026/03/24 11:45:34 ✅ Cliente Supabase inicializado
+2026/03/24 11:45:34 ⚠️ Falha inicial ao conectar no WPPConnect: Post "http://benchmark-runner:3333/api/agro_vivo/SsU8y6SMSvsMkZdvWqFNqxQKs5c8F3gKWCl3xuht7uNRSI1qPkomSwoQsS0VyuN1/generate-token": dial tcp 172.19.0.2:3333: connect: connection refused. Auto-Reconnect tentará em background.
+2026/03/24 11:45:34 🛠️ [MCP] Ferramenta registrada: consultar_base_conhecimento
+2026/03/24 11:45:34 🛠️ [MCP] Ferramenta registrada: consultar_dados_fazenda
+2026/03/24 11:45:34 🛠️ [MCP] Ferramenta registrada: criar_infraestrutura_fazenda
+2026/03/24 11:45:34 🛠️ [MCP] Ferramenta registrada: adicionar_insumo_pmo
+2026/03/24 11:45:34 🛠️ [MCP] Ferramenta registrada: registrar_propagacao_vegetal
+2026/03/24 11:45:34 🛠️ [MCP] Ferramenta registrada: registrar_limpeza
+2026/03/24 11:45:34 🛠️ [MCP] Ferramenta registrada: criar_talhao
+2026/03/24 11:45:34 🛠️ [MCP] Ferramenta registrada: criar_canteiros
+2026/03/24 11:45:34 🛠️ [MCP] Ferramenta registrada: registrar_compostagem
+2026/03/24 11:45:34 🛠️ [MCP] Ferramenta registrada: registrar_compra_insumo
+2026/03/24 11:45:34 ✅ Servidor MCP (Internal) inicializado com Tool RAG
+2026/03/24 11:45:34 ✅ TTS Orchestrator inicializado
+2026/03/24 11:45:34 🚀 PMO-Bot-Go v0.11.5 listening on 0.0.0.0:8080
+2026/03/24 11:45:34 💓 Heartbeat: DISCONNECTED (erro: Get "http://benchmark-runner:3333/api/agro_vivo/check-connection-session": dial tcp 172.19.0.2:3333: connect: connection refused)
+2026/03/24 11:45:34 💓 Heartbeat: DISCONNECTED
+2026/03/24 11:45:35 🔍 [DEBUG] handleWebhook ENTERED
+2026/03/24 11:45:35 🔒 Token inválido — acesso negado
+2026/03/24 11:45:35 🔍 [DEBUG] handleWebhook ENTERED
+2026/03/24 11:45:35 🔒 Token inválido — acesso negado
+2026/03/24 11:45:35 🔍 [DEBUG] handleWebhook ENTERED
+2026/03/24 11:45:35 🔒 Token inválido — acesso negado
+2026/03/24 11:45:36 🔍 [DEBUG] handleWebhook ENTERED
+2026/03/24 11:45:36 🔒 Token inválido — acesso negado
+2026/03/24 11:45:36 🔍 [DEBUG] handleWebhook ENTERED
+2026/03/24 11:45:36 🔒 Token inválido — acesso negado
+2026/03/24 11:45:36 🔍 [DEBUG] handleWebhook ENTERED
+2026/03/24 11:45:36 🔒 Token inválido — acesso negado
+2026/03/24 11:45:36 🔍 [DEBUG] handleWebhook ENTERED
+2026/03/24 11:45:36 🔒 Token inválido — acesso negado
+2026/03/24 11:45:37 🔍 [DEBUG] handleWebhook ENTERED
+2026/03/24 11:45:37 🔒 Token inválido — acesso negado
+2026/03/24 11:46:07 ✅ [WPP] Cliente WhatsApp reconectado (Novo Token JWT) com sucesso!
+2026/03/24 11:46:07 🚀 [WPP] Enviando comando start-session para agro_vivo (webhook: http://pmo-bot-go:8080/webhook/wppconnect?token=SsU8y6SMSvsMkZdvWqFNqxQKs5c8F3gKWCl3xuht7uNRSI1qPkomSwoQsS0VyuN1&token=SsU8y6SMSvsMkZdvWqFNqxQKs5c8F3gKWCl3xuht7uNRSI1qPkomSwoQsS0VyuN1)...
+2026/03/24 11:46:07 ℹ️ [WPP] Resposta do start-session (404): <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error</title>
+</head>
+<body>
+<pre>Cannot POST /api/agro_vivo/start-session</pre>
+</body>
+</html>
+2026/03/24 11:46:07 ⚠️ [WPP] Aviso ao iniciar sessão pós-refresh: start-session fail (HTTP 404): <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error</title>
+</head>
+<body>
+<pre>Cannot POST /api/agro_vivo/start-session</pre>
+</body>
+</html>
+2026/03/24 11:46:42 💓 Heartbeat: DISCONNECTED (erro: Get "http://benchmark-runner:3333/api/agro_vivo/check-connection-session": dial tcp: lookup benchmark-runner on 127.0.0.11:53: no such host)
+2026/03/24 11:46:42 💓 Heartbeat: DISCONNECTED
+2026/03/24 11:47:49 💓 Heartbeat: DISCONNECTED (erro: Get "http://benchmark-runner:3333/api/agro_vivo/check-connection-session": dial tcp: lookup benchmark-runner on 127.0.0.11:53: no such host)
+2026/03/24 11:47:49 💓 Heartbeat: DISCONNECTED
+2026/03/24 11:48:55 💓 Heartbeat: DISCONNECTED (erro: Get "http://benchmark-runner:3333/api/agro_vivo/check-connection-session": dial tcp: lookup benchmark-runner on 127.0.0.11:53: no such host)
+2026/03/24 11:48:56 💓 Heartbeat: DISCONNECTED
+2026/03/24 11:50:02 💓 Heartbeat: DISCONNECTED (erro: Get "http://benchmark-runner:3333/api/agro_vivo/check-connection-session": dial tcp: lookup benchmark-runner on 127.0.0.11:53: no such host)
+2026/03/24 11:50:02 💓 Heartbeat: DISCONNECTED
