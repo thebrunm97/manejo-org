@@ -311,9 +311,14 @@ func (c *Client) InsertCadernoCampo(record CadernoCampoInsert) (string, error) {
 		record.DetalhesTecnicos["unidade"] = record.QuantidadeUnidade
 		record.DetalhesTecnicos["unidade_medida"] = record.QuantidadeUnidade
 		// Auto-gerar lote para Colheita (paridade com Python e React)
-		loteGerado := GerarCodigoLote()
-		record.DetalhesTecnicos["lote"] = loteGerado
-		log.Printf("🆔 [Supabase] Lote auto-gerado para Colheita: %s", loteGerado)
+		if record.DetalhesTecnicos["lote"] == nil || record.DetalhesTecnicos["lote"] == "" {
+			loteGerado := GerarCodigoLote()
+			record.DetalhesTecnicos["lote"] = loteGerado
+			log.Printf("🆔 [Supabase] Lote auto-gerado para Colheita: %s", loteGerado)
+		}
+	case "VENDA":
+		record.DetalhesTecnicos["qtd"] = record.QuantidadeValor
+		record.DetalhesTecnicos["unidade"] = record.QuantidadeUnidade
 	case "MANEJO":
 		record.DetalhesTecnicos["dosagem"] = record.QuantidadeValor
 		// Usando unidade_dosagem e unidade_medida
