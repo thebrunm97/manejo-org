@@ -70,6 +70,11 @@ services:
       - GIN_MODE=release
       - WPPCONNECT_URL=http://wppconnect:21465
       - TZ=America/Sao_Paulo
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
     depends_on:
       wppconnect:
         condition: service_healthy
