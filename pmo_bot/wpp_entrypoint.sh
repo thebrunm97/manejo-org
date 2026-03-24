@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "🧹 Realizando limpeza agressiva de locks do Chrome..."
+echo "ðŸ§¹ Realizando limpeza agressiva de locks do Chrome..."
 
 # Caminhos definidos no docker-compose.yml
 USER_DATA_DIR="${WPP_USER_DATA_DIR:-/data/wppconnect}"
@@ -16,11 +16,11 @@ if [ -d "$USER_DATA_DIR" ]; then
   find "$USER_DATA_DIR" -name "*.lock" -delete 2>/dev/null || true
 fi
 
-# Garantir que o Webhook URL está preenchido (Fallback de segurança)
+# Garantir que o Webhook URL estÃ¡ preenchido (Fallback de seguranÃ§a)
 export WPPCONNECT_TOKEN=${WPPCONNECT_TOKEN:-${SECRET_KEY}}
 export WEBHOOK_URL=${WEBHOOK_URL:-"http://pmo-bot-go:8080/webhook/wppconnect?token=$WPPCONNECT_TOKEN"}
 
-echo "⚙️ Injetando configuração global de Webhook..."
+echo "âš™ï¸ Injetando configuraÃ§Ã£o global de Webhook..."
 cat <<EOF > /usr/src/wpp-server/config.json
 {
   "secretKey": "${SECRET_KEY}",
@@ -54,6 +54,6 @@ cat <<EOF > /usr/src/wpp-server/config.json
 }
 EOF
 
-echo "✅ Locks removidos e configuração injetada. Iniciando servidor..."
+echo "âœ… Locks removidos e configuraÃ§Ã£o injetada. Iniciando servidor..."
 cd /usr/src/wpp-server
 exec node -r /usr/src/wpp-server/patches/wppconnect-patch.js /usr/src/wpp-server/dist/server.js

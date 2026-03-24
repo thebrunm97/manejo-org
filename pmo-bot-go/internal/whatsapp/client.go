@@ -314,6 +314,12 @@ func (c *Client) CheckConnection() (bool, map[string]interface{}, error) {
 
 // doRequest handles the raw HTTP request to the WPPConnect server
 func (c *Client) doRequest(method, url string, payload []byte) ([]byte, error) {
+	// 🛡️ Safety Check: If MOCK_WHATSAPP is true, we never send actual network requests.
+	if os.Getenv("MOCK_WHATSAPP") == "true" {
+		log.Printf("🛡️ [WPP-SAFE-MODE] MOCK_WHATSAPP=true. Skipping outbound request to %s", url)
+		return []byte(`{"status":"success","message":"Mocked success in Safe Mode"}`), nil
+	}
+
 	var bodyReader io.Reader
 	if payload != nil {
 		bodyReader = bytes.NewReader(payload)
