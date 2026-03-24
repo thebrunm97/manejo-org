@@ -1,6 +1,6 @@
 # ---- Build Stage ----
 FROM golang:alpine AS builder
-
+ARG TARGETARCH
 WORKDIR /app
 
 # Cache dependencies first
@@ -9,7 +9,7 @@ RUN go mod download
 
 # Copy source and build
 COPY . .
-RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /pmo-bot-go ./cmd/server
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=$TARGETARCH go build -ldflags="-s -w" -o /pmo-bot-go ./cmd/server
 
 # ---- Runtime Stage ----
 FROM alpine:3.21
