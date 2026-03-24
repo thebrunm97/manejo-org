@@ -27,6 +27,7 @@ RUN apt-get update && apt-get install -y \
     libxrandr2 \
     xdg-utils \
     git \
+    chromium \
     && rm -rf /var/lib/apt/lists/*
 
 # Criar diretório da aplicação
@@ -68,7 +69,8 @@ EXPOSE 21465
 
 # Variáveis de ambiente
 ENV NODE_ENV=production \
-    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=false \
+    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
     LOG_LEVEL=silly
 
 # Healthcheck

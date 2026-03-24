@@ -30,7 +30,12 @@ services:
       - SESSION_SECRET_KEY=${WPPCONNECT_TOKEN}
       - AUTHENTICATION_TYPE=secret
       - TZ=America/Sao_Paulo
-      - PUPPETEER_EXECUTABLE_PATH=/root/.cache/puppeteer/chrome/linux-146.0.7680.153/chrome-linux64/chrome
+      - PUPPETEER_ARGS="--no-sandbox --disable-setuid-sandbox"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1.5G
     env_file:
       - ../.env
     volumes:
