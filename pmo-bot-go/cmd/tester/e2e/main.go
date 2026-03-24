@@ -201,7 +201,7 @@ var testCases = []testCase{
 // ---------------------------------------------------------------------------
 
 const (
-	webhookURL   = "http://localhost:8080/webhook?token=TY6oMv4d20a3"
+	webhookURL   = "http://localhost:8080/webhook?token=benchmark_secret"
 	delayBetween = 2 * time.Second // respect Groq rate limits
 )
 

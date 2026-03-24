@@ -697,7 +697,7 @@ func (s *Server) handleRegistrarCompraInsumo(args map[string]interface{}) (inter
 
 	log.Printf("🛒 [MCP-TOOL] Registrando compra de '%s' para PMO %d", record.Produto, pmoID)
 
-	id, err := s.supabase.InsertCadernoCampo(record)
+	_, err := s.supabase.InsertCadernoCampo(record)
 	if err != nil {
 		return fmt.Sprintf("Erro ao registrar compra na Tabela de Compras: %v", err), nil
 	}
