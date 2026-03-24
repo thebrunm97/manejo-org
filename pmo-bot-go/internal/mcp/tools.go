@@ -265,6 +265,51 @@ func (s *Server) InitializeTools() {
 		},
 		Handler: s.handleRegistrarCompraInsumo,
 	})
+
+	s.RegisterTool(Tool{
+		Name:        "registrar_colheita",
+		Description: "Usa esta ferramenta para registrar a colheita de produtos na fazenda (Formulário 07).",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"pmo_id":      map[string]interface{}{"type": "integer"},
+				"data":        map[string]interface{}{"type": "string", "description": "Data da colheita (YYYY-MM-DD)."},
+				"cultura":     map[string]interface{}{"type": "string", "description": "Nome da cultura colhida (Ex: Alface Crespa, Tomate)."},
+				"talhao":      map[string]interface{}{"type": "string", "description": "Nome do talhão onde foi colhido (Ex: Talhão 01)."},
+				"quantidade":  map[string]interface{}{"type": "number", "description": "Quantidade colhida."},
+				"unidade":     map[string]interface{}{"type": "string", "description": "Unidade de medida (Ex: kg, maços, caixas)."},
+				"destino_inicial": map[string]interface{}{"type": "string", "description": "Para onde foi o produto logo após a colheita (Ex: Depósito, Câmara Fria, Lavagem).", "default": "Depósito"},
+			},
+			"required": []string{"pmo_id", "cultura", "talhao", "quantidade", "unidade"},
+		},
+		Handler: s.handleRegistrarColheita,
+	})
+
+	s.RegisterTool(Tool{
+		Name:        "registrar_venda",
+		Description: "Usa esta ferramenta para registrar a venda, comercialização ou destinação final de produtos (Formulário 08). Saída de estoque.",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"pmo_id":     map[string]interface{}{"type": "integer"},
+				"data":       map[string]interface{}{"type": "string", "description": "Data da venda/saída (YYYY-MM-DD)."},
+				"produto":    map[string]interface{}{"type": "string", "description": "Nome do produto vendido (Ex: Alface, Tomate)."},
+				"quantidade": map[string]interface{}{"type": "number"},
+				"unidade":    map[string]interface{}{"type": "string", "description": "Unidade de medida (Ex: kg, maços, caixas)."},
+				"valor_unitario": map[string]interface{}{"type": "number", "description": "Valor por unidade vendida (opcional)."},
+				"cliente":    map[string]interface{}{"type": "string", "description": "Nome do comprador ou cliente."},
+				"destinacao": map[string]interface{}{
+					"type": "string",
+					"enum": []string{"venda", "doacao", "perda", "processamento", "consumo proprio"},
+					"description": "Tipo de saída/destinação.",
+					"default": "venda",
+				},
+				"nota_fiscal": map[string]interface{}{"type": "string", "description": "Número da NF ou recibo."},
+			},
+			"required": []string{"pmo_id", "produto", "quantidade", "unidade", "destinacao"},
+		},
+		Handler: s.handleRegistrarVenda,
+	})
 }
 
 func (s *Server) handleConsultarDadosFazenda(args map[string]interface{}) (interface{}, error) {
@@ -703,4 +748,99 @@ func (s *Server) handleRegistrarCompraInsumo(args map[string]interface{}) (inter
 	}
 
 	return fmt.Sprintf("Compra de '%s' registrada com sucesso (Formulário 06).", record.Produto), nil
+}
+
+func (s *Server) handleRegistrarColheita(args map[string]interface{}) (interface{}, error) {
+	log.Printf("🧺 [MCP-TOOL] handleRegistrarColheita Args: %+v", args)
+
+	pmoIDFloat, _ := parseArgToFloat(args["pmo_id"])
+	pmoID := int64(pmoIDFloat)
+	userID, _ := args["user_id"].(string)
+
+	data := sanitize(args["data"])
+	if data == "" {
+		data = time.Now().Format("2006-01-02")
+	}
+
+	qtd, _ := parseArgToFloat(args["quantidade"])
+	unidade := sanitize(args["unidade"])
+	talhao := sanitize(args["talhao"])
+	cultura := sanitize(args["cultura"])
+
+	// Validação básica de existência (mockada ou via log de aviso se não encontrar ID, similar ao Lookup do plantio)
+	// No futuro, podemos fazer um FetchTalhoes aqui, mas o client.InsertCadernoCampo já faz o Lookup nos canteiros se fornecidos.
+	// Por enquanto, seguimos o fluxo de salvar o nome textual no talhao_canteiro.
+
+	record := supabase.CadernoCampoInsert{
+		PmoID:             pmoID,
+		UsuarioID:         userID,
+		TipoAtividade:     "Colheita",
+		DataRegistro:      data,
+		Produto:           cultura,
+		TalhaoCanteiro:    talhao,
+		QuantidadeValor:   qtd,
+		QuantidadeUnidade: unidade,
+		DetalhesTecnicos: map[string]interface{}{
+			"destino_inicial": sanitize(args["destino_inicial"]),
+		},
+	}
+
+	if record.Produto == "" || qtd <= 0 || record.TalhaoCanteiro == "" {
+		return "ERRO: Cultura, talhão e quantidade são obrigatórios para a colheita.", nil
+	}
+
+	log.Printf("🧺 [MCP-TOOL] Registrando colheita de '%s' no talhão '%s'", record.Produto, record.TalhaoCanteiro)
+
+	id, err := s.supabase.InsertCadernoCampo(record)
+	if err != nil {
+		return fmt.Sprintf("Erro ao registrar colheita: %v", err), nil
+	}
+
+	return fmt.Sprintf("Colheita de %v %s de %s registrada com sucesso no talhão %s (ID: %s).", qtd, unidade, cultura, talhao, id), nil
+}
+
+func (s *Server) handleRegistrarVenda(args map[string]interface{}) (interface{}, error) {
+	log.Printf("💰 [MCP-TOOL] handleRegistrarVenda Args: %+v", args)
+
+	pmoIDFloat, _ := parseArgToFloat(args["pmo_id"])
+	pmoID := int64(pmoIDFloat)
+	userID, _ := args["user_id"].(string)
+
+	data := sanitize(args["data"])
+	if data == "" {
+		data = time.Now().Format("2006-01-02")
+	}
+
+	qtd, _ := parseArgToFloat(args["quantidade"])
+	unidade := sanitize(args["unidade"])
+	valorUnit, _ := parseArgToFloat(args["valor_unitario"])
+
+	record := supabase.CadernoCampoInsert{
+		PmoID:             pmoID,
+		UsuarioID:         userID,
+		TipoAtividade:     "Venda",
+		DataRegistro:      data,
+		Produto:           sanitize(args["produto"]),
+		QuantidadeValor:   qtd,
+		QuantidadeUnidade: unidade,
+		Fornecedor:        sanitize(args["cliente"]), // Mapeando Cliente para Fornecedor
+		NotaFiscal:        sanitize(args["nota_fiscal"]),
+		DetalhesTecnicos: map[string]interface{}{
+			"destinacao":     sanitize(args["destinacao"]),
+			"valor_unitario": valorUnit,
+		},
+	}
+
+	if record.Produto == "" || qtd <= 0 {
+		return "ERRO: Produto e quantidade são obrigatórios para registrar a venda/saída.", nil
+	}
+
+	log.Printf("💰 [MCP-TOOL] Registrando saída/venda de '%s' para '%s'", record.Produto, record.Fornecedor)
+
+	id, err := s.supabase.InsertCadernoCampo(record)
+	if err != nil {
+		return fmt.Sprintf("Erro ao registrar venda: %v", err), nil
+	}
+
+	return fmt.Sprintf("Registro de %s (%v %s) para '%s' salvo com sucesso (ID: %s).", record.Produto, qtd, unidade, record.Fornecedor, id), nil
 }
