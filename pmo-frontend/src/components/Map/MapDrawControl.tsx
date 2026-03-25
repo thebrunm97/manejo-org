@@ -8,6 +8,7 @@ type DrawControlProps = ConstructorParameters<typeof MapboxDraw>[0] & {
   onCreate?: (evt: any) => void;
   onUpdate?: (evt: any) => void;
   onDelete?: (evt: any) => void;
+  onModeChange?: (evt: any) => void;
 };
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -23,11 +24,13 @@ export default function MapDrawControl(props: DrawControlProps) {
       if (props.onCreate) map.on('draw.create', props.onCreate);
       if (props.onUpdate) map.on('draw.update', props.onUpdate);
       if (props.onDelete) map.on('draw.delete', props.onDelete);
+      if (props.onModeChange) map.on('draw.modechange', props.onModeChange);
     },
     ({ map }: any) => {
       if (props.onCreate) map.off('draw.create', props.onCreate);
       if (props.onUpdate) map.off('draw.update', props.onUpdate);
       if (props.onDelete) map.off('draw.delete', props.onDelete);
+      if (props.onModeChange) map.off('draw.modechange', props.onModeChange);
     },
     {
       position: props.position

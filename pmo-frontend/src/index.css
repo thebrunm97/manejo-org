@@ -522,7 +522,11 @@ body {
 .mapboxgl-map .mapbox-gl-draw_line .mapboxgl-canvas,
 .mapboxgl-map .mapbox-gl-draw_point .mapboxgl-canvas,
 .mapboxgl-interactive.mapboxgl-draw_polygon,
-.mapbox-gl-draw-mode.draw_polygon .mapboxgl-canvas {
+.mapbox-gl-draw-mode.draw_polygon .mapboxgl-canvas,
+.maplibregl-canvas-container.maplibregl-interactive.mapboxgl-draw_polygon,
+.maplibregl-canvas-container.maplibregl-interactive.mapboxgl-draw_line,
+.maplibregl-canvas-container.maplibregl-interactive.mapboxgl-draw_point,
+.mapboxgl-canvas-container.mapboxgl-interactive.mapboxgl-draw_polygon {
   cursor: crosshair !important;
 }
 
