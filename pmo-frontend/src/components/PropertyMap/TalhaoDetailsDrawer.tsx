@@ -500,10 +500,10 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                                         style={{ width: `${Math.min((Number(formData.ph_solo) / 8) * 100, 100)}%` }}
                                                     />
                                                 </div>
-                                                <div className="flex justify-between mt-1 px-0.5 opacity-50">
-                                                    <span className="text-[8px] font-bold text-slate-300 uppercase">Ácido</span>
-                                                    <span className="text-[8px] font-bold text-slate-300 uppercase">Neutro</span>
-                                                    <span className="text-[8px] font-bold text-slate-300 uppercase">Alcalino</span>
+                                                <div className="flex justify-between mt-1 px-0.5">
+                                                    <span className="text-[8px] font-bold text-slate-500 uppercase">Ácido</span>
+                                                    <span className="text-[8px] font-bold text-slate-500 uppercase">Neutro</span>
+                                                    <span className="text-[8px] font-bold text-slate-500 uppercase">Alcalino</span>
                                                 </div>
                                             </div>
  
