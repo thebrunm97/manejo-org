@@ -11,8 +11,6 @@ import {
     TreePine,
     Info,
     LayoutGrid,
-    Calendar,
-    Printer,
     Pencil,
     Loader2,
     Save,
@@ -261,42 +259,31 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                 open ? "translate-y-0 opacity-100 scale-100 pointer-events-auto" : "translate-y-4 opacity-0 scale-95 pointer-events-none"
             )}>
                 {/* Header */}
-                <div className="flex items-center gap-4 p-6 shrink-0 bg-white border-b border-slate-50">
-                <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600">
+                <div className="flex items-start gap-3 p-5 shrink-0 bg-white border-b border-slate-50">
+                <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 shrink-0">
                     {getIcon(talhao.nome)}
                 </div>
-                <div className="flex-1 overflow-hidden">
-                    <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Talhão No.</span>
-                        <span className="text-[10px] font-black text-slate-900 uppercase">#{talhao.id % 100}</span>
-                    </div>
-                    <h3 className="text-lg font-bold text-slate-900 truncate leading-tight mt-0.5">{talhao.nome || 'Talhão Sem Nome'}</h3>
+                <div className="flex-1 overflow-hidden min-w-0">
+                    <h3 className="text-base font-bold text-slate-900 truncate leading-tight">{talhao.nome || 'Talhão Sem Nome'}</h3>
                     <p className="text-[11px] text-slate-400 font-medium">{talhao.cultura || 'Rotação de Culturas'}</p>
                 </div>
-                <div className="flex items-center gap-1.5">
-                    <button className="p-2 text-emerald-600 bg-emerald-50 rounded-full hover:bg-emerald-100 transition-colors">
-                        <Pencil size={14} />
+                <div className="flex items-center gap-1 shrink-0">
+                    <button className="p-1.5 text-emerald-600 bg-emerald-50 rounded-full hover:bg-emerald-100 transition-colors">
+                        <Pencil size={13} />
                     </button>
-                    <button className="p-2 text-emerald-600 bg-emerald-50 rounded-full hover:bg-emerald-100 transition-colors">
-                        <Calendar size={14} />
-                    </button>
-                    <button className="p-2 text-emerald-600 bg-emerald-50 rounded-full hover:bg-emerald-100 transition-colors">
-                        <Printer size={14} />
-                    </button>
-                    <div className="w-px h-4 bg-slate-100 mx-1" />
                     <button onClick={onClose} className="p-1.5 text-slate-300 hover:text-slate-500 transition-all">
-                        <X size={20} />
+                        <X size={18} />
                     </button>
                 </div>
-            </div>                {/* Body Content (Invisible Scrollarea) - SPEC 02 */}
-                <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] p-5 pt-0 pb-10">
+            </div>                {/* Body Content (Invisible Scrollarea) */}
+                <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-4 pt-0 pb-8">
                     {/* Insights/Soil Progress */}
                     <div className="space-y-6">
                         {/* Nested Data Card (Seeding/Area) */}
-                        <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
-                            <div className="flex items-center justify-between mb-4">
+                        <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                            <div className="flex items-center justify-between mb-2">
                                 <div>
-                                    <h4 className="text-sm font-bold text-slate-900">Propriedades</h4>
+                                    <h4 className="text-xs font-bold text-slate-900">Propriedades</h4>
                                     <div className="flex items-center gap-2 text-[10px] text-emerald-600 font-bold mt-1">
                                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                         <span>EM PRODUÇÃO</span>
@@ -328,7 +315,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                 </div>
                 
                     {/* Tabs */}
-                    <div className="flex bg-slate-50/50 border-b border-slate-100 shrink-0 mb-6 rounded-xl overflow-hidden">
+                    <div className="flex bg-slate-50/50 border-b border-slate-100 shrink-0 mb-3 rounded-lg overflow-hidden">
                         <button
                             onClick={() => setTabIndex(0)}
                             className={cn(
