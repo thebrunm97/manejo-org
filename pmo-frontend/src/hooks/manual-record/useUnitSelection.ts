@@ -11,7 +11,9 @@ export const UNIDADES_PLANTIO: UnitType[] = [
     UnitType.UNID,
     UnitType.KG,
     UnitType.G,
-    UnitType.M2
+    UnitType.M2,
+    UnitType.KG_M2,
+    UnitType.L_M2
 ];
 
 export const UNIDADES_MANEJO: UnitType[] = [
@@ -20,6 +22,8 @@ export const UNIDADES_MANEJO: UnitType[] = [
     UnitType.ML_L,
     UnitType.G_PLANTA,
     UnitType.ML_PLANTA,
+    UnitType.L_M2,
+    UnitType.KG_M2,
     UnitType.UNID
 ];
 
