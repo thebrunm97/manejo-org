@@ -1,9 +1,8 @@
 // src/components/PropertyMap/PropertyMap.tsx
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     LayoutGrid,
-    Map as MapIcon,
     Edit2,
     Navigation,
     Plus,
@@ -19,7 +18,6 @@ import { cn } from '../../utils/cn';
 
 // Componentes Internos
 import FarmMap from '../Map/FarmMap';
-import TalhaoDetailsDrawer from './TalhaoDetailsDrawer';
 import { locationService } from '../../services/locationService';
 import { Talhao } from '../../domain/geo/geoTypes';
 
@@ -33,22 +31,28 @@ const formatArea = (m2: number) => {
 
 interface PropertyMapProps {
     propriedadeId?: number | null;
+    talhoes: Talhao[];
+    viewMode: 'croqui' | 'mapa';
+    setViewMode: (mode: 'croqui' | 'mapa') => void;
+    selectedTalhao: Talhao | null;
+    setSelectedTalhao: (talhao: Talhao | null) => void;
+    onOpenDrawer: (talhao: Talhao) => void;
+    loadTalhoes: () => Promise<void>;
+    loading?: boolean;
 }
 
-const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
+const PropertyMap: React.FC<PropertyMapProps> = ({ 
+    propriedadeId,
+    talhoes,
+    viewMode,
+    setViewMode,
+    selectedTalhao,
+    setSelectedTalhao,
+    onOpenDrawer,
+    loadTalhoes,
+    loading = false
+}) => {
     const { user } = useAuthCore();
-
-    // Estados
-    const [viewMode, setViewModeRaw] = useState<'croqui' | 'mapa'>('croqui');
-    const setViewMode = (mode: 'croqui' | 'mapa') => {
-        setIsDrawerOpen(false);
-        setSelectedTalhao(null);
-        setViewModeRaw(mode);
-    };
-    const [talhoes, setTalhoes] = useState<Talhao[]>([]);
-    const [selectedTalhao, setSelectedTalhao] = useState<Talhao | null>(null);
-    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-    const [loading, setLoading] = useState(true);
 
     // Estado para Novo Talhão
     const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -74,40 +78,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
         }
     }, [snackbar.open]);
 
-    // Carregar dados
-    const loadTalhoes = useCallback(async () => {
-        try {
-            setLoading(true);
-            const data = await locationService.getTalhoes();
-            setTalhoes((data || []) as unknown as Talhao[]);
-        } catch (error) {
-            console.error("Erro ao buscar talhões", error);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        loadTalhoes();
-    }, [loadTalhoes]);
-
     // Handlers
-    const handleOpenDrawer = (talhao: Talhao) => {
-        setSelectedTalhao(talhao);
-        setIsDrawerOpen(true);
-    };
-
-    const handleCloseDrawer = () => {
-        setIsDrawerOpen(false);
-        setSelectedTalhao(null);
-    };
-
-
-    const handleDeleteCanteiro = async (canteiroId: string) => {
-        setCanteiroToDelete(String(canteiroId));
-        setDeleteConfirmOpen(true);
-    };
-
     const confirmDeleteCanteiro = async () => {
         if (!canteiroToDelete) return;
 
@@ -202,58 +173,6 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
 
     return (
         <div className="flex-1 relative w-full h-full bg-slate-100 overflow-hidden">
-            {/* TOP WIDGETS */}
-            <div className="absolute top-6 left-6 z-[1001] pointer-events-none">
-                <div className="bg-white/90 backdrop-blur-md px-6 py-2.5 rounded-full shadow-lg border border-white/20 pointer-events-auto flex items-center gap-3">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                    <h2 className="text-xs font-black text-slate-900 tracking-tight uppercase">
-                        Plano de Manejo
-                    </h2>
-                </div>
-            </div>
-
-            <div className="absolute top-6 right-6 z-[1001]">
-                <div className="flex bg-white/90 backdrop-blur-md p-1 rounded-full shadow-lg border border-white/20">
-                    <button
-                        onClick={() => setViewMode('croqui')}
-                        className={cn(
-                            "flex items-center gap-2 px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all",
-                            viewMode === 'croqui'
-                                ? "bg-emerald-600 text-white shadow-md shadow-emerald-900/20"
-                                : "text-slate-500 hover:text-slate-700 hover:bg-slate-100/50"
-                        )}
-                    >
-                        <LayoutGrid size={14} />
-                        Croqui
-                    </button>
-                    <button
-                        onClick={() => setViewMode('mapa')}
-                        className={cn(
-                            "flex items-center gap-2 px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all",
-                            viewMode === 'mapa'
-                                ? "bg-emerald-600 text-white shadow-md shadow-emerald-900/20"
-                                : "text-slate-500 hover:text-slate-700 hover:bg-slate-100/50"
-                        )}
-                    >
-                        <MapIcon size={14} />
-                        Satélite
-                    </button>
-                </div>
-            </div>
-
-            {/* OVERLAY: FAB Novo Talhão (Visível apenas em modo Mapa) */}
-            {viewMode === 'mapa' && (
-                <button
-                    onClick={() => setViewMode('mapa')}
-                    className="absolute bottom-6 right-6 z-[1001] group flex items-center gap-3 bg-white/90 backdrop-blur-md text-slate-900 pl-3 pr-6 py-2 rounded-full shadow-lg border border-white/20 transition-all hover:scale-105 active:scale-95"
-                >
-                    <div className="bg-emerald-600 text-white p-2 rounded-full">
-                        <Plus size={18} strokeWidth={3} />
-                    </div>
-                    <span className="font-black text-[10px] uppercase tracking-widest">Novo Talhão</span>
-                </button>
-            )}
-
             {/* CONTEÚDO PRINCIPAL */}
             <div className="w-full h-full">
 
@@ -330,7 +249,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
                                                 No Mapa
                                             </button>
                                             <button
-                                                onClick={() => handleOpenDrawer(talhao)}
+                                                onClick={() => onOpenDrawer(talhao)}
                                                 className="flex-[1.5] flex items-center justify-center gap-2 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-emerald-100 transition-all hover:scale-[1.02] active:scale-[0.98]"
                                             >
                                                 <Edit2 size={14} />
@@ -358,23 +277,12 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
                                 onEdited={() => { }}
                                 onDeleted={() => { }}
                                 onSaveTalhao={undefined}
-                                onTalhaoClick={handleOpenDrawer}
+                                onTalhaoClick={onOpenDrawer}
                             />
                         </div>
                     </div>
                 )}
             </div>
-
-            {/* DRAWER LATERAL — FORA de qualquer overflow-hidden */}
-            {viewMode === 'mapa' && (
-                <TalhaoDetailsDrawer
-                    open={isDrawerOpen}
-                    onClose={handleCloseDrawer}
-                    talhao={selectedTalhao}
-                    onDeleteCanteiro={handleDeleteCanteiro as any}
-                    onUpdateStart={loadTalhoes}
-                />
-            )}
 
             {/* MODAL: NOVO TALHÃO */}
             <div className={cn(

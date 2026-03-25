@@ -110,7 +110,7 @@ const FarmMap: React.FC<FarmMapProps> = ({
 
     return (
         <MapContainer center={[-18.9186, -48.2772] as any} zoom={15} zoomControl={false} style={{ height: '100%', width: '100%' }}>
-            <ZoomControl position="bottomleft" />
+            <ZoomControl position="bottomright" />
             <TileLayer url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}" attribution="Google Satélite" />
 
             <FeatureGroup>
