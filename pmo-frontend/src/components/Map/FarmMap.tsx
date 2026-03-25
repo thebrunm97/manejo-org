@@ -165,7 +165,15 @@ const FarmMap: React.FC<FarmMapProps> = ({
                                     position={L.polygon(positions).getBounds().getCenter()}
                                      icon={L.divIcon({ 
                                         className: '', 
-                                        html: '<div style="background-color: white; color: #3f3f46; padding: 2px 6px; border-radius: 9999px; font-size: 9px; font-weight: 600; white-space: nowrap; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #e4e4e7; width: max-content; display: flex; align-items: center; gap: 4px; transform: translate(-50%, -50%);"><span style="font-size: 10px;">🌱</span> ' + t.nome + '</div>'
+                                        html: `
+                                            <div style="background: white; border: 1px solid #e4e4e7; border-radius: 12px; padding: 6px 10px; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); white-space: nowrap; transform: translate(-50%, -50%);">
+                                                <div style="width: 8px; height: 8px; background: #10b981; border-radius: 50%;"></div>
+                                                <div style="display: flex; flex-direction: column; line-height: 1.2;">
+                                                    <span style="font-weight: 700; font-size: 10px; color: #18181b;">${t.nome}</span>
+                                                    <span style="font-weight: 400; font-size: 9px; color: #71717a;">${t.cultura || 'Área Livre'}</span>
+                                                </div>
+                                            </div>
+                                        `
                                     })}
                                     eventHandlers={{
                                         click: (_e) => {
