@@ -130,7 +130,7 @@ const MapaPropriedade: React.FC = () => {
         <div className="relative w-full h-[calc(100vh-64px)] overflow-hidden bg-slate-50">
             {/* TOGGLE CROQUI/SATÉLITE CENTRALIZADO */}
             <div className="absolute md:top-6 top-auto bottom-8 left-1/2 -translate-x-1/2 z-[1000] w-max">
-                <div className="flex bg-white/95 backdrop-blur-md p-1.5 rounded-full shadow-2xl border border-white/20 ring-1 ring-black/5">
+                <div className="flex bg-white/95 backdrop-blur-md p-1.5 rounded-full shadow-2xl border border-white/20 ring-1 ring-black/5 select-none">
                     <button
                         onClick={() => setViewMode('croqui')}
                         className={cn(
