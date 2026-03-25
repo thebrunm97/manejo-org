@@ -277,7 +277,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
                                 onEdited={() => { }}
                                 onDeleted={() => { }}
                                 onSaveTalhao={undefined}
-                                onTalhaoClick={onOpenDrawer}
+                                onTalhaoClick={(t) => viewMode === 'mapa' && onOpenDrawer(t)}
                             />
                         </div>
                     </div>

@@ -35,6 +35,14 @@ const MapaPropriedade: React.FC = () => {
         loadTalhoes();
     }, [loadTalhoes]);
 
+    // Auto-close drawer when switching to Croqui view
+    useEffect(() => {
+        if (viewMode === 'croqui' && isDrawerOpen) {
+            setIsDrawerOpen(false);
+            setSelectedTalhao(null);
+        }
+    }, [viewMode, isDrawerOpen]);
+
     useEffect(() => {
         const loadInitialData = async () => {
             try {
@@ -166,13 +174,15 @@ const MapaPropriedade: React.FC = () => {
             </div>
 
             {/* DRAWER FLUTUANTE SOLTO (IMUNE AO OVERFLOW) */}
-            <TalhaoDetailsDrawer
-                open={isDrawerOpen}
-                onClose={handleCloseDrawer}
-                talhao={selectedTalhao}
-                onDeleteCanteiro={() => loadTalhoes()} 
-                onUpdateStart={loadTalhoes}
-            />
+            {viewMode === 'mapa' && (
+                <TalhaoDetailsDrawer
+                    open={isDrawerOpen}
+                    onClose={handleCloseDrawer}
+                    talhao={selectedTalhao}
+                    onDeleteCanteiro={() => loadTalhoes()} 
+                    onUpdateStart={loadTalhoes}
+                />
+            )}
         </div>
     );
 };

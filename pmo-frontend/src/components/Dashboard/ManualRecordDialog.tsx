@@ -41,6 +41,7 @@ import {
 import {
     useRecordValidation,
     useRecordFormState,
+    TipoRegistro,
     CommonDraft,
     PlantioDraft,
     ManejoDraft,
