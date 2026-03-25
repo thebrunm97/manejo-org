@@ -1,28 +1,18 @@
-import React, { useEffect } from 'react';
-import L from 'leaflet';
-
-// Injeção Global Prioritária
-if (typeof window !== 'undefined') {
-    (window as any).L = L;
-}
-
-import '../../leaflet-draw-shim';
-import { MapContainer, TileLayer, Polygon, FeatureGroup, useMap, ZoomControl, Marker } from 'react-leaflet';
-import { SafeEditControl } from './SafeEditControl';
-
-import 'leaflet/dist/leaflet.css';
-import 'leaflet-draw/dist/leaflet.draw.css';
+import React, { useMemo, useEffect } from 'react';
+import Map, { Source, Layer, Marker, useMap } from 'react-map-gl/maplibre';
 import { Talhao, GeoJSONGeometry } from '../../domain/geo/geoTypes';
+import { ESRI_SATELLITE_STYLE } from './mapStyles';
+
+// Tipagem para GeoJSON FeatureCollection
+interface GeoJSONData {
+    type: 'FeatureCollection';
+    features: any[];
+}
 
 interface MapCreatedEvent {
-    layer: L.Layer;
+    layer?: any;
     geometry: string;
     areaM2: number;
-}
-
-interface MapControllerProps {
-    talhoes: Talhao[];
-    focusTarget?: Talhao | null;
 }
 
 interface FarmMapProps {
@@ -39,47 +29,72 @@ interface FarmMapProps {
 
 const getCropColor = (cultura?: string): string => {
     const n = cultura?.toLowerCase().trim() || '';
-    if (n.includes('milho'))                            return '#FBBF24'; // Amber-400 (Brilhante)
-    if (n.includes('soja'))                             return '#F97316'; // Orange-500 (Vibrante)
-    if (n.includes('feijão') || n.includes('feijao'))   return '#EC4899'; // Pink-500 (Neon)
-    if (n.includes('pastagem') || n.includes('pasto'))  return '#10B981'; // Emerald-500 (Luminoso)
-    if (n.includes('café') || n.includes('cafe'))       return '#8B5CF6'; // Violet-500 (Profundo)
-    return '#38BDF8'; // Sky-400 (Default)
+    if (n.includes('milho')) return '#FBBF24';
+    if (n.includes('soja')) return '#F97316';
+    if (n.includes('feijão') || n.includes('feijao')) return '#EC4899';
+    if (n.includes('pastagem') || n.includes('pasto')) return '#10B981';
+    if (n.includes('café') || n.includes('cafe')) return '#8B5CF6';
+    return '#38BDF8';
 };
 
-
-// Component to handle auto-zoom based on focusTarget or initial bounds
-const MapController: React.FC<MapControllerProps> = ({ talhoes, focusTarget }) => {
-    const map = useMap();
+// Hook Interno para Controle de Zoom/Bounds (Equivalente ao MapController)
+const MapController: React.FC<{ talhoes: Talhao[], focusTarget?: Talhao | null }> = ({ talhoes, focusTarget }) => {
+    const { current: map } = useMap();
 
     useEffect(() => {
+        if (!map) return;
+
         if (focusTarget && focusTarget.geometry) {
             try {
-                const geo: GeoJSONGeometry = typeof focusTarget.geometry === 'string' ? JSON.parse(focusTarget.geometry) : focusTarget.geometry;
+                const geo: GeoJSONGeometry = typeof focusTarget.geometry === 'string' 
+                    ? JSON.parse(focusTarget.geometry) 
+                    : focusTarget.geometry;
+                
                 if (geo.coordinates && geo.coordinates[0]) {
-                    const coords: L.LatLngTuple[] = geo.coordinates[0].map(c => [c[1], c[0]] as L.LatLngTuple);
-                    const bounds = L.latLngBounds(coords);
-                    map.fitBounds(bounds, { padding: [80, 80], maxZoom: 16, animate: true, duration: 1.2 });
+                    const coords = geo.coordinates[0];
+                    let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+                    coords.forEach(([lng, lat]) => {
+                        minLng = Math.min(minLng, lng);
+                        maxLng = Math.max(maxLng, lng);
+                        minLat = Math.min(minLat, lat);
+                        maxLat = Math.max(maxLat, lat);
+                    });
+
+                    map.fitBounds(
+                        [minLng, minLat, maxLng, maxLat],
+                        { padding: 80, maxZoom: 16, duration: 1200 }
+                    );
                 }
             } catch (e) {
                 console.error("Invalid geometry for focus:", e);
             }
         } else if (talhoes.length > 0 && !focusTarget) {
-            const bounds = L.latLngBounds([]);
-            let hasValidBounds = false;
+            let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+            let hasValid = false;
+
             talhoes.forEach(t => {
                 if (t.geometry) {
                     try {
                         const geo: GeoJSONGeometry = typeof t.geometry === 'string' ? JSON.parse(t.geometry) : t.geometry;
                         if (geo.coordinates && geo.coordinates[0]) {
-                            const coords: L.LatLngTuple[] = geo.coordinates[0].map(c => [c[1], c[0]] as L.LatLngTuple);
-                            bounds.extend(coords);
-                            hasValidBounds = true;
+                            geo.coordinates[0].forEach(([lng, lat]) => {
+                                minLng = Math.min(minLng, lng);
+                                maxLng = Math.max(maxLng, lng);
+                                minLat = Math.min(minLat, lat);
+                                maxLat = Math.max(maxLat, lat);
+                            });
+                            hasValid = true;
                         }
                     } catch (e) { }
                 }
             });
-            if (hasValidBounds && bounds.isValid()) map.fitBounds(bounds, { padding: [50, 50] });
+
+            if (hasValid) {
+                map.fitBounds(
+                    [minLng, minLat, maxLng, maxLat],
+                    { padding: 50, duration: 1000 }
+                );
+            }
         }
     }, [talhoes, focusTarget, map]);
 
@@ -90,110 +105,143 @@ const FarmMap: React.FC<FarmMapProps> = ({
     talhoes = [],
     focusTarget,
     selectedTalhaoId,
-    onEdited,
-    onDeleted,
-    onMapCreated,
     onTalhaoClick
 }) => {
-    const handleCreated = async (e: any) => {
-        const layer = e.layer;
+    // 1. Converter talhões para GeoJSON FeatureCollection (WebGL Native)
+    const geojsonData = useMemo<GeoJSONData>(() => {
+        const features = talhoes
+            .map(t => {
+                if (!t.geometry) return null;
+                try {
+                    const geometry = typeof t.geometry === 'string' ? JSON.parse(t.geometry) : t.geometry;
+                    return {
+                        type: 'Feature',
+                        id: t.id,
+                        properties: {
+                            id: t.id,
+                            nome: t.nome,
+                            cultura: t.cultura,
+                            color: getCropColor(t.cultura),
+                            isSelected: selectedTalhaoId === t.id
+                        },
+                        geometry
+                    };
+                } catch (e) {
+                    return null;
+                }
+            })
+            .filter(Boolean);
 
-        // Calculate area immediately to pass to parent
-        const geoJSON = layer.toGeoJSON();
-        const areaM2 = (L as any).GeometryUtil?.geodesicArea(layer.getLatLngs()[0]) || 0;
+        return {
+            type: 'FeatureCollection',
+            features
+        };
+    }, [talhoes, selectedTalhaoId]);
 
-        if (onMapCreated) {
-            onMapCreated({
-                layer,
-                geometry: JSON.stringify(geoJSON.geometry),
-                areaM2: areaM2
-            });
-        }
-    };
+    // Calcular Centróides para os Markers (Pílulas)
+    const centroids = useMemo(() => {
+        return talhoes.map(t => {
+            if (!t.geometry) return null;
+            try {
+                const geo: GeoJSONGeometry = typeof t.geometry === 'string' ? JSON.parse(t.geometry) : t.geometry;
+                if (!geo.coordinates || !geo.coordinates[0]) return null;
+                
+                const coords = geo.coordinates[0];
+                let sumLng = 0, sumLat = 0;
+                coords.forEach(([lng, lat]) => {
+                    sumLng += lng;
+                    sumLat += lat;
+                });
+                return {
+                    id: t.id,
+                    lng: sumLng / coords.length,
+                    lat: sumLat / coords.length,
+                    talhao: t
+                };
+            } catch (e) { return null; }
+        }).filter(Boolean);
+    }, [talhoes]);
 
     return (
-        <MapContainer center={[-18.9186, -48.2772] as any} zoom={15} zoomControl={false} style={{ height: '100%', width: '100%' }}>
-            <ZoomControl position="bottomright" />
-            <TileLayer url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}" attribution="Google Satélite" />
-
-            <FeatureGroup>
-                <SafeEditControl
-                    position="topright"
-                    onCreated={handleCreated}
-                    onEdited={onEdited}
-                    onDeleted={onDeleted}
-                    draw={{
-                        rectangle: false,
-                        circle: false,
-                        circlemarker: false,
-                        marker: false,
-                        polyline: false,
-                        polygon: { allowIntersection: true, showArea: true, shapeOptions: { color: '#059669' } }
+        <Map
+            initialViewState={{
+                longitude: -48.2772,
+                latitude: -18.9186,
+                zoom: 15
+            }}
+            style={{ width: '100%', height: '100%' }}
+            mapStyle={ESRI_SATELLITE_STYLE as any}
+            onClick={(e) => {
+                const feature = e.features?.[0];
+                if (feature && onTalhaoClick) {
+                    const talhao = talhoes.find(t => t.id === feature.properties.id);
+                    if (talhao) onTalhaoClick(talhao);
+                }
+            }}
+            interactiveLayerIds={['talhoes-fill']}
+        >
+            <Source id="talhoes-source" type="geojson" data={geojsonData}>
+                {/* Layer de Preenchimento (Enterprise Vitreous Effect) */}
+                <Layer
+                    id="talhoes-fill"
+                    type="fill"
+                    paint={{
+                        'fill-color': ['get', 'color'],
+                        'fill-opacity': [
+                            'case',
+                            ['boolean', ['feature-state', 'hover'], false],
+                            0.6,
+                            selectedTalhaoId ? ['case', ['==', ['id'], selectedTalhaoId], 0.4, 0.1] : 0.2
+                        ]
                     }}
                 />
+                
+                {/* Layer de Borda (Solid Detail) */}
+                <Layer
+                    id="talhoes-line"
+                    type="line"
+                    paint={{
+                        'line-color': ['get', 'color'],
+                        'line-width': ['case', ['==', ['id'], (selectedTalhaoId || -1)], 4, 2],
+                        'line-opacity': 1
+                    }}
+                />
+            </Source>
 
-                {talhoes.map(t => {
-                    if (!t.geometry) return null;
-                    const geo: GeoJSONGeometry = typeof t.geometry === 'string' ? JSON.parse(t.geometry) : t.geometry;
+            {/* Pílulas HTML (Markers) */}
+            {centroids.map(c => c && (
+                <Marker 
+                    key={c.id} 
+                    longitude={c.lng} 
+                    latitude={c.lat}
+                    anchor="center"
+                    onClick={(e) => {
+                        e.originalEvent.stopPropagation();
+                        if (onTalhaoClick) onTalhaoClick(c.talhao);
+                    }}
+                >
+                    <div className="map-marker-pill" style={{ 
+                        background: 'white', 
+                        border: '1px solid #e4e4e7', 
+                        borderRadius: '12px', 
+                        padding: '6px 12px', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '8px', 
+                        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+                        width: 'max-content'
+                    }}>
+                        <div style={{ width: '8px', height: '8px', background: getCropColor(c.talhao.cultura), borderRadius: '50%' }}></div>
+                        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1.3' }}>
+                            <span style={{ fontWeight: 700, fontSize: 11, color: '#18181b', whiteSpace: 'nowrap' }}>{c.talhao.nome}</span>
+                            <span style={{ fontWeight: 500, fontSize: 10, color: '#71717a', whiteSpace: 'nowrap' }}>{c.talhao.cultura || 'Área Livre'}</span>
+                        </div>
+                    </div>
+                </Marker>
+            ))}
 
-                    if (!geo.coordinates || !geo.coordinates[0]) return null;
-                    const positions: L.LatLngTuple[] = geo.coordinates[0].map(c => [c[1], c[0]] as L.LatLngTuple);
-
-                    const talhaoColor = getCropColor(t.cultura);
-                    const isSelected = selectedTalhaoId === t.id;
-
-                    return (
-                        <React.Fragment key={t.id}>
-                            <Polygon
-                                positions={positions}
-                                pathOptions={{
-                                    color: talhaoColor,
-                                    fillColor: talhaoColor,
-                                    weight: isSelected ? 4 : 3,
-                                    opacity: 1,
-                                    fillOpacity: isSelected ? 0.3 : 0.1,
-                                    lineCap: 'round',
-                                    lineJoin: 'round',
-                                    className: 'polygon-glow-effect'
-                                }}
-                                eventHandlers={{
-                                    click: (e) => {
-                                        L.DomEvent.stopPropagation(e);
-                                        if (onTalhaoClick) onTalhaoClick(t);
-                                    }
-                                }}
-                            />
-                            
-                            {/* Centroid Label (Pill Flutuante no Mapa - Dark Discrete) */}
-                            {positions.length > 0 && (
-                                <Marker 
-                                    position={L.polygon(positions).getBounds().getCenter()}
-                                     icon={L.divIcon({ 
-                                        className: '',
-                                        iconSize: [0, 0],
-                                        html: `
-                                            <div style="background: white; border: 1px solid #e4e4e7; border-radius: 12px; padding: 6px 12px; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); width: max-content; min-width: fit-content; transform: translate(-50%, -50%);">
-                                                <div style="width: 8px; height: 8px; min-width: 8px; background: ${talhaoColor}; border-radius: 50%;"></div>
-                                                <div style="display: flex; flex-direction: column; line-height: 1.3;">
-                                                    <span style="font-weight: 700; font-size: 11px; color: #18181b; white-space: nowrap;">${t.nome}</span>
-                                                    <span style="font-weight: 500; font-size: 10px; color: #71717a; white-space: nowrap;">${t.cultura || 'Área Livre'}</span>
-                                                </div>
-                                            </div>
-                                        `
-                                    })}
-                                    eventHandlers={{
-                                        click: (_e) => {
-                                            if (onTalhaoClick) onTalhaoClick(t);
-                                        }
-                                    }}
-                                />
-                            )}
-                        </React.Fragment>
-                    );
-                })}
-            </FeatureGroup>
             <MapController talhoes={talhoes} focusTarget={focusTarget} />
-        </MapContainer>
+        </Map>
     );
 };
 
