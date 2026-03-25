@@ -361,18 +361,20 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
                                 onTalhaoClick={handleOpenDrawer}
                             />
                         </div>
-
-                        {/* O Drawer como irmão do mapa, imune ao clipping do overflow anterior */}
-                        <TalhaoDetailsDrawer
-                            open={isDrawerOpen}
-                            onClose={handleCloseDrawer}
-                            talhao={selectedTalhao}
-                            onDeleteCanteiro={handleDeleteCanteiro as any}
-                            onUpdateStart={loadTalhoes}
-                        />
                     </div>
                 )}
             </div>
+
+            {/* DRAWER LATERAL — FORA de qualquer overflow-hidden */}
+            {viewMode === 'mapa' && (
+                <TalhaoDetailsDrawer
+                    open={isDrawerOpen}
+                    onClose={handleCloseDrawer}
+                    talhao={selectedTalhao}
+                    onDeleteCanteiro={handleDeleteCanteiro as any}
+                    onUpdateStart={loadTalhoes}
+                />
+            )}
 
             {/* MODAL: NOVO TALHÃO */}
             <div className={cn(
