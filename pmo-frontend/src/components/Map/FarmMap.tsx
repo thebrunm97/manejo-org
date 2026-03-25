@@ -28,6 +28,7 @@ interface MapControllerProps {
 interface FarmMapProps {
     talhoes: Talhao[];
     focusTarget?: Talhao | null;
+    selectedTalhaoId?: number;
     onCreated?: (e: any) => void;
     onEdited?: (e: any) => void;
     onDeleted?: (e: any) => void;
@@ -36,13 +37,14 @@ interface FarmMapProps {
     onTalhaoClick?: (talhao: Talhao) => void;
 }
 
-const CROP_COLORS: Record<string, string> = {
-    'feijao': '#f472b6', // Rosa
-    'milho': '#fbbf24',   // Amarelo
-    'soja': '#fb923c',    // Laranja
-    'cafe': '#a855f7',    // Roxo
-    'pasto': '#84cc16',   // Lima
-    'default': '#10b981'  // Esmeralda
+const getCropColor = (cultura?: string): string => {
+    const n = cultura?.toLowerCase().trim() || '';
+    if (n.includes('milho'))                            return '#FBBF24'; // Amber-400 (Brilhante)
+    if (n.includes('soja'))                             return '#F97316'; // Orange-500 (Vibrante)
+    if (n.includes('feijão') || n.includes('feijao'))   return '#EC4899'; // Pink-500 (Neon)
+    if (n.includes('pastagem') || n.includes('pasto'))  return '#10B981'; // Emerald-500 (Luminoso)
+    if (n.includes('café') || n.includes('cafe'))       return '#8B5CF6'; // Violet-500 (Profundo)
+    return '#38BDF8'; // Sky-400 (Default)
 };
 
 
@@ -87,6 +89,7 @@ const MapController: React.FC<MapControllerProps> = ({ talhoes, focusTarget }) =
 const FarmMap: React.FC<FarmMapProps> = ({
     talhoes = [],
     focusTarget,
+    selectedTalhaoId,
     onEdited,
     onDeleted,
     onMapCreated,
@@ -136,20 +139,22 @@ const FarmMap: React.FC<FarmMapProps> = ({
                     if (!geo.coordinates || !geo.coordinates[0]) return null;
                     const positions: L.LatLngTuple[] = geo.coordinates[0].map(c => [c[1], c[0]] as L.LatLngTuple);
 
-                    const culturaKey = (t.cultura || '').toLowerCase();
-                    const talhaoColor = CROP_COLORS[culturaKey as keyof typeof CROP_COLORS] || CROP_COLORS.default;
+                    const talhaoColor = getCropColor(t.cultura);
+                    const isSelected = selectedTalhaoId === t.id;
 
                     return (
                         <React.Fragment key={t.id}>
                             <Polygon
                                 positions={positions}
-                                 pathOptions={{ 
-                                    color: talhaoColor, 
-                                    weight: 2,
-                                    opacity: 1,
-                                    fill: true,
+                                pathOptions={{
+                                    color: talhaoColor,
                                     fillColor: talhaoColor,
-                                    fillOpacity: 0.3
+                                    weight: isSelected ? 4 : 3,
+                                    opacity: 1,
+                                    fillOpacity: isSelected ? 0.3 : 0.1,
+                                    lineCap: 'round',
+                                    lineJoin: 'round',
+                                    className: 'polygon-glow-effect'
                                 }}
                                 eventHandlers={{
                                     click: (e) => {
@@ -164,13 +169,14 @@ const FarmMap: React.FC<FarmMapProps> = ({
                                 <Marker 
                                     position={L.polygon(positions).getBounds().getCenter()}
                                      icon={L.divIcon({ 
-                                        className: '', 
+                                        className: '',
+                                        iconSize: [0, 0],
                                         html: `
-                                            <div style="background: white; border: 1px solid #e4e4e7; border-radius: 12px; padding: 6px 10px; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); white-space: nowrap; transform: translate(-50%, -50%);">
-                                                <div style="width: 8px; height: 8px; background: #10b981; border-radius: 50%;"></div>
-                                                <div style="display: flex; flex-direction: column; line-height: 1.2;">
-                                                    <span style="font-weight: 700; font-size: 10px; color: #18181b;">${t.nome}</span>
-                                                    <span style="font-weight: 400; font-size: 9px; color: #71717a;">${t.cultura || 'Área Livre'}</span>
+                                            <div style="background: white; border: 1px solid #e4e4e7; border-radius: 12px; padding: 6px 12px; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); width: max-content; min-width: fit-content; transform: translate(-50%, -50%);">
+                                                <div style="width: 8px; height: 8px; min-width: 8px; background: ${talhaoColor}; border-radius: 50%;"></div>
+                                                <div style="display: flex; flex-direction: column; line-height: 1.3;">
+                                                    <span style="font-weight: 700; font-size: 11px; color: #18181b; white-space: nowrap;">${t.nome}</span>
+                                                    <span style="font-weight: 500; font-size: 10px; color: #71717a; white-space: nowrap;">${t.cultura || 'Área Livre'}</span>
                                                 </div>
                                             </div>
                                         `

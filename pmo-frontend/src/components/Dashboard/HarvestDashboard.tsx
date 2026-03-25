@@ -25,9 +25,10 @@ const getActivityConfig = (tipo: string | undefined) => {
 interface HarvestDashboardProps {
   harvestStats: HarvestSummary;
   recentActivity: any[]; // MVP: mantendo flexibilidade, mas idealmente criar tipo
+  onEditRecord?: (record: any) => void;
 }
 
-const HarvestDashboard: React.FC<HarvestDashboardProps> = ({ harvestStats, recentActivity }) => {
+const HarvestDashboard: React.FC<HarvestDashboardProps> = ({ harvestStats, recentActivity, onEditRecord }) => {
   const navigate = useNavigate();
 
   return (
@@ -94,7 +95,8 @@ const HarvestDashboard: React.FC<HarvestDashboardProps> = ({ harvestStats, recen
               return (
                 <div
                   key={row.id}
-                  className="p-2 rounded-2xl border border-gray-100 flex items-center gap-2 transition-colors hover:bg-slate-50"
+                  onClick={() => onEditRecord?.(row)}
+                  className="p-2 rounded-2xl border border-gray-100 flex items-center gap-2 transition-colors hover:bg-slate-50 cursor-pointer group"
                 >
                   <div
                     className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"

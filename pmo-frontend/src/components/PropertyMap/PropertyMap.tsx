@@ -271,6 +271,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
                             <FarmMap
                                 talhoes={talhoes}
                                 focusTarget={selectedTalhao}
+                                selectedTalhaoId={selectedTalhao?.id}
                                 // @ts-ignore
                                 onMapCreated={handleMapCreated}
                                 onCreated={() => { }}
