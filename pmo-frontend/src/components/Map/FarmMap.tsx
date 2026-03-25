@@ -132,12 +132,11 @@ const FarmMap: React.FC<FarmMapProps> = ({
                                 positions={positions}
                                 pathOptions={{ 
                                     color: '#10b981', 
+                                    weight: 1.5,
+                                    opacity: 0.9,
                                     fillColor: 'transparent', 
                                     fillOpacity: 0,
-                                    weight: 2,
-                                    fill: false,
-                                    lineJoin: 'round',
-                                    lineCap: 'round'
+                                    fill: false
                                 }}
                                 eventHandlers={{
                                     click: (e) => {
@@ -152,18 +151,11 @@ const FarmMap: React.FC<FarmMapProps> = ({
                                 <Marker 
                                     position={L.polygon(positions).getBounds().getCenter()}
                                     icon={L.divIcon({
-                                        // Reset ALL Leaflet default styles (white box, border, shadow)
-                                        className: '!bg-transparent !border-none !shadow-none !p-0 !m-0',
-                                        html: `
-                                            <div style="transform: translate(-50%, -50%); pointer-events: none; background: transparent;">
-                                                <div style="display: flex; align-items: center; background: rgba(24,24,27,0.92); color: white; font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 9999px; box-shadow: 0 2px 10px rgba(0,0,0,0.4); border: 1px solid rgba(63,63,70,0.6); pointer-events: auto; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer;">
-                                                    ${t.nome}
-                                                </div>
-                                            </div>
-                                        `,
-                                        iconSize: undefined as any,
-                                        iconAnchor: undefined as any,
-                                        popupAnchor: undefined as any
+                                        className: '',
+                                        html: `<div style="transform:translate(-50%,-50%)">
+                                            <div class="bg-zinc-900 text-white text-[10px] font-bold px-3 py-1 rounded-full whitespace-nowrap shadow-lg border border-zinc-700/50">${t.nome}</div>
+                                        </div>`,
+                                        iconSize: [0, 0]
                                     })}
                                     eventHandlers={{
                                         click: (_e) => {
