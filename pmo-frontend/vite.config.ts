@@ -113,6 +113,6 @@ export default defineConfig({
         }
     },
     optimizeDeps: {
-        include: ['maplibre-gl', 'react-map-gl']
+        include: ['maplibre-gl', 'react-map-gl/maplibre']
     }
 })
