@@ -127,10 +127,10 @@ const MapaPropriedade: React.FC = () => {
     }
 
     return (
-        <div className="relative w-full h-[calc(100vh-64px)] overflow-hidden">
+        <div className="relative w-full h-[calc(100vh-64px)] overflow-hidden bg-slate-50">
             {/* TOGGLE CROQUI/SATÉLITE CENTRALIZADO */}
-            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[1000]">
-                <div className="flex bg-white/90 backdrop-blur-md p-1 rounded-full shadow-lg border border-white/20">
+            <div className="absolute md:top-6 top-auto bottom-8 left-1/2 -translate-x-1/2 z-[1000] w-max">
+                <div className="flex bg-white/95 backdrop-blur-md p-1.5 rounded-full shadow-2xl border border-white/20 ring-1 ring-black/5">
                     <button
                         onClick={() => setViewMode('croqui')}
                         className={cn(
@@ -170,6 +170,7 @@ const MapaPropriedade: React.FC = () => {
                     onOpenDrawer={handleOpenDrawer}
                     loadTalhoes={loadTalhoes}
                     loading={loading}
+                    isDrawerOpen={isDrawerOpen}
                 />
             </div>
 

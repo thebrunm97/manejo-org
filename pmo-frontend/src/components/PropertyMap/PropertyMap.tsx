@@ -40,6 +40,7 @@ interface PropertyMapProps {
     onOpenDrawer: (talhao: Talhao) => void;
     loadTalhoes: () => Promise<void>;
     loading?: boolean;
+    isDrawerOpen?: boolean;
 }
 
 const PropertyMap: React.FC<PropertyMapProps> = ({ 
@@ -51,7 +52,8 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
     setSelectedTalhao,
     onOpenDrawer,
     loadTalhoes,
-    loading = false
+    loading = false,
+    isDrawerOpen
 }) => {
     const { user } = useAuthCore();
 
@@ -278,29 +280,30 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
                                 selectedTalhaoId={selectedTalhao?.id}
                                 onDrawCreate={handleDrawCreate}
                                 onTalhaoClick={(t) => viewMode === 'mapa' && onOpenDrawer(t)}
+                                isDrawerOpen={isDrawerOpen}
                             />
                         </div>
                     </div>
                 )}
             </div>
 
-            {/* MODAL: NOVO TALHÃO */}
+            {/* MODAL: NOVO TALHÃO (Responsivo: Bottom sheet no mobile, Side panel no desktop) */}
             <div className={cn(
-                "fixed inset-0 z-[130] flex items-center justify-center p-4 transition-all duration-200",
-                createModalOpen ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
+                "fixed inset-0 z-[130] flex md:items-stretch items-end md:justify-end justify-center p-0 transition-all duration-300 pointer-events-none",
+                createModalOpen ? "opacity-100 visible" : "opacity-0 invisible"
             )}>
-                <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={handleCancelNewTalhao} />
+                <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] md:hidden pointer-events-auto" onClick={handleCancelNewTalhao} />
                 <div className={cn(
-                    "relative bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 transform",
-                    createModalOpen ? "scale-100 translate-y-0" : "scale-95 translate-y-4"
+                    "relative bg-white w-full md:w-96 md:h-full md:rounded-none rounded-t-[2.5rem] shadow-2xl overflow-hidden flex flex-col transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) transform pointer-events-auto",
+                    createModalOpen ? "translate-x-0 translate-y-0" : "md:translate-x-full translate-y-full"
                 )}>
-                    {/* Header */}
-                    <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
+                    {/* Header Slim */}
+                    <div className="px-6 py-4 border-b border-slate-50 flex items-center justify-between bg-white">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 bg-green-100 text-green-600 rounded-xl">
+                            <div className="p-2 bg-emerald-100 text-emerald-600 rounded-xl">
                                 <Plus size={20} />
                             </div>
-                            <h3 className="text-xl font-black text-slate-900 tracking-tight">Novo Talhão Detectado</h3>
+                            <h3 className="text-lg font-black text-slate-900 tracking-tight">Novo Talhão</h3>
                         </div>
                         <button onClick={handleCancelNewTalhao} className="p-2 text-slate-400 hover:text-slate-600 rounded-full transition-colors">
                             <X size={20} />
@@ -308,11 +311,14 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
                     </div>
 
                     {/* Content */}
-                    <div className="p-8 space-y-6">
-                        <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center justify-center gap-4">
-                            <div className="text-center">
+                    <div className="p-6 md:p-8 space-y-6 max-h-[70vh] overflow-y-auto">
+                        <div className="p-4 bg-emerald-50/50 border border-emerald-100/50 rounded-2xl flex items-center justify-between">
+                            <div>
                                 <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Área Estimada</p>
-                                <p className="text-2xl font-black text-emerald-700">{pendingTalhao ? formatArea(pendingTalhao.areaM2) : '0 m²'}</p>
+                                <p className="text-xl font-black text-emerald-700">{pendingTalhao ? formatArea(pendingTalhao.areaM2) : '0 m²'}</p>
+                            </div>
+                            <div className="px-3 py-1 bg-white rounded-lg border border-emerald-100 text-[10px] font-bold text-emerald-600 uppercase">
+                                GeoJSON OK
                             </div>
                         </div>
 

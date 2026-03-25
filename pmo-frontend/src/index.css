@@ -471,6 +471,11 @@ body {
   pointer-events: auto;
   cursor: pointer;
   transform: translate(-50%, -50%);
+  z-index: 50 !important;
+}
+
+.maplibregl-marker {
+  z-index: 50 !important; /* Acima dos polígonos, abaixo dos drawers (z-index 50+) */
 }
 
 /* ========================================================== */
@@ -486,6 +491,15 @@ body {
   margin-left: 16px !important;
   border-radius: 8px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2) !important;
+  transition: transform 0.2s ease;
+}
+
+@media (max-width: 768px) {
+  .maplibregl-control-container .mapboxgl-ctrl-group {
+    transform: scale(1.1);
+    margin-top: 12px !important;
+    margin-left: 12px !important;
+  }
 }
 
 /* Corrige o reset do Tailwind nos botões do mapa */
