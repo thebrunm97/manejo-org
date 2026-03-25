@@ -259,7 +259,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                 open ? "translate-y-0 opacity-100 scale-100 pointer-events-auto" : "translate-y-4 opacity-0 scale-95 pointer-events-none"
             )}>
                 {/* Header */}
-                <div className="flex items-start gap-3 p-5 shrink-0 bg-white border-b border-slate-50">
+                <div className="flex items-start gap-4 p-6 shrink-0 bg-white border-b border-slate-50">
                 <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 shrink-0">
                     {getIcon(talhao.nome)}
                 </div>
@@ -276,11 +276,11 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                     </button>
                 </div>
             </div>                {/* Body Content (Invisible Scrollarea) */}
-                <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-4 pt-0 pb-8">
+                <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-6 pt-0 pb-8">
                     {/* Insights/Soil Progress */}
                     <div className="space-y-6">
                         {/* Nested Data Card (Seeding/Area) */}
-                        <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                        <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
                             <div className="flex items-center justify-between mb-2">
                                 <div>
                                     <h4 className="text-xs font-bold text-slate-900">Propriedades</h4>
@@ -486,7 +486,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                         {/* Gauges View (Dashboard Style) */}
                                         <div className="grid grid-cols-1 gap-6 px-2">
                                             {/* pH */}
-                                            <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                                            <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
                                                 <div className="flex justify-between items-baseline mb-3">
                                                     <div className="flex items-center gap-2">
                                                         <div className="w-1.5 h-4 bg-emerald-500 rounded-full" />
@@ -508,7 +508,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                             </div>
  
                                             {/* V% */}
-                                            <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                                            <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
                                                 <div className="flex justify-between items-baseline mb-3">
                                                     <div className="flex items-center gap-2">
                                                         <div className="w-1.5 h-4 bg-blue-500 rounded-full" />
@@ -526,14 +526,14 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
 
                                             {/* Nutrients Row */}
                                             <div className="grid grid-cols-2 gap-4">
-                                                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
                                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Fósforo (P)</p>
                                                     <h3 className="text-base font-black text-slate-900 flex items-baseline gap-1">
                                                         {formData.fosforo || '-'}
                                                         <span className="text-[10px] font-bold text-slate-300">mg</span>
                                                     </h3>
                                                 </div>
-                                                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
                                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Potássio (K)</p>
                                                     <h3 className="text-base font-black text-slate-900 flex items-baseline gap-1">
                                                         {formData.potassio || '-'}
@@ -544,7 +544,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                         </div>
 
                                         {/* Physical / Texture Card */}
-                                        <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 space-y-4">
+                                        <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 space-y-4">
                                             <div className="flex justify-between items-center">
                                                 <h5 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Textura Física</h5>
                                                 <span className="text-[10px] font-black bg-slate-900 text-white px-3 py-1 rounded-full">{classificacao}</span>
