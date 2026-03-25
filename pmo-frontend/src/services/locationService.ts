@@ -10,6 +10,13 @@ export interface TalhaoWithCanteiros extends TalhaoRow {
     canteiros: Array<{
         id: string;
         nome: string;
+        tipo_estrutura?: string;
+        largura_metros?: number;
+        comprimento_metros?: number;
+        profundidade_metros?: number;
+        volume_m3?: number;
+        quantidade?: number;
+        area_total_m2?: number;
         status: string | null;
     }>;
 }
@@ -27,8 +34,13 @@ export const locationService = {
                     id,
                     nome,
                     status,
+                    tipo_estrutura,
                     largura_metros,
-                    comprimento_metros
+                    comprimento_metros,
+                    profundidade_metros,
+                    volume_m3,
+                    quantidade,
+                    area_total_m2
                 )
             `)
             .order('nome', { ascending: true });
@@ -63,13 +75,16 @@ export const locationService = {
      * Cria um novo canteiro/espaço no banco de dados.
      */
     createCanteiro: async (talhaoId: number, nome: string, metadata: any = {}): Promise<CanteiroRow> => {
-        const payload: CanteiroInsert = {
+        const payload: any = {
             talhao_id: talhaoId,
             nome: nome,
-            // tipo: metadata.tipo || 'canteiro', // Not in Row type in supabase.ts check earlier?
+            tipo_estrutura: metadata.tipo || 'canteiro',
             largura_metros: metadata.largura || null,
             comprimento_metros: metadata.comprimento || null,
-            // area_total_m2: metadata.area || null, // Not in Row type in supabase.ts check earlier?
+            profundidade_metros: metadata.profundidade || null,
+            volume_m3: metadata.volume || null,
+            quantidade: metadata.quantidade || 1,
+            area_total_m2: metadata.area || null,
         };
 
         const { data, error } = await supabase

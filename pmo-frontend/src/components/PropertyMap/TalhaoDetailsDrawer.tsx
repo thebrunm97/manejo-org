@@ -74,6 +74,9 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
         baseName: '',
         width: '',
         length: '',
+        depth: '',
+        volume: '',
+        isManualVolume: false,
         isBatch: false,
         quantity: 1,
         startNumber: 1
@@ -86,6 +89,9 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
             baseName: '',
             width: '',
             length: '',
+            depth: '',
+            volume: '',
+            isManualVolume: false,
             isBatch: false,
             quantity: 1,
             startNumber: 1
@@ -93,13 +99,28 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
         setCreateModalOpen(true);
     };
 
+    // Reactive Calculations for Area and Volume
+    useEffect(() => {
+        const w = parseFloat(batchData.width.replace(',', '.')) || 0;
+        const l = parseFloat(batchData.length.replace(',', '.')) || 0;
+        const d = parseFloat(batchData.depth.replace(',', '.')) || 0;
+        
+        if (batchData.type === 'tanque' && !batchData.isManualVolume && w > 0 && l > 0 && d > 0) {
+            const calculatedVolume = w * l * d;
+            setBatchData(prev => ({ ...prev, volume: calculatedVolume.toFixed(2).replace('.', ',') }));
+        }
+    }, [batchData.width, batchData.length, batchData.depth, batchData.type, batchData.isManualVolume]);
+
     const handleBatchSave = async () => {
         if (!talhao) return;
         try {
             const payloads: any[] = [];
             const w = parseFloat(batchData.width.replace(',', '.')) || 0;
             const l = parseFloat(batchData.length.replace(',', '.')) || 0;
-            const area = (w > 0 && l > 0) ? (w * l) : null;
+            const d = parseFloat(batchData.depth.replace(',', '.')) || 0;
+            const v = parseFloat(batchData.volume.replace(',', '.')) || 0;
+            const q = batchData.isBatch ? 1 : (batchData.quantity || 1);
+            const area = (w > 0 && l > 0) ? (w * l * q) : null;
 
             const count = batchData.isBatch ? (Math.max(1, batchData.quantity)) : 1;
             const start = batchData.isBatch ? (Math.max(1, batchData.startNumber)) : 1;
@@ -116,9 +137,12 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                 payloads.push({
                     talhao_id: String(talhao.id),
                     nome: finalName,
-                    tipo: batchData.type,
-                    largura: w || null,
-                    comprimento: l || null,
+                    tipo_estrutura: batchData.type,
+                    largura_metros: w || null,
+                    comprimento_metros: l || null,
+                    profundidade_metros: batchData.type === 'tanque' ? d : null,
+                    volume_m3: batchData.type === 'tanque' ? v : null,
+                    quantidade: q,
                     area_total_m2: area,
                     status: 'ativo'
                 });
@@ -784,7 +808,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
             )}>
                 <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setCreateModalOpen(false)} />
                 <div className={cn(
-                    "relative bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 transform",
+                    "relative bg-white w-full max-w-md max-h-[calc(100dvh-4rem)] rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 transform",
                     createModalOpen ? "scale-100 translate-y-0" : "scale-95 translate-y-4"
                 )}>
                     {/* Modal Header */}
@@ -795,8 +819,8 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                         </button>
                     </div>
 
-                    {/* Modal Content */}
-                    <div className="p-6 space-y-6">
+                    {/* Modal Content - Invisible Scroll area */}
+                    <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] p-6 space-y-6 pb-12">
                         {/* Type Selection */}
                         <div className="space-y-3">
                             <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Tipo de Estrutura</label>
@@ -833,26 +857,81 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                         </div>
 
                         {/* Dimensions */}
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 text-center block">Largura (m)</label>
                                 <input
-                                    type="number"
+                                    type="text"
                                     value={batchData.width}
                                     onChange={(e) => setBatchData({ ...batchData, width: e.target.value })}
                                     className="w-full bg-white border border-slate-200 rounded-2xl px-5 py-3 text-sm font-black text-center text-slate-700 focus:outline-none focus:border-emerald-600 transition-all"
+                                    placeholder="0,00"
                                 />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 text-center block">Comp. (m)</label>
                                 <input
-                                    type="number"
+                                    type="text"
                                     value={batchData.length}
                                     onChange={(e) => setBatchData({ ...batchData, length: e.target.value })}
                                     className="w-full bg-white border border-slate-200 rounded-2xl px-5 py-3 text-sm font-black text-center text-slate-700 focus:outline-none focus:border-emerald-600 transition-all"
+                                    placeholder="0,00"
                                 />
                             </div>
                         </div>
+
+                        {/* Tangue Specific: Profundidade e Volume */}
+                        {batchData.type === 'tanque' && (
+                            <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-top-2 duration-200">
+                                <div className="space-y-2">
+                                    <label className="text-[11px] font-black text-blue-400 uppercase tracking-widest ml-1 text-center block">Profundidade (m)</label>
+                                    <input
+                                        type="text"
+                                        value={batchData.depth}
+                                        onChange={(e) => setBatchData({ ...batchData, depth: e.target.value })}
+                                        className="w-full bg-blue-50/30 border border-blue-100 rounded-2xl px-5 py-3 text-sm font-black text-center text-blue-700 focus:outline-none focus:border-blue-500 transition-all"
+                                        placeholder="0,00"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[11px] font-black text-blue-400 uppercase tracking-widest ml-1 text-center block">Volume (m³)</label>
+                                    <input
+                                        type="text"
+                                        value={batchData.volume}
+                                        onChange={(e) => {
+                                            setBatchData({ ...batchData, volume: e.target.value, isManualVolume: true });
+                                        }}
+                                        className={cn(
+                                            "w-full border rounded-2xl px-5 py-3 text-sm font-black text-center transition-all focus:outline-none",
+                                            batchData.isManualVolume 
+                                                ? "bg-amber-50 border-amber-200 text-amber-700 focus:border-amber-500" 
+                                                : "bg-blue-50/30 border-blue-100 text-blue-700 focus:border-blue-500"
+                                        )}
+                                        placeholder="0,00"
+                                    />
+                                    {batchData.isManualVolume && (
+                                        <button 
+                                            onClick={() => setBatchData(prev => ({ ...prev, isManualVolume: false }))}
+                                            className="text-[9px] font-bold text-amber-600 uppercase tracking-tight w-full hover:underline"
+                                        >
+                                            Resetar para Automático
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {!batchData.isBatch && (
+                            <div className="space-y-2">
+                                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Quantidade de Estruturas</label>
+                                <input
+                                    type="number"
+                                    value={batchData.quantity}
+                                    onChange={(e) => setBatchData({ ...batchData, quantity: Math.max(1, parseInt(e.target.value) || 1) })}
+                                    className="w-full bg-white border border-slate-200 rounded-2xl px-5 py-3 text-sm font-black text-slate-700 focus:outline-none focus:border-emerald-600 transition-all"
+                                />
+                            </div>
+                        )}
 
                         {/* Batch Switch */}
                         <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
