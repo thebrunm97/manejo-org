@@ -403,6 +403,18 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                     ? 'Locais / Áreas Higienizadas'
                     : 'Talhões / Canteiros';
 
+    const handleTabClick = (e: React.MouseEvent<HTMLButtonElement>, tabId: string) => {
+        if (isEditMode && activeTab !== tabId) return;
+        
+        setActiveTab(tabId as TipoRegistro); 
+        
+        e.currentTarget.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest',
+            inline: 'center'
+        });
+    };
+
     if (!open) return null;
 
     return (
@@ -457,10 +469,10 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                                     key={tab.id}
                                     role="tab"
                                     aria-selected={isActive}
-                                    onClick={() => !disabled && setActiveTab(tab.id as any)}
+                                    onClick={(e) => handleTabClick(e, tab.id)}
                                     disabled={disabled}
                                     className={`
-                                        inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-sm font-bold transition-all duration-200 whitespace-nowrap flex-shrink-0 snap-center
+                                        inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-sm font-bold transition-all duration-200 whitespace-nowrap flex-shrink-0 snap-center scroll-mx-10
                                         ${isActive
                                             ? `${tab.activeBg} ${tab.color} shadow-lg shadow-emerald-200`
                                             : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}
