@@ -60,7 +60,12 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
     // Estado para Novo Talhão
     const [createModalOpen, setCreateModalOpen] = useState(false);
     const [pendingTalhao, setPendingTalhao] = useState<{ layer: any, geometry: string, areaM2: number } | null>(null);
-    const [newTalhaoData, setNewTalhaoData] = useState({ nome: '', cultura: '' });
+    const [newTalhaoData, setNewTalhaoData] = useState({ 
+        nome: '', 
+        cultura: '',
+        fillColor: '#3bb444',
+        borderColor: '#228b22'
+    });
     const [savingNew, setSavingNew] = useState(false);
 
     // Estado para Deleção
@@ -121,7 +126,12 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
             geometry: JSON.stringify(feature.geometry),
             areaM2
         });
-        setNewTalhaoData({ nome: `Talhão ${talhoes.length + 1}`, cultura: '' });
+        setNewTalhaoData({ 
+            nome: `Talhão ${talhoes.length + 1}`, 
+            cultura: '',
+            fillColor: '#3bb444',
+            borderColor: '#228b22'
+        });
         setCreateModalOpen(true);
     };
 
@@ -153,7 +163,9 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
                 geometry: pendingTalhao.geometry,
                 area_total_m2: parseFloat(pendingTalhao.areaM2.toFixed(2)),
                 area_ha: parseFloat(areaHa.toFixed(2)),
-                cor: '#16a34a', // Sucesso Green
+                fill_color: newTalhaoData.fillColor,
+                border_color: newTalhaoData.borderColor,
+                cor: newTalhaoData.fillColor, // Backward compatibility
                 propriedade_id: propriedadeId
             };
 
@@ -212,10 +224,10 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
                                         key={talhao.id}
                                         className="group relative bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 hover:border-slate-200 transition-all duration-300 flex flex-col overflow-hidden"
                                     >
-                                        <div className={cn(
-                                            "h-1.5 w-full",
-                                            talhao.tipo === 'agua' ? "bg-blue-500" : "bg-emerald-500"
-                                        )} />
+                                        <div 
+                                            className="h-1.5 w-full"
+                                            style={{ backgroundColor: talhao.fill_color || talhao.fillColor || talhao.cor || (talhao.tipo === 'agua' ? '#3B82F6' : '#10B981') }}
+                                        />
 
                                         <div className="p-6 flex-1">
                                             <div className="flex justify-between items-start mb-4">
@@ -234,8 +246,11 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
                                             </div>
 
                                             <div className="flex items-center gap-3 bg-slate-50/80 p-3 rounded-2xl border border-slate-100 mb-4 group-hover:bg-white transition-colors">
-                                                <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100">
-                                                    {talhao.tipo === 'agua' ? <Droplets size={16} className="text-blue-500" /> : <Sprout size={16} className="text-emerald-500" />}
+                                                <div 
+                                                    className="p-2 bg-white rounded-xl shadow-sm border border-slate-100"
+                                                    style={{ color: talhao.fill_color || talhao.fillColor || talhao.cor || (talhao.tipo === 'agua' ? '#3B82F6' : '#10B981') }}
+                                                >
+                                                    {talhao.tipo === 'agua' ? <Droplets size={16} /> : <Sprout size={16} />}
                                                 </div>
                                                 <span className="text-sm font-bold text-slate-600 truncate">{talhao.cultura || "Sem cultura definida"}</span>
                                             </div>
@@ -343,6 +358,33 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
                                     onChange={(e) => setNewTalhaoData({ ...newTalhaoData, cultura: e.target.value })}
                                     className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-green-500/5 focus:border-green-600 transition-all placeholder:text-slate-300"
                                 />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Cor de Preenchimento</label>
+                                    <div className="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-2xl px-4 py-2">
+                                        <input
+                                            type="color"
+                                            value={newTalhaoData.fillColor}
+                                            onChange={(e) => setNewTalhaoData({ ...newTalhaoData, fillColor: e.target.value })}
+                                            className="w-10 h-10 p-1 rounded-xl cursor-pointer bg-white border border-slate-200"
+                                        />
+                                        <span className="text-xs font-mono font-bold text-slate-500 uppercase">{newTalhaoData.fillColor}</span>
+                                    </div>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Cor da Borda</label>
+                                    <div className="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-2xl px-4 py-2">
+                                        <input
+                                            type="color"
+                                            value={newTalhaoData.borderColor}
+                                            onChange={(e) => setNewTalhaoData({ ...newTalhaoData, borderColor: e.target.value })}
+                                            className="w-10 h-10 p-1 rounded-xl cursor-pointer bg-white border border-slate-200"
+                                        />
+                                        <span className="text-xs font-mono font-bold text-slate-500 uppercase">{newTalhaoData.borderColor}</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

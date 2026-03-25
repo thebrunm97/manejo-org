@@ -1,5 +1,7 @@
 import React, { useMemo, useEffect } from 'react';
 import Map, { Source, Layer, Marker, useMap, NavigationControl } from 'react-map-gl/maplibre';
+import centerOfMass from '@turf/center-of-mass';
+import { polygon } from '@turf/helpers';
 import { Talhao, GeoJSONGeometry } from '../../domain/geo/geoTypes';
 import { ESRI_SATELLITE_STYLE } from './mapStyles';
 
@@ -136,7 +138,8 @@ const FarmMap: React.FC<FarmMapProps> = ({
                             id: t.id,
                             nome: t.nome,
                             cultura: t.cultura,
-                            color: getCropColor(t.cultura),
+                            fill_color: t.fill_color || t.fillColor || t.cor || getCropColor(t.cultura),
+                            border_color: t.border_color || t.borderColor || t.fill_color || t.fillColor || t.cor || getCropColor(t.cultura),
                             isSelected: selectedTalhaoId === t.id
                         },
                         geometry
@@ -153,7 +156,7 @@ const FarmMap: React.FC<FarmMapProps> = ({
         };
     }, [talhoes, selectedTalhaoId]);
 
-    // Calcular Centróides para os Markers (Pílulas)
+    // Calcular Centróides para os Markers (Pílulas) via Turf
     const centroids = useMemo(() => {
         return talhoes.map(t => {
             if (!t.geometry) return null;
@@ -161,19 +164,29 @@ const FarmMap: React.FC<FarmMapProps> = ({
                 const geo: GeoJSONGeometry = typeof t.geometry === 'string' ? JSON.parse(t.geometry) : t.geometry;
                 if (!geo.coordinates || !geo.coordinates[0]) return null;
                 
-                const coords = geo.coordinates[0];
-                let sumLng = 0, sumLat = 0;
-                coords.forEach(([lng, lat]) => {
-                    sumLng += lng;
-                    sumLat += lat;
-                });
+                let coords = geo.coordinates[0];
+                
+                // Garantir que o polígono está fechado para o Turf (primeiro ponto == último ponto)
+                const first = coords[0];
+                const last = coords[coords.length - 1];
+                if (first[0] !== last[0] || first[1] !== last[1]) {
+                    coords = [...coords, first];
+                }
+
+                const poly = polygon([coords]);
+                const center = centerOfMass(poly);
+                const [lng, lat] = center.geometry.coordinates;
+
                 return {
                     id: t.id,
-                    lng: sumLng / coords.length,
-                    lat: sumLat / coords.length,
+                    lng,
+                    lat,
                     talhao: t
                 };
-            } catch (e) { return null; }
+            } catch (e) { 
+                console.error("Turf Error:", e);
+                return null; 
+            }
         }).filter(Boolean);
     }, [talhoes]);
 
@@ -223,7 +236,7 @@ const FarmMap: React.FC<FarmMapProps> = ({
                     id="talhoes-fill"
                     type="fill"
                     paint={{
-                        'fill-color': ['get', 'color'],
+                        'fill-color': ['get', 'fill_color'],
                         'fill-opacity': [
                             'case',
                             ['boolean', ['feature-state', 'hover'], false],
@@ -238,26 +251,22 @@ const FarmMap: React.FC<FarmMapProps> = ({
                     id="talhoes-line"
                     type="line"
                     paint={{
-                        'line-color': ['get', 'color'],
+                        'line-color': ['get', 'border_color'],
                         'line-width': ['case', ['==', ['id'], (selectedTalhaoId || -1)], 4, 2],
                         'line-opacity': 1
                     }}
                 />
             </Source>
 
-            {/* Pílulas HTML (Markers) */}
+            {/* Pílulas HTML (Markers) - Ghost Labels (pointer-events-none) */}
             {centroids.map(c => c && (
                 <Marker 
                     key={c.id} 
                     longitude={c.lng} 
                     latitude={c.lat}
                     anchor="center"
-                    onClick={(e) => {
-                        e.originalEvent.stopPropagation();
-                        if (onTalhaoClick) onTalhaoClick(c.talhao);
-                    }}
                 >
-                    <div className="map-marker-pill" style={{ 
+                    <div className="map-marker-pill pointer-events-none" style={{ 
                         background: 'white', 
                         border: '1px solid #e4e4e7', 
                         borderRadius: '12px', 
@@ -268,7 +277,12 @@ const FarmMap: React.FC<FarmMapProps> = ({
                         boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
                         width: 'max-content'
                     }}>
-                        <div style={{ width: '8px', height: '8px', background: getCropColor(c.talhao.cultura), borderRadius: '50%' }}></div>
+                        <div style={{ 
+                            width: '8px', 
+                            height: '8px', 
+                            background: c.talhao.fill_color || c.talhao.fillColor || c.talhao.cor || getCropColor(c.talhao.cultura), 
+                            borderRadius: '50%' 
+                        }}></div>
                         <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1.3' }}>
                             <span style={{ fontWeight: 700, fontSize: 11, color: '#18181b', whiteSpace: 'nowrap' }}>{c.talhao.nome}</span>
                             <span style={{ fontWeight: 500, fontSize: 10, color: '#71717a', whiteSpace: 'nowrap' }}>{c.talhao.cultura || 'Área Livre'}</span>
