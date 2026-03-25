@@ -252,7 +252,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
         <>
             {/* Offcanvas Drawer Pattern */}
             <div className={cn(
-                "fixed inset-0 z-[110] transition-all duration-300 pointer-events-none md:pointer-events-auto",
+                "fixed inset-0 z-[9999] transition-all duration-300 pointer-events-none md:pointer-events-auto",
                 open ? "visible" : "invisible"
             )}>
                 {/* Backdrop overlay (Desktop/Mobile) */}
