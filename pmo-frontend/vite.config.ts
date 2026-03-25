@@ -90,10 +90,9 @@ export default defineConfig({
             { find: '@utils', replacement: path.resolve(__dirname, './src/utils') },
             { find: '@services', replacement: path.resolve(__dirname, './src/services') },
             { find: '@components', replacement: path.resolve(__dirname, './src/components') },
-            { find: '@types', replacement: path.resolve(__dirname, './src/types') },
-            { find: /^leaflet-draw$/, replacement: path.resolve(__dirname, './src/leaflet-draw-shim.js') }
+            { find: '@types', replacement: path.resolve(__dirname, './src/types') }
         ],
-        dedupe: ['react', 'react-dom', 'react-router-dom', 'leaflet']
+        dedupe: ['react', 'react-dom', 'react-router-dom']
     },
     build: {
         chunkSizeWarningLimit: 600,
@@ -106,7 +105,7 @@ export default defineConfig({
                 manualChunks: {
                     'vendor-react': ['react', 'react-dom', 'react-router-dom'],
                     'vendor-ui': ['lucide-react', 'clsx', 'tailwind-merge'],
-                    'vendor-maps': ['leaflet', 'react-leaflet', 'leaflet-draw'],
+                    'vendor-maps': ['maplibre-gl', 'react-map-gl'],
                     'vendor-charts': ['recharts'],
                     'vendor-supabase': ['@supabase/supabase-js']
                 }
@@ -114,6 +113,6 @@ export default defineConfig({
         }
     },
     optimizeDeps: {
-        include: ['leaflet-draw', 'react-leaflet-draw']
+        include: ['maplibre-gl', 'react-map-gl']
     }
 })
