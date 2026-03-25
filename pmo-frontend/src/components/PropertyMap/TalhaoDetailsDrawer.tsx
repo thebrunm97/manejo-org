@@ -264,26 +264,29 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                     onClick={onClose}
                 />
 
-                {/* Drawer Panel */}
+                {/* Drawer Panel (Now a Floating Card) */}
                 <div className={cn(
-                    "absolute top-6 right-6 bottom-6 w-80 md:w-[22rem] bg-white/95 backdrop-blur-md rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] z-[1001] transition-all duration-500 transform flex flex-col overflow-hidden border border-white/20",
-                    open ? "translate-x-0 opacity-100" : "translate-x-full opacity-0 pointer-events-none"
+                    "absolute top-6 right-6 w-80 md:w-[22rem] max-h-[calc(100vh-4rem)] bg-white/95 backdrop-blur-md rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] z-[1001] transition-all duration-500 transform flex flex-col overflow-hidden border border-white/20",
+                    open ? "translate-y-0 opacity-100 scale-100" : "translate-y-4 opacity-0 scale-95 pointer-events-none"
                 )}>
                     {/* Header */}
-                    <div className="flex items-center gap-4 p-5 border-b border-slate-100 shrink-0 bg-white/80 backdrop-blur-sm rounded-t-3xl">
-                        <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors">
-                            <ArrowLeft size={20} />
+                    <div className="flex items-center gap-4 p-5 shrink-0 bg-white/40 backdrop-blur-sm border-b border-slate-100">
+                        <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-white/50 rounded-full transition-colors">
+                            <ArrowLeft size={18} />
                         </button>
                         <div className="flex-1 overflow-hidden">
-                            <h3 className="text-lg font-extrabold text-slate-900 truncate tracking-tight">{talhao.nome || 'Talhão Sem Nome'}</h3>
-                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-2">
-                                {talhao.area_ha ? `${talhao.area_ha} ha` : `${talhao.area_total_m2 || 0} m²`}
-                                <span className="w-1 h-1 bg-slate-300 rounded-full" />
-                                {talhao.cultura || 'Sem cultura'}
-                            </p>
+                            <h3 className="text-base font-black text-slate-900 truncate tracking-tight uppercase">{talhao.nome || 'Talhão Sem Nome'}</h3>
+                            <div className="flex items-center gap-2 mt-0.5">
+                                <div className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-md text-[9px] font-black uppercase tracking-wider">
+                                    {talhao.area_ha ? `${talhao.area_ha} ha` : `${talhao.area_total_m2 || 0} m²`}
+                                </div>
+                                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest truncate">
+                                    {talhao.cultura || 'Sem cultura'}
+                                </span>
+                            </div>
                         </div>
-                        <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors">
-                            <X size={20} />
+                        <button onClick={onClose} className="p-2 text-slate-300 hover:text-slate-500 rounded-full transition-colors">
+                            <X size={18} />
                         </button>
                     </div>
 
@@ -456,52 +459,68 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                     </div>
                                 ) : (
                                     <div className="space-y-8 animate-in fade-in duration-500">
-                                        {/* Gauges View */}
-                                        <div className="grid grid-cols-1 gap-6">
+                                        {/* Gauges View (Dashboard Style) */}
+                                        <div className="grid grid-cols-1 gap-6 px-2">
                                             {/* pH */}
-                                            <div className="space-y-2">
-                                                <div className="flex justify-between items-baseline">
-                                                    <span className="text-xs font-extrabold text-slate-500 uppercase tracking-tighter">pH (Água)</span>
-                                                    <span className="text-lg font-black text-slate-900 leading-none">{formData.ph_solo || '-'}</span>
+                                            <div className="bg-slate-50/50 p-4 rounded-3xl border border-slate-100/50 shadow-sm">
+                                                <div className="flex justify-between items-baseline mb-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-1.5 h-4 bg-emerald-500 rounded-full" />
+                                                        <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">pH do Solo</span>
+                                                    </div>
+                                                    <span className="text-xl font-black text-slate-900">{formData.ph_solo || '-'}</span>
                                                 </div>
-                                                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                                                <div className="h-2 w-full bg-slate-200/50 rounded-full overflow-hidden">
                                                     <div
                                                         className="h-full bg-emerald-500 transition-all duration-1000 shadow-[0_0_8px_rgba(16,185,129,0.3)]"
                                                         style={{ width: `${Math.min((Number(formData.ph_solo) / 8) * 100, 100)}%` }}
                                                     />
                                                 </div>
-                                            </div>
-
-                                            {/* V% */}
-                                            <div className="space-y-2">
-                                                <div className="flex justify-between items-baseline">
-                                                    <span className="text-xs font-extrabold text-slate-500 uppercase tracking-tighter">Saturação por Bases (V%)</span>
-                                                    <span className="text-lg font-black text-slate-900 leading-none">{formData.v_percent || '-'}%</span>
+                                                <div className="flex justify-between mt-1 px-0.5">
+                                                    <span className="text-[8px] font-bold text-slate-300 uppercase">Ácido</span>
+                                                    <span className="text-[8px] font-bold text-slate-300 uppercase">Neutro</span>
+                                                    <span className="text-[8px] font-bold text-slate-300 uppercase">Alcalino</span>
                                                 </div>
-                                                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                                            </div>
+ 
+                                            {/* V% */}
+                                            <div className="bg-slate-50/50 p-4 rounded-3xl border border-slate-100/50 shadow-sm">
+                                                <div className="flex justify-between items-baseline mb-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-1.5 h-4 bg-blue-500 rounded-full" />
+                                                        <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Saturação por Bases</span>
+                                                    </div>
+                                                    <span className="text-xl font-black text-slate-900">{formData.v_percent || '-'}%</span>
+                                                </div>
+                                                <div className="h-2 w-full bg-slate-200/50 rounded-full overflow-hidden">
                                                     <div
                                                         className="h-full bg-blue-500 transition-all duration-1000 shadow-[0_0_8px_rgba(59,130,246,0.3)]"
                                                         style={{ width: `${Number(formData.v_percent) || 0}%` }}
                                                     />
                                                 </div>
+                                                <div className="flex justify-between mt-1 px-0.5">
+                                                    <span className="text-[8px] font-bold text-slate-300 uppercase">Baixa</span>
+                                                    <span className="text-[8px] font-bold text-slate-300 uppercase">Média</span>
+                                                    <span className="text-[8px] font-bold text-slate-300 uppercase">Ideal</span>
+                                                </div>
                                             </div>
-
+ 
                                             {/* P & K Dual Cards */}
                                             <div className="grid grid-cols-2 gap-4">
-                                                <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group">
+                                                <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-md relative overflow-hidden group">
                                                     <div className="absolute top-0 right-0 w-12 h-12 bg-purple-500/5 blur-xl -mr-6 -mt-6 group-hover:bg-purple-500/10 transition-colors" />
-                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Fósforo (P)</p>
-                                                    <h3 className="text-xl font-black text-slate-900 flex items-baseline gap-1">
+                                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Fósforo (P)</p>
+                                                    <h3 className="text-lg font-black text-slate-900 flex items-baseline gap-1">
                                                         {formData.fosforo || '-'}
-                                                        <span className="text-[9px] font-bold text-slate-400">mg/dm³</span>
+                                                        <span className="text-[9px] font-bold text-slate-300">mg</span>
                                                     </h3>
                                                 </div>
-                                                <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group">
+                                                <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-md relative overflow-hidden group">
                                                     <div className="absolute top-0 right-0 w-12 h-12 bg-amber-500/5 blur-xl -mr-6 -mt-6 group-hover:bg-amber-500/10 transition-colors" />
-                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Potássio (K)</p>
-                                                    <h3 className="text-xl font-black text-slate-900 flex items-baseline gap-1">
+                                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Potássio (K)</p>
+                                                    <h3 className="text-lg font-black text-slate-900 flex items-baseline gap-1">
                                                         {formData.potassio || '-'}
-                                                        <span className="text-[9px] font-bold text-slate-400">mg/dm³</span>
+                                                        <span className="text-[9px] font-bold text-slate-300">mg</span>
                                                     </h3>
                                                 </div>
                                             </div>
