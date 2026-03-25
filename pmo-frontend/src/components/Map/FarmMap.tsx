@@ -278,7 +278,7 @@ const FarmMap: React.FC<FarmMapProps> = ({
             ))}
 
             <MapController talhoes={talhoes} focusTarget={focusTarget} isDrawerOpen={isDrawerOpen} />
-            <NavigationControl position="bottom-right" />
+            <NavigationControl position="bottom-left" />
         </Map>
     );
 };
