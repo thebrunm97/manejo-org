@@ -25,6 +25,7 @@ interface FarmMapProps {
     onDrawUpdate?: (e: any) => void;
     onDrawDelete?: (e: any) => void;
     onTalhaoClick?: (talhao: Talhao) => void;
+    isDrawerOpen?: boolean;
 }
 
 const getCropColor = (cultura?: string): string => {
@@ -38,7 +39,7 @@ const getCropColor = (cultura?: string): string => {
 };
 
 // Hook Interno para Controle de Zoom/Bounds (Equivalente ao MapController)
-const MapController: React.FC<{ talhoes: Talhao[], focusTarget?: Talhao | null }> = ({ talhoes, focusTarget }) => {
+const MapController: React.FC<{ talhoes: Talhao[], focusTarget?: Talhao | null, isDrawerOpen?: boolean }> = ({ talhoes, focusTarget, isDrawerOpen }) => {
     const { current: map } = useMap();
 
     useEffect(() => {
@@ -60,9 +61,13 @@ const MapController: React.FC<{ talhoes: Talhao[], focusTarget?: Talhao | null }
                         maxLat = Math.max(maxLat, lat);
                     });
 
+                    const padding = isDrawerOpen && window.innerWidth > 768 
+                        ? { top: 80, right: 480, bottom: 80, left: 80 } 
+                        : 80;
+
                     map.fitBounds(
                         [minLng, minLat, maxLng, maxLat],
-                        { padding: 80, maxZoom: 16, duration: 1200 }
+                        { padding, maxZoom: 16, duration: 1200 }
                     );
                 }
             } catch (e) {
@@ -90,13 +95,17 @@ const MapController: React.FC<{ talhoes: Talhao[], focusTarget?: Talhao | null }
             });
 
             if (hasValid) {
+                const padding = isDrawerOpen && window.innerWidth > 768 
+                    ? { top: 50, right: 450, bottom: 50, left: 50 } 
+                    : 50;
+
                 map.fitBounds(
                     [minLng, minLat, maxLng, maxLat],
-                    { padding: 50, duration: 1000 }
+                    { padding, duration: 1000 }
                 );
             }
         }
-    }, [talhoes, focusTarget, map]);
+    }, [talhoes, focusTarget, map, isDrawerOpen]);
 
     return null;
 };
@@ -108,7 +117,8 @@ const FarmMap: React.FC<FarmMapProps> = ({
     onTalhaoClick,
     onDrawCreate,
     onDrawUpdate,
-    onDrawDelete
+    onDrawDelete,
+    isDrawerOpen
 }) => {
     // 1. Converter talhões para GeoJSON FeatureCollection (WebGL Native)
     const geojsonData = useMemo<GeoJSONData>(() => {
@@ -255,7 +265,7 @@ const FarmMap: React.FC<FarmMapProps> = ({
                 </Marker>
             ))}
 
-            <MapController talhoes={talhoes} focusTarget={focusTarget} />
+            <MapController talhoes={talhoes} focusTarget={focusTarget} isDrawerOpen={isDrawerOpen} />
         </Map>
     );
 };

@@ -366,13 +366,24 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
 
     return (
         <>
-            {/* Drawer Panel (Floating Card) - SPEC 01 */}
+            {/* Responsive Panel: Side panel on desktop, Bottom sheet on mobile */}
             <div className={cn(
-                "absolute top-6 left-6 bottom-6 z-[1000] w-80 md:w-[26rem] bg-white rounded-[24px] shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex flex-col overflow-hidden transition-all duration-300 transform",
-                open ? "translate-y-0 opacity-100 scale-100 pointer-events-auto" : "translate-y-4 opacity-0 scale-95 pointer-events-none"
+                "fixed inset-x-0 bottom-0 md:inset-y-0 md:right-0 md:left-auto md:w-80 z-[2000] pointer-events-none transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1)",
+                open ? "visible" : "invisible"
             )}>
+                <div className={cn(
+                    "absolute bg-white shadow-2xl shadow-black/20 flex flex-col overflow-hidden transition-all duration-500 transform pointer-events-auto",
+                    // Desktop: Right Panel
+                    "md:top-0 md:right-0 md:bottom-0 md:left-auto md:w-80 md:rounded-l-[32px] md:h-full",
+                    // Mobile: Bottom Sheet
+                    "top-auto left-0 right-0 bottom-0 w-full h-[75vh] rounded-t-[32px] md:h-full",
+                    // Open/Close States
+                    open 
+                        ? "translate-y-0 md:translate-x-0 opacity-100" 
+                        : "translate-y-full md:translate-x-full opacity-0"
+                )}>
                 {/* Header */}
-                <div className="flex items-start gap-4 p-6 shrink-0 bg-white border-b border-slate-50">
+                <div className="flex items-start gap-4 p-5 shrink-0 bg-white border-b border-slate-50">
                 <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 shrink-0">
                     {getIcon(talhao.nome)}
                 </div>
@@ -422,7 +433,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                     </button>
                 </div>
             </div>                {/* Body Content (Invisible Scrollarea) */}
-                <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-6 pt-0 pb-8">
+                <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-5 pt-0 pb-8">
                     {/* Insights/Soil Progress */}
                     <div className="space-y-6">
                         {/* Nested Data Card (Seeding/Area) */}
@@ -600,7 +611,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
 
                         {/* Tab 1: Soil Health */}
                         {tabIndex === 1 && (
-                            <div className="p-6 space-y-8 animate-in fade-in duration-300">
+                            <div className="p-5 space-y-8 animate-in fade-in duration-300">
                                 <div className="flex items-center justify-between">
                                          <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
                                         <div className="w-1.5 h-6 bg-emerald-600 rounded-full" />
@@ -796,6 +807,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                     )}
                 </div>
             </div>
+        </div>
 
                 {/* --- CREATE MODAL --- */}
             <div className={cn(
