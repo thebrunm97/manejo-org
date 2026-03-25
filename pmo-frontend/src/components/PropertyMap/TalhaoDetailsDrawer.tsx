@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import {
     X,
-    ArrowLeft,
     Sprout,
     Trash2,
     Plus,
@@ -371,7 +370,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                                 <div key={canteiro.id} className="flex items-center justify-between p-4 px-6 hover:bg-slate-50 group transition-colors">
                                                     <div className="flex items-center gap-4">
                                                         <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100">
-                                                            {getStrIcon(canteiro.nome)}
+                                                            {getIcon(canteiro.nome)}
                                                         </div>
                                                         <div>
                                                             <h4 className="text-sm font-bold text-slate-800">{canteiro.nome}</h4>
