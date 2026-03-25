@@ -364,29 +364,50 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            {/* Preview em Tempo Real (WYSIWYG) */}
+                            <div className="space-y-1.5 pt-2">
+                                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Pré-visualização em Tempo Real</label>
+                                <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 transition-all">
+                                    <div 
+                                        className="w-full h-24 rounded-2xl border-4 shadow-lg transition-all duration-300 flex items-center justify-center relative overflow-hidden"
+                                        style={{ 
+                                            backgroundColor: newTalhaoData.fillColor, 
+                                            borderColor: newTalhaoData.borderColor,
+                                        }}
+                                    >
+                                        {/* Efeito de Vidro Interno */}
+                                        <div className="absolute inset-0 bg-white/10 opacity-50" />
+                                        <span className="relative z-10 text-[10px] font-black uppercase tracking-tighter text-white drop-shadow-md select-none bg-black/20 px-3 py-1 rounded-full backdrop-blur-sm">
+                                            {newTalhaoData.nome || "Novo Talhão"}
+                                        </span>
+                                    </div>
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Aparência final no Mapa Satélite</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4 pt-2">
                                 <div className="space-y-1.5">
-                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Cor de Preenchimento</label>
-                                    <div className="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-2xl px-4 py-2">
+                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Cor do Talhão</label>
+                                    <div className="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-2xl px-4 py-2 hover:bg-white transition-colors cursor-pointer group">
                                         <input
                                             type="color"
                                             value={newTalhaoData.fillColor}
                                             onChange={(e) => setNewTalhaoData({ ...newTalhaoData, fillColor: e.target.value })}
-                                            className="w-10 h-10 p-1 rounded-xl cursor-pointer bg-white border border-slate-200"
+                                            className="w-10 h-10 p-1 rounded-xl cursor-pointer bg-white border border-slate-200 hover:scale-110 transition-transform"
                                         />
-                                        <span className="text-xs font-mono font-bold text-slate-500 uppercase">{newTalhaoData.fillColor}</span>
+                                        <span className="text-xs font-mono font-bold text-slate-500 uppercase group-hover:text-slate-900">{newTalhaoData.fillColor}</span>
                                     </div>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Cor da Borda</label>
-                                    <div className="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-2xl px-4 py-2">
+                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Cor do Limite</label>
+                                    <div className="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-2xl px-4 py-2 hover:bg-white transition-colors cursor-pointer group">
                                         <input
                                             type="color"
                                             value={newTalhaoData.borderColor}
                                             onChange={(e) => setNewTalhaoData({ ...newTalhaoData, borderColor: e.target.value })}
-                                            className="w-10 h-10 p-1 rounded-xl cursor-pointer bg-white border border-slate-200"
+                                            className="w-10 h-10 p-1 rounded-xl cursor-pointer bg-white border border-slate-200 hover:scale-110 transition-transform"
                                         />
-                                        <span className="text-xs font-mono font-bold text-slate-500 uppercase">{newTalhaoData.borderColor}</span>
+                                        <span className="text-xs font-mono font-bold text-slate-500 uppercase group-hover:text-slate-900">{newTalhaoData.borderColor}</span>
                                     </div>
                                 </div>
                             </div>
