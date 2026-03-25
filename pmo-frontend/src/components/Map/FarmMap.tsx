@@ -132,10 +132,12 @@ const FarmMap: React.FC<FarmMapProps> = ({
                             <Polygon
                                 positions={positions}
                                 pathOptions={{ 
-                                    color: isSelected ? '#10b981' : (t.cor || '#FFF'), 
-                                    fillColor: isSelected ? '#10b981' : (t.cor || '#FFF'), 
-                                    fillOpacity: isSelected ? 0.3 : 0.15,
-                                    weight: isSelected ? 3 : 2
+                                    color: isSelected ? '#fbbf24' : '#10b981', 
+                                    fillColor: isSelected ? '#f59e0b' : '#10b981', 
+                                    fillOpacity: isSelected ? 0.5 : 0.35,
+                                    weight: isSelected ? 4 : 3,
+                                    lineJoin: 'round',
+                                    lineCap: 'round'
                                 }}
                                 eventHandlers={{
                                     click: (e) => {
