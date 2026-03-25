@@ -472,4 +472,32 @@ body {
   cursor: pointer;
   transform: translate(-50%, -50%);
 }
+
+/* ========================================================== */
+/* FIX UI/UX: MAPBOX DRAW EM AMBIENTE TAILWIND/MAPLIBRE       */
+/* ========================================================== */
+.maplibregl-control-container .mapboxgl-ctrl-group,
+.mapboxgl-control-container .mapboxgl-ctrl-group {
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+  transform: scale(1.3);
+  transform-origin: top left;
+  margin-top: 16px !important;
+  margin-left: 16px !important;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Corrige o reset do Tailwind nos botões do mapa */
+.mapboxgl-ctrl-group button {
+  width: 32px !important;
+  height: 32px !important;
+  background-color: white !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+}
+
+.mapboxgl-ctrl-group button:hover {
+  background-color: #f4f4f5 !important;
+}
 

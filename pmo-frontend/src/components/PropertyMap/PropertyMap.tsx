@@ -13,6 +13,7 @@ import {
     Loader2,
     Droplets
 } from 'lucide-react';
+import area from '@turf/area';
 import { useAuthCore } from '../../context/AuthContext';
 import { cn } from '../../utils/cn';
 
@@ -106,11 +107,21 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
     };
 
     // --- CRIAÇÃO DE TALHÃO ---
-    // const handleMapCreated = (data: { layer: any, geometry: string, areaM2: number }) => {
-    //     setPendingTalhao(data);
-    //     setNewTalhaoData({ nome: `Talhão ${talhoes.length + 1}`, cultura: '' });
-    //     setCreateModalOpen(true);
-    // };
+    const handleDrawCreate = (e: any) => {
+        const feature = e.features[0];
+        if (!feature) return;
+
+        // Calcula área usando turf (mapbox draw output is GeoJSON)
+        const areaM2 = area(feature);
+
+        setPendingTalhao({
+            layer: null, // No longer used in MapLibre version
+            geometry: JSON.stringify(feature.geometry),
+            areaM2
+        });
+        setNewTalhaoData({ nome: `Talhão ${talhoes.length + 1}`, cultura: '' });
+        setCreateModalOpen(true);
+    };
 
     const handleCancelNewTalhao = () => {
         setCreateModalOpen(false);
@@ -265,7 +276,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
                                 talhoes={talhoes}
                                 focusTarget={selectedTalhao}
                                 selectedTalhaoId={selectedTalhao?.id}
-                                // onMapCreated={handleMapCreated} // Disabled until Phase 4 (MapLibre Draw)
+                                onDrawCreate={handleDrawCreate}
                                 onTalhaoClick={(t) => viewMode === 'mapa' && onOpenDrawer(t)}
                             />
                         </div>
