@@ -19,7 +19,8 @@ import {
     Sparkles,
     Recycle,
     ShoppingCart,
-    DollarSign
+    DollarSign,
+    Check
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useAuthProfile } from '../../context/AuthContext';
@@ -677,11 +678,11 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                 </div>
 
                 {/* --- 4. Rodapé com Botões (Footer) --- */}
-                <div className="p-4 sm:p-6 bg-white border-t border-gray-100 flex flex-col sm:flex-row justify-end gap-3 rounded-b-xl">
+                <div className="p-4 md:p-6 bg-slate-50/50 border-t border-slate-100 flex flex-col-reverse md:flex-row md:justify-end gap-3 rounded-b-xl">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="w-full sm:w-auto px-6 py-3 text-sm font-bold text-slate-600 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors focus:ring-4 focus:ring-slate-200"
+                        className="w-full md:w-auto px-6 py-3 rounded-xl font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
                     >
                         Cancelar
                     </button>
@@ -689,11 +690,8 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                         type="button"
                         onClick={handleInitialSaveClick}
                         disabled={loading}
-                        className={`w-full sm:min-w-[200px] px-8 py-3 text-base font-bold text-white rounded-full shadow-lg transition-all active:scale-[0.98] focus:ring-4
-                            ${isEditMode
-                                ? "bg-amber-600 hover:bg-amber-700 shadow-amber-200 focus:ring-amber-500/20"
-                                : "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200 focus:ring-emerald-500/20"}
-                            ${loading ? "opacity-60 cursor-not-allowed" : ""}
+                        className={`w-full md:w-auto px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-lg shadow-emerald-200 transition-all active:scale-95 flex items-center justify-center gap-2 group
+                            ${loading ? "opacity-70 cursor-not-allowed" : ""}
                         `}
                     >
                         {loading ? (
@@ -701,7 +699,12 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                                 <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                 <span>Salvando...</span>
                             </div>
-                        ) : (isEditMode ? 'Salvar Edição' : 'Salvar Registro')}
+                        ) : (
+                            <>
+                                <Check size={18} className="transition-transform group-hover:scale-110" />
+                                <span>{isEditMode ? 'Salvar Edição' : 'Salvar Registro'}</span>
+                            </>
+                        )}
                     </button>
                 </div>
 
