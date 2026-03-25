@@ -18,7 +18,8 @@ import {
     AlertTriangle,
     Sparkles,
     Recycle,
-    ShoppingCart
+    ShoppingCart,
+    DollarSign
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useAuthProfile } from '../../context/AuthContext';
@@ -30,6 +31,7 @@ import {
     DetalhesPlantio,
     DetalhesManejo,
     DetalhesColheita,
+    DetalhesVenda,
     DetalhesCompostagem,
     CadernoCampoRecord,
     ManejoSubtype
@@ -45,7 +47,8 @@ import {
     OutroDraft,
     LimpezaDraft,
     CompostagemDraft,
-    ComprasDraft
+    ComprasDraft,
+    VendasDraft
 } from '../../hooks/manual-record';
 import { useCadernoOfflineLogic } from '../../hooks/offline/useCadernoOfflineLogic';
 
@@ -57,6 +60,7 @@ import OutroTab from './ManualRecord/Tabs/OutroTab';
 import LimpezaTab from './ManualRecord/Tabs/LimpezaTab';
 import CompostagemTab from './ManualRecord/Tabs/CompostagemTab';
 import ComprasTab from './ManualRecord/Tabs/ComprasTab';
+import VendasTab from './ManualRecord/Tabs/VendasTab';
 
 // --- Component Props ---
 interface ManualRecordDialogProps {
@@ -83,6 +87,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
         limpezaDraft,
         compostagemDraft,
         comprasDraft,
+        vendasDraft,
         setActiveTab,
         getCurrentDraft,
         updateDraft: updateDraftBase,
@@ -208,6 +213,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                 const detalhes: DetalhesColheita = {
                     lote: d.lote,
                     destino: d.destino,
+                    destino_inicial: d.destino_inicial,
                     classificacao: d.classificacao,
                     qtd: parseFloat(d.qtdColheita) || 0,
                     unidade: d.unidadeColheita
@@ -241,6 +247,27 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                     detalhes_tecnicos: detalhes,
                     is_pmo_compostagem: true
                 } as any;
+            }
+            else if (activeTab === 'vendas') {
+                const d = draft as VendasDraft;
+                const detalhes: DetalhesVenda = {
+                    destinacao: d.destinacao,
+                    valor_unitario: d.valorUnitario ? parseFloat(d.valorUnitario) : undefined,
+                    cliente: d.cliente,
+                    nf_recibo: d.nf,
+                    qtd: parseFloat(d.quantidade) || 0,
+                    unidade: d.unidade
+                };
+                finalPayload = {
+                    ...payloadBase,
+                    tipo_atividade: ActivityType.VENDA,
+                    id: payloadBase.id!,
+                    quantidade_valor: parseFloat(d.quantidade) || 0,
+                    quantidade_unidade: d.unidade,
+                    fornecedor: d.cliente,
+                    nota_fiscal: d.nf,
+                    detalhes_tecnicos: detalhes
+                } as CadernoEntry;
             }
             else if (activeTab === 'compras') {
                 const d = draft as ComprasDraft;
@@ -361,7 +388,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
 
     // --- Prepare drafts for render ---
     const common = getCurrentDraft() as CommonDraft;
-    const shouldShowLocation = activeTab !== 'outro' && activeTab !== 'limpeza' && activeTab !== 'compostagem' && activeTab !== 'compras';
+    const shouldShowLocation = activeTab !== 'outro' && activeTab !== 'limpeza' && activeTab !== 'compostagem' && activeTab !== 'compras' && activeTab !== 'vendas';
 
     // --- Derived UI vars ---
     const labelProduto =
@@ -406,17 +433,17 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                     </button>
                 </div>
 
-                {/* Tabs */}
-                <div className="bg-white border-b border-gray-200">
-                    <nav className="-mb-px flex" aria-label="Tabs" role="tablist">
+                  <div className="bg-white border-b border-gray-100 flex-shrink-0">
+                    <nav className="flex overflow-x-auto scrollbar-hide px-4 py-3 gap-2" aria-label="Tabs" role="tablist">
                         {[
-                            { id: 'plantio', label: 'PLANTIO', icon: Sprout, color: 'text-green-600', activeBorder: 'border-green-500' },
-                            { id: 'manejo', label: 'MANEJO', icon: FlaskConical, color: 'text-blue-600', activeBorder: 'border-blue-500' },
-                            { id: 'colheita', label: 'COLHEITA', icon: Scissors, color: 'text-amber-600', activeBorder: 'border-amber-500' },
-                            { id: 'limpeza', label: 'LIMPEZA', icon: Sparkles, color: 'text-cyan-600', activeBorder: 'border-cyan-500' },
-                            { id: 'compostagem', label: 'COMPOSTO', icon: Recycle, color: 'text-emerald-600', activeBorder: 'border-emerald-500' },
-                            { id: 'compras', label: 'COMPRAS', icon: ShoppingCart, color: 'text-indigo-600', activeBorder: 'border-indigo-500' },
-                            { id: 'outro', label: 'OUTRO', icon: Package, color: 'text-gray-600', activeBorder: 'border-gray-500' },
+                            { id: 'plantio', label: 'Plantio', icon: Sprout, color: 'text-white', activeBg: 'bg-emerald-600', inactiveBg: 'bg-slate-100' },
+                            { id: 'manejo', label: 'Manejo', icon: FlaskConical, color: 'text-white', activeBg: 'bg-emerald-600', inactiveBg: 'bg-slate-100' },
+                            { id: 'colheita', label: 'Colheita', icon: Scissors, color: 'text-white', activeBg: 'bg-emerald-600', inactiveBg: 'bg-slate-100' },
+                            { id: 'vendas', label: 'Vendas', icon: DollarSign, color: 'text-white', activeBg: 'bg-emerald-600', inactiveBg: 'bg-slate-100' },
+                            { id: 'limpeza', label: 'Limpeza', icon: Sparkles, color: 'text-white', activeBg: 'bg-emerald-600', inactiveBg: 'bg-slate-100' },
+                            { id: 'compostagem', label: 'Composto', icon: Recycle, color: 'text-white', activeBg: 'bg-emerald-600', inactiveBg: 'bg-slate-100' },
+                            { id: 'compras', label: 'Compras', icon: ShoppingCart, color: 'text-white', activeBg: 'bg-emerald-600', inactiveBg: 'bg-slate-100' },
+                            { id: 'outro', label: 'Outro', icon: Package, color: 'text-white', activeBg: 'bg-emerald-600', inactiveBg: 'bg-slate-100' },
                         ].map((tab) => {
                             const Icon = tab.icon;
                             const isActive = activeTab === tab.id;
@@ -430,14 +457,14 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                                     onClick={() => !disabled && setActiveTab(tab.id as any)}
                                     disabled={disabled}
                                     className={`
-                                        w-1/6 py-4 px-1 text-center border-b-2 font-medium text-sm flex flex-col items-center justify-center gap-1 transition-colors duration-200
+                                        inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-sm font-bold transition-all duration-200 whitespace-nowrap flex-shrink-0
                                         ${isActive
-                                            ? `${tab.activeBorder} ${tab.color} bg-gray-50`
-                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50'}
-                                        ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                                            ? `${tab.activeBg} ${tab.color} shadow-lg shadow-emerald-200`
+                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}
+                                        ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer active:scale-95'}
                                     `}
                                 >
-                                    <Icon size={20} />
+                                    <Icon size={22} className={isActive ? 'text-white' : 'text-slate-500'} />
                                     <span>{tab.label}</span>
                                 </button>
                             );
@@ -463,81 +490,91 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                         </div>
                     )}
 
-                    {/* Common Fields: Data & Produto (Produto Oculto na Limpeza e Compostagem) */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                        <div className={(activeTab === 'limpeza' || activeTab === 'compostagem') ? 'sm:col-span-2' : ''}>
-                            <label htmlFor="data-hora-input" className="block text-sm font-medium text-gray-700 mb-1">Data e Hora</label>
-                            <input
-                                id="data-hora-input"
-                                type="datetime-local"
-                                value={common.dataHora}
-                                onChange={e => updateDraft('dataHora', e.target.value)}
-                                className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm px-3 py-2 border 
-                                    ${errors.data ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-green-500 focus:ring-green-500'}
-                                `}
-                            />
-                            {errors.data && <p className="mt-1 text-xs text-red-600">{errors.data}</p>}
+                    {/* Informações do Registro Card */}
+                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 sm:p-5 space-y-5">
+                        <div className="flex items-center gap-2 mb-2">
+                             <div className="p-1.5 bg-emerald-100 rounded-lg">
+                                <MapPin size={18} className="text-emerald-700" />
+                             </div>
+                             <h4 className="text-sm font-bold text-slate-900 uppercase tracking-tight">Informações do Registro</h4>
                         </div>
 
-                        {activeTab !== 'limpeza' && activeTab !== 'compostagem' && !(activeTab === 'manejo' && manejoDraft.subtipoManejo === ManejoSubtype.HIGIENIZACAO) && (
-                            <div>
-                                <label htmlFor="produto-input" className="block text-sm font-medium text-gray-700 mb-1">{labelProduto}</label>
+                        {/* Data & Produto */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                            <div className={(activeTab === 'limpeza' || activeTab === 'compostagem') ? 'sm:col-span-2' : ''}>
+                                <label htmlFor="data-hora-input" className="block text-sm font-semibold text-slate-900 mb-1.5">Data e Hora</label>
                                 <input
-                                    id="produto-input"
-                                    type="text"
-                                    value={common.produto}
-                                    onChange={e => updateDraft('produto', e.target.value)}
-                                    placeholder="Ex: Alface Americana"
-                                    className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm px-3 py-2 border 
-                                         ${errors.produto ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-green-500 focus:ring-green-500'}
-                                     `}
+                                    id="data-hora-input"
+                                    type="datetime-local"
+                                    value={common.dataHora}
+                                    onChange={e => updateDraft('dataHora', e.target.value)}
+                                    className={`mt-1 block w-full h-12 rounded-xl shadow-sm sm:text-base px-4 py-2 border transition-all
+                                        ${errors.data ? 'border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-500/10' : 'border-slate-300 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-500/20'}
+                                    `}
                                 />
-                                {errors.produto && <p className="mt-1 text-xs text-red-600">{errors.produto}</p>}
+                                {errors.data && <p className="mt-1 text-xs text-red-600 font-medium">{errors.data}</p>}
+                            </div>
+
+                            {activeTab !== 'limpeza' && activeTab !== 'compostagem' && !(activeTab === 'manejo' && manejoDraft.subtipoManejo === ManejoSubtype.HIGIENIZACAO) && (
+                                <div>
+                                    <label htmlFor="produto-input" className="block text-sm font-semibold text-slate-900 mb-1.5">{labelProduto}</label>
+                                    <input
+                                        id="produto-input"
+                                        type="text"
+                                        value={common.produto}
+                                        onChange={e => updateDraft('produto', e.target.value)}
+                                        placeholder="Ex: Alface Americana"
+                                        className={`mt-1 block w-full h-12 rounded-xl shadow-sm sm:text-base px-4 py-2 border transition-all
+                                             ${errors.produto ? 'border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-500/10' : 'border-slate-300 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-500/20'}
+                                         `}
+                                    />
+                                    {errors.produto && <p className="mt-1 text-xs text-red-600 font-medium">{errors.produto}</p>}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Location Selector */}
+                        {shouldShowLocation && (
+                            <div>
+                                <label className={`block text-sm font-semibold mb-1.5 ${errors.locais ? 'text-red-600' : 'text-slate-900'}`}>
+                                    {labelLocais} {errors.locais && `(${errors.locais})`}
+                                </label>
+                                <div
+                                    onClick={() => {
+                                        setOpenLocation(true);
+                                        if (errors.locais) clearError('locais');
+                                    }}
+                                    className={`
+                                        flex flex-wrap gap-2 p-4 border border-dashed rounded-xl min-h-[64px] items-center cursor-pointer transition-all
+                                        ${errors.locais ? 'border-red-300 bg-red-50' : 'border-slate-300 hover:bg-white hover:border-emerald-500 hover:shadow-md'}
+                                    `}
+                                >
+                                    {common.locais.length === 0 && (
+                                        <div className="flex items-center text-slate-500 text-sm pl-1">
+                                            <MapPin size={20} className={`mr-2 ${errors.locais ? 'text-red-500' : 'text-slate-400'}`} />
+                                            <span>Toque para selecionar Talhões ou Canteiros...</span>
+                                        </div>
+                                    )}
+                                    {common.locais.map(l => (
+                                        <span key={l} className="inline-flex items-center px-4 py-1.5 rounded-full text-sm font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                            {l}
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    updateDraft('locais', common.locais.filter(x => x !== l));
+                                                }}
+                                                className="ml-2 inline-flex items-center justify-center h-5 w-5 rounded-full text-emerald-400 hover:bg-emerald-200 hover:text-emerald-700 focus:outline-none"
+                                            >
+                                                <span className="sr-only">Remover</span>
+                                                <X size={14} />
+                                            </button>
+                                        </span>
+                                    ))}
+                                </div>
                             </div>
                         )}
                     </div>
-
-                    {/* Location Selector */}
-                    {shouldShowLocation && (
-                        <div>
-                            <label className={`block text-xs font-bold uppercase mb-1 ${errors.locais ? 'text-red-600' : 'text-gray-500'}`}>
-                                {labelLocais} {errors.locais && `(${errors.locais})`}
-                            </label>
-                            <div
-                                onClick={() => {
-                                    setOpenLocation(true);
-                                    if (errors.locais) clearError('locais');
-                                }}
-                                className={`
-                                    flex flex-wrap gap-2 p-3 border border-dashed rounded-md min-h-[60px] items-center cursor-pointer transition-colors
-                                    ${errors.locais ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:bg-gray-50 hover:border-green-500'}
-                                `}
-                            >
-                                {common.locais.length === 0 && (
-                                    <div className="flex items-center text-gray-500 text-sm pl-1">
-                                        <MapPin size={18} className={`mr-2 ${errors.locais ? 'text-red-500' : 'text-gray-400'}`} />
-                                        <span>Clique para selecionar Talhões ou Canteiros...</span>
-                                    </div>
-                                )}
-                                {common.locais.map(l => (
-                                    <span key={l} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
-                                        {l}
-                                        <button
-                                            type="button"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                updateDraft('locais', common.locais.filter(x => x !== l));
-                                            }}
-                                            className="ml-1.5 inline-flex items-center justify-center h-4 w-4 rounded-full text-green-400 hover:bg-green-200 hover:text-green-600 focus:outline-none"
-                                        >
-                                            <span className="sr-only">Remover</span>
-                                            <X size={12} />
-                                        </button>
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
-                    )}
 
                     {/* --- TAB CONTENT: PLANTIO --- */}
                     {activeTab === 'plantio' && (
@@ -581,6 +618,14 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                         />
                     )}
 
+                    {/* --- TAB CONTENT: VENDAS --- */}
+                    {activeTab === 'vendas' && (
+                        <VendasTab
+                            draft={vendasDraft}
+                            updateDraft={updateDraft}
+                        />
+                    )}
+
                     {/* --- TAB CONTENT: LIMPEZA --- */}
                     {activeTab === 'limpeza' && (
                         <LimpezaTab
@@ -612,28 +657,29 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                     )}
 
                     {/* Campo de Observação Geral */}
-                    <div>
-                        <label htmlFor="obs-geral" className="block text-sm font-medium text-gray-700 mb-1">Observações Adicionais</label>
+                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 sm:p-5">
+                        <label htmlFor="obs-geral" className="block text-sm font-semibold text-slate-900 mb-1.5">Observações Adicionais</label>
                         <textarea
                             id="obs-geral"
                             value={common.observacao}
                             onChange={e => updateDraft('observacao', e.target.value)}
                             rows={3}
-                            className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm px-3 py-2 border 
-                                 ${errors.observacao ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-green-500 focus:ring-green-500'}
+                            placeholder="Algum detalhe extra relevante?"
+                            className={`mt-1 block w-full rounded-xl shadow-sm sm:text-base px-4 py-3 border transition-all
+                                 ${errors.observacao ? 'border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-500/10' : 'border-slate-300 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-500/20'}
                              `}
                         />
-                        {errors.observacao && <p className="mt-1 text-xs text-red-600">{errors.observacao}</p>}
+                        {errors.observacao && <p className="mt-1 text-xs text-red-600 font-medium">{errors.observacao}</p>}
                     </div>
 
                 </div>
 
                 {/* --- 4. Rodapé com Botões (Footer) --- */}
-                <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-2 rounded-b-xl">
+                <div className="p-4 sm:p-6 bg-white border-t border-gray-100 flex flex-col sm:flex-row justify-end gap-3 rounded-b-xl">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                        className="w-full sm:w-auto px-6 py-3 text-sm font-bold text-slate-600 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors focus:ring-4 focus:ring-slate-200"
                     >
                         Cancelar
                     </button>
@@ -641,14 +687,19 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                         type="button"
                         onClick={handleInitialSaveClick}
                         disabled={loading}
-                        className={`px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 
+                        className={`w-full sm:min-w-[200px] px-8 py-3 text-base font-bold text-white rounded-full shadow-lg transition-all active:scale-[0.98] focus:ring-4
                             ${isEditMode
-                                ? "bg-amber-600 hover:bg-amber-700 focus:ring-amber-500"
-                                : "bg-green-600 hover:bg-green-700 focus:ring-green-500"}
-                            ${loading ? "opacity-50 cursor-not-allowed" : ""}
+                                ? "bg-amber-600 hover:bg-amber-700 shadow-amber-200 focus:ring-amber-500/20"
+                                : "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200 focus:ring-emerald-500/20"}
+                            ${loading ? "opacity-60 cursor-not-allowed" : ""}
                         `}
                     >
-                        {loading ? 'Salvando...' : (isEditMode ? 'Salvar Edição' : 'Salvar Registro')}
+                        {loading ? (
+                            <div className="flex items-center justify-center gap-2">
+                                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                <span>Salvando...</span>
+                            </div>
+                        ) : (isEditMode ? 'Salvar Edição' : 'Salvar Registro')}
                     </button>
                 </div>
 

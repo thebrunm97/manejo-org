@@ -8,6 +8,7 @@ export enum ActivityType {
     PLANTIO = 'Plantio',
     MANEJO = 'Manejo',
     COLHEITA = 'Colheita',
+    VENDA = 'Venda',
     INSUMO = 'Insumo',
     COMPOSTAGEM = 'Compostagem',
     OUTRO = 'Outro',
@@ -91,7 +92,18 @@ export const DetalhesManejoSchema = z.object({
 export const DetalhesColheitaSchema = z.object({
     lote: z.string().optional(),
     destino: z.string().optional(),
+    destino_inicial: z.string().optional(),
     classificacao: z.string().optional(),
+    qtd: z.number().optional(),
+    unidade: z.nativeEnum(UnitType).or(z.string()).optional()
+});
+
+// --- Detalhes Venda ---
+export const DetalhesVendaSchema = z.object({
+    destinacao: z.enum(['venda', 'doacao', 'perda', 'processamento', 'consumo proprio']).optional(),
+    valor_unitario: z.number().optional(),
+    cliente: z.string().optional(),
+    nf_recibo: z.string().optional(),
     qtd: z.number().optional(),
     unidade: z.nativeEnum(UnitType).or(z.string()).optional()
 });
@@ -115,6 +127,7 @@ export const DetalhesGenericoSchema = z.record(z.string(), z.any());
 export type DetalhesPlantio = z.infer<typeof DetalhesPlantioSchema>;
 export type DetalhesManejo = z.infer<typeof DetalhesManejoSchema>;
 export type DetalhesColheita = z.infer<typeof DetalhesColheitaSchema>;
+export type DetalhesVenda = z.infer<typeof DetalhesVendaSchema>;
 export type DetalhesCompostagem = z.infer<typeof DetalhesCompostagemSchema>;
 export type DetalhesGenerico = z.infer<typeof DetalhesGenericoSchema>;
 
@@ -123,6 +136,7 @@ export type DetalhesTecnicos =
     | DetalhesPlantio
     | DetalhesManejo
     | DetalhesColheita
+    | DetalhesVenda
     | DetalhesCompostagem
     | DetalhesGenerico;
 
@@ -205,6 +219,11 @@ export interface RegistroColheita extends BaseRegistro {
     detalhes_tecnicos: DetalhesColheita;
 }
 
+export interface RegistroVenda extends BaseRegistro {
+    tipo_atividade: ActivityType.VENDA | 'Venda';
+    detalhes_tecnicos: DetalhesVenda;
+}
+
 export interface RegistroCompostagem extends BaseRegistro {
     tipo_atividade: ActivityType.COMPOSTAGEM | 'Compostagem';
     detalhes_tecnicos: DetalhesCompostagem;
@@ -215,7 +234,7 @@ export interface RegistroOutro extends BaseRegistro {
     detalhes_tecnicos: DetalhesGenerico;
 }
 
-export type CadernoEntry = RegistroPlantio | RegistroManejo | RegistroColheita | RegistroCompostagem | RegistroLimpeza | RegistroOutro;
+export type CadernoEntry = RegistroPlantio | RegistroManejo | RegistroColheita | RegistroVenda | RegistroCompostagem | RegistroLimpeza | RegistroOutro;
 
 // Alias para compatibilidade com código existente
 export type CadernoRegistro = CadernoEntry;

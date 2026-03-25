@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChevronDown } from 'lucide-react';
-import { UnitType } from '../../../types/CadernoTypes';
+import { UnitType } from '../../../../types/CadernoTypes';
 
 interface UnitSelectProps {
     value: UnitType | string;
@@ -25,13 +25,13 @@ const UnitSelect: React.FC<UnitSelectProps> = ({
 
     return (
         <div className="min-w-[100px]">
-            <label htmlFor={id} className="block text-xs font-medium text-gray-700 mb-1">{label}</label>
+            <label htmlFor={id} className="block text-sm font-semibold text-slate-900 mb-1.5">{label}</label>
             <div className="relative">
                 <select
                     id={id}
                     value={safeValue}
                     onChange={e => onChange(fieldName, e.target.value)}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm px-3 py-2 border bg-white appearance-none pr-8"
+                    className="block w-full h-12 rounded-xl border-slate-300 shadow-sm focus:border-emerald-600 focus:ring-4 focus:ring-emerald-500/20 sm:text-base px-4 py-2 border bg-white appearance-none pr-10 transition-all font-medium text-slate-700"
                 >
                     {effectiveOptions.map(opt => (
                         <option key={opt} value={opt}>
@@ -39,8 +39,8 @@ const UnitSelect: React.FC<UnitSelectProps> = ({
                         </option>
                     ))}
                 </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                    <ChevronDown size={14} />
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                    <ChevronDown size={18} />
                 </div>
             </div>
         </div>
