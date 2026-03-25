@@ -454,3 +454,14 @@ body {
     display: none;
   }
 }
+
+/* ============================================================== */
+/* ||    LEAFLET DIVICON RESET (Dark Pill Labels - Sem Wrapper) || */
+/* ============================================================== */
+/* Remove o fundo branco, border e sombra padrão do Leaflet para
+   divIcons customizados. Necessário para as "Dark Pills" do mapa. */
+.leaflet-div-icon {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
