@@ -132,11 +132,11 @@ const FarmMap: React.FC<FarmMapProps> = ({
                             <Polygon
                                 positions={positions}
                                 pathOptions={{ 
-                                    color: isSelected ? '#fbbf24' : '#10b981', 
-                                    fillColor: isSelected ? '#f59e0b' : '#10b981', 
-                                    fillOpacity: isSelected ? 0.2 : 0.1,
-                                    weight: isSelected ? 5 : 4,
-                                    fill: true,
+                                    color: '#10b981', 
+                                    fillColor: 'transparent', 
+                                    fillOpacity: 0,
+                                    weight: 3,
+                                    fill: false,
                                     lineJoin: 'round',
                                     lineCap: 'round'
                                 }}
@@ -148,7 +148,7 @@ const FarmMap: React.FC<FarmMapProps> = ({
                                 }}
                             />
                             
-                            {/* Centroid Label (Pill Flutuante no Mapa - Dark Mode Premium) */}
+                            {/* Centroid Label (Pill Flutuante no Mapa - Dark Discrete) */}
                             {positions.length > 0 && (
                                 <Marker 
                                     position={L.polygon(positions).getBounds().getCenter()}
@@ -156,10 +156,8 @@ const FarmMap: React.FC<FarmMapProps> = ({
                                         className: '', 
                                         html: `
                                             <div style="transform: translate(-50%, -50%); pointer-events: none;">
-                                                <div class="flex items-center gap-2 bg-zinc-900/95 backdrop-blur-sm text-white font-semibold px-4 py-1.5 rounded-full shadow-2xl text-[11px] border border-zinc-700/50 pointer-events-auto hover:scale-105 transition-transform whitespace-nowrap cursor-pointer">
-                                                    <div class="w-1.5 h-1.5 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.8)] ${t.tipo === 'agua' ? 'bg-blue-400' : 'bg-emerald-400'}"></div>
-                                                    <span class="tracking-tight">${t.nome}</span>
-                                                    ${t.cultura ? `<span class="text-[10px] font-medium text-zinc-400 border-l border-zinc-700 pl-2 capitalize">${t.cultura}</span>` : ''}
+                                                <div class="flex items-center bg-zinc-900/90 text-white font-semibold px-3 py-1 rounded-full shadow-lg text-[10px] border border-zinc-700/50 pointer-events-auto transition-transform whitespace-nowrap cursor-pointer">
+                                                    <span class="tracking-tight uppercase font-black">${t.nome}</span>
                                                 </div>
                                             </div>
                                         `,
