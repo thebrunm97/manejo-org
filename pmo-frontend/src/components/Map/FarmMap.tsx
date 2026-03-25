@@ -215,7 +215,7 @@ const FarmMap: React.FC<FarmMapProps> = ({
                     if (talhao) onTalhaoClick(talhao);
                 }
             }}
-            interactiveLayerIds={['talhoes-fill']}
+            interactiveLayerIds={['talhoes-fill', 'talhoes-line']}
         >
             <MapDrawControl
                 position="top-left"
