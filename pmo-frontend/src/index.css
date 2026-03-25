@@ -502,6 +502,18 @@ body {
   }
 }
 
+/* Impede seleção de texto no mapa e overlays para não quebrar o drag */
+.maplibregl-map, 
+.mapboxgl-map,
+.map-marker-pill,
+.mapboxgl-ctrl,
+.maplibregl-ctrl {
+  user-select: none !important;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
 /* Corrige o reset do Tailwind nos botões do mapa */
 .mapboxgl-ctrl-group button {
   width: 32px !important;
@@ -515,18 +527,4 @@ body {
   background-color: #f4f4f5 !important;
 }
 
-/* ========================================================== */
-/* FIX UI/UX: CURSOR CROSSHAIR PARA DESENHO DE PRECISÃO       */
-/* ========================================================== */
-.mapboxgl-map .mapbox-gl-draw_polygon .mapboxgl-canvas,
-.mapboxgl-map .mapbox-gl-draw_line .mapboxgl-canvas,
-.mapboxgl-map .mapbox-gl-draw_point .mapboxgl-canvas,
-.mapboxgl-interactive.mapboxgl-draw_polygon,
-.mapbox-gl-draw-mode.draw_polygon .mapboxgl-canvas,
-.maplibregl-canvas-container.maplibregl-interactive.mapboxgl-draw_polygon,
-.maplibregl-canvas-container.maplibregl-interactive.mapboxgl-draw_line,
-.maplibregl-canvas-container.maplibregl-interactive.mapboxgl-draw_point,
-.mapboxgl-canvas-container.mapboxgl-interactive.mapboxgl-draw_polygon {
-  cursor: crosshair !important;
-}
 
