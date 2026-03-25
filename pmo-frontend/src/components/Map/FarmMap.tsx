@@ -120,6 +120,8 @@ const FarmMap: React.FC<FarmMapProps> = ({
     onDrawDelete,
     isDrawerOpen
 }) => {
+    const [cursor, setCursor] = React.useState<string>('auto');
+
     // 1. Converter talhões para GeoJSON FeatureCollection (WebGL Native)
     const geojsonData = useMemo<GeoJSONData>(() => {
         const features = talhoes
@@ -175,8 +177,17 @@ const FarmMap: React.FC<FarmMapProps> = ({
         }).filter(Boolean);
     }, [talhoes]);
 
+    const handleModeChange = (e: any) => {
+        if (['draw_polygon', 'draw_line', 'draw_point'].includes(e.mode)) {
+            setCursor('crosshair');
+        } else {
+            setCursor('auto');
+        }
+    };
+
     return (
         <Map
+            cursor={cursor}
             initialViewState={{
                 longitude: -48.2772,
                 latitude: -18.9186,
@@ -204,6 +215,7 @@ const FarmMap: React.FC<FarmMapProps> = ({
                 onCreate={onDrawCreate}
                 onUpdate={onDrawUpdate}
                 onDelete={onDrawDelete}
+                onModeChange={handleModeChange}
             />
             <Source id="talhoes-source" type="geojson" data={geojsonData}>
                 {/* Layer de Preenchimento (Enterprise Vitreous Effect) */}
