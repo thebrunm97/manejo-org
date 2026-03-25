@@ -265,8 +265,9 @@ const FarmMap: React.FC<FarmMapProps> = ({
                     longitude={c.lng} 
                     latitude={c.lat}
                     anchor="center"
+                    style={{ pointerEvents: 'none' }}
                 >
-                    <div className="map-marker-pill pointer-events-none" style={{ 
+                    <div className="map-marker-pill pointer-events-none select-none" style={{ 
                         background: 'white', 
                         border: '1px solid #e4e4e7', 
                         borderRadius: '12px', 
