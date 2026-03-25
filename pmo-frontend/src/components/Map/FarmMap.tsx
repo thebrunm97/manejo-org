@@ -120,7 +120,7 @@ const FarmMap: React.FC<FarmMapProps> = ({
     onDrawDelete,
     isDrawerOpen
 }) => {
-    const [cursor, setCursor] = React.useState<string>('auto');
+    const [cursor, setCursor] = React.useState<string | undefined>(undefined);
 
     // 1. Converter talhões para GeoJSON FeatureCollection (WebGL Native)
     const geojsonData = useMemo<GeoJSONData>(() => {
@@ -181,7 +181,7 @@ const FarmMap: React.FC<FarmMapProps> = ({
         if (['draw_polygon', 'draw_line', 'draw_point'].includes(e.mode)) {
             setCursor('crosshair');
         } else {
-            setCursor('auto');
+            setCursor(undefined);
         }
     };
 
