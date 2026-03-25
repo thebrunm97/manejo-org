@@ -266,11 +266,11 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
 
                 {/* Drawer Panel */}
                 <div className={cn(
-                    "absolute top-0 bottom-0 right-0 w-full md:w-[500px] bg-white shadow-2xl transition-transform duration-300 pointer-events-auto flex flex-col",
-                    open ? "translate-x-0" : "translate-x-full"
+                    "absolute top-6 right-6 bottom-6 w-80 md:w-[22rem] bg-white/95 backdrop-blur-md rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] z-[1001] transition-all duration-500 transform flex flex-col overflow-hidden border border-white/20",
+                    open ? "translate-x-0 opacity-100" : "translate-x-full opacity-0 pointer-events-none"
                 )}>
                     {/* Header */}
-                    <div className="flex items-center gap-4 p-5 border-b border-slate-100 shrink-0">
+                    <div className="flex items-center gap-4 p-5 border-b border-slate-100 shrink-0 bg-white/80 backdrop-blur-sm rounded-t-3xl">
                         <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors">
                             <ArrowLeft size={20} />
                         </button>
@@ -293,7 +293,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                             onClick={() => setTabIndex(0)}
                             className={cn(
                                 "flex-1 py-3.5 text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 border-b-2 transition-all",
-                                tabIndex === 0 ? "text-green-600 border-green-600 bg-white" : "text-slate-400 border-transparent hover:text-slate-600"
+                                 tabIndex === 0 ? "text-emerald-600 border-emerald-600 bg-white" : "text-slate-400 border-transparent hover:text-slate-600"
                             )}
                         >
                             <LayoutGrid size={16} />
@@ -303,7 +303,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                             onClick={() => setTabIndex(1)}
                             className={cn(
                                 "flex-1 py-3.5 text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 border-b-2 transition-all",
-                                tabIndex === 1 ? "text-green-600 border-green-600 bg-white" : "text-slate-400 border-transparent hover:text-slate-600"
+                                 tabIndex === 1 ? "text-emerald-600 border-emerald-600 bg-white" : "text-slate-400 border-transparent hover:text-slate-600"
                             )}
                         >
                             <FlaskConical size={16} />
@@ -325,7 +325,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                         <p className="text-sm text-slate-500 mb-8">Nenhum canteiro, linha ou tanque cadastrado para este talhão.</p>
                                         <button
                                             onClick={handleOpenCreateModal}
-                                            className="px-8 py-3 bg-green-600 text-white font-bold rounded-2xl shadow-lg shadow-green-100 hover:bg-green-700 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                             className="px-8 py-3 bg-emerald-600 text-white font-bold rounded-2xl shadow-lg shadow-emerald-100 hover:bg-emerald-700 transition-all hover:scale-[1.02] active:scale-[0.98]"
                                         >
                                             Adicionar Agora
                                         </button>
@@ -370,8 +370,8 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                         {tabIndex === 1 && (
                             <div className="p-6 space-y-8 animate-in fade-in duration-300">
                                 <div className="flex items-center justify-between">
-                                    <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                                        <div className="w-1.5 h-6 bg-green-600 rounded-full" />
+                                         <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                                        <div className="w-1.5 h-6 bg-emerald-600 rounded-full" />
                                         Métricas de Fertilidade
                                     </h4>
                                     <button
@@ -380,8 +380,8 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                         className={cn(
                                             "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm",
                                             isEditing
-                                                ? "bg-green-600 text-white hover:bg-green-700"
-                                                : "bg-white text-slate-600 border border-slate-200 hover:border-green-600 hover:text-green-600"
+                                                 ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                                                : "bg-white text-slate-600 border border-slate-200 hover:border-emerald-600 hover:text-emerald-600"
                                         )}
                                     >
                                         {isEditing ? (saving ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />) : <Edit2 size={14} />}
@@ -401,25 +401,25 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                             <div className="grid grid-cols-3 gap-3">
                                                 <div className="space-y-1">
                                                     <label className="text-[9px] font-bold text-slate-500 ml-2">pH (H₂O)</label>
-                                                    <input type="text" name="ph_solo" value={formData.ph_solo} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-600 transition-all" />
+                                                     <input type="text" name="ph_solo" value={formData.ph_solo} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition-all" />
                                                 </div>
                                                 <div className="space-y-1">
                                                     <label className="text-[9px] font-bold text-slate-500 ml-2">M.O. (%)</label>
-                                                    <input type="text" name="materia_organica" value={formData.materia_organica} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-600 transition-all" />
+                                                     <input type="text" name="materia_organica" value={formData.materia_organica} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition-all" />
                                                 </div>
                                                 <div className="space-y-1">
                                                     <label className="text-[9px] font-bold text-slate-500 ml-2">V (%)</label>
-                                                    <input type="text" name="v_percent" value={formData.v_percent} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-600 transition-all" />
+                                                     <input type="text" name="v_percent" value={formData.v_percent} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition-all" />
                                                 </div>
                                             </div>
                                             <div className="grid grid-cols-2 gap-3">
                                                 <div className="space-y-1">
                                                     <label className="text-[9px] font-bold text-slate-500 ml-2">P (mg/dm³)</label>
-                                                    <input type="text" name="fosforo" value={formData.fosforo} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-600 transition-all" />
+                                                     <input type="text" name="fosforo" value={formData.fosforo} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition-all" />
                                                 </div>
                                                 <div className="space-y-1">
                                                     <label className="text-[9px] font-bold text-slate-500 ml-2">K (mg/dm³)</label>
-                                                    <input type="text" name="potassio" value={formData.potassio} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-600 transition-all" />
+                                                     <input type="text" name="potassio" value={formData.potassio} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition-all" />
                                                 </div>
                                             </div>
                                         </div>
@@ -428,8 +428,8 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                             <div className="flex justify-between items-center">
                                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Textura (%)</p>
                                                 <div className="flex bg-slate-100 rounded-lg p-0.5 border border-slate-200">
-                                                    <button onClick={() => setUnitMode('percent')} className={cn("px-3 py-1 text-[10px] font-bold rounded-md transition-all", unitMode === 'percent' ? "bg-white text-green-600 shadow-sm" : "text-slate-400 hover:text-slate-600")}>%</button>
-                                                    <button onClick={() => setUnitMode('g_kg')} className={cn("px-3 py-1 text-[10px] font-bold rounded-md transition-all", unitMode === 'g_kg' ? "bg-white text-green-600 shadow-sm" : "text-slate-400 hover:text-slate-600")}>g/kg</button>
+                                                    <button onClick={() => setUnitMode('percent')} className={cn("px-3 py-1 text-[10px] font-bold rounded-md transition-all", unitMode === 'percent' ? "bg-white text-emerald-600 shadow-sm" : "text-slate-400 hover:text-slate-600")}>%</button>
+                                                    <button onClick={() => setUnitMode('g_kg')} className={cn("px-3 py-1 text-[10px] font-bold rounded-md transition-all", unitMode === 'g_kg' ? "bg-white text-emerald-600 shadow-sm" : "text-slate-400 hover:text-slate-600")}>g/kg</button>
                                                 </div>
                                             </div>
                                             <div className="grid grid-cols-3 gap-3">
@@ -439,16 +439,16 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                                 </div>
                                                 <div className="space-y-1">
                                                     <label className="text-[9px] font-bold text-slate-500 ml-2">Silte</label>
-                                                    <input type="text" name="silte" value={formData.silte} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-600 transition-all" />
+                                                     <input type="text" name="silte" value={formData.silte} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition-all" />
                                                 </div>
                                                 <div className="space-y-1">
                                                     <label className="text-[9px] font-bold text-slate-500 ml-2">Areia</label>
-                                                    <input type="text" name="areia" value={formData.areia} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-600 transition-all" />
+                                                     <input type="text" name="areia" value={formData.areia} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition-all" />
                                                 </div>
                                             </div>
                                             <div className="flex justify-between items-center px-2">
                                                 <span className="text-[10px] font-black text-amber-700 bg-amber-100/50 px-2 py-0.5 rounded uppercase">{classificacao}</span>
-                                                <span className={cn("text-[10px] font-black uppercase", isTotalCorrect ? "text-green-600" : "text-red-500")}>
+                                                <span className={cn("text-[10px] font-black uppercase", isTotalCorrect ? "text-emerald-600" : "text-red-500")}>
                                                     Total: {total.toFixed(1)} / {baseEsperada}
                                                 </span>
                                             </div>
@@ -552,7 +552,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                         <div className="p-6 border-t border-slate-100 shrink-0 bg-white shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.1)]">
                             <button
                                 onClick={handleOpenCreateModal}
-                                className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-green-600 hover:bg-green-700 text-white font-black text-sm rounded-2xl shadow-xl shadow-green-100 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm rounded-2xl shadow-xl shadow-emerald-100 transition-all hover:scale-[1.02] active:scale-[0.98]"
                             >
                                 <Plus size={20} />
                                 Novo Canteiro / Estrutura
@@ -564,7 +564,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
 
             {/* --- CREATE MODAL --- */}
             <div className={cn(
-                "fixed inset-0 z-[130] flex items-center justify-center p-4 transition-all duration-200",
+                "fixed inset-0 z-[2000] flex items-center justify-center p-4 transition-all duration-200",
                 createModalOpen ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
             )}>
                 <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setCreateModalOpen(false)} />
@@ -593,7 +593,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                         className={cn(
                                             "py-2 px-1 text-[10px] font-black uppercase rounded-xl border transition-all",
                                             batchData.type === t
-                                                ? "bg-green-50 text-green-700 border-green-200 shadow-inner ring-2 ring-green-600/5"
+                                                ? "bg-emerald-50 text-emerald-700 border-emerald-200 shadow-inner ring-2 ring-emerald-600/5"
                                                 : "bg-white text-slate-400 border-slate-100 hover:bg-slate-50"
                                         )}
                                     >
@@ -613,7 +613,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                 value={batchData.baseName}
                                 onChange={(e) => setBatchData({ ...batchData, baseName: e.target.value })}
                                 placeholder={batchData.isBatch ? "Ex: Linha" : "Ex: Canteiro 1"}
-                                className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-green-500/5 focus:border-green-600 transition-all placeholder:text-slate-300"
+                                className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-600 transition-all placeholder:text-slate-300"
                             />
                         </div>
 
@@ -625,7 +625,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                     type="number"
                                     value={batchData.width}
                                     onChange={(e) => setBatchData({ ...batchData, width: e.target.value })}
-                                    className="w-full bg-white border border-slate-200 rounded-2xl px-5 py-3 text-sm font-black text-center text-slate-700 focus:outline-none focus:border-green-600 transition-all"
+                                    className="w-full bg-white border border-slate-200 rounded-2xl px-5 py-3 text-sm font-black text-center text-slate-700 focus:outline-none focus:border-emerald-600 transition-all"
                                 />
                             </div>
                             <div className="space-y-2">
@@ -634,7 +634,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                     type="number"
                                     value={batchData.length}
                                     onChange={(e) => setBatchData({ ...batchData, length: e.target.value })}
-                                    className="w-full bg-white border border-slate-200 rounded-2xl px-5 py-3 text-sm font-black text-center text-slate-700 focus:outline-none focus:border-green-600 transition-all"
+                                    className="w-full bg-white border border-slate-200 rounded-2xl px-5 py-3 text-sm font-black text-center text-slate-700 focus:outline-none focus:border-emerald-600 transition-all"
                                 />
                             </div>
                         </div>
@@ -649,7 +649,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                 onClick={() => setBatchData({ ...batchData, isBatch: !batchData.isBatch })}
                                 className={cn(
                                     "w-12 h-6 rounded-full p-1 transition-all duration-300",
-                                    batchData.isBatch ? "bg-green-600" : "bg-slate-300"
+                                    batchData.isBatch ? "bg-emerald-600" : "bg-slate-300"
                                 )}
                             >
                                 <div className={cn(
@@ -697,7 +697,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                         </button>
                         <button
                             onClick={handleBatchSave}
-                            className="flex-[2] py-3 bg-green-600 hover:bg-green-700 text-white font-black text-sm rounded-2xl shadow-xl shadow-green-900/10 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                            className="flex-[2] py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm rounded-2xl shadow-xl shadow-emerald-900/10 transition-all hover:scale-[1.02] active:scale-[0.98]"
                         >
                             {batchData.isBatch ? `Gerar ${batchData.quantity} itens` : 'Criar Estrutura'}
                         </button>
@@ -707,7 +707,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
 
             {/* Success/Error Snackbars - Custom Implementation */}
             {snackbar.open && (
-                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] animate-in slide-in-from-bottom-5 fade-in duration-300">
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[2100] animate-in slide-in-from-bottom-5 fade-in duration-300">
                     <div className={cn(
                         "flex items-center gap-3 px-6 py-3 rounded-2xl shadow-2xl border backdrop-blur-md",
                         snackbar.severity === 'success'

@@ -9,14 +9,17 @@ const LimpezaTab: React.FC<ManualRecordTabProps<LimpezaDraft>> = ({
     errors
 }) => {
     return (
-        <div className="p-4 bg-cyan-50 rounded-lg border border-cyan-100 space-y-4 shadow-sm">
-            <h4 className="text-sm font-bold text-cyan-800 uppercase tracking-wide flex items-center gap-2">
-                <Sparkles size={16} /> Controle de Limpeza (Form. 04)
-            </h4>
+        <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 sm:p-5 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="flex items-center gap-2 mb-2">
+                 <div className="p-1.5 bg-cyan-100 rounded-lg">
+                    <Sparkles size={18} className="text-cyan-700" />
+                 </div>
+                 <h4 className="text-sm font-bold text-slate-900 uppercase tracking-tight">Controle de Limpeza (Form. 04)</h4>
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label htmlFor="item-area-input" className="block text-sm font-medium text-gray-700 mb-1">Item ou Área Higienizada</label>
+                <div className="sm:col-span-2">
+                    <label htmlFor="item-area-input" className="block text-sm font-semibold text-slate-900 mb-1.5">Item ou Área Higienizada</label>
                     <input
                         id="item-area-input"
                         type="text"
@@ -24,8 +27,8 @@ const LimpezaTab: React.FC<ManualRecordTabProps<LimpezaDraft>> = ({
                         value={draft.itemArea}
                         onChange={e => updateDraft('itemArea', e.target.value)}
                         placeholder="Ex: Trator, Galpão, Caixa d'água"
-                        className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm px-3 py-2 border 
-                            ${errors.itemArea ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-cyan-500 focus:ring-cyan-500'}
+                        className={`block w-full h-12 rounded-xl shadow-sm sm:text-base px-4 py-2 border transition-all font-medium text-slate-700
+                            ${errors.itemArea ? 'border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-500/10' : 'border-slate-300 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-500/20'}
                         `}
                     />
                     <datalist id="item-area-suggestions">
@@ -37,16 +40,17 @@ const LimpezaTab: React.FC<ManualRecordTabProps<LimpezaDraft>> = ({
                         <option value="Caminhão / Veículo" />
                         <option value="Instalações (Banheiros/Copa)" />
                     </datalist>
-                    {errors.itemArea && <p className="mt-1 text-xs text-red-600">{errors.itemArea}</p>}
+                    {errors.itemArea && <p className="mt-1 text-xs text-red-600 font-medium">{errors.itemArea}</p>}
                 </div>
+                
                 <div>
-                    <label htmlFor="tipo-limpeza-select" className="block text-sm font-medium text-gray-700 mb-1">Tipo de Limpeza</label>
+                    <label htmlFor="tipo-limpeza-select" className="block text-sm font-semibold text-slate-900 mb-1.5">Tipo de Limpeza</label>
                     <select
                         id="tipo-limpeza-select"
                         value={draft.tipoLimpeza}
                         onChange={e => updateDraft('tipoLimpeza', e.target.value)}
-                        className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm px-3 py-2 border bg-white
-                            ${errors.tipoLimpeza ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-cyan-500 focus:ring-cyan-500'}
+                        className={`block w-full h-12 rounded-xl shadow-sm sm:text-base px-4 py-2 border bg-white appearance-none transition-all font-medium text-slate-700
+                            ${errors.tipoLimpeza ? 'border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-500/10' : 'border-slate-300 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-500/20'}
                         `}
                     >
                         <option value="">Selecione...</option>
@@ -54,48 +58,48 @@ const LimpezaTab: React.FC<ManualRecordTabProps<LimpezaDraft>> = ({
                         <option value="Úmida / Lavagem">Úmida / Lavagem</option>
                         <option value="Desinfecção">Desinfecção</option>
                     </select>
-                    {errors.tipoLimpeza && <p className="mt-1 text-xs text-red-600">{errors.tipoLimpeza}</p>}
+                    {errors.tipoLimpeza && <p className="mt-1 text-xs text-red-600 font-medium">{errors.tipoLimpeza}</p>}
+                </div>
+
+                <div>
+                    <label htmlFor="responsavel-limpeza-input" className="block text-sm font-semibold text-slate-900 mb-1.5">Responsável</label>
+                    <input
+                        id="responsavel-limpeza-input"
+                        type="text"
+                        value={draft.responsavel}
+                        onChange={e => updateDraft('responsavel', e.target.value)}
+                        placeholder="Quem executou?"
+                        className={`block w-full h-12 rounded-xl shadow-sm sm:text-base px-4 py-2 border transition-all font-medium text-slate-700
+                            ${errors.responsavel ? 'border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-500/10' : 'border-slate-300 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-500/20'}
+                        `}
+                    />
+                    {errors.responsavel && <p className="mt-1 text-xs text-red-600 font-medium">{errors.responsavel}</p>}
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="pt-4 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label htmlFor="produto-limpeza-input" className="block text-sm font-medium text-gray-700 mb-1">Produto Utilizado</label>
+                    <label htmlFor="produto-limpeza-input" className="block text-sm font-semibold text-slate-900 mb-1.5">Produto Utilizado</label>
                     <input
                         id="produto-limpeza-input"
                         type="text"
                         value={draft.produtoUtilizado}
                         onChange={e => updateDraft('produtoUtilizado', e.target.value)}
-                        placeholder="Ex: Sabão Neutro, Cloro, Água"
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm px-3 py-2 border"
+                        placeholder="Ex: Sabão Neutro, Cloro"
+                        className="block w-full h-12 rounded-xl border-slate-300 shadow-sm focus:border-emerald-600 focus:ring-4 focus:ring-emerald-500/20 sm:text-base px-4 py-2 border font-medium text-slate-700 transition-all"
                     />
                 </div>
                 <div>
-                    <label htmlFor="dosagem-limpeza-input" className="block text-sm font-medium text-gray-700 mb-1">Dosagem</label>
+                    <label htmlFor="dosagem-limpeza-input" className="block text-sm font-semibold text-slate-900 mb-1.5">Dosagem</label>
                     <input
                         id="dosagem-limpeza-input"
                         type="text"
                         value={draft.dosagem}
                         onChange={e => updateDraft('dosagem', e.target.value)}
-                        placeholder="Ex: 10ml / Litro ou 'Puro'"
-                        className="mt-1 block v-full rounded-md border-gray-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm px-3 py-2 border"
+                        placeholder="Ex: 10ml / Litro"
+                        className="block w-full h-12 rounded-xl border-slate-300 shadow-sm focus:border-emerald-600 focus:ring-4 focus:ring-emerald-500/20 sm:text-base px-4 py-2 border font-medium text-slate-700 transition-all"
                     />
                 </div>
-            </div>
-
-            <div>
-                <label htmlFor="responsavel-limpeza-input" className="block text-sm font-medium text-gray-700 mb-1">Responsável (Assinatura)</label>
-                <input
-                    id="responsavel-limpeza-input"
-                    type="text"
-                    value={draft.responsavel}
-                    onChange={e => updateDraft('responsavel', e.target.value)}
-                    placeholder="Nome de quem executou"
-                    className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm px-3 py-2 border 
-                        ${errors.responsavel ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-cyan-500 focus:ring-cyan-500'}
-                    `}
-                />
-                {errors.responsavel && <p className="mt-1 text-xs text-red-600">{errors.responsavel}</p>}
             </div>
         </div>
     );

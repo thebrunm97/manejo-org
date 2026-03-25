@@ -1,4 +1,4 @@
-import React, { useEffect, MouseEvent } from 'react';
+import React, { useEffect } from 'react';
 import L from 'leaflet';
 
 // Injeção Global Prioritária
@@ -7,7 +7,7 @@ if (typeof window !== 'undefined') {
 }
 
 import '../../leaflet-draw-shim';
-import { MapContainer, TileLayer, Polygon, Popup, FeatureGroup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Polygon, FeatureGroup, useMap, ZoomControl, Marker } from 'react-leaflet';
 import { SafeEditControl } from './SafeEditControl';
 
 import 'leaflet/dist/leaflet.css';
@@ -47,7 +47,7 @@ const MapController: React.FC<MapControllerProps> = ({ talhoes, focusTarget }) =
                 if (geo.coordinates && geo.coordinates[0]) {
                     const coords: L.LatLngTuple[] = geo.coordinates[0].map(c => [c[1], c[0]] as L.LatLngTuple);
                     const bounds = L.latLngBounds(coords);
-                    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 18, animate: true, duration: 1.5 });
+                    map.fitBounds(bounds, { padding: [100, 100], maxZoom: 18, animate: true, duration: 1.5 });
                 }
             } catch (e) {
                 console.error("Invalid geometry for focus:", e);
@@ -67,7 +67,7 @@ const MapController: React.FC<MapControllerProps> = ({ talhoes, focusTarget }) =
                     } catch (e) { }
                 }
             });
-            if (hasValidBounds && bounds.isValid()) map.fitBounds(bounds);
+            if (hasValidBounds && bounds.isValid()) map.fitBounds(bounds, { padding: [50, 50] });
         }
     }, [talhoes, focusTarget, map]);
 
@@ -99,7 +99,8 @@ const FarmMap: React.FC<FarmMapProps> = ({
     };
 
     return (
-        <MapContainer center={[-18.9186, -48.2772] as any} zoom={15} style={{ height: '100%', width: '100%', minHeight: '500px' }}>
+        <MapContainer center={[-18.9186, -48.2772] as any} zoom={15} zoomControl={false} style={{ height: '100%', width: '100%' }}>
+            <ZoomControl position="bottomleft" />
             <TileLayer url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}" attribution="Google Satélite" />
 
             <FeatureGroup>
@@ -114,7 +115,7 @@ const FarmMap: React.FC<FarmMapProps> = ({
                         circlemarker: false,
                         marker: false,
                         polyline: false,
-                        polygon: { allowIntersection: true, showArea: true, shapeOptions: { color: '#97009c' } }
+                        polygon: { allowIntersection: true, showArea: true, shapeOptions: { color: '#059669' } }
                     }}
                 />
 
@@ -124,44 +125,51 @@ const FarmMap: React.FC<FarmMapProps> = ({
 
                     if (!geo.coordinates || !geo.coordinates[0]) return null;
                     const positions: L.LatLngTuple[] = geo.coordinates[0].map(c => [c[1], c[0]] as L.LatLngTuple);
+                    const isSelected = focusTarget?.id === t.id;
 
                     return (
-                        <Polygon
-                            key={t.id}
-                            positions={positions}
-                            pathOptions={{ color: t.cor || '#FFF', fillColor: t.cor, fillOpacity: 0.5 }}
-                            eventHandlers={{
-                                click: (e) => {
-                                    L.DomEvent.stopPropagation(e);
-                                    if (onTalhaoClick) onTalhaoClick(t);
-                                }
-                            }}
-                        >
-                            <Popup>
-                                <strong>{t.nome}</strong><br />
-                                <small style={{ color: '#666' }}>{t.tipo ? t.tipo.toUpperCase() : 'TALHÃO'}</small><br />
-                                Área: {t.area_total_m2 || t.area_m2 || 0} m²<br />
-                                {t.cultura && <span>🌱: {t.cultura}<br /></span>}
-                                <hr style={{ margin: '4px 0' }} />
-                                🧪 pH: {t.ph_solo || '-'}<br />
-                                ⚡ V%: {t.v_percent || '-'}%<br />
-                                🧱 Argila: {t.teor_argila || '-'}%
-                                {onTalhaoClick && (
-                                    <div style={{ marginTop: '8px', textAlign: 'center' }}>
-                                        <button
-                                            style={{ cursor: 'pointer', padding: '4px 8px', background: '#4caf50', color: 'white', border: 'none', borderRadius: '4px' }}
-                                            onClick={(e: MouseEvent) => {
-                                                e.stopPropagation();
-                                                onTalhaoClick(t);
-                                            }}
-                                        >
-                                            Gerenciar
-                                        </button>
-                                    </div>
-                                )}
-                            </Popup>
-                        </Polygon>
-                    )
+                        <React.Fragment key={t.id}>
+                            <Polygon
+                                positions={positions}
+                                pathOptions={{ 
+                                    color: isSelected ? '#10b981' : (t.cor || '#FFF'), 
+                                    fillColor: isSelected ? '#10b981' : (t.cor || '#FFF'), 
+                                    fillOpacity: isSelected ? 0.3 : 0.15,
+                                    weight: isSelected ? 3 : 2
+                                }}
+                                eventHandlers={{
+                                    click: (e) => {
+                                        L.DomEvent.stopPropagation(e);
+                                        if (onTalhaoClick) onTalhaoClick(t);
+                                    }
+                                }}
+                            />
+                            
+                            {/* Centroid Label (Pill Flutuante no Mapa) */}
+                            {positions.length > 0 && (
+                                <Marker 
+                                    position={L.polygon(positions).getBounds().getCenter()}
+                                    icon={L.divIcon({
+                                        className: 'custom-div-icon',
+                                        html: `
+                                            <div class="flex items-center gap-2 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg border border-white whitespace-nowrap transition-all duration-300 pointer-events-auto">
+                                                <div class="w-1.5 h-1.5 rounded-full ${t.tipo === 'agua' ? 'bg-blue-500' : 'bg-emerald-500'}"></div>
+                                                <span class="text-[10px] font-black text-slate-800 uppercase tracking-tighter">${t.nome}</span>
+                                                ${t.cultura ? `<span class="text-[9px] font-bold text-slate-400 border-l border-slate-200 pl-2 capitalize">${t.cultura}</span>` : ''}
+                                            </div>
+                                        `,
+                                        iconSize: [0, 0],
+                                        iconAnchor: [60, 20] 
+                                    })}
+                                    eventHandlers={{
+                                        click: (e) => {
+                                            if (onTalhaoClick) onTalhaoClick(t);
+                                        }
+                                    }}
+                                />
+                            )}
+                        </React.Fragment>
+                    );
                 })}
             </FeatureGroup>
             <MapController talhoes={talhoes} focusTarget={focusTarget} />

@@ -11,7 +11,7 @@ import {
 } from '../../types/CadernoTypes';
 
 // --- Types ---
-export type TipoRegistro = 'plantio' | 'manejo' | 'colheita' | 'outro' | 'limpeza' | 'compostagem' | 'compras';
+export type TipoRegistro = 'plantio' | 'manejo' | 'colheita' | 'outro' | 'limpeza' | 'compostagem' | 'compras' | 'vendas';
 export type OutroSubtype = 'compra' | 'venda' | 'outro';
 
 export interface CommonDraft {
@@ -45,14 +45,24 @@ export interface ManejoDraft extends CommonDraft {
 }
 
 export interface ColheitaDraft extends CommonDraft {
-    lote: string;
-    destino: string;
-    classificacao: string;
+    lote?: string;
+    destino?: string;
+    destino_inicial?: string;
+    classificacao?: string;
     qtdColheita: string;
     unidadeColheita: UnitType;
     houveDescartes: boolean;
     qtdDescartes: string;
     unidadeDescartes: UnitType;
+}
+
+export interface VendasDraft extends CommonDraft {
+    destinacao?: 'venda' | 'doacao' | 'perda' | 'processamento' | 'consumo proprio';
+    valorUnitario?: string;
+    cliente?: string;
+    nf?: string;
+    quantidade: string;
+    unidade: UnitType;
 }
 
 export interface OutroDraft extends CommonDraft {
@@ -63,6 +73,9 @@ export interface OutroDraft extends CommonDraft {
     fornecedor: string;
     tipoOrigem: 'compra' | 'doação' | 'produção própria';
     destinoVenda: string;
+    titulo: string;
+    descricao: string;
+    responsavel: string;
 }
 
 export interface LimpezaDraft extends CommonDraft {
@@ -88,7 +101,7 @@ export interface ComprasDraft extends CommonDraft {
     nfRecibo: string;
 }
 
-export type AnyDraft = PlantioDraft | ManejoDraft | ColheitaDraft | OutroDraft | LimpezaDraft | CompostagemDraft | ComprasDraft;
+export type AnyDraft = PlantioDraft | ManejoDraft | ColheitaDraft | OutroDraft | LimpezaDraft | CompostagemDraft | ComprasDraft | VendasDraft;
 
 export interface ValidationErrors {
     [key: string]: string;
@@ -186,6 +199,30 @@ export const useRecordValidation = () => {
         if (draft.houveDescartes) {
             if (!draft.qtdDescartes || parseFloat(draft.qtdDescartes) <= 0) {
                 newErrors.qtdDescartes = 'Informe a quantidade';
+            }
+        }
+
+        return newErrors;
+    }, []);
+
+    const validateVendas = useCallback((draft: VendasDraft): ValidationErrors => {
+        const newErrors: ValidationErrors = {};
+
+        if (!draft.dataHora) newErrors.data = 'Data é obrigatória';
+        if (!draft.produto.trim()) newErrors.produto = 'Produto é obrigatório';
+        if (!draft.quantidade || parseFloat(draft.quantidade) <= 0) {
+            newErrors.quantidade = 'Quantidade é obrigatória e deve ser maior que zero';
+        }
+        if (!draft.destinacao) {
+            newErrors.destinacao = 'Tipo de destinação é obrigatório';
+        }
+
+        if (draft.destinacao === 'venda') {
+            if (!draft.cliente?.trim()) {
+                newErrors.cliente = 'Comprador/Cliente é obrigatório para vendas';
+            }
+            if (!draft.valorUnitario || parseFloat(draft.valorUnitario) < 0) {
+                newErrors.valorUnitario = 'Valor unitário inválido';
             }
         }
 
@@ -296,6 +333,9 @@ export const useRecordValidation = () => {
                 break;
             case 'compras':
                 newErrors = validateCompras(draft as ComprasDraft);
+                break;
+            case 'vendas':
+                newErrors = validateVendas(draft as VendasDraft);
                 break;
         }
 

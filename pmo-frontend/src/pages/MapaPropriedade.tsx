@@ -1,7 +1,7 @@
 // src/pages/MapaPropriedade.tsx
 
 import React, { useState, useEffect } from 'react';
-import { Tractor, AlertTriangle, Loader2 } from 'lucide-react';
+import { AlertTriangle, Loader2 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { getPmoDetails } from '../services/pmoService';
@@ -12,7 +12,6 @@ const MapaPropriedade: React.FC = () => {
     const { user } = useAuth();
     const [pmoId, setPmoId] = useState<string | null>(null);
     const [propriedadeId, setPropriedadeId] = useState<number | null>(null);
-    const [nomePropriedade, setNomePropriedade] = useState<string>('');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -41,7 +40,6 @@ const MapaPropriedade: React.FC = () => {
 
                     if (result.success && result.data?.propriedade_id) {
                         setPropriedadeId(result.data.propriedade_id);
-                        setNomePropriedade(result.data.nomePropriedade || '');
                         console.log('📍 Contexto de Mapa:', result.data.nomePropriedade);
                     } else {
                         // Fallback logic preserved from previous fix
@@ -51,7 +49,6 @@ const MapaPropriedade: React.FC = () => {
                             const firstProp = userProps.data[0];
                             console.log('📍 Contexto de Mapa (Fallback):', firstProp.nome);
                             setPropriedadeId(firstProp.id);
-                            setNomePropriedade(firstProp.nome);
                         } else {
                             console.error('[MapaPropriedade] Falha crítica: Nenhuma propriedade encontrada.');
                         }
@@ -91,25 +88,8 @@ const MapaPropriedade: React.FC = () => {
     }
 
     return (
-        <div className="p-4 md:p-8">
-            <div className="flex items-center gap-3 mb-6">
-                <div className="p-2.5 bg-green-100 rounded-xl text-green-700">
-                    <Tractor size={28} />
-                </div>
-                <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">
-                    Mapa da Propriedade
-                </h1>
-            </div>
-
-            {/* Exibir o nome da fazenda para confirmar que carregou */}
-            {nomePropriedade && (
-                <div className="p-4 bg-emerald-50 border border-emerald-100 text-emerald-800 font-bold mb-6 rounded-xl flex items-center gap-3 shadow-sm shadow-emerald-600/5">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    Visualizando: {nomePropriedade}
-                </div>
-            )}
-
-            <div className="bg-white rounded-3xl overflow-hidden shadow-xl shadow-slate-200/50 border border-slate-100">
+        <div className="flex-col h-[calc(100vh-64px)] w-full p-2 bg-slate-100 flex overflow-hidden">
+            <div className="flex-1 w-full h-full rounded-[2rem] overflow-hidden shadow-2xl relative bg-white">
                 <PropertyMap propriedadeId={propriedadeId} />
             </div>
         </div>

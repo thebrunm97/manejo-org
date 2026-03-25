@@ -12,6 +12,7 @@ import {
     DetalhesPlantio,
     DetalhesManejo,
     DetalhesColheita,
+    DetalhesVenda,
     DetalhesCompostagem
 } from '../../types/CadernoTypes';
 import {
@@ -24,6 +25,7 @@ import {
     LimpezaDraft,
     CompostagemDraft,
     ComprasDraft,
+    VendasDraft,
     AnyDraft
 } from './useRecordValidation';
 
@@ -91,7 +93,10 @@ export const initialOutroDraft: OutroDraft = {
     numeroDocumento: '',
     fornecedor: '',
     tipoOrigem: 'compra',
-    destinoVenda: ''
+    destinoVenda: '',
+    titulo: '',
+    descricao: '',
+    responsavel: ''
 };
 
 export const initialLimpezaDraft: LimpezaDraft = {
@@ -120,6 +125,16 @@ export const initialComprasDraft: ComprasDraft = {
     nfRecibo: ''
 };
 
+export const initialVendasDraft: VendasDraft = {
+    ...initialCommon,
+    destinacao: 'venda',
+    quantidade: '',
+    unidade: UnitType.KG,
+    valorUnitario: '',
+    cliente: '',
+    nf: ''
+};
+
 interface UseRecordFormStateProps {
     /** Whether the dialog is open */
     open: boolean;
@@ -140,6 +155,7 @@ interface UseRecordFormStateReturn {
     limpezaDraft: LimpezaDraft;
     compostagemDraft: CompostagemDraft;
     comprasDraft: ComprasDraft;
+    vendasDraft: VendasDraft;
 
     // Actions
     setActiveTab: (tab: TipoRegistro) => void;
@@ -156,6 +172,7 @@ interface UseRecordFormStateReturn {
     setLimpezaDraft: React.Dispatch<React.SetStateAction<LimpezaDraft>>;
     setCompostagemDraft: React.Dispatch<React.SetStateAction<CompostagemDraft>>;
     setComprasDraft: React.Dispatch<React.SetStateAction<ComprasDraft>>;
+    setVendasDraft: React.Dispatch<React.SetStateAction<VendasDraft>>;
 }
 
 /**
@@ -209,6 +226,10 @@ export const useRecordFormState = ({
         ...initialComprasDraft,
         dataHora: getNowISO()
     }));
+    const [vendasDraft, setVendasDraft] = useState<VendasDraft>(() => ({
+        ...initialVendasDraft,
+        dataHora: getNowISO()
+    }));
 
     /**
      * Gets the current draft based on active tab.
@@ -222,8 +243,9 @@ export const useRecordFormState = ({
             case 'limpeza': return limpezaDraft;
             case 'compostagem': return compostagemDraft;
             case 'compras': return comprasDraft;
+            case 'vendas': return vendasDraft;
         }
-    }, [activeTab, plantioDraft, manejoDraft, colheitaDraft, outroDraft, limpezaDraft, compostagemDraft, comprasDraft]);
+    }, [activeTab, plantioDraft, manejoDraft, colheitaDraft, outroDraft, limpezaDraft, compostagemDraft, comprasDraft, vendasDraft]);
 
     /**
      * Updates a field in the current draft.
@@ -250,6 +272,9 @@ export const useRecordFormState = ({
                 break;
             case 'compras':
                 setComprasDraft(prev => ({ ...prev, [field]: value } as ComprasDraft));
+                break;
+            case 'vendas':
+                setVendasDraft(prev => ({ ...prev, [field]: value } as VendasDraft));
                 break;
         }
     }, [activeTab]);
@@ -281,6 +306,9 @@ export const useRecordFormState = ({
             case 'compras':
                 setComprasDraft({ ...initialComprasDraft, dataHora: now });
                 break;
+            case 'vendas':
+                setVendasDraft({ ...initialVendasDraft, dataHora: now });
+                break;
         }
     }, []);
 
@@ -296,6 +324,7 @@ export const useRecordFormState = ({
         setLimpezaDraft({ ...initialLimpezaDraft, dataHora: now });
         setCompostagemDraft({ ...initialCompostagemDraft, dataHora: now });
         setComprasDraft({ ...initialComprasDraft, dataHora: now });
+        setVendasDraft({ ...initialVendasDraft, dataHora: now });
         setActiveTab('plantio');
     }, []);
 
@@ -312,6 +341,7 @@ export const useRecordFormState = ({
             const isPlantio = tipoRaw === ActivityType.PLANTIO || tipoRaw === 'Plantio';
             const isManejo = tipoRaw === ActivityType.MANEJO || tipoRaw === 'Manejo' || tipoRaw === ActivityType.INSUMO;
             const isColheita = tipoRaw === ActivityType.COLHEITA || tipoRaw === 'Colheita';
+            const isVenda = tipoRaw === ActivityType.VENDA || tipoRaw === 'Venda';
             const isCompostagem = tipoRaw === ActivityType.COMPOSTAGEM || tipoRaw === 'Compostagem';
             const isCompras = tipoRaw === ActivityType.INSUMO || tipoRaw === 'Insumo';
 
@@ -381,6 +411,18 @@ export const useRecordFormState = ({
                     qtdDescartes: recordToEdit.qtd_descartes ? String(recordToEdit.qtd_descartes) : '',
                     unidadeDescartes: (recordToEdit.unidade_descartes as UnitType) || UnitType.KG
                 });
+            } else if (isVenda) {
+                setActiveTab('vendas');
+                const d = details as DetalhesVenda;
+                setVendasDraft({
+                    ...common,
+                    destinacao: d.destinacao || 'venda',
+                    quantidade: d.qtd ? String(d.qtd) : (recordToEdit.quantidade_valor ? String(recordToEdit.quantidade_valor) : ''),
+                    unidade: (d.unidade as UnitType) || (recordToEdit.quantidade_unidade as UnitType) || UnitType.KG,
+                    valorUnitario: d.valor_unitario ? String(d.valor_unitario) : '',
+                    cliente: d.cliente || recordToEdit.fornecedor || '',
+                    nf: d.nf_recibo || recordToEdit.nota_fiscal || ''
+                });
             } else if (isCompostagem) {
                 setActiveTab('compostagem');
                 const d = details as DetalhesCompostagem;
@@ -424,6 +466,7 @@ export const useRecordFormState = ({
         limpezaDraft,
         compostagemDraft,
         comprasDraft,
+        vendasDraft,
         setActiveTab,
         getCurrentDraft,
         updateDraft,
@@ -435,7 +478,8 @@ export const useRecordFormState = ({
         setOutroDraft,
         setLimpezaDraft,
         setCompostagemDraft,
-        setComprasDraft
+        setComprasDraft,
+        setVendasDraft
     };
 };
 
