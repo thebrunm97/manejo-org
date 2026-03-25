@@ -1,18 +1,39 @@
 // src/pages/MapaPropriedade.tsx
 
-import React, { useState, useEffect } from 'react';
-import { AlertTriangle, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { AlertTriangle, Loader2, LayoutGrid, Map as MapIcon } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { getPmoDetails } from '../services/pmoService';
 import { fetchUserProperties } from '../services/profileService';
 import PropertyMap from '../components/PropertyMap/PropertyMap';
+import TalhaoDetailsDrawer from '../components/PropertyMap/TalhaoDetailsDrawer';
+import { locationService } from '../services/locationService';
+import { Talhao } from '../domain/geo/geoTypes';
+import { cn } from '../utils/cn';
 
 const MapaPropriedade: React.FC = () => {
     const { user } = useAuth();
+    const [viewMode, setViewMode] = useState<'croqui' | 'mapa'>('croqui');
+    const [talhoes, setTalhoes] = useState<Talhao[]>([]);
+    const [selectedTalhao, setSelectedTalhao] = useState<Talhao | null>(null);
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [pmoId, setPmoId] = useState<string | null>(null);
     const [propriedadeId, setPropriedadeId] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
+
+    const loadTalhoes = useCallback(async () => {
+        try {
+            const data = await locationService.getTalhoes();
+            setTalhoes((data || []) as unknown as Talhao[]);
+        } catch (error) {
+            console.error("Erro ao buscar talhões", error);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadTalhoes();
+    }, [loadTalhoes]);
 
     useEffect(() => {
         const loadInitialData = async () => {
@@ -64,6 +85,16 @@ const MapaPropriedade: React.FC = () => {
         loadInitialData();
     }, [user]);
 
+    const handleOpenDrawer = (talhao: Talhao) => {
+        setSelectedTalhao(talhao);
+        setIsDrawerOpen(true);
+    };
+
+    const handleCloseDrawer = () => {
+        setIsDrawerOpen(false);
+        setSelectedTalhao(null);
+    };
+
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center h-[100vh]">
@@ -88,10 +119,60 @@ const MapaPropriedade: React.FC = () => {
     }
 
     return (
-        <div className="flex-col h-[calc(100vh-64px)] w-full p-2 bg-slate-100 flex overflow-hidden">
-            <div className="flex-1 w-full h-full rounded-[2rem] overflow-hidden shadow-2xl relative bg-white">
-                <PropertyMap propriedadeId={propriedadeId} />
+        <div className="relative w-full h-[calc(100vh-64px)] bg-slate-100 p-2 md:p-4 overflow-hidden">
+            {/* TOGGLE CROQUI/SATÉLITE CENTRALIZADO */}
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[1000]">
+                <div className="flex bg-white/90 backdrop-blur-md p-1 rounded-full shadow-lg border border-white/20">
+                    <button
+                        onClick={() => setViewMode('croqui')}
+                        className={cn(
+                            "flex items-center gap-2 px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all",
+                            viewMode === 'croqui'
+                                ? "bg-emerald-600 text-white shadow-md shadow-emerald-900/20"
+                                : "text-slate-500 hover:text-slate-700 hover:bg-slate-100/50"
+                        )}
+                    >
+                        <LayoutGrid size={14} />
+                        Croqui
+                    </button>
+                    <button
+                        onClick={() => setViewMode('mapa')}
+                        className={cn(
+                            "flex items-center gap-2 px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all",
+                            viewMode === 'mapa'
+                                ? "bg-emerald-600 text-white shadow-md shadow-emerald-900/20"
+                                : "text-slate-500 hover:text-slate-700 hover:bg-slate-100/50"
+                        )}
+                    >
+                        <MapIcon size={14} />
+                        Satélite
+                    </button>
+                </div>
             </div>
+
+            {/* JAULA DO MAPA (COM OVERFLOW HIDDEN) */}
+            <div className="absolute inset-2 md:inset-4 rounded-[2rem] overflow-hidden shadow-2xl z-0 bg-white">
+                <PropertyMap 
+                    propriedadeId={propriedadeId} 
+                    talhoes={talhoes}
+                    viewMode={viewMode}
+                    setViewMode={setViewMode}
+                    selectedTalhao={selectedTalhao}
+                    setSelectedTalhao={setSelectedTalhao}
+                    onOpenDrawer={handleOpenDrawer}
+                    loadTalhoes={loadTalhoes}
+                    loading={loading}
+                />
+            </div>
+
+            {/* DRAWER FLUTUANTE SOLTO (IMUNE AO OVERFLOW) */}
+            <TalhaoDetailsDrawer
+                open={isDrawerOpen}
+                onClose={handleCloseDrawer}
+                talhao={selectedTalhao}
+                onDeleteCanteiro={() => loadTalhoes()} 
+                onUpdateStart={loadTalhoes}
+            />
         </div>
     );
 };

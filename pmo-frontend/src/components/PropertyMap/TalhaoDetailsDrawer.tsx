@@ -255,7 +255,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
         <>
             {/* Drawer Panel (Floating Card) - SPEC 01 */}
             <div className={cn(
-                "absolute top-4 left-4 md:top-6 md:left-6 w-80 md:w-[22rem] bg-white rounded-[24px] shadow-2xl z-[1000] overflow-hidden max-h-[calc(100vh-2rem)] flex flex-col transition-all duration-500 transform",
+                "absolute top-4 left-4 md:top-6 md:left-6 w-80 md:w-[22rem] bg-white rounded-[24px] shadow-2xl z-[1000] overflow-hidden max-h-[calc(100%-2rem)] md:max-h-[calc(100%-3rem)] flex flex-col transition-all duration-500 transform",
                 open ? "translate-y-0 opacity-100 scale-100 pointer-events-auto" : "translate-y-4 opacity-0 scale-95 pointer-events-none"
             )}>
                 {/* Header */}
