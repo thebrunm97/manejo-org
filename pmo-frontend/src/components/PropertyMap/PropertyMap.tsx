@@ -39,7 +39,12 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
     const { user } = useAuthCore();
 
     // Estados
-    const [viewMode, setViewMode] = useState<'croqui' | 'mapa'>('croqui');
+    const [viewMode, setViewModeRaw] = useState<'croqui' | 'mapa'>('croqui');
+    const setViewMode = (mode: 'croqui' | 'mapa') => {
+        setIsDrawerOpen(false);
+        setSelectedTalhao(null);
+        setViewModeRaw(mode);
+    };
     const [talhoes, setTalhoes] = useState<Talhao[]>([]);
     const [selectedTalhao, setSelectedTalhao] = useState<Talhao | null>(null);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -207,10 +212,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
                 </div>
             </div>
 
-            <div className={cn(
-                "absolute top-6 z-[1001] transition-all duration-500",
-                isDrawerOpen ? "right-[26rem]" : "right-6"
-            )}>
+            <div className="absolute top-6 right-6 z-[1001]">
                 <div className="flex bg-white/90 backdrop-blur-md p-1 rounded-full shadow-lg border border-white/20">
                     <button
                         onClick={() => setViewMode('croqui')}
@@ -243,10 +245,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
             {viewMode === 'mapa' && (
                 <button
                     onClick={() => setViewMode('mapa')}
-                    className={cn(
-                        "absolute bottom-6 z-[1001] group flex items-center gap-3 bg-white/90 backdrop-blur-md text-slate-900 pl-3 pr-6 py-2 rounded-full shadow-lg border border-white/20 transition-all hover:scale-105 active:scale-95",
-                        isDrawerOpen ? "right-[26rem]" : "right-6"
-                    )}
+                    className="absolute bottom-6 right-6 z-[1001] group flex items-center gap-3 bg-white/90 backdrop-blur-md text-slate-900 pl-3 pr-6 py-2 rounded-full shadow-lg border border-white/20 transition-all hover:scale-105 active:scale-95"
                 >
                     <div className="bg-emerald-600 text-white p-2 rounded-full">
                         <Plus size={18} strokeWidth={3} />
@@ -347,30 +346,33 @@ const PropertyMap: React.FC<PropertyMapProps> = ({ propriedadeId }) => {
 
                 {/* MODO MAPA (SATÉLITE) */}
                 {viewMode === 'mapa' && (
-                    <div className="h-full w-full relative animate-in zoom-in-95 duration-700 bg-slate-200">
-                        <FarmMap
-                            talhoes={talhoes}
-                            focusTarget={selectedTalhao}
-                            // @ts-ignore
-                            onMapCreated={handleMapCreated}
-                            onCreated={() => { }}
-                            onEdited={() => { }}
-                            onDeleted={() => { }}
-                            onSaveTalhao={undefined}
-                            onTalhaoClick={handleOpenDrawer}
+                    <div className="h-full w-full relative animate-in zoom-in-95 duration-700">
+                        {/* Wrapper Redondo com Overflow-Hidden (O Mapa fica contido aqui) */}
+                        <div className="absolute inset-0 rounded-[2rem] overflow-hidden shadow-inner bg-slate-200">
+                            <FarmMap
+                                talhoes={talhoes}
+                                focusTarget={selectedTalhao}
+                                // @ts-ignore
+                                onMapCreated={handleMapCreated}
+                                onCreated={() => { }}
+                                onEdited={() => { }}
+                                onDeleted={() => { }}
+                                onSaveTalhao={undefined}
+                                onTalhaoClick={handleOpenDrawer}
+                            />
+                        </div>
+
+                        {/* O Drawer como irmão do mapa, imune ao clipping do overflow anterior */}
+                        <TalhaoDetailsDrawer
+                            open={isDrawerOpen}
+                            onClose={handleCloseDrawer}
+                            talhao={selectedTalhao}
+                            onDeleteCanteiro={handleDeleteCanteiro as any}
+                            onUpdateStart={loadTalhoes}
                         />
                     </div>
                 )}
             </div>
-
-            {/* DRAWER LATERAL (GERENCIADOR) */}
-            <TalhaoDetailsDrawer
-                open={isDrawerOpen}
-                onClose={handleCloseDrawer}
-                talhao={selectedTalhao}
-                onDeleteCanteiro={handleDeleteCanteiro as any}
-                onUpdateStart={loadTalhoes}
-            />
 
             {/* MODAL: NOVO TALHÃO */}
             <div className={cn(
