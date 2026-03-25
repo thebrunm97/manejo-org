@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect } from 'react';
-import Map, { Source, Layer, Marker, useMap } from 'react-map-gl/maplibre';
+import Map, { Source, Layer, Marker, useMap, NavigationControl } from 'react-map-gl/maplibre';
 import { Talhao, GeoJSONGeometry } from '../../domain/geo/geoTypes';
 import { ESRI_SATELLITE_STYLE } from './mapStyles';
 
@@ -278,6 +278,7 @@ const FarmMap: React.FC<FarmMapProps> = ({
             ))}
 
             <MapController talhoes={talhoes} focusTarget={focusTarget} isDrawerOpen={isDrawerOpen} />
+            <NavigationControl position="bottom-right" />
         </Map>
     );
 };
