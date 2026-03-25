@@ -106,16 +106,13 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
     };
 
     // --- CRIAÇÃO DE TALHÃO ---
-    const handleMapCreated = (data: { layer: any, geometry: string, areaM2: number }) => {
-        setPendingTalhao(data);
-        setNewTalhaoData({ nome: `Talhão ${talhoes.length + 1}`, cultura: '' });
-        setCreateModalOpen(true);
-    };
+    // const handleMapCreated = (data: { layer: any, geometry: string, areaM2: number }) => {
+    //     setPendingTalhao(data);
+    //     setNewTalhaoData({ nome: `Talhão ${talhoes.length + 1}`, cultura: '' });
+    //     setCreateModalOpen(true);
+    // };
 
     const handleCancelNewTalhao = () => {
-        if (pendingTalhao?.layer?.remove) {
-            pendingTalhao.layer.remove();
-        }
         setCreateModalOpen(false);
         setPendingTalhao(null);
     };
@@ -150,10 +147,6 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
             if (locationService.createTalhao) {
                 await locationService.createTalhao(payload);
                 await loadTalhoes();
-            }
-
-            if (pendingTalhao.layer?.remove) {
-                pendingTalhao.layer.remove();
             }
 
             setCreateModalOpen(false);
@@ -272,12 +265,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
                                 talhoes={talhoes}
                                 focusTarget={selectedTalhao}
                                 selectedTalhaoId={selectedTalhao?.id}
-                                // @ts-ignore
-                                onMapCreated={handleMapCreated}
-                                onCreated={() => { }}
-                                onEdited={() => { }}
-                                onDeleted={() => { }}
-                                onSaveTalhao={undefined}
+                                // onMapCreated={handleMapCreated} // Disabled until Phase 4 (MapLibre Draw)
                                 onTalhaoClick={(t) => viewMode === 'mapa' && onOpenDrawer(t)}
                             />
                         </div>

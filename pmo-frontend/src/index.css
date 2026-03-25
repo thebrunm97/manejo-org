@@ -456,23 +456,19 @@ body {
 }
 
 /* ============================================================== */
-/* ||    LEAFLET DIVICON RESET (Dark Pill Labels - Sem Wrapper) || */
+/* ||    MAPLIBRE GL JS RESET (Enterprise Cartography)         || */
 /* ============================================================== */
-/* Remove o fundo branco, border e sombra padrão do Leaflet para
-   divIcons customizados. Necessário para as "Dark Pills" do mapa. */
-.leaflet-div-icon {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
+@import 'maplibre-gl/dist/maplibre-gl.css';
+
+.map-container {
+  width: 100%;
+  height: 100%;
 }
 
-/* Efeito Mapbox para Polígonos do Leaflet */
-path.polygon-glow-effect {
-  transition: stroke-width 0.2s ease, fill-opacity 0.2s ease;
-  filter: drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.4));
-}
-
-path.polygon-glow-effect:hover {
-  filter: drop-shadow(0px 0px 6px rgba(255, 255, 255, 0.5));
+/* Custom Marker Pills for MapLibre */
+.map-marker-pill {
+  pointer-events: auto;
   cursor: pointer;
-}
+  transform: translate(-50%, -50%);
+}
+
