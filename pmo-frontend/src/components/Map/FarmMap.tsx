@@ -132,10 +132,7 @@ const FarmMap: React.FC<FarmMapProps> = ({
                                 positions={positions}
                                 pathOptions={{ 
                                     color: '#10b981', 
-                                    weight: 1.5,
-                                    opacity: 0.9,
-                                    fillColor: 'transparent', 
-                                    fillOpacity: 0,
+                                    weight: 2,
                                     fill: false
                                 }}
                                 eventHandlers={{
@@ -151,11 +148,8 @@ const FarmMap: React.FC<FarmMapProps> = ({
                                 <Marker 
                                     position={L.polygon(positions).getBounds().getCenter()}
                                     icon={L.divIcon({
-                                        className: '',
-                                        html: `<div style="transform:translate(-50%,-50%)">
-                                            <div class="bg-zinc-900 text-white text-[10px] font-bold px-3 py-1 rounded-full whitespace-nowrap shadow-lg border border-zinc-700/50">${t.nome}</div>
-                                        </div>`,
-                                        iconSize: [0, 0]
+                                        className: 'bg-transparent border-none shadow-none',
+                                        html: '<div class="bg-zinc-900 text-white px-3 py-1.5 rounded-full text-[10px] font-bold w-max shadow-lg border border-zinc-700/80 uppercase tracking-wider">' + t.nome + '</div>'
                                     })}
                                     eventHandlers={{
                                         click: (_e) => {
