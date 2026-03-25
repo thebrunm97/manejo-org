@@ -36,6 +36,16 @@ interface FarmMapProps {
     onTalhaoClick?: (talhao: Talhao) => void;
 }
 
+const CROP_COLORS: Record<string, string> = {
+    'feijao': '#f472b6', // Rosa
+    'milho': '#fbbf24',   // Amarelo
+    'soja': '#fb923c',    // Laranja
+    'cafe': '#a855f7',    // Roxo
+    'pasto': '#84cc16',   // Lima
+    'default': '#10b981'  // Esmeralda
+};
+
+
 // Component to handle auto-zoom based on focusTarget or initial bounds
 const MapController: React.FC<MapControllerProps> = ({ talhoes, focusTarget }) => {
     const map = useMap();
@@ -126,15 +136,20 @@ const FarmMap: React.FC<FarmMapProps> = ({
                     if (!geo.coordinates || !geo.coordinates[0]) return null;
                     const positions: L.LatLngTuple[] = geo.coordinates[0].map(c => [c[1], c[0]] as L.LatLngTuple);
 
+                    const culturaKey = (t.cultura || '').toLowerCase();
+                    const talhaoColor = CROP_COLORS[culturaKey as keyof typeof CROP_COLORS] || CROP_COLORS.default;
+
                     return (
                         <React.Fragment key={t.id}>
                             <Polygon
                                 positions={positions}
-                                pathOptions={{ 
-                                    color: '#10b981', 
-                                    weight: 1.5,
-                                    fillColor: '#10b981',
-                                    fillOpacity: 0.35
+                                 pathOptions={{ 
+                                    color: talhaoColor, 
+                                    weight: 2,
+                                    opacity: 1,
+                                    fill: true,
+                                    fillColor: talhaoColor,
+                                    fillOpacity: 0.3
                                 }}
                                 eventHandlers={{
                                     click: (e) => {
@@ -148,9 +163,9 @@ const FarmMap: React.FC<FarmMapProps> = ({
                             {positions.length > 0 && (
                                 <Marker 
                                     position={L.polygon(positions).getBounds().getCenter()}
-                                    icon={L.divIcon({
-                                        className: 'bg-transparent border-none shadow-none',
-                                        html: '<div class="bg-zinc-900 text-white px-3 py-1.5 rounded-full text-[10px] font-bold shadow-lg border border-zinc-700 w-max">' + t.nome + '</div>'
+                                     icon={L.divIcon({ 
+                                        className: '', 
+                                        html: '<div style="background-color: white; color: #3f3f46; padding: 2px 6px; border-radius: 9999px; font-size: 9px; font-weight: 600; white-space: nowrap; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #e4e4e7; width: max-content; display: flex; align-items: center; gap: 4px; transform: translate(-50%, -50%);"><span style="font-size: 10px;">🌱</span> ' + t.nome + '</div>'
                                     })}
                                     eventHandlers={{
                                         click: (_e) => {

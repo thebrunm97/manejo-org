@@ -9,13 +9,16 @@ import {
     FlaskConical,
     Droplets,
     TreePine,
-    Edit2,
-    Save,
-    Loader2,
-    CheckCircle2,
-    AlertCircle,
     Info,
-    LayoutGrid
+    LayoutGrid,
+    Calendar,
+    Printer,
+    Pencil,
+    Loader2,
+    Save,
+    Edit2,
+    CheckCircle2,
+    AlertCircle
 } from 'lucide-react';
 import { locationService } from '../../services/locationService';
 import { cn } from '../../utils/cn';
@@ -240,6 +243,9 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
     const baseEsperada = unitMode === 'percent' ? 100 : 1000;
     const isTotalCorrect = Math.abs(total - baseEsperada) < 0.5;
 
+    const areaHa = (talhao.area_m2 || talhao.area_total_m2 || talhao.area_ha || 0) / 10000;
+    const areaFormatada = areaHa.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+
     const getIcon = (nome?: string) => {
         const lower = (nome || '').toLowerCase();
         if (lower.includes('tanque') || lower.includes('água')) return <Droplets className="text-blue-500" size={18} />;
@@ -249,40 +255,43 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
 
     return (
         <>
-            {/* Offcanvas Drawer Pattern */}
+            {/* Drawer Panel (Floating Card) - SPEC 01 */}
             <div className={cn(
-                "fixed inset-0 z-[9999] transition-all duration-300 pointer-events-none md:pointer-events-auto",
-                open ? "visible" : "invisible"
+                "absolute top-4 left-4 md:top-6 md:left-6 w-80 md:w-[22rem] bg-white rounded-[24px] shadow-2xl z-[1000] overflow-hidden max-h-[calc(100vh-2rem)] flex flex-col transition-all duration-500 transform",
+                open ? "translate-y-0 opacity-100 scale-100 pointer-events-auto" : "translate-y-4 opacity-0 scale-95 pointer-events-none"
             )}>
-                {/* Backdrop overlay (Desktop/Mobile) */}
-                <div
-                    className={cn(
-                        "absolute inset-0 bg-slate-900/60 transition-opacity duration-300 pointer-events-auto",
-                        open ? "opacity-100 backdrop-blur-sm" : "opacity-0"
-                    )}
-                    onClick={onClose}
-                />
-
-                {/* Drawer Panel (Floating Card) */}
-                <div className={cn(
-                    "absolute top-4 right-4 md:top-6 md:right-6 w-80 md:w-[22rem] bg-white rounded-[24px] shadow-2xl z-[1000] overflow-hidden max-h-[calc(100vh-3rem)] flex flex-col",
-                    open ? "translate-y-0 opacity-100 scale-100 pointer-events-auto" : "translate-y-4 opacity-0 scale-95 pointer-events-none"
-                )}>
-                    {/* Header */}
-                    <div className="flex items-center gap-4 p-6 shrink-0 bg-white border-b border-slate-50">
-                        <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600">
-                            {getIcon(talhao.nome)}
-                        </div>
-                        <div className="flex-1 overflow-hidden">
-                            <h3 className="text-lg font-bold text-slate-900 truncate leading-tight">{talhao.nome || 'Talhão Sem Nome'}</h3>
-                            <p className="text-xs text-slate-500 mt-0.5 font-medium">{talhao.cultura || 'Rotação de Culturas'}</p>
-                        </div>
-                        <button onClick={onClose} className="p-2 text-slate-300 hover:text-slate-500 hover:bg-slate-50 rounded-xl transition-all">
-                            <X size={20} />
-                        </button>
+                {/* Header */}
+                <div className="flex items-center gap-4 p-6 shrink-0 bg-white border-b border-slate-50">
+                <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600">
+                    {getIcon(talhao.nome)}
+                </div>
+                <div className="flex-1 overflow-hidden">
+                    <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Talhão No.</span>
+                        <span className="text-[10px] font-black text-slate-900 uppercase">#{talhao.id % 100}</span>
                     </div>
-
-                    <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+                    <h3 className="text-lg font-bold text-slate-900 truncate leading-tight mt-0.5">{talhao.nome || 'Talhão Sem Nome'}</h3>
+                    <p className="text-[11px] text-slate-400 font-medium">{talhao.cultura || 'Rotação de Culturas'}</p>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <button className="p-2 text-emerald-600 bg-emerald-50 rounded-full hover:bg-emerald-100 transition-colors">
+                        <Pencil size={14} />
+                    </button>
+                    <button className="p-2 text-emerald-600 bg-emerald-50 rounded-full hover:bg-emerald-100 transition-colors">
+                        <Calendar size={14} />
+                    </button>
+                    <button className="p-2 text-emerald-600 bg-emerald-50 rounded-full hover:bg-emerald-100 transition-colors">
+                        <Printer size={14} />
+                    </button>
+                    <div className="w-px h-4 bg-slate-100 mx-1" />
+                    <button onClick={onClose} className="p-1.5 text-slate-300 hover:text-slate-500 transition-all">
+                        <X size={20} />
+                    </button>
+                </div>
+            </div>                {/* Body Content (Invisible Scrollarea) - SPEC 02 */}
+                <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] p-5 pt-0 pb-10">
+                    {/* Insights/Soil Progress */}
+                    <div className="space-y-6">
                         {/* Nested Data Card (Seeding/Area) */}
                         <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
                             <div className="flex items-center justify-between mb-4">
@@ -299,24 +308,27 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                             </div>
                             
                             <div className="grid grid-cols-3 gap-2">
-                                <div className="space-y-1">
-                                    <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Área</p>
-                                    <p className="text-sm font-black text-slate-900">{talhao.area_ha || 0} <span className="text-[10px] font-bold text-slate-400">ha</span></p>
+                                <div className="space-y-0.5">
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Área</p>
+                                    <p className="text-2xl font-black text-slate-900 leading-none">{areaFormatada}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase">hectares</p>
                                 </div>
-                                <div className="space-y-1">
-                                    <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Perímetro</p>
-                                    <p className="text-sm font-black text-slate-900">-- <span className="text-[10px] font-bold text-slate-400">m</span></p>
+                                <div className="space-y-0.5">
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Perímetro</p>
+                                    <p className="text-2xl font-black text-slate-900 leading-none">--</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase">metros</p>
                                 </div>
-                                <div className="space-y-1">
-                                    <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Altivez</p>
-                                    <p className="text-sm font-black text-slate-900">850 <span className="text-[10px] font-bold text-slate-400">m</span></p>
+                                <div className="space-y-0.5">
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Altivez</p>
+                                    <p className="text-2xl font-black text-slate-900 leading-none">850</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase">m (nível mar)</p>
                                 </div>
                             </div>
-                        </div>
                     </div>
-
+                </div>
+                
                     {/* Tabs */}
-                    <div className="flex bg-slate-50/50 border-b border-slate-100 shrink-0">
+                    <div className="flex bg-slate-50/50 border-b border-slate-100 shrink-0 mb-6 rounded-xl overflow-hidden">
                         <button
                             onClick={() => setTabIndex(0)}
                             className={cn(
@@ -339,8 +351,8 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                         </button>
                     </div>
 
-                    {/* Content Scroll Area */}
-                    <div className="flex-1 overflow-y-auto scrollbar-hide">
+                    {/* Content Area */}
+                    <div className="flex-1">
                         {/* Tab 0: Structure */}
                         {tabIndex === 0 && (
                             <div className="animate-in fade-in duration-300">
@@ -578,22 +590,22 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                         )}
                     </div>
 
-                    {/* Footer Actions */}
+                    {/* Footer Actions (Inside Scrollarea) */}
                     {tabIndex === 0 && (
-                        <div className="p-6 border-t border-slate-100 shrink-0 bg-white shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.1)]">
-                            <button
+                        <div className="mt-10 mb-2">
+                             <button
                                 onClick={handleOpenCreateModal}
-                                className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm rounded-2xl shadow-xl shadow-emerald-100 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-emerald-100 transition-all hover:scale-[1.02] active:scale-[0.98]"
                             >
-                                <Plus size={20} />
-                                Novo Canteiro / Estrutura
+                                <Plus size={18} />
+                                Nova Estrutura
                             </button>
                         </div>
                     )}
                 </div>
             </div>
 
-            {/* --- CREATE MODAL --- */}
+                {/* --- CREATE MODAL --- */}
             <div className={cn(
                 "fixed inset-0 z-[2000] flex items-center justify-center p-4 transition-all duration-200",
                 createModalOpen ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
