@@ -1,6 +1,7 @@
 import MapboxDraw from '@mapbox/mapbox-gl-draw';
 import { useControl } from 'react-map-gl/maplibre';
 import type { ControlPosition } from 'react-map-gl/maplibre';
+import { mapLibreDrawStyle } from './mapLibreDrawStyle';
 
 type DrawControlProps = ConstructorParameters<typeof MapboxDraw>[0] & {
   position?: ControlPosition;
@@ -12,7 +13,12 @@ type DrawControlProps = ConstructorParameters<typeof MapboxDraw>[0] & {
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default function MapDrawControl(props: DrawControlProps) {
   useControl<any>(
-    () => new MapboxDraw(props),
+    () => new MapboxDraw({
+      displayControlsDefault: props.displayControlsDefault !== undefined ? props.displayControlsDefault : false,
+      controls: props.controls || { polygon: true, trash: true },
+      defaultMode: props.defaultMode || 'simple_select',
+      styles: mapLibreDrawStyle
+    }),
     ({ map }: any) => {
       if (props.onCreate) map.on('draw.create', props.onCreate);
       if (props.onUpdate) map.on('draw.update', props.onUpdate);

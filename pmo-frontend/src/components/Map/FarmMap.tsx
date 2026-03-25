@@ -9,21 +9,21 @@ interface GeoJSONData {
     features: any[];
 }
 
+import MapDrawControl from './MapDrawControl';
+
 interface MapCreatedEvent {
-    layer?: any;
-    geometry: string;
+    feature?: any;
+    geometry: any;
     areaM2: number;
 }
 
 interface FarmMapProps {
     talhoes: Talhao[];
     focusTarget?: Talhao | null;
-    selectedTalhaoId?: number;
-    onCreated?: (e: any) => void;
-    onEdited?: (e: any) => void;
-    onDeleted?: (e: any) => void;
-    onMapCreated?: (event: MapCreatedEvent) => void;
-    onSaveTalhao?: (talhao: Talhao) => void;
+    selectedTalhaoId?: number | string;
+    onDrawCreate?: (e: any) => void;
+    onDrawUpdate?: (e: any) => void;
+    onDrawDelete?: (e: any) => void;
     onTalhaoClick?: (talhao: Talhao) => void;
 }
 
@@ -105,7 +105,10 @@ const FarmMap: React.FC<FarmMapProps> = ({
     talhoes = [],
     focusTarget,
     selectedTalhaoId,
-    onTalhaoClick
+    onTalhaoClick,
+    onDrawCreate,
+    onDrawUpdate,
+    onDrawDelete
 }) => {
     // 1. Converter talhões para GeoJSON FeatureCollection (WebGL Native)
     const geojsonData = useMemo<GeoJSONData>(() => {
@@ -180,6 +183,18 @@ const FarmMap: React.FC<FarmMapProps> = ({
             }}
             interactiveLayerIds={['talhoes-fill']}
         >
+            <MapDrawControl
+                position="top-left"
+                displayControlsDefault={false}
+                controls={{
+                    polygon: true,
+                    trash: true
+                }}
+                defaultMode="simple_select"
+                onCreate={onDrawCreate}
+                onUpdate={onDrawUpdate}
+                onDelete={onDrawDelete}
+            />
             <Source id="talhoes-source" type="geojson" data={geojsonData}>
                 {/* Layer de Preenchimento (Enterprise Vitreous Effect) */}
                 <Layer
