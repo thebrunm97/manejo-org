@@ -241,8 +241,8 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
     const baseEsperada = unitMode === 'percent' ? 100 : 1000;
     const isTotalCorrect = Math.abs(total - baseEsperada) < 0.5;
 
-    const getStrIcon = (nome: string) => {
-        const lower = nome.toLowerCase();
+    const getIcon = (nome?: string) => {
+        const lower = (nome || '').toLowerCase();
         if (lower.includes('tanque') || lower.includes('água')) return <Droplets className="text-blue-500" size={18} />;
         if (lower.includes('linha') || lower.includes('saf')) return <TreePine className="text-amber-600" size={18} />;
         return <Sprout className="text-emerald-500" size={18} />;
