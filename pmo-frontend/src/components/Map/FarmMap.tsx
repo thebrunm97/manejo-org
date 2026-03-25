@@ -152,17 +152,17 @@ const FarmMap: React.FC<FarmMapProps> = ({
                                     icon={L.divIcon({
                                         className: 'custom-div-icon',
                                         html: `
-                                            <div class="flex items-center gap-2 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg border border-white whitespace-nowrap transition-all duration-300 pointer-events-auto">
+                                            <div class="flex items-center gap-2 bg-white/90 backdrop-blur-sm text-slate-800 font-bold px-3 py-1 rounded-full shadow-md text-[10px] border border-white/50 whitespace-nowrap pointer-events-auto hover:scale-105 transition-transform">
                                                 <div class="w-1.5 h-1.5 rounded-full ${t.tipo === 'agua' ? 'bg-blue-500' : 'bg-emerald-500'}"></div>
-                                                <span class="text-[10px] font-black text-slate-800 uppercase tracking-tighter">${t.nome}</span>
-                                                ${t.cultura ? `<span class="text-[9px] font-bold text-slate-400 border-l border-slate-200 pl-2 capitalize">${t.cultura}</span>` : ''}
+                                                <span class="tracking-tight">${t.nome}</span>
+                                                ${t.cultura ? `<span class="text-[9px] font-medium text-slate-400 border-l border-slate-200 pl-2 ml-1 capitalize">${t.cultura}</span>` : ''}
                                             </div>
                                         `,
                                         iconSize: [0, 0],
-                                        iconAnchor: [60, 20] 
+                                        iconAnchor: [60, 15] 
                                     })}
                                     eventHandlers={{
-                                        click: (e) => {
+                                        click: (_e) => {
                                             if (onTalhaoClick) onTalhaoClick(t);
                                         }
                                     }}
