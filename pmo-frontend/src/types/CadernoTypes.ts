@@ -34,7 +34,9 @@ export enum UnitType {
     KG_HA = 'kg/ha',
     G_PLANTA = 'g/planta',
     ML_PLANTA = 'ml/planta',
-    ML_L = 'ml/L'
+    ML_L = 'ml/L',
+    L_M2 = 'l/m²',
+    KG_M2 = 'kg/m²'
 }
 
 // ==================================================================
