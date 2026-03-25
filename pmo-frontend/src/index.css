@@ -514,4 +514,15 @@ body {
 .mapboxgl-ctrl-group button:hover {
   background-color: #f4f4f5 !important;
 }
+
+/* ========================================================== */
+/* FIX UI/UX: CURSOR CROSSHAIR PARA DESENHO DE PRECISÃO       */
+/* ========================================================== */
+.mapboxgl-map .mapbox-gl-draw_polygon .mapboxgl-canvas,
+.mapboxgl-map .mapbox-gl-draw_line .mapboxgl-canvas,
+.mapboxgl-map .mapbox-gl-draw_point .mapboxgl-canvas,
+.mapboxgl-interactive.mapboxgl-draw_polygon,
+.mapbox-gl-draw-mode.draw_polygon .mapboxgl-canvas {
+  cursor: crosshair !important;
+}
 
