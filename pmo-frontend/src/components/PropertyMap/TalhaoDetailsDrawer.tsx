@@ -166,7 +166,12 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
 
     // Estados para edição do cabeçalho (Talhão)
     const [isEditingTalhao, setIsEditingTalhao] = useState(false);
-    const [talhaoEditData, setTalhaoEditData] = useState({ nome: '', cultura: '' });
+    const [talhaoEditData, setTalhaoEditData] = useState({ 
+        nome: '', 
+        cultura: '',
+        fillColor: '#3bb444',
+        borderColor: '#228b22'
+    });
 
     // Estados para edição de Canteiros/Estruturas individuais
     const [editingCanteiroId, setEditingCanteiroId] = useState<string | number | null>(null);
@@ -223,7 +228,9 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
             });
             setTalhaoEditData({
                 nome: talhao.nome || '',
-                cultura: talhao.cultura || ''
+                cultura: talhao.cultura || '',
+                fillColor: talhao.fillColor || talhao.cor || '#3bb444',
+                borderColor: talhao.borderColor || '#228b22'
             });
         }
     }, [talhao, isEditing]);
@@ -297,7 +304,10 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
         try {
             await locationService.updateTalhao(talhao.id, {
                 nome: talhaoEditData.nome,
-                cultura: talhaoEditData.cultura
+                cultura: talhaoEditData.cultura,
+                fill_color: talhaoEditData.fillColor,
+                border_color: talhaoEditData.borderColor,
+                cor: talhaoEditData.fillColor // Backward compatibility
             });
             setIsEditingTalhao(false);
             if (onUpdateStart) onUpdateStart();
@@ -357,11 +367,13 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
     const areaHa = areaM2 / 10000;
     const areaFormatada = areaHa.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
 
-    const getIcon = (nome?: string) => {
+    const getIcon = (nome?: string, customColor?: string) => {
         const lower = (nome || '').toLowerCase();
-        if (lower.includes('tanque') || lower.includes('água')) return <Droplets className="text-blue-500" size={18} />;
-        if (lower.includes('linha') || lower.includes('saf')) return <TreePine className="text-amber-600" size={18} />;
-        return <Sprout className="text-emerald-500" size={18} />;
+        const baseColor = customColor || (lower.includes('tanque') || lower.includes('água') ? '#3B82F6' : lower.includes('linha') || lower.includes('saf') ? '#D97706' : '#10B981');
+        
+        if (lower.includes('tanque') || lower.includes('água')) return <Droplets style={{ color: baseColor }} size={18} />;
+        if (lower.includes('linha') || lower.includes('saf')) return <TreePine style={{ color: baseColor }} size={18} />;
+        return <Sprout style={{ color: baseColor }} size={18} />;
     };
 
     return (
@@ -384,8 +396,13 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                 )}>
                 {/* Header */}
                 <div className="flex items-start gap-3 p-4 shrink-0 bg-white border-b border-slate-100">
-                <div className="w-9 h-9 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600 shrink-0">
-                    {getIcon(talhao.nome)}
+                <div 
+                    className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ 
+                        backgroundColor: `${talhao.fill_color || talhao.fillColor || talhao.cor || (talhao.tipo === 'agua' ? '#3B82F6' : '#10B981')}20`
+                    }}
+                >
+                    {getIcon(talhao.nome, talhao.fill_color || talhao.fillColor || talhao.cor)}
                 </div>
                 <div className="flex-1 overflow-hidden min-w-0">
                     {isEditingTalhao ? (
@@ -403,6 +420,32 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                 className="w-full text-[11px] text-slate-500 bg-slate-50 border border-slate-200 rounded px-2 py-0.5 focus:border-emerald-500 outline-none"
                                 placeholder="Cultura (ex: Feijão)"
                             />
+                            <div className="grid grid-cols-2 gap-2 mt-2">
+                                <div className="space-y-1">
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase ml-1">Cor</p>
+                                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
+                                        <input
+                                            type="color"
+                                            value={talhaoEditData.fillColor}
+                                            onChange={(e) => setTalhaoEditData(prev => ({ ...prev, fillColor: e.target.value }))}
+                                            className="w-6 h-6 p-0.5 rounded cursor-pointer bg-white border border-slate-200"
+                                        />
+                                        <span className="text-[9px] font-mono font-bold text-slate-500 uppercase">{talhaoEditData.fillColor}</span>
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase ml-1">Borda</p>
+                                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
+                                        <input
+                                            type="color"
+                                            value={talhaoEditData.borderColor}
+                                            onChange={(e) => setTalhaoEditData(prev => ({ ...prev, borderColor: e.target.value }))}
+                                            className="w-6 h-6 p-0.5 rounded cursor-pointer bg-white border border-slate-200"
+                                        />
+                                        <span className="text-[9px] font-mono font-bold text-slate-500 uppercase">{talhaoEditData.borderColor}</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     ) : (
                         <>

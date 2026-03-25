@@ -20,6 +20,10 @@ export interface Talhao {
     geometry?: string | GeoJSONGeometry;
     geometria?: GeoPoint[]; // For internal state/services
     cor?: string;
+    fillColor?: string;
+    borderColor?: string;
+    fill_color?: string;
+    border_color?: string;
     area_total_m2?: number;
     area_m2?: number;
     area_ha?: number;
