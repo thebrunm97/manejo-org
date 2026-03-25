@@ -132,9 +132,9 @@ const FarmMap: React.FC<FarmMapProps> = ({
                                 positions={positions}
                                 pathOptions={{ 
                                     color: '#10b981', 
-                                    weight: 2,
-                                    opacity: 1,
-                                    fill: false
+                                    weight: 1.5,
+                                    fillColor: '#10b981',
+                                    fillOpacity: 0.35
                                 }}
                                 eventHandlers={{
                                     click: (e) => {
