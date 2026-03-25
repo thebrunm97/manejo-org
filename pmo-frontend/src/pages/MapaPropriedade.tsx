@@ -171,6 +171,7 @@ const MapaPropriedade: React.FC = () => {
                     loadTalhoes={loadTalhoes}
                     loading={loading}
                     isDrawerOpen={isDrawerOpen}
+                    pmoId={pmoId}
                 />
             </div>
 

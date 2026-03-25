@@ -41,6 +41,7 @@ interface PropertyMapProps {
     loadTalhoes: () => Promise<void>;
     loading?: boolean;
     isDrawerOpen?: boolean;
+    pmoId?: string | number | null;
 }
 
 const PropertyMap: React.FC<PropertyMapProps> = ({ 
@@ -53,7 +54,8 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
     onOpenDrawer,
     loadTalhoes,
     loading = false,
-    isDrawerOpen
+    isDrawerOpen,
+    pmoId
 }) => {
     const { user } = useAuthCore();
 
@@ -166,7 +168,9 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
                 fill_color: newTalhaoData.fillColor,
                 border_color: newTalhaoData.borderColor,
                 cor: newTalhaoData.fillColor, // Backward compatibility
-                propriedade_id: propriedadeId
+                propriedade_id: propriedadeId,
+                pmo_id: pmoId ? parseInt(String(pmoId)) : null,
+                user_id: user.id
             };
 
             if (locationService.createTalhao) {
