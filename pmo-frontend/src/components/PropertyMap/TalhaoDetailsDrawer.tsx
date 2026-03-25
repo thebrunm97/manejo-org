@@ -1,6 +1,7 @@
 // src/components/PropertyMap/TalhaoDetailsDrawer.tsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import L from 'leaflet';
 import {
     X,
     Sprout,
@@ -244,6 +245,24 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
     const areaHa = (talhao.area_m2 || talhao.area_total_m2 || talhao.area_ha || 0) / 10000;
     const areaFormatada = areaHa.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
 
+    const perimetroKm = useMemo(() => {
+        if (!talhao || !talhao.geometry) return null;
+        try {
+            const geo = typeof talhao.geometry === 'string' ? JSON.parse(talhao.geometry) : talhao.geometry;
+            if (geo.coordinates && geo.coordinates[0]) {
+                const coords: L.LatLngTuple[] = geo.coordinates[0].map((c: any) => [c[1], c[0]] as L.LatLngTuple);
+                let dist = 0;
+                for (let i = 0; i < coords.length - 1; i++) {
+                    dist += L.latLng(coords[i]).distanceTo(L.latLng(coords[i+1]));
+                }
+                return dist;
+            }
+        } catch (e) {
+            console.error("Error calculating perimeter:", e);
+        }
+        return null;
+    }, [talhao]);
+
     const getIcon = (nome?: string) => {
         const lower = (nome || '').toLowerCase();
         if (lower.includes('tanque') || lower.includes('água')) return <Droplets className="text-blue-500" size={18} />;
@@ -302,7 +321,9 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                 </div>
                                 <div className="space-y-0.5">
                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Perímetro</p>
-                                    <p className="text-2xl font-black text-slate-900 leading-none">--</p>
+                                    <p className="text-2xl font-black text-slate-900 leading-none">
+                                        {perimetroKm ? Math.round(perimetroKm).toLocaleString('pt-BR') : '--'}
+                                    </p>
                                     <p className="text-[10px] font-bold text-slate-400 uppercase">metros</p>
                                 </div>
                                 <div className="space-y-0.5">
