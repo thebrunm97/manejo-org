@@ -26,7 +26,9 @@ export const locationService = {
                 canteiros (
                     id,
                     nome,
-                    status
+                    status,
+                    largura_metros,
+                    comprimento_metros
                 )
             `)
             .order('nome', { ascending: true });
@@ -102,7 +104,7 @@ export const locationService = {
     /**
      * Remove um canteiro pelo ID.
      */
-    deleteCanteiro: async (id: string): Promise<boolean> => {
+    deleteCanteiro: async (id: string | number): Promise<boolean> => {
         const { error } = await supabase
             .from('canteiros')
             .delete()
@@ -110,6 +112,22 @@ export const locationService = {
 
         if (error) {
             console.error('Erro ao deletar canteiro:', error);
+            throw error;
+        }
+        return true;
+    },
+
+    /**
+     * Atualiza dados de um canteiro.
+     */
+    updateCanteiro: async (id: string | number, data: Partial<CanteiroRow>): Promise<boolean> => {
+        const { error } = await supabase
+            .from('canteiros')
+            .update(data)
+            .eq('id', id);
+
+        if (error) {
+            console.error('Erro ao atualizar canteiro:', error);
             throw error;
         }
         return true;

@@ -137,8 +137,16 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
     };
 
     const [saving, setSaving] = useState(false);
-    const [isEditing, setIsEditing] = useState(false);
+    const [isEditing, setIsEditing] = useState(false); // Refere-se à Saúde do Solo
     const [unitMode, setUnitMode] = useState<'percent' | 'g_kg'>('percent');
+
+    // Estados para edição do cabeçalho (Talhão)
+    const [isEditingTalhao, setIsEditingTalhao] = useState(false);
+    const [talhaoEditData, setTalhaoEditData] = useState({ nome: '', cultura: '' });
+
+    // Estados para edição de Canteiros/Estruturas individuais
+    const [editingCanteiroId, setEditingCanteiroId] = useState<string | number | null>(null);
+    const [canteiroEditData, setCanteiroEditData] = useState({ nome: '', largura: '', comprimento: '' });
 
     // Form Data para métricas de solo
     const [formData, setFormData] = useState({
@@ -180,7 +188,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
         return null;
     }, [talhao]);
 
-    // Load Data
+    // Load Initial Data for Editing
     useEffect(() => {
         if (talhao) {
             setFormData({
@@ -192,6 +200,10 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                 teor_argila: talhao.teor_argila || '',
                 silte: talhao.silte || '',
                 areia: talhao.areia || ''
+            });
+            setTalhaoEditData({
+                nome: talhao.nome || '',
+                cultura: talhao.cultura || ''
             });
         }
     }, [talhao, isEditing]);
@@ -259,6 +271,54 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
         }
     };
 
+    const handleSaveTalhaoHeader = async () => {
+        if (!talhao) return;
+        setSaving(true);
+        try {
+            await locationService.updateTalhao(talhao.id, {
+                nome: talhaoEditData.nome,
+                cultura: talhaoEditData.cultura
+            });
+            setIsEditingTalhao(false);
+            if (onUpdateStart) onUpdateStart();
+            setSnackbar({ open: true, message: "Informações do talhão atualizadas!", severity: 'success' });
+        } catch (e) {
+            console.error(e);
+            setSnackbar({ open: true, message: "Erro ao atualizar talhão.", severity: 'error' });
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleStartEditCanteiro = (canteiro: any) => {
+        setEditingCanteiroId(canteiro.id);
+        setCanteiroEditData({
+            nome: canteiro.nome || '',
+            largura: String(canteiro.largura_metros || ''),
+            comprimento: String(canteiro.comprimento_metros || '')
+        });
+    };
+
+    const handleSaveCanteiroEdit = async () => {
+        if (!editingCanteiroId) return;
+        setSaving(true);
+        try {
+            await locationService.updateCanteiro(editingCanteiroId, {
+                nome: canteiroEditData.nome,
+                largura_metros: parseFloat(canteiroEditData.largura.replace(',', '.')) || null,
+                comprimento_metros: parseFloat(canteiroEditData.comprimento.replace(',', '.')) || null
+            });
+            setEditingCanteiroId(null);
+            if (onUpdateStart) onUpdateStart();
+            setSnackbar({ open: true, message: "Estrutura atualizada com sucesso!", severity: 'success' });
+        } catch (e) {
+            console.error(e);
+            setSnackbar({ open: true, message: "Erro ao atualizar estrutura.", severity: 'error' });
+        } finally {
+            setSaving(false);
+        }
+    };
+
     if (!talhao) return null;
 
     // --- CÁLCULOS VISUAIS ---
@@ -288,7 +348,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
         <>
             {/* Drawer Panel (Floating Card) - SPEC 01 */}
             <div className={cn(
-                "absolute top-8 left-8 z-[1000] w-80 md:w-[22rem] bg-white rounded-[24px] shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex flex-col max-h-[calc(100%-10rem)] overflow-hidden transition-all duration-300 transform",
+                "absolute top-6 left-6 bottom-6 z-[1000] w-80 md:w-[26rem] bg-white rounded-[24px] shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex flex-col overflow-hidden transition-all duration-300 transform",
                 open ? "translate-y-0 opacity-100 scale-100 pointer-events-auto" : "translate-y-4 opacity-0 scale-95 pointer-events-none"
             )}>
                 {/* Header */}
@@ -297,13 +357,46 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                     {getIcon(talhao.nome)}
                 </div>
                 <div className="flex-1 overflow-hidden min-w-0">
-                    <h3 className="text-base font-bold text-slate-900 truncate leading-tight">{talhao.nome || 'Talhão Sem Nome'}</h3>
-                    <p className="text-[11px] text-slate-400 font-medium">{talhao.cultura || 'Rotação de Culturas'}</p>
+                    {isEditingTalhao ? (
+                        <div className="space-y-1">
+                            <input
+                                autoFocus
+                                value={talhaoEditData.nome}
+                                onChange={(e) => setTalhaoEditData(prev => ({ ...prev, nome: e.target.value }))}
+                                className="w-full text-sm font-bold text-slate-900 bg-slate-50 border border-slate-200 rounded px-2 py-0.5 focus:border-emerald-500 outline-none"
+                                placeholder="Nome do talhão"
+                            />
+                            <input
+                                value={talhaoEditData.cultura}
+                                onChange={(e) => setTalhaoEditData(prev => ({ ...prev, cultura: e.target.value }))}
+                                className="w-full text-[11px] text-slate-500 bg-slate-50 border border-slate-200 rounded px-2 py-0.5 focus:border-emerald-500 outline-none"
+                                placeholder="Cultura (ex: Feijão)"
+                            />
+                        </div>
+                    ) : (
+                        <>
+                            <h3 className="text-base font-bold text-slate-900 truncate leading-tight">{talhao.nome || 'Talhão Sem Nome'}</h3>
+                            <p className="text-[11px] text-slate-400 font-medium">{talhao.cultura || 'Rotação de Culturas'}</p>
+                        </>
+                    )}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                    <button className="p-1.5 text-emerald-600 bg-emerald-50 rounded-full hover:bg-emerald-100 transition-colors">
-                        <Pencil size={13} />
-                    </button>
+                    {isEditingTalhao ? (
+                        <button 
+                            onClick={handleSaveTalhaoHeader}
+                            disabled={saving}
+                            className="p-1.5 text-white bg-emerald-600 rounded-full hover:bg-emerald-700 transition-colors"
+                        >
+                            {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+                        </button>
+                    ) : (
+                        <button 
+                            onClick={() => setIsEditingTalhao(true)}
+                            className="p-1.5 text-emerald-600 bg-emerald-50 rounded-full hover:bg-emerald-100 transition-colors"
+                        >
+                            <Pencil size={13} />
+                        </button>
+                    )}
                     <button onClick={onClose} className="p-1.5 text-slate-300 hover:text-slate-500 transition-all">
                         <X size={18} />
                     </button>
@@ -399,27 +492,84 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                                 {talhao.canteiros.length} ESTRUTURAS REGISTRADAS
                                             </span>
                                         </div>
-                                        <div className="divide-y divide-slate-50">
+                                        <div className="divide-y divide-slate-50 mb-20">
                                             {talhao.canteiros.map((canteiro: any) => (
-                                                <div key={canteiro.id} className="flex items-center justify-between p-4 px-6 hover:bg-slate-50 group transition-colors">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100">
-                                                            {getIcon(canteiro.nome)}
+                                                <div key={canteiro.id} className="p-4 px-6 hover:bg-slate-50 group transition-colors">
+                                                    {editingCanteiroId === canteiro.id ? (
+                                                        <div className="space-y-3 animate-in slide-in-from-top-1 duration-200">
+                                                            <div className="flex items-center gap-2">
+                                                                <input 
+                                                                    value={canteiroEditData.nome}
+                                                                    onChange={(e) => setCanteiroEditData(p => ({ ...p, nome: e.target.value }))}
+                                                                    className="flex-1 text-sm font-bold bg-white border border-slate-200 rounded-lg px-3 py-1.5 outline-none focus:border-emerald-500"
+                                                                    placeholder="Nome"
+                                                                />
+                                                            </div>
+                                                            <div className="grid grid-cols-2 gap-2">
+                                                                <div className="space-y-1">
+                                                                    <p className="text-[9px] font-bold text-slate-400 uppercase">Largura (m)</p>
+                                                                    <input 
+                                                                        type="text"
+                                                                        value={canteiroEditData.largura}
+                                                                        onChange={(e) => setCanteiroEditData(p => ({ ...p, largura: e.target.value }))}
+                                                                        className="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-1.5 outline-none focus:border-emerald-500"
+                                                                        placeholder="0,00"
+                                                                    />
+                                                                </div>
+                                                                <div className="space-y-1">
+                                                                    <p className="text-[9px] font-bold text-slate-400 uppercase">Comprimento (m)</p>
+                                                                    <input 
+                                                                        type="text"
+                                                                        value={canteiroEditData.comprimento}
+                                                                        onChange={(e) => setCanteiroEditData(p => ({ ...p, comprimento: e.target.value }))}
+                                                                        className="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-1.5 outline-none focus:border-emerald-500"
+                                                                        placeholder="0,00"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex justify-end gap-2 mt-2">
+                                                                <button onClick={() => setEditingCanteiroId(null)} className="px-3 py-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-600">Cancelar</button>
+                                                                <button 
+                                                                    onClick={handleSaveCanteiroEdit}
+                                                                    className="px-4 py-1.5 bg-emerald-600 text-white text-[10px] font-bold rounded-lg hover:bg-emerald-700 shadow-lg shadow-emerald-100"
+                                                                >
+                                                                    Salvar
+                                                                </button>
+                                                            </div>
                                                         </div>
-                                                        <div>
-                                                            <h4 className="text-sm font-bold text-slate-800">{canteiro.nome}</h4>
-                                                            {canteiro.status !== 'ativo' && (
-                                                                <span className="text-[9px] font-bold text-slate-400 uppercase">{canteiro.status}</span>
-                                                            )}
+                                                    ) : (
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100">
+                                                                    {getIcon(canteiro.nome)}
+                                                                </div>
+                                                                <div>
+                                                                    <h4 className="text-sm font-bold text-slate-800">{canteiro.nome}</h4>
+                                                                    <div className="flex gap-2 text-[10px] text-slate-400 font-medium">
+                                                                        {canteiro.largura_metros && <span>{String(canteiro.largura_metros).replace('.', ',')}m larg.</span>}
+                                                                        {canteiro.comprimento_metros && <span>{String(canteiro.comprimento_metros).replace('.', ',')}m comp.</span>}
+                                                                        {!canteiro.largura_metros && !canteiro.comprimento_metros && <span>Dimensões não info.</span>}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                                                <button
+                                                                    onClick={() => handleStartEditCanteiro(canteiro)}
+                                                                    className="p-2 text-slate-300 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
+                                                                    title="Editar"
+                                                                >
+                                                                    <Pencil size={14} />
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => onDeleteCanteiro(canteiro.id)}
+                                                                    className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                                                    title="Excluir"
+                                                                >
+                                                                    <Trash2 size={16} />
+                                                                </button>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                    <button
-                                                        onClick={() => onDeleteCanteiro(canteiro.id)}
-                                                        className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                                                        title="Excluir"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
+                                                    )}
                                                 </div>
                                             ))}
                                         </div>
