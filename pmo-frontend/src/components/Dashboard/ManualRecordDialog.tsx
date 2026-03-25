@@ -7,7 +7,7 @@
  * 
  * LATEST FIX: Applied strict structure to fix layout issues (overlay fusing with modal).
  */
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
     Sprout,
     FlaskConical,
@@ -44,7 +44,6 @@ import {
     PlantioDraft,
     ManejoDraft,
     ColheitaDraft,
-    OutroDraft,
     LimpezaDraft,
     CompostagemDraft,
     ComprasDraft,
@@ -113,6 +112,30 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
     const [openJustification, setOpenJustification] = useState(false);
     const [justificativa, setJustificativa] = useState('');
     const [openLocation, setOpenLocation] = useState(false);
+    
+    // --- Tabs Dragging Logic ---
+    const tabsRef = useRef<HTMLDivElement>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const [startX, setStartX] = useState(0);
+    const [scrollLeft, setScrollLeft] = useState(0);
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        setIsDragging(true);
+        if (tabsRef.current) {
+            setStartX(e.pageX - tabsRef.current.offsetLeft);
+            setScrollLeft(tabsRef.current.scrollLeft);
+        }
+    };
+
+    const handleMouseLeaveOrUp = () => setIsDragging(false);
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!isDragging || !tabsRef.current) return;
+        e.preventDefault();
+        const x = e.pageX - tabsRef.current.offsetLeft;
+        const walk = (x - startX) * 2; // Scroll speed multiplier
+        tabsRef.current.scrollLeft = scrollLeft - walk;
+    };
 
     // --- Wrapper for updateDraft that clears errors ---
     const updateDraft = useCallback((field: string, value: any) => {
@@ -307,48 +330,18 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                 } as any;
             }
             else {
-                // Outro
-                const d = draft as OutroDraft;
-                const detalhes: any = { ...d };
-
-                if (d.tipoOutro === 'compra') {
-                    Object.assign(detalhes, {
-                        tipo_registro: 'compra',
-                        quantidade: parseFloat(d.quantidade) || 0,
-                        unidade: d.unidade,
-                        fornecedor: d.fornecedor,
-                        tipo_origem: d.tipoOrigem,
-                        numero_documento: d.numeroDocumento
-                    });
-                    // Sprint 1: Mapear para colunas nativas no payloadBase (através do spread posterior)
-                    Object.assign(payloadBase, {
-                        fornecedor: d.fornecedor,
-                        nota_fiscal: d.numeroDocumento
-                    });
-                } else if (d.tipoOutro === 'venda') {
-                    Object.assign(detalhes, {
-                        tipo_registro: 'venda',
-                        quantidade: parseFloat(d.quantidade) || 0,
-                        unidade: d.unidade,
-                        destino: d.destinoVenda,
-                        numero_documento: d.numeroDocumento
-                    });
-                } else {
-                    Object.assign(detalhes, { tipo_registro: 'outro' });
-                }
-
-                delete detalhes.dataHora;
-                delete detalhes.locais;
-                delete detalhes.produto;
-                delete detalhes.observacao;
-
+                // Outro: Atividade Geral de Manejo
+                
                 finalPayload = {
                     ...payloadBase,
                     tipo_atividade: ActivityType.OUTRO,
                     id: payloadBase.id!,
-                    quantidade_valor: d.quantidade ? parseFloat(d.quantidade) : 0,
-                    quantidade_unidade: d.unidade || UnitType.UNID,
-                    detalhes_tecnicos: detalhes
+                    quantidade_valor: 0,
+                    quantidade_unidade: UnitType.UNID,
+                    detalhes_tecnicos: { 
+                        tipo_registro: 'outro', 
+                        subcategoria: 'geral' 
+                    }
                 } as CadernoEntry;
             }
 
@@ -416,7 +409,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
 
             {/* --- 2. Caixa do Modal (White Background is Critical) --- */}
-            <div className="relative w-full max-w-2xl bg-white rounded-lg shadow-2xl flex flex-col max-h-full">
+            <div className="relative w-[calc(100vw-2rem)] max-w-2xl md:w-full max-h-[calc(100dvh-3rem)] md:max-h-[calc(100dvh-4rem)] bg-white rounded-[24px] shadow-2xl flex flex-col overflow-hidden">
 
                 {/* Header */}
                 <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-100">
@@ -434,7 +427,16 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                 </div>
 
                   <div className="bg-white border-b border-gray-100 flex-shrink-0">
-                    <nav className="flex overflow-x-auto scrollbar-hide px-4 py-3 gap-2" aria-label="Tabs" role="tablist">
+                    <nav 
+                        ref={tabsRef as any}
+                        onMouseDown={handleMouseDown}
+                        onMouseLeave={handleMouseLeaveOrUp}
+                        onMouseUp={handleMouseLeaveOrUp}
+                        onMouseMove={handleMouseMove}
+                        className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth px-10 gap-5 py-4 [&::-webkit-scrollbar]:hidden [mask-image:linear-gradient(to_right,transparent,white_15%,white_85%,transparent)] cursor-grab active:cursor-grabbing select-none" 
+                        aria-label="Tabs" 
+                        role="tablist"
+                    >
                         {[
                             { id: 'plantio', label: 'Plantio', icon: Sprout, color: 'text-white', activeBg: 'bg-emerald-600', inactiveBg: 'bg-slate-100' },
                             { id: 'manejo', label: 'Manejo', icon: FlaskConical, color: 'text-white', activeBg: 'bg-emerald-600', inactiveBg: 'bg-slate-100' },
@@ -457,11 +459,11 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                                     onClick={() => !disabled && setActiveTab(tab.id as any)}
                                     disabled={disabled}
                                     className={`
-                                        inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-sm font-bold transition-all duration-200 whitespace-nowrap flex-shrink-0
+                                        inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-sm font-bold transition-all duration-200 whitespace-nowrap flex-shrink-0 snap-center
                                         ${isActive
                                             ? `${tab.activeBg} ${tab.color} shadow-lg shadow-emerald-200`
                                             : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}
-                                        ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer active:scale-95'}
+                                        ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer active:scale-95 active:cursor-grabbing'}
                                     `}
                                 >
                                     <Icon size={22} className={isActive ? 'text-white' : 'text-slate-500'} />
@@ -473,7 +475,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                 </div>
 
                 {/* --- 3. Corpo do Formulário (Scrollable Content) --- */}
-                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+                <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] p-4 md:p-6 pb-8 space-y-6">
 
                     {isEditMode && (
                         <div className="bg-amber-50 border-l-4 border-amber-400 p-4 mb-2 rounded-r-md">
