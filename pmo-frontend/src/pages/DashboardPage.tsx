@@ -95,6 +95,7 @@ const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const [openRecordDialog, setOpenRecordDialog] = useState(false);
   const [openWhatsappDialog, setOpenWhatsappDialog] = useState(false);
+  const [recordToEdit, setRecordToEdit] = useState<any>(null);
 
 
   // Conectando o cérebro
@@ -126,7 +127,9 @@ const DashboardPage: React.FC = () => {
       <ProfileIncompleteAlert show={!userProfile?.telefone} />
       <ProductTour ready={isPageReady} />
       <ManualRecordDialog
+        key={recordToEdit?.id || "new-record"}
         open={openRecordDialog}
+        recordToEdit={recordToEdit}
         onClose={() => setOpenRecordDialog(false)}
         onRecordSaved={refreshDashboard}
       />
@@ -164,7 +167,10 @@ const DashboardPage: React.FC = () => {
             Gerenciar Planos
           </button>
           <button
-            onClick={() => setOpenRecordDialog(true)}
+            onClick={() => {
+              setRecordToEdit(null);
+              setOpenRecordDialog(true);
+            }}
             className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 shadow-lg shadow-green-600/20 transition-all w-full sm:w-auto hover:-translate-y-0.5 active:translate-y-0"
           >
             <Plus size={20} />
@@ -319,6 +325,10 @@ const DashboardPage: React.FC = () => {
             <HarvestDashboard
               harvestStats={harvestStats || {}}
               recentActivity={recentActivities || []}
+              onEditRecord={(record) => {
+                setRecordToEdit(record);
+                setOpenRecordDialog(true);
+              }}
             />
           </div>
         </div>

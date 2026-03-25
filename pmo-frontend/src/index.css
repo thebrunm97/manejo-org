@@ -464,4 +464,15 @@ body {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
+}
+
+/* Efeito Mapbox para Polígonos do Leaflet */
+path.polygon-glow-effect {
+  transition: stroke-width 0.2s ease, fill-opacity 0.2s ease;
+  filter: drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.4));
+}
+
+path.polygon-glow-effect:hover {
+  filter: drop-shadow(0px 0px 6px rgba(255, 255, 255, 0.5));
+  cursor: pointer;
 }

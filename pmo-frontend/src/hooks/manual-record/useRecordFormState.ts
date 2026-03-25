@@ -327,7 +327,6 @@ export const useRecordFormState = ({
         setVendasDraft({ ...initialVendasDraft, dataHora: now });
         setActiveTab('plantio');
     }, []);
-
     // --- Populate from existing record on edit mode ---
     useEffect(() => {
         if (!open) return;
@@ -448,13 +447,11 @@ export const useRecordFormState = ({
                 setOutroDraft({ ...initialOutroDraft, ...common });
             }
         } else {
-            // Creation mode - ensure dataHora is fresh if empty
-            if (!plantioDraft.dataHora) {
-                setPlantioDraft(prev => ({ ...prev, dataHora: now }));
-            }
+            // Creation mode - RESET EVERYTHING to ensure no leakage
+            resetAllDrafts();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [open, recordToEdit]);
+    }, [open, recordToEdit, resetAllDrafts]);
 
     return {
         activeTab,
@@ -471,7 +468,7 @@ export const useRecordFormState = ({
         getCurrentDraft,
         updateDraft,
         clearDraft,
-        resetAllDrafts,
+        resetAllDrafts, // Exported correctly
         setPlantioDraft,
         setManejoDraft,
         setColheitaDraft,

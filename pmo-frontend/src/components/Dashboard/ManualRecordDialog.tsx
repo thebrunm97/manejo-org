@@ -92,7 +92,8 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
         setActiveTab,
         getCurrentDraft,
         updateDraft: updateDraftBase,
-        clearDraft
+        clearDraft,
+        resetAllDrafts
     } = useRecordFormState({ open, recordToEdit });
 
     const { pmoAtivoId } = useAuthProfile();
@@ -160,6 +161,11 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
             executeSave();
         }
     }, [getCurrentDraft, validate, activeTab, isEditMode]);
+
+    const handleClose = useCallback(() => {
+        resetAllDrafts();
+        onClose();
+    }, [onClose, resetAllDrafts]);
 
     const executeSave = useCallback(async () => {
         setLoading(true);
@@ -432,7 +438,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                     </h3>
                     <button
                         type="button"
-                        onClick={onClose}
+                        onClick={handleClose}
                         className="text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-full p-2 transition-colors"
                     >
                         <span className="sr-only">Fechar</span>
@@ -694,7 +700,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                 <div className="p-4 md:p-6 bg-slate-50/50 border-t border-slate-100 flex flex-col-reverse md:flex-row md:justify-end gap-3 rounded-b-xl">
                     <button
                         type="button"
-                        onClick={onClose}
+                        onClick={handleClose}
                         className="w-full md:w-auto px-6 py-3 rounded-xl font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
                     >
                         Cancelar
