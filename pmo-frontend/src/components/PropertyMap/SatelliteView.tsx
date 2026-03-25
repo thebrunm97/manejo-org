@@ -3,10 +3,12 @@ import React, { useState, useMemo } from 'react';
 import {
     Trash2,
 } from 'lucide-react';
-import Map, { Source, Layer, Marker } from 'react-map-gl/maplibre';
+import Map, { Source, Layer } from 'react-map-gl/maplibre';
 import { useTalhaoManager } from '../../hooks/map/useTalhaoManager';
 import TalhaoDetails from '../Map/TalhaoDetails';
 import { ESRI_SATELLITE_STYLE } from '../Map/mapStyles';
+import MapDrawControl from '../Map/MapDrawControl';
+import { GeoPoint } from '../../domain/geo/geoTypes';
 
 const getCropColor = (cultura?: string): string => {
     const n = cultura?.toLowerCase().trim() || '';
@@ -25,7 +27,9 @@ interface SatelliteViewProps {
 const SatelliteView: React.FC<SatelliteViewProps> = ({ pmoId }) => {
     const {
         talhoes,
-        removeTalhao
+        addTalhao,
+        removeTalhao,
+        refresh
     } = useTalhaoManager(pmoId);
 
     const [selectedTalhaoId, setSelectedTalhaoId] = useState<number | null>(null);
@@ -55,6 +59,22 @@ const SatelliteView: React.FC<SatelliteViewProps> = ({ pmoId }) => {
         }
     };
 
+    const handleCreate = async (e: any) => {
+        const feature = e.features[0];
+        if (!feature) return;
+
+        // GeoJSON [lng, lat] -> Domínio {lat, lng}
+        const coords: GeoPoint[] = feature.geometry.coordinates[0].map((c: any) => ({
+            lat: c[1],
+            lng: c[0]
+        }));
+
+        const ok = await addTalhao(coords);
+        if (ok) {
+            refresh(); // Force refresh to sync layers
+        }
+    };
+
     return (
         <div className="flex flex-col md:flex-row h-[700px] w-full bg-slate-100 rounded-3xl overflow-hidden shadow-2xl border border-slate-200">
             <div className="flex-1 relative z-10">
@@ -72,6 +92,16 @@ const SatelliteView: React.FC<SatelliteViewProps> = ({ pmoId }) => {
                     }}
                     interactiveLayerIds={['talhoes-fill']}
                 >
+                    <MapDrawControl
+                        position="top-right"
+                        displayControlsDefault={false}
+                        controls={{
+                            polygon: true,
+                            trash: true
+                        }}
+                        defaultMode="draw_polygon"
+                        onCreate={handleCreate}
+                    />
                     <Source id="talhoes-source" type="geojson" data={geojsonData}>
                         <Layer
                             id="talhoes-fill"

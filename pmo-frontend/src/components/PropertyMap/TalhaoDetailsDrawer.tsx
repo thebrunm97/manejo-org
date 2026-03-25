@@ -1,7 +1,7 @@
 // src/components/PropertyMap/TalhaoDetailsDrawer.tsx
 
 import React, { useState, useEffect, useMemo } from 'react';
-import L from 'leaflet';
+import { getAreaOfPolygon, getPathLength } from 'geolib';
 import {
     X,
     Sprout,
@@ -185,8 +185,8 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
         try {
             const geo = typeof talhao.geometry === 'string' ? JSON.parse(talhao.geometry) : talhao.geometry;
             if (geo.coordinates && geo.coordinates[0]) {
-                const coords: L.LatLngTuple[] = geo.coordinates[0].map((c: any) => [c[1], c[0]] as L.LatLngTuple);
-                return (L as any).GeometryUtil?.geodesicArea(coords) || 0;
+                const coords = geo.coordinates[0].map((c: any) => ({ latitude: c[1], longitude: c[0] }));
+                return getAreaOfPolygon(coords);
             }
         } catch (e) {
             console.error("Error calculating area fallback:", e);
@@ -199,12 +199,8 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
         try {
             const geo = typeof talhao.geometry === 'string' ? JSON.parse(talhao.geometry) : talhao.geometry;
             if (geo.coordinates && geo.coordinates[0]) {
-                const coords: L.LatLngTuple[] = geo.coordinates[0].map((c: any) => [c[1], c[0]] as L.LatLngTuple);
-                let dist = 0;
-                for (let i = 0; i < coords.length - 1; i++) {
-                    dist += L.latLng(coords[i]).distanceTo(L.latLng(coords[i+1]));
-                }
-                return dist;
+                const coords = geo.coordinates[0].map((c: any) => ({ latitude: c[1], longitude: c[0] }));
+                return getPathLength(coords);
             }
         } catch (e) {
             console.error("Error calculating perimeter:", e);
