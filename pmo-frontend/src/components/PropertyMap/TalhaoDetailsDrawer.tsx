@@ -368,15 +368,15 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
         <>
             {/* Responsive Panel: Side panel on desktop, Bottom sheet on mobile */}
             <div className={cn(
-                "fixed inset-x-0 bottom-0 md:inset-y-0 md:right-0 md:left-auto md:max-w-md z-[2000] pointer-events-none transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1)",
+                "fixed inset-x-0 bottom-0 md:inset-y-0 md:right-8 md:left-auto md:max-w-md z-[2000] pointer-events-none transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) flex md:items-center",
                 open ? "visible" : "invisible"
             )}>
                 <div className={cn(
-                    "absolute bg-white shadow-2xl shadow-black/20 flex flex-col overflow-hidden transition-all duration-500 transform pointer-events-auto",
-                    // Desktop: Right Panel
-                    "md:top-0 md:right-0 md:bottom-0 md:left-auto md:w-[28rem] md:rounded-l-[24px] md:h-full",
+                    "relative bg-white shadow-2xl shadow-black/20 flex flex-col overflow-hidden transition-all duration-500 transform pointer-events-auto",
+                    // Desktop: Floating Center Panel
+                    "md:w-[26rem] md:rounded-[24px] md:max-h-[92vh]",
                     // Mobile: Bottom Sheet
-                    "top-auto left-0 right-0 bottom-0 w-full h-[75vh] rounded-t-[24px] md:h-full",
+                    "top-auto left-0 right-0 bottom-0 w-full h-[75vh] rounded-t-[24px]",
                     // Open/Close States
                     open 
                         ? "translate-y-0 md:translate-x-0 opacity-100" 
@@ -570,13 +570,13 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                                         </div>
                                                     ) : (
                                                         <div className="flex items-center justify-between">
-                                                            <div className="flex items-center gap-4">
-                                                                <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="p-1.5 bg-white rounded-lg shadow-sm border border-slate-100">
                                                                     {getIcon(canteiro.nome)}
                                                                 </div>
                                                                 <div>
-                                                                    <h4 className="text-sm font-bold text-slate-800">{canteiro.nome}</h4>
-                                                                    <div className="flex gap-2 text-[10px] text-slate-400 font-medium">
+                                                                    <h4 className="text-xs font-bold text-slate-800 leading-tight">{canteiro.nome}</h4>
+                                                                    <div className="flex gap-2 text-[9px] text-slate-400 font-medium">
                                                                         {canteiro.largura_metros && <span>{String(canteiro.largura_metros).replace('.', ',')}m larg.</span>}
                                                                         {canteiro.comprimento_metros && <span>{String(canteiro.comprimento_metros).replace('.', ',')}m comp.</span>}
                                                                         {!canteiro.largura_metros && !canteiro.comprimento_metros && <span>Dimensões não info.</span>}
