@@ -242,7 +242,22 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
     const baseEsperada = unitMode === 'percent' ? 100 : 1000;
     const isTotalCorrect = Math.abs(total - baseEsperada) < 0.5;
 
-    const areaHa = (talhao.area_m2 || talhao.area_total_m2 || talhao.area_ha || 0) / 10000;
+    const calculatedAreaM2 = useMemo(() => {
+        if (!talhao || !talhao.geometry) return 0;
+        try {
+            const geo = typeof talhao.geometry === 'string' ? JSON.parse(talhao.geometry) : talhao.geometry;
+            if (geo.coordinates && geo.coordinates[0]) {
+                const coords: L.LatLngTuple[] = geo.coordinates[0].map((c: any) => [c[1], c[0]] as L.LatLngTuple);
+                return (L as any).GeometryUtil?.geodesicArea(coords) || 0;
+            }
+        } catch (e) {
+            console.error("Error calculating area fallback:", e);
+        }
+        return 0;
+    }, [talhao]);
+
+    const areaM2 = talhao.area_m2 || talhao.area_total_m2 || talhao.area_ha * 10000 || calculatedAreaM2 || 0;
+    const areaHa = areaM2 / 10000;
     const areaFormatada = areaHa.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
 
     const perimetroKm = useMemo(() => {
