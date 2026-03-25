@@ -119,7 +119,7 @@ const MapaPropriedade: React.FC = () => {
     }
 
     return (
-        <div className="relative w-full h-[calc(100vh-64px)] bg-slate-100 p-2 md:p-4 overflow-hidden">
+        <div className="relative w-full h-[calc(100vh-64px)] overflow-hidden">
             {/* TOGGLE CROQUI/SATÉLITE CENTRALIZADO */}
             <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[1000]">
                 <div className="flex bg-white/90 backdrop-blur-md p-1 rounded-full shadow-lg border border-white/20">
@@ -150,8 +150,8 @@ const MapaPropriedade: React.FC = () => {
                 </div>
             </div>
 
-            {/* JAULA DO MAPA (COM OVERFLOW HIDDEN) */}
-            <div className="absolute inset-2 md:inset-4 rounded-[2rem] overflow-hidden shadow-2xl z-0 bg-white">
+            {/* JAULA DO MAPA (FULL-BLEED) */}
+            <div className="absolute inset-0 overflow-hidden z-0 bg-white">
                 <PropertyMap 
                     propriedadeId={propriedadeId} 
                     talhoes={talhoes}
