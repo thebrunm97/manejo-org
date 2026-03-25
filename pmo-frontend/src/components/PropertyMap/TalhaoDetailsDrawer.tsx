@@ -136,18 +136,49 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
         }
     };
 
-    // --- Soil State ---
+    const [saving, setSaving] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [unitMode, setUnitMode] = useState<'percent' | 'g_kg'>('percent');
 
-    // Form Data
+    // Form Data para métricas de solo
     const [formData, setFormData] = useState({
         ph_solo: '', materia_organica: '', v_percent: '',
         fosforo: '', potassio: '',
         teor_argila: '', silte: '', areia: ''
     });
 
-    const [saving, setSaving] = useState(false);
+    // Hooks de cálculo movidos para o topo para respeitar as Rules of Hooks
+    const calculatedAreaM2 = useMemo(() => {
+        if (!talhao || !talhao.geometry) return 0;
+        try {
+            const geo = typeof talhao.geometry === 'string' ? JSON.parse(talhao.geometry) : talhao.geometry;
+            if (geo.coordinates && geo.coordinates[0]) {
+                const coords: L.LatLngTuple[] = geo.coordinates[0].map((c: any) => [c[1], c[0]] as L.LatLngTuple);
+                return (L as any).GeometryUtil?.geodesicArea(coords) || 0;
+            }
+        } catch (e) {
+            console.error("Error calculating area fallback:", e);
+        }
+        return 0;
+    }, [talhao]);
+
+    const perimetroKm = useMemo(() => {
+        if (!talhao || !talhao.geometry) return null;
+        try {
+            const geo = typeof talhao.geometry === 'string' ? JSON.parse(talhao.geometry) : talhao.geometry;
+            if (geo.coordinates && geo.coordinates[0]) {
+                const coords: L.LatLngTuple[] = geo.coordinates[0].map((c: any) => [c[1], c[0]] as L.LatLngTuple);
+                let dist = 0;
+                for (let i = 0; i < coords.length - 1; i++) {
+                    dist += L.latLng(coords[i]).distanceTo(L.latLng(coords[i+1]));
+                }
+                return dist;
+            }
+        } catch (e) {
+            console.error("Error calculating perimeter:", e);
+        }
+        return null;
+    }, [talhao]);
 
     // Load Data
     useEffect(() => {
@@ -242,41 +273,9 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
     const baseEsperada = unitMode === 'percent' ? 100 : 1000;
     const isTotalCorrect = Math.abs(total - baseEsperada) < 0.5;
 
-    const calculatedAreaM2 = useMemo(() => {
-        if (!talhao || !talhao.geometry) return 0;
-        try {
-            const geo = typeof talhao.geometry === 'string' ? JSON.parse(talhao.geometry) : talhao.geometry;
-            if (geo.coordinates && geo.coordinates[0]) {
-                const coords: L.LatLngTuple[] = geo.coordinates[0].map((c: any) => [c[1], c[0]] as L.LatLngTuple);
-                return (L as any).GeometryUtil?.geodesicArea(coords) || 0;
-            }
-        } catch (e) {
-            console.error("Error calculating area fallback:", e);
-        }
-        return 0;
-    }, [talhao]);
-
     const areaM2 = talhao.area_m2 || talhao.area_total_m2 || talhao.area_ha * 10000 || calculatedAreaM2 || 0;
     const areaHa = areaM2 / 10000;
     const areaFormatada = areaHa.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
-
-    const perimetroKm = useMemo(() => {
-        if (!talhao || !talhao.geometry) return null;
-        try {
-            const geo = typeof talhao.geometry === 'string' ? JSON.parse(talhao.geometry) : talhao.geometry;
-            if (geo.coordinates && geo.coordinates[0]) {
-                const coords: L.LatLngTuple[] = geo.coordinates[0].map((c: any) => [c[1], c[0]] as L.LatLngTuple);
-                let dist = 0;
-                for (let i = 0; i < coords.length - 1; i++) {
-                    dist += L.latLng(coords[i]).distanceTo(L.latLng(coords[i+1]));
-                }
-                return dist;
-            }
-        } catch (e) {
-            console.error("Error calculating perimeter:", e);
-        }
-        return null;
-    }, [talhao]);
 
     const getIcon = (nome?: string) => {
         const lower = (nome || '').toLowerCase();
