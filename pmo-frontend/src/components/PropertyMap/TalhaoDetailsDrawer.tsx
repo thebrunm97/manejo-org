@@ -266,28 +266,54 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
 
                 {/* Drawer Panel (Now a Floating Card) */}
                 <div className={cn(
-                    "absolute top-6 right-6 w-80 md:w-[22rem] max-h-[calc(100vh-4rem)] bg-white/95 backdrop-blur-md rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] z-[9999] transition-all duration-500 transform flex flex-col overflow-hidden border border-white/20",
+                    "absolute top-6 left-6 w-80 md:w-[24rem] max-h-[calc(100vh-4rem)] bg-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-[2rem] z-[9999] transition-all duration-500 transform flex flex-col overflow-hidden border border-slate-100",
                     open ? "translate-y-0 opacity-100 scale-100" : "translate-y-4 opacity-0 scale-95 pointer-events-none"
                 )}>
                     {/* Header */}
-                    <div className="flex items-center gap-4 p-5 shrink-0 bg-white/40 backdrop-blur-sm border-b border-slate-100">
-                        <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-white/50 rounded-full transition-colors">
-                            <ArrowLeft size={18} />
-                        </button>
+                    <div className="flex items-center gap-4 p-6 shrink-0 bg-white border-b border-slate-50">
+                        <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600">
+                            {getIcon(talhao.nome)}
+                        </div>
                         <div className="flex-1 overflow-hidden">
-                            <h3 className="text-base font-black text-slate-900 truncate tracking-tight uppercase">{talhao.nome || 'Talhão Sem Nome'}</h3>
-                            <div className="flex items-center gap-2 mt-0.5">
-                                <div className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-md text-[9px] font-black uppercase tracking-wider">
-                                    {talhao.area_ha ? `${talhao.area_ha} ha` : `${talhao.area_total_m2 || 0} m²`}
+                            <h3 className="text-lg font-bold text-slate-900 truncate leading-tight">{talhao.nome || 'Talhão Sem Nome'}</h3>
+                            <p className="text-xs text-slate-500 mt-0.5 font-medium">{talhao.cultura || 'Rotação de Culturas'}</p>
+                        </div>
+                        <button onClick={onClose} className="p-2 text-slate-300 hover:text-slate-500 hover:bg-slate-50 rounded-xl transition-all">
+                            <X size={20} />
+                        </button>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+                        {/* Nested Data Card (Seeding/Area) */}
+                        <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <h4 className="text-sm font-bold text-slate-900">Propriedades</h4>
+                                    <div className="flex items-center gap-2 text-[10px] text-emerald-600 font-bold mt-1">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                        <span>EM PRODUÇÃO</span>
+                                    </div>
                                 </div>
-                                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest truncate">
-                                    {talhao.cultura || 'Sem cultura'}
-                                </span>
+                                <button className="text-emerald-600 text-[11px] font-bold hover:underline">
+                                    Editar mapa +
+                                </button>
+                            </div>
+                            
+                            <div className="grid grid-cols-3 gap-2">
+                                <div className="space-y-1">
+                                    <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Área</p>
+                                    <p className="text-sm font-black text-slate-900">{talhao.area_ha || 0} <span className="text-[10px] font-bold text-slate-400">ha</span></p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Perímetro</p>
+                                    <p className="text-sm font-black text-slate-900">-- <span className="text-[10px] font-bold text-slate-400">m</span></p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Altivez</p>
+                                    <p className="text-sm font-black text-slate-900">850 <span className="text-[10px] font-bold text-slate-400">m</span></p>
+                                </div>
                             </div>
                         </div>
-                        <button onClick={onClose} className="p-2 text-slate-300 hover:text-slate-500 rounded-full transition-colors">
-                            <X size={18} />
-                        </button>
                     </div>
 
                     {/* Tabs */}
@@ -462,21 +488,21 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                         {/* Gauges View (Dashboard Style) */}
                                         <div className="grid grid-cols-1 gap-6 px-2">
                                             {/* pH */}
-                                            <div className="bg-slate-50/50 p-4 rounded-3xl border border-slate-100/50 shadow-sm">
+                                            <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
                                                 <div className="flex justify-between items-baseline mb-3">
                                                     <div className="flex items-center gap-2">
                                                         <div className="w-1.5 h-4 bg-emerald-500 rounded-full" />
-                                                        <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">pH do Solo</span>
+                                                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">pH do Solo</span>
                                                     </div>
-                                                    <span className="text-xl font-black text-slate-900">{formData.ph_solo || '-'}</span>
+                                                    <span className="text-sm font-black text-slate-900">{formData.ph_solo || '-'}</span>
                                                 </div>
-                                                <div className="h-2 w-full bg-slate-200/50 rounded-full overflow-hidden">
+                                                <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
                                                     <div
-                                                        className="h-full bg-emerald-500 transition-all duration-1000 shadow-[0_0_8px_rgba(16,185,129,0.3)]"
+                                                        className="h-full bg-emerald-500 transition-all duration-1000"
                                                         style={{ width: `${Math.min((Number(formData.ph_solo) / 8) * 100, 100)}%` }}
                                                     />
                                                 </div>
-                                                <div className="flex justify-between mt-1 px-0.5">
+                                                <div className="flex justify-between mt-1 px-0.5 opacity-50">
                                                     <span className="text-[8px] font-bold text-slate-300 uppercase">Ácido</span>
                                                     <span className="text-[8px] font-bold text-slate-300 uppercase">Neutro</span>
                                                     <span className="text-[8px] font-bold text-slate-300 uppercase">Alcalino</span>
@@ -484,79 +510,66 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                             </div>
  
                                             {/* V% */}
-                                            <div className="bg-slate-50/50 p-4 rounded-3xl border border-slate-100/50 shadow-sm">
+                                            <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
                                                 <div className="flex justify-between items-baseline mb-3">
                                                     <div className="flex items-center gap-2">
                                                         <div className="w-1.5 h-4 bg-blue-500 rounded-full" />
-                                                        <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Saturação por Bases</span>
+                                                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Saturação por Bases</span>
                                                     </div>
-                                                    <span className="text-xl font-black text-slate-900">{formData.v_percent || '-'}%</span>
+                                                    <span className="text-sm font-black text-slate-900">{formData.v_percent || '-'}%</span>
                                                 </div>
-                                                <div className="h-2 w-full bg-slate-200/50 rounded-full overflow-hidden">
+                                                <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
                                                     <div
-                                                        className="h-full bg-blue-500 transition-all duration-1000 shadow-[0_0_8px_rgba(59,130,246,0.3)]"
+                                                        className="h-full bg-blue-500 transition-all duration-1000"
                                                         style={{ width: `${Number(formData.v_percent) || 0}%` }}
                                                     />
                                                 </div>
-                                                <div className="flex justify-between mt-1 px-0.5">
-                                                    <span className="text-[8px] font-bold text-slate-300 uppercase">Baixa</span>
-                                                    <span className="text-[8px] font-bold text-slate-300 uppercase">Média</span>
-                                                    <span className="text-[8px] font-bold text-slate-300 uppercase">Ideal</span>
-                                                </div>
                                             </div>
- 
-                                            {/* P & K Dual Cards */}
+
+                                            {/* Nutrients Row */}
                                             <div className="grid grid-cols-2 gap-4">
-                                                <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-md relative overflow-hidden group">
-                                                    <div className="absolute top-0 right-0 w-12 h-12 bg-purple-500/5 blur-xl -mr-6 -mt-6 group-hover:bg-purple-500/10 transition-colors" />
-                                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Fósforo (P)</p>
-                                                    <h3 className="text-lg font-black text-slate-900 flex items-baseline gap-1">
+                                                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Fósforo (P)</p>
+                                                    <h3 className="text-base font-black text-slate-900 flex items-baseline gap-1">
                                                         {formData.fosforo || '-'}
-                                                        <span className="text-[9px] font-bold text-slate-300">mg</span>
+                                                        <span className="text-[10px] font-bold text-slate-300">mg</span>
                                                     </h3>
                                                 </div>
-                                                <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-md relative overflow-hidden group">
-                                                    <div className="absolute top-0 right-0 w-12 h-12 bg-amber-500/5 blur-xl -mr-6 -mt-6 group-hover:bg-amber-500/10 transition-colors" />
-                                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Potássio (K)</p>
-                                                    <h3 className="text-lg font-black text-slate-900 flex items-baseline gap-1">
+                                                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Potássio (K)</p>
+                                                    <h3 className="text-base font-black text-slate-900 flex items-baseline gap-1">
                                                         {formData.potassio || '-'}
-                                                        <span className="text-[9px] font-bold text-slate-300">mg</span>
+                                                        <span className="text-[10px] font-bold text-slate-300">mg</span>
                                                     </h3>
                                                 </div>
                                             </div>
                                         </div>
 
                                         {/* Physical / Texture Card */}
-                                        <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm overflow-hidden space-y-4">
+                                        <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 space-y-4">
                                             <div className="flex justify-between items-center">
-                                                <h5 className="text-xs font-black text-slate-800 uppercase tracking-widest">Textura Física</h5>
-                                                <span className="text-[10px] font-black bg-[#451a03] text-white px-2 py-0.5 rounded-full">{classificacao}</span>
+                                                <h5 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Textura Física</h5>
+                                                <span className="text-[10px] font-black bg-slate-900 text-white px-3 py-1 rounded-full">{classificacao}</span>
                                             </div>
 
-                                            <div className="h-10 w-full bg-slate-50 rounded-2xl overflow-hidden flex shadow-inner border border-slate-200/50">
-                                                <div className="h-full bg-[#5D4037] flex items-center justify-center transition-all duration-1000 border-r border-white/20" style={{ width: `${argilaPct}%` }}>
-                                                    {argilaPct > 15 && <span className="text-[10px] font-black text-white/90">{argilaPct}%</span>}
-                                                </div>
-                                                <div className="h-full bg-slate-400 flex items-center justify-center transition-all duration-1000 border-r border-white/20" style={{ width: `${siltePct}%` }}>
-                                                    {siltePct > 15 && <span className="text-[10px] font-black text-white/90">{siltePct}%</span>}
-                                                </div>
-                                                <div className="h-full bg-amber-400 flex items-center justify-center transition-all duration-1000" style={{ width: `${areiaPct}%` }}>
-                                                    {areiaPct > 15 && <span className="text-[10px] font-black text-[#5D4037]">{areiaPct}%</span>}
-                                                </div>
+                                            <div className="h-4 w-full bg-slate-200 rounded-full overflow-hidden flex">
+                                                <div className="h-full bg-[#5D4037] transition-all duration-1000" style={{ width: `${argilaPct}%` }} />
+                                                <div className="h-full bg-slate-400 transition-all duration-1000" style={{ width: `${siltePct}%` }} />
+                                                <div className="h-full bg-amber-400 transition-all duration-1000" style={{ width: `${areiaPct}%` }} />
                                             </div>
 
                                             <div className="flex justify-center gap-6">
                                                 <div className="flex items-center gap-2">
-                                                    <div className="w-2.5 h-2.5 rounded-full bg-[#5D4037]" />
-                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-tight">Argila</span>
+                                                    <div className="w-2 h-2 rounded-full bg-[#5D4037]" />
+                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Argila</span>
                                                 </div>
                                                 <div className="flex items-center gap-2">
-                                                    <div className="w-2.5 h-2.5 rounded-full bg-slate-400" />
-                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-tight">Silte</span>
+                                                    <div className="w-2 h-2 rounded-full bg-slate-400" />
+                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Silte</span>
                                                 </div>
                                                 <div className="flex items-center gap-2">
-                                                    <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-tight">Areia</span>
+                                                    <div className="w-2 h-2 rounded-full bg-amber-400" />
+                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Areia</span>
                                                 </div>
                                             </div>
                                         </div>

@@ -132,10 +132,10 @@ const FarmMap: React.FC<FarmMapProps> = ({
                             <Polygon
                                 positions={positions}
                                 pathOptions={{ 
-                                    color: isSelected ? '#d97706' : '#047857', 
-                                    fillColor: isSelected ? '#fbbf24' : '#10b981', 
-                                    fillOpacity: isSelected ? 0.6 : 0.4,
-                                    weight: isSelected ? 4 : 3,
+                                    color: isSelected ? '#fbbf24' : '#10b981', 
+                                    fillColor: isSelected ? '#f59e0b' : '#10b981', 
+                                    fillOpacity: isSelected ? 0.2 : 0.1,
+                                    weight: isSelected ? 5 : 4,
                                     fill: true,
                                     lineJoin: 'round',
                                     lineCap: 'round'
@@ -148,22 +148,22 @@ const FarmMap: React.FC<FarmMapProps> = ({
                                 }}
                             />
                             
-                            {/* Centroid Label (Pill Flutuante no Mapa) */}
+                            {/* Centroid Label (Pill Flutuante no Mapa - Dark Mode Premium) */}
                             {positions.length > 0 && (
                                 <Marker 
                                     position={L.polygon(positions).getBounds().getCenter()}
                                     icon={L.divIcon({
-                                        className: '', // Remove o leaflet-div-icon class padrão (que tem fundo branco)
+                                        className: '', 
                                         html: `
                                             <div style="transform: translate(-50%, -50%); pointer-events: none;">
-                                                <div class="flex items-center gap-2 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.15)] border border-white/50 text-slate-800 font-bold text-[10px] pointer-events-auto hover:scale-105 transition-transform whitespace-nowrap cursor-pointer">
-                                                    <div class="w-1.5 h-1.5 rounded-full shadow-inner ${t.tipo === 'agua' ? 'bg-blue-500' : 'bg-emerald-500'}"></div>
-                                                    <span class="tracking-tight uppercase font-black">${t.nome}</span>
-                                                    ${t.cultura ? `<span class="text-[9px] font-medium text-slate-400 border-l border-slate-200 pl-2 capitalize">${t.cultura}</span>` : ''}
+                                                <div class="flex items-center gap-2 bg-zinc-900/95 backdrop-blur-sm text-white font-semibold px-4 py-1.5 rounded-full shadow-2xl text-[11px] border border-zinc-700/50 pointer-events-auto hover:scale-105 transition-transform whitespace-nowrap cursor-pointer">
+                                                    <div class="w-1.5 h-1.5 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.8)] ${t.tipo === 'agua' ? 'bg-blue-400' : 'bg-emerald-400'}"></div>
+                                                    <span class="tracking-tight">${t.nome}</span>
+                                                    ${t.cultura ? `<span class="text-[10px] font-medium text-zinc-400 border-l border-zinc-700 pl-2 capitalize">${t.cultura}</span>` : ''}
                                                 </div>
                                             </div>
                                         `,
-                                        iconSize: null as any // Permite que a div tenha tamanho natural de seu conteúdo
+                                        iconSize: null as any 
                                     })}
                                     eventHandlers={{
                                         click: (_e) => {
