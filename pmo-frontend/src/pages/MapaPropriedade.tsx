@@ -35,13 +35,18 @@ const MapaPropriedade: React.FC = () => {
         loadTalhoes();
     }, [loadTalhoes]);
 
-    // Auto-close drawer when switching to Croqui view
+    // Sincroniza o SelectedTalhao com a lista atualizada para refletir mudanças (ex: edição de geometria)
     useEffect(() => {
-        if (viewMode === 'croqui' && isDrawerOpen) {
-            setIsDrawerOpen(false);
-            setSelectedTalhao(null);
+        if (selectedTalhao && talhoes.length > 0) {
+            const refreshed = talhoes.find(t => String(t.id) === String(selectedTalhao.id));
+            if (refreshed) {
+                // Só atualiza se houver mudança real para evitar loops
+                if (JSON.stringify(refreshed.geometry) !== JSON.stringify(selectedTalhao.geometry)) {
+                    setSelectedTalhao(refreshed);
+                }
+            }
         }
-    }, [viewMode, isDrawerOpen]);
+    }, [talhoes, selectedTalhao]);
 
     useEffect(() => {
         const loadInitialData = async () => {

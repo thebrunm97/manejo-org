@@ -40,7 +40,7 @@ export default function MapDrawControl(props: DrawControlProps) {
       if (props.onCreate) map.off('draw.create', props.onCreate);
       if (props.onUpdate) map.off('draw.update', props.onUpdate);
       if (props.onDelete) map.off('draw.delete', props.onDelete);
-      if (props.onModeChange) map.off('draw.modechange', props.offModeChange || props.onModeChange);
+      if (props.onModeChange) map.off('draw.modechange', props.onModeChange);
     },
     {
       position: props.position
