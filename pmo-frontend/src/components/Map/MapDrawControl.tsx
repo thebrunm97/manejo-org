@@ -9,17 +9,22 @@ type DrawControlProps = ConstructorParameters<typeof MapboxDraw>[0] & {
   onUpdate?: (evt: any) => void;
   onDelete?: (evt: any) => void;
   onModeChange?: (evt: any) => void;
+  getDrawInstance?: (instance: MapboxDraw) => void;
 };
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default function MapDrawControl(props: DrawControlProps) {
   useControl<any>(
-    () => new MapboxDraw({
-      displayControlsDefault: props.displayControlsDefault !== undefined ? props.displayControlsDefault : false,
-      controls: props.controls || { polygon: true, trash: true },
-      defaultMode: props.defaultMode || 'simple_select',
-      styles: mapLibreDrawStyle
-    }),
+    () => {
+      const draw = new MapboxDraw({
+        displayControlsDefault: props.displayControlsDefault !== undefined ? props.displayControlsDefault : false,
+        controls: props.controls || { polygon: true, trash: true },
+        defaultMode: props.defaultMode || 'simple_select',
+        styles: mapLibreDrawStyle
+      });
+      if (props.getDrawInstance) props.getDrawInstance(draw);
+      return draw;
+    },
     ({ map }: any) => {
       if (props.onCreate) map.on('draw.create', props.onCreate);
       if (props.onUpdate) map.on('draw.update', props.onUpdate);
