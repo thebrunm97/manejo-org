@@ -202,20 +202,33 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
         try {
             const newAreaM2 = area(feature);
             const areaHa = newAreaM2 / 10000;
-            const newGeometry = JSON.stringify(feature.geometry);
 
+            // 1. ATUALIZAÇÃO OTIMISTA (Feedback Instantâneo no Drawer)
+            // Como o Drawer calcula perímetro via geolib baseando-se na prop geometry,
+            // ao atualizar o selectedTalhao localmente, o Drawer recalcula tudo imediatamente.
+            if (setSelectedTalhao) {
+                setSelectedTalhao({
+                    ...selectedTalhao,
+                    geometry: feature.geometry,
+                    area_total_m2: parseFloat(newAreaM2.toFixed(2)),
+                    area_ha: parseFloat(areaHa.toFixed(2))
+                });
+            }
+
+            // 2. PERSISTÊNCIA NO BANCO
             await locationService.updateTalhao(Number(selectedTalhao.id), {
-                geometry: newGeometry as any,
+                geometry: feature.geometry as any,
                 area_total_m2: parseFloat(newAreaM2.toFixed(2)),
                 area_ha: parseFloat(areaHa.toFixed(2))
             });
 
-            // Recarregar para garantir sincronia
-            await loadTalhoes();
-            setSnackbar({ open: true, message: 'Geometria atualizada!', severity: 'success' });
+            // 3. SINCRONIA FINAL (Recarrega a lista global)
+            if (loadTalhoes) await loadTalhoes();
+            
+            setSnackbar({ open: true, message: 'Geometria e métricas atualizadas!', severity: 'success' });
         } catch (error) {
-            console.error("Erro ao atualizar geometria", error);
-            setSnackbar({ open: true, message: 'Erro ao salvar alterações.', severity: 'error' });
+            console.error("Erro ao atualizar geometria:", error);
+            setSnackbar({ open: true, message: 'Falha ao salvar mudanças.', severity: 'error' });
         }
     };
 
