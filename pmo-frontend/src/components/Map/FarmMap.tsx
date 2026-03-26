@@ -128,12 +128,13 @@ const FarmMap: React.FC<FarmMapProps> = ({
 
     // Sincronizar Talhão Selecionado com o Draw (Modo de Edição)
     useEffect(() => {
-        if (!drawInstance) return;
+        // Só tenta interagir com o Draw se ele existir e estiver propriamente inicializado
+        if (!drawInstance || typeof drawInstance.getMode !== 'function') return;
 
-        if (selectedTalhaoId) {
-            const talhao = talhoes.find(t => t.id === selectedTalhaoId);
-            if (talhao && talhao.geometry) {
-                try {
+        try {
+            if (selectedTalhaoId) {
+                const talhao = talhoes.find(t => t.id === selectedTalhaoId);
+                if (talhao && talhao.geometry) {
                     const geometry = typeof talhao.geometry === 'string' ? JSON.parse(talhao.geometry) : talhao.geometry;
                     const feature = {
                         type: 'Feature',
@@ -142,19 +143,21 @@ const FarmMap: React.FC<FarmMapProps> = ({
                         geometry
                     } as any;
 
+                    // Deletar o estado anterior com segurança
                     drawInstance.deleteAll();
                     drawInstance.add(feature);
                     drawInstance.changeMode('direct_select', { featureId: talhao.id as string });
-                } catch (e) {
-                    console.error("Error syncing to draw:", e);
+                }
+            } else {
+                // Ao desmarcar, limpa o draw
+                drawInstance.deleteAll();
+                if (drawInstance.getMode() !== 'simple_select') {
+                    drawInstance.changeMode('simple_select');
                 }
             }
-        } else {
-            drawInstance.deleteAll();
-            // Retorna ao modo padrão caso nada esteja selecionado
-            if (drawInstance.getMode() !== 'simple_select') {
-                drawInstance.changeMode('simple_select');
-            }
+        } catch (e) {
+            // Se o Draw falhar internamente (comum em transições de animação rápida), ignoramos
+            console.warn("Draw synchronization briefly unstable:", e);
         }
     }, [selectedTalhaoId, drawInstance, talhoes]);
 

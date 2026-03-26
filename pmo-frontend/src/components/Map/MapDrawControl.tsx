@@ -1,3 +1,4 @@
+import { useMemo, useEffect } from 'react';
 import MapboxDraw from '@mapbox/mapbox-gl-draw';
 import { useControl } from 'react-map-gl/maplibre';
 import type { ControlPosition } from 'react-map-gl/maplibre';
@@ -14,17 +15,21 @@ type DrawControlProps = ConstructorParameters<typeof MapboxDraw>[0] & {
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default function MapDrawControl(props: DrawControlProps) {
+  const draw = useMemo(() => new MapboxDraw({
+    displayControlsDefault: props.displayControlsDefault !== undefined ? props.displayControlsDefault : false,
+    controls: props.controls || { polygon: true, trash: true },
+    defaultMode: props.defaultMode || 'simple_select',
+    styles: mapLibreDrawStyle
+  }), []);
+
+  useEffect(() => {
+    if (props.getDrawInstance) {
+      props.getDrawInstance(draw);
+    }
+  }, [draw, props.getDrawInstance]);
+
   useControl<any>(
-    () => {
-      const draw = new MapboxDraw({
-        displayControlsDefault: props.displayControlsDefault !== undefined ? props.displayControlsDefault : false,
-        controls: props.controls || { polygon: true, trash: true },
-        defaultMode: props.defaultMode || 'simple_select',
-        styles: mapLibreDrawStyle
-      });
-      if (props.getDrawInstance) props.getDrawInstance(draw);
-      return draw;
-    },
+    () => draw,
     ({ map }: any) => {
       if (props.onCreate) map.on('draw.create', props.onCreate);
       if (props.onUpdate) map.on('draw.update', props.onUpdate);
@@ -35,7 +40,7 @@ export default function MapDrawControl(props: DrawControlProps) {
       if (props.onCreate) map.off('draw.create', props.onCreate);
       if (props.onUpdate) map.off('draw.update', props.onUpdate);
       if (props.onDelete) map.off('draw.delete', props.onDelete);
-      if (props.onModeChange) map.off('draw.modechange', props.onModeChange);
+      if (props.onModeChange) map.off('draw.modechange', props.offModeChange || props.onModeChange);
     },
     {
       position: props.position
