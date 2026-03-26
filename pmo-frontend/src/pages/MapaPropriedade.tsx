@@ -103,6 +103,17 @@ const MapaPropriedade: React.FC = () => {
         setSelectedTalhao(null);
     };
 
+    const handleDeleteTalhao = async (id: number | string) => {
+        try {
+            await locationService.deleteTalhao(id);
+            setIsDrawerOpen(false);
+            setSelectedTalhao(null);
+            await loadTalhoes();
+        } catch (error) {
+            console.error("Erro ao deletar talhão:", error);
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center h-[100vh]">
@@ -168,6 +179,7 @@ const MapaPropriedade: React.FC = () => {
                     selectedTalhao={selectedTalhao}
                     setSelectedTalhao={setSelectedTalhao}
                     onOpenDrawer={handleOpenDrawer}
+                    onDeleteTalhao={handleDeleteTalhao}
                     loadTalhoes={loadTalhoes}
                     loading={loading}
                     isDrawerOpen={isDrawerOpen}
@@ -182,6 +194,7 @@ const MapaPropriedade: React.FC = () => {
                     onClose={handleCloseDrawer}
                     talhao={selectedTalhao}
                     onDeleteCanteiro={() => loadTalhoes()} 
+                    onDeleteTalhao={handleDeleteTalhao}
                     onUpdateStart={loadTalhoes}
                 />
             )}

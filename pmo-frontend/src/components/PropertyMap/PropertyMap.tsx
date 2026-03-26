@@ -38,6 +38,7 @@ interface PropertyMapProps {
     selectedTalhao: Talhao | null;
     setSelectedTalhao: (talhao: Talhao | null) => void;
     onOpenDrawer: (talhao: Talhao) => void;
+    onDeleteTalhao?: (id: string | number) => void;
     loadTalhoes: () => Promise<void>;
     loading?: boolean;
     isDrawerOpen?: boolean;
@@ -52,6 +53,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
     selectedTalhao,
     setSelectedTalhao,
     onOpenDrawer,
+    onDeleteTalhao,
     loadTalhoes,
     loading = false,
     isDrawerOpen,
@@ -193,6 +195,41 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
         }
     };
 
+    const handleDrawUpdate = async (e: any) => {
+        const feature = e.features[0];
+        if (!feature || !selectedTalhao) return;
+
+        try {
+            const newAreaM2 = area(feature);
+            const areaHa = newAreaM2 / 10000;
+            const newGeometry = JSON.stringify(feature.geometry);
+
+            await locationService.updateTalhao(Number(selectedTalhao.id), {
+                geometry: newGeometry as any,
+                area_total_m2: parseFloat(newAreaM2.toFixed(2)),
+                area_ha: parseFloat(areaHa.toFixed(2))
+            });
+
+            // Recarregar para garantir sincronia
+            await loadTalhoes();
+            setSnackbar({ open: true, message: 'Geometria atualizada!', severity: 'success' });
+        } catch (error) {
+            console.error("Erro ao atualizar geometria", error);
+            setSnackbar({ open: true, message: 'Erro ao salvar alterações.', severity: 'error' });
+        }
+    };
+
+    const handleDrawDelete = (e: any) => {
+        const deletedFeatures = e.features;
+        if (deletedFeatures && deletedFeatures.length > 0 && onDeleteTalhao) {
+            // Pegamos o ID do primeiro talhão excluído via ferramenta de lixo do mapa
+            const featureId = deletedFeatures[0].id;
+            if (featureId) {
+                onDeleteTalhao(featureId);
+            }
+        }
+    };
+
     return (
         <div className="flex-1 relative w-full h-full bg-slate-100 overflow-hidden">
             {/* CONTEÚDO PRINCIPAL */}
@@ -298,6 +335,8 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
                                 focusTarget={selectedTalhao}
                                 selectedTalhaoId={selectedTalhao?.id}
                                 onDrawCreate={handleDrawCreate}
+                                onDrawUpdate={handleDrawUpdate}
+                                onDrawDelete={handleDrawDelete}
                                 onTalhaoClick={(t) => viewMode === 'mapa' && onOpenDrawer(t)}
                                 isDrawerOpen={isDrawerOpen}
                             />

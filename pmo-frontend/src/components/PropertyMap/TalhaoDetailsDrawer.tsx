@@ -42,6 +42,7 @@ interface TalhaoDetailsDrawerProps {
     onClose: () => void;
     talhao: any;
     onDeleteCanteiro: (id: string | number) => void;
+    onDeleteTalhao?: (id: string | number) => void;
     onAddCanteiro?: () => void;
     onUpdateStart?: () => void;
 }
@@ -51,6 +52,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
     onClose,
     talhao,
     onDeleteCanteiro,
+    onDeleteTalhao,
     onUpdateStart
 }) => {
     const [tabIndex, setTabIndex] = useState(0);
@@ -183,6 +185,8 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
         fosforo: '', potassio: '',
         teor_argila: '', silte: '', areia: ''
     });
+
+    const [showDeleteTalhaoConfirm, setShowDeleteTalhaoConfirm] = useState(false);
 
     // Hooks de cálculo movidos para o topo para respeitar as Rules of Hooks
     const calculatedAreaM2 = useMemo(() => {
@@ -471,6 +475,17 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                             <Pencil size={13} />
                         </button>
                     )}
+                    
+                    {!isEditingTalhao && (
+                        <button 
+                            onClick={() => setShowDeleteTalhaoConfirm(true)}
+                            className="p-1.5 text-red-500 bg-red-50 rounded-full hover:bg-red-100 transition-colors"
+                            title="Excluir Talhão"
+                        >
+                            <Trash2 size={13} />
+                        </button>
+                    )}
+
                     <button onClick={onClose} className="p-1.5 text-slate-300 hover:text-slate-500 transition-all">
                         <X size={18} />
                     </button>
@@ -1050,23 +1065,54 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                 </div>
             </div>
 
-            {/* Success/Error Snackbars - Custom Implementation */}
             {snackbar.open && (
-                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[2100] animate-in slide-in-from-bottom-5 fade-in duration-300">
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[3000] animate-in slide-in-from-bottom-5 fade-in duration-300 px-4 w-full max-w-md pointer-events-none">
                     <div className={cn(
-                        "flex items-center gap-3 px-6 py-3 rounded-2xl shadow-2xl border backdrop-blur-md",
-                        snackbar.severity === 'success'
-                            ? "bg-emerald-500/90 text-white border-emerald-400/50"
-                            : "bg-red-500/90 text-white border-red-400/50"
+                        "flex items-center gap-4 px-6 py-4 rounded-3xl shadow-2xl border backdrop-blur-md pointer-events-auto",
+                        snackbar.severity === 'success' ? "bg-emerald-600/90 text-white border-emerald-400/50" : "bg-red-600/90 text-white border-red-500/50"
                     )}>
-                        {snackbar.severity === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
-                        <span className="text-sm font-black tracking-tight">{snackbar.message}</span>
-                        <button onClick={() => setSnackbar(prev => ({ ...prev, open: false }))} className="ml-2 hover:opacity-70 transition-opacity">
-                            <X size={14} />
-                        </button>
+                        {snackbar.severity === 'success' ? <CheckCircle2 size={24} /> : <AlertCircle size={24} />}
+                        <div className="flex-1 overflow-hidden font-bold text-sm">{snackbar.message}</div>
+                        <button onClick={() => setSnackbar(p => ({ ...p, open: false }))} className="p-1 hover:bg-white/10 rounded-lg transition-colors"><X size={18} /></button>
                     </div>
                 </div>
             )}
+
+            {/* MODAL: CONFIRMAR EXCLUSÃO DO TALHÃO */}
+            <div className={cn(
+                "fixed inset-0 z-[3000] flex items-center justify-center p-4 transition-all duration-200",
+                showDeleteTalhaoConfirm ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
+            )}>
+                <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowDeleteTalhaoConfirm(false)} />
+                <div className={cn(
+                    "relative bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden p-8 flex flex-col items-center text-center transition-all duration-300 transform",
+                    showDeleteTalhaoConfirm ? "scale-100 translate-y-0" : "scale-95 translate-y-4"
+                )}>
+                    <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
+                        <Trash2 size={40} />
+                    </div>
+                    <h3 className="text-xl font-black text-slate-900 tracking-tight mb-2">Excluir Talhão?</h3>
+                    <p className="text-sm text-slate-500 mb-8 font-medium px-4">Esta ação irá remover permanentemente o <strong>{talhao.nome}</strong> e todas as suas estruturas vinculadas. Deseja continuar?</p>
+
+                    <div className="w-full flex flex-col gap-2">
+                        <button
+                            onClick={() => {
+                                if (onDeleteTalhao) onDeleteTalhao(talhao.id);
+                                setShowDeleteTalhaoConfirm(false);
+                            }}
+                            className="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-black text-sm rounded-2xl shadow-xl shadow-red-900/10 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                        >
+                            Sim, Excluir Talhão
+                        </button>
+                        <button
+                            onClick={() => setShowDeleteTalhaoConfirm(false)}
+                            className="w-full py-3 text-xs font-bold text-slate-400 hover:text-slate-600 transition-all"
+                        >
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
         </>
     );
 };

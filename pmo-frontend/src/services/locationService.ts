@@ -179,5 +179,21 @@ export const locationService = {
             throw error;
         }
         return data;
+    },
+
+    /**
+     * Remove um talhão pelo ID.
+     */
+    deleteTalhao: async (id: string | number): Promise<boolean> => {
+        const { error } = await supabase
+            .from('talhoes')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            console.error('Erro ao deletar talhão:', error);
+            throw error;
+        }
+        return true;
     }
 };

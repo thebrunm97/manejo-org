@@ -2,6 +2,7 @@ import React, { useMemo, useEffect } from 'react';
 import Map, { Source, Layer, Marker, useMap, NavigationControl } from 'react-map-gl/maplibre';
 import centerOfMass from '@turf/center-of-mass';
 import { polygon } from '@turf/helpers';
+import MapboxDraw from '@mapbox/mapbox-gl-draw';
 import { Talhao, GeoJSONGeometry } from '../../domain/geo/geoTypes';
 import { ESRI_SATELLITE_STYLE } from './mapStyles';
 
@@ -123,6 +124,39 @@ const FarmMap: React.FC<FarmMapProps> = ({
     isDrawerOpen
 }) => {
     const [cursor, setCursor] = React.useState<string | undefined>(undefined);
+    const [drawInstance, setDrawInstance] = React.useState<MapboxDraw | null>(null);
+
+    // Sincronizar Talhão Selecionado com o Draw (Modo de Edição)
+    useEffect(() => {
+        if (!drawInstance) return;
+
+        if (selectedTalhaoId) {
+            const talhao = talhoes.find(t => t.id === selectedTalhaoId);
+            if (talhao && talhao.geometry) {
+                try {
+                    const geometry = typeof talhao.geometry === 'string' ? JSON.parse(talhao.geometry) : talhao.geometry;
+                    const feature = {
+                        type: 'Feature',
+                        id: talhao.id,
+                        properties: { id: talhao.id },
+                        geometry
+                    } as any;
+
+                    drawInstance.deleteAll();
+                    drawInstance.add(feature);
+                    drawInstance.changeMode('direct_select', { featureId: talhao.id as string });
+                } catch (e) {
+                    console.error("Error syncing to draw:", e);
+                }
+            }
+        } else {
+            drawInstance.deleteAll();
+            // Retorna ao modo padrão caso nada esteja selecionado
+            if (drawInstance.getMode() !== 'simple_select') {
+                drawInstance.changeMode('simple_select');
+            }
+        }
+    }, [selectedTalhaoId, drawInstance, talhoes]);
 
     // 1. Converter talhões para GeoJSON FeatureCollection (WebGL Native)
     const geojsonData = useMemo<GeoJSONData>(() => {
@@ -225,6 +259,7 @@ const FarmMap: React.FC<FarmMapProps> = ({
                     trash: true
                 }}
                 defaultMode="simple_select"
+                getDrawInstance={setDrawInstance}
                 onCreate={onDrawCreate}
                 onUpdate={onDrawUpdate}
                 onDelete={onDrawDelete}
@@ -235,6 +270,7 @@ const FarmMap: React.FC<FarmMapProps> = ({
                 <Layer
                     id="talhoes-fill"
                     type="fill"
+                    filter={['!=', ['get', 'id'], selectedTalhaoId || '']}
                     paint={{
                         'fill-color': ['get', 'fill_color'],
                         'fill-opacity': [
@@ -250,6 +286,7 @@ const FarmMap: React.FC<FarmMapProps> = ({
                 <Layer
                     id="talhoes-line"
                     type="line"
+                    filter={['!=', ['get', 'id'], selectedTalhaoId || '']}
                     paint={{
                         'line-color': ['get', 'border_color'],
                         'line-width': ['case', ['==', ['id'], (selectedTalhaoId || -1)], 4, 2],
