@@ -467,13 +467,15 @@ const GeneralLogTable: React.FC<GeneralLogTableProps> = ({ pmoId }) => {
 
 
             <ManualRecordDialog
+                key={selectedItem?.id || "new-record"}
                 open={isEditOpen}
-                onClose={() => setIsEditOpen(false)}
-                pmoId={pmoId || 0}
                 recordToEdit={selectedItem}
-                onRecordSaved={() => {
-                    fetchRegistros();
+                onClose={() => {
                     setIsEditOpen(false);
+                }}
+                onRecordSaved={() => {
+                    setIsEditOpen(false);
+                    fetchRegistros();
                 }}
             />
         </div>

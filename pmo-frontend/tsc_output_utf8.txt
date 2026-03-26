@@ -1,0 +1,47 @@
+﻿src/components/PmoForm/SeletorLocalizacaoSaf.tsx(115,30): error TS2345: Argument of type '{ area_total_m2: number | null; comprimento_metros: number | null; created_at: string | null; grid_x: number | null; grid_y: number | null; id: string; largura_metros: number | null; ... 7 more ...; volume_m3: number | null; }[]' is not assignable to parameter of type 'SetStateAction<Canteiro[]>'.
+  Type '{ area_total_m2: number | null; comprimento_metros: number | null; created_at: string | null; grid_x: number | null; grid_y: number | null; id: string; largura_metros: number | null; ... 7 more ...; volume_m3: number | null; }[]' is not assignable to type 'Canteiro[]'.
+    Type '{ area_total_m2: number | null; comprimento_metros: number | null; created_at: string | null; grid_x: number | null; grid_y: number | null; id: string; largura_metros: number | null; ... 7 more ...; volume_m3: number | null; }' is not assignable to type 'Canteiro'.
+      Types of property 'area_total_m2' are incompatible.
+        Type 'number | null' is not assignable to type 'number | undefined'.
+          Type 'null' is not assignable to type 'number | undefined'.
+src/components/PmoForm/SeletorLocalizacaoSaf.tsx(186,26): error TS2345: Argument of type '(prev: Canteiro[]) => ({ area_total_m2: number | null; comprimento_metros: number | null; created_at: string | null; grid_x: number | null; grid_y: number | null; id: string; ... 8 more ...; volume_m3: number | null; } | Canteiro)[]' is not assignable to parameter of type 'SetStateAction<Canteiro[]>'.
+  Type '(prev: Canteiro[]) => ({ area_total_m2: number | null; comprimento_metros: number | null; created_at: string | null; grid_x: number | null; grid_y: number | null; id: string; ... 8 more ...; volume_m3: number | null; } | Canteiro)[]' is not assignable to type '(prevState: Canteiro[]) => Canteiro[]'.
+    Type '({ area_total_m2: number | null; comprimento_metros: number | null; created_at: string | null; grid_x: number | null; grid_y: number | null; id: string; largura_metros: number | null; ... 7 more ...; volume_m3: number | null; } | Canteiro)[]' is not assignable to type 'Canteiro[]'.
+      Type '{ area_total_m2: number | null; comprimento_metros: number | null; created_at: string | null; grid_x: number | null; grid_y: number | null; id: string; largura_metros: number | null; ... 7 more ...; volume_m3: number | null; } | Canteiro' is not assignable to type 'Canteiro'.
+        Type '{ area_total_m2: number | null; comprimento_metros: number | null; created_at: string | null; grid_x: number | null; grid_y: number | null; id: string; largura_metros: number | null; ... 7 more ...; volume_m3: number | null; }' is not assignable to type 'Canteiro'.
+          Types of property 'area_total_m2' are incompatible.
+            Type 'number | null' is not assignable to type 'number | undefined'.
+              Type 'null' is not assignable to type 'number | undefined'.
+src/components/PmoForm/SeletorLocalizacaoSaf.tsx(187,26): error TS2345: Argument of type '{ area_total_m2: number | null; comprimento_metros: number | null; created_at: string | null; grid_x: number | null; grid_y: number | null; id: string; largura_metros: number | null; ... 7 more ...; volume_m3: number | null; }' is not assignable to parameter of type 'Canteiro'.
+  Types of property 'area_total_m2' are incompatible.
+    Type 'number | null' is not assignable to type 'number | undefined'.
+      Type 'null' is not assignable to type 'number | undefined'.
+src/components/PmoForm/SeletorLocalizacaoSaf.tsx(351,74): error TS2345: Argument of type 'string | null | undefined' is not assignable to parameter of type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+src/components/PmoForm/SeletorLocalizacaoSaf.tsx(365,70): error TS2345: Argument of type 'string | null | undefined' is not assignable to parameter of type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+src/hooks/manual-record/__tests__/useRecordValidation.test.ts(67,84): error TS2322: Type '{ tipoOutro: OutroSubtype; quantidade: string; unidade: UnitType; numeroDocumento: string; fornecedor: string; tipoOrigem: "compra" | "doa\u00E7\u00E3o" | "produ\u00E7\u00E3o pr\u00F3pria"; ... 7 more ...; observacao: string; }' is not assignable to type 'OutroDraft'.
+  Types of property 'titulo' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/hooks/offline/__tests__/useCadernoOfflineLogic.test.ts(38,52): error TS2345: Argument of type '{ tipo: string; produto: string; }' is not assignable to parameter of type 'Omit<CadernoEntry, "id" | "created_at"> & { id?: string | undefined; }'.
+  Type '{ tipo: string; produto: string; }' is missing the following properties from type 'Omit<CadernoEntry, "id" | "created_at">': data_registro, pmo_id, tipo_atividade
+src/hooks/offline/__tests__/useCadernoOfflineLogic.test.ts(54,52): error TS2345: Argument of type '{ id: string; tipo: string; produto: string; }' is not assignable to parameter of type 'Omit<CadernoEntry, "id" | "created_at"> & { id?: string | undefined; }'.
+  Type '{ id: string; tipo: string; produto: string; }' is missing the following properties from type 'Omit<CadernoEntry, "id" | "created_at">': data_registro, pmo_id, tipo_atividade
+src/hooks/offline/__tests__/useCadernoOfflineLogic.test.ts(69,52): error TS2345: Argument of type '{ tipo: string; produto: string; }' is not assignable to parameter of type 'Omit<CadernoEntry, "id" | "created_at"> & { id?: string | undefined; }'.
+  Type '{ tipo: string; produto: string; }' is missing the following properties from type 'Omit<CadernoEntry, "id" | "created_at">': data_registro, pmo_id, tipo_atividade
+src/hooks/offline/__tests__/useCadernoOfflineLogic.test.ts(91,52): error TS2345: Argument of type '{ tipo: string; produto: string; }' is not assignable to parameter of type 'Omit<CadernoEntry, "id" | "created_at"> & { id?: string | undefined; }'.
+  Type '{ tipo: string; produto: string; }' is missing the following properties from type 'Omit<CadernoEntry, "id" | "created_at">': data_registro, pmo_id, tipo_atividade
+src/hooks/offline/__tests__/useCadernoOfflineLogic.test.ts(107,52): error TS2345: Argument of type '{ tipo: string; produto: string; }' is not assignable to parameter of type 'Omit<CadernoEntry, "id" | "created_at"> & { id?: string | undefined; }'.
+  Type '{ tipo: string; produto: string; }' is missing the following properties from type 'Omit<CadernoEntry, "id" | "created_at">': data_registro, pmo_id, tipo_atividade
+src/hooks/offline/__tests__/useSyncEngine.test.ts(6,10): error TS6133: 'createPmo' is declared but its value is never read.
+src/hooks/offline/__tests__/useSyncEngine.test.ts(81,15): error TS6133: 'result' is declared but its value is never read.
+src/services/__tests__/storageBucketService.test.ts(31,13): error TS2353: Object literal may only specify known properties, and 'size' does not exist in type 'MediaAsset'.
+src/services/__tests__/storageBucketService.test.ts(58,13): error TS2353: Object literal may only specify known properties, and 'size' does not exist in type 'MediaAsset'.
+src/services/__tests__/storageBucketService.test.ts(87,105): error TS2353: Object literal may only specify known properties, and 'size' does not exist in type 'MediaAsset'.
+src/utils/__tests__/deepMerge.test.ts(50,23): error TS2339: Property 'a' does not exist on type 'never'.
+  The intersection '{ a: number; } & { a: undefined; b: number; }' was reduced to 'never' because property 'a' has conflicting types in some constituents.
+src/utils/__tests__/deepMerge.test.ts(51,23): error TS2339: Property 'b' does not exist on type 'never'.
+  The intersection '{ a: number; } & { a: undefined; b: number; }' was reduced to 'never' because property 'a' has conflicting types in some constituents.
+src/utils/__tests__/deepMerge.test.ts(58,23): error TS2339: Property 'a' does not exist on type 'never'.
+  The intersection '{ a: { b: number; }; } & { a: null; }' was reduced to 'never' because property 'a' has conflicting types in some constituents.

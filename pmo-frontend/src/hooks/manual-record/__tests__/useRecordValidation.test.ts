@@ -76,6 +76,9 @@ const createBaseOutroDraft = (overrides: Partial<OutroDraft> = {}): OutroDraft =
     fornecedor: '',
     tipoOrigem: 'compra',
     destinoVenda: '',
+    titulo: '',
+    descricao: '',
+    responsavel: '',
     ...overrides
 });
 
