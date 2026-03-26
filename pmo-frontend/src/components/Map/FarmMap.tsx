@@ -224,7 +224,7 @@ const FarmMap: React.FC<FarmMapProps> = ({
             }}
             onMouseEnter={() => setCursor('pointer')}
             onMouseLeave={() => setCursor(undefined)}
-            interactiveLayerIds={['talhoes-fill', 'talhoes-line']}
+            interactiveLayerIds={['talhoes-fill']}
         >
             <MapDrawControl
                 position="top-left"
