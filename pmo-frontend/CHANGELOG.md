@@ -1,4 +1,4 @@
-## [v0.8.0] - Março 2026
+## [v1.5.0] - 26 de Março de 2026
 
 ### GIS & WebGL (Sprint 2)
 **Foco:** Motor de edição vetorial de talhões e suporte a cores customizadas.
