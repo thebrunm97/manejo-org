@@ -53,8 +53,7 @@ func ProcessMessage(ctx context.Context, from string, body string, msgID string,
 	}
 
 	// Step 2: Resolve profile to have UserID for all consumption logs
-	profile, errP := sbClient.GetProfileByPhone(phone)
-	}
+	profile, _ := sbClient.GetProfileByPhone(phone)
 
 	if isAudio {
 		log.Printf("🎤 [FSM] Áudio detectado. Baixando media %s...", msgID)
@@ -261,9 +260,21 @@ func ProcessMessage(ctx context.Context, from string, body string, msgID string,
 		return ProcessResult{Success: true, Reason: "ignored_intent"}
 	}
 
-	// If intent is "duvida" or "configurar_infraestrutura", use Gemini with MCP Tool Calling
+	// Phase 4: Hierarchical Multi-Agent Integration
 	if extracted.Intencao == "duvida" || extracted.Intencao == "configurar_infraestrutura" {
-		log.Printf("🧠 [FSM] Intenção '%s' detectada. Iniciando Tool Calling para PMO %d...", extracted.Intencao, pmoID)
+		log.Printf("🧠 [FSM] Modo multi-agente ativado para: %s", extracted.Intencao)
+
+		// 1. Classificação de Intenção (Orquestrador)
+		result, err := gemClient.ClassifyIntent(ctx, body)
+		if err != nil {
+			log.Printf("⚠️ [FSM] Erro na classificação de intenção, usando fallback RAG: %v", err)
+			result = gemini.RouterResult{Intent: gemini.IntentRAG}
+		}
+
+		// 2. Seleção de Especialista e Ferramentas
+		specialistPrompt := gemini.GetPromptForIntent(result.Intent)
+		tools := mcpServer.GetToolsForIntent(result.Intent)
+		log.Printf("🤖 [ORCHESTRATOR] Roteado para especialista %v (%d ferramentas)", result.Intent, len(tools))
 
 		// Prepare History for Gemini
 		var geminiHistory []*genai.Content
@@ -277,32 +288,33 @@ func ProcessMessage(ctx context.Context, from string, body string, msgID string,
 			}
 		}
 
-		// Fix: Sub-timeout for the Gemini tool loop (30s) derived from parent ctx
+		// Sub-timeout for the Gemini tool loop (30s)
 		toolCtx, toolCancel := context.WithTimeout(ctx, 30*time.Second)
 		defer toolCancel()
-		tools := mcpServer.GetToolDeclarations()
 
-		resp, session, err := gemClient.GenerateContentWithTools(toolCtx, body, geminiHistory, tools)
+		// 3. Chamada Inicial ao Especialista
+		resp, session, err := gemClient.GenerateContentWithTools(toolCtx, body, geminiHistory, tools, specialistPrompt)
 		if err != nil {
-			log.Printf("❌ [FSM] Erro inicial no Gemini Tool Calling: %v", err)
+			log.Printf("❌ [FSM] Erro no Especialista Gemini: %v", err)
 			return handleDuvidaFallback(wpClient, ttsClient, from, gemClient, body, respondWithAudio, sbClient, profile, startTime, promptTokens, completionTokens, finalIntent)
 		}
 
-		// Log Gemini usage for first turn
+		// Log Gemini usage
 		if resp != nil && resp.UsageMetadata != nil {
-			log.Printf("📊 [Telemetry] Gravando consumo Gemini (turn 1) para usuário %s", profile.ID)
+			log.Printf("📊 [Telemetry] Consumo Gemini (Turn 1) - Prompt: %d, Completion: %d", resp.UsageMetadata.PromptTokenCount, resp.UsageMetadata.CandidatesTokenCount)
 			_ = sbClient.InsertLogConsumo(supabase.LogConsumoInsert{
 				UserID:           profile.ID,
 				TokensPrompt:     int(resp.UsageMetadata.PromptTokenCount),
 				TokensCompletion: int(resp.UsageMetadata.CandidatesTokenCount),
 				TotalTokens:      int(resp.UsageMetadata.TotalTokenCount),
 				ModeloIA:         gemClient.Config.Model,
-				Acao:             "duvida",
+				Acao:             string(result.Intent),
 				Status:           "success",
 			})
 		}
 
-		// Tool Loop (limited to 5 turns to avoid infinite loops)
+		// 4. Loop de Ferramentas com Middlewares (LoopGuard)
+		lg := mcp.NewLoopGuard(2) // Máximo 2 repetições dos mesmos argumentos
 		for i := 0; i < 5; i++ {
 			if len(resp.Candidates) == 0 {
 				break
@@ -317,52 +329,49 @@ func ProcessMessage(ctx context.Context, from string, body string, msgID string,
 			}
 
 			if len(toolCalls) == 0 {
-				// No more tools requested, we have a final text answer
-				if extracted.Intencao == "configurar_infraestrutura" {
-					// ABORT: Prevent JSON leakage or plain text advice for infrastructure
-					botResponse = "⚠️ O meu sistema de engenharia está com instabilidade no momento e não consegui executar a obra. Por favor, aguarde alguns minutos e tente novamente."
-					sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio)
-					recordLog(sbClient, profile, body, botResponse, gemClient.Config.Model+"-mcp-aborted", promptTokens, completionTokens, finalIntent, nil, startTime, false)
-					return ProcessResult{Success: false, Reason: "infrastructure_aborted_safety"}
-				}
-
+				// Resposta final em texto
 				var textResp strings.Builder
 				for _, part := range candidate.Content.Parts {
 					if t, ok := part.(genai.Text); ok {
 						textResp.WriteString(string(t))
 					}
 				}
-				if extracted.Intencao == "configurar_infraestrutura" {
-					botResponse = fmt.Sprintf("🏗️ *Engenharia da Fazenda:*\n\n%s", textResp.String())
-				} else {
-					botResponse = fmt.Sprintf("📚 *Consultor Orgânico RESPONDE:*\n\n%s", textResp.String())
+				
+				prefix := "📚 *Consultor Orgânico:* "
+				if result.Intent == gemini.IntentDatabase {
+					prefix = "🏗️ *Operador de Dados:* "
 				}
+				botResponse = prefix + textResp.String()
+				
 				sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio)
 
-				// Save to History (User Query + Bot Answer)
 				if historyManager != nil {
 					historyManager.AddMessage(from, "user", body)
 					historyManager.AddMessage(from, "model", textResp.String())
 				}
 
-				recordLog(sbClient, profile, body, botResponse, gemClient.Config.Model+"-mcp", promptTokens, completionTokens, finalIntent, nil, startTime, true)
-				return ProcessResult{Success: true, Reason: "expert_answered_mcp"}
+				recordLog(sbClient, profile, body, botResponse, gemClient.Config.Model+"-multi-agent", promptTokens, completionTokens, finalIntent, nil, startTime, true)
+				return ProcessResult{Success: true, Reason: "multi_agent_answered"}
 			}
 
-			// Handle Tool Calls
+			// Execução de Ferramentas
 			var toolResponses []genai.Part
 			for _, tc := range toolCalls {
-				log.Printf("🛠️ [FSM] Gemini solicitou tool: %s com args: %v", tc.Name, tc.Args)
+				log.Printf("🛠️ [FSM] Especialista solicitou tool: %s", tc.Name)
 
-				// Injeção de Segurança Mestra: Injetar pmo_id e user_id da sessão INCONDICIONALMENTE.
-				// Secure by default — mesmo tools futuros estarão protegidos.
+				// Injeção de Segurança
 				tc.Args["pmo_id"] = float64(pmoID)
 				tc.Args["user_id"] = profile.ID
 
-				result, err := mcpServer.CallTool(tc.Name, tc.Args)
+				result, err := mcpServer.CallToolWithGuard(lg, tc.Name, tc.Args)
 				if err != nil {
-					log.Printf("⚠️ [FSM] Erro ao executar tool %s: %v", tc.Name, err)
-					result = fmt.Sprintf("Erro ao executar ferramenta: %v", err)
+					log.Printf("⚠️ [FSM] LoopGuard ou Erro na Tool %s: %v", tc.Name, err)
+					result = fmt.Sprintf("Erro/Bloqueio: %v", err)
+				}
+
+				// Curto-Prazo (System Note)
+				if err == nil && historyManager != nil {
+					historyManager.InjectSystemNote(from, fmt.Sprintf("Tool %s executada com sucesso.", tc.Name))
 				}
 
 				toolResponses = append(toolResponses, genai.FunctionResponse{
@@ -371,29 +380,13 @@ func ProcessMessage(ctx context.Context, from string, body string, msgID string,
 				})
 			}
 
-			// Send responses back to Gemini
 			resp, err = session.SendMessage(toolCtx, toolResponses...)
 			if err != nil {
-				log.Printf("❌ [FSM] Erro ao enviar resultado da tool para o Gemini: %v", err)
+				log.Printf("❌ [FSM] Erro no loop de ferramentas: %v", err)
 				break
-			}
-
-			// Log Gemini usage for this turn
-			if resp != nil && resp.UsageMetadata != nil {
-				log.Printf("📊 [Telemetry] Gravando consumo Gemini (follow-up) para usuário %s", profile.ID)
-				_ = sbClient.InsertLogConsumo(supabase.LogConsumoInsert{
-					UserID:           profile.ID,
-					TokensPrompt:     int(resp.UsageMetadata.PromptTokenCount),
-					TokensCompletion: int(resp.UsageMetadata.CandidatesTokenCount),
-					TotalTokens:      int(resp.UsageMetadata.TotalTokenCount),
-					ModeloIA:         gemClient.Config.Model,
-					Acao:             "duvida",
-					Status:           "success",
-				})
 			}
 		}
 
-		// If loop finished without returning, something went wrong or too complex
 		return handleDuvidaFallback(wpClient, ttsClient, from, gemClient, body, respondWithAudio, sbClient, profile, startTime, promptTokens, completionTokens, finalIntent)
 	}
 

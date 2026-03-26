@@ -17,6 +17,7 @@ func (s *Server) InitializeTools() {
 	s.RegisterTool(Tool{
 		Name:        "consultar_base_conhecimento",
 		Description: "Usa esta ferramenta para pesquisar manuais, regras de plantio, histórico da fazenda e normas globais orgânicas.",
+		Category:    CategoryRAG,
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -37,6 +38,7 @@ func (s *Server) InitializeTools() {
 	s.RegisterTool(Tool{
 		Name:        "consultar_dados_fazenda",
 		Description: "Usa esta ferramenta para consultar dados estruturados da fazenda como talhões, canteiros ativos e registros recentes do caderno de campo.",
+		Category:    CategoryRAG,
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -62,6 +64,7 @@ func (s *Server) InitializeTools() {
 	s.RegisterTool(Tool{
 		Name:        "criar_infraestrutura_fazenda",
 		Description: "Cria um talhão completo e opcionalmente uma sequência de canteiros em um único passo. Use esta ferramenta sempre que o usuário pedir para 'criar a fazenda', 'adicionar talhão com canteiros' ou 'montar infraestrutura'.",
+		Category:    CategoryDatabase,
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -86,6 +89,7 @@ func (s *Server) InitializeTools() {
 	s.RegisterTool(Tool{
 		Name:        "adicionar_insumo_pmo",
 		Description: "Usa esta ferramenta para cadastrar insumos e equipamentos (Seção 8 do PMO) como fertilizantes, sementes compradas, substratos ou ferramentas novas.",
+		Category:    CategoryDatabase,
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -127,6 +131,7 @@ func (s *Server) InitializeTools() {
 	s.RegisterTool(Tool{
 		Name:        "registrar_propagacao_vegetal",
 		Description: "Usa esta ferramenta para registrar a origem de sementes, mudas ou material propagativo (Seção 9 do PMO).",
+		Category:    CategoryDatabase,
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -165,6 +170,7 @@ func (s *Server) InitializeTools() {
 	s.RegisterTool(Tool{
 		Name:        "registrar_limpeza",
 		Description: "Usa esta ferramenta para registrar a higienização de instalações, equipamentos ou ferramentas (Seção 4 / Formulário 04 do PMO).",
+		Category:    CategoryDatabase,
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -183,6 +189,7 @@ func (s *Server) InitializeTools() {
 	s.RegisterTool(Tool{
 		Name:        "criar_talhao",
 		Description: "Usa esta ferramenta para criar um novo talhão (área produtiva) na fazenda.",
+		Category:    CategoryDatabase,
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -199,6 +206,7 @@ func (s *Server) InitializeTools() {
 	s.RegisterTool(Tool{
 		Name:        "criar_canteiros",
 		Description: "Cria canteiros em lote dentro de um talhão existente.",
+		Category:    CategoryDatabase,
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -214,6 +222,7 @@ func (s *Server) InitializeTools() {
 	s.RegisterTool(Tool{
 		Name:        "registrar_compostagem",
 		Description: "Usa esta ferramenta para registrar a montagem, revirada, controle de temperatura, adição de água ou uso de lotes de compostagem (Formulário 05).",
+		Category:    CategoryDatabase,
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -232,6 +241,7 @@ func (s *Server) InitializeTools() {
 	s.RegisterTool(Tool{
 		Name:        "registrar_compra_insumo",
 		Description: "Usa esta ferramenta para registrar a compra ou aquisição de um insumo, produto, semente, ferramenta ou serviço (Formulário 06 da certificação orgânica). Obrigatório quando o agricultor relatar que 'comprou' algo ou recebeu 'nota fiscal'.",
+		Category:    CategoryDatabase,
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -269,6 +279,7 @@ func (s *Server) InitializeTools() {
 	s.RegisterTool(Tool{
 		Name:        "registrar_colheita",
 		Description: "Usa esta ferramenta para registrar a colheita de produtos na fazenda (Formulário 07).",
+		Category:    CategoryDatabase,
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -288,6 +299,7 @@ func (s *Server) InitializeTools() {
 	s.RegisterTool(Tool{
 		Name:        "registrar_venda",
 		Description: "Usa esta ferramenta para registrar a venda, comercialização ou destinação final de produtos (Formulário 08). Saída de estoque.",
+		Category:    CategoryDatabase,
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{

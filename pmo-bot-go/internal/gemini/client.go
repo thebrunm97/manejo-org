@@ -14,6 +14,26 @@ import (
 //go:embed prompts/system_prompt.md
 var systemPrompt string
 
+//go:embed prompts/agronomist.md
+var systemPromptAgronomist string
+
+//go:embed prompts/db_operator.md
+var systemPromptDBOperator string
+
+// GetPromptForIntent selects the correct specialist system prompt based on the
+// classified Intent from the Router. Falls back to the default monolithic prompt
+// for CHAT or any unrecognized intent to avoid breaking the existing flow.
+func GetPromptForIntent(intent Intent) string {
+	switch intent {
+	case IntentRAG:
+		return systemPromptAgronomist
+	case IntentDatabase:
+		return systemPromptDBOperator
+	default:
+		return systemPrompt
+	}
+}
+
 // Config holds Gemini API configuration
 type Config struct {
 	APIKey     string
@@ -101,12 +121,19 @@ func (c *Client) AskExpert(question string) (string, error) {
 	return result, nil
 }
 
-// GenerateContentWithTools handles the interactive tool calling flow with history support
-func (c *Client) GenerateContentWithTools(ctx context.Context, question string, history []*genai.Content, tools []*genai.Tool) (*genai.GenerateContentResponse, *genai.ChatSession, error) {
+// GenerateContentWithTools handles the interactive tool calling flow with history support.
+// Pass a specific systemInstruction to use a modular specialist prompt; pass empty string
+// to fall back to the default monolithic prompt.
+func (c *Client) GenerateContentWithTools(ctx context.Context, question string, history []*genai.Content, tools []*genai.Tool, systemInstruction ...string) (*genai.GenerateContentResponse, *genai.ChatSession, error) {
 	model := c.client.GenerativeModel(c.Config.Model)
 	model.Tools = tools
+
+	prompt := systemPrompt
+	if len(systemInstruction) > 0 && systemInstruction[0] != "" {
+		prompt = systemInstruction[0]
+	}
 	model.SystemInstruction = &genai.Content{
-		Parts: []genai.Part{genai.Text(systemPrompt)},
+		Parts: []genai.Part{genai.Text(prompt)},
 	}
 	model.SetTemperature(0.2)
 
