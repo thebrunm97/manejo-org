@@ -11,6 +11,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 )
 
 // Config represents the WPPConnect server configuration
@@ -195,7 +197,7 @@ func (c *Client) SendMessage(to, message string) error {
 
 	payload := SendMessageRequest{
 		Phone:   to,
-		Message: message,
+		Message: utils.SanitizeForWhatsApp(message),
 		IsGroup: false,
 	}
 
@@ -256,7 +258,7 @@ func (c *Client) SendReply(to, message, replyToMessageId string) error {
 
 	payload := map[string]interface{}{
 		"phone":     to,
-		"message":   message,
+		"message":   utils.SanitizeForWhatsApp(message),
 		"isGroup":   false,
 		"messageId": replyToMessageId, // Used by WPPConnect to associate the reply
 	}
@@ -272,7 +274,7 @@ func (c *Client) SendReply(to, message, replyToMessageId string) error {
 
 // RenderVoiceText formats a text message to look like a premium transcription card.
 func RenderVoiceText(text string) string {
-	return fmt.Sprintf("🌿 %s", text)
+	return fmt.Sprintf("🌿 %s", utils.SanitizeForWhatsApp(text))
 }
 
 // CheckConnection checks the WPPConnect session status.

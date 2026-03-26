@@ -1,6 +1,7 @@
 package history
 
 import (
+	"fmt"
 	"sync"
 	"time"
 )
@@ -75,7 +76,31 @@ func (m *Manager) AddMessage(phone string, role, content string) {
 	conv.Messages = append(conv.Messages, Message{Role: role, Content: content})
 	conv.LastUpdate = time.Now()
 
-	// Keep only the last N messages
+	if len(conv.Messages) > m.maxMessages {
+		conv.Messages = conv.Messages[len(conv.Messages)-m.maxMessages:]
+	}
+}
+
+// InjectSystemNote inserts a specialized "observation" message into the history as a model response.
+// This helps the LLM maintain context of tool results without them being treated as direct user input.
+func (m *Manager) InjectSystemNote(phone string, note string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	conv, ok := m.conversations[phone]
+	if !ok {
+		conv = &Conversation{
+			Messages: make([]Message, 0),
+		}
+		m.conversations[phone] = conv
+	}
+
+	conv.Messages = append(conv.Messages, Message{
+		Role:    "model",
+		Content: fmt.Sprintf("[OBSERVAÇÃO DO SISTEMA: %s]", note),
+	})
+	conv.LastUpdate = time.Now()
+
 	if len(conv.Messages) > m.maxMessages {
 		conv.Messages = conv.Messages[len(conv.Messages)-m.maxMessages:]
 	}
