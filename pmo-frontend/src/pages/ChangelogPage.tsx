@@ -157,12 +157,12 @@ const ChangelogPage: React.FC = () => {
                     <h3 className="text-xl font-bold text-slate-900 mb-2">Quer saber mais?</h3>
                     <p className="text-slate-500 mb-6 font-medium">Fique por dentro das novidades em tempo real seguindo nosso Instagram.</p>
                     <a 
-                        href="https://instagram.com/manejoorg" 
+                        href="https://instagram.com/manejo_org" 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-slate-900 text-white font-bold hover:bg-slate-800 transition-all active:scale-95 shadow-lg shadow-slate-900/10"
                     >
-                        Seguir @manejoorg
+                        Seguir @manejo_org
                     </a>
                 </section>
             </main>
