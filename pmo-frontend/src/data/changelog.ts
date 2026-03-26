@@ -11,6 +11,30 @@ export interface ChangelogEntry {
 
 export const changelogData: ChangelogEntry[] = [
     {
+        version: "1.5.0",
+        date: "26 de Março de 2026",
+        title: "Cartografia Profissional e Cores no Campo",
+        description: "Assuma o controle total do seu mapa. Agora você pode desenhar seus talhões com precisão profissional e organizar sua fazenda com as cores que preferir para cada plantio.",
+        sections: [
+            {
+                type: "New",
+                items: [
+                    "Desenho de Talhões Profissional: Uma nova ferramenta de desenho que permite ajustar os limites da sua terra com facilidade e precisão.",
+                    "Cores Personalizadas: Agora você pode escolher a cor exata para cada talhão, facilitando a organização visual da sua propriedade.",
+                    "Pesquisa em Meus Manuais: O assistente no WhatsApp agora pesquisa dentro dos seus manuais técnicos (PDFs) para tirar dúvidas de manejo em segundos."
+                ]
+            },
+            {
+                type: "Improvements",
+                items: [
+                    "Visualização 'O que você vê é o que você tem': As cores que você escolhe no painel aparecem instantaneamente no mapa em tempo real.",
+                    "Assistente Mais Rápido e Seguro: Modernizamos o 'coração' do sistema para garantir que suas mensagens e registros via áudio nunca falhem.",
+                    "Transição Suave no Mapa: Melhoramos a troca entre o modo de visualização e o modo de desenho, para uma experiência mais fluida."
+                ]
+            }
+        ]
+    },
+    {
         version: "0.12.0",
         date: "20 de Março de 2026",
         title: "A Era da Segurança e Formulários Inteligentes",
