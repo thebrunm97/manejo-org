@@ -28,12 +28,12 @@ Este arquivo documenta as mudanças importantes e refatorações realizadas no P
 - **Chrome Lock Lifecycle**: Correção de deadlock na inicialização do WPPConnect via patches de infraestrutura.
 - **Offline Sync Engine**: Melhoria no rastreamento de metadados e `pmo_id` para itens enfileirados localmente.
 
-## [0.11.5] - 2026-03-19
+## [0.7.5] - 2026-03-19
 ### Added
 - **FSM State Persistence (Bot Backend)**: Implementação de Máquina de Estados Finita (FSM) com persistência in-memory por telefone. O bot agora retém o contexto de registros incompletos (Atividade, Item, Local) e aguarda informações faltantes (ex: Quantidade) sem amnésia conversacional.
 - **Entrevista Ativa**: Fluxo de diálogo guiado para "Compra/Aquisição" e registros bloqueados pelo Choke Point.
 
-## [0.11.4] - 2026-03-09
+## [0.6.6] - 2026-03-09
 ### Added
 - **E2E Test Hardening (Playwright)**: 
   - Refatoração completa do `ManualRecord` com foco em acessibilidade (a11y) e seletores robustos.
@@ -51,7 +51,7 @@ Este arquivo documenta as mudanças importantes e refatorações realizadas no P
 ### CI/CD
 - **Production-Ready Tests**: Otimização do pipeline de CI/CD para validar o bundle final de produção em vez do servidor de desenvolvimento.
 
-## [0.11.3] - 2026-03-07
+## [0.6.5] - 2026-03-07
 ### Added
 - **Final Legacy Purge**: Remoção completa de todos os scripts Python obsoletos, diretórios de configuração e binários legados da PoC anterior.
 - **Gemini 3.1 Migration**: Transição para o modelo `gemini-3.1-flash-lite` para otimização de cotas e melhor performance em multimodularidade.
@@ -74,7 +74,7 @@ Este arquivo documenta as mudanças importantes e refatorações realizadas no P
 ### Fixed
 - **Vite Path Resolution**: Correção de caminhos (aliases) para compatibilidade com Windows e preservação do CSS do `leaflet-draw` via regex alias.
 
-## [0.11.2] - 2026-03-06
+## [0.6.4] - 2026-03-06
 ### Added
 - **Gemini Tool Calling**: Integração nativa do SDK da Gemini com suporte a chamadas de função (MCP), permitindo transações complexas via linguagem natural.
 - **RAG Performance Optimization**: Implementação de Worker Pool e Channels em Go para ingestão paralela de documentos PDF com controle de concorrência.

@@ -35,7 +35,7 @@ export const changelogData: ChangelogEntry[] = [
         ]
     },
     {
-        version: "0.12.0",
+        version: "0.8.0",
         date: "20 de Março de 2026",
         title: "A Era da Segurança e Formulários Inteligentes",
         description: "O maior salto de estabilidade e segurança até hoje. Protegemos seus dados com criptografia de ponta e organizamos a casa para o crescimento da fazenda.",
@@ -58,7 +58,7 @@ export const changelogData: ChangelogEntry[] = [
         ]
     },
     {
-        version: "0.11.0",
+        version: "0.7.0",
         date: "10 de Março de 2026",
         title: "Inteligência com Memória e Entrevistas",
         description: "O Consultor Orgânico aprendeu a lembrar do que vocês estavam conversando e a fazer perguntas para completar seus registros.",
