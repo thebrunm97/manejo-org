@@ -14,11 +14,8 @@ interface GeoJSONData {
 
 import MapDrawControl from './MapDrawControl';
 
-interface MapCreatedEvent {
-    feature?: any;
-    geometry: any;
-    areaM2: number;
-}
+
+
 
 interface FarmMapProps {
     talhoes: Talhao[];
@@ -146,7 +143,8 @@ const FarmMap: React.FC<FarmMapProps> = ({
                     // Deletar o estado anterior com segurança
                     drawInstance.deleteAll();
                     drawInstance.add(feature);
-                    drawInstance.changeMode('direct_select', { featureId: talhao.id as string });
+                    drawInstance.changeMode('direct_select', { featureId: String(talhao.id) });
+
                 }
             } else {
                 // Ao desmarcar, limpa o draw

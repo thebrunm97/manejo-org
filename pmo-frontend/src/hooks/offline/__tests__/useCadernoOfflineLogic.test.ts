@@ -32,7 +32,7 @@ describe('useCadernoOfflineLogic', () => {
 
         const { result } = renderHook(() => useCadernoOfflineLogic());
 
-        const payload = { tipo: 'PLANTIO', produto: 'Soja' };
+        const payload = { tipo: 'PLANTIO', produto: 'Soja', data_registro: '2026-01-01', pmo_id: 1, tipo_atividade: 'Plantio' } as any;
 
         const saveResult = await act(async () => {
             return await result.current.saveRecord(payload);
@@ -48,7 +48,7 @@ describe('useCadernoOfflineLogic', () => {
 
         const { result } = renderHook(() => useCadernoOfflineLogic());
 
-        const payload = { id: 'real-123', tipo: 'PLANTIO', produto: 'Milho' };
+        const payload = { id: 'real-123', tipo: 'PLANTIO', produto: 'Milho', data_registro: '2026-01-01', pmo_id: 1, tipo_atividade: 'Plantio' } as any;
 
         const saveResult = await act(async () => {
             return await result.current.saveRecord(payload);
@@ -63,7 +63,7 @@ describe('useCadernoOfflineLogic', () => {
 
         const { result } = renderHook(() => useCadernoOfflineLogic());
 
-        const payload = { tipo: 'COLHEITA', produto: 'Cenoura' };
+        const payload = { tipo: 'COLHEITA', produto: 'Cenoura', data_registro: '2026-01-01', pmo_id: 1, tipo_atividade: 'Colheita' } as any;
 
         const saveResult = await act(async () => {
             return await result.current.saveRecord(payload);
@@ -85,7 +85,7 @@ describe('useCadernoOfflineLogic', () => {
 
         const { result } = renderHook(() => useCadernoOfflineLogic());
 
-        const payload = { tipo: 'MANEJO', produto: 'Tomate' };
+        const payload = { tipo: 'MANEJO', produto: 'Tomate', data_registro: '2026-01-01', pmo_id: 1, tipo_atividade: 'Manejo' } as any;
 
         const saveResult = await act(async () => {
             return await result.current.saveRecord(payload);
@@ -101,7 +101,7 @@ describe('useCadernoOfflineLogic', () => {
 
         const { result } = renderHook(() => useCadernoOfflineLogic());
 
-        const payload = { tipo: 'PLANTIO', produto: 'Invalid' };
+        const payload = { tipo: 'PLANTIO', produto: 'Invalid', data_registro: '2026-01-01', pmo_id: 1, tipo_atividade: 'Plantio' } as any;
 
         const saveResult = await act(async () => {
             return await result.current.saveRecord(payload);

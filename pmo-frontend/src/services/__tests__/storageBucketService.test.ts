@@ -27,8 +27,8 @@ describe('storageBucketService', () => {
             name: 'img.jpg',
             file: mockFile,
             mimeType: 'image/jpeg',
-            uri: '',
-            size: 100
+            type: 'image',
+            uri: ''
         };
         const userId = 'user-1';
 
@@ -54,8 +54,8 @@ describe('storageBucketService', () => {
         const asset: MediaAsset = {
             name: 'photo.png',
             uri: 'file://local/path.png',
-            mimeType: 'image/png',
-            size: 500
+            type: 'image',
+            mimeType: 'image/png'
         };
         const userId = 'user-2';
         const mockBlob = new Blob(['photo content']);
@@ -84,7 +84,7 @@ describe('storageBucketService', () => {
     });
 
     it('should return null if upload fails', async () => {
-        const asset: MediaAsset = { name: 'f.txt', file: new File([], 'f.txt'), mimeType: 'text/plain', size: 0, uri: '' };
+        const asset: MediaAsset = { name: 'f.txt', file: new File([], 'f.txt'), mimeType: 'text/plain', type: 'document', uri: '' };
 
         vi.mocked(supabase.storage.from).mockReturnValue({
             upload: vi.fn().mockResolvedValue({ error: new Error('Storage Full') }),

@@ -19,10 +19,10 @@ interface Talhao {
 interface Canteiro {
     id: number | string;
     nome: string;
-    tipo?: string;
-    area_total_m2?: number;
-    largura?: number;
-    comprimento?: number;
+    tipo?: string | null;
+    area_total_m2?: number | null;
+    largura?: number | null;
+    comprimento?: number | null;
     _displayName?: string;
     [key: string]: any;
 }
@@ -348,7 +348,7 @@ const SeletorLocalizacaoSaf: React.FC<SeletorLocalizacaoSafProps> = ({
                                             </div>
                                         ) : (
                                             canteirosFiltrados.map((local) => {
-                                                const colors = getColors(local.tipo);
+                                                const colors = getColors(local.tipo || undefined);
                                                 const isSelected = valueObj?.canteiro_id === local.id;
 
                                                 return (
@@ -362,7 +362,7 @@ const SeletorLocalizacaoSaf: React.FC<SeletorLocalizacaoSafProps> = ({
                                                             }`}
                                                     >
                                                         <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${colors.bg} ${colors.text}`}>
-                                                            {getIcon(local.tipo)}
+                                                            {getIcon(local.tipo || undefined)}
                                                         </div>
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-center justify-between gap-2">

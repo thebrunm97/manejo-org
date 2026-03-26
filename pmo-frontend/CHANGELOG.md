@@ -1,4 +1,18 @@
+## [v0.8.0] - Março 2026
+
+### GIS & WebGL (Sprint 2)
+**Foco:** Motor de edição vetorial de talhões e suporte a cores customizadas.
+
+- **Motor de Edição Vetorial:**
+  - Sincronização bidirecional entre `FarmMap.tsx` e `MapDrawControl.tsx`.
+  - Ocultação inteligente do polígono estático durante a edição para evitar "z-fighting".
+- **WebGL & Estilização:**
+  - Integração do Color Picker no `PropertyMap.tsx` com preview em tempo real (WYSIWYG).
+  - Injeção de propriedades (`fillColor`, `borderColor`) no GeoJSON.
+  - Renderização via Expressões Coalesce no MapLibre (Fase 3 do WebGL).
+
 ## [v0.7.0] - Março 2026
+
 
 ### Hardening & Security (Sprint 1)
 **Foco:** Reforço da segurança, integridade de dados e Row Level Security (RLS).

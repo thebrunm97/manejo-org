@@ -45,7 +45,7 @@ describe('deepMerge utility', () => {
     it('should handle undefined values in source correctly', () => {
         const target = { a: 1 };
         const source = { a: undefined, b: 2 };
-        const result = deepMerge(target, source);
+        const result = deepMerge(target, source) as any;
         // According to deepMerge.ts line 22: output[key] = sValue !== undefined ? sValue : tValue;
         expect(result.a).toBe(1);
         expect(result.b).toBe(2);
@@ -54,7 +54,7 @@ describe('deepMerge utility', () => {
     it('should handle null values in source correctly', () => {
         const target = { a: { b: 1 } };
         const source = { a: null };
-        const result = deepMerge(target, source);
+        const result = deepMerge(target, source) as any;
         expect(result.a).toBe(null);
     });
 

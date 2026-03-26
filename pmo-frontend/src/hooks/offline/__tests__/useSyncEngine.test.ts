@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useSyncEngine } from '../useSyncEngine';
 import { localDb, CADERNO_STORE, SYNC_QUEUE_STORE } from '../../../utils/db';
 import { cadernoService } from '../../../services/cadernoService';
-import { createPmo, updatePmo } from '../../../services/pmoService';
+import { updatePmo } from '../../../services/pmoService';
 import { toast } from 'react-toastify';
 
 // Mocks
@@ -78,7 +78,7 @@ describe('useSyncEngine', () => {
             .mockResolvedValueOnce([]) // SYNC_QUEUE
             .mockResolvedValueOnce(mockLegacyItems); // CADERNO_STORE
 
-        const { result } = renderHook(() => useSyncEngine());
+        renderHook(() => useSyncEngine());
 
         // Effect will trigger syncPendingRecords
         await act(async () => {
