@@ -1,7 +1,7 @@
 # Changelog
 Este arquivo documenta as mudanças importantes e refatorações realizadas no Pmo Bot Go Backend.
 
-## [1.5.0] - 2026-03-26
+## [0.9.0] - 2026-03-26
 ### Added (GIS & Map Engine)
 - **Vector Editing Engine**: Suporte a desenho e edição bidirecional de polígonos com sincronização persistente.
 - **WebGL Data-driven Styling**: Renderização de cores customizadas (coalesce) via MapLibre GL com tipagem estrita de GeoJSON.
@@ -17,7 +17,7 @@ Este arquivo documenta as mudanças importantes e refatorações realizadas no P
 - **Vercel Build Stability**: Correção de resolução de pacotes ESM/CJS em bundles de produção.
 - **RLS Security Hardening**: Garantia de injeção automática de metadados de segurança em todos os fluxos de salvamento.
 
-## [1.4.0] - 2026-03-20
+## [0.8.0] - 2026-03-20
 ### Added
 - **AI Tools Expansion**: Novas ferramentas para Registro de Limpeza (Form 04), Propagação Vegetal (Seção 9) e Insumos (Seção 8).
 - **ManualRecordDialog Modularization**: Refatoração completa do componente de UI para arquitetura baseada em abas especializadas.

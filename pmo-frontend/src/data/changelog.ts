@@ -11,7 +11,7 @@ export interface ChangelogEntry {
 
 export const changelogData: ChangelogEntry[] = [
     {
-        version: "1.5.0",
+        version: "0.9.0",
         date: "26 de Março de 2026",
         title: "Cartografia Profissional e Cores no Campo",
         description: "Assuma o controle total do seu mapa. Agora você pode desenhar seus talhões com precisão profissional e organizar sua fazenda com as cores que preferir para cada plantio.",
