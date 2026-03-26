@@ -1,6 +1,22 @@
 # Changelog
 Este arquivo documenta as mudanças importantes e refatorações realizadas no Pmo Bot Go Backend.
 
+## [1.5.0] - 2026-03-26
+### Added (GIS & Map Engine)
+- **Vector Editing Engine**: Suporte a desenho e edição bidirecional de polígonos com sincronização persistente.
+- **WebGL Data-driven Styling**: Renderização de cores customizadas (coalesce) via MapLibre GL com tipagem estrita de GeoJSON.
+- **WYSIWYG Color Picker**: Ferramenta de seleção de cores integrada com preview instantâneo no mapa.
+
+### Added (AI & Backend)
+- **Full Gemini Migration**: Transição completa para modelos Gemini com suporte a MCP Tool Calling e File Search (RAG).
+- **Go Engine Stability**: Motor principal em Go agora consolidado como o serviço central de processamento de mensagens.
+- **Active Dialogue Interviews**: Sistema de captura de campo guiado por IA via WhatsApp.
+
+### Fixed
+- **Integrity Green Pass**: Resolução de 100% dos erros de tipagem TypeScript no frontend e testes.
+- **Vercel Build Stability**: Correção de resolução de pacotes ESM/CJS em bundles de produção.
+- **RLS Security Hardening**: Garantia de injeção automática de metadados de segurança em todos os fluxos de salvamento.
+
 ## [1.4.0] - 2026-03-20
 ### Added
 - **AI Tools Expansion**: Novas ferramentas para Registro de Limpeza (Form 04), Propagação Vegetal (Seção 9) e Insumos (Seção 8).
