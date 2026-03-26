@@ -175,8 +175,11 @@ const FarmMap: React.FC<FarmMapProps> = ({
                             id: t.id,
                             nome: t.nome,
                             cultura: t.cultura,
-                            fill_color: t.fill_color || t.fillColor || t.cor || getCropColor(t.cultura),
-                            border_color: t.border_color || t.borderColor || t.fill_color || t.fillColor || t.cor || getCropColor(t.cultura),
+                            // Sanatização: se for string vazia, vira undefined para o coalesce do MapLibre
+                            fillColor: t.fillColor || undefined,
+                            borderColor: t.borderColor || undefined,
+                            // Fallback legado/calculado
+                            color: t.cor || getCropColor(t.cultura),
                             isSelected: selectedTalhaoId === t.id
                         },
                         geometry
@@ -275,7 +278,12 @@ const FarmMap: React.FC<FarmMapProps> = ({
                     type="fill"
                     filter={['!=', ['get', 'id'], selectedTalhaoId || '']}
                     paint={{
-                        'fill-color': ['get', 'fill_color'],
+                        'fill-color': [
+                            'coalesce', 
+                            ['get', 'fillColor'], 
+                            ['get', 'color'], 
+                            '#3bb444' // Fallback radical caso color também falhe
+                        ],
                         'fill-opacity': [
                             'case',
                             ['boolean', ['feature-state', 'hover'], false],
@@ -291,7 +299,12 @@ const FarmMap: React.FC<FarmMapProps> = ({
                     type="line"
                     filter={['!=', ['get', 'id'], selectedTalhaoId || '']}
                     paint={{
-                        'line-color': ['get', 'border_color'],
+                        'line-color': [
+                            'coalesce', 
+                            ['get', 'borderColor'], 
+                            ['get', 'color'], 
+                            '#228b22'
+                        ],
                         'line-width': ['case', ['==', ['id'], (selectedTalhaoId || -1)], 4, 2],
                         'line-opacity': 1
                     }}
@@ -321,7 +334,7 @@ const FarmMap: React.FC<FarmMapProps> = ({
                         <div style={{ 
                             width: '8px', 
                             height: '8px', 
-                            background: c.talhao.fill_color || c.talhao.fillColor || c.talhao.cor || getCropColor(c.talhao.cultura), 
+                            background: c.talhao.fillColor || c.talhao.cor || getCropColor(c.talhao.cultura), 
                             borderRadius: '50%' 
                         }}></div>
                         <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1.3' }}>
