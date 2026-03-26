@@ -466,16 +466,15 @@ body {
   height: 100%;
 }
 
-/* Custom Marker Pills for MapLibre */
+/* Custom Marker Pills for MapLibre — Apenas label visual (sem interceptar cliques) */
 .map-marker-pill {
-  pointer-events: auto;
-  cursor: pointer;
+  pointer-events: none;
   transform: translate(-50%, -50%);
-  z-index: 50 !important;
+  z-index: 10 !important;
 }
 
 .maplibregl-marker {
-  z-index: 50 !important; /* Acima dos polígonos, abaixo dos drawers (z-index 50+) */
+  z-index: 10 !important; /* Abaixo dos controles e drawers */
 }
 
 /* ========================================================== */

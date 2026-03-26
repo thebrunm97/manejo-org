@@ -121,43 +121,11 @@ const FarmMap: React.FC<FarmMapProps> = ({
     isDrawerOpen
 }) => {
     const [cursor, setCursor] = React.useState<string | undefined>(undefined);
-    const [drawInstance, setDrawInstance] = React.useState<MapboxDraw | null>(null);
+    const [, setDrawInstance] = React.useState<MapboxDraw | null>(null);
 
-    // Sincronizar Talhão Selecionado com o Draw (Modo de Edição)
-    useEffect(() => {
-        // Só tenta interagir com o Draw se ele existir e estiver propriamente inicializado
-        if (!drawInstance || typeof drawInstance.getMode !== 'function') return;
-
-        try {
-            if (selectedTalhaoId) {
-                const talhao = talhoes.find(t => t.id === selectedTalhaoId);
-                if (talhao && talhao.geometry) {
-                    const geometry = typeof talhao.geometry === 'string' ? JSON.parse(talhao.geometry) : talhao.geometry;
-                    const feature = {
-                        type: 'Feature',
-                        id: talhao.id,
-                        properties: { id: talhao.id },
-                        geometry
-                    } as any;
-
-                    // Deletar o estado anterior com segurança
-                    drawInstance.deleteAll();
-                    drawInstance.add(feature);
-                    drawInstance.changeMode('direct_select', { featureId: String(talhao.id) });
-
-                }
-            } else {
-                // Ao desmarcar, limpa o draw
-                drawInstance.deleteAll();
-                if (drawInstance.getMode() !== 'simple_select') {
-                    drawInstance.changeMode('simple_select');
-                }
-            }
-        } catch (e) {
-            // Se o Draw falhar internamente (comum em transições de animação rápida), ignoramos
-            console.warn("Draw synchronization briefly unstable:", e);
-        }
-    }, [selectedTalhaoId, drawInstance, talhoes]);
+    // NOTA: Auto-sync do Draw removido intencionalmente.
+    // O Draw agora é usado APENAS para criação de novos polígonos (draw_polygon) e exclusão (trash).
+    // A seleção visual é controlada por Data-Driven Styling nas camadas base do MapLibre.
 
     // 1. Converter talhões para GeoJSON FeatureCollection (WebGL Native)
     const geojsonData = useMemo<GeoJSONData>(() => {
@@ -249,10 +217,13 @@ const FarmMap: React.FC<FarmMapProps> = ({
             onClick={(e) => {
                 const feature = e.features?.[0];
                 if (feature && onTalhaoClick) {
-                    const talhao = talhoes.find(t => t.id === feature.properties.id);
+                    const talhaoId = feature.properties?.id;
+                    const talhao = talhoes.find(t => String(t.id) === String(talhaoId));
                     if (talhao) onTalhaoClick(talhao);
                 }
             }}
+            onMouseEnter={() => setCursor('pointer')}
+            onMouseLeave={() => setCursor(undefined)}
             interactiveLayerIds={['talhoes-fill', 'talhoes-line']}
         >
             <MapDrawControl
@@ -270,32 +241,30 @@ const FarmMap: React.FC<FarmMapProps> = ({
                 onModeChange={handleModeChange}
             />
             <Source id="talhoes-source" type="geojson" data={geojsonData}>
-                {/* Layer de Preenchimento (Enterprise Vitreous Effect) */}
+                {/* Layer de Preenchimento — Data-Driven Styling (sem filtro excludente) */}
                 <Layer
                     id="talhoes-fill"
                     type="fill"
-                    filter={['!=', ['get', 'id'], selectedTalhaoId || '']}
                     paint={{
                         'fill-color': [
                             'coalesce', 
                             ['get', 'fillColor'], 
                             ['get', 'color'], 
-                            '#3bb444' // Fallback radical caso color também falhe
+                            '#3bb444'
                         ],
                         'fill-opacity': [
                             'case',
-                            ['boolean', ['feature-state', 'hover'], false],
-                            0.6,
-                            selectedTalhaoId ? ['case', ['==', ['id'], selectedTalhaoId], 0.4, 0.1] : 0.2
+                            selectedTalhaoId ? ['==', ['get', 'id'], selectedTalhaoId] : false,
+                            0.45,
+                            0.18
                         ]
                     }}
                 />
                 
-                {/* Layer de Borda (Solid Detail) */}
+                {/* Layer de Borda — Highlight dinâmico para seleção */}
                 <Layer
                     id="talhoes-line"
                     type="line"
-                    filter={['!=', ['get', 'id'], selectedTalhaoId || '']}
                     paint={{
                         'line-color': [
                             'coalesce', 
@@ -303,14 +272,21 @@ const FarmMap: React.FC<FarmMapProps> = ({
                             ['get', 'color'], 
                             '#228b22'
                         ],
-                        'line-width': ['case', ['==', ['id'], (selectedTalhaoId || -1)], 4, 2],
+                        'line-width': [
+                            'case',
+                            selectedTalhaoId ? ['==', ['get', 'id'], selectedTalhaoId] : false,
+                            4,
+                            2
+                        ],
                         'line-opacity': 1
                     }}
                 />
             </Source>
 
-            {/* Pílulas HTML (Markers) - Ghost Labels (pointer-events-none) */}
-            {centroids.map(c => c && (
+            {/* Pílula HTML — Visível APENAS para o talhão selecionado */}
+            {centroids
+                .filter(c => c && selectedTalhaoId && String(c.id) === String(selectedTalhaoId))
+                .map(c => c && (
                 <Marker 
                     key={c.id} 
                     longitude={c.lng} 
@@ -318,26 +294,29 @@ const FarmMap: React.FC<FarmMapProps> = ({
                     anchor="center"
                     style={{ pointerEvents: 'none' }}
                 >
-                    <div className="map-marker-pill pointer-events-none select-none" style={{ 
-                        background: 'white', 
-                        border: '1px solid #e4e4e7', 
-                        borderRadius: '12px', 
-                        padding: '6px 12px', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '8px', 
-                        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
-                        width: 'max-content'
-                    }}>
+                    <div 
+                        className="map-marker-pill pointer-events-none select-none animate-in fade-in zoom-in-95 duration-300" 
+                        style={{ 
+                            background: 'white', 
+                            border: '1px solid #e4e4e7', 
+                            borderRadius: '12px', 
+                            padding: '6px 12px', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '8px', 
+                            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15)',
+                            width: 'max-content'
+                        }}
+                    >
                         <div style={{ 
                             width: '8px', 
                             height: '8px', 
                             background: c.talhao.fillColor || c.talhao.cor || getCropColor(c.talhao.cultura), 
                             borderRadius: '50%' 
-                        }}></div>
-                        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1.3' }}>
-                            <span style={{ fontWeight: 700, fontSize: 11, color: '#18181b', whiteSpace: 'nowrap' }}>{c.talhao.nome}</span>
-                            <span style={{ fontWeight: 500, fontSize: 10, color: '#71717a', whiteSpace: 'nowrap' }}>{c.talhao.cultura || 'Área Livre'}</span>
+                        }} />
+                        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1.2' }}>
+                            <span style={{ fontWeight: 800, fontSize: 11, color: '#18181b', whiteSpace: 'nowrap' }}>{c.talhao.nome}</span>
+                            <span style={{ fontWeight: 600, fontSize: 10, color: '#71717a', whiteSpace: 'nowrap' }}>{c.talhao.cultura || 'Área Livre'}</span>
                         </div>
                     </div>
                 </Marker>
