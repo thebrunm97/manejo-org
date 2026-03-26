@@ -105,7 +105,7 @@ export default defineConfig({
                 manualChunks: {
                     'vendor-react': ['react', 'react-dom', 'react-router-dom'],
                     'vendor-ui': ['lucide-react', 'clsx', 'tailwind-merge'],
-                    'vendor-maps': ['maplibre-gl', 'react-map-gl'],
+                    'vendor-maps': ['maplibre-gl', 'react-map-gl/maplibre'],
                     'vendor-charts': ['recharts'],
                     'vendor-supabase': ['@supabase/supabase-js']
                 }
