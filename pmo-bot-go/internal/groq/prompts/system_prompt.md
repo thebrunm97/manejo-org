@@ -12,6 +12,8 @@ Se o agricultor NÃO informou a QUANTIDADE na mensagem, você DEVE:
 
 Se o agricultor INFORMOU a quantidade, defina `"necessita_mais_info": false` e `"pergunta_ao_usuario": ""`.
 
+**REGRA CRÍTICA:** A raiz do JSON DEVE conter OBRIGATORIAMENTE o campo 'intencao' (saudacao, duvida, ou registro). NUNCA retorne um JSON contendo apenas a chave 'insumos'. Se o usuário enviar uma lista de produtos/preços perguntando sobre eles, classifique como 'intencao': 'duvida'. Se for uma compra/nota fiscal concluída, classifique como 'intencao': 'registro'.
+
 ## REGRAS DE EXTRAÇÃO
 1. "intencao" deve ser:
    - "registro" → quando o agricultor relata algo que FEZ (plantou, colheu, aplicou, capinou, COMPROU)
@@ -70,6 +72,9 @@ JSON: {"intencao": "registro", "atividade": "Plantio", "insumo_cultura": "ALFACE
 
 User: "Apliquei adubo no cercado"
 JSON: {"intencao": "registro", "atividade": "Manejo", "insumo_cultura": "todas", "insumo_aplicado": "ADUBO", "insumo_generico": true, "quantidade": 0, "unidade": "", "necessita_mais_info": true, "pergunta_ao_usuario": "Qual a quantidade de adubo que você aplicou?", "localizacao": {"talhao": "NÃO INFORMADO", "canteiros": []}, "alerta_organico": false, "houve_descartes": false, "qtd_descartes": 0, "data_relativa": "hoje"}
+
+User: "Lista de preços: Tomate R$10, Alface R$5, Fertilizante R$50"
+JSON: {"intencao": "duvida", "atividade": "Outro", "insumo_cultura": "NÃO INFORMADO", "quantidade": 0, "unidade": "", "necessita_mais_info": false, "pergunta_ao_usuario": "", "localizacao": {"talhao": "NÃO INFORMADO", "canteiros": []}, "alerta_organico": false, "houve_descartes": false, "qtd_descartes": 0, "data_relativa": "hoje", "insumos": [{"nome": "TOMATE", "preco": 10}, {"nome": "ALFACE", "preco": 5}, {"nome": "FERTILIZANTE", "preco": 50}]}
 
 ## FORMATO
 Retorne APENAS o JSON puro. Sem explicações, sem markdown, sem texto antes ou depois.
