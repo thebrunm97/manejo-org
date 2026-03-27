@@ -141,10 +141,8 @@ const FarmMap: React.FC<FarmMapProps> = ({
                             id: t.id,
                             nome: t.nome,
                             cultura: t.cultura,
-                            // Sanatização: se for string vazia, vira undefined para o coalesce do MapLibre
                             fillColor: t.fillColor || undefined,
                             borderColor: t.borderColor || undefined,
-                            // Fallback legado/calculado
                             color: t.cor || getCropColor(t.cultura),
                             isSelected: selectedTalhaoId === t.id
                         },
@@ -154,7 +152,7 @@ const FarmMap: React.FC<FarmMapProps> = ({
                     return null;
                 }
             })
-            .filter(Boolean);
+            .filter((f): f is any => f !== null);
 
         return {
             type: 'FeatureCollection',
@@ -222,8 +220,6 @@ const FarmMap: React.FC<FarmMapProps> = ({
                     if (talhao) onTalhaoClick(talhao);
                 }
             }}
-            onMouseEnter={() => setCursor('pointer')}
-            onMouseLeave={() => setCursor(undefined)}
             interactiveLayerIds={['talhoes-fill']}
         >
             <MapDrawControl

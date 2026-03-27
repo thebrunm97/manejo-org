@@ -550,32 +550,43 @@ func ProcessMessage(ctx context.Context, from string, body string, msgID string,
 			return ProcessResult{Success: false, Reason: "limpeza_missing_item_choke"}
 		}
 
-		// Mapeamento para struct do Supabase
-		limpezaRecord := supabase.PmoLimpezaInsert{
-			PmoID:            pmoID,
-			DataLimpeza:      time.Now().Format("2006-01-02"),
-			ItemArea:         extracted.ItemArea,
-			TipoLimpeza:      extracted.TipoLimpeza,
-			ProdutoUtilizado: extracted.ProdutoUtilizado,
-			Dosagem:          extracted.Dosagem,
-			Responsavel:      extracted.Responsavel,
-			Observacao:       body,
+		payload := map[string]interface{}{
+			"item_area":         extracted.ItemArea,
+			"tipo_limpeza":      extracted.TipoLimpeza,
+			"produto_utilizado": extracted.ProdutoUtilizado,
+			"dosagem":           extracted.Dosagem,
+			"responsavel":       extracted.Responsavel,
+			"observacao":        body,
+			"data":              time.Now().Format("2006-01-02"),
 		}
 
-		if limpezaRecord.Responsavel == "" {
-			limpezaRecord.Responsavel = "Produtor"
+		if payload["responsavel"] == "" {
+			payload["responsavel"] = "Produtor"
 		}
 
-		err := sbClient.InsertPMOLimpeza(limpezaRecord)
+		res, err := sbClient.RegistrarOperacaoCampoRPC(context.Background(), map[string]interface{}{
+			"pmo_id_arg":   pmoID,
+			"user_id_arg":  profile.ID,
+			"tipo_arg":     "Limpeza",
+			"payload_arg":  payload,
+		})
+
 		if err != nil {
-			log.Printf("❌ [FSM] Falha ao salvar no Controle de Limpeza: %v", err)
+			log.Printf("❌ [FSM] Falha ao salvar no Controle de Limpeza via RPC: %v", err)
 			botResponse = "❌ Falha técnica ao salvar sua limpeza. Tente novamente."
 			sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio)
 			return ProcessResult{Success: false, Reason: "db_limpeza_error"}
 		}
 
+		if status, ok := res["status"].(string); ok && status == "error" {
+			log.Printf("❌ [FSM] Erro retornado pela RPC de Limpeza: %v", res["message"])
+			botResponse = fmt.Sprintf("⚠️ Erro no registro: %v", res["message"])
+			sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio)
+			return ProcessResult{Success: false, Reason: "rpc_limpeza_db_error"}
+		}
+
 		botResponse = fmt.Sprintf("✅ *Registro de Limpeza Salvo com Sucesso!*\n\n*Item:* %s\n*Tipo:* %s\n*Responsável:* %s\n\n_Conforme Formulário 04 SEBRAE._ 🧽",
-			extracted.ItemArea, extracted.TipoLimpeza, limpezaRecord.Responsavel)
+			extracted.ItemArea, extracted.TipoLimpeza, payload["responsavel"])
 		
 		sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio)
 		

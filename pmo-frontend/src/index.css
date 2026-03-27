@@ -510,8 +510,14 @@ body {
   user-select: none !important;
   -webkit-user-select: none;
   -moz-user-select: none;
-  -ms-user-select: none;
+  cursor: grab; /* Força o cursor de mão aberta como padrão no canvas do mapa */
 }
+
+.maplibregl-map:active,
+.mapboxgl-map:active {
+  cursor: grabbing !important; /* Força o cursor de mão fechada ao arrastar */
+}
+
 
 /* Corrige o reset do Tailwind nos botões do mapa */
 .mapboxgl-ctrl-group button {

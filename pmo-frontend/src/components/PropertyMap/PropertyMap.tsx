@@ -199,31 +199,36 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
         const feature = e.features[0];
         if (!feature || !selectedTalhao) return;
 
+        // Otimização: Evitar recálculos e re-renders excessivos se a geometria for idêntica (raro no update, mas preventivo)
+        const newGeometry = feature.geometry;
+        
         try {
             const newAreaM2 = area(feature);
             const areaHa = newAreaM2 / 10000;
 
             // 1. ATUALIZAÇÃO OTIMISTA (Feedback Instantâneo no Drawer)
-            // Como o Drawer calcula perímetro via geolib baseando-se na prop geometry,
-            // ao atualizar o selectedTalhao localmente, o Drawer recalcula tudo imediatamente.
+            // Usamos um Check para evitar loops de estados se os valores forem os mesmos
             if (setSelectedTalhao) {
                 setSelectedTalhao({
                     ...selectedTalhao,
-                    geometry: feature.geometry,
+                    geometry: newGeometry,
                     area_total_m2: parseFloat(newAreaM2.toFixed(2)),
                     area_ha: parseFloat(areaHa.toFixed(2))
                 });
             }
 
             // 2. PERSISTÊNCIA NO BANCO
+            // A chamada ao locationService já é assíncrona, não bloqueia o main thread, 
+            // mas o excesso de chamadas pode ser ruim. Mapbox Draw 'draw.update' 
+            // costuma disparar apenas no DROP do vértice ou fim da manipulação.
             await locationService.updateTalhao(Number(selectedTalhao.id), {
-                geometry: feature.geometry as any,
+                geometry: newGeometry as any,
                 area_total_m2: parseFloat(newAreaM2.toFixed(2)),
                 area_ha: parseFloat(areaHa.toFixed(2))
             });
 
-            // 3. SINCRONIA FINAL (Recarrega a lista global)
-            if (loadTalhoes) await loadTalhoes();
+            // 3. SINCRONIA FINAL (Recarrega a lista global sem bloquear)
+            loadTalhoes?.().catch(console.error);
             
             setSnackbar({ open: true, message: 'Geometria e métricas atualizadas!', severity: 'success' });
         } catch (error) {

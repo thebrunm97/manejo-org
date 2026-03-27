@@ -538,142 +538,110 @@ func (s *Server) handleRegistrarLimpeza(args map[string]interface{}) (interface{
 
 	pmoIDFloat, _ := parseArgToFloat(args["pmo_id"])
 	pmoID := int64(pmoIDFloat)
+	userID, _ := args["user_id"].(string)
 
-	record := supabase.PmoLimpezaInsert{
-		PmoID:            pmoID,
-		DataLimpeza:      time.Now().Format("2006-01-02"),
-		ItemArea:         sanitize(args["item_area"]),
-		TipoLimpeza:      sanitize(args["tipo_limpeza"]),
-		ProdutoUtilizado: sanitize(args["produto_utilizado"]),
-		Dosagem:          sanitize(args["dosagem"]),
-		Responsavel:      sanitize(args["responsavel"]),
+	payload := map[string]interface{}{
+		"item_area":         sanitize(args["item_area"]),
+		"tipo_limpeza":      sanitize(args["tipo_limpeza"]),
+		"produto_utilizado": sanitize(args["produto_utilizado"]),
+		"dosagem":           sanitize(args["dosagem"]),
+		"responsavel":       sanitize(args["responsavel"]),
+		"observacao":        sanitize(args["observacao"]),
+		"data":              time.Now().Format("2006-01-02"),
 	}
 
-	if record.Responsavel == "" {
-		record.Responsavel = "Produtor"
-	}
+	res, err := s.supabase.RegistrarOperacaoCampoRPC(context.Background(), map[string]interface{}{
+		"pmo_id_arg":   pmoID,
+		"user_id_arg":  userID,
+		"tipo_arg":     "Limpeza",
+		"payload_arg":  payload,
+	})
 
-	log.Printf("🧽 [MCP-TOOL] Registrando limpeza de '%s' para PMO %d", record.ItemArea, pmoID)
-
-	err := s.supabase.InsertPMOLimpeza(record)
 	if err != nil {
-		return fmt.Sprintf("Erro ao inserir registro de limpeza: %v", err), nil
+		return fmt.Errorf("erro ao registrar limpeza: %w", err), nil
 	}
 
-	return fmt.Sprintf("Registro de limpeza para '%s' (%s) salvo com sucesso.", record.ItemArea, record.TipoLimpeza), nil
+	if status, ok := res["status"].(string); ok && status == "error" {
+		return fmt.Sprintf("Erro no banco: %v", res["message"]), nil
+	}
+
+	return fmt.Sprintf("Limpeza de '%s' registrada com sucesso.", payload["item_area"]), nil
 }
 
 func (s *Server) handleRegistrarPropagacaoVegetal(args map[string]interface{}) (interface{}, error) {
-	log.Printf("🚨 [DEBUG TOOL] handleRegistrarPropagacaoVegetal Args recebidos do LLM: %+v", args)
+	log.Printf("🌱 [MCP-TOOL] handleRegistrarPropagacaoVegetal Args: %+v", args)
 
 	pmoIDFloat, _ := parseArgToFloat(args["pmo_id"])
 	pmoID := int64(pmoIDFloat)
+	userID, _ := args["user_id"].(string)
 
-	sistemaOrganico := true
-	if val, ok := args["sistema_organico"].(bool); ok {
-		sistemaOrganico = val
+	payload := map[string]interface{}{
+		"tipo":             sanitize(args["tipo"]),
+		"especies":         sanitize(args["especies"]),
+		"origem":           sanitize(args["origem"]),
+		"quantidade":       sanitize(args["quantidade"]),
+		"sistema_organico": args["sistema_organico"],
+		"data":             sanitize(args["data_compra"]),
 	}
 
-	record := supabase.PmoPropagacaoInsert{
-		PmoID:           pmoID,
-		Tipo:            sanitize(args["tipo"]),
-		Especies:        sanitize(args["especies"]),
-		Origem:          sanitize(args["origem"]),
-		Quantidade:      sanitize(args["quantidade"]),
-		SistemaOrganico: sistemaOrganico,
-		DataCompra:      sanitize(args["data_compra"]),
+	if payload["especies"] == "" || payload["tipo"] == "" || payload["quantidade"] == "" {
+		return "ERRO FATAL: Espécie, tipo e quantidade são obrigatórios.", nil
 	}
 
-	log.Printf("🌱 [MCP-TOOL] Registrando propagação '%s' para PMO %d", record.Especies, pmoID)
+	res, err := s.supabase.RegistrarOperacaoCampoRPC(context.Background(), map[string]interface{}{
+		"pmo_id_arg":   pmoID,
+		"user_id_arg":  userID,
+		"tipo_arg":     "Propagacao",
+		"payload_arg":  payload,
+	})
 
-	qtd := strings.TrimSpace(strings.ToUpper(record.Quantidade))
-	if record.Especies == "" || record.Tipo == "" || qtd == "" || qtd == "0" || qtd == "NÃO INFORMADO" || qtd == "NULL" || qtd == "NENHUM" || strings.Contains(qtd, "0 ") {
-		return "ERRO FATAL: O usuário não informou a quantidade exata. Não adivinhe nem use zeros. Pergunte a ele: 'Quantas mudas/sementes você comprou ou plantou?'", nil
-	}
-
-	err := s.supabase.InsertPMOPropagacao(record)
 	if err != nil {
-		return fmt.Sprintf("Erro ao inserir propagação: %v", err), nil
+		return fmt.Errorf("erro ao registrar propagação: %w", err), nil
 	}
 
-	return fmt.Sprintf("Material de propagação '%s' (%s) registrado com sucesso na Seção 9 do seu plano.", record.Especies, record.Tipo), nil
+	if status, ok := res["status"].(string); ok && status == "error" {
+		return fmt.Sprintf("Erro no banco: %v", res["message"]), nil
+	}
+
+	return fmt.Sprintf("Material de propagação '%s' (%s) registrado com sucesso.", payload["especies"], payload["tipo"]), nil
 }
 
 func (s *Server) handleRegistrarCompostagem(args map[string]interface{}) (interface{}, error) {
-	log.Printf("🍂 [DEBUG TOOL] handleRegistrarCompostagem Args: %+v", args)
+	log.Printf("🍂 [MCP-TOOL] handleRegistrarCompostagem Args: %+v", args)
 
 	pmoIDFloat, _ := parseArgToFloat(args["pmo_id"])
 	pmoID := int64(pmoIDFloat)
-
-	// UserID is injected by the FSM
 	userID, _ := args["user_id"].(string)
 
-	acao := sanitize(args["acao"])
-	identificador := sanitize(args["identificador_pilha"])
+	payload := map[string]interface{}{
+		"acao":                sanitize(args["acao"]),
+		"identificador_pilha": sanitize(args["identificador_pilha"]),
+		"materiais":           sanitize(args["materiais"]),
+		"temperatura":         args["temperatura"],
+		"observacao":          sanitize(args["observacao"]),
+		"data":                time.Now().Format("2006-01-02"),
+	}
 
-	if acao == "" || identificador == "" {
+	if payload["acao"] == "" || payload["identificador_pilha"] == "" {
 		return "ERRO FATAL: Ação e identificador da pilha são obrigatórios.", nil
 	}
 
-	if acao == "Nova Pilha" {
-		record := supabase.PmoCompostagemInsert{
-			PmoID:        pmoID,
-			UserID:       userID,
-			NPilha:       identificador,
-			Ingredientes: sanitize(args["materiais"]),
-			DataMontagem: time.Now().Format("2006-01-02"),
-			Status:       "ativo",
-		}
-		err := s.supabase.InsertPMOCompostagem(record)
-		if err != nil {
-			return fmt.Sprintf("Erro ao criar nova pilha de compostagem no Supabase: %v", err), nil
-		}
-		return fmt.Sprintf("Nova pilha '%s' registrada com sucesso de forma estruturada.", identificador), nil
-	}
+	res, err := s.supabase.RegistrarOperacaoCampoRPC(context.Background(), map[string]interface{}{
+		"pmo_id_arg":   pmoID,
+		"user_id_arg":  userID,
+		"tipo_arg":     "Compostagem",
+		"payload_arg":  payload,
+	})
 
-	// For Revirada, Temperatura, Agua, Uso -> Fetch the pile UUID
-	pilhaID, err := s.supabase.LookupCompostagemID(pmoID, userID, identificador)
 	if err != nil {
-		return fmt.Sprintf("Aviso: %v. Responda ao usuário que a pilha não existe e pergunte se ele deseja iniciar uma 'Nova Pilha' antes de registrar eventos nela.", err), nil
+		return fmt.Errorf("erro ao processar ação de compostagem: %w", err), nil
 	}
 
-	var temp float64
-	if val, ok := args["temperatura"]; ok && val != nil {
-		temp, _ = parseArgToFloat(val)
+	if status, ok := res["status"].(string); ok && status == "error" {
+		return fmt.Sprintf("Aviso: %v", res["message"]), nil
 	}
 
-	evtType := ""
-	switch acao {
-	case "Revirada":
-		evtType = "revirada"
-	case "Temperatura":
-		evtType = "temperatura"
-	case "Agua":
-		evtType = "agua"
-	case "Uso":
-		evtType = "uso"
-	default:
-		evtType = strings.ToLower(acao) // fallback
-	}
-
-	evt := supabase.PmoCompostagemEventoInsert{
-		PilhaID:          pilhaID,
-		TipoEvento:       evtType,
-		ValorTemperatura: temp,
-		DataEvento:       time.Now().Format("2006-01-02"),
-		Observacao:       sanitize(args["observacao"]),
-	}
-
-	err = s.supabase.InsertPMOCompostagemEvento(evt)
-	if err != nil {
-		return fmt.Sprintf("Erro ao inserir evento na compostagem: %v", err), nil
-	}
-
-	msg := fmt.Sprintf("Evento '%s' registrado com sucesso na pilha '%s'.", evtType, identificador)
-	if temp > 0 {
-		msg += fmt.Sprintf(" Temperatura informada: %.1f°C.", temp)
-	}
-	return msg, nil
+	return res["message"], nil
 }
 
 // sanitize cleans and truncates string inputs from the LLM.
