@@ -59,6 +59,7 @@ type ExtractionResult struct {
 	ProdutoUtilizado  string      `json:"produto_utilizado"`
 	Dosagem           string      `json:"dosagem"`
 	Responsavel       string      `json:"responsavel"`
+	Insumos           interface{} `json:"insumos,omitempty"` // Captured for fallback detection
 }
 
 // ---------------------------------------------------------------------------

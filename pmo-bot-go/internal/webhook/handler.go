@@ -272,13 +272,22 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 
 	// Delegate business logic orchestration to FSM asynchronously
 	go func(msg WPPMessage) {
+		// Layer 0: Panic Recovery
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("🔥 [CRITICAL] Panic capturado na goroutine do webhook: %v", r)
+				// Tentar avisar o usuário se possível
+				h.cfg.WhatsAppClient.SendMessage(msg.From, "⚠️ Ocorreu um erro crítico inesperado. Minha equipe foi avisada.")
+			}
+		}()
+
 		// Layer 2: Session-Level Mutex — serialize processing per phone number
 		mu := getSessionMutex(msg.From)
 		mu.Lock()
 		defer mu.Unlock()
 
-		// Layer 3: Context with timeout — prevent goroutine leaks (90s)
-		ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+		// Layer 3: Context with timeout — prevent goroutine leaks (120s extended for Multi-Agent)
+		ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 		defer cancel()
 
 		result := state.ProcessMessage(ctx, msg.From, msg.Body, msg.MessageID(), msg.IsAudio(), h.cfg.SupabaseClient, h.cfg.GroqClient, h.cfg.WhatsAppClient, h.cfg.GeminiClient, h.cfg.TtsClient, h.cfg.MCPServer, h.cfg.HistoryManager)
