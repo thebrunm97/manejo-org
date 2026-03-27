@@ -27,10 +27,10 @@ graph TD
 ### O Fluxo de Inteligência
 1. **Frontend PWA**: Interface principal do usuário para gestão de talhões, canteiros e registros manuais. Opera em modo *Offline-first*.
 2. **WhatsApp Bot**: Interface conversacional para agilidade no campo (textos e áudios).
-3. **Backend GoLang**: O "Cérebro" do sistema. Orquestra sessões, gerencia a Máquina de Estados (FSM) e executa o roteamento cognitivo.
-4. **LLMs & MCP**: 
-   - **Groq (Llama 3)**: Responsável pelo roteamento cognitivo ultrarrápido de intenções.
-   - **Gemini**: Utilizado para *Tool Calling* rigoroso e integração baseada em **MCP (Model Context Protocol)** para criação de infraestrutura.
+3. **Backend GoLang (Orchestrator)**: Atua como roteador inteligente, orquestrando múltiplos agentes e gerenciando a Máquina de Estados (FSM).
+4. **Declarative MCP & Fat Database**: 
+   - **Postgres RPC**: Toda a lógica pesada de negócio (resolução de nomes, geração de lotes) reside no banco de dados via RPCs.
+   - **Multi-Agent Engine**: Uso especializado de Groq e Gemini com prompts modulares (`agronomist`, `db_operator`).
 
 ---
 
@@ -39,14 +39,14 @@ graph TD
 ### 🖥️ Frontend (PWA)
 Desenvolvido com **React 19 + Vite**, focado em performance e usabilidade no campo.
 - **Offline-first**: Sincronização robusta via `idb` (IndexedDB) e Workbox.
-- **Geolocalização**: Mapas interativos via **Leaflet** com estratégia de *GeoJSON Placeholder* para visualização precisa de talhões e canteiros.
+- **Geolocalização**: Mapas interativos via **Leaflet** com estratégia de *GeoJSON Placeholder* for visualização precisa de talhões e canteiros.
 - **Design System**: UI premium baseada na estética moderna com Tailwind CSS v4.
 
-### ⚙️ Backend (GoLang)
-Motor de alta performance substituindo a arquitetura Python legada.
+### ⚙️ Backend (GoLang - Thin Backend Layer)
+Motor de alta performance focado em orquestração e roteamento.
 - **FSM (Finite State Machine)**: Controle rigoroso dos estados da conversa, garantindo fluxos lineares e sem perda de contexto.
-- **Roteamento Cognitivo**: Camada de inteligência via Groq que decide entre consultas técnicas, registro de atividades ou configuração de infraestrutura.
-- **Ferramentas MCP**: Automação técnica para criação em lote de talhões e canteiros diretamente via prompt de comando.
+- **Declarative Operations**: Integração profunda com Supabase via RPCs, eliminando lógica imperativa complexa no código Go.
+- **Security & Resilience**: Middlewares de proteção contra loops e recuperação de pânico em tempo real.
 
 ### 📊 Auditoria e Telemetria
 - **Rigor Financeiro**: Logs de consumo detalhados por PMO ID e User ID.
