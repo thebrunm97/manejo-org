@@ -302,8 +302,8 @@ func ProcessMessage(ctx context.Context, from string, body string, msgID string,
 			}
 		}
 
-		// Sub-timeout for the Gemini tool loop (30s)
-		toolCtx, toolCancel := context.WithTimeout(ctx, 30*time.Second)
+		// Sub-timeout for the Gemini tool loop (90s)
+		toolCtx, toolCancel := context.WithTimeout(ctx, 90*time.Second)
 		defer toolCancel()
 
 		// 3. Chamada Inicial ao Especialista
@@ -426,22 +426,42 @@ func ProcessMessage(ctx context.Context, from string, body string, msgID string,
 		return ProcessResult{Success: false, Reason: "generic_input_blocked"}
 	}
 
-	// Step 7: Compliance Check
+	// Step 7: Compliance Check (Ajustado para ser Orientador)
 	if extracted.AlertaOrganico {
-		produtoAlvo := extracted.InsumoCultura
-		if extracted.InsumoAplicado != "" {
-			produtoAlvo = extracted.InsumoAplicado
-		}
-		log.Printf("🚨 [FSM] ALERTA ORGÂNICO ATIVADO! Produto: %s. Operação abortada.", produtoAlvo)
-		finalIntent = "alerta_conformidade"
-
-		botResponse = fmt.Sprintf("🚨 *ALERTA DE NÃO-CONFORMIDADE!*\n\n⚠️ O uso de *%s* parece desrespeitar as normas orgânicas (Lei 10.831 e IN 46).\n\nO registro no caderno de campo foi **BLOQUEADO**. Por favor, consulte o seu inspetor.", produtoAlvo)
-		if err := sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio); err != nil {
-			log.Printf("❌ [FSM] Falha ao enviar alerta via WPP: %v", err)
+		produtoAlvo := extracted.InsumoAplicado
+		if produtoAlvo == "" {
+			produtoAlvo = extracted.InsumoCultura
 		}
 
-		recordLog(sbClient, profile, body, botResponse, aiModel, promptTokens, completionTokens, finalIntent, nil, startTime, false)
-		return ProcessResult{Success: false, Reason: "organic_compliance_failure"}
+		// Blacklist Crítica: Se for um desses, bloqueamos o registro.
+		blacklistCritica := []string{"GLIFOSATO", "UREIA", "UREIA", "NPK", "SULFATODEAMONIO", "2,4-D", "HERBICIDA", "VENENO"}
+		isProibidoEscancarado := false
+		produtoUpper := strings.ToUpper(strings.ReplaceAll(produtoAlvo, " ", ""))
+		for _, b := range blacklistCritica {
+			if strings.Contains(produtoUpper, b) {
+				isProibidoEscancarado = true
+				break
+			}
+		}
+
+		if isProibidoEscancarado {
+			log.Printf("🚨 [FSM] BLOQUEIO CRÍTICO ATIVADO! Produto: %s. Operação abortada.", produtoAlvo)
+			finalIntent = "alerta_conformidade"
+			botResponse = fmt.Sprintf("🚨 *ALERTA DE NÃO-CONFORMIDADE!*\n\n⚠️ O uso de *%s* parece desrespeitar as normas orgânicas (Lei 10.831 e IN 46).\n\nO registro no caderno de campo foi **BLOQUEADO**. Por favor, consulte o seu inspetor.", produtoAlvo)
+			sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio)
+			recordLog(sbClient, profile, body, botResponse, aiModel, promptTokens, completionTokens, finalIntent, nil, startTime, false)
+			return ProcessResult{Success: false, Reason: "organic_compliance_block"}
+		}
+
+		// Se chegou aqui, é um "alerta suave" ou dúvida (ex: Termofosfato Master)
+		log.Printf("⚠️ [FSM] Alerta orgânico suave detectado para %s. Permitindo registro com aviso.", produtoAlvo)
+		// Marcamos para adicionar o aviso na resposta final, mas deixamos seguir para o Step 8.
+		extracted.AlertaOrganico = false // Resetamos para o Step 8 prosseguir, mas mantemos o contexto de que houve alerta
+		msgAvisoPrecaucao := "\n\n⚠️ *Nota de Precaução:* Como este produto pode ter restrições de uso, lembre-se de confirmar se este lote específico é aprovado pela sua certificadora."
+		
+		// Injetamos o aviso nos detalhes para que possa ser usado depois se necessário, 
+		// ou simplesmente concatenamos na resposta final no Step 8.
+		extracted.PerguntaAoUsuario = msgAvisoPrecaucao 
 	}
 
 	// Step 8: Save to Caderno de Campo via RPC
@@ -527,6 +547,11 @@ func ProcessMessage(ctx context.Context, from string, body string, msgID string,
 			botResponse += fmt.Sprintf("_Vinculado a %d canteiro(s)._\n", len(extracted.Localizacao.Canteiros))
 		}
 		botResponse += "_Seu caderno eletrônico está em dia._ 🌱"
+
+		// Se houver um aviso de precaução vindo do Step 7, anexamos aqui.
+		if extracted.PerguntaAoUsuario != "" && strings.Contains(extracted.PerguntaAoUsuario, "Nota de Precaução") {
+			botResponse += extracted.PerguntaAoUsuario
+		}
 
 		if err := sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio); err != nil {
 			log.Printf("❌ [FSM] Falha ao enviar confirmação de registro: %v", err)
