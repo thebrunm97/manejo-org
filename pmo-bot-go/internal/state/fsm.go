@@ -33,7 +33,15 @@ type ProcessResult struct {
 
 // ProcessMessage orchestrates the flow:
 // LID -> Phone -> PMO ID -> LLM Extraction -> Organic Alert Check -> Save to Supabase -> Feedback
-func ProcessMessage(ctx context.Context, from string, body string, msgID string, isAudio bool, sbClient *supabase.Client, groqClient *groq.Client, wpClient *whatsapp.Client, gemClient *gemini.Client, ttsClient *tts.Orchestrator, mcpServer *mcp.Server, historyManager *history.Manager) ProcessResult {
+func ProcessMessage(ctx context.Context, from string, body string, msgID string, isAudio bool, sbClient *supabase.Client, groqClient *groq.Client, wpClient *whatsapp.Client, gemClient *gemini.Client, ttsClient *tts.Orchestrator, mcpServer *mcp.Server, historyManager *history.Manager) (res ProcessResult) {
+	// Panic Recovery inside the logic layer
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("🔥 [FSM-PANIC] Erro interno catastrófico: %v", r)
+			res = ProcessResult{Success: false, Reason: "internal_panic"}
+		}
+	}()
+
 	log.Printf("🧵 [FSM] Iniciando fluxo para mensagem de: %s (isAudio=%v)", from, isAudio)
 
 	// Variables for tracking the process outcome and logging
@@ -180,6 +188,12 @@ func ProcessMessage(ctx context.Context, from string, body string, msgID string,
 		return ProcessResult{Success: false, Reason: "llm_error"}
 	}
 
+	// Fallback 🚨: Se o Groq falhar em retornar o schema raiz mas retornar insumos (ou nada)
+	if extracted.Intencao == "" {
+		log.Printf("⚠️ [FSM-FALLBACK] Groq retornou intenção vazia (Possível quebra de schema raiz). Forçando 'duvida'.")
+		extracted.Intencao = "duvida"
+	}
+
 	// Log immediate Groq Llama extraction consumption
 	log.Printf("📊 [Telemetry] Gravando consumo Groq Llama para usuário %s", profile.ID)
 	_ = sbClient.InsertLogConsumo(supabase.LogConsumoInsert{
@@ -316,7 +330,8 @@ func ProcessMessage(ctx context.Context, from string, body string, msgID string,
 		// 4. Loop de Ferramentas com Middlewares (LoopGuard)
 		lg := mcp.NewLoopGuard(2) // Máximo 2 repetições dos mesmos argumentos
 		for i := 0; i < 5; i++ {
-			if len(resp.Candidates) == 0 {
+			if resp == nil || len(resp.Candidates) == 0 {
+				log.Printf("⚠️ [FSM] Gemini respondeu vazio no turno %d", i+1)
 				break
 			}
 
@@ -343,7 +358,10 @@ func ProcessMessage(ctx context.Context, from string, body string, msgID string,
 				}
 				botResponse = prefix + textResp.String()
 				
-				sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio)
+				if err := sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio); err != nil {
+					log.Printf("❌ [FSM] Falha ao enviar resposta multi-agente via WPP: %v", err)
+					return ProcessResult{Success: false, Reason: "send_feedback_error"}
+				}
 
 				if historyManager != nil {
 					historyManager.AddMessage(from, "user", body)
@@ -355,7 +373,7 @@ func ProcessMessage(ctx context.Context, from string, body string, msgID string,
 			}
 
 			// Execução de Ferramentas
-			var toolResponses []genai.Part
+			var toolParts []genai.Part
 			for _, tc := range toolCalls {
 				log.Printf("🛠️ [FSM] Especialista solicitou tool: %s", tc.Name)
 
@@ -374,13 +392,13 @@ func ProcessMessage(ctx context.Context, from string, body string, msgID string,
 					historyManager.InjectSystemNote(from, fmt.Sprintf("Tool %s executada com sucesso.", tc.Name))
 				}
 
-				toolResponses = append(toolResponses, genai.FunctionResponse{
+				toolParts = append(toolParts, genai.FunctionResponse{
 					Name:     tc.Name,
 					Response: map[string]interface{}{"result": result},
 				})
 			}
 
-			resp, err = session.SendMessage(toolCtx, toolResponses...)
+			resp, err = session.SendMessage(toolCtx, toolParts...)
 			if err != nil {
 				log.Printf("❌ [FSM] Erro no loop de ferramentas: %v", err)
 				break
