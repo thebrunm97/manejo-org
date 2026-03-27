@@ -326,7 +326,47 @@ func (c *Client) RegistrarAtividadeRPC(ctx context.Context, args map[string]inte
 	return result, nil
 }
 
+// RegistrarCompraInsumoRPC calls the 'rpc_registrar_compra_insumo' function.
+// This ensures the input exists in the catalog and registers the purchase in one atomic transaction.
+func (c *Client) RegistrarCompraInsumoRPC(ctx context.Context, args map[string]interface{}) (map[string]interface{}, error) {
+	reqURL := fmt.Sprintf("%s/rest/v1/rpc/rpc_registrar_compra_insumo", c.config.URL)
 
+	payload, err := json.Marshal(args)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal RPC payload: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewReader(payload))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create RPC request: %w", err)
+	}
+
+	req.Header.Set("apikey", c.config.Key)
+	req.Header.Set("Authorization", "Bearer "+c.config.Key)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("RPC execution HTTP failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read RPC response: %w", err)
+	}
+
+	if resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("supabase RPC error (%d): %s", resp.StatusCode, string(body))
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse RPC response: %w", err)
+	}
+
+	return result, nil
+}
 
 // InsertLogProcessamento saves AI processing audit data for the admin dashboard.
 func (c *Client) InsertLogProcessamento(logData LogProcessamentoInsert) error {
@@ -534,8 +574,6 @@ func (c *Client) UpsertBotStatus(sessionName, status string, details map[string]
 
 	return nil
 }
-
-
 
 // GetIngestionStats returns the plan tier and document count for a pmo_id.
 func (c *Client) GetIngestionStats(pmoID int64) (string, int, error) {
@@ -768,8 +806,30 @@ func (c *Client) InsertPMOInsumo(record PmoInsumoInsert) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.doRequest(http.MethodPost, reqURL, payload)
-	return err
+
+	req, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewReader(payload))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("apikey", c.config.Key)
+	req.Header.Set("Authorization", "Bearer "+c.config.Key)
+	req.Header.Set("Content-Type", "application/json")
+	// Use merge-duplicates to ensure idempotency with the unique constraint
+	req.Header.Set("Prefer", "resolution=merge-duplicates")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("supabase API error (%d): %s", resp.StatusCode, string(body))
+	}
+
+	return nil
 }
 
 // InsertPMOPropagacao inserts Section 9 (Propagação Vegetal) data for PMO.

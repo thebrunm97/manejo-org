@@ -176,11 +176,11 @@ func (s *Server) InitializeTools() {
 			"type": "object",
 			"properties": map[string]interface{}{
 				"pmo_id":            map[string]interface{}{"type": "integer"},
-				"item_area":          map[string]interface{}{"type": "string", "description": "O que foi limpo (Ex: Trator, Galpão, Enxadas)."},
-				"tipo_limpeza":       map[string]interface{}{"type": "string", "description": "Como foi feito (Ex: Lavagem, Varrição, Desinfecção)."},
-				"produto_utilizado":  map[string]interface{}{"type": "string", "description": "Produto usado, se houver (Ex: Sabão neutro, Álcool 70%)."},
-				"dosagem":            map[string]interface{}{"type": "string", "description": "Quantidade do produto usado."},
-				"responsavel":        map[string]interface{}{"type": "string", "description": "Quem realizou a limpeza (Default: Produtor)."},
+				"item_area":         map[string]interface{}{"type": "string", "description": "O que foi limpo (Ex: Trator, Galpão, Enxadas)."},
+				"tipo_limpeza":      map[string]interface{}{"type": "string", "description": "Como foi feito (Ex: Lavagem, Varrição, Desinfecção)."},
+				"produto_utilizado": map[string]interface{}{"type": "string", "description": "Produto usado, se houver (Ex: Sabão neutro, Álcool 70%)."},
+				"dosagem":           map[string]interface{}{"type": "string", "description": "Quantidade do produto usado."},
+				"responsavel":       map[string]interface{}{"type": "string", "description": "Quem realizou a limpeza (Default: Produtor)."},
 			},
 			"required": []string{"pmo_id", "item_area", "tipo_limpeza"},
 		},
@@ -211,8 +211,8 @@ func (s *Server) InitializeTools() {
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
-				"talhao_id":            map[string]interface{}{"type": "integer"},
-				"quantidade":           map[string]interface{}{"type": "integer", "description": "Número de canteiros a criar."},
+				"talhao_id":             map[string]interface{}{"type": "integer"},
+				"quantidade":            map[string]interface{}{"type": "integer", "description": "Número de canteiros a criar."},
 				"identificador_inicial": map[string]interface{}{"type": "integer", "description": "Número do primeiro canteiro (Ex: 1)."},
 			},
 			"required": []string{"talhao_id", "quantidade", "identificador_inicial"},
@@ -284,12 +284,12 @@ func (s *Server) InitializeTools() {
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
-				"pmo_id":      map[string]interface{}{"type": "integer"},
-				"data":        map[string]interface{}{"type": "string", "description": "Data da colheita (YYYY-MM-DD)."},
-				"cultura":     map[string]interface{}{"type": "string", "description": "Nome da cultura colhida (Ex: Alface Crespa, Tomate)."},
-				"talhao":      map[string]interface{}{"type": "string", "description": "Nome do talhão onde foi colhido (Ex: Talhão 01)."},
-				"quantidade":  map[string]interface{}{"type": "number", "description": "Quantidade colhida."},
-				"unidade":     map[string]interface{}{"type": "string", "description": "Unidade de medida (Ex: kg, maços, caixas)."},
+				"pmo_id":          map[string]interface{}{"type": "integer"},
+				"data":            map[string]interface{}{"type": "string", "description": "Data da colheita (YYYY-MM-DD)."},
+				"cultura":         map[string]interface{}{"type": "string", "description": "Nome da cultura colhida (Ex: Alface Crespa, Tomate)."},
+				"talhao":          map[string]interface{}{"type": "string", "description": "Nome do talhão onde foi colhido (Ex: Talhão 01)."},
+				"quantidade":      map[string]interface{}{"type": "number", "description": "Quantidade colhida."},
+				"unidade":         map[string]interface{}{"type": "string", "description": "Unidade de medida (Ex: kg, maços, caixas)."},
 				"destino_inicial": map[string]interface{}{"type": "string", "description": "Para onde foi o produto logo após a colheita (Ex: Depósito, Câmara Fria, Lavagem).", "default": "Depósito"},
 			},
 			"required": []string{"pmo_id", "cultura", "talhao", "quantidade", "unidade"},
@@ -304,18 +304,18 @@ func (s *Server) InitializeTools() {
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
-				"pmo_id":     map[string]interface{}{"type": "integer"},
-				"data":       map[string]interface{}{"type": "string", "description": "Data da venda/saída (YYYY-MM-DD)."},
-				"produto":    map[string]interface{}{"type": "string", "description": "Nome do produto vendido (Ex: Alface, Tomate)."},
-				"quantidade": map[string]interface{}{"type": "number"},
-				"unidade":    map[string]interface{}{"type": "string", "description": "Unidade de medida (Ex: kg, maços, caixas)."},
+				"pmo_id":         map[string]interface{}{"type": "integer"},
+				"data":           map[string]interface{}{"type": "string", "description": "Data da venda/saída (YYYY-MM-DD)."},
+				"produto":        map[string]interface{}{"type": "string", "description": "Nome do produto vendido (Ex: Alface, Tomate)."},
+				"quantidade":     map[string]interface{}{"type": "number"},
+				"unidade":        map[string]interface{}{"type": "string", "description": "Unidade de medida (Ex: kg, maços, caixas)."},
 				"valor_unitario": map[string]interface{}{"type": "number", "description": "Valor por unidade vendida (opcional)."},
-				"cliente":    map[string]interface{}{"type": "string", "description": "Nome do comprador ou cliente."},
+				"cliente":        map[string]interface{}{"type": "string", "description": "Nome do comprador ou cliente."},
 				"destinacao": map[string]interface{}{
-					"type": "string",
-					"enum": []string{"venda", "doacao", "perda", "processamento", "consumo proprio"},
+					"type":        "string",
+					"enum":        []string{"venda", "doacao", "perda", "processamento", "consumo proprio"},
 					"description": "Tipo de saída/destinação.",
-					"default": "venda",
+					"default":     "venda",
 				},
 				"nota_fiscal": map[string]interface{}{"type": "string", "description": "Número da NF ou recibo."},
 			},
@@ -742,15 +742,15 @@ func (s *Server) handleRegistrarCompraInsumo(args map[string]interface{}) (inter
 	rpcArgs := map[string]interface{}{
 		"pmo_id_arg":             pmoID,
 		"user_id_arg":            userID,
-		"atividade_arg":          "Insumo",
-		"data_arg":               dataCompra,
 		"produto_arg":            produto,
 		"quantidade_valor_arg":   qtdValor,
 		"quantidade_unidade_arg": qtdUnidade,
 		"fornecedor_arg":         fornecedor,
-		"detalhes_arg": map[string]interface{}{
-			"nota_fiscal": sanitize(args["nota_fiscal"]),
-		},
+		"data_compra_arg":        dataCompra,
+		"nota_fiscal_arg":        sanitize(args["nota_fiscal"]),
+		"marca_arg":              sanitize(args["marca"]),
+		"composicao_arg":         sanitize(args["composicao"]),
+		"procedencia_arg":        sanitize(args["procedencia"]),
 	}
 
 	if produto == "" || qtdValor <= 0 || qtdUnidade == "" {
@@ -759,18 +759,18 @@ func (s *Server) handleRegistrarCompraInsumo(args map[string]interface{}) (inter
 
 	log.Printf("🛒 [MCP-TOOL] Chamando RPC para compra de '%s' para PMO %d", produto, pmoID)
 
-	resp, err := s.supabase.RegistrarAtividadeRPC(context.Background(), rpcArgs)
+	resp, err := s.supabase.RegistrarCompraInsumoRPC(context.Background(), rpcArgs)
 	if err != nil {
-		return fmt.Sprintf("Erro ao registrar compra via RPC: %v", err), nil
+		return fmt.Errorf("erro ao registrar compra via RPC: %w", err), nil
 	}
 
 	if status, ok := resp["status"].(string); ok && status == "error" {
 		return fmt.Sprintf("Erro no banco de dados: %v", resp["message"]), nil
 	}
 
-	id := resp["id"]
+	compraID := resp["compra_id"]
 
-	return fmt.Sprintf("Compra de '%s' registrada com sucesso (ID: %s).", produto, id), nil
+	return fmt.Sprintf("Compra de '%s' registrada com sucesso (ID: %s).", produto, compraID), nil
 }
 
 func (s *Server) handleRegistrarColheita(args map[string]interface{}) (interface{}, error) {
