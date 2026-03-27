@@ -1,6 +1,24 @@
 # Changelog
 Este arquivo documenta as mudanças importantes e refatorações realizadas no Pmo Bot Go Backend.
 
+## [0.13.0] - 2026-03-28 - MCP Declarative Architecture
+### Added
+- **RPCs de Banco de Dados**:
+  - `criar_infraestrutura_pmo`: Criação atômica de Talhões e Canteiros com resolução de propriedades.
+  - `rpc_registrar_compra_insumo`: Registro atômico de insumos no catálogo e compras no caderno de campo.
+  - `rpc_registrar_operacao_campo`: RPC polimórfica para Manejo, Compostagem, Limpeza e Propagação.
+- **Resolução Automática de IDs**: Migração da lógica de busca de IDs (Talhões, Canteiros, Pilhas de Compostagem) do Go para o PostgreSQL via PL/pgSQL.
+- **Atomicidade Garantida**: Operações complexas que envolviam múltiplas tabelas agora ocorrem em transações únicas no banco.
+
+### Changed
+- **Padrão Thin Backend**: Adoção definitiva do padrão onde o Go atua como proxy, reduzindo massivamente a complexidade de `internal/supabase/client.go` e `internal/mcp/tools.go`.
+- **Refatoração de Handlers**: Migração final de todos os handlers de campo para o modelo declarativo RPC.
+
+### Removed
+- **Lógica Imperativa Go**: Exclusão de funções de busca e inserção direta que poluíam o backend:
+  - `InsertPMOLimpeza`, `InsertPMOPropagacao`, `InsertPMOCompostagem`, `InsertPMOCompostagemEvento`.
+  - `LookupCanteiroIDs`, `LookupTalhaoID`, `LookupCompostagemID`.
+
 ## [0.12.0] - 2026-03-27 - Multi-Agent & Declarative MCP Overhaul
 ### Added
 - **Orquestrador de Intenções**: Router LLM para classificar RAG vs Database de forma inteligente.

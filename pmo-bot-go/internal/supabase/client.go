@@ -8,7 +8,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -330,6 +329,48 @@ func (c *Client) RegistrarAtividadeRPC(ctx context.Context, args map[string]inte
 // This ensures the input exists in the catalog and registers the purchase in one atomic transaction.
 func (c *Client) RegistrarCompraInsumoRPC(ctx context.Context, args map[string]interface{}) (map[string]interface{}, error) {
 	reqURL := fmt.Sprintf("%s/rest/v1/rpc/rpc_registrar_compra_insumo", c.config.URL)
+
+	payload, err := json.Marshal(args)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal RPC payload: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewReader(payload))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create RPC request: %w", err)
+	}
+
+	req.Header.Set("apikey", c.config.Key)
+	req.Header.Set("Authorization", "Bearer "+c.config.Key)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("RPC execution HTTP failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read RPC response: %w", err)
+	}
+
+	if resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("supabase RPC error (%d): %s", resp.StatusCode, string(body))
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse RPC response: %w", err)
+	}
+
+	return result, nil
+}
+
+// RegistrarOperacaoCampoRPC calls the polymorphic 'rpc_registrar_operacao_campo' function.
+// This handles Limpeza, Propagacao, Manejo, and Compostagem in a single atomic call.
+func (c *Client) RegistrarOperacaoCampoRPC(ctx context.Context, args map[string]interface{}) (map[string]interface{}, error) {
+	reqURL := fmt.Sprintf("%s/rest/v1/rpc/rpc_registrar_operacao_campo", c.config.URL)
 
 	payload, err := json.Marshal(args)
 	if err != nil {
@@ -830,79 +871,6 @@ func (c *Client) InsertPMOInsumo(record PmoInsumoInsert) error {
 	}
 
 	return nil
-}
-
-// InsertPMOPropagacao inserts Section 9 (Propagação Vegetal) data for PMO.
-func (c *Client) InsertPMOPropagacao(record PmoPropagacaoInsert) error {
-	reqURL := fmt.Sprintf("%s/rest/v1/pmo_propagacao", c.config.URL)
-	payload, err := json.Marshal(record)
-	if err != nil {
-		return err
-	}
-	_, err = c.doRequest(http.MethodPost, reqURL, payload)
-	return err
-}
-
-// InsertPMOLimpeza inserts Form 04 (Controle de Limpeza) data for PMO.
-func (c *Client) InsertPMOLimpeza(record PmoLimpezaInsert) error {
-	reqURL := fmt.Sprintf("%s/rest/v1/pmo_limpeza", c.config.URL)
-	payload, err := json.Marshal(record)
-	if err != nil {
-		return err
-	}
-	_, err = c.doRequest(http.MethodPost, reqURL, payload)
-	return err
-}
-
-// InsertPMOCompostagem inserts Form 05 (Compostagem) Lote data for PMO.
-func (c *Client) InsertPMOCompostagem(record PmoCompostagemInsert) error {
-	reqURL := fmt.Sprintf("%s/rest/v1/pmo_compostagem", c.config.URL)
-	payload, err := json.Marshal(record)
-	if err != nil {
-		return err
-	}
-	_, err = c.doRequest(http.MethodPost, reqURL, payload)
-	return err
-}
-
-// InsertPMOCompostagemEvento inserts an event into the Form 05 (Compostagem) Lote.
-func (c *Client) InsertPMOCompostagemEvento(record PmoCompostagemEventoInsert) error {
-	reqURL := fmt.Sprintf("%s/rest/v1/pmo_compostagem_eventos", c.config.URL)
-	payload, err := json.Marshal(record)
-	if err != nil {
-		return err
-	}
-	_, err = c.doRequest(http.MethodPost, reqURL, payload)
-	return err
-}
-
-// LookupCompostagemID resolves the n_pilha string to its DB UUID.
-func (c *Client) LookupCompostagemID(pmoID int64, userID string, nPilha string) (string, error) {
-	escapedNPilha := url.QueryEscape(nPilha)
-
-	userFilter := ""
-	if userID != "" {
-		userFilter = fmt.Sprintf("&user_id=eq.%s", userID)
-	}
-
-	reqURL := fmt.Sprintf("%s/rest/v1/pmo_compostagem?pmo_id=eq.%d%s&n_pilha=ilike.*%s*&select=id", c.config.URL, pmoID, userFilter, escapedNPilha)
-
-	body, err := c.doRequest(http.MethodGet, reqURL, nil)
-	if err != nil {
-		return "", fmt.Errorf("falha ao buscar compostagem: %w", err)
-	}
-
-	var pilhas []struct {
-		ID string `json:"id"`
-	}
-	if err := json.Unmarshal(body, &pilhas); err != nil {
-		return "", fmt.Errorf("falha ao interpretar resposta da compostagem: %w", err)
-	}
-	if len(pilhas) == 0 {
-		return "", fmt.Errorf("pilha '%s' não encontrada", nPilha)
-	}
-
-	return pilhas[0].ID, nil
 }
 
 // ---------------------------------------------------------------------------
