@@ -466,46 +466,50 @@ func ProcessMessage(ctx context.Context, from string, body string, msgID string,
 
 	// Step 8: Save to Caderno de Campo via RPC
 	if extracted.Intencao == "registro" {
-		log.Printf("💾 [FSM] Iniciando registro via RPC para atividade: %s", extracted.Atividade)
-
 		atividade := extracted.Atividade
-		// Mapeamento especial para Compra/Aquisição (Tabela Outro no Frontend)
+		var resp map[string]interface{}
+		var err error
+
 		if atividade == "Compra/Aquisição" {
-			atividade = "Insumo" // Alinhamento com o que o RPC espera para compras
+			log.Printf("🛒 [FSM] Usando RPC de Compra para: %s", extracted.InsumoCultura)
+			rpcArgs := map[string]interface{}{
+				"pmo_id_arg":             pmoID,
+				"user_id_arg":            profile.ID,
+				"produto_arg":            extracted.InsumoCultura,
+				"quantidade_valor_arg":   parseToFloat(extracted.Quantidade),
+				"quantidade_unidade_arg": extracted.Unidade,
+				"fornecedor_arg":         extracted.Fornecedor,
+				"nota_fiscal_arg":        extracted.NotaFiscal,
+				"marca_arg":              extracted.Marca,
+				"data_compra_arg":        time.Now().Format("2006-01-02"),
+			}
+			resp, err = sbClient.RegistrarCompraInsumoRPC(ctx, rpcArgs)
+		} else {
+			log.Printf("💾 [FSM] Usando RPC de Atividade Geral para: %s", atividade)
+			rpcArgs := map[string]interface{}{
+				"pmo_id_arg":             pmoID,
+				"user_id_arg":            profile.ID,
+				"atividade_arg":          atividade,
+				"data_arg":               time.Now().Format("2006-01-02"),
+				"produto_arg":            extracted.InsumoCultura,
+				"quantidade_valor_arg":   parseToFloat(extracted.Quantidade),
+				"quantidade_unidade_arg": extracted.Unidade,
+				"talhao_nome_arg":        extracted.Localizacao.Talhao,
+				"canteiros_arg":          extracted.Localizacao.Canteiros,
+				"insumo_aplicado_arg":    extracted.InsumoAplicado,
+				"fornecedor_arg":         extracted.Fornecedor,
+				"detalhes_arg": map[string]interface{}{
+					"observacao_original": body,
+					"secao_origem":        "wppconnect",
+					"houve_descartes":     extracted.HouveDescartes,
+					"qtd_descartes":       parseToFloat(extracted.QtdDescartes),
+				},
+			}
+			resp, err = sbClient.RegistrarAtividadeRPC(ctx, rpcArgs)
 		}
 
-		rpcArgs := map[string]interface{}{
-			"pmo_id_arg":             pmoID,
-			"user_id_arg":            profile.ID,
-			"atividade_arg":          atividade,
-			"data_arg":               time.Now().Format("2006-01-02"), // FSM sempre usa data atual no Step 8
-			"produto_arg":            extracted.InsumoCultura,
-			"quantidade_valor_arg":   parseToFloat(extracted.Quantidade),
-			"quantidade_unidade_arg": extracted.Unidade,
-			"talhao_nome_arg":        extracted.Localizacao.Talhao,
-			"canteiros_arg":          extracted.Localizacao.Canteiros,
-			"insumo_aplicado_arg":    extracted.InsumoAplicado,
-			"fornecedor_arg":         extracted.Fornecedor,
-			"detalhes_arg": map[string]interface{}{
-				"observacao_original": body,
-				"secao_origem":        "wppconnect",
-				"houve_descartes":     extracted.HouveDescartes,
-				"qtd_descartes":       parseToFloat(extracted.QtdDescartes),
-			},
-		}
-
-		// Validação de quantidade (Guardrail)
-		if parseToFloat(extracted.Quantidade) <= 0 {
-			log.Printf("⚠️ [FSM] Abortando registro com quantidade zero.")
-			botResponse = "Por favor, informe a quantidade exata para o registro do seu caderno 🌱."
-			sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio)
-			recordLog(sbClient, profile, body, botResponse, aiModel, promptTokens, completionTokens, "guardrail_final", nil, startTime, false)
-			return ProcessResult{Success: false, Reason: "missing_quantity_final"}
-		}
-
-		resp, err := sbClient.RegistrarAtividadeRPC(ctx, rpcArgs)
 		if err != nil {
-			log.Printf("❌ [FSM] Falha ao chamar RPC RegistrarAtividade: %v", err)
+			log.Printf("❌ [FSM] Falha ao chamar RPC de Registro: %v", err)
 			botResponse = "❌ Falha técnica ao salvar no banco. Controle o sistema."
 			sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio)
 			recordLog(sbClient, profile, body, botResponse, aiModel, promptTokens, completionTokens, finalIntent, nil, startTime, false)
@@ -519,10 +523,14 @@ func ProcessMessage(ctx context.Context, from string, body string, msgID string,
 			return ProcessResult{Success: false, Reason: "rpc_db_error"}
 		}
 
+		// Compatibilidade entre RPCs (id vs compra_id)
 		id := resp["id"]
+		if id == nil {
+			id = resp["compra_id"]
+		}
 		lote, _ := resp["lote"].(string)
 
-		log.Printf("💾 [FSM] Registro salvo com sucesso! ID: %s, Lote: %s", id, lote)
+		log.Printf("💾 [FSM] Registro salvo com sucesso! ID: %v, Lote: %s", id, lote)
 
 		// Send Confirmation Message
 		localOuFornecedorLabel := "Local"
@@ -536,8 +544,13 @@ func ProcessMessage(ctx context.Context, from string, body string, msgID string,
 			}
 		}
 
-		botResponse = fmt.Sprintf("✅ *Registro Salvo com Sucesso!*\n\n*Atividade:* %s\n*Item:* %s\n*Qtd:* %v %s\n*%s:* %s\n\n",
+		botResponse = fmt.Sprintf("✅ *Registro Salvo com Sucesso!*\n\n*Atividade:* %s\n*Item:* %s\n*Qtd:* %v %s\n*%s:* %s",
 			extracted.Atividade, extracted.InsumoCultura, extracted.Quantidade, extracted.Unidade, localOuFornecedorLabel, strings.ToUpper(localOuFornecedorValue))
+
+		if extracted.NotaFiscal != "" {
+			botResponse += fmt.Sprintf("\n*Nota Fiscal:* %s", extracted.NotaFiscal)
+		}
+		botResponse += "\n\n"
 
 		if lote != "" {
 			botResponse += fmt.Sprintf("*Lote:* %s\n", lote)
