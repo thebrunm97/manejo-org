@@ -18,6 +18,7 @@ Se o agricultor INFORMOU a quantidade, defina `"necessita_mais_info": false` e `
 1. "intencao" deve ser:
    - "registro" → quando o agricultor relata algo que FEZ (plantou, colheu, aplicou, capinou, COMPROU)
    - "limpeza" → quando o agricultor relata a higienização de instalações, equipamentos ou ferramentas. Verbos-chave: limpar, lavar, desinfetar, higienizar, passar pano.
+   - "configurar_infraestrutura" → quando o agricultor pede para criar, montar ou organizar a estrutura física da fazenda (ex: "cria 5 canteiros", "monta o talhão 4").
    - "duvida" → quando pergunta algo técnico
    - "saudacao" → cumprimentos simples (oi, bom dia)
    - "ignorar" → mensagens sem conteúdo útil (ex: "vou almoçar", "tchau")
@@ -40,23 +41,22 @@ Se o agricultor INFORMOU a quantidade, defina `"necessita_mais_info": false` e `
 ## REGRAS DE CONFORMIDADE ORGÂNICA (Lei 10.831/2003 + IN 46/2011)
 Marque "alerta_organico": true se a mensagem mencionar QUALQUER um destes:
 
-### INSUMOS PROIBIDOS:
-- Ureia, sulfato de amônio, NPK, MAP, DAP (fertilizantes sintéticos de alta solubilidade)
+### INSUMOS PROIBIDOS (Gera `alerta_organico: true`):
+- Ureia, sulfato de amônio, NPK sintético, MAP, DAP (fertilizantes sintéticos de alta solubilidade)
 - Agrotóxicos sintéticos (glifosato, 2,4-D, organofosforados, carbamatos, piretroides sintéticos)
 - Sementes transgênicas / OGM
 - Reguladores de crescimento sintéticos (paclobutrazol, ethephon)
 - Herbicidas químicos
 
-**ATENÇÃO:** Termos genéricos (como "adubo", "fertilizante", "veneno") NÃO DEVEM gerar `alerta_organico: true` automaticamente. Se o termo for genérico, use apenas `insumo_generico: true` e defina `alerta_organico: false`. Só levante o alerta orgânico se um agrotóxico ou fertilizante químico específico for expressamente citado.
+**ATENÇÃO:** Só levante o `alerta_organico: true` se um agrotóxico ou fertilizante químico ESCANCARADAMENTE proibido (como os listados acima) for citado. Se o termo for genérico (ex: adubo, fertilizante) ou se houver qualquer dúvida razoável, use apenas `insumo_generico: true` e defina `alerta_organico: false`.
 
 ### INSUMOS PERMITIDOS (NÃO geram alerta):
-- Calda bordalesa, calda sulfocálcica
+- Termofosfatos (ex: Yoorin), Fosfatos Naturais, Caldas (Bordalesa/Sulfocálcica)
+- Pó de Rocha (Remineralizadores), Biofertilizantes, Calda Viçosa
 - Óleo de neem (Azadiractina), Bt (Bacillus thuringiensis)
-- Trichoderma, Beauveria bassiana
-- Compostagem, bokashi, húmus de minhoca
-- Biofertilizantes líquidos
-- Fosfato natural, calcário, pó de rocha
-- Extrato pirolenhoso
+- Trichoderma, Beauveria bassiana, Metarhizium
+- Compostagem, bokashi, húmus de minhoca, estercos curtidos
+- Extrato pirolenhoso, Calcário, Gesso agrícola
 - Farinha de osso, farinha de peixe (fontes orgânicas)
 
 ## EXEMPLOS DE CLASSIFICAÇÃO (FEW-SHOT):

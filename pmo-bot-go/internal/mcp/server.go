@@ -96,7 +96,8 @@ func (s *Server) GetToolsForIntent(intent gemini.Intent) []*genai.Tool {
 		switch intent {
 		case gemini.IntentRAG:
 			// RAG specialist gets knowledge base and farm data lookups
-			if t.Category == CategoryRAG {
+			// UPDATED: Also gets database tools to allow "advice + action" flow.
+			if t.Category == CategoryRAG || t.Category == CategoryDatabase {
 				include = true
 			}
 
