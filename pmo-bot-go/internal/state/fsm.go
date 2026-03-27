@@ -444,104 +444,65 @@ func ProcessMessage(ctx context.Context, from string, body string, msgID string,
 		return ProcessResult{Success: false, Reason: "organic_compliance_failure"}
 	}
 
-	// Step 8: Save to Caderno de Campo
+	// Step 8: Save to Caderno de Campo via RPC
 	if extracted.Intencao == "registro" {
-		// Look up canteiros BEFORE inserting, so we can save them in the JSONB DetalhesTecnicos
-		var canteiroIDs []string
-		if len(extracted.Localizacao.Canteiros) > 0 {
-			ids, err := sbClient.LookupCanteiroIDs(pmoID, profile.ID, extracted.Localizacao.Talhao, extracted.Localizacao.Canteiros)
-			if err != nil {
-				log.Printf("⚠️ [FSM] Erro ao buscar IDs dos canteiros (não crítico): %v", err)
-			} else {
-				canteiroIDs = ids
-			}
-		}
+		log.Printf("💾 [FSM] Iniciando registro via RPC para atividade: %s", extracted.Atividade)
 
-		record := supabase.CadernoCampoInsert{
-			PmoID:              pmoID,
-			UsuarioID:          profile.ID,
-			TipoAtividade:      extracted.Atividade,
-			Produto:            extracted.InsumoCultura,
-			TalhaoCanteiro:     fmtLocalizacao(extracted.Localizacao),
-			QuantidadeValor:    parseToFloat(extracted.Quantidade),
-			QuantidadeUnidade:  extracted.Unidade,
-			ObservacaoOriginal: body,
-			SecaoOrigem:        "wppconnect",
-			DetalhesTecnicos:   make(map[string]interface{}),
-			HouveDescartes:     extracted.HouveDescartes,
-			QtdDescartes:       parseToFloat(extracted.QtdDescartes),
-			Canteiros:          canteiroIDs,
-			InsumoAplicado:     extracted.InsumoAplicado,
-		}
-
+		atividade := extracted.Atividade
 		// Mapeamento especial para Compra/Aquisição (Tabela Outro no Frontend)
-		if record.TipoAtividade == "Compra/Aquisição" {
-			record.TipoAtividade = "Outro" // Alinhamento com ActivityType.OUTRO
-			
-			// Normalização de Unidade solicitada: mudas -> unid
-			if strings.ToLower(record.QuantidadeUnidade) == "mudas" || strings.ToLower(record.QuantidadeUnidade) == "muda" {
-				record.QuantidadeUnidade = "unid"
-			}
-
-			// Popular Detalhes Técnicos para paridade com o Frontend React (ManualRecordDialog.tsx)
-			record.DetalhesTecnicos["tipo_registro"] = "compra"
-			record.DetalhesTecnicos["subtipo"] = "Compra de Insumo/Produto"
-			record.DetalhesTecnicos["fornecedor"] = extracted.Fornecedor
-			record.DetalhesTecnicos["tipo_origem"] = "compra"
-			record.DetalhesTecnicos["origem"] = "Compra" // Solicitado pelo usuário
-			record.DetalhesTecnicos["quantidade"] = record.QuantidadeValor
-			record.DetalhesTecnicos["unidade"] = record.QuantidadeUnidade
-			record.DetalhesTecnicos["numero_documento"] = "" // Opcional no momento
-
-			// Sprint 1: Mapear para colunas nativas da tabela caderno_campo
-			record.Fornecedor = extracted.Fornecedor
-			// NotaFiscal extraída pelo Groq pode vir em campos variados, mas o ideal é mapear se houver
-			// Se o Groq extrair NumeroDocumento, mapeamos aqui
-			// record.NotaFiscal = ... 
-			
-			log.Printf("🛒 [FSM] Mapeando Compra: Fornecedor=%s, Qtd=%v %s", extracted.Fornecedor, record.QuantidadeValor, record.QuantidadeUnidade)
+		if atividade == "Compra/Aquisição" {
+			atividade = "Insumo" // Alinhamento com o que o RPC espera para compras
 		}
 
-		// GUARDRAIL DE SEGURANÇA (Double Check): Se a quantidade for zero, aborta.
-		if record.QuantidadeValor <= 0 {
-			log.Printf("⚠️ [FSM] Abortando registro com quantidade zero após processamento.")
+		rpcArgs := map[string]interface{}{
+			"pmo_id_arg":             pmoID,
+			"user_id_arg":            profile.ID,
+			"atividade_arg":          atividade,
+			"data_arg":               time.Now().Format("2006-01-02"), // FSM sempre usa data atual no Step 8
+			"produto_arg":            extracted.InsumoCultura,
+			"quantidade_valor_arg":   parseToFloat(extracted.Quantidade),
+			"quantidade_unidade_arg": extracted.Unidade,
+			"talhao_nome_arg":        extracted.Localizacao.Talhao,
+			"canteiros_arg":          extracted.Localizacao.Canteiros,
+			"insumo_aplicado_arg":    extracted.InsumoAplicado,
+			"fornecedor_arg":         extracted.Fornecedor,
+			"detalhes_arg": map[string]interface{}{
+				"observacao_original": body,
+				"secao_origem":        "wppconnect",
+				"houve_descartes":     extracted.HouveDescartes,
+				"qtd_descartes":       parseToFloat(extracted.QtdDescartes),
+			},
+		}
+
+		// Validação de quantidade (Guardrail)
+		if parseToFloat(extracted.Quantidade) <= 0 {
+			log.Printf("⚠️ [FSM] Abortando registro com quantidade zero.")
 			botResponse = "Por favor, informe a quantidade exata para o registro do seu caderno 🌱."
 			sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio)
 			recordLog(sbClient, profile, body, botResponse, aiModel, promptTokens, completionTokens, "guardrail_final", nil, startTime, false)
 			return ProcessResult{Success: false, Reason: "missing_quantity_final"}
 		}
 
-		cadernoID, err := sbClient.InsertCadernoCampo(record)
+		resp, err := sbClient.RegistrarAtividadeRPC(ctx, rpcArgs)
 		if err != nil {
-			log.Printf("❌ [FSM] Falha ao salvar no Caderno de Campo: %v", err)
+			log.Printf("❌ [FSM] Falha ao chamar RPC RegistrarAtividade: %v", err)
 			botResponse = "❌ Falha técnica ao salvar no banco. Controle o sistema."
-			if err := sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio); err != nil {
-				log.Printf("❌ [FSM] Falha ao enviar mensagem de erro de DB via WPP: %v", err)
-			}
-			extraidoMap := map[string]interface{}{
-				"tipo_atividade":     extracted.Atividade,
-				"insumo_cultura":     extracted.InsumoCultura,
-				"quantidade_valor":   extracted.Quantidade,
-				"quantidade_unidade": extracted.Unidade,
-				"houve_descartes":    extracted.HouveDescartes,
-				"qtd_descartes":      extracted.QtdDescartes,
-				"talhao_canteiro":    fmtLocalizacao(extracted.Localizacao),
-			}
-			recordLog(sbClient, profile, body, botResponse, aiModel, promptTokens, completionTokens, finalIntent, extraidoMap, startTime, false)
-			return ProcessResult{Success: false, Reason: "db_insert_error"}
+			sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio)
+			recordLog(sbClient, profile, body, botResponse, aiModel, promptTokens, completionTokens, finalIntent, nil, startTime, false)
+			return ProcessResult{Success: false, Reason: "rpc_error"}
 		}
 
-		log.Printf("💾 [FSM] Registro salvo com sucesso no Caderno de Campo! (ID: %s)", cadernoID)
-
-		// 5b. Tentar vincular canteiros (N:N) silenciosamente (Best-Effort)
-		canteirosVinculados := 0
-		if len(canteiroIDs) > 0 {
-			if err := sbClient.InsertCanteiroVinculos(cadernoID, canteiroIDs); err != nil {
-				log.Printf("⚠️ [FSM] Erro ao vincular canteiros (não crítico): %v", err)
-			} else {
-				canteirosVinculados = len(canteiroIDs)
-			}
+		if status, ok := resp["status"].(string); ok && status == "error" {
+			log.Printf("❌ [FSM] Erro retornado pela RPC: %v", resp["message"])
+			botResponse = fmt.Sprintf("⚠️ Erro no registro: %v", resp["message"])
+			sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio)
+			return ProcessResult{Success: false, Reason: "rpc_db_error"}
 		}
+
+		id := resp["id"]
+		lote, _ := resp["lote"].(string)
+
+		log.Printf("💾 [FSM] Registro salvo com sucesso! ID: %s, Lote: %s", id, lote)
 
 		// Send Confirmation Message
 		localOuFornecedorLabel := "Local"
@@ -558,27 +519,21 @@ func ProcessMessage(ctx context.Context, from string, body string, msgID string,
 		botResponse = fmt.Sprintf("✅ *Registro Salvo com Sucesso!*\n\n*Atividade:* %s\n*Item:* %s\n*Qtd:* %v %s\n*%s:* %s\n\n",
 			extracted.Atividade, extracted.InsumoCultura, extracted.Quantidade, extracted.Unidade, localOuFornecedorLabel, strings.ToUpper(localOuFornecedorValue))
 
-		if canteirosVinculados > 0 {
-			botResponse += fmt.Sprintf("_Vinculado a %d canteiro(s)._\n", canteirosVinculados)
+		if lote != "" {
+			botResponse += fmt.Sprintf("*Lote:* %s\n", lote)
+		}
+		
+		if len(extracted.Localizacao.Canteiros) > 0 {
+			botResponse += fmt.Sprintf("_Vinculado a %d canteiro(s)._\n", len(extracted.Localizacao.Canteiros))
 		}
 		botResponse += "_Seu caderno eletrônico está em dia._ 🌱"
 
 		if err := sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio); err != nil {
-			log.Printf("❌ [FSM] Falha ao enviar confirmação de registro via WPP: %v", err)
+			log.Printf("❌ [FSM] Falha ao enviar confirmação de registro: %v", err)
 		}
 
 		// Success Logging
-		extraidoMap := map[string]interface{}{
-			"tipo_atividade":     extracted.Atividade,
-			"insumo_cultura":     extracted.InsumoCultura,
-			"quantidade_valor":   extracted.Quantidade,
-			"quantidade_unidade": extracted.Unidade,
-			"houve_descartes":    extracted.HouveDescartes,
-			"qtd_descartes":      extracted.QtdDescartes,
-			"talhao_canteiro":    fmtLocalizacao(extracted.Localizacao),
-			"fornecedor":         extracted.Fornecedor,
-		}
-
+		extraidoMap := toMap(extracted)
 		recordLog(sbClient, profile, body, botResponse, aiModel, promptTokens, completionTokens, finalIntent, extraidoMap, startTime, true)
 		return ProcessResult{Success: true, Reason: "record_saved"}
 	}
@@ -782,45 +737,43 @@ func handleAguardandoQuantidade(ctx map[string]interface{}, body, from, phone st
 			}
 		}
 
-		// Look up canteiros
-		var canteiroIDs []string
-		if len(canteiros) > 0 {
-			ids, _ := sbClient.LookupCanteiroIDs(pmoID, profile.ID, talhao, canteiros)
-			canteiroIDs = ids
+		rpcArgs := map[string]interface{}{
+			"pmo_id_arg":             pmoID,
+			"user_id_arg":            profile.ID,
+			"atividade_arg":          atividade,
+			"data_arg":               time.Now().Format("2006-01-02"),
+			"produto_arg":            insumo,
+			"quantidade_valor_arg":   qtd,
+			"quantidade_unidade_arg": unidade,
+			"talhao_nome_arg":        talhao,
+			"canteiros_arg":          canteiros,
+			"detalhes_arg": map[string]interface{}{
+				"observacao_original": "Contexto restaurado + Resposta: " + body,
+				"secao_origem":        "wppconnect_fsm_recovery",
+			},
 		}
 
-		record := supabase.CadernoCampoInsert{
-			PmoID:              pmoID,
-			UsuarioID:          profile.ID,
-			TipoAtividade:      atividade,
-			Produto:            insumo,
-			TalhaoCanteiro:     fmtLocalizacao(groq.Localizacao{Talhao: talhao, Canteiros: canteiros}),
-			QuantidadeValor:    qtd,
-			QuantidadeUnidade:  unidade,
-			ObservacaoOriginal: "Contexto restaurado + Resposta: " + body,
-			SecaoOrigem:        "wppconnect_fsm_recovery",
-			DetalhesTecnicos:   make(map[string]interface{}),
-			Canteiros:          canteiroIDs,
-		}
-
-		cadernoID, err := sbClient.InsertCadernoCampo(record)
+		resp, err := sbClient.RegistrarAtividadeRPC(context.Background(), rpcArgs)
 		if err != nil {
-			log.Printf("❌ [FSM] Erro ao salvar registro recuperado: %v", err)
+			log.Printf("❌ [FSM] Erro ao salvar registro recuperado via RPC: %v", err)
 			sendFeedback(wpClient, ttsClient, from, "❌ Erro ao salvar o registro. Tente novamente.", respondAudio)
-			return ProcessResult{Success: false, Reason: "db_error_recovery"}
+			return ProcessResult{Success: false, Reason: "rpc_error_recovery"}
 		}
 
-		// Vincular canteiros
-		if len(canteiroIDs) > 0 {
-			_ = sbClient.InsertCanteiroVinculos(cadernoID, canteiroIDs)
+		if status, ok := resp["status"].(string); ok && status == "error" {
+			log.Printf("❌ [FSM] Erro RPC no recovery: %v", resp["message"])
+			sendFeedback(wpClient, ttsClient, from, fmt.Sprintf("⚠️ Erro no registro: %v", resp["message"]), respondAudio)
+			return ProcessResult{Success: false, Reason: "rpc_db_error_recovery"}
 		}
+
+		_ = resp["id"]
+		lote, _ := resp["lote"].(string)
 
 		localOuFornecedorLabel := "Local"
-		localOuFornecedorValue := record.TalhaoCanteiro
+		localOuFornecedorValue := fmtLocalizacao(groq.Localizacao{Talhao: talhao, Canteiros: canteiros})
 
 		if atividade == "Compra/Aquisição" {
 			localOuFornecedorLabel = "Fornecedor"
-			// No estado recuperado, o fornecedor deve estar no ctx ou no record.DetalhesTecnicos se reconstruído
 			f, _ := ctx["fornecedor"].(string)
 			if f == "" {
 				f = "NÃO INFORMADO"
@@ -828,8 +781,14 @@ func handleAguardandoQuantidade(ctx map[string]interface{}, body, from, phone st
 			localOuFornecedorValue = f
 		}
 
-		botResponse := fmt.Sprintf("✅ *Registro Completo e Salvo!*\\n\\n*Atividade:* %s\\n*Item:* %s\\n*Qtd:* %v %s\\n*%s:* %s\\n\\n_Contexto recuperado com sucesso._ 🌱",
+		botResponse := fmt.Sprintf("✅ *Registro Completo e Salvo!*\n\n*Atividade:* %s\n*Item:* %s\n*Qtd:* %v %s\n*%s:* %s\n\n",
 			atividade, insumo, qtd, unidade, localOuFornecedorLabel, strings.ToUpper(localOuFornecedorValue))
+		
+		if lote != "" {
+			botResponse += fmt.Sprintf("*Lote:* %s\n", lote)
+		}
+		botResponse += "_Contexto recuperado com sucesso._ 🌱"
+
 		sendFeedback(wpClient, ttsClient, from, botResponse, respondAudio)
 
 		historyManager.ClearFSMState(phone)
@@ -857,37 +816,36 @@ func handleAguardandoCompra(ctx map[string]interface{}, body, from, phone string
 	// O body desta mensagem é o Fornecedor (e possivelmente outras infos)
 	fornecedor := body
 
-	record := supabase.CadernoCampoInsert{
-		PmoID:              pmoID,
-		UsuarioID:          profile.ID,
-		TipoAtividade:      "Outro", // ActivityType.OUTRO
-		Produto:            insumo,
-		TalhaoCanteiro:     "NÃO INFORMADO",
-		QuantidadeValor:    qtd,
-		QuantidadeUnidade:  unidade,
-		ObservacaoOriginal: "Compra registrada via atendimento ativo. Fornecedor: " + body,
-		SecaoOrigem:        "wppconnect_fsm_recovery_compra",
-		DetalhesTecnicos:   make(map[string]interface{}),
+	rpcArgs := map[string]interface{}{
+		"pmo_id_arg":             pmoID,
+		"user_id_arg":            profile.ID,
+		"atividade_arg":          "Insumo",
+		"data_arg":               time.Now().Format("2006-01-02"),
+		"produto_arg":            insumo,
+		"quantidade_valor_arg":   qtd,
+		"quantidade_unidade_arg": unidade,
+		"fornecedor_arg":         fornecedor,
+		"detalhes_arg": map[string]interface{}{
+			"observacao_original": "Compra registrada via atendimento ativo. Fornecedor: " + body,
+			"secao_origem":        "wppconnect_fsm_recovery_compra",
+		},
 	}
 
-	// Detalhes Técnicos para o Frontend
-	record.DetalhesTecnicos["tipo_registro"] = "compra"
-	record.DetalhesTecnicos["subtipo"] = "Compra de Insumo/Produto"
-	record.DetalhesTecnicos["fornecedor"] = fornecedor
-	record.DetalhesTecnicos["tipo_origem"] = "compra"
-	record.DetalhesTecnicos["origem"] = "Compra"
-	record.DetalhesTecnicos["quantidade"] = qtd
-	record.DetalhesTecnicos["unidade"] = unidade
-	record.DetalhesTecnicos["numero_documento"] = ""
-
-	cadernoID, err := sbClient.InsertCadernoCampo(record)
+	resp, err := sbClient.RegistrarAtividadeRPC(context.Background(), rpcArgs)
 	if err != nil {
-		log.Printf("❌ [FSM] Erro ao salvar compra recuperada: %v", err)
+		log.Printf("❌ [FSM] Erro ao salvar compra recuperada via RPC: %v", err)
 		sendFeedback(wpClient, ttsClient, from, "❌ Erro ao salvar a compra. Tente novamente.", respondAudio)
-		return ProcessResult{Success: false, Reason: "db_error_compra_recovery"}
+		return ProcessResult{Success: false, Reason: "rpc_error_compra_recovery"}
 	}
 
-	log.Printf("💾 [FSM] Compra salva com sucesso! (ID: %s)", cadernoID)
+	if status, ok := resp["status"].(string); ok && status == "error" {
+		log.Printf("❌ [FSM] Erro RPC na compra: %v", resp["message"])
+		sendFeedback(wpClient, ttsClient, from, fmt.Sprintf("⚠️ Erro no registro: %v", resp["message"]), respondAudio)
+		return ProcessResult{Success: false, Reason: "rpc_db_error_compra_recovery"}
+	}
+
+	id := resp["id"]
+	log.Printf("💾 [FSM] Compra salva com sucesso! (ID: %s)", id)
 
 	botResponse := fmt.Sprintf("✅ *Compra de %s Gravada!*\n\n*Qtd:* %v %s\n*Fornecedor:* %s\n\n_Registro adicionado ao seu caderno._ 🌱",
 		insumo, qtd, unidade, fornecedor)

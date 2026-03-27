@@ -13,6 +13,8 @@ CREATE OR REPLACE FUNCTION registrar_atividade_pmo(
     talhao_nome_arg TEXT,
     canteiros_arg TEXT[],
     insumo_aplicado_arg TEXT DEFAULT NULL,
+    fornecedor_arg TEXT DEFAULT NULL,
+    nota_fiscal_arg TEXT DEFAULT NULL,
     detalhes_arg JSONB DEFAULT '{}'
 ) RETURNS JSONB
 LANGUAGE plpgsql
@@ -95,6 +97,8 @@ BEGIN
         talhao_id,
         talhao_canteiro,
         lote,
+        fornecedor,
+        nota_fiscal,
         detalhes_tecnicos
     ) VALUES (
         pmo_id_arg,
@@ -107,6 +111,8 @@ BEGIN
         v_talhao_id,
         talhao_nome_arg,
         COALESCE(v_detalhes->>'lote', v_lote),
+        fornecedor_arg,
+        nota_fiscal_arg,
         v_detalhes
     ) RETURNING id INTO v_caderno_id;
 

@@ -1,6 +1,7 @@
 package mcp
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -730,36 +731,46 @@ func (s *Server) handleRegistrarCompraInsumo(args map[string]interface{}) (inter
 
 	qtdValor, _ := parseArgToFloat(args["quantidade_valor"])
 	qtdUnidade := sanitize(args["quantidade_unidade"])
+	produto := sanitize(args["produto"])
+	fornecedor := sanitize(args["fornecedor"])
 
 	dataCompra := sanitize(args["data_compra"])
 	if dataCompra == "" {
 		dataCompra = time.Now().Format("2006-01-02")
 	}
 
-	record := supabase.CadernoCampoInsert{
-		PmoID:             pmoID,
-		UsuarioID:         userID,
-		TipoAtividade:     "Insumo",
-		DataRegistro:      dataCompra,
-		Produto:           sanitize(args["produto"]),
-		QuantidadeValor:   qtdValor,
-		QuantidadeUnidade: qtdUnidade,
-		Fornecedor:        sanitize(args["fornecedor"]),
-		NotaFiscal:        sanitize(args["nota_fiscal"]),
+	rpcArgs := map[string]interface{}{
+		"pmo_id_arg":             pmoID,
+		"user_id_arg":            userID,
+		"atividade_arg":          "Insumo",
+		"data_arg":               dataCompra,
+		"produto_arg":            produto,
+		"quantidade_valor_arg":   qtdValor,
+		"quantidade_unidade_arg": qtdUnidade,
+		"fornecedor_arg":         fornecedor,
+		"detalhes_arg": map[string]interface{}{
+			"nota_fiscal": sanitize(args["nota_fiscal"]),
+		},
 	}
 
-	if record.Produto == "" || qtdValor <= 0 || qtdUnidade == "" {
+	if produto == "" || qtdValor <= 0 || qtdUnidade == "" {
 		return "ERRO FATAL: O usuário não informou o produto, a quantidade exata ou a unidade. Pergunte a ele os detalhes da compra.", nil
 	}
 
-	log.Printf("🛒 [MCP-TOOL] Registrando compra de '%s' para PMO %d", record.Produto, pmoID)
+	log.Printf("🛒 [MCP-TOOL] Chamando RPC para compra de '%s' para PMO %d", produto, pmoID)
 
-	_, err := s.supabase.InsertCadernoCampo(record)
+	resp, err := s.supabase.RegistrarAtividadeRPC(context.Background(), rpcArgs)
 	if err != nil {
-		return fmt.Sprintf("Erro ao registrar compra na Tabela de Compras: %v", err), nil
+		return fmt.Sprintf("Erro ao registrar compra via RPC: %v", err), nil
 	}
 
-	return fmt.Sprintf("Compra de '%s' registrada com sucesso (Formulário 06).", record.Produto), nil
+	if status, ok := resp["status"].(string); ok && status == "error" {
+		return fmt.Sprintf("Erro no banco de dados: %v", resp["message"]), nil
+	}
+
+	id := resp["id"]
+
+	return fmt.Sprintf("Compra de '%s' registrada com sucesso (ID: %s).", produto, id), nil
 }
 
 func (s *Server) handleRegistrarColheita(args map[string]interface{}) (interface{}, error) {
@@ -779,36 +790,40 @@ func (s *Server) handleRegistrarColheita(args map[string]interface{}) (interface
 	talhao := sanitize(args["talhao"])
 	cultura := sanitize(args["cultura"])
 
-	// Validação básica de existência (mockada ou via log de aviso se não encontrar ID, similar ao Lookup do plantio)
-	// No futuro, podemos fazer um FetchTalhoes aqui, mas o client.InsertCadernoCampo já faz o Lookup nos canteiros se fornecidos.
-	// Por enquanto, seguimos o fluxo de salvar o nome textual no talhao_canteiro.
-
-	record := supabase.CadernoCampoInsert{
-		PmoID:             pmoID,
-		UsuarioID:         userID,
-		TipoAtividade:     "Colheita",
-		DataRegistro:      data,
-		Produto:           cultura,
-		TalhaoCanteiro:    talhao,
-		QuantidadeValor:   qtd,
-		QuantidadeUnidade: unidade,
-		DetalhesTecnicos: map[string]interface{}{
+	rpcArgs := map[string]interface{}{
+		"pmo_id_arg":             pmoID,
+		"user_id_arg":            userID,
+		"atividade_arg":          "Colheita",
+		"data_arg":               data,
+		"produto_arg":            cultura,
+		"quantidade_valor_arg":   qtd,
+		"quantidade_unidade_arg": unidade,
+		"talhao_nome_arg":        talhao,
+		"canteiros_arg":          []string{}, // RPC handles decomposition if needed
+		"detalhes_arg": map[string]interface{}{
 			"destino_inicial": sanitize(args["destino_inicial"]),
 		},
 	}
 
-	if record.Produto == "" || qtd <= 0 || record.TalhaoCanteiro == "" {
+	if cultura == "" || qtd <= 0 || talhao == "" {
 		return "ERRO: Cultura, talhão e quantidade são obrigatórios para a colheita.", nil
 	}
 
-	log.Printf("🧺 [MCP-TOOL] Registrando colheita de '%s' no talhão '%s'", record.Produto, record.TalhaoCanteiro)
+	log.Printf("🧺 [MCP-TOOL] Chamando RPC para colheita de '%s' no talhão '%s'", cultura, talhao)
 
-	id, err := s.supabase.InsertCadernoCampo(record)
+	resp, err := s.supabase.RegistrarAtividadeRPC(context.Background(), rpcArgs)
 	if err != nil {
-		return fmt.Sprintf("Erro ao registrar colheita: %v", err), nil
+		return fmt.Sprintf("Erro ao registrar colheita via RPC: %v", err), nil
 	}
 
-	return fmt.Sprintf("Colheita de %v %s de %s registrada com sucesso no talhão %s (ID: %s).", qtd, unidade, cultura, talhao, id), nil
+	if status, ok := resp["status"].(string); ok && status == "error" {
+		return fmt.Sprintf("Erro no banco de dados: %v", resp["message"]), nil
+	}
+
+	id := resp["id"]
+	lote := resp["lote"]
+
+	return fmt.Sprintf("Colheita de %v %s de %s registrada com sucesso (Lote: %s, ID: %s).", qtd, unidade, cultura, lote, id), nil
 }
 
 func (s *Server) handleRegistrarVenda(args map[string]interface{}) (interface{}, error) {
@@ -826,33 +841,40 @@ func (s *Server) handleRegistrarVenda(args map[string]interface{}) (interface{},
 	qtd, _ := parseArgToFloat(args["quantidade"])
 	unidade := sanitize(args["unidade"])
 	valorUnit, _ := parseArgToFloat(args["valor_unitario"])
+	produto := sanitize(args["produto"])
+	cliente := sanitize(args["cliente"])
 
-	record := supabase.CadernoCampoInsert{
-		PmoID:             pmoID,
-		UsuarioID:         userID,
-		TipoAtividade:     "Venda",
-		DataRegistro:      data,
-		Produto:           sanitize(args["produto"]),
-		QuantidadeValor:   qtd,
-		QuantidadeUnidade: unidade,
-		Fornecedor:        sanitize(args["cliente"]), // Mapeando Cliente para Fornecedor
-		NotaFiscal:        sanitize(args["nota_fiscal"]),
-		DetalhesTecnicos: map[string]interface{}{
+	rpcArgs := map[string]interface{}{
+		"pmo_id_arg":             pmoID,
+		"user_id_arg":            userID,
+		"atividade_arg":          "Venda",
+		"data_arg":               data,
+		"produto_arg":            produto,
+		"quantidade_valor_arg":   qtd,
+		"quantidade_unidade_arg": unidade,
+		"fornecedor_arg":         cliente, // No banco Venda usa fornecedor para o cliente
+		"detalhes_arg": map[string]interface{}{
 			"destinacao":     sanitize(args["destinacao"]),
 			"valor_unitario": valorUnit,
 		},
 	}
 
-	if record.Produto == "" || qtd <= 0 {
+	if produto == "" || qtd <= 0 {
 		return "ERRO: Produto e quantidade são obrigatórios para registrar a venda/saída.", nil
 	}
 
-	log.Printf("💰 [MCP-TOOL] Registrando saída/venda de '%s' para '%s'", record.Produto, record.Fornecedor)
+	log.Printf("💰 [MCP-TOOL] Chamando RPC para saída/venda de '%s' para '%s'", produto, cliente)
 
-	id, err := s.supabase.InsertCadernoCampo(record)
+	resp, err := s.supabase.RegistrarAtividadeRPC(context.Background(), rpcArgs)
 	if err != nil {
-		return fmt.Sprintf("Erro ao registrar venda: %v", err), nil
+		return fmt.Sprintf("Erro ao registrar venda via RPC: %v", err), nil
 	}
 
-	return fmt.Sprintf("Registro de %s (%v %s) para '%s' salvo com sucesso (ID: %s).", record.Produto, qtd, unidade, record.Fornecedor, id), nil
+	if status, ok := resp["status"].(string); ok && status == "error" {
+		return fmt.Sprintf("Erro no banco de dados: %v", resp["message"]), nil
+	}
+
+	id := resp["id"]
+
+	return fmt.Sprintf("Registro de %s (%v %s) para '%s' salvo com sucesso (ID: %s).", produto, qtd, unidade, cliente, id), nil
 }

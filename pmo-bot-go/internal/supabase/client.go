@@ -2,14 +2,13 @@ package supabase
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
-	"math/rand"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
@@ -285,234 +284,49 @@ func (c *Client) GetProfileByPhone(phone string) (*Profile, error) {
 	return nil, fmt.Errorf("profile not found for phone %s", phone)
 }
 
-// InsertCadernoCampo inserts the LLM parsed record and returns the UUID of the created row.
-// Uses Prefer: return=representation to get the full object back from Supabase.
-func (c *Client) InsertCadernoCampo(record CadernoCampoInsert) (string, error) {
-	// DATA SAFETY LOCK: Refuse to insert records with zero or negative quantity.
-	if record.QuantidadeValor <= 0 {
-		return "", fmt.Errorf("[Safety Lock] Refusing to save record for '%s' with zero quantity", record.TipoAtividade)
-	}
+// RegistrarAtividadeRPC calls the 'registrar_atividade_pmo' Postgres function in Supabase.
+// This is the new declarative way to register activities, replacing several imperative steps.
+func (c *Client) RegistrarAtividadeRPC(ctx context.Context, args map[string]interface{}) (map[string]interface{}, error) {
+	reqURL := fmt.Sprintf("%s/rest/v1/rpc/registrar_atividade_pmo", c.config.URL)
 
-	reqURL := fmt.Sprintf("%s/rest/v1/caderno_campo", c.config.URL)
-
-	// Lógica de De-Para do JSONB detalhes_tecnicos para paridade com o Frontend React
-	if record.DetalhesTecnicos == nil {
-		record.DetalhesTecnicos = make(map[string]interface{})
-	}
-
-	atividadeUpper := strings.ToUpper(record.TipoAtividade)
-	switch atividadeUpper {
-	case "PLANTIO":
-		record.DetalhesTecnicos["qtd_utilizada"] = record.QuantidadeValor
-		record.DetalhesTecnicos["unidade_medida"] = record.QuantidadeUnidade
-	case "COLHEITA":
-		record.DetalhesTecnicos["qtd"] = record.QuantidadeValor
-		// Usando unidade e unidade_medida para cobrir CadernoTypes e a instrução
-		record.DetalhesTecnicos["unidade"] = record.QuantidadeUnidade
-		record.DetalhesTecnicos["unidade_medida"] = record.QuantidadeUnidade
-		// Auto-gerar lote para Colheita (paridade com Python e React)
-		if record.DetalhesTecnicos["lote"] == nil || record.DetalhesTecnicos["lote"] == "" {
-			loteGerado := GerarCodigoLote()
-			record.DetalhesTecnicos["lote"] = loteGerado
-			log.Printf("🆔 [Supabase] Lote auto-gerado para Colheita: %s", loteGerado)
-		}
-	case "VENDA":
-		record.DetalhesTecnicos["qtd"] = record.QuantidadeValor
-		record.DetalhesTecnicos["unidade"] = record.QuantidadeUnidade
-	case "MANEJO":
-		record.DetalhesTecnicos["dosagem"] = record.QuantidadeValor
-		// Usando unidade_dosagem e unidade_medida
-		record.DetalhesTecnicos["unidade_dosagem"] = record.QuantidadeUnidade
-		record.DetalhesTecnicos["unidade_medida"] = record.QuantidadeUnidade
-		if record.InsumoAplicado != "" {
-			// Padronização Sprint 1: Usar apenas insumo_aplicado
-			record.DetalhesTecnicos["insumo_aplicado"] = record.InsumoAplicado
-		}
-	}
-
-	if len(record.Canteiros) > 0 {
-		record.DetalhesTecnicos["canteiros"] = record.Canteiros
-	}
-
-	payload, err := json.Marshal(record)
+	payload, err := json.Marshal(args)
 	if err != nil {
-		return "", fmt.Errorf("failed to marshal caderno payload: %w", err)
+		return nil, fmt.Errorf("failed to marshal RPC payload: %w", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewReader(payload))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewReader(payload))
 	if err != nil {
-		return "", fmt.Errorf("failed to create caderno request: %w", err)
+		return nil, fmt.Errorf("failed to create RPC request: %w", err)
 	}
 
 	req.Header.Set("apikey", c.config.Key)
 	req.Header.Set("Authorization", "Bearer "+c.config.Key)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Prefer", "return=representation")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("caderno insert HTTP failed: %w", err)
+		return nil, fmt.Errorf("RPC execution HTTP failed: %w", err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("failed to read caderno response: %w", err)
+		return nil, fmt.Errorf("failed to read RPC response: %w", err)
 	}
 
 	if resp.StatusCode >= 400 {
-		return "", fmt.Errorf("supabase caderno insert error (%d): %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf("supabase RPC error (%d): %s", resp.StatusCode, string(body))
 	}
 
-	// Supabase returns [{"id": "uuid", ...}] with return=representation
-	var rows []struct {
-		ID string `json:"id"`
-	}
-	if err := json.Unmarshal(body, &rows); err != nil {
-		return "", fmt.Errorf("failed to parse caderno response: %w", err)
-	}
-	if len(rows) == 0 {
-		return "", fmt.Errorf("caderno insert returned 0 rows")
+	var result map[string]interface{}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse RPC response: %w", err)
 	}
 
-	return rows[0].ID, nil
+	return result, nil
 }
 
-// ---------------------------------------------------------------------------
-// Canteiro Relational Methods (N:N support — golang-guerrilha Rule #5)
-// ---------------------------------------------------------------------------
 
-// LookupCanteiroIDs resolves canteiro names to their DB IDs.
-// Strategy: find talhao_id by pmoID+name, then lookup each canteiro by talhao_id+name.
-// LookupCanteiroIDs resolves the external names to database IDs (Talhao and Canteiros)
-func (c *Client) LookupCanteiroIDs(pmoID int64, userID string, talhaoNome string, canteiros []string) ([]string, error) {
-	if talhaoNome == "" || talhaoNome == "NÃO INFORMADO" || len(canteiros) == 0 {
-		return nil, nil // Nothing to lookup
-	}
-
-	// Step 1: Resolve Talhao ID
-	// Use an OR condition to find the Talhao by pmo_id or user_id for flexibility
-	escapedTalhao := url.QueryEscape(talhaoNome)
-	log.Printf("🔍 [DB-DEBUG] Querying Talhão: %s (escaped: %s)", talhaoNome, escapedTalhao)
-	talhaoURL := fmt.Sprintf("%s/rest/v1/talhoes?or=(pmo_id.eq.%d,user_id.eq.%s)&nome=ilike.*%s*&select=id", c.config.URL, pmoID, userID, escapedTalhao)
-
-	talhaoBody, err := c.doRequest(http.MethodGet, talhaoURL, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to lookup talhao: %w", err)
-	}
-
-	var talhoes []struct {
-		ID int64 `json:"id"`
-	}
-	if err := json.Unmarshal(talhaoBody, &talhoes); err != nil {
-		return nil, fmt.Errorf("failed to parse talhao response: %w", err)
-	}
-	if len(talhoes) == 0 {
-		log.Printf("⚠️ [Supabase] Talhão '%s' não encontrado para PMO %d", talhaoNome, pmoID)
-		return nil, nil
-	}
-
-	talhaoID := talhoes[0].ID
-	log.Printf("📍 [Supabase] Talhão '%s' resolvido para ID %d", talhaoNome, talhaoID)
-
-	// Step 2: Resolve each canteiro name to its ID
-	var canteiroIDs []string
-
-	for _, nome := range canteiros {
-		escapedNome := url.QueryEscape(nome)
-		canteiroURL := fmt.Sprintf("%s/rest/v1/canteiros?talhao_id=eq.%d&nome=ilike.*%s*&select=id,nome",
-			c.config.URL, talhaoID, escapedNome)
-
-		canteiroBody, err := c.doRequest(http.MethodGet, canteiroURL, nil)
-		if err != nil {
-			log.Printf("⚠️ [Supabase] Erro ao buscar canteiro '%s': %v", nome, err)
-			continue
-		}
-
-		var candidatos []struct {
-			ID   string `json:"id"`
-			Nome string `json:"nome"`
-		}
-		if err := json.Unmarshal(canteiroBody, &candidatos); err != nil {
-			log.Printf("⚠️ [Supabase] Erro ao parsear canteiro '%s': %v", nome, err)
-			continue
-		}
-
-		if len(candidatos) == 0 {
-			log.Printf("⚠️ [Supabase] Canteiro '%s' não encontrado no talhão %d", nome, talhaoID)
-			continue
-		}
-
-		// Fine filter: extract numbers from DB name and compare as int (like Python does)
-		nomeAlvo, err := strconv.Atoi(strings.TrimSpace(nome))
-		if err != nil {
-			// Nome is not purely numeric — use first match directly
-			canteiroIDs = append(canteiroIDs, candidatos[0].ID)
-			log.Printf("✅ [Supabase] Canteiro '%s' → ID %s (match direto)", nome, candidatos[0].ID)
-			continue
-		}
-
-		// Numeric comparison (handles "Canteiro 01" == "1", "Canteiro 10" != "1")
-		matched := false
-		for _, cand := range candidatos {
-			for _, digitStr := range extractNumbers(cand.Nome) {
-				if digitStr == nomeAlvo {
-					canteiroIDs = append(canteiroIDs, cand.ID)
-					log.Printf("✅ [Supabase] Canteiro '%s' → ID %s (match numérico)", nome, cand.ID)
-					matched = true
-					break
-				}
-			}
-			if matched {
-				break
-			}
-		}
-
-		if !matched {
-			log.Printf("⚠️ [Supabase] Canteiro '%s' sem match exato entre candidatos: %v", nome, candidatos)
-		}
-	}
-
-	return canteiroIDs, nil
-}
-
-// InsertCanteiroVinculos batch-inserts rows into the caderno_campo_canteiros junction table.
-// Best-effort: logs errors per-row but does not abort.
-func (c *Client) InsertCanteiroVinculos(cadernoID string, canteiroIDs []string) error {
-	if cadernoID == "" || len(canteiroIDs) == 0 {
-		return nil
-	}
-
-	type vinculo struct {
-		CadernoCampoID string `json:"caderno_campo_id"`
-		CanteiroID     string `json:"canteiro_id"`
-	}
-
-	var batch []vinculo
-	for _, id := range canteiroIDs {
-		batch = append(batch, vinculo{
-			CadernoCampoID: cadernoID,
-			CanteiroID:     id,
-		})
-	}
-
-	payload, err := json.Marshal(batch)
-	if err != nil {
-		return fmt.Errorf("failed to marshal canteiro vinculos: %w", err)
-	}
-
-	log.Printf("🔗 [DB] Inserindo %d vínculos de canteiros para o registro ID %s", len(canteiroIDs), cadernoID)
-
-	reqURL := fmt.Sprintf("%s/rest/v1/caderno_campo_canteiros", c.config.URL)
-	_, err = c.doRequest(http.MethodPost, reqURL, payload)
-	if err != nil {
-		log.Printf("❌ [DB] FALHA ao inserir vínculos de canteiros para registro %s: %v", cadernoID, err)
-		return fmt.Errorf("falha ao inserir vínculos de canteiros para registro %s: %w", cadernoID, err)
-	}
-
-	log.Printf("✅ [DB] %d canteiro(s) vinculado(s) com sucesso ao registro %s", len(canteiroIDs), cadernoID)
-	return nil
-}
 
 // InsertLogProcessamento saves AI processing audit data for the admin dashboard.
 func (c *Client) InsertLogProcessamento(logData LogProcessamentoInsert) error {
@@ -721,38 +535,7 @@ func (c *Client) UpsertBotStatus(sessionName, status string, details map[string]
 	return nil
 }
 
-// extractNumbers extracts all integer values from a string.
-// Ex: "Canteiro 01" → [1], "C-10 a 12" → [10, 12]
-func extractNumbers(s string) []int {
-	var nums []int
-	current := ""
-	for _, ch := range s {
-		if ch >= '0' && ch <= '9' {
-			current += string(ch)
-		} else {
-			if current != "" {
-				if n, err := strconv.Atoi(current); err == nil {
-					nums = append(nums, n)
-				}
-				current = ""
-			}
-		}
-	}
-	if current != "" {
-		if n, err := strconv.Atoi(current); err == nil {
-			nums = append(nums, n)
-		}
-	}
-	return nums
-}
 
-// GerarCodigoLote gera um código de lote no formato LOTE-YYYYMMDD-XXXX.
-// Usado automaticamente para atividades de Colheita (paridade com Python e React).
-func GerarCodigoLote() string {
-	now := time.Now()
-	suffix := fmt.Sprintf("%04d", rand.Intn(10000))
-	return fmt.Sprintf("LOTE-%s-%s", now.Format("20060102"), suffix)
-}
 
 // GetIngestionStats returns the plan tier and document count for a pmo_id.
 func (c *Client) GetIngestionStats(pmoID int64) (string, int, error) {

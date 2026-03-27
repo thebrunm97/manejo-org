@@ -1,6 +1,24 @@
 # Changelog
 Este arquivo documenta as mudanças importantes e refatorações realizadas no Pmo Bot Go Backend.
 
+## [0.12.0] - 2026-03-27 - Multi-Agent & Declarative MCP Overhaul
+### Added
+- **Orquestrador de Intenções**: Router LLM para classificar RAG vs Database de forma inteligente.
+- **Prompts Modulares**: Implementação de `agronomist.md` e `db_operator.md` para especialização de respostas.
+- **Filtro Dinâmico de Ferramentas**: Seleção de tools por categoria para otimizar o context window.
+- **Middlewares de Segurança**: `LoopGuard` (prevenção de recursão infinita) e `Short-term Memory` (System Notes).
+- **Sanitizador de UI**: Formatação automática de mensagens para a interface do WhatsApp.
+- **MCP Declarativo**: Criação da função PL/pgSQL `registrar_atividade_pmo` no Supabase, centralizando a lógica de negócio no banco.
+
+### Changed
+- **Arquitetura de Banco**: Adoção do padrão *Thin Backend / Fat Database* para registro de atividades.
+- **Refatoração de Handlers**: Substituição da lógica imperativa complexa em `fsm.go` e `tools.go` por chamadas simplificadas via `.Rpc()`.
+- **Performance**: Aumento do timeout do webhook para acomodar o processamento multi-agente.
+
+### Fixed
+- **Resiliência do FSM**: Fallback implementado para falhas na geração de schema da intenção (Groq).
+- **Estabilidade do Servidor**: Implementação de `defer recover()` nos handlers principais para evitar crashes silenciosos.
+
 ## [0.9.0] - 2026-03-26
 ### Added (GIS & Map Engine)
 - **Vector Editing Engine**: Suporte a desenho e edição bidirecional de polígonos com sincronização persistente.
