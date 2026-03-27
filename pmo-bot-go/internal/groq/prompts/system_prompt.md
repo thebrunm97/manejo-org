@@ -37,6 +37,8 @@ Se o agricultor INFORMOU a quantidade, defina `"necessita_mais_info": false` e `
 10. "houve_descartes": true se perdeu, descartou, morreu. Senão false.
 11. "qtd_descartes": número das perdas. Se não mencionada, use 0.
 12. "fornecedor": Para "Compra/Aquisição", extraia o nome do VIVEIRO, LOJA ou PESSOA (ex: "Viveiro da Shirley", "Zé do Tomate"). Se não mencionar, use "NÃO INFORMADO".
+13. "nota_fiscal": Para "Compra/Aquisição", extraia o número da Nota Fiscal (ex: "NF-1234", "1542").
+14. "marca": Extraia a marca comercial do produto se informada (ex: "YOORIN").
 
 ## REGRAS DE CONFORMIDADE ORGÂNICA (Lei 10.831/2003 + IN 46/2011)
 Marque "alerta_organico": true se a mensagem mencionar QUALQUER um destes:
@@ -62,10 +64,10 @@ Marque "alerta_organico": true se a mensagem mencionar QUALQUER um destes:
 ## EXEMPLOS DE CLASSIFICAÇÃO (FEW-SHOT):
 
 User: "Acabei de comprar 50 mudas de tomate lá no Viveiro do Zé"
-JSON: {"intencao": "registro", "atividade": "Compra/Aquisição", "insumo_cultura": "TOMATE", "quantidade": 50, "unidade": "mudas", "necessita_mais_info": false, "pergunta_ao_usuario": "", "localizacao": {"talhao": "NÃO INFORMADO", "canteiros": []}, "alerta_organico": false, "houve_descartes": false, "qtd_descartes": 0, "data_relativa": "hoje", "insumo_aplicado": "", "insumo_generico": false, "fornecedor": "Viveiro do Zé"}
+JSON: {"intencao": "registro", "atividade": "Compra/Aquisição", "insumo_cultura": "TOMATE", "quantidade": 50, "unidade": "mudas", "necessita_mais_info": false, "pergunta_ao_usuario": "", "localizacao": {"talhao": "NÃO INFORMADO", "canteiros": []}, "alerta_organico": false, "houve_descartes": false, "qtd_descartes": 0, "data_relativa": "hoje", "insumo_aplicado": "", "insumo_generico": false, "fornecedor": "Viveiro do Zé", "nota_fiscal": ""}
 
-User: "Comprei mudas de tomate no viveiro"
-JSON: {"intencao": "registro", "atividade": "Compra/Aquisição", "insumo_cultura": "TOMATE", "quantidade": 0, "unidade": "mudas", "necessita_mais_info": true, "pergunta_ao_usuario": "Quantas mudas de tomate você comprou?", "localizacao": {"talhao": "NÃO INFORMADO", "canteiros": []}, "alerta_organico": false, "houve_descartes": false, "qtd_descartes": 0, "data_relativa": "hoje", "insumo_aplicado": "", "insumo_generico": false, "fornecedor": "NÃO INFORMADO"}
+User: "Comprei 20 sacos de Yoorin na AgroTécnica, NF-1542"
+JSON: {"intencao": "registro", "atividade": "Compra/Aquisição", "insumo_cultura": "YOORIN", "quantidade": 20, "unidade": "sacos", "necessita_mais_info": false, "pergunta_ao_usuario": "", "localizacao": {"talhao": "NÃO INFORMADO", "canteiros": []}, "alerta_organico": false, "houve_descartes": false, "qtd_descartes": 0, "data_relativa": "hoje", "insumo_aplicado": "", "insumo_generico": false, "fornecedor": "AgroTécnica", "nota_fiscal": "1542", "marca": "YOORIN"}
 
 User: "Plantei 200 pés de alface no canteiro 3"
 JSON: {"intencao": "registro", "atividade": "Plantio", "insumo_cultura": "ALFACE", "quantidade": 200, "unidade": "pés", "necessita_mais_info": false, "pergunta_ao_usuario": "", "localizacao": {"talhao": "NÃO INFORMADO", "canteiros": ["3"]}, "alerta_organico": false, "houve_descartes": false, "qtd_descartes": 0, "data_relativa": "hoje", "insumo_aplicado": "", "insumo_generico": false}

@@ -54,6 +54,10 @@ type ExtractionResult struct {
 	NecessitaMaisInfo bool        `json:"necessita_mais_info"`
 	PerguntaAoUsuario string      `json:"pergunta_ao_usuario"`
 	Fornecedor        string      `json:"fornecedor"`
+	NotaFiscal        string      `json:"nota_fiscal"`
+	Marca             string      `json:"marca"`
+	Composicao        string      `json:"composicao"`
+	Procedencia       string      `json:"procedencia"`
 	ItemArea          string      `json:"item_area"`
 	TipoLimpeza       string      `json:"tipo_limpeza"`
 	ProdutoUtilizado  string      `json:"produto_utilizado"`
