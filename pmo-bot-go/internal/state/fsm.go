@@ -467,6 +467,9 @@ func ProcessMessage(ctx context.Context, from string, body string, msgID string,
 	// Step 8: Save to Caderno de Campo via RPC
 	if extracted.Intencao == "registro" {
 		atividade := extracted.Atividade
+		if extracted.Data == "" {
+			extracted.Data = time.Now().Format("2006-01-02")
+		}
 		var resp map[string]interface{}
 		var err error
 
@@ -485,28 +488,43 @@ func ProcessMessage(ctx context.Context, from string, body string, msgID string,
 			}
 			resp, err = sbClient.RegistrarCompraInsumoRPC(ctx, rpcArgs)
 		} else {
-			log.Printf("💾 [FSM] Usando RPC de Atividade Geral para: %s", atividade)
-			rpcArgs := map[string]interface{}{
-				"pmo_id_arg":             pmoID,
-				"user_id_arg":            profile.ID,
-				"atividade_arg":          atividade,
-				"data_arg":               time.Now().Format("2006-01-02"),
-				"produto_arg":            extracted.InsumoCultura,
-				"quantidade_valor_arg":   parseToFloat(extracted.Quantidade),
-				"quantidade_unidade_arg": extracted.Unidade,
-				"talhao_nome_arg":        extracted.Localizacao.Talhao,
-				"canteiros_arg":          extracted.Localizacao.Canteiros,
-				"insumo_aplicado_arg":    extracted.InsumoAplicado,
-				"fornecedor_arg":         extracted.Fornecedor,
-				"nota_fiscal_arg":        extracted.NotaFiscal,
-				"detalhes_arg": map[string]interface{}{
-					"observacao_original": body,
-					"secao_origem":        "wppconnect",
-					"houve_descartes":     extracted.HouveDescartes,
-					"qtd_descartes":       parseToFloat(extracted.QtdDescartes),
-				},
+			log.Printf("🚜 [FSM] Usando RPC Unificada (Operacao de Campo) para: %s", atividade)
+			
+			// Build a rich, unified payload
+			payload := map[string]interface{}{
+				"data":                extracted.Data,
+				"produto":             extracted.InsumoCultura, // Alias for 'especies', etc.
+				"quantidade_valor":    parseToFloat(extracted.Quantidade),
+				"quantidade_unidade":  extracted.Unidade,
+				"talhao_nome":         extracted.Localizacao.Talhao,
+				"canteiro_ids":        extracted.Localizacao.Canteiros,
+				"fornecedor":          extracted.Fornecedor,
+				"nota_fiscal":         extracted.NotaFiscal,
+				"insumo":              extracted.InsumoAplicado,
+				"metodo_aplicacao":    atividade,
+				"observacao_original": body,
+				// Specialized fields for backward compatibility with SQL CASE logic
+				"item_area":         extracted.Localizacao.Talhao,
+				"tipo_limpeza":      "Geral",
+				"produto_utilizado": extracted.InsumoAplicado,
+				"especies":          extracted.InsumoCultura,
+				"origem":            extracted.Fornecedor,
+				"quantidade":        fmt.Sprintf("%v %s", extracted.Quantidade, extracted.Unidade),
+				"sistema_organico":  true,
+				"insumo_aplicado":   extracted.InsumoAplicado, // used by Manejo
+				"fonte":             extracted.Fornecedor,    // used by Manejo
+				"talhoes_aplicados": []string{extracted.Localizacao.Talhao},
 			}
-			resp, err = sbClient.RegistrarAtividadeRPC(ctx, rpcArgs)
+
+			resp, err = sbClient.RegistrarOperacaoCampoRPC(ctx, map[string]interface{}{
+				"pmo_id_arg":  pmoID,
+				"user_id_arg": profile.ID,
+				"tipo_arg":    atividade,
+				"payload_arg": payload,
+				"lote_arg":    extracted.Lote,
+				"cliente_arg": extracted.Cliente,
+				"valor_arg":   extracted.ValorTotal,
+			})
 		}
 
 		if err != nil {
@@ -545,8 +563,21 @@ func ProcessMessage(ctx context.Context, from string, body string, msgID string,
 			}
 		}
 
-		botResponse = fmt.Sprintf("✅ *Registro Salvo com Sucesso!*\n\n*Atividade:* %s\n*Item:* %s\n*Qtd:* %v %s\n*%s:* %s",
-			extracted.Atividade, extracted.InsumoCultura, extracted.Quantidade, extracted.Unidade, localOuFornecedorLabel, strings.ToUpper(localOuFornecedorValue))
+		botResponse = fmt.Sprintf("✅ *Registro Salvo com Sucesso!*\n\n*Atividade:* %s\n", extracted.Atividade)
+
+		if extracted.Atividade == "Manejo" && extracted.InsumoAplicado != "" {
+			itemCultura := extracted.InsumoCultura
+			if itemCultura == "" || itemCultura == "N/A" || itemCultura == "todas" {
+				itemCultura = ""
+			} else {
+				itemCultura = fmt.Sprintf("*Cultura:* %s\n", itemCultura)
+			}
+			botResponse += fmt.Sprintf("%s*Insumo:* %s\n", itemCultura, extracted.InsumoAplicado)
+		} else {
+			botResponse += fmt.Sprintf("*Item:* %s\n", extracted.InsumoCultura)
+		}
+
+		botResponse += fmt.Sprintf("*Qtd:* %v %s\n*%s:* %s", extracted.Quantidade, extracted.Unidade, localOuFornecedorLabel, strings.ToUpper(localOuFornecedorValue))
 
 		if extracted.NotaFiscal != "" {
 			botResponse += fmt.Sprintf("\n*Nota Fiscal:* %s", extracted.NotaFiscal)
