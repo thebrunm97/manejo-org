@@ -45,6 +45,7 @@ type ExtractionResult struct {
 	Quantidade        interface{} `json:"quantidade"`
 	Unidade           string      `json:"unidade"`
 	Localizacao       Localizacao `json:"localizacao"`
+	Data              string      `json:"data"`
 	DataRelativa      string      `json:"data_relativa"`
 	AlertaOrganico    bool        `json:"alerta_organico"`
 	TokensPrompt      int         `json:"tokens_prompt"`
@@ -64,6 +65,9 @@ type ExtractionResult struct {
 	Dosagem           string      `json:"dosagem"`
 	Responsavel       string      `json:"responsavel"`
 	Insumos           interface{} `json:"insumos,omitempty"` // Captured for fallback detection
+	Lote              string      `json:"lote"`
+	Cliente           string      `json:"cliente"`
+	ValorTotal        interface{} `json:"valor_total"`
 }
 
 // ---------------------------------------------------------------------------
@@ -144,10 +148,12 @@ func NewClient(apiKey string) (*Client, error) {
 // Extract sends the farmer's message to the Groq API and returns
 // a structured ExtractionResult with intent, activity, and organic alert.
 func (c *Client) Extract(farmerMessage string) (*ExtractionResult, error) {
+	actualSystemPrompt := fmt.Sprintf("%s\n\n## DATA ATUAL (Referência): %s", systemPrompt, time.Now().Format("2006-01-02"))
+
 	reqBody := chatRequest{
 		Model: modelName,
 		Messages: []chatMessage{
-			{Role: "system", Content: systemPrompt},
+			{Role: "system", Content: actualSystemPrompt},
 			{Role: "user", Content: farmerMessage},
 		},
 		Temperature:    0,
