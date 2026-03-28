@@ -129,7 +129,15 @@ func ProcessMessage(ctx context.Context, from string, body string, msgID string,
 			return ProcessResult{Success: true, Reason: "device_linked"}
 		}
 
-		sendFeedback(wpClient, ttsClient, from, "❌ Não consegui encontrar o seu cadastro no sistema PMO. Se você tem um código de pareamento, digite: CONECTAR <codigo>", respondWithAudio)
+		unlinkedMsg := "❌ *WhatsApp Não Vinculado*\n\n" +
+			"Olá! Para conectar seu WhatsApp ao *ManejoORG*, siga estes passos rápidos:\n\n" +
+			"1️⃣ Acesse o sistema em 🌐 *https://manejo-org.vercel.app/*\n" +
+			"2️⃣ No seu *Dashboard*, vá na seção *Assistente Inteligente* e clique em *Conectar WhatsApp*\n" +
+			"3️⃣ Clique em *Gerar Código de Conexão*\n\n" +
+			"Depois é só voltar aqui e me enviar: *CONECTAR <seu-codigo>*\n\n" +
+			"_(O código gerado expira após o uso. Se você ainda não tem uma conta, cadastre-se no site!)_ 🌱"
+
+		sendFeedback(wpClient, ttsClient, from, unlinkedMsg, respondWithAudio)
 		return ProcessResult{Success: false, Reason: "profile_not_found"}
 	}
 	pmoID := profile.PmoAtivoID
