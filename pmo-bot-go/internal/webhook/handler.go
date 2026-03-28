@@ -90,7 +90,11 @@ func (m *WPPMessage) MessageID() string {
 
 // ShouldProcess checks if the message should be processed.
 func (m *WPPMessage) ShouldProcess() bool {
-	return !m.FromMe && m.Event == "onmessage"
+	event := strings.ToLower(m.Event)
+	if m.FromMe {
+		return false
+	}
+	return event == "onmessage" || event == "on-message"
 }
 
 // IsAudio checks if the message is an audio/voice note.
@@ -232,6 +236,7 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 
 	// 4. Self-message filter
 	if !payload.ShouldProcess() {
+		log.Printf("⏭️  Mensagem ignorada (FromMe: %v, Event: %s)", payload.FromMe, payload.Event)
 		c.JSON(http.StatusOK, gin.H{"status": "ignored", "reason": "fromMe or not onmessage"})
 		return
 	}
@@ -239,7 +244,7 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 	// 5. TTL check
 	age := payload.AgeSeconds()
 	if age >= 0 && age > h.cfg.MaxMessageAge {
-		log.Printf("⏳ TTL DROP: Mensagem de %.1fs atrás ignorada", age)
+		log.Printf("⏳ TTL DROP: Mensagem de %.1fs atrás ignorada (Max: %.1fs)", age, h.cfg.MaxMessageAge)
 		c.JSON(http.StatusOK, gin.H{"status": "ignored_old", "age": age})
 		return
 	}
