@@ -498,6 +498,7 @@ func ProcessMessage(ctx context.Context, from string, body string, msgID string,
 				"canteiros_arg":          extracted.Localizacao.Canteiros,
 				"insumo_aplicado_arg":    extracted.InsumoAplicado,
 				"fornecedor_arg":         extracted.Fornecedor,
+				"nota_fiscal_arg":        extracted.NotaFiscal,
 				"detalhes_arg": map[string]interface{}{
 					"observacao_original": body,
 					"secao_origem":        "wppconnect",
