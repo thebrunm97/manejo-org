@@ -3,6 +3,7 @@ import Map, { Source, Layer, Marker, useMap, NavigationControl } from 'react-map
 import centerOfMass from '@turf/center-of-mass';
 import { polygon } from '@turf/helpers';
 import MapboxDraw from '@mapbox/mapbox-gl-draw';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import { Talhao, GeoJSONGeometry } from '../../domain/geo/geoTypes';
 import { ESRI_SATELLITE_STYLE } from './mapStyles';
 
@@ -126,8 +127,10 @@ const FarmMap: React.FC<FarmMapProps> = ({
     finishDrawingTrigger = 0,
     trashDrawingTrigger = 0
 }) => {
+    const isMobile = useIsMobile();
     const [cursor, setCursor] = useState<string | undefined>(undefined);
     const [drawInstance, setDrawInstance] = useState<MapboxDraw | null>(null);
+    const containerRef = React.useRef<HTMLDivElement>(null);
 
     // Efeito para ativar modo de desenho programaticamente
     useEffect(() => {
@@ -175,22 +178,29 @@ const FarmMap: React.FC<FarmMapProps> = ({
         // 1. Immediate trigger on state change
         performResize();
 
-        // 2. Native Event Listeners (Plan E: Ancestor Capture Bypass)
-        // MapboxDraw is known to use `stopImmediatePropagation` on the canvas.
-        // We move the listeners to the Map Container (parent) to catch events first.
-        const container = mapInstance?.getContainer();
+        // 2. Window-Level Pointer Spy (The "Ultimate Proof")
+        const onWindowPointerDown = (e: PointerEvent) => {
+            if (e.pointerType === 'touch') {
+                console.log('🕵️ [WINDOW] Global RAW Touch detected');
+            }
+        };
+        window.addEventListener('pointerdown', onWindowPointerDown, { capture: true, passive: true });
+
+        // 3. Container-Level Interaction Logic (Plan F: Unified Pointer System)
+        const container = containerRef.current;
         const canvas = mapInstance?.getCanvas();
         if (!container || !canvas || !mapInstance) return;
 
-        let touchStartPos: { x: number, y: number } | null = null;
-        let touchStartTime = 0;
+        let lastPointerId: number | null = null;
+        let pointerStartPoint: { x: number, y: number } | null = null;
+        let pointerStartTime = 0;
 
         const handleInteraction = (point: { x: number, y: number }, type: string) => {
             if (isDrawingMode) return;
             
-            console.log(`🔥 [FarmMap] RAW ${type} Interaction at:`, point);
+            console.log(`🔥 [FarmMap] Unified ${type} (${isMobile ? 'Touch' : 'Mouse'}) at:`, point);
             
-            const tolerance = 20; // 20px tolerance for mobile/fat-finger
+            const tolerance = isMobile ? 24 : 12;
             const bbox: [maplibregl.PointLike, maplibregl.PointLike] = [
                 [point.x - tolerance, point.y - tolerance],
                 [point.x + tolerance, point.y + tolerance]
@@ -203,72 +213,55 @@ const FarmMap: React.FC<FarmMapProps> = ({
             if (features && features.length > 0 && onTalhaoClick) {
                 const feature = features[0];
                 const talhaoId = feature.properties?.id;
-                console.log('✅ [FarmMap] Plot Detected via RAW:', talhaoId);
+                console.log('✅ [FarmMap] Plot Detected via Unified:', talhaoId);
                 const talhao = talhoes.find(t => String(t.id) === String(talhaoId));
                 if (talhao) {
                     onTalhaoClick(talhao);
                 }
             } else {
-                console.log('❌ [FarmMap] No plot detected via RAW at:', point);
+                console.log('❌ [FarmMap] No plot detected via Unified at:', point);
             }
         };
 
-        const onTouchStart = (e: TouchEvent) => {
-            if (e.touches && e.touches.length > 0) {
-                const touch = e.touches[0];
-                const rect = canvas.getBoundingClientRect();
-                touchStartPos = {
-                    x: touch.clientX - rect.left,
-                    y: touch.clientY - rect.top
-                };
-                touchStartTime = Date.now();
-                console.log('👉 [FarmMap] RAW Canvas touchstart registered');
-            }
-        };
-
-        const onTouchMove = (e: TouchEvent) => {
-            if (!touchStartPos || !e.touches || e.touches.length === 0) return;
-            const touch = e.touches[0];
+        const onPointerDown = (e: PointerEvent) => {
+            if (!e.isPrimary) return;
             const rect = canvas.getBoundingClientRect();
-            const currentX = touch.clientX - rect.left;
-            const currentY = touch.clientY - rect.top;
-            
-            const dx = currentX - touchStartPos.x;
-            const dy = currentY - touchStartPos.y;
-            
-            // Cancel tap if movement exceeds 10 pixels (drag/pan)
-            if (Math.sqrt(dx * dx + dy * dy) > 10) {
-                touchStartPos = null;
-            }
-        };
-
-        const onTouchEnd = () => {
-            if (!touchStartPos) return;
-            
-            const duration = Date.now() - touchStartTime;
-            if (duration < 500) {
-                handleInteraction(touchStartPos, 'tap');
-            }
-            touchStartPos = null;
-        };
-
-        const onMouseClick = (e: MouseEvent) => {
-            // Desktop fallback
-            const rect = canvas.getBoundingClientRect();
-            const point = {
+            pointerStartPoint = {
                 x: e.clientX - rect.left,
                 y: e.clientY - rect.top
             };
-            handleInteraction(point, 'click');
+            pointerStartTime = Date.now();
+            lastPointerId = e.pointerId;
+            console.log('👉 [FarmMap] Container PointerDown registered');
         };
 
-        // Attach to CONTAINER with capture: true to run BEFORE Draw or canvas-level listeners
-        container.addEventListener('touchstart', onTouchStart, { capture: true, passive: true });
-        container.addEventListener('touchmove', onTouchMove, { capture: true, passive: true });
-        container.addEventListener('touchend', onTouchEnd, { capture: true, passive: true });
-        container.addEventListener('click', onMouseClick, { capture: true });
+        const onPointerMove = (e: PointerEvent) => {
+            if (e.pointerId !== lastPointerId || !pointerStartPoint) return;
+            const rect = canvas.getBoundingClientRect();
+            const currentX = e.clientX - rect.left;
+            const currentY = e.clientY - rect.top;
+            const dx = currentX - pointerStartPoint.x;
+            const dy = currentY - pointerStartPoint.y;
+            if (Math.sqrt(dx * dx + dy * dy) > 10) {
+                pointerStartPoint = null;
+            }
+        };
 
-        // 3. Window-level listeners for absolute sync
+        const onPointerUp = (e: PointerEvent) => {
+            if (e.pointerId !== lastPointerId || !pointerStartPoint) return;
+            const duration = Date.now() - pointerStartTime;
+            if (duration < 500) {
+                handleInteraction(pointerStartPoint, 'tap');
+            }
+            pointerStartPoint = null;
+            lastPointerId = null;
+        };
+
+        container.addEventListener('pointerdown', onPointerDown, { capture: true });
+        container.addEventListener('pointermove', onPointerMove, { capture: true });
+        container.addEventListener('pointerup', onPointerUp, { capture: true });
+        container.addEventListener('pointercancel', () => { pointerStartPoint = null; }, { capture: true });
+
         const onWindowResize = () => performResize();
         window.addEventListener('resize', onWindowResize);
         window.addEventListener('load', onWindowResize);
@@ -276,14 +269,14 @@ const FarmMap: React.FC<FarmMapProps> = ({
         return () => {
             cancelAnimationFrame(frame1);
             cancelAnimationFrame(frame2);
-            container.removeEventListener('touchstart', onTouchStart, { capture: true });
-            container.removeEventListener('touchmove', onTouchMove, { capture: true });
-            container.removeEventListener('touchend', onTouchEnd, { capture: true });
-            container.removeEventListener('click', onMouseClick, { capture: true });
+            window.removeEventListener('pointerdown', onWindowPointerDown, { capture: true });
+            container.removeEventListener('pointerdown', onPointerDown, { capture: true });
+            container.removeEventListener('pointermove', onPointerMove, { capture: true });
+            container.removeEventListener('pointerup', onPointerUp, { capture: true });
             window.removeEventListener('resize', onWindowResize);
             window.removeEventListener('load', onWindowResize);
         };
-    }, [isDrawerOpen, isDrawingMode, mapInstance, talhoes, onTalhaoClick]);
+    }, [isDrawerOpen, isDrawingMode, mapInstance, talhoes, onTalhaoClick, isMobile]);
 
     // NOTA: Auto-sync do Draw removido intencionalmente.
     // O Draw agora é usado APENAS para criação de novos polígonos (draw_polygon) e exclusão (trash).
@@ -365,7 +358,7 @@ const FarmMap: React.FC<FarmMapProps> = ({
     };
 
     return (
-        <div className="relative w-full h-full z-0" style={{ touchAction: 'none', userSelect: 'none' }}>
+        <div ref={containerRef} className="relative w-full h-full z-0" style={{ touchAction: 'none', userSelect: 'none' }}>
             <Map
                 cursor={cursor}
                 initialViewState={{
@@ -384,20 +377,22 @@ const FarmMap: React.FC<FarmMapProps> = ({
                 doubleClickZoom={!isDrawingMode}
                 interactiveLayerIds={['talhoes-fill']}
             >
-            <MapDrawControl
-                position="top-left"
-                displayControlsDefault={false}
-                controls={{
-                    polygon: false, // Hidden native controls per USER request
-                    trash: false
-                }}
-                defaultMode="simple_select"
-                getDrawInstance={setDrawInstance}
-                onCreate={onDrawCreate}
-                onUpdate={onDrawUpdate}
-                onDelete={onDrawDelete}
-                onModeChange={handleModeChange}
-            />
+            {isDrawingMode && (
+                <MapDrawControl
+                    position="top-left"
+                    displayControlsDefault={false}
+                    controls={{
+                        polygon: false, // Hidden native controls per USER request
+                        trash: false
+                    }}
+                    defaultMode="draw_polygon"
+                    getDrawInstance={setDrawInstance}
+                    onCreate={onDrawCreate}
+                    onUpdate={onDrawUpdate}
+                    onDelete={onDrawDelete}
+                    onModeChange={handleModeChange}
+                />
+            )}
             <Source id="talhoes-source" type="geojson" data={geojsonData}>
                 {/* Layer de Preenchimento — Data-Driven Styling (sem filtro excludente) */}
                 <Layer
