@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
+	"github.com/thebrunm97/pmo-bot-go/internal/weather"
 	"github.com/thebrunm97/pmo-bot-go/internal/webhook"
 	"github.com/thebrunm97/pmo-bot-go/internal/whatsapp"
 )
@@ -163,6 +165,25 @@ func main() {
 		}
 	}()
 
+	// --- Weather Fetch goroutine (every 3 hours) ---
+	weatherAPIKey := os.Getenv("WEATHER_API_KEY")
+	if weatherAPIKey == "" {
+		log.Println("⚠️ WEATHER_API_KEY não definida — rotina de clima desabilitada")
+	} else {
+		go func() {
+			// Start loop with small initial delay
+			time.Sleep(10 * time.Second)
+			weather.RunWeatherCronJob(context.Background(), sbClient, weatherAPIKey)
+
+			ticker := time.NewTicker(3 * time.Hour)
+			defer ticker.Stop()
+
+			for range ticker.C {
+				weather.RunWeatherCronJob(context.Background(), sbClient, weatherAPIKey)
+			}
+		}()
+	}
+
 	// --- Start ---
 	log.Printf("🚀 PMO-Bot-Go v0.11.5 listening on 0.0.0.0:%s", port)
 	if err := r.Run("0.0.0.0:" + port); err != nil {
@@ -196,3 +217,4 @@ func sendHeartbeat(session string, wp *whatsapp.Client, sb *supabase.Client) {
 		log.Printf("💓 Heartbeat: %s", status)
 	}
 }
+
