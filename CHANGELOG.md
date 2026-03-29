@@ -1,6 +1,12 @@
 # Changelog
 Este arquivo documenta as mudanças importantes e refatorações realizadas no Pmo Bot Go Backend e Frontend AgTech.
 
+## [0.13.2] - 2026-03-29 - Map Interaction Restore (Plan G)
+### Fixed
+- **Map Interaction Restore (Plan G)**: Refatoração estrutural com `MapProvider` e `MapInteractionHandler` para garantir contexto de hook e detecção de toques em toda a árvore do mapa.
+- **Unified Pointer System**: Implementação de sistema unificado de eventos (`PointerEvent`) para garantir paridade 1:1 entre cliques de mouse e toques mobile, removendo a necessidade de listeners nativos e melhorando a performance.
+- **Conditional Drawing Logic**: Unmount automático do `MapDrawControl` quando não está em modo de edição, eliminando o bug de interceptação de eventos (`stopPropagation`) do `mapbox-gl-draw`.
+
 ## [0.13.1] - 2026-03-29 - AgTech Pro Weather Integration & Bento Grid UI
 ### Added
 - **Worker Pool & Batch Inserts**: Implementação de arquitetura corporativa concorrente (`internal/weather/job.go`) com N workers para buscar dados meteorológicos paralelamente, consolidando em um `Bulk Insert` assíncrono no Supabase.
