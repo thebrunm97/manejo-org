@@ -758,28 +758,20 @@ func (s *Server) handleRegistrarColheita(args map[string]interface{}) (interface
 	talhao := sanitize(args["talhao"])
 	cultura := sanitize(args["cultura"])
 
-	rpcArgs := map[string]interface{}{
-		"pmo_id_arg":             pmoID,
-		"user_id_arg":            userID,
-		"atividade_arg":          "Colheita",
-		"data_arg":               data,
-		"produto_arg":            cultura,
-		"quantidade_valor_arg":   qtd,
-		"quantidade_unidade_arg": unidade,
-		"talhao_nome_arg":        talhao,
-		"canteiros_arg":          []string{}, // RPC handles decomposition if needed
-		"detalhes_arg": map[string]interface{}{
-			"destino_inicial": sanitize(args["destino_inicial"]),
+	resp, err := s.supabase.RegistrarOperacaoCampoRPC(context.Background(), map[string]interface{}{
+		"pmo_id_arg":  pmoID,
+		"user_id_arg": userID,
+		"tipo_arg":    "Colheita",
+		"payload_arg": map[string]interface{}{
+			"data":                data,
+			"produto":             cultura,
+			"quantidade_valor":    qtd,
+			"quantidade_unidade":  unidade,
+			"talhao_nome":         talhao,
+			"destino_inicial":     sanitize(args["destino_inicial"]),
+			"observacao_original": fmt.Sprintf("Colheita de %s registrada via MCP Tool.", cultura),
 		},
-	}
-
-	if cultura == "" || qtd <= 0 || talhao == "" {
-		return "ERRO: Cultura, talhão e quantidade são obrigatórios para a colheita.", nil
-	}
-
-	log.Printf("🧺 [MCP-TOOL] Chamando RPC para colheita de '%s' no talhão '%s'", cultura, talhao)
-
-	resp, err := s.supabase.RegistrarAtividadeRPC(context.Background(), rpcArgs)
+	})
 	if err != nil {
 		return fmt.Sprintf("Erro ao registrar colheita via RPC: %v", err), nil
 	}
@@ -812,28 +804,21 @@ func (s *Server) handleRegistrarVenda(args map[string]interface{}) (interface{},
 	produto := sanitize(args["produto"])
 	cliente := sanitize(args["cliente"])
 
-	rpcArgs := map[string]interface{}{
-		"pmo_id_arg":             pmoID,
-		"user_id_arg":            userID,
-		"atividade_arg":          "Venda",
-		"data_arg":               data,
-		"produto_arg":            produto,
-		"quantidade_valor_arg":   qtd,
-		"quantidade_unidade_arg": unidade,
-		"fornecedor_arg":         cliente, // No banco Venda usa fornecedor para o cliente
-		"detalhes_arg": map[string]interface{}{
-			"destinacao":     sanitize(args["destinacao"]),
-			"valor_unitario": valorUnit,
+	resp, err := s.supabase.RegistrarOperacaoCampoRPC(context.Background(), map[string]interface{}{
+		"pmo_id_arg":  pmoID,
+		"user_id_arg": userID,
+		"tipo_arg":    "Venda",
+		"payload_arg": map[string]interface{}{
+			"data":                data,
+			"produto":             produto,
+			"quantidade_valor":    qtd,
+			"quantidade_unidade":  unidade,
+			"fornecedor":          cliente,
+			"destinacao":          sanitize(args["destinacao"]),
+			"valor_unitario":      valorUnit,
+			"observacao_original": fmt.Sprintf("Venda de %s para %s registrada via MCP Tool.", produto, cliente),
 		},
-	}
-
-	if produto == "" || qtd <= 0 {
-		return "ERRO: Produto e quantidade são obrigatórios para registrar a venda/saída.", nil
-	}
-
-	log.Printf("💰 [MCP-TOOL] Chamando RPC para saída/venda de '%s' para '%s'", produto, cliente)
-
-	resp, err := s.supabase.RegistrarAtividadeRPC(context.Background(), rpcArgs)
+	})
 	if err != nil {
 		return fmt.Sprintf("Erro ao registrar venda via RPC: %v", err), nil
 	}
