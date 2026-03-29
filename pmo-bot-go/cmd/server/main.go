@@ -129,6 +129,7 @@ func main() {
 	}
 
 	r := gin.New()
+	r.Use(gin.Logger())   // Log incoming requests
 	r.Use(gin.Recovery()) // Recover from panics without crashing
 
 	// --- Initialize TTS Orchestrator ---
