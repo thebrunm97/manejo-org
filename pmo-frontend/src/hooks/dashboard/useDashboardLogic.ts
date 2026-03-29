@@ -19,9 +19,7 @@ export interface DashboardData {
   userProfile: { telefone?: string } | null;
 }
 
-// Coordenadas padrão (Araguari, MG) - Fallback
-const DEFAULT_LAT = -18.900582;
-const DEFAULT_LON = -48.25088;
+// Geolocalização não é mais necessária (Clima via Supabase backend)
 
 export function useDashboardLogic() {
   const { user, profile } = useAuth();
@@ -42,26 +40,7 @@ export function useDashboardLogic() {
   const [isLoading, setIsLoading] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
 
-  // Função auxiliar para obter localização (Promise-based)
-  const getCoordinates = () => {
-    return new Promise<{ lat: number; lng: number }>((resolve) => {
-      if (!navigator.geolocation) {
-        resolve({ lat: DEFAULT_LAT, lng: DEFAULT_LON });
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        },
-        (err) => {
-          console.warn("Geolocalização negada ou falhou, usando padrão.", err);
-          resolve({ lat: DEFAULT_LAT, lng: DEFAULT_LON });
-        },
-        { timeout: 5000 }, // Timeout curto para não travar o load
-      );
-    });
-  };
+  // Geolocalização removida: o clima agora vem do Supabase via background Cron do PMO
 
 
 
@@ -76,20 +55,6 @@ export function useDashboardLogic() {
     setDataError(null);
 
     try {
-      // FIRE AND FORGET WEATHER FETCH: does not block the main dashboard load
-      const loadWeatherAsync = async () => {
-        try {
-          console.log("DashboardLogic: Requesting Coordinates (Background)...");
-          const coords = await getCoordinates();
-          console.log("DashboardLogic: Requesting Weather (Background)...");
-          const weather = await getCurrentWeather(coords.lat, coords.lng);
-          setData((prev) => ({ ...prev, weather }));
-        } catch (e) {
-          console.warn("DashboardLogic: Weather fetch failed silently", e);
-        }
-      };
-      loadWeatherAsync();
-
       // Passo 1: O Perfil já foi injetado pelo AuthContext
       const userTelefone = profile?.telefone;
 
@@ -110,6 +75,18 @@ export function useDashboardLogic() {
           dashboardService.fetchHarvestSummary(pmoId),
           dashboardService.fetchLastActivity(pmoId)
         ]);
+
+        // FIRE AND FORGET WEATHER FETCH: Using pmoId from profile
+        const loadWeatherAsync = async (id: string) => {
+          try {
+            console.log("DashboardLogic: Requesting Weather from Supabase (Background)...");
+            const weather = await getCurrentWeather(id);
+            setData((prev) => ({ ...prev, weather }));
+          } catch (e) {
+            console.warn("DashboardLogic: Weather fetch failed silently", e);
+          }
+        };
+        loadWeatherAsync(pmoId);
 
         if (pmoResult.success && pmoResult.data) {
           pmoName = pmoResult.data.nome_identificador;
