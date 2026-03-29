@@ -7,18 +7,27 @@ O formato baseia-se no [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0
 ## [Unreleased]
 
 ### 🚀 Added
-- **Compras (Formulário 06)**: Novo módulo E2E para registro de Compras de Insumos. Integração frontend na aba \`ComprasTab\` com submissão off-line ready. Nova ferramenta MCP \`registrar_compra_insumo\` inclusa no backend para captura via WhatsApp.
+- **Compras (Formulário 06)**: Novo módulo E2E para registro de Compras de Insumos. Integração frontend na aba `ComprasTab` com submissão off-line ready. Nova ferramenta MCP `registrar_compra_insumo` inclusa no backend para captura via WhatsApp.
+- **Inteligência de Limpeza**: Atualização de regras de extração no `system_prompt.md` (item de área, produto, dosagem) garantindo liberação imediata da entidade para registros do Formulário 04.
 
-## [0.12.0] - 2026-03-20
+## [0.13.0] - 2026-03-28
 
 ### 🚀 Added
-- **AI Tools (Form 04 & Sections 8/9)**: Novas ferramentas MCP para automatizar registros de Limpeza, Propagação e Insumos.
-- **Session-Level Mutex**: Implementação de `sync.Map` para gerenciar concorrência por sessão de usuário.
-- **Message Deduplication**: Deduplicador de IDs de mensagem para evitar processamento redundante de webhooks.
+- **RPCs de Banco de Dados**: Adoção de `criar_infraestrutura_pmo`, `rpc_registrar_compra_insumo`, e `rpc_registrar_operacao_campo`.
+- **Atomicidade Garantida**: Resolução automática de IDs (Talhões, Canteiros) diretamente via PL/pgSQL.
 
 ### 🛠 Refactored / Fixed
-- **FSM Context Management**: Introdução de timeouts de 90s/30s e propagação segura de `context.Context`.
-- **Supabase Mapping**: Suporte robusto para mapeamento JSONB de detalhes técnicos via Go client.
+- **Thin Backend**: Remoção massiva de inserções iterativas Go, delegando transações para o PostgreSQL de forma declarativa.
+
+## [0.12.0] - 2026-03-27
+
+### 🚀 Added
+- **Router LLM**: Orquestrador de intenções inteligente para FSM vs RAG.
+- **Sanitizador UI**: Correção de artefatos markdown antes do encaminhamento à API WhatsApp.
+- **Security Middlewares**: Fallbacks e validações de timeout (90s) contra processamento fantasma.
+
+### 🛠 Refactored / Fixed
+- **FSM Context Management**: Introdução pragmática do `LoopGuard` para travar intenções repetitivas.
 
 ## [v0.11.5] - 2026-03-19
 

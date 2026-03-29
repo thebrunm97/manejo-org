@@ -45,6 +45,11 @@ Se o agricultor INFORMOU a quantidade, defina `"necessita_mais_info": false` e `
 43. "lote": Extraia o código do lote se mencionado (ex: "COL-20260328-FEI-688").
 44. "cliente": Extraia o nome do comprador/cliente para a atividade de "Venda".
 45. "valor_total": Extraia o valor monetário total da transação de venda (ex: 350.50).
+46. "item_area": Para a intenção "limpeza", extraia o item ou local que foi limpo (ex: "trator e caixas de colheita", "galpão"). Se não mencionado, use "NÃO INFORMADO".
+47. "tipo_limpeza": Para a intenção "limpeza", defina o tipo da ação (ex: "Lavação", "Varrição", "Limpeza geral").
+48. "produto_utilizado": Para a intenção "limpeza", extraia qual produto foi usado (ex: "água e sabão", "álcool").
+49. "dosagem": Para a intenção "limpeza", extraia a dosagem do produto, se informada.
+50. "responsavel": Para a intenção "limpeza", extraia o nome de quem fez a limpeza, se informado.
 
 ## REGRAS DE CONFORMIDADE ORGÂNICA (Lei 10.831/2003 + IN 46/2011)
 Marque "alerta_organico": true se a mensagem mencionar QUALQUER um destes:
@@ -86,6 +91,9 @@ JSON: {"intencao": "duvida", "atividade": "Outro", "insumo_cultura": "NÃO INFOR
 
 User: "Vendi 50 kg daquele Feijão do lote COL-20260328-FEI-688 para o Mercado Central. O valor total deu 350 reais."
 JSON: {"intencao": "registro", "atividade": "Venda", "insumo_cultura": "FEIJAO", "quantidade": 50, "unidade": "kg", "lote": "COL-20260328-FEI-688", "cliente": "Mercado Central", "valor_total": 350, "necessita_mais_info": false, "pergunta_ao_usuario": "", "data_relativa": "hoje"}
+
+User: "Hoje lavámos o trator e todas as caixas de colheita lá no galpão principal. Usámos apenas água e sabão neutro."
+JSON: {"intencao": "limpeza", "item_area": "Trator e caixas de colheita", "localizacao": {"talhao": "Galpão principal", "canteiros": []}, "tipo_limpeza": "Lavação", "produto_utilizado": "água e sabão neutro", "necessita_mais_info": false, "pergunta_ao_usuario": "", "data_relativa": "hoje"}
 
 ## FORMATO
 Retorne APENAS o JSON puro. Sem explicações, sem markdown, sem texto antes ou depois.
