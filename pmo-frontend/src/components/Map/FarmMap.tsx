@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import Map, { Source, Layer, Marker, useMap, NavigationControl } from 'react-map-gl/maplibre';
 import centerOfMass from '@turf/center-of-mass';
 import { polygon } from '@turf/helpers';
@@ -126,8 +126,8 @@ const FarmMap: React.FC<FarmMapProps> = ({
     finishDrawingTrigger = 0,
     trashDrawingTrigger = 0
 }) => {
-    const [cursor, setCursor] = React.useState<string | undefined>(undefined);
-    const [drawInstance, setDrawInstance] = React.useState<MapboxDraw | null>(null);
+    const [cursor, setCursor] = useState<string | undefined>(undefined);
+    const [drawInstance, setDrawInstance] = useState<MapboxDraw | null>(null);
 
     // Efeito para ativar modo de desenho programaticamente
     useEffect(() => {
@@ -175,17 +175,60 @@ const FarmMap: React.FC<FarmMapProps> = ({
         // 1. Immediate trigger on state change
         performResize();
 
-        // 2. Window-level listeners for absolute sync (orientation change, zoom, etc.)
+        // 2. Native Event Listeners (Plan B: bypass React synthetic events for touch reliability)
+        const handleNativeEvent = (e: any) => {
+            if (isDrawingMode) return;
+            
+            // Log target and point for remote debugging
+            console.log(`📍 [FarmMap] Native ${e.type} at:`, e.point);
+            
+            const tolerance = 20; // 20px tolerance for mobile/fat-finger
+            const bbox: [maplibregl.PointLike, maplibregl.PointLike] = [
+                [e.point.x - tolerance, e.point.y - tolerance],
+                [e.point.x + tolerance, e.point.y + tolerance]
+            ];
+            
+            if (mapInstance) {
+                const features = mapInstance.queryRenderedFeatures(bbox, {
+                    layers: ['talhoes-fill']
+                });
+                
+                if (features && features.length > 0 && onTalhaoClick) {
+                    const feature = features[0];
+                    const talhaoId = feature.properties?.id;
+                    console.log('✅ [FarmMap] Plot Detected:', talhaoId);
+                    const talhao = talhoes.find(t => String(t.id) === String(talhaoId));
+                    if (talhao) {
+                        onTalhaoClick(talhao);
+                    }
+                } else {
+                    console.log('❌ [FarmMap] No plot detected at interaction point');
+                }
+            }
+        };
+
+        if (mapInstance) {
+            mapInstance.on('click', handleNativeEvent);
+            // We also listen to touchstart to see if it triggers faster
+            mapInstance.on('touchstart', (e) => {
+                console.log('👉 [FarmMap] Native touchstart detected');
+            });
+        }
+
+        // 3. Window-level listeners for absolute sync (orientation change, zoom, etc.)
         window.addEventListener('resize', performResize);
         window.addEventListener('load', performResize);
 
         return () => {
             cancelAnimationFrame(frame1);
             cancelAnimationFrame(frame2);
+            if (mapInstance) {
+                mapInstance.off('click', handleNativeEvent);
+            }
             window.removeEventListener('resize', performResize);
             window.removeEventListener('load', performResize);
         };
-    }, [isDrawerOpen, isDrawingMode, mapInstance]);
+    }, [isDrawerOpen, isDrawingMode, mapInstance, talhoes, onTalhaoClick]);
 
     // NOTA: Auto-sync do Draw removido intencionalmente.
     // O Draw agora é usado APENAS para criação de novos polígonos (draw_polygon) e exclusão (trash).
@@ -212,7 +255,7 @@ const FarmMap: React.FC<FarmMapProps> = ({
                         },
                         geometry
                     };
-                } catch (e) {
+                } catch {
                     return null;
                 }
             })
@@ -267,7 +310,7 @@ const FarmMap: React.FC<FarmMapProps> = ({
     };
 
     return (
-        <div className="relative w-full h-full z-0">
+        <div className="relative w-full h-full z-0" style={{ touchAction: 'none', userSelect: 'none' }}>
             <Map
                 cursor={cursor}
                 initialViewState={{
@@ -284,36 +327,6 @@ const FarmMap: React.FC<FarmMapProps> = ({
                 boxZoom={!isDrawingMode}
                 dragRotate={!isDrawingMode}
                 doubleClickZoom={!isDrawingMode}
-                onClick={(e) => {
-                    if (isDrawingMode) return;
-                    
-                    // console.log('DEBUG: Map Clicked', e.point, e.lngLat);
-                    
-                    // Robust feature detection: Prefer e.features (populated by interactiveLayerIds)
-                    // Fallback to manual queryRenderedFeatures with bbox tolerance for mobile
-                    let clickedFeatures = e.features;
-                    
-                    if ((!clickedFeatures || clickedFeatures.length === 0) && e.target) {
-                        const tolerance = 12; // 12px tolerance for mobile/fat-finger
-                        const bbox: [maplibregl.PointLike, maplibregl.PointLike] = [
-                            [e.point.x - tolerance, e.point.y - tolerance],
-                            [e.point.x + tolerance, e.point.y + tolerance]
-                        ];
-                        clickedFeatures = e.target.queryRenderedFeatures(bbox, {
-                            layers: ['talhoes-fill']
-                        });
-                    }
-                    
-                    if (clickedFeatures && clickedFeatures.length > 0 && onTalhaoClick) {
-                        const feature = clickedFeatures[0];
-                        const talhaoId = feature.properties?.id;
-                        // console.log('DEBUG: Plot Detected', talhaoId);
-                        const talhao = talhoes.find(t => String(t.id) === String(talhaoId));
-                        if (talhao) {
-                            onTalhaoClick(talhao);
-                        }
-                    }
-                }}
                 interactiveLayerIds={['talhoes-fill']}
             >
             <MapDrawControl
