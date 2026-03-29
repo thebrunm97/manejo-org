@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect, useState } from 'react';
-import Map, { Source, Layer, Marker, useMap, NavigationControl } from 'react-map-gl/maplibre';
+import Map, { Source, Layer, Marker, useMap, NavigationControl, MapProvider } from 'react-map-gl/maplibre';
 import centerOfMass from '@turf/center-of-mass';
 import { polygon } from '@turf/helpers';
 import MapboxDraw from '@mapbox/mapbox-gl-draw';
@@ -14,9 +14,6 @@ interface GeoJSONData {
 }
 
 import MapDrawControl from './MapDrawControl';
-
-
-
 
 interface FarmMapProps {
     talhoes: Talhao[];
@@ -42,7 +39,10 @@ const getCropColor = (cultura?: string): string => {
     return '#38BDF8';
 };
 
-// Hook Interno para Controle de Zoom/Bounds (Equivalente ao MapController)
+/**
+ * COMPONENTE: MapController
+ * Sincroniza zoom e enquadramento (bounds) com base nos talhões ou alvo em foco.
+ */
 const MapController: React.FC<{ talhoes: Talhao[], focusTarget?: Talhao | null, isDrawerOpen?: boolean }> = ({ talhoes, focusTarget, isDrawerOpen }) => {
     const { current: map } = useMap();
 
@@ -114,71 +114,35 @@ const MapController: React.FC<{ talhoes: Talhao[], focusTarget?: Talhao | null, 
     return null;
 };
 
-const FarmMap: React.FC<FarmMapProps> = ({
-    talhoes = [],
-    focusTarget,
-    selectedTalhaoId,
-    onTalhaoClick,
-    onDrawCreate,
-    onDrawUpdate,
-    onDrawDelete,
-    isDrawerOpen,
-    isDrawingMode = false,
-    finishDrawingTrigger = 0,
-    trashDrawingTrigger = 0
-}) => {
-    const isMobile = useIsMobile();
-    const [cursor, setCursor] = useState<string | undefined>(undefined);
-    const [drawInstance, setDrawInstance] = useState<MapboxDraw | null>(null);
-    const containerRef = React.useRef<HTMLDivElement>(null);
-
-    // Efeito para ativar modo de desenho programaticamente
-    useEffect(() => {
-        if (isDrawingMode && drawInstance) {
-            drawInstance.changeMode('draw_polygon');
-            setCursor('crosshair');
-        } else if (!isDrawingMode && drawInstance) {
-            drawInstance.changeMode('simple_select');
-            setCursor(undefined);
-        }
-    }, [isDrawingMode, drawInstance]);
-
-    // Efeito para desfazer último ponto (trash)
-    useEffect(() => {
-        if (trashDrawingTrigger && drawInstance) {
-            drawInstance.trash();
-        }
-    }, [trashDrawingTrigger, drawInstance]);
-
-    // Efeito para finalizar desenho via trigger externo
-    useEffect(() => {
-        if (finishDrawingTrigger > 0 && drawInstance && isDrawingMode) {
-            drawInstance.changeMode('simple_select');
-        }
-    }, [finishDrawingTrigger, drawInstance, isDrawingMode]);
-
-    // --- WebGL Deep Sync: coordinate-drift protection ---
+/**
+ * COMPONENTE: MapInteractionHandler (PLAN G)
+ * Gerencia listeners de pointer events e resize internos, com acesso total ao hook useMap().
+ */
+const MapInteractionHandler: React.FC<{
+    containerRef: React.RefObject<HTMLDivElement>,
+    isMobile: boolean,
+    isDrawingMode: boolean,
+    talhoes: Talhao[],
+    onTalhaoClick?: (t: Talhao) => void,
+    isDrawerOpen?: boolean
+}> = ({ containerRef, isMobile, isDrawingMode, talhoes, onTalhaoClick, isDrawerOpen }) => {
     const { current: mapInstance } = useMap();
+
     useEffect(() => {
         if (!mapInstance) return;
 
-        // Use requestAnimationFrame (double) to ensure sync with browser's render cycle
-        let frame1: number;
-        let frame2: number;
+        console.log("🛠️ [MapInteractionHandler] Unified Bridge active for Map instance.");
 
+        // Coordinate-drift protection on mount/resize
         const performResize = () => {
-            frame1 = requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
                 mapInstance.resize();
-                frame2 = requestAnimationFrame(() => {
-                    mapInstance.resize();
-                });
+                requestAnimationFrame(() => mapInstance.resize());
             });
         };
-
-        // 1. Immediate trigger on state change
         performResize();
 
-        // 2. Window-Level Pointer Spy (The "Ultimate Proof")
+        // Window-Level Pointer Spy
         const onWindowPointerDown = (e: PointerEvent) => {
             if (e.pointerType === 'touch') {
                 console.log('🕵️ [WINDOW] Global RAW Touch detected');
@@ -186,10 +150,10 @@ const FarmMap: React.FC<FarmMapProps> = ({
         };
         window.addEventListener('pointerdown', onWindowPointerDown, { capture: true, passive: true });
 
-        // 3. Container-Level Interaction Logic (Plan F: Unified Pointer System)
+        // Container-Level Interaction Logic
         const container = containerRef.current;
-        const canvas = mapInstance?.getCanvas();
-        if (!container || !canvas || !mapInstance) return;
+        const canvas = mapInstance.getCanvas();
+        if (!container || !canvas) return;
 
         let lastPointerId: number | null = null;
         let pointerStartPoint: { x: number, y: number } | null = null;
@@ -213,13 +177,13 @@ const FarmMap: React.FC<FarmMapProps> = ({
             if (features && features.length > 0 && onTalhaoClick) {
                 const feature = features[0];
                 const talhaoId = feature.properties?.id;
-                console.log('✅ [FarmMap] Plot Detected via Unified:', talhaoId);
+                console.log('✅ [FarmMap] Plot Detected:', talhaoId);
                 const talhao = talhoes.find(t => String(t.id) === String(talhaoId));
                 if (talhao) {
                     onTalhaoClick(talhao);
                 }
             } else {
-                console.log('❌ [FarmMap] No plot detected via Unified at:', point);
+                console.log('❌ [FarmMap] No plot detected at:', point);
             }
         };
 
@@ -267,8 +231,6 @@ const FarmMap: React.FC<FarmMapProps> = ({
         window.addEventListener('load', onWindowResize);
 
         return () => {
-            cancelAnimationFrame(frame1);
-            cancelAnimationFrame(frame2);
             window.removeEventListener('pointerdown', onWindowPointerDown, { capture: true });
             container.removeEventListener('pointerdown', onPointerDown, { capture: true });
             container.removeEventListener('pointermove', onPointerMove, { capture: true });
@@ -276,11 +238,53 @@ const FarmMap: React.FC<FarmMapProps> = ({
             window.removeEventListener('resize', onWindowResize);
             window.removeEventListener('load', onWindowResize);
         };
-    }, [isDrawerOpen, isDrawingMode, mapInstance, talhoes, onTalhaoClick, isMobile]);
+    }, [isDrawerOpen, isDrawingMode, mapInstance, talhoes, onTalhaoClick, isMobile, containerRef]);
 
-    // NOTA: Auto-sync do Draw removido intencionalmente.
-    // O Draw agora é usado APENAS para criação de novos polígonos (draw_polygon) e exclusão (trash).
-    // A seleção visual é controlada por Data-Driven Styling nas camadas base do MapLibre.
+    return null;
+}
+
+const FarmMap: React.FC<FarmMapProps> = ({
+    talhoes = [],
+    focusTarget,
+    selectedTalhaoId,
+    onTalhaoClick,
+    onDrawCreate,
+    onDrawUpdate,
+    onDrawDelete,
+    isDrawerOpen,
+    isDrawingMode = false,
+    finishDrawingTrigger = 0,
+    trashDrawingTrigger = 0
+}) => {
+    const isMobile = useIsMobile();
+    const [cursor, setCursor] = useState<string | undefined>(undefined);
+    const [drawInstance, setDrawInstance] = useState<MapboxDraw | null>(null);
+    const containerRef = React.useRef<HTMLDivElement>(null);
+
+    // Efeito para ativar modo de desenho programaticamente
+    useEffect(() => {
+        if (isDrawingMode && drawInstance) {
+            drawInstance.changeMode('draw_polygon');
+            setCursor('crosshair');
+        } else if (!isDrawingMode && drawInstance) {
+            drawInstance.changeMode('simple_select');
+            setCursor(undefined);
+        }
+    }, [isDrawingMode, drawInstance]);
+
+    // Efeito para desfazer último ponto (trash)
+    useEffect(() => {
+        if (trashDrawingTrigger && drawInstance) {
+            drawInstance.trash();
+        }
+    }, [trashDrawingTrigger, drawInstance]);
+
+    // Efeito para finalizar desenho via trigger externo
+    useEffect(() => {
+        if (finishDrawingTrigger > 0 && drawInstance && isDrawingMode) {
+            drawInstance.changeMode('simple_select');
+        }
+    }, [finishDrawingTrigger, drawInstance, isDrawingMode]);
 
     // 1. Converter talhões para GeoJSON FeatureCollection (WebGL Native)
     const geojsonData = useMemo<GeoJSONData>(() => {
@@ -325,7 +329,6 @@ const FarmMap: React.FC<FarmMapProps> = ({
                 
                 let coords = geo.coordinates[0];
                 
-                // Garantir que o polígono está fechado para o Turf (primeiro ponto == último ponto)
                 const first = coords[0];
                 const last = coords[coords.length - 1];
                 if (first[0] !== last[0] || first[1] !== last[1]) {
@@ -359,127 +362,136 @@ const FarmMap: React.FC<FarmMapProps> = ({
 
     return (
         <div ref={containerRef} className="relative w-full h-full z-0" style={{ touchAction: 'none', userSelect: 'none' }}>
-            <Map
-                cursor={cursor}
-                initialViewState={{
-                    longitude: -48.2772,
-                    latitude: -18.9186,
-                    zoom: 15
-                }}
-                style={{ width: '100%', height: '100%' }}
-                mapStyle={ESRI_SATELLITE_STYLE as any}
-                // LOCK INTERACTION ON DRAWING MODE (Mobile-First Fix)
-                dragPan={!isDrawingMode}
-                touchZoomRotate={!isDrawingMode}
-                scrollZoom={!isDrawingMode}
-                boxZoom={!isDrawingMode}
-                dragRotate={!isDrawingMode}
-                doubleClickZoom={!isDrawingMode}
-                interactiveLayerIds={['talhoes-fill']}
-            >
-            {isDrawingMode && (
-                <MapDrawControl
-                    position="top-left"
-                    displayControlsDefault={false}
-                    controls={{
-                        polygon: false, // Hidden native controls per USER request
-                        trash: false
+            <MapProvider>
+                <Map
+                    cursor={cursor}
+                    initialViewState={{
+                        longitude: -48.2772,
+                        latitude: -18.9186,
+                        zoom: 15
                     }}
-                    defaultMode="draw_polygon"
-                    getDrawInstance={setDrawInstance}
-                    onCreate={onDrawCreate}
-                    onUpdate={onDrawUpdate}
-                    onDelete={onDrawDelete}
-                    onModeChange={handleModeChange}
-                />
-            )}
-            <Source id="talhoes-source" type="geojson" data={geojsonData}>
-                {/* Layer de Preenchimento — Data-Driven Styling (sem filtro excludente) */}
-                <Layer
-                    id="talhoes-fill"
-                    type="fill"
-                    paint={{
-                        'fill-color': [
-                            'coalesce', 
-                            ['get', 'fillColor'], 
-                            ['get', 'color'], 
-                            '#3bb444'
-                        ],
-                        'fill-opacity': [
-                            'case',
-                            selectedTalhaoId ? ['==', ['get', 'id'], selectedTalhaoId] : false,
-                            0.45,
-                            0.18
-                        ]
-                    }}
-                />
-                
-                {/* Layer de Borda — Highlight dinâmico para seleção */}
-                <Layer
-                    id="talhoes-line"
-                    type="line"
-                    paint={{
-                        'line-color': [
-                            'coalesce', 
-                            ['get', 'borderColor'], 
-                            ['get', 'color'], 
-                            '#228b22'
-                        ],
-                        'line-width': [
-                            'case',
-                            selectedTalhaoId ? ['==', ['get', 'id'], selectedTalhaoId] : false,
-                            4,
-                            2
-                        ],
-                        'line-opacity': 1
-                    }}
-                />
-            </Source>
-
-            {/* Pílula HTML — Visível APENAS para o talhão selecionado */}
-            {centroids
-                .filter(c => c && selectedTalhaoId && String(c.id) === String(selectedTalhaoId))
-                .map(c => c && (
-                <Marker 
-                    key={c.id} 
-                    longitude={c.lng} 
-                    latitude={c.lat}
-                    anchor="center"
-                    style={{ pointerEvents: 'none' }}
+                    style={{ width: '100%', height: '100%' }}
+                    mapStyle={ESRI_SATELLITE_STYLE as any}
+                    dragPan={!isDrawingMode}
+                    touchZoomRotate={!isDrawingMode}
+                    scrollZoom={!isDrawingMode}
+                    boxZoom={!isDrawingMode}
+                    dragRotate={!isDrawingMode}
+                    doubleClickZoom={!isDrawingMode}
                 >
-                    <div 
-                        className="map-marker-pill pointer-events-none select-none animate-in fade-in zoom-in-95 duration-300" 
-                        style={{ 
-                            background: 'white', 
-                            border: '1px solid #e4e4e7', 
-                            borderRadius: '12px', 
-                            padding: '6px 12px', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '8px', 
-                            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15)',
-                            width: 'max-content'
-                        }}
-                    >
-                        <div style={{ 
-                            width: '8px', 
-                            height: '8px', 
-                            background: c.talhao.fillColor || c.talhao.cor || getCropColor(c.talhao.cultura), 
-                            borderRadius: '50%' 
-                        }} />
-                        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1.2' }}>
-                            <span style={{ fontWeight: 800, fontSize: 11, color: '#18181b', whiteSpace: 'nowrap' }}>{c.talhao.nome}</span>
-                            <span style={{ fontWeight: 600, fontSize: 10, color: '#71717a', whiteSpace: 'nowrap' }}>{c.talhao.cultura || 'Área Livre'}</span>
-                        </div>
-                    </div>
-                </Marker>
-            ))}
+                    {/* PLAN G: Interaction Handler correctly placed inside context */}
+                    <MapInteractionHandler 
+                        containerRef={containerRef}
+                        isMobile={isMobile}
+                        isDrawingMode={isDrawingMode}
+                        talhoes={talhoes}
+                        onTalhaoClick={onTalhaoClick}
+                        isDrawerOpen={isDrawerOpen}
+                    />
 
-            <MapController talhoes={talhoes} focusTarget={focusTarget} isDrawerOpen={isDrawerOpen} />
-            <NavigationControl position="bottom-left" />
-        </Map>
-    </div>
+                    {/* PLAN F Victory: Conditional rendering of Draw Control */}
+                    {isDrawingMode && (
+                        <MapDrawControl
+                            position="top-left"
+                            displayControlsDefault={false}
+                            controls={{
+                                polygon: false,
+                                trash: false
+                            }}
+                            defaultMode="draw_polygon"
+                            getDrawInstance={setDrawInstance}
+                            onCreate={onDrawCreate}
+                            onUpdate={onDrawUpdate}
+                            onDelete={onDrawDelete}
+                            onModeChange={handleModeChange}
+                        />
+                    )}
+
+                    <Source id="talhoes-source" type="geojson" data={geojsonData}>
+                        <Layer
+                            id="talhoes-fill"
+                            type="fill"
+                            paint={{
+                                'fill-color': [
+                                    'coalesce', 
+                                    ['get', 'fillColor'], 
+                                    ['get', 'color'], 
+                                    '#3bb444'
+                                ],
+                                'fill-opacity': [
+                                    'case',
+                                    selectedTalhaoId ? ['==', ['get', 'id'], selectedTalhaoId] : false,
+                                    0.45,
+                                    0.18
+                                ]
+                            }}
+                        />
+                        <Layer
+                            id="talhoes-line"
+                            type="line"
+                            paint={{
+                                'line-color': [
+                                    'coalesce', 
+                                    ['get', 'borderColor'], 
+                                    ['get', 'color'], 
+                                    '#228b22'
+                                ],
+                                'line-width': [
+                                    'case',
+                                    selectedTalhaoId ? ['==', ['get', 'id'], selectedTalhaoId] : false,
+                                    4,
+                                    2
+                                ],
+                                'line-opacity': 1
+                            }}
+                        />
+                    </Source>
+
+                    {centroids
+                        .filter(c => c && selectedTalhaoId && String(c.id) === String(selectedTalhaoId))
+                        .map(c => c && (
+                        <Marker 
+                            key={c.id} 
+                            longitude={c.lng} 
+                            latitude={c.lat}
+                            anchor="center"
+                            style={{ pointerEvents: 'none' }}
+                        >
+                            <div 
+                                className="map-marker-pill pointer-events-none select-none animate-in fade-in zoom-in-95 duration-300" 
+                                style={{ 
+                                    background: 'white', 
+                                    border: '1px solid #e4e4e7', 
+                                    borderRadius: '12px', 
+                                    padding: '6px 12px', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    gap: '8px', 
+                                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15)',
+                                    width: 'max-content'
+                                }}
+                            >
+                                <div style={{ 
+                                    width: '8px', 
+                                    height: '8px', 
+                                    background: c.talhao.fillColor || c.talhao.cor || getCropColor(c.talhao.cultura), 
+                                    borderRadius: '50%' 
+                                }} />
+                                <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1.2' }}>
+                                    <span style={{ fontWeight: 800, fontSize: 11, color: '#18181b', whiteSpace: 'nowrap' }}>{c.talhao.nome}</span>
+                                    <span style={{ fontWeight: 600, fontSize: 10, color: '#71717a', whiteSpace: 'nowrap' }}>{c.talhao.cultura || 'Área Livre'}</span>
+                                </div>
+                            </div>
+                        </Marker>
+                    ))}
+
+                    <MapController talhoes={talhoes} focusTarget={focusTarget} isDrawerOpen={isDrawerOpen} />
+                    <NavigationControl position="bottom-left" />
+                </Map>
+            </MapProvider>
+        </div>
     );
 };
 
 export default FarmMap;
+

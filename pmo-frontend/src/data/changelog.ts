@@ -11,6 +11,21 @@ export interface ChangelogEntry {
 
 export const changelogData: ChangelogEntry[] = [
     {
+        version: "0.13.2",
+        date: "29 de Março de 2026",
+        title: "Mapa de volta à velocidade da luz",
+        description: "Consertamos o problema que impedia tocar nos talhões pelo celular e web. Agora o mapa está 100% interativo e inteligente novamente.",
+        sections: [
+            {
+                type: "Fixes",
+                items: [
+                    "Conserto de Toques no Mapa: Resolvemos o erro que 'prendia' o clique do usuário, impedindo a abertura dos detalhes do talhão no mobile.",
+                    "Arquitetura Plan G: Refatoramos a base do mapa para garantir que ele responda instantaneamente em qualquer dispositivo, protegendo a experiência contra interferências visuais."
+                ]
+            }
+        ]
+    },
+    {
         version: "0.13.1",
         date: "29 de Março de 2026",
         title: "Previsão do Tempo Integrada e Novo Painel",
