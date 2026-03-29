@@ -11,6 +11,27 @@ export interface ChangelogEntry {
 
 export const changelogData: ChangelogEntry[] = [
     {
+        version: "0.13.1",
+        date: "29 de Março de 2026",
+        title: "Previsão do Tempo na Medida Certa e Painel Moderno",
+        description: "Adicionamos uma estação meteorológica virtual direta no seu painel para te alertar sobre ventos e chuvas, e de quebra demos um banho de loja no visual da tela inicial.",
+        sections: [
+            {
+                type: "New",
+                items: [
+                    "Estação Meteorológica Autônoma: O robô agora vigia o clima da sua região sozinho e te avisa no painel se o vento tá bom pra pulverizar.",
+                    "Painel Mais Bonito e Inteligente: A tela principal (Dashboard) foi redesenhada no padrão Bento Grid. Tá bem mais fácil de ler as safras e navegar no dia a dia."
+                ]
+            },
+            {
+                type: "Improvements",
+                items: [
+                    "Motor Aberto Pra Muita Gente: A engrenagem do servidor que busca os dados do clima (Piscina de Trabalhadores) opera em lotes. O sistema não engasga mesmo se mil fazendas resolverem atualizar na mesma hora."
+                ]
+            }
+        ]
+    },
+    {
         version: "0.13.0",
         date: "28 de Março de 2026",
         title: "Tudo Salvo Sem Perigo de Erro",
