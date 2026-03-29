@@ -40,11 +40,33 @@ export const useVegetalImportLogic = (pmoId: string | number | undefined, curren
                         'DESCONHECIDO'
                     ).toUpperCase().trim();
 
-                    const localNome = (
+                    const rawLocal = (
                         reg.talhoes?.nome ||
                         (reg.atividades?.[0]?.local) ||
                         'Local não informado'
                     );
+
+                    let localNome = 'Local não informado';
+                    if (typeof rawLocal === 'string') {
+                        localNome = rawLocal;
+                    } else if (typeof rawLocal === 'object' && rawLocal !== null) {
+                        const parts: string[] = [];
+                        if (rawLocal.talhao) parts.push(`Talhão: ${rawLocal.talhao}`);
+                        if (rawLocal.canteiro) parts.push(`Canteiro: ${rawLocal.canteiro}`);
+                        if (rawLocal.linha) parts.push(`Linha: ${rawLocal.linha}`);
+                        
+                        if (parts.length > 0) {
+                            localNome = parts.join(' | ');
+                        } else if (rawLocal._display) {
+                            localNome = String(rawLocal._display);
+                        } else if (rawLocal.talhao_nome || rawLocal.canteiro_nome) {
+                            localNome = `${rawLocal.talhao_nome || '?'} › ${rawLocal.canteiro_nome || '?'}`;
+                        } else {
+                            localNome = 'Local não informado';
+                        }
+                    } else {
+                        localNome = String(rawLocal);
+                    }
 
                     // Desduplicação
                     const jaExiste = currentItems.some(item =>
