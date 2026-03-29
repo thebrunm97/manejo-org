@@ -91,7 +91,7 @@ const WeatherWidget: React.FC<{
 };
 
 const DashboardPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [openRecordDialog, setOpenRecordDialog] = useState(false);
   const [openWhatsappDialog, setOpenWhatsappDialog] = useState(false);
@@ -120,8 +120,8 @@ const DashboardPage: React.FC = () => {
   const saudacao = obterSaudacao();
 
   const getDisplayName = () => {
-    if (userProfile?.nome) {
-      const parts = userProfile.nome.trim().split(/\s+/);
+    if (profile?.nome) {
+      const parts = profile.nome.trim().split(/\s+/);
       if (parts.length === 1) return parts[0];
       return `${parts[0]} ${parts[parts.length - 1]}`;
     }
