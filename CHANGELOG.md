@@ -1,5 +1,15 @@
 # Changelog
-Este arquivo documenta as mudanças importantes e refatorações realizadas no Pmo Bot Go Backend.
+Este arquivo documenta as mudanças importantes e refatorações realizadas no Pmo Bot Go Backend e Frontend AgTech.
+
+## [0.13.1] - 2026-03-29 - AgTech Pro Weather Integration & Bento Grid UI
+### Added
+- **Worker Pool & Batch Inserts**: Implementação de arquitetura corporativa concorrente (`internal/weather/job.go`) com N workers para buscar dados meteorológicos paralelamente, consolidando em um `Bulk Insert` assíncrono no Supabase.
+- **Weather Station Integrada**: Tabela `pmo_clima` criada com histórico meteorológico vinculado ativamente a cada produtor.
+- **Dashboard Bento Grid**: Redesign completo da tela principal (`DashboardPage.tsx`) com nova hierarquia visual, hover states, tipografia moderna e Empty States dinâmicos via `.maybeSingle()`.
+
+### Changed
+- **Geolocalização Autónoma**: O frontend não requisita mais permissão de GPS do navegador; a localização é inferida nativamente da propriedade cadastrada do PMO local.
+- **Refatoração UI/UX**: Pílulas de UI (Badges) injetadas no Card de Plano Atual e no Monitoramento de Colheitas (HarvestDashboard) para adequação e harmonização estética.
 
 ## [0.13.0] - 2026-03-28 - MCP Declarative Architecture
 ### Added
