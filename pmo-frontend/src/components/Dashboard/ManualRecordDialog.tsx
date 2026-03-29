@@ -7,7 +7,7 @@
  * 
  * LATEST FIX: Applied strict structure to fix layout issues (overlay fusing with modal).
  */
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
     Sprout,
     FlaskConical,
@@ -20,7 +20,8 @@ import {
     Recycle,
     ShoppingCart,
     DollarSign,
-    Check
+    Check,
+    ArrowLeft
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useAuthProfile } from '../../context/AuthContext';
@@ -116,29 +117,14 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
     const [justificativa, setJustificativa] = useState('');
     const [openLocation, setOpenLocation] = useState(false);
     
-    // --- Tabs Dragging Logic ---
-    const tabsRef = useRef<HTMLDivElement>(null);
-    const [isDragging, setIsDragging] = useState(false);
-    const [startX, setStartX] = useState(0);
-    const [scrollLeft, setScrollLeft] = useState(0);
+    // --- Wizard State ---
+    const [step, setStep] = useState<1 | 2>(isEditMode ? 2 : 1);
 
-    const handleMouseDown = (e: React.MouseEvent) => {
-        setIsDragging(true);
-        if (tabsRef.current) {
-            setStartX(e.pageX - tabsRef.current.offsetLeft);
-            setScrollLeft(tabsRef.current.scrollLeft);
+    useEffect(() => {
+        if (open) {
+            setStep(isEditMode ? 2 : 1);
         }
-    };
-
-    const handleMouseLeaveOrUp = () => setIsDragging(false);
-
-    const handleMouseMove = (e: React.MouseEvent) => {
-        if (!isDragging || !tabsRef.current) return;
-        e.preventDefault();
-        const x = e.pageX - tabsRef.current.offsetLeft;
-        const walk = (x - startX) * 2; // Scroll speed multiplier
-        tabsRef.current.scrollLeft = scrollLeft - walk;
-    };
+    }, [open, isEditMode]);
 
     // --- Wrapper for updateDraft that clears errors ---
     const updateDraft = useCallback((field: string, value: any) => {
@@ -414,12 +400,6 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
         if (isEditMode && activeTab !== tabId) return;
         
         setActiveTab(tabId as TipoRegistro); 
-        
-        e.currentTarget.scrollIntoView({
-            behavior: 'smooth',
-            block: 'nearest',
-            inline: 'center'
-        });
     };
 
     if (!open) return null;
@@ -434,7 +414,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                 {/* Header */}
                 <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-100">
                     <h3 className="text-xl font-bold text-gray-900" id="modal-title">
-                        {isEditMode ? 'Editar Registro' : 'Novo Registro'}
+                        {isEditMode ? 'Editar Registro' : (step === 1 ? 'Novo Registro' : `Novo Registro > ${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}`)}
                     </h3>
                     <button
                         type="button"
@@ -446,56 +426,47 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                     </button>
                 </div>
 
-                  <div className="bg-white border-b border-gray-100 flex-shrink-0">
-                    <nav 
-                        ref={tabsRef as any}
-                        onMouseDown={handleMouseDown}
-                        onMouseLeave={handleMouseLeaveOrUp}
-                        onMouseUp={handleMouseLeaveOrUp}
-                        onMouseMove={handleMouseMove}
-                        className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth px-10 gap-5 py-4 [&::-webkit-scrollbar]:hidden [mask-image:linear-gradient(to_right,transparent,white_15%,white_85%,transparent)] cursor-grab active:cursor-grabbing select-none" 
-                        aria-label="Tabs" 
-                        role="tablist"
-                    >
-                        {[
-                            { id: 'plantio', label: 'Plantio', icon: Sprout, color: 'text-white', activeBg: 'bg-emerald-600', inactiveBg: 'bg-slate-100' },
-                            { id: 'manejo', label: 'Manejo', icon: FlaskConical, color: 'text-white', activeBg: 'bg-emerald-600', inactiveBg: 'bg-slate-100' },
-                            { id: 'colheita', label: 'Colheita', icon: Scissors, color: 'text-white', activeBg: 'bg-emerald-600', inactiveBg: 'bg-slate-100' },
-                            { id: 'vendas', label: 'Vendas', icon: DollarSign, color: 'text-white', activeBg: 'bg-emerald-600', inactiveBg: 'bg-slate-100' },
-                            { id: 'limpeza', label: 'Limpeza', icon: Sparkles, color: 'text-white', activeBg: 'bg-emerald-600', inactiveBg: 'bg-slate-100' },
-                            { id: 'compostagem', label: 'Composto', icon: Recycle, color: 'text-white', activeBg: 'bg-emerald-600', inactiveBg: 'bg-slate-100' },
-                            { id: 'compras', label: 'Compras', icon: ShoppingCart, color: 'text-white', activeBg: 'bg-emerald-600', inactiveBg: 'bg-slate-100' },
-                            { id: 'outro', label: 'Outro', icon: Package, color: 'text-white', activeBg: 'bg-emerald-600', inactiveBg: 'bg-slate-100' },
-                        ].map((tab) => {
-                            const Icon = tab.icon;
-                            const isActive = activeTab === tab.id;
-                            const disabled = isEditMode && activeTab !== tab.id;
+                {/* --- Step 1: Seleção da Atividade (Wizard Grid) --- */}
+                {step === 1 && (
+                    <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-8 animate-in fade-in duration-300">
+                        <div className="text-center mb-8 mt-4">
+                            <h4 className="text-xl font-bold text-slate-800">Qual atividade você deseja registrar?</h4>
+                            <p className="text-base text-slate-500 mt-1">Toque em uma das opções abaixo</p>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6 px-1 sm:px-4">
+                            {[
+                                { id: 'plantio', label: 'Plantio', icon: Sprout, bgColor: 'bg-emerald-50', textColor: 'text-emerald-700', ringColor: 'hover:ring-emerald-500/50' },
+                                { id: 'manejo', label: 'Manejo', icon: FlaskConical, bgColor: 'bg-blue-50', textColor: 'text-blue-700', ringColor: 'hover:ring-blue-500/50' },
+                                { id: 'colheita', label: 'Colheita', icon: Scissors, bgColor: 'bg-amber-50', textColor: 'text-amber-700', ringColor: 'hover:ring-amber-500/50' },
+                                { id: 'vendas', label: 'Vendas', icon: DollarSign, bgColor: 'bg-green-50', textColor: 'text-green-700', ringColor: 'hover:ring-green-500/50' },
+                                { id: 'limpeza', label: 'Limpeza', icon: Sparkles, bgColor: 'bg-cyan-50', textColor: 'text-cyan-700', ringColor: 'hover:ring-cyan-500/50' },
+                                { id: 'compostagem', label: 'Composto', icon: Recycle, bgColor: 'bg-lime-50', textColor: 'text-lime-700', ringColor: 'hover:ring-lime-500/50' },
+                                { id: 'compras', label: 'Compras', icon: ShoppingCart, bgColor: 'bg-indigo-50', textColor: 'text-indigo-700', ringColor: 'hover:ring-indigo-500/50' },
+                                { id: 'outro', label: 'Outro', icon: Package, bgColor: 'bg-slate-100', textColor: 'text-slate-700', ringColor: 'hover:ring-slate-500/50' },
+                            ].map((tab) => {
+                                const Icon = tab.icon;
+                                return (
+                                    <button
+                                        key={tab.id}
+                                        type="button"
+                                        onClick={(e) => {
+                                            handleTabClick(e, tab.id);
+                                            setStep(2);
+                                        }}
+                                        className={`flex flex-col items-center justify-center p-6 sm:p-8 gap-4 rounded-[28px] cursor-pointer transition-all border-2 border-transparent active:scale-95 hover:shadow-lg ${tab.bgColor} ${tab.textColor} ${tab.ringColor}`}
+                                    >
+                                        <Icon size={44} strokeWidth={1.5} />
+                                        <span className="font-bold text-base tracking-tight">{tab.label}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
 
-                            return (
-                                <button
-                                    key={tab.id}
-                                    role="tab"
-                                    aria-selected={isActive}
-                                    onClick={(e) => handleTabClick(e, tab.id)}
-                                    disabled={disabled}
-                                    className={`
-                                        inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-sm font-bold transition-all duration-200 whitespace-nowrap flex-shrink-0 snap-center scroll-mx-10
-                                        ${isActive
-                                            ? `${tab.activeBg} ${tab.color} shadow-lg shadow-emerald-200`
-                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}
-                                        ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer active:scale-95 active:cursor-grabbing'}
-                                    `}
-                                >
-                                    <Icon size={22} className={isActive ? 'text-white' : 'text-slate-500'} />
-                                    <span>{tab.label}</span>
-                                </button>
-                            );
-                        })}
-                    </nav>
-                </div>
-
-                {/* --- 3. Corpo do Formulário (Scrollable Content) --- */}
-                <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] p-4 md:p-6 pb-8 space-y-6">
+                {/* --- Step 2: Corpo do Formulário (Scrollable Content) --- */}
+                {step === 2 && (
+                    <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] p-4 md:p-6 pb-8 space-y-6 animate-in slide-in-from-right-4 fade-in duration-300">
 
                     {isEditMode && (
                         <div className="bg-amber-50 border-l-4 border-amber-400 p-4 mb-2 rounded-r-md">
@@ -695,36 +666,62 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                     </div>
 
                 </div>
+                )}
 
                 {/* --- 4. Rodapé com Botões (Footer) --- */}
-                <div className="p-4 md:p-6 bg-slate-50/50 border-t border-slate-100 flex flex-col-reverse md:flex-row md:justify-end gap-3 rounded-b-xl">
-                    <button
-                        type="button"
-                        onClick={handleClose}
-                        className="w-full md:w-auto px-6 py-3 rounded-xl font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
-                    >
-                        Cancelar
-                    </button>
-                    <button
-                        type="button"
-                        onClick={handleInitialSaveClick}
-                        disabled={loading}
-                        className={`w-full md:w-auto px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-lg shadow-emerald-200 transition-all active:scale-95 flex items-center justify-center gap-2 group
-                            ${loading ? "opacity-70 cursor-not-allowed" : ""}
-                        `}
-                    >
-                        {loading ? (
-                            <div className="flex items-center justify-center gap-2">
-                                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                <span>Salvando...</span>
+                <div className={`p-4 md:p-6 bg-slate-50/50 border-t border-slate-100 flex flex-col md:flex-row gap-3 rounded-b-xl items-center ${step === 1 && !isEditMode ? 'justify-center' : 'md:justify-between'}`}>
+                    {step === 1 && !isEditMode ? (
+                        <button
+                            type="button"
+                            onClick={handleClose}
+                            className="w-full sm:w-auto px-8 py-3 rounded-xl font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-200 transition-colors"
+                        >
+                            Cancelar
+                        </button>
+                    ) : (
+                        <>
+                            <div className="w-full md:w-auto flex flex-row gap-3 order-2 md:order-1">
+                                {!isEditMode && step === 2 && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setStep(1)}
+                                        className="flex-1 md:flex-none px-4 md:px-6 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-200 transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <ArrowLeft size={20} />
+                                        <span>Voltar</span>
+                                    </button>
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={handleClose}
+                                    className="flex-1 md:flex-none px-4 md:px-6 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-200 transition-colors"
+                                >
+                                    Cancelar
+                                </button>
                             </div>
-                        ) : (
-                            <>
-                                <Check size={18} className="transition-transform group-hover:scale-110" />
-                                <span>{isEditMode ? 'Salvar Edição' : 'Salvar Registro'}</span>
-                            </>
-                        )}
-                    </button>
+                            
+                            <button
+                                type="button"
+                                onClick={handleInitialSaveClick}
+                                disabled={loading}
+                                className={`w-full md:w-auto px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-lg shadow-emerald-200 transition-all active:scale-95 flex items-center justify-center gap-2 group order-1 md:order-2
+                                    ${loading ? "opacity-70 cursor-not-allowed" : ""}
+                                `}
+                            >
+                                {loading ? (
+                                    <div className="flex items-center justify-center gap-2">
+                                        <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        <span>Salvando...</span>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <Check size={20} className="transition-transform group-hover:scale-110" />
+                                        <span>{isEditMode ? 'Salvar Edição' : 'Salvar Registro'}</span>
+                                    </>
+                                )}
+                            </button>
+                        </>
+                    )}
                 </div>
 
             </div>

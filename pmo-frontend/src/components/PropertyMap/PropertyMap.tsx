@@ -11,7 +11,9 @@ import {
     CheckCircle2,
     AlertCircle,
     Loader2,
-    Droplets
+    Droplets,
+    Undo2,
+    Check
 } from 'lucide-react';
 import area from '@turf/area';
 import { useAuthCore } from '../../context/AuthContext';
@@ -63,6 +65,9 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
 
     // Estado para Novo Talhão
     const [createModalOpen, setCreateModalOpen] = useState(false);
+    const [isDrawingMode, setIsDrawingMode] = useState(false);
+    const [finishDrawingTrigger, setFinishDrawingTrigger] = useState(0);
+    const [trashDrawingTrigger, setTrashDrawingTrigger] = useState(0);
     const [pendingTalhao, setPendingTalhao] = useState<{ layer: any, geometry: string, areaM2: number } | null>(null);
     const [newTalhaoData, setNewTalhaoData] = useState({ 
         nome: '', 
@@ -117,6 +122,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
         setViewMode('mapa');
     };
 
+
     // --- CRIAÇÃO DE TALHÃO ---
     const handleDrawCreate = (e: any) => {
         const feature = e.features[0];
@@ -136,12 +142,14 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
             fillColor: '#3bb444',
             borderColor: '#228b22'
         });
+        setIsDrawingMode(false);
         setCreateModalOpen(true);
     };
 
     const handleCancelNewTalhao = () => {
         setCreateModalOpen(false);
         setPendingTalhao(null);
+        setIsDrawingMode(false);
     };
 
     const handleSaveNewTalhao = async () => {
@@ -346,18 +354,87 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
                 {/* MODO MAPA (SATÉLITE) */}
                 {viewMode === 'mapa' && (
                     <div className="h-full w-full relative animate-in zoom-in-95 duration-700">
-                        {/* Wrapper Redondo com Overflow-Hidden (O Mapa fica contido aqui) */}
-                        <div className="absolute inset-0 rounded-[2rem] overflow-hidden shadow-inner bg-slate-200">
-                            <FarmMap
-                                talhoes={talhoes}
-                                focusTarget={selectedTalhao}
-                                selectedTalhaoId={selectedTalhao?.id}
-                                onDrawCreate={handleDrawCreate}
-                                onDrawUpdate={handleDrawUpdate}
-                                onDrawDelete={handleDrawDelete}
-                                onTalhaoClick={(t) => viewMode === 'mapa' && onOpenDrawer(t)}
-                                isDrawerOpen={isDrawerOpen}
-                            />
+                        {/* Wrapper Imersivo (Full Bleed) */}
+                        <div className="absolute inset-0 overflow-hidden bg-slate-200">
+                                <FarmMap
+                                    talhoes={talhoes}
+                                    focusTarget={selectedTalhao}
+                                    selectedTalhaoId={selectedTalhao?.id}
+                                    isDrawingMode={isDrawingMode}
+                                    finishDrawingTrigger={finishDrawingTrigger}
+                                    trashDrawingTrigger={trashDrawingTrigger}
+                                    onDrawCreate={handleDrawCreate}
+                                    onDrawUpdate={handleDrawUpdate}
+                                    onDrawDelete={handleDrawDelete}
+                                    onTalhaoClick={(t) => !isDrawingMode && viewMode === 'mapa' && onOpenDrawer(t)}
+                                    isDrawerOpen={isDrawerOpen}
+                                />
+                        </div>
+
+                        {/* --- MAP FLOATING INTERFACE (Pointer Events Container) --- */}
+                        <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
+                            {/* Minimalist FAB: Circular & Elegant */}
+                            {!isDrawingMode && !createModalOpen && !selectedTalhao && (
+                                <div className="absolute bottom-24 right-6">
+                                    <button
+                                        onClick={() => setIsDrawingMode(true)}
+                                        className="w-14 h-14 bg-emerald-600 text-white rounded-full shadow-[0_8px_30px_rgb(16,185,129,0.3)] border border-emerald-400/40 flex items-center justify-center hover:bg-emerald-500 hover:scale-110 active:scale-90 transition-all outline-none pointer-events-auto"
+                                        title="Novo Talhão"
+                                    >
+                                        <Plus size={28} strokeWidth={3} />
+                                    </button>
+                                </div>
+                            )}
+
+
+                            {/* UI MODO DESENHO (Barra de Controle Profissional & Minimalista) */}
+                            {isDrawingMode && (
+                                <div className="absolute inset-0 pointer-events-none flex flex-col items-center">
+                                    {/* Toolbar Flutuante Inferior (Thumb Zone) */}
+                                    <div className="mt-auto mb-10 px-6 animate-in slide-in-from-bottom-12 duration-700 ease-out pointer-events-auto">
+                                        <div className="flex flex-col items-center gap-4">
+                                            {/* Hint Card */}
+                                            <div className="px-4 py-2 bg-slate-900/40 backdrop-blur-md border border-white/10 rounded-2xl shadow-xl animate-bounce">
+                                                <p className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
+                                                    <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />
+                                                    Toque no mapa para definir {talhoes.length === 0 ? 'os vértices' : 'a área'}
+                                                </p>
+                                            </div>
+
+                                            {/* Action Toolbar */}
+                                            <div className="p-2 bg-white/90 backdrop-blur-2xl rounded-[2rem] border border-white/50 shadow-[0_20px_50px_rgba(0,0,0,0.2)] flex items-center gap-2">
+                                                <button
+                                                    onClick={handleCancelNewTalhao}
+                                                    className="w-12 h-12 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-all active:scale-90"
+                                                    title="Cancelar Desenho"
+                                                >
+                                                    <X size={20} strokeWidth={2.5} />
+                                                </button>
+
+                                                <button
+                                                    onClick={() => setTrashDrawingTrigger(prev => prev + 1)}
+                                                    className="w-12 h-12 flex items-center justify-center bg-amber-50 hover:bg-amber-100 text-amber-600 rounded-full transition-all active:scale-95 border border-amber-200/50"
+                                                    title="Desfazer Último Ponto"
+                                                >
+                                                    <Undo2 size={20} strokeWidth={2.5} />
+                                                </button>
+
+                                                <div className="w-[1px] h-8 bg-slate-200/50 mx-1" />
+
+                                                <button
+                                                    onClick={() => setFinishDrawingTrigger(prev => prev + 1)}
+                                                    className="pl-4 pr-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full flex items-center gap-3 transition-all active:scale-95 shadow-lg shadow-emerald-500/30 group"
+                                                >
+                                                    <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center group-hover:rotate-12 transition-transform">
+                                                        <Check size={18} strokeWidth={3} />
+                                                    </div>
+                                                    <span className="text-xs font-black uppercase tracking-widest pr-1">Finalizar</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

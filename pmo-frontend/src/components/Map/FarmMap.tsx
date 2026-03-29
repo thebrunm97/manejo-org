@@ -26,6 +26,9 @@ interface FarmMapProps {
     onDrawDelete?: (e: any) => void;
     onTalhaoClick?: (talhao: Talhao) => void;
     isDrawerOpen?: boolean;
+    isDrawingMode?: boolean;
+    finishDrawingTrigger?: number;
+    trashDrawingTrigger?: number;
 }
 
 const getCropColor = (cultura?: string): string => {
@@ -118,10 +121,76 @@ const FarmMap: React.FC<FarmMapProps> = ({
     onDrawCreate,
     onDrawUpdate,
     onDrawDelete,
-    isDrawerOpen
+    isDrawerOpen,
+    isDrawingMode = false,
+    finishDrawingTrigger = 0,
+    trashDrawingTrigger = 0
 }) => {
     const [cursor, setCursor] = React.useState<string | undefined>(undefined);
-    const [, setDrawInstance] = React.useState<MapboxDraw | null>(null);
+    const [drawInstance, setDrawInstance] = React.useState<MapboxDraw | null>(null);
+
+    // Efeito para ativar modo de desenho programaticamente
+    useEffect(() => {
+        if (isDrawingMode && drawInstance) {
+            drawInstance.changeMode('draw_polygon');
+            setCursor('crosshair');
+        } else if (!isDrawingMode && drawInstance) {
+            drawInstance.changeMode('simple_select');
+            setCursor(undefined);
+        }
+    }, [isDrawingMode, drawInstance]);
+
+    // Efeito para desfazer último ponto (trash)
+    useEffect(() => {
+        if (trashDrawingTrigger && drawInstance) {
+            drawInstance.trash();
+        }
+    }, [trashDrawingTrigger, drawInstance]);
+
+    // Efeito para finalizar desenho via trigger externo
+    useEffect(() => {
+        if (finishDrawingTrigger > 0 && drawInstance && isDrawingMode) {
+            drawInstance.changeMode('simple_select');
+        }
+    }, [finishDrawingTrigger, drawInstance, isDrawingMode]);
+
+    // --- WebGL Deep Sync: coordinate-drift protection ---
+    const { current: mapInstance } = useMap();
+    useEffect(() => {
+        if (!mapInstance) return;
+
+        // Use requestAnimationFrame (double) to ensure sync with browser's render cycle
+        let frame1: number;
+        let frame2: number;
+
+        const performResize = () => {
+            frame1 = requestAnimationFrame(() => {
+                mapInstance.resize();
+                frame2 = requestAnimationFrame(() => {
+                    mapInstance.resize();
+                });
+            });
+        };
+
+        // 1. Immediate trigger on state change
+        performResize();
+
+        // 2. Add touchstart sync: force re-calc right before a potential click event
+        const container = mapInstance.getContainer();
+        container.addEventListener('touchstart', performResize, { passive: true });
+
+        // 3. Window-level listeners for absolute sync (orientation change, zoom, etc.)
+        window.addEventListener('resize', performResize);
+        window.addEventListener('load', performResize);
+
+        return () => {
+            cancelAnimationFrame(frame1);
+            cancelAnimationFrame(frame2);
+            container.removeEventListener('touchstart', performResize);
+            window.removeEventListener('resize', performResize);
+            window.removeEventListener('load', performResize);
+        };
+    }, [isDrawerOpen, isDrawingMode, mapInstance]);
 
     // NOTA: Auto-sync do Draw removido intencionalmente.
     // O Draw agora é usado APENAS para criação de novos polígonos (draw_polygon) e exclusão (trash).
@@ -203,31 +272,60 @@ const FarmMap: React.FC<FarmMapProps> = ({
     };
 
     return (
-        <Map
-            cursor={cursor}
-            initialViewState={{
-                longitude: -48.2772,
-                latitude: -18.9186,
-                zoom: 15
-            }}
-            style={{ width: '100%', height: '100%' }}
-            mapStyle={ESRI_SATELLITE_STYLE as any}
-            onClick={(e) => {
-                const feature = e.features?.[0];
-                if (feature && onTalhaoClick) {
-                    const talhaoId = feature.properties?.id;
-                    const talhao = talhoes.find(t => String(t.id) === String(talhaoId));
-                    if (talhao) onTalhaoClick(talhao);
-                }
-            }}
-            interactiveLayerIds={['talhoes-fill']}
-        >
+        <div className="relative w-full h-full z-0">
+            <Map
+                cursor={cursor}
+                initialViewState={{
+                    longitude: -48.2772,
+                    latitude: -18.9186,
+                    zoom: 15
+                }}
+                style={{ width: '100%', height: '100%' }}
+                mapStyle={ESRI_SATELLITE_STYLE as any}
+                // LOCK INTERACTION ON DRAWING MODE (Mobile-First Fix)
+                dragPan={!isDrawingMode}
+                touchZoomRotate={!isDrawingMode}
+                scrollZoom={!isDrawingMode}
+                boxZoom={!isDrawingMode}
+                dragRotate={!isDrawingMode}
+                doubleClickZoom={!isDrawingMode}
+                onClick={(e) => {
+                    if (isDrawingMode) return;
+                    
+                    // console.log('DEBUG: Map Clicked', e.point, e.lngLat);
+                    
+                    // Robust feature detection: Prefer e.features (populated by interactiveLayerIds)
+                    // Fallback to manual queryRenderedFeatures with bbox tolerance for mobile
+                    let clickedFeatures = e.features;
+                    
+                    if ((!clickedFeatures || clickedFeatures.length === 0) && e.target) {
+                        const bbox: [maplibregl.PointLike, maplibregl.PointLike] = [
+                            [e.point.x - 8, e.point.y - 8],
+                            [e.point.x + 8, e.point.y + 8]
+                        ];
+                        clickedFeatures = e.target.queryRenderedFeatures(bbox, {
+                            layers: ['talhoes-fill']
+                        });
+                    }
+                    
+                    if (clickedFeatures && clickedFeatures.length > 0 && onTalhaoClick) {
+                        const feature = clickedFeatures[0];
+                        const talhaoId = feature.properties?.id;
+                        // console.log('DEBUG: Plot Detected', talhaoId);
+                        const talhao = talhoes.find(t => String(t.id) === String(talhaoId));
+                        if (talhao) {
+                            onTalhaoClick(talhao);
+                        }
+                    }
+                }}
+                interactiveLayerIds={['talhoes-fill']}
+            >
             <MapDrawControl
                 position="top-left"
                 displayControlsDefault={false}
                 controls={{
-                    polygon: true,
-                    trash: true
+                    polygon: false, // Hidden native controls per USER request
+                    trash: false
                 }}
                 defaultMode="simple_select"
                 getDrawInstance={setDrawInstance}
@@ -321,6 +419,7 @@ const FarmMap: React.FC<FarmMapProps> = ({
             <MapController talhoes={talhoes} focusTarget={focusTarget} isDrawerOpen={isDrawerOpen} />
             <NavigationControl position="bottom-left" />
         </Map>
+    </div>
     );
 };
 

@@ -1,7 +1,6 @@
 package webhook
 
 import (
-	"bytes"
 	"context"
 	"crypto/hmac"
 	"fmt"
@@ -17,7 +16,6 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/ledongthuc/pdf"
 	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
@@ -25,6 +23,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/state"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
+	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 	"github.com/thebrunm97/pmo-bot-go/internal/whatsapp"
 	"golang.org/x/time/rate"
 )
@@ -103,12 +102,20 @@ func (m *WPPMessage) IsAudio() bool {
 		return true
 	}
 	if m.MimeType != nil {
-		mime := *m.MimeType
-		for i := 0; i+4 < len(mime); i++ {
-			if mime[i:i+5] == "audio" {
-				return true
-			}
-		}
+		mime := strings.ToLower(*m.MimeType)
+		return strings.Contains(mime, "audio")
+	}
+	return false
+}
+
+// IsImage checks if the message is an image.
+func (m *WPPMessage) IsImage() bool {
+	if m.Type == "image" {
+		return true
+	}
+	if m.MimeType != nil {
+		mime := strings.ToLower(*m.MimeType)
+		return strings.Contains(mime, "image")
 	}
 	return false
 }
@@ -253,9 +260,9 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 	log.Printf("📨 [%s] De: %s | Tipo: %s | Body: %.100s",
 		payload.Event, payload.From, payload.Type, payload.Body)
 
-	// 7. Skip non-text messages if not audio
-	if payload.Body == "" && !payload.IsAudio() {
-		log.Println("⏭️  Mensagem sem texto (mídia não-audio) — ignorando")
+	// 7. Skip non-text messages if not audio or image
+	if payload.Body == "" && !payload.IsAudio() && !payload.IsImage() {
+		log.Println("⏭️  Mensagem sem texto (mídia não-suportada) — ignorando")
 		c.JSON(http.StatusOK, gin.H{"status": "received", "note": "media not supported yet"})
 		return
 	}
@@ -295,7 +302,7 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 		defer cancel()
 
-		result := state.ProcessMessage(ctx, msg.From, msg.Body, msg.MessageID(), msg.IsAudio(), h.cfg.SupabaseClient, h.cfg.GroqClient, h.cfg.WhatsAppClient, h.cfg.GeminiClient, h.cfg.TtsClient, h.cfg.MCPServer, h.cfg.HistoryManager)
+		result := state.ProcessMessage(ctx, msg.From, msg.Body, msg.MessageID(), msg.IsAudio(), msg.IsImage(), h.cfg.SupabaseClient, h.cfg.GroqClient, h.cfg.WhatsAppClient, h.cfg.GeminiClient, h.cfg.TtsClient, h.cfg.MCPServer, h.cfg.HistoryManager)
 		if !result.Success {
 			log.Printf("⚠️ [FSM] Background processing completed with issues: %s", result.Reason)
 		}
@@ -413,7 +420,7 @@ func (h *Handler) processKnowledgePDF(path string, originalName string, pmoID in
 
 	log.Printf("📥 [ASYNC-RAG] Iniciando processamento de %s (PMO: %d, Job: %s)", originalName, pmoID, jobID)
 
-	content, err := extractTextFromPDF(path)
+	content, err := utils.ExtractTextFromPDF(path)
 	if err != nil {
 		errStr := fmt.Sprintf("Erro na extração de texto: %v", err)
 		log.Printf("❌ [ASYNC-RAG] %s", errStr)
@@ -424,7 +431,7 @@ func (h *Handler) processKnowledgePDF(path string, originalName string, pmoID in
 	}
 
 	// Simple Chunking Strategy: ~1200 characters with 200 overlap
-	chunks := simpleChunking(content, 1200, 200)
+	chunks := utils.SimpleChunking(content, 1200, 200)
 	totalChunks := len(chunks)
 	log.Printf("🧩 [ASYNC-RAG] Texto extraído. Gerando %d chunks em Worker Pool...", totalChunks)
 
@@ -529,49 +536,6 @@ func (h *Handler) processKnowledgePDF(path string, originalName string, pmoID in
 	}
 
 	log.Printf("✅ [ASYNC-RAG] Documento %s processado (Total Chunks: %d)", originalName, totalChunks)
-}
-
-// extractTextFromPDF uses ledongthuc/pdf to get all text from document.
-func extractTextFromPDF(path string) (string, error) {
-	f, r, err := pdf.Open(path)
-	if f != nil {
-		defer f.Close()
-	}
-	if err != nil {
-		return "", err
-	}
-
-	var buf bytes.Buffer
-	b, err := r.GetPlainText()
-	if err != nil {
-		return "", err
-	}
-	buf.ReadFrom(b)
-
-	return buf.String(), nil
-}
-
-// simpleChunking creates chunks of size 'limit' with an 'overlap'.
-func simpleChunking(text string, limit int, overlap int) []string {
-	if len(text) <= limit {
-		return []string{text}
-	}
-
-	var chunks []string
-	start := 0
-	for start < len(text) {
-		end := start + limit
-		if end > len(text) {
-			end = len(text)
-		}
-
-		chunks = append(chunks, text[start:end])
-		if end == len(text) {
-			break
-		}
-		start = end - overlap
-	}
-	return chunks
 }
 
 // verifyToken does constant-time token comparison.

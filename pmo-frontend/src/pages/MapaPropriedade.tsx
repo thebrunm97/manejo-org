@@ -143,9 +143,12 @@ const MapaPropriedade: React.FC = () => {
     }
 
     return (
-        <div className="relative w-full h-[calc(100vh-64px)] overflow-hidden bg-slate-50">
-            {/* TOGGLE CROQUI/SATÉLITE CENTRALIZADO */}
-            <div className="absolute md:top-6 top-auto bottom-8 left-1/2 -translate-x-1/2 z-[1000] w-max">
+        <div className="relative w-full h-full overflow-hidden bg-slate-50">
+            {/* TOGGLE CROQUI/SATÉLITE CENTRALIZADO (Escondido no mobile quando em modo MAPA para imersão) */}
+            <div className={cn(
+                "absolute md:top-6 top-auto bottom-8 left-1/2 -translate-x-1/2 z-[1000] w-max transition-all duration-300",
+                viewMode === 'mapa' ? "md:opacity-100 opacity-0 pointer-events-none md:pointer-events-auto" : "opacity-100"
+            )}>
                 <div className="flex bg-white/95 backdrop-blur-md p-1.5 rounded-full shadow-2xl border border-white/20 ring-1 ring-black/5 select-none">
                     <button
                         onClick={() => setViewMode('croqui')}
@@ -192,8 +195,8 @@ const MapaPropriedade: React.FC = () => {
                 />
             </div>
 
-            {/* DRAWER FLUTUANTE SOLTO (IMUNE AO OVERFLOW) */}
-            {viewMode === 'mapa' && (
+            {/* DRAWER FLUTUANTE SOLTO (Renderizado apenas se houver talhão para evitar pílula fantasma) */}
+            {viewMode === 'mapa' && selectedTalhao && (
                 <TalhaoDetailsDrawer
                     open={isDrawerOpen}
                     onClose={handleCloseDrawer}
