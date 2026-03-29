@@ -25,7 +25,18 @@ interface SidebarProps {
 
 const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) => {
   const { navigateTo, goToLogin, currentPath } = useAppNavigation();
-  const { isAdmin, isLoadingRole } = useAuth();
+  const { profile, isAdmin, isLoadingRole } = useAuth();
+
+  const getDisplayName = () => {
+    if (profile?.nome) {
+      const parts = profile.nome.trim().split(/\s+/);
+      if (parts.length === 1) return parts[0];
+      return `${parts[0]} ${parts[parts.length - 1]}`;
+    }
+    return user?.email?.split('@')[0] || 'Produtor';
+  };
+
+  const displayName = getDisplayName();
 
   const appName = import.meta.env.VITE_APP_NAME || 'Manejo Org';
   const appInitials = appName.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase();
@@ -146,7 +157,9 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
 
         <div className="mt-4 p-3 bg-gray-900/50 rounded-lg flex items-center gap-3 border border-gray-800">
           <div className="w-8 h-8 rounded-full bg-green-600/20 border border-green-600/30 flex items-center justify-center text-green-500 font-bold text-xs shrink-0 overflow-hidden">
-            {user?.email ? (
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+            ) : user?.email ? (
               user.email.charAt(0).toUpperCase()
             ) : (
               <UserIcon size={14} />
@@ -154,7 +167,7 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
           </div>
           <div className="overflow-hidden">
             <div className="text-sm font-medium text-gray-200 truncate">
-              {user?.email?.split('@')[0] || 'Produtor'}
+              {displayName}
             </div>
             <div className="text-[10px] text-gray-500 uppercase tracking-tight">
               Plano Premium
