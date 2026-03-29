@@ -119,6 +119,17 @@ const DashboardPage: React.FC = () => {
   });
   const saudacao = obterSaudacao();
 
+  const getDisplayName = () => {
+    if (userProfile?.nome) {
+      const parts = userProfile.nome.trim().split(/\s+/);
+      if (parts.length === 1) return parts[0];
+      return `${parts[0]} ${parts[parts.length - 1]}`;
+    }
+    return user?.email?.split("@")[0] || "Produtor";
+  };
+
+  const displayName = getDisplayName();
+
 
   const isPageReady = !isLoading;
 
@@ -148,7 +159,7 @@ const DashboardPage: React.FC = () => {
             id="tour-welcome"
             className="text-3xl font-extrabold text-slate-900 tracking-tight mb-1 break-words"
           >
-            {saudacao}, {user?.email?.split("@")[0]}! 🚜
+            {saudacao}, {displayName}!
           </h1>
           <p className="text-slate-500 text-base break-words">
             Resumo da produção em{" "}
