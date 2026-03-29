@@ -17,50 +17,50 @@ const PlanoAtualCard: React.FC<PlanoAtualCardProps> = ({
     onEditar,
 }) => {
     return (
-        <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow duration-200 relative overflow-hidden flex flex-col min-h-[180px]">
+        <div className="bg-white rounded-3xl border border-slate-200 p-6 lg:p-8 shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden flex flex-col h-full min-h-[200px] group">
             {/* Header: Icon + Label */}
-            <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-green-50 rounded-lg text-green-600">
-                    <Leaf size={20} />
+            <div className="flex items-center gap-3 mb-6">
+                <div className="p-2.5 bg-green-50 rounded-2xl text-green-600 transition-transform group-hover:scale-110">
+                    <Leaf size={22} />
                 </div>
-                <span className="text-xs font-bold text-slate-400 tracking-wider uppercase">
+                <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase bg-slate-50 px-2.5 py-1 rounded-lg">
                     PLANO ATUAL
                 </span>
             </div>
 
             {/* Content */}
             {nomePlano ? (
-                <>
-                    <h3 className="text-xl font-bold text-slate-900 leading-tight mb-1 break-words">
+                <div className="flex flex-col flex-1">
+                    <h3 className="text-2xl font-extrabold text-slate-900 leading-tight mb-2 break-words">
                         {nomePlano}
                     </h3>
 
-                    <div className="text-sm text-slate-500 mb-6 flex items-center gap-2">
+                    <div className="text-sm text-slate-500 mb-8 flex items-center gap-2 font-semibold">
                         <span>v{versao}</span>
                         <span className="text-slate-300">•</span>
                         <div className="flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-green-500 block" />
+                            <span className="w-2 h-2 rounded-full bg-green-500 block shadow-[0_0_8px_rgba(34,197,94,0.5)] fade-in" />
                             <span>{status}</span>
                         </div>
                     </div>
 
                     {/* Footer: Buttons */}
-                    <div className="mt-auto flex gap-2">
+                    <div className="mt-auto flex gap-3">
                         <button
                             onClick={onVer}
-                            className="flex-1 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold py-2 px-4 rounded-lg transition-colors"
+                            className="flex-1 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold py-2.5 px-4 rounded-xl transition-all hover:shadow-lg hover:shadow-green-600/20 hover:-translate-y-0.5 active:translate-y-0"
                         >
-                            Ver
+                            Ver Plano
                         </button>
                         <button
                             onClick={onEditar}
-                            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors border border-slate-200 hover:border-slate-300"
+                            className="p-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-colors border border-slate-200 hover:border-slate-300"
                             aria-label="Editar plano"
                         >
-                            <Edit size={18} />
+                            <Edit size={20} />
                         </button>
                     </div>
-                </>
+                </div>
             ) : (
                 <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">
                     Nenhum plano selecionado

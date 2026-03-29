@@ -39,28 +39,27 @@ const HarvestDashboard: React.FC<HarvestDashboardProps> = ({ harvestStats, recen
       </h6>
 
       {/* Carousel de Resumo */}
-      <div className="grid grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-2 pb-2 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6 pb-2 mb-6">
         {Object.entries(harvestStats).length === 0 ? (
-          <div className="w-full px-4 py-3 text-sm text-blue-800 bg-blue-50 border border-blue-200 rounded-xl">
+          <div className="col-span-full px-4 py-3 text-sm text-slate-800 bg-slate-50 border border-slate-200 rounded-2xl">
             Nenhuma colheita registrada neste plano ainda.
           </div>
         ) : (
           Object.entries(harvestStats).map(([key, dados]) => (
             <div
               key={key}
-              className="border border-gray-100 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.05)] p-2.5 flex flex-col justify-between items-start transition-transform hover:-translate-y-1"
-              style={{ aspectRatio: '1 / 0.9' }}
+              className="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between items-start group"
             >
               <div
-                className="w-12 h-12 rounded-xl mb-1 flex items-center justify-center"
+                className="w-12 h-12 rounded-2xl mb-4 flex items-center justify-center transition-transform group-hover:scale-110"
                 style={{ backgroundColor: '#E8F5E9', color: '#1B5E20' }}
               >
-                <Scale className="w-5 h-5" />
+                <Scale className="w-6 h-6" />
               </div>
               <div className="w-full">
-                <p className="text-3xl font-extrabold text-slate-800 tracking-tight leading-none mb-0.5">
+                <p className="text-3xl font-black text-slate-900 tracking-tight leading-none mb-1">
                   {dados.total.toLocaleString('pt-BR')}
-                  <span className="text-sm font-semibold text-slate-400 ml-0.5">
+                  <span className="text-sm font-semibold text-slate-400 ml-1">
                     {dados.unidade}
                   </span>
                 </p>
@@ -96,10 +95,10 @@ const HarvestDashboard: React.FC<HarvestDashboardProps> = ({ harvestStats, recen
                 <div
                   key={row.id}
                   onClick={() => onEditRecord?.(row)}
-                  className="p-2 rounded-2xl border border-gray-100 flex items-center gap-2 transition-colors hover:bg-slate-50 cursor-pointer group"
+                  className="p-3 lg:p-4 rounded-2xl border border-transparent hover:border-slate-100 flex items-center gap-4 transition-all hover:bg-slate-50 hover:shadow-sm cursor-pointer group"
                 >
                   <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+                    className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105"
                     style={{ backgroundColor: cfg.bgcolor, color: cfg.color }}
                   >
                     {cfg.icon}
@@ -115,8 +114,8 @@ const HarvestDashboard: React.FC<HarvestDashboardProps> = ({ harvestStats, recen
                   </div>
                   <div className="flex flex-col items-end gap-0.5">
                     <span
-                      className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold"
-                      style={{ backgroundColor: '#F1F5F9', color: '#475569', height: 24 }}
+                      className="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors"
+                      style={{ backgroundColor: '#F1F5F9', color: '#475569' }}
                     >
                       {formatDateBR(row.data_registro, { day: '2-digit', month: 'short' }).replace('.', '')}
                     </span>
