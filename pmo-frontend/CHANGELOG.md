@@ -1,3 +1,20 @@
+## [Unreleased]
+
+### Refinamentos e Funcionalidades (Sprint Atual)
+- **Perfil do Usuário:** Resolvido o salvamento do "nome completo" e adicionada funcionalidade de upload de Avatar (imagem de perfil) usando o Storage do Supabase.
+- **Linguagem Amigável:** Tradução completa das features na página `/changelog` para uma linguagem com foco total no produtor rural ("causos da roça").
+
+## [v0.13.0] - 28 de Março de 2026
+
+### MCP Declarative Architecture
+- Preparação e suporte frontend para consumir a nova modelagem de Banco de Dados baseada em RPCs (Atômicas).
+
+## [v0.12.0] - 27 de Março de 2026
+
+### Multi-Agent Integration
+- Suporte a formatação sanitizada enviada pelo WPPConnect.
+- Estabilização do contexto entre interações web e WhatsApp.
+
 ## [v0.9.0] - 26 de Março de 2026
 
 ### GIS & WebGL (Sprint 2)
