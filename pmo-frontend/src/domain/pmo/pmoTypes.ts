@@ -282,6 +282,7 @@ export interface PmoListItem {
 export interface UserProfile {
     id: string;
     nome?: string;
+    avatar_url?: string;
     pmo_ativo_id: string | null;
     telefone?: string;
     role?: 'user' | 'admin'; // Role based access control

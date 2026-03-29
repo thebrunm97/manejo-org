@@ -13,7 +13,7 @@ export async function fetchUserProfile(
     try {
         const { data, error } = await supabase
             .from('profiles')
-            .select('id, pmo_ativo_id, telefone')
+            .select('id, nome, avatar_url, pmo_ativo_id, telefone, role')
             .eq('id', userId)
             .single();
 
@@ -89,7 +89,7 @@ export async function fetchUserProperties(userId: string): Promise<FetchResult<a
  */
 export async function updateUserProfile(
     userId: string,
-    data: { nome?: string; telefone?: string }
+    data: { nome?: string; telefone?: string; avatar_url?: string }
 ): Promise<SaveResult> {
     try {
         const { error } = await supabase
@@ -105,5 +105,33 @@ export async function updateUserProfile(
     } catch (err) {
         const message = err instanceof Error ? err.message : 'Erro ao atualizar perfil';
         return { success: false, error: message };
+    }
+}
+
+/**
+ * Faz o upload do avatar do usuário para o bucket 'avatars'.
+ * 
+ * @param userId - ID do usuário
+ * @param file - Arquivo de imagem
+ * @returns FetchResult com a URL pública
+ */
+export async function uploadAvatar(userId: string, file: File): Promise<FetchResult<string>> {
+    try {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${userId}-${Math.random()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(fileName, file, { upsert: true });
+
+        if (uploadError) {
+            return { success: false, error: uploadError.message };
+        }
+
+        const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
+        
+        return { success: true, data: data.publicUrl };
+    } catch (err) {
+        return { success: false, error: 'Erro ao fazer upload da imagem' };
     }
 }

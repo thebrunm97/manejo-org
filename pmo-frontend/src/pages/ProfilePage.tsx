@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { User, Mail, Phone, Shield, Save, Camera, Lock, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { fetchUserProfile, updateUserProfile } from '../services/profileService';
+import { fetchUserProfile, updateUserProfile, uploadAvatar } from '../services/profileService';
 import { formatPhoneBR } from '../utils/masks';
 import { useAppNavigation } from '../hooks/navigation/useAppNavigation';
 import { toast } from 'react-toastify';
@@ -12,12 +12,15 @@ const ProfilePage: React.FC = () => {
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [uploadingAvatar, setUploadingAvatar] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [formData, setFormData] = useState({
         nome: '',
         telefone: '',
         role: 'user',
-        email: user?.email || ''
+        email: user?.email || '',
+        avatar_url: ''
     });
 
     useEffect(() => {
@@ -31,7 +34,8 @@ const ProfilePage: React.FC = () => {
                         ...prev,
                         nome: result.data?.nome || '',
                         telefone: formatPhoneBR(result.data?.telefone || ''),
-                        role: (result.data as any).role || 'user'
+                        role: (result.data as any).role || 'user',
+                        avatar_url: result.data?.avatar_url || ''
                     }));
                 }
             } catch (error) {
@@ -70,7 +74,8 @@ const ProfilePage: React.FC = () => {
         try {
             const result = await updateUserProfile(user.id, {
                 nome: formData.nome,
-                telefone: phoneDigits
+                telefone: phoneDigits,
+                avatar_url: formData.avatar_url
             });
 
             if (result.success) {
@@ -82,6 +87,45 @@ const ProfilePage: React.FC = () => {
             toast.error('Ocorreu um erro ao salvar as alterações');
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleAvatarClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0 || !user?.id) return;
+        
+        const file = e.target.files[0];
+        
+        if (!file.type.startsWith('image/')) {
+            toast.warning('Por favor, selecione uma imagem válida (JPG, PNG).');
+            return;
+        }
+        
+        if (file.size > 2 * 1024 * 1024) {
+            toast.warning('A imagem deve ter no máximo 2MB.');
+            return;
+        }
+
+        setUploadingAvatar(true);
+        try {
+            const result = await uploadAvatar(user.id, file);
+            if (result.success && result.data) {
+                setFormData(prev => ({ ...prev, avatar_url: result.data! }));
+                await updateUserProfile(user.id, { avatar_url: result.data });
+                toast.success('Foto de perfil atualizada!');
+            } else {
+                toast.error(result.error || 'Erro ao fazer upload da imagem.');
+            }
+        } catch (error) {
+            toast.error('Erro inesperado ao fazer upload.');
+        } finally {
+            setUploadingAvatar(false);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
         }
     };
 
@@ -118,10 +162,32 @@ const ProfilePage: React.FC = () => {
 
                         <div className="relative z-10">
                             <div className="relative inline-block mb-4">
-                                <div className="w-32 h-32 rounded-full border-4 border-white shadow-md bg-slate-100 flex items-center justify-center overflow-hidden mx-auto">
-                                    <User size={64} className="text-slate-300" />
+                                <input 
+                                    type="file" 
+                                    ref={fileInputRef} 
+                                    className="hidden" 
+                                    accept="image/*" 
+                                    onChange={handleFileChange} 
+                                />
+                                <div className="w-32 h-32 rounded-full border-4 border-white shadow-md bg-slate-100 flex items-center justify-center overflow-hidden mx-auto relative group">
+                                    {formData.avatar_url ? (
+                                        <img src={formData.avatar_url} alt="Avatar do Fazendeiro" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <User size={64} className="text-slate-300" />
+                                    )}
+                                    {uploadingAvatar && (
+                                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center backdrop-blur-sm z-10 transition-all">
+                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                                        </div>
+                                    )}
                                 </div>
-                                <button className="absolute bottom-0 right-0 p-2 bg-green-600 text-white rounded-full border-2 border-white shadow-lg hover:bg-green-700 transition-colors">
+                                <button 
+                                    type="button"
+                                    onClick={handleAvatarClick}
+                                    disabled={uploadingAvatar}
+                                    className="absolute bottom-0 right-0 p-2 bg-green-600 text-white rounded-full border-2 border-white shadow-lg hover:bg-green-700 transition-colors z-20 disabled:opacity-50"
+                                    aria-label="Alterar foto de perfil"
+                                >
                                     <Camera size={16} />
                                 </button>
                             </div>
