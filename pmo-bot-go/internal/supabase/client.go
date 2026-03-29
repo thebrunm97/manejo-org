@@ -197,6 +197,23 @@ type PmoCompostagemEventoInsert struct {
 	Observacao       string  `json:"observacao,omitempty"`
 }
 
+type PmoClimaInsert struct {
+	PmoID         int64       `json:"pmo_id"`
+	TemperaturaC  float64     `json:"temperatura_c"`
+	Umidade       int         `json:"umidade"`
+	VentoKph      float64     `json:"vento_kph"`
+	CondicaoTexto string      `json:"condicao_texto"`
+	CondicaoIcone string      `json:"condicao_icone"`
+	PrevisaoDias  interface{} `json:"previsao_dias"`
+}
+
+type PmoLocation struct {
+	ID        int64
+	Latitude  string
+	Longitude string
+	City      string
+}
+
 // ---------------------------------------------------------------------------
 // Main Methods
 // ---------------------------------------------------------------------------
@@ -667,6 +684,90 @@ func (c *Client) GetIngestionStats(pmoID int64) (string, int, error) {
 	}
 
 	return tier, len(uniqueNames), nil
+}
+
+// FetchActivePMOsLocations retrieves all PMOs that have valid locations for weather fetching.
+func (c *Client) FetchActivePMOsLocations() ([]PmoLocation, error) {
+	reqURL := fmt.Sprintf("%s/rest/v1/pmos?select=id,form_data", c.config.URL)
+	body, err := c.doRequest(http.MethodGet, reqURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var pmos []struct {
+		ID       int64                  `json:"id"`
+		FormData map[string]interface{} `json:"form_data"`
+	}
+	if err := json.Unmarshal(body, &pmos); err != nil {
+		return nil, err
+	}
+
+	var results []PmoLocation
+	for _, p := range pmos {
+		var lat, lon, city string
+
+		if sec1, ok := p.FormData["secao_1_descricao_propriedade"].(map[string]interface{}); ok {
+			if coords, ok := sec1["coordenadas_geograficas"].(map[string]interface{}); ok {
+				if latStr, ok := coords["latitude"].(string); ok && latStr != "" {
+					lat = latStr
+				}
+				if lonStr, ok := coords["longitude"].(string); ok && lonStr != "" {
+					lon = lonStr
+				}
+			}
+			if end, ok := sec1["dados_cadastrais"].(map[string]interface{}); ok {
+				if endProp, ok := end["endereco_propriedade_base_fisica_produtiva"].(string); ok && endProp != "" {
+					city = endProp
+				}
+			}
+		}
+
+		if (lat != "" && lon != "") || city != "" {
+			results = append(results, PmoLocation{
+				ID:        p.ID,
+				Latitude:  lat,
+				Longitude: lon,
+				City:      city,
+			})
+		}
+	}
+	return results, nil
+}
+
+// SaveWeatherDataBatch inserts multiple weather records at once
+func (c *Client) SaveWeatherDataBatch(data []PmoClimaInsert) error {
+	if len(data) == 0 {
+		return nil
+	}
+
+	reqURL := fmt.Sprintf("%s/rest/v1/pmo_clima", c.config.URL)
+	payload, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	
+	req, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewReader(payload))
+	if err != nil {
+		return fmt.Errorf("failed to create bulk pmo_clima request: %w", err)
+	}
+
+	req.Header.Set("apikey", c.config.Key)
+	req.Header.Set("Authorization", "Bearer "+c.config.Key)
+	req.Header.Set("Content-Type", "application/json")
+	// PostgREST naturally supports bulk inserts when sending array JSON
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("pmo_clima bulk insert HTTP failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("pmo_clima bulk insert error (%d): %s", resp.StatusCode, string(respBody))
+	}
+
+	return nil
 }
 
 // ---------------------------------------------------------------------------
