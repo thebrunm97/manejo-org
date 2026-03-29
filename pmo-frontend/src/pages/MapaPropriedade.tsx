@@ -10,6 +10,7 @@ import PropertyMap from '../components/PropertyMap/PropertyMap';
 import TalhaoDetailsDrawer from '../components/PropertyMap/TalhaoDetailsDrawer';
 import { locationService } from '../services/locationService';
 import { Talhao } from '../domain/geo/geoTypes';
+import { useIsMobile } from '../hooks/useIsMobile';
 import { cn } from '../utils/cn';
 
 const MapaPropriedade: React.FC = () => {
@@ -21,6 +22,7 @@ const MapaPropriedade: React.FC = () => {
     const [pmoId, setPmoId] = useState<string | null>(null);
     const [propriedadeId, setPropriedadeId] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
+    const { isMobile } = useIsMobile();
 
     const loadTalhoes = useCallback(async () => {
         try {
@@ -144,38 +146,40 @@ const MapaPropriedade: React.FC = () => {
 
     return (
         <div className="relative w-full h-full overflow-hidden bg-slate-50">
-            {/* TOGGLE CROQUI/SATÉLITE CENTRALIZADO (Escondido no mobile quando em modo MAPA para imersão) */}
-            <div className={cn(
-                "absolute md:top-6 top-auto bottom-8 left-1/2 -translate-x-1/2 z-[1000] w-max transition-all duration-300",
-                viewMode === 'mapa' ? "md:opacity-100 opacity-0 pointer-events-none md:pointer-events-auto" : "opacity-100"
-            )}>
-                <div className="flex bg-white/95 backdrop-blur-md p-1.5 rounded-full shadow-2xl border border-white/20 ring-1 ring-black/5 select-none">
-                    <button
-                        onClick={() => setViewMode('croqui')}
-                        className={cn(
-                            "flex items-center gap-2 px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all",
-                            viewMode === 'croqui'
-                                ? "bg-emerald-600 text-white shadow-md shadow-emerald-900/20"
-                                : "text-slate-500 hover:text-slate-700 hover:bg-slate-100/50"
-                        )}
-                    >
-                        <LayoutGrid size={14} />
-                        Croqui
-                    </button>
-                    <button
-                        onClick={() => setViewMode('mapa')}
-                        className={cn(
-                            "flex items-center gap-2 px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all",
-                            viewMode === 'mapa'
-                                ? "bg-emerald-600 text-white shadow-md shadow-emerald-900/20"
-                                : "text-slate-500 hover:text-slate-700 hover:bg-slate-100/50"
-                        )}
-                    >
-                        <MapIcon size={14} />
-                        Satélite
-                    </button>
+            {/* TOGGLE CROQUI/SATÉLITE CENTRALIZADO (Hard Removal on Mobile for Immersive Map) */}
+            {(!isMobile || viewMode !== 'mapa') && (
+                <div className={cn(
+                    "absolute md:top-6 top-auto bottom-8 left-1/2 -translate-x-1/2 z-[1000] w-max transition-all duration-300",
+                    viewMode === 'mapa' ? "md:opacity-100 opacity-0 pointer-events-none md:pointer-events-auto" : "opacity-100"
+                )}>
+                    <div className="flex bg-white/95 backdrop-blur-md p-1.5 rounded-full shadow-2xl border border-white/20 ring-1 ring-black/5 select-none">
+                        <button
+                            onClick={() => setViewMode('croqui')}
+                            className={cn(
+                                "flex items-center gap-2 px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all",
+                                viewMode === 'croqui'
+                                    ? "bg-emerald-600 text-white shadow-md shadow-emerald-900/20"
+                                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-100/50"
+                            )}
+                        >
+                            <LayoutGrid size={14} />
+                            Croqui
+                        </button>
+                        <button
+                            onClick={() => setViewMode('mapa')}
+                            className={cn(
+                                "flex items-center gap-2 px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all",
+                                viewMode === 'mapa'
+                                    ? "bg-emerald-600 text-white shadow-md shadow-emerald-900/20"
+                                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-100/50"
+                            )}
+                        >
+                            <MapIcon size={14} />
+                            Satélite
+                        </button>
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* JAULA DO MAPA (FULL-BLEED) */}
             <div className="absolute inset-0 overflow-hidden z-0 bg-white">
