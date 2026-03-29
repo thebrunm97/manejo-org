@@ -175,11 +175,12 @@ const FarmMap: React.FC<FarmMapProps> = ({
         // 1. Immediate trigger on state change
         performResize();
 
-        // 2. Native Event Listeners (Plan D: Raw DOM Capture)
-        // MapboxDraw is known to swallow `click` and map-level touch events on mobile.
-        // We bypass this by attaching listeners directly to the WebGL canvas with `capture: true`.
+        // 2. Native Event Listeners (Plan E: Ancestor Capture Bypass)
+        // MapboxDraw is known to use `stopImmediatePropagation` on the canvas.
+        // We move the listeners to the Map Container (parent) to catch events first.
+        const container = mapInstance?.getContainer();
         const canvas = mapInstance?.getCanvas();
-        if (!canvas || !mapInstance) return;
+        if (!container || !canvas || !mapInstance) return;
 
         let touchStartPos: { x: number, y: number } | null = null;
         let touchStartTime = 0;
@@ -261,11 +262,11 @@ const FarmMap: React.FC<FarmMapProps> = ({
             handleInteraction(point, 'click');
         };
 
-        // Attach with capture: true to ensure we run BEFORE Draw or other plugins
-        canvas.addEventListener('touchstart', onTouchStart, { capture: true, passive: true });
-        canvas.addEventListener('touchmove', onTouchMove, { capture: true, passive: true });
-        canvas.addEventListener('touchend', onTouchEnd, { capture: true, passive: true });
-        canvas.addEventListener('click', onMouseClick, { capture: true });
+        // Attach to CONTAINER with capture: true to run BEFORE Draw or canvas-level listeners
+        container.addEventListener('touchstart', onTouchStart, { capture: true, passive: true });
+        container.addEventListener('touchmove', onTouchMove, { capture: true, passive: true });
+        container.addEventListener('touchend', onTouchEnd, { capture: true, passive: true });
+        container.addEventListener('click', onMouseClick, { capture: true });
 
         // 3. Window-level listeners for absolute sync
         const onWindowResize = () => performResize();
@@ -275,10 +276,10 @@ const FarmMap: React.FC<FarmMapProps> = ({
         return () => {
             cancelAnimationFrame(frame1);
             cancelAnimationFrame(frame2);
-            canvas.removeEventListener('touchstart', onTouchStart, { capture: true });
-            canvas.removeEventListener('touchmove', onTouchMove, { capture: true });
-            canvas.removeEventListener('touchend', onTouchEnd, { capture: true });
-            canvas.removeEventListener('click', onMouseClick, { capture: true });
+            container.removeEventListener('touchstart', onTouchStart, { capture: true });
+            container.removeEventListener('touchmove', onTouchMove, { capture: true });
+            container.removeEventListener('touchend', onTouchEnd, { capture: true });
+            container.removeEventListener('click', onMouseClick, { capture: true });
             window.removeEventListener('resize', onWindowResize);
             window.removeEventListener('load', onWindowResize);
         };
