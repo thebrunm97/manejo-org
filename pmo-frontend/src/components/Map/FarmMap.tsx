@@ -175,17 +175,21 @@ const FarmMap: React.FC<FarmMapProps> = ({
         // 1. Immediate trigger on state change
         performResize();
 
-        // 2. Native Event Listeners (Plan B: bypass React synthetic events for touch reliability)
-        const handleNativeEvent = (e: any) => {
+        // 2. Native Event Listeners (Plan C: Deep Mobile Bypass)
+        // MapboxDraw is known to swallow `click` events on mobile devices.
+        // We implement an explicit tap detector using native touchstart and touchend.
+        let touchStartPoint: maplibregl.Point | null = null;
+        let touchStartTime = 0;
+
+        const handleTapOrClick = (point: maplibregl.Point | { x: number, y: number }, type: string) => {
             if (isDrawingMode) return;
             
-            // Log target and point for remote debugging
-            console.log(`📍 [FarmMap] Native ${e.type} at:`, e.point);
+            console.log(`📍 [FarmMap] Custom ${type} Interaction at:`, point);
             
             const tolerance = 20; // 20px tolerance for mobile/fat-finger
             const bbox: [maplibregl.PointLike, maplibregl.PointLike] = [
-                [e.point.x - tolerance, e.point.y - tolerance],
-                [e.point.x + tolerance, e.point.y + tolerance]
+                [point.x - tolerance, point.y - tolerance],
+                [point.x + tolerance, point.y + tolerance]
             ];
             
             if (mapInstance) {
@@ -207,12 +211,48 @@ const FarmMap: React.FC<FarmMapProps> = ({
             }
         };
 
+        const onNativeClick = (e: any) => {
+            // Se foi um toque simulado por click (ex: desktop)
+            handleTapOrClick(e.point, 'click');
+        };
+
+        const onTouchStart = (e: any) => {
+            if (e.points && e.points.length > 0) {
+                touchStartPoint = e.points[0];
+                touchStartTime = Date.now();
+                console.log('👉 [FarmMap] Native touchstart registered');
+            }
+        };
+
+        const onTouchMove = (e: any) => {
+            if (!touchStartPoint || !e.points || e.points.length === 0) return;
+            const currentPoint = e.points[0];
+            const dx = currentPoint.x - touchStartPoint.x;
+            const dy = currentPoint.y - touchStartPoint.y;
+            // Cancel tap if movement exceeds 10 pixels (drag/pan)
+            if (Math.sqrt(dx * dx + dy * dy) > 10) {
+                touchStartPoint = null;
+            }
+        };
+
+        const onTouchEnd = () => {
+            if (!touchStartPoint) return;
+            
+            const duration = Date.now() - touchStartTime;
+            const point = touchStartPoint;
+            
+            // If it's a quick tap without much movement
+            if (duration < 500) {
+                 handleTapOrClick(point, 'tap');
+            }
+            touchStartPoint = null;
+        };
+
         if (mapInstance) {
-            mapInstance.on('click', handleNativeEvent);
-            // We also listen to touchstart to see if it triggers faster
-            mapInstance.on('touchstart', (e) => {
-                console.log('👉 [FarmMap] Native touchstart detected');
-            });
+            mapInstance.on('click', onNativeClick);
+            mapInstance.on('touchstart', onTouchStart);
+            mapInstance.on('touchmove', onTouchMove);
+            mapInstance.on('touchend', onTouchEnd);
         }
 
         // 3. Window-level listeners for absolute sync (orientation change, zoom, etc.)
@@ -223,7 +263,10 @@ const FarmMap: React.FC<FarmMapProps> = ({
             cancelAnimationFrame(frame1);
             cancelAnimationFrame(frame2);
             if (mapInstance) {
-                mapInstance.off('click', handleNativeEvent);
+                mapInstance.off('click', onNativeClick);
+                mapInstance.off('touchstart', onTouchStart);
+                mapInstance.off('touchmove', onTouchMove);
+                mapInstance.off('touchend', onTouchEnd);
             }
             window.removeEventListener('resize', performResize);
             window.removeEventListener('load', performResize);
