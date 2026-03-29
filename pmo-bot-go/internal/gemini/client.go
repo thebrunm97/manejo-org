@@ -20,6 +20,9 @@ var systemPromptAgronomist string
 //go:embed prompts/db_operator.md
 var systemPromptDBOperator string
 
+//go:embed prompts/agronomist_vision.md
+var systemPromptAgronomistVision string
+
 // GetPromptForIntent selects the correct specialist system prompt based on the
 // classified Intent from the Router. Falls back to the default monolithic prompt
 // for CHAT or any unrecognized intent to avoid breaking the existing flow.
@@ -77,7 +80,7 @@ func (c *Client) Close() error {
 // GenerateEmbedding transforms a text chunk into a vector
 func (c *Client) GenerateEmbedding(text string) ([]float32, error) {
 	ctx := context.Background()
-	model := c.client.EmbeddingModel("text-embedding-004")
+	model := c.client.EmbeddingModel("gemini-embedding-001")
 
 	log.Printf("📡 [GEMINI SDK] Gerando embedding para texto (%d chars)...", len(text))
 	res, err := model.EmbedContent(ctx, genai.Text(text))
@@ -149,4 +152,36 @@ func (c *Client) GenerateContentWithTools(ctx context.Context, question string, 
 	}
 
 	return resp, session, nil
+}
+
+// DescribeAgronomicImage analyzes an image using gemini-2.5-flash and returns a technical description.
+func (c *Client) DescribeAgronomicImage(ctx context.Context, imageBytes []byte, mimeType string) (string, error) {
+	// gemini-2.5-flash is used exclusively for vision as a specialized extractor.
+	model := c.client.GenerativeModel("gemini-2.5-flash")
+	model.SystemInstruction = &genai.Content{
+		Parts: []genai.Part{genai.Text(systemPromptAgronomistVision)},
+	}
+	model.SetTemperature(0.4)
+
+	log.Printf("📡 [GEMINI SDK] Descrevendo imagem (%s, %d bytes) com gemini-2.5-flash", mimeType, len(imageBytes))
+
+	resp, err := model.GenerateContent(ctx,
+		genai.ImageData(mimeType, imageBytes),
+	)
+	if err != nil {
+		return "", fmt.Errorf("vision description error: %w", err)
+	}
+
+	if len(resp.Candidates) == 0 || len(resp.Candidates[0].Content.Parts) == 0 {
+		return "", fmt.Errorf("empty vision response from gemini-2.5-flash")
+	}
+
+	var result string
+	for _, part := range resp.Candidates[0].Content.Parts {
+		if text, ok := part.(genai.Text); ok {
+			result += string(text)
+		}
+	}
+
+	return result, nil
 }

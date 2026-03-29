@@ -33,7 +33,7 @@ type ProcessResult struct {
 
 // ProcessMessage orchestrates the flow:
 // LID -> Phone -> PMO ID -> LLM Extraction -> Organic Alert Check -> Save to Supabase -> Feedback
-func ProcessMessage(ctx context.Context, from string, body string, msgID string, isAudio bool, sbClient *supabase.Client, groqClient *groq.Client, wpClient *whatsapp.Client, gemClient *gemini.Client, ttsClient *tts.Orchestrator, mcpServer *mcp.Server, historyManager *history.Manager) (res ProcessResult) {
+func ProcessMessage(ctx context.Context, from string, body string, msgID string, isAudio bool, isImage bool, sbClient *supabase.Client, groqClient *groq.Client, wpClient *whatsapp.Client, gemClient *gemini.Client, ttsClient *tts.Orchestrator, mcpServer *mcp.Server, historyManager *history.Manager) (res ProcessResult) {
 	// Panic Recovery inside the logic layer
 	defer func() {
 		if r := recover(); r != nil {
@@ -104,6 +104,40 @@ func ProcessMessage(ctx context.Context, from string, body string, msgID string,
 		respondWithAudio = true
 		aiModel = "whisper-large-v3-turbo"
 		log.Printf("📝 [FSM] Transcrição concluída: \"%s\"", body)
+	}
+
+	if isImage {
+		log.Printf("📸 [FSM] Imagem detectada. Baixando media %s...", msgID)
+		imageBytes, mimeType, err := wpClient.DownloadImage(msgID)
+		if err != nil {
+			log.Printf("❌ [FSM] Falha ao baixar imagem: %v", err)
+			wpClient.SendMessage(from, "⚠️ Não consegui baixar sua imagem. Tente enviar de novo.")
+			return ProcessResult{Success: false, Reason: "image_download_error"}
+		}
+
+		log.Printf("👁️ [FSM] Imagem baixada (%d bytes). Solicitando visão agronômica (gemini-2.5-flash)...", len(imageBytes))
+
+		description, err := gemClient.DescribeAgronomicImage(ctx, imageBytes, mimeType)
+		if err != nil {
+			log.Printf("❌ [FSM] Falha na análise de visão: %v", err)
+			wpClient.SendMessage(from, "⚠️ Tive um problema ao analisar sua foto. Pode tentar novamente?")
+			return ProcessResult{Success: false, Reason: "vision_analysis_error"}
+		}
+
+		// Log vision consumption
+		if profile != nil {
+			log.Printf("📊 [Telemetry] Gravando consumo Gemini Vision para usuário %s", profile.ID)
+			_ = sbClient.InsertLogConsumo(supabase.LogConsumoInsert{
+				UserID:   profile.ID,
+				ModeloIA: "gemini-2.5-flash",
+				Acao:     "vision_description",
+				Status:   "success",
+			})
+		}
+
+		body = description
+		aiModel = "gemini-2.5-flash-vision"
+		log.Printf("📝 [FSM] Descrição da imagem concluída: \"%s\"", body)
 	}
 
 	// Step 2b: Intercept FSM State before general extractions

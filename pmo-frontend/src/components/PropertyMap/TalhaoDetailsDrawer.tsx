@@ -1,1119 +1,351 @@
-// src/components/PropertyMap/TalhaoDetailsDrawer.tsx
-
-import React, { useState, useEffect, useMemo } from 'react';
-import { getAreaOfPolygon, getPathLength } from 'geolib';
-import {
-    X,
-    Sprout,
-    Trash2,
-    Plus,
-    FlaskConical,
-    Droplets,
-    TreePine,
-    Info,
-    LayoutGrid,
-    Pencil,
-    Loader2,
-    Save,
-    Edit2,
-    CheckCircle2,
-    AlertCircle
+import React, { useState, useEffect } from 'react';
+import { 
+    X, Edit2, Trash2, Sprout, Layers, FlaskConical, 
+    Plus, Info, Save, Loader2, Check, CheckCircle2, 
+    AlertCircle, LayoutGrid, Pencil, Droplets, TreePine
 } from 'lucide-react';
-import { locationService } from '../../services/locationService';
 import { cn } from '../../utils/cn';
 
-// --- Helper: Soil Classification ---
-const getSoilClassification = (clay: number, sand: number) => {
-    if (!clay && !sand) return "Indefinido";
-    const c = parseFloat(String(clay));
-    const s = parseFloat(String(sand));
-
-    if (c >= 60) return "Muito Argiloso";
-    if (c >= 35) return "Argiloso";
-    if (s >= 70 && c < 15) return "Arenoso";
-    if (c >= 20 && c < 35 && s < 45) return "Franco-Argiloso";
-    if (c < 35 && s > 45) return "Franco-Arenoso";
-    return "Franco (Médio)";
-};
-
-// Interface Props
 interface TalhaoDetailsDrawerProps {
     open: boolean;
     onClose: () => void;
     talhao: any;
-    onDeleteCanteiro: (id: string | number) => void;
-    onDeleteTalhao?: (id: string | number) => void;
-    onAddCanteiro?: () => void;
-    onUpdateStart?: () => void;
+    onDeleteCanteiro: (id: string) => void;
+    onUpdateCanteiro: (id: string, data: any) => void;
+    onCreateCanteiros: (data: any) => void;
+    onDeleteTalhao?: (id: string) => void;
+    onUpdateTalhao?: (id: string, data: any) => void;
 }
 
 const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
-    open,
-    onClose,
-    talhao,
-    onDeleteCanteiro,
-    onDeleteTalhao,
-    onUpdateStart
+    open, onClose, talhao, onDeleteCanteiro, onUpdateCanteiro, onCreateCanteiros, onDeleteTalhao, onUpdateTalhao
 }) => {
     const [tabIndex, setTabIndex] = useState(0);
-
-    // --- Feedback State ---
-    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
-        open: false, message: '', severity: 'success'
-    });
-
-    useEffect(() => {
-        if (snackbar.open) {
-            const timer = setTimeout(() => setSnackbar(prev => ({ ...prev, open: false })), 4000);
-            return () => clearTimeout(timer);
-        }
-    }, [snackbar.open]);
-
-    // --- State for Create Modal ---
-    const [createModalOpen, setCreateModalOpen] = useState(false);
-    const [batchData, setBatchData] = useState({
-        type: 'canteiro', // canteiro, linha, tanque
-        baseName: '',
-        width: '',
-        length: '',
-        depth: '',
-        volume: '',
-        isManualVolume: false,
-        isBatch: false,
-        quantity: 1,
-        startNumber: 1
-    });
-
-    // Helper to open modal
-    const handleOpenCreateModal = () => {
-        setBatchData({
-            type: 'canteiro',
-            baseName: '',
-            width: '',
-            length: '',
-            depth: '',
-            volume: '',
-            isManualVolume: false,
-            isBatch: false,
-            quantity: 1,
-            startNumber: 1
-        });
-        setCreateModalOpen(true);
-    };
-
-    // Reactive Calculations for Area and Volume
-    useEffect(() => {
-        const w = parseFloat(batchData.width.replace(',', '.')) || 0;
-        const l = parseFloat(batchData.length.replace(',', '.')) || 0;
-        const d = parseFloat(batchData.depth.replace(',', '.')) || 0;
-        
-        if (batchData.type === 'tanque' && !batchData.isManualVolume && w > 0 && l > 0 && d > 0) {
-            const calculatedVolume = w * l * d;
-            setBatchData(prev => ({ ...prev, volume: calculatedVolume.toFixed(2).replace('.', ',') }));
-        }
-    }, [batchData.width, batchData.length, batchData.depth, batchData.type, batchData.isManualVolume]);
-
-    const handleBatchSave = async () => {
-        if (!talhao) return;
-        try {
-            const payloads: any[] = [];
-            const w = parseFloat(batchData.width.replace(',', '.')) || 0;
-            const l = parseFloat(batchData.length.replace(',', '.')) || 0;
-            const d = parseFloat(batchData.depth.replace(',', '.')) || 0;
-            const v = parseFloat(batchData.volume.replace(',', '.')) || 0;
-            const q = batchData.isBatch ? 1 : (batchData.quantity || 1);
-            const area = (w > 0 && l > 0) ? (w * l * q) : null;
-
-            const count = batchData.isBatch ? (Math.max(1, batchData.quantity)) : 1;
-            const start = batchData.isBatch ? (Math.max(1, batchData.startNumber)) : 1;
-
-            for (let i = 0; i < count; i++) {
-                const num = start + i;
-                let finalName = batchData.baseName;
-                if (!finalName) finalName = batchData.type === 'linha' ? 'Linha' : (batchData.type === 'tanque' ? 'Tanque' : 'Canteiro');
-
-                if (batchData.isBatch) {
-                    finalName = `${finalName} ${num}`;
-                }
-
-                payloads.push({
-                    talhao_id: String(talhao.id),
-                    nome: finalName,
-                    tipo_estrutura: batchData.type,
-                    largura_metros: w || null,
-                    comprimento_metros: l || null,
-                    profundidade_metros: batchData.type === 'tanque' ? d : null,
-                    volume_m3: batchData.type === 'tanque' ? v : null,
-                    quantidade: q,
-                    area_total_m2: area,
-                    status: 'ativo'
-                });
-            }
-
-            if (locationService.createCanteirosBatch) {
-                await locationService.createCanteirosBatch(payloads);
-                if (onUpdateStart) onUpdateStart();
-                setCreateModalOpen(false);
-                setSnackbar({ open: true, message: `${count} estruturas criadas com sucesso!`, severity: 'success' });
-            }
-        } catch (e) {
-            console.error(e);
-            setSnackbar({ open: true, message: "Erro ao criar estruturas.", severity: 'error' });
-        }
-    };
-
+    const [isEditing, setIsEditing] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [isEditing, setIsEditing] = useState(false); // Refere-se à Saúde do Solo
-    const [unitMode, setUnitMode] = useState<'percent' | 'g_kg'>('percent');
-
-    // Estados para edição do cabeçalho (Talhão)
-    const [isEditingTalhao, setIsEditingTalhao] = useState(false);
-    const [talhaoEditData, setTalhaoEditData] = useState({ 
-        nome: '', 
-        cultura: '',
-        fillColor: '#3bb444',
-        borderColor: '#228b22'
-    });
-
-    // Estados para edição de Canteiros/Estruturas individuais
-    const [editingCanteiroId, setEditingCanteiroId] = useState<string | number | null>(null);
-    const [canteiroEditData, setCanteiroEditData] = useState({ nome: '', largura: '', comprimento: '' });
-
-    // Form Data para métricas de solo
-    const [formData, setFormData] = useState({
-        ph_solo: '', materia_organica: '', v_percent: '',
-        fosforo: '', potassio: '',
-        teor_argila: '', silte: '', areia: ''
-    });
-
+    const [createModalOpen, setCreateModalOpen] = useState(false);
     const [showDeleteTalhaoConfirm, setShowDeleteTalhaoConfirm] = useState(false);
+    const [isEditingTalhao, setIsEditingTalhao] = useState(false);
+    const [talhaoEditData, setTalhaoEditData] = useState({
+        nome: '', cultura: '', fillColor: '#10B981', borderColor: '#059669'
+    });
+    const [editingCanteiroId, setEditingCanteiroId] = useState<string | null>(null);
+    const [canteiroEditData, setCanteiroEditData] = useState({ nome: '', largura: '', comprimento: '' });
+    const [formData, setFormData] = useState({
+        ph_solo: '', v_percent: '', materia_organica: '', fosforo: '', potassio: '', teor_argila: '', silte: '', areia: ''
+    });
+    const [unitMode, setUnitMode] = useState<'percent' | 'g_kg'>('percent');
+    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
+    const [batchData, setBatchData] = useState({
+        type: 'canteiro', baseName: '', width: '', length: '', quantity: 1, isBatch: false, startNumber: 1, depth: '', volume: '', isManualVolume: false
+    });
 
-    // Hooks de cálculo movidos para o topo para respeitar as Rules of Hooks
-    const calculatedAreaM2 = useMemo(() => {
-        if (!talhao || !talhao.geometry) return 0;
-        try {
-            const geo = typeof talhao.geometry === 'string' ? JSON.parse(talhao.geometry) : talhao.geometry;
-            if (geo.coordinates && geo.coordinates[0]) {
-                const coords = geo.coordinates[0].map((c: any) => ({ latitude: c[1], longitude: c[0] }));
-                return getAreaOfPolygon(coords);
-            }
-        } catch (e) {
-            console.error("Error calculating area fallback:", e);
-        }
-        return 0;
-    }, [talhao]);
-
-    const perimetroKm = useMemo(() => {
-        if (!talhao || !talhao.geometry) return null;
-        try {
-            const geo = typeof talhao.geometry === 'string' ? JSON.parse(talhao.geometry) : talhao.geometry;
-            if (geo.coordinates && geo.coordinates[0]) {
-                const coords = geo.coordinates[0].map((c: any) => ({ latitude: c[1], longitude: c[0] }));
-                return getPathLength(coords);
-            }
-        } catch (e) {
-            console.error("Error calculating perimeter:", e);
-        }
-        return null;
-    }, [talhao]);
-
-    // Load Initial Data for Editing
     useEffect(() => {
         if (talhao) {
             setFormData({
-                ph_solo: talhao.ph_solo || '',
-                materia_organica: talhao.materia_organica || '',
-                v_percent: talhao.v_percent || '',
-                fosforo: talhao.fosforo || '',
-                potassio: talhao.potassio || '',
-                teor_argila: talhao.teor_argila || '',
-                silte: talhao.silte || '',
-                areia: talhao.areia || ''
+                ph_solo: talhao.ph_solo || '', v_percent: talhao.v_percent || '', materia_organica: talhao.materia_organica || '',
+                fosforo: talhao.fosforo || '', potassio: talhao.potassio || '', teor_argila: talhao.teor_argila || '',
+                silte: talhao.silte || '', areia: talhao.areia || ''
             });
             setTalhaoEditData({
-                nome: talhao.nome || '',
-                cultura: talhao.cultura || '',
-                fillColor: talhao.fillColor || talhao.cor || '#3bb444',
-                borderColor: talhao.borderColor || '#228b22'
+                nome: talhao.nome || '', cultura: talhao.cultura || '',
+                fillColor: talhao.fillColor || talhao.fill_color || '#10B981',
+                borderColor: talhao.borderColor || talhao.border_color || '#059669'
             });
         }
-    }, [talhao, isEditing]);
+    }, [talhao]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        let newFormData = { ...formData, [name]: value };
-
-        if (['teor_argila', 'silte', 'areia'].includes(name)) {
-            const totalTarget = unitMode === 'percent' ? 100 : 1000;
-            const getVal = (k: string) => {
-                const raw = newFormData[k as keyof typeof newFormData];
-                if (raw === '' || raw === undefined) return NaN;
-                return parseFloat(String(raw).replace(',', '.')) || 0;
-            };
-
-            const argila = getVal('teor_argila');
-            const silte = getVal('silte');
-            const areia = getVal('areia');
-            const isVal = (n: number) => !isNaN(n);
-
-            if (name === 'teor_argila') {
-                if (isVal(silte)) newFormData.areia = Math.max(0, totalTarget - argila - silte).toString().replace('.', ',');
-                else if (isVal(areia)) newFormData.silte = Math.max(0, totalTarget - argila - areia).toString().replace('.', ',');
-            } else if (name === 'silte') {
-                if (isVal(argila)) newFormData.areia = Math.max(0, totalTarget - argila - silte).toString().replace('.', ',');
-                else if (isVal(areia)) newFormData.teor_argila = Math.max(0, totalTarget - silte - areia).toString().replace('.', ',');
-            } else if (name === 'areia') {
-                if (isVal(argila)) newFormData.silte = Math.max(0, totalTarget - argila - areia).toString().replace('.', ',');
-                else if (isVal(silte)) newFormData.teor_argila = Math.max(0, totalTarget - silte - areia).toString().replace('.', ',');
-            }
-        }
-        setFormData(newFormData);
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleSave = async () => {
-        if (!talhao) return;
+        if (!onUpdateTalhao) return;
         setSaving(true);
         try {
-            const parseNum = (val: any) => {
-                if (!val && val !== 0) return null;
-                return parseFloat(String(val).replace(',', '.'));
+            const d = {
+                ...formData,
+                ph_solo: parseFloat(String(formData.ph_solo).replace(',', '.')) || null,
+                v_percent: parseFloat(String(formData.v_percent).replace(',', '.')) || null,
+                materia_organica: parseFloat(String(formData.materia_organica).replace(',', '.')) || null,
+                fosforo: parseFloat(String(formData.fosforo).replace(',', '.')) || null,
+                potassio: parseFloat(String(formData.potassio).replace(',', '.')) || null,
+                teor_argila: parseFloat(String(formData.teor_argila).replace(',', '.')) || null,
+                silte: parseFloat(String(formData.silte).replace(',', '.')) || null,
+                areia: parseFloat(String(formData.areia).replace(',', '.')) || null,
             };
-
-            const payload = {
-                ph_solo: parseNum(formData.ph_solo),
-                v_percent: parseNum(formData.v_percent),
-                materia_organica: parseNum(formData.materia_organica),
-                fosforo: parseNum(formData.fosforo),
-                potassio: parseNum(formData.potassio),
-                teor_argila: parseNum(formData.teor_argila),
-                silte: parseNum(formData.silte),
-                areia: parseNum(formData.areia)
-            };
-
-            await locationService.updateTalhao(talhao.id, payload);
+            await onUpdateTalhao(talhao.id, d);
             setIsEditing(false);
-            if (onUpdateStart) onUpdateStart();
-            setSnackbar({ open: true, message: "Dados salvos com sucesso!", severity: 'success' });
-        } catch (error: any) {
-            console.error(error);
-            setSnackbar({ open: true, message: `Erro ao salvar: ${error.message || "Erro desconhecido"}`, severity: 'error' });
+            setSnackbar({ open: true, message: 'Dados de solo atualizados!', severity: 'success' });
+        } catch (error) {
+            setSnackbar({ open: true, message: 'Erro ao atualizar dados.', severity: 'error' });
         } finally {
             setSaving(false);
         }
     };
 
     const handleSaveTalhaoHeader = async () => {
-        if (!talhao) return;
+        if (!onUpdateTalhao) return;
         setSaving(true);
         try {
-            await locationService.updateTalhao(talhao.id, {
-                nome: talhaoEditData.nome,
-                cultura: talhaoEditData.cultura,
-                fill_color: talhaoEditData.fillColor,
-                border_color: talhaoEditData.borderColor,
-                cor: talhaoEditData.fillColor // Backward compatibility
+            await onUpdateTalhao(talhao.id, {
+                nome: talhaoEditData.nome, cultura: talhaoEditData.cultura,
+                fill_color: talhaoEditData.fillColor, border_color: talhaoEditData.borderColor
             });
             setIsEditingTalhao(false);
-            if (onUpdateStart) onUpdateStart();
-            setSnackbar({ open: true, message: "Informações do talhão atualizadas!", severity: 'success' });
-        } catch (e) {
-            console.error(e);
-            setSnackbar({ open: true, message: "Erro ao atualizar talhão.", severity: 'error' });
+            setSnackbar({ open: true, message: 'Talhão atualizado!', severity: 'success' });
+        } catch (error) {
+            setSnackbar({ open: true, message: 'Erro ao atualizar talhão.', severity: 'error' });
         } finally {
             setSaving(false);
         }
     };
 
-    const handleStartEditCanteiro = (canteiro: any) => {
-        setEditingCanteiroId(canteiro.id);
-        setCanteiroEditData({
-            nome: canteiro.nome || '',
-            largura: String(canteiro.largura_metros || ''),
-            comprimento: String(canteiro.comprimento_metros || '')
-        });
+    const handleStartEditCanteiro = (c: any) => {
+        setEditingCanteiroId(c.id);
+        setCanteiroEditData({ nome: c.nome, largura: String(c.largura_metros || '').replace('.', ','), comprimento: String(c.comprimento_metros || '').replace('.', ',') });
     };
 
     const handleSaveCanteiroEdit = async () => {
         if (!editingCanteiroId) return;
-        setSaving(true);
         try {
-            await locationService.updateCanteiro(editingCanteiroId, {
-                nome: canteiroEditData.nome,
+            await onUpdateCanteiro(editingCanteiroId, {
+                nome: canteiroEditData.nome, 
                 largura_metros: parseFloat(canteiroEditData.largura.replace(',', '.')) || null,
                 comprimento_metros: parseFloat(canteiroEditData.comprimento.replace(',', '.')) || null
             });
             setEditingCanteiroId(null);
-            if (onUpdateStart) onUpdateStart();
-            setSnackbar({ open: true, message: "Estrutura atualizada com sucesso!", severity: 'success' });
-        } catch (e) {
-            console.error(e);
-            setSnackbar({ open: true, message: "Erro ao atualizar estrutura.", severity: 'error' });
-        } finally {
-            setSaving(false);
+            setSnackbar({ open: true, message: 'Estrutura atualizada!', severity: 'success' });
+        } catch (error) {
+            setSnackbar({ open: true, message: 'Erro ao atualizar.', severity: 'error' });
         }
     };
 
-    if (!talhao) return null;
+    const handleBatchSave = async () => {
+        if (!onCreateCanteiros) return;
+        try {
+            const structs = [];
+            const qty = batchData.isBatch ? batchData.quantity : 1;
+            for (let i = 0; i < qty; i++) {
+                structs.push({
+                    nome: batchData.isBatch ? `${batchData.baseName} ${batchData.startNumber + i}` : batchData.baseName,
+                    tipo: batchData.type, largura_metros: parseFloat(batchData.width.replace(',', '.')) || null,
+                    comprimento_metros: parseFloat(batchData.length.replace(',', '.')) || null,
+                    profundidade_metros: batchData.type === 'tanque' ? parseFloat(batchData.depth.replace(',', '.')) || null : null,
+                    volume_m3: batchData.type === 'tanque' ? parseFloat(batchData.volume.replace(',', '.')) || null : null,
+                    talhao_id: talhao.id
+                });
+            }
+            await onCreateCanteiros(structs);
+            setCreateModalOpen(false);
+            setSnackbar({ open: true, message: `${qty} estrutura(s) criada(s)!`, severity: 'success' });
+        } catch (error) {
+            setSnackbar({ open: true, message: 'Erro ao criar.', severity: 'error' });
+        }
+    };
 
-    // --- CÁLCULOS VISUAIS ---
-    const argilaVal = parseFloat(String(formData.teor_argila).replace(',', '.')) || 0;
-    const silteVal = parseFloat(String(formData.silte).replace(',', '.')) || 0;
-    const areiaVal = parseFloat(String(formData.areia).replace(',', '.')) || 0;
-    const argilaPct = unitMode === 'g_kg' ? argilaVal / 10 : argilaVal;
-    const siltePct = unitMode === 'g_kg' ? silteVal / 10 : silteVal;
-    const areiaPct = unitMode === 'g_kg' ? areiaVal / 10 : areiaVal;
-    const classificacao = getSoilClassification(argilaPct, areiaPct);
-    const total = argilaVal + silteVal + areiaVal;
+    const areaFormatada = talhao?.area_ha?.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '--';
+    const argila = parseFloat(String(formData.teor_argila).replace(',', '.')) || 0;
+    const silte = parseFloat(String(formData.silte).replace(',', '.')) || 0;
+    const areia = parseFloat(String(formData.areia).replace(',', '.')) || 0;
+    const total = argila + silte + areia;
     const baseEsperada = unitMode === 'percent' ? 100 : 1000;
-    const isTotalCorrect = Math.abs(total - baseEsperada) < 0.5;
+    let classificacao = '--';
+    if (total > 0) {
+        if (argila > 35) classificacao = 'Argiloso';
+        else if (argila > 15 && areia > 45) classificacao = 'Franco-Arenoso';
+        else if (argila < 15 && areia > 70) classificacao = 'Arenoso';
+        else classificacao = 'Franco';
+    }
 
-    const areaM2 = talhao.area_m2 || talhao.area_total_m2 || talhao.area_ha * 10000 || calculatedAreaM2 || 0;
-    const areaHa = areaM2 / 10000;
-    const areaFormatada = areaHa.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
-
-    const getIcon = (nome?: string, customColor?: string) => {
-        const lower = (nome || '').toLowerCase();
-        const baseColor = customColor || (lower.includes('tanque') || lower.includes('água') ? '#3B82F6' : lower.includes('linha') || lower.includes('saf') ? '#D97706' : '#10B981');
-        
+    const getIcon = (name: string, color?: string) => {
+        const lower = name?.toLowerCase() || '';
+        const baseColor = color || (talhao?.tipo === 'agua' ? '#3B82F6' : '#10B981');
         if (lower.includes('tanque') || lower.includes('água')) return <Droplets style={{ color: baseColor }} size={18} />;
         if (lower.includes('linha') || lower.includes('saf')) return <TreePine style={{ color: baseColor }} size={18} />;
         return <Sprout style={{ color: baseColor }} size={18} />;
     };
 
+    if (!talhao) return null;
+
     return (
-        <>
-            {/* Responsive Panel: Side panel on desktop, Bottom sheet on mobile */}
-            <div className={cn(
-                "fixed inset-x-0 bottom-0 md:inset-y-0 md:right-8 md:left-auto md:max-w-md z-[2000] pointer-events-none transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) flex md:items-center",
-                open ? "visible" : "invisible"
-            )}>
-                <div className={cn(
-                    "relative bg-white shadow-2xl shadow-black/20 flex flex-col overflow-hidden transition-all duration-500 transform pointer-events-auto",
-                    // Desktop: Floating Center Panel
-                    "md:w-[26rem] md:rounded-[24px] md:max-h-[92vh]",
-                    // Mobile: Bottom Sheet
-                    "top-auto left-0 right-0 bottom-0 w-full h-[75vh] rounded-t-[24px]",
-                    // Open/Close States
-                    open 
-                        ? "translate-y-0 md:translate-x-0 opacity-100" 
-                        : "translate-y-full md:translate-x-full opacity-0"
-                )}>
-                {/* Header */}
-                <div className="flex items-start gap-3 p-4 shrink-0 bg-white border-b border-slate-100">
-                <div 
-                    className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                    style={{ 
-                        backgroundColor: `${talhao.fill_color || talhao.fillColor || talhao.cor || (talhao.tipo === 'agua' ? '#3B82F6' : '#10B981')}20`
-                    }}
-                >
-                    {getIcon(talhao.nome, talhao.fill_color || talhao.fillColor || talhao.cor)}
-                </div>
-                <div className="flex-1 overflow-hidden min-w-0">
-                    {isEditingTalhao ? (
-                        <div className="space-y-1">
-                            <input
-                                autoFocus
-                                value={talhaoEditData.nome}
-                                onChange={(e) => setTalhaoEditData(prev => ({ ...prev, nome: e.target.value }))}
-                                className="w-full text-sm font-bold text-slate-900 bg-slate-50 border border-slate-200 rounded px-2 py-0.5 focus:border-emerald-500 outline-none"
-                                placeholder="Nome do talhão"
-                            />
-                            <input
-                                value={talhaoEditData.cultura}
-                                onChange={(e) => setTalhaoEditData(prev => ({ ...prev, cultura: e.target.value }))}
-                                className="w-full text-[11px] text-slate-500 bg-slate-50 border border-slate-200 rounded px-2 py-0.5 focus:border-emerald-500 outline-none"
-                                placeholder="Cultura (ex: Feijão)"
-                            />
-                            <div className="grid grid-cols-2 gap-2 mt-2">
-                                <div className="space-y-1">
-                                    <p className="text-[9px] font-bold text-slate-400 uppercase ml-1">Cor</p>
-                                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
-                                        <input
-                                            type="color"
-                                            value={talhaoEditData.fillColor}
-                                            onChange={(e) => setTalhaoEditData(prev => ({ ...prev, fillColor: e.target.value }))}
-                                            className="w-6 h-6 p-0.5 rounded cursor-pointer bg-white border border-slate-200"
-                                        />
-                                        <span className="text-[9px] font-mono font-bold text-slate-500 uppercase">{talhaoEditData.fillColor}</span>
-                                    </div>
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-[9px] font-bold text-slate-400 uppercase ml-1">Borda</p>
-                                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
-                                        <input
-                                            type="color"
-                                            value={talhaoEditData.borderColor}
-                                            onChange={(e) => setTalhaoEditData(prev => ({ ...prev, borderColor: e.target.value }))}
-                                            className="w-6 h-6 p-0.5 rounded cursor-pointer bg-white border border-slate-200"
-                                        />
-                                        <span className="text-[9px] font-mono font-bold text-slate-500 uppercase">{talhaoEditData.borderColor}</span>
-                                    </div>
-                                </div>
-                            </div>
+        <div className="talhao-details-container">
+            <div className={cn("fixed inset-x-0 bottom-0 md:inset-y-0 md:right-8 md:left-auto md:max-w-md z-[2000] pointer-events-none transition-all duration-500 flex md:items-center", open ? "visible" : "invisible")}>
+                <div className={cn("relative bg-white/95 backdrop-blur-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-500 transform pointer-events-auto", "md:w-[28rem] md:rounded-[40px] md:max-h-[92vh] md:border md:border-white/20", "top-auto left-0 right-0 bottom-0 w-full h-[85vh] rounded-t-[40px]", open ? "translate-y-0 md:translate-x-0 opacity-100" : "translate-y-full md:translate-x-12 opacity-0")}>
+                    <div className="flex items-start gap-4 p-6 shrink-0 bg-transparent">
+                        <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg bg-emerald-500/10 border border-white/40 overflow-hidden relative group" style={{ backgroundColor: `${talhao.fill_color || '#10B981'}15` }}>
+                            {getIcon(talhao.nome, talhao.fill_color)}
                         </div>
-                    ) : (
-                        <>
-                            <h3 className="text-lg font-bold text-slate-900 truncate leading-tight">{talhao.nome || 'Talhão Sem Nome'}</h3>
-                            <p className="text-xs text-slate-500 font-medium">{talhao.cultura || 'Rotação de Culturas'} — {areaFormatada} ha</p>
-                        </>
-                    )}
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                    {isEditingTalhao ? (
-                        <button 
-                            onClick={handleSaveTalhaoHeader}
-                            disabled={saving}
-                            className="p-1.5 text-white bg-emerald-600 rounded-full hover:bg-emerald-700 transition-colors"
-                        >
-                            {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
-                        </button>
-                    ) : (
-                        <button 
-                            onClick={() => setIsEditingTalhao(true)}
-                            className="p-1.5 text-emerald-600 bg-emerald-50 rounded-full hover:bg-emerald-100 transition-colors"
-                        >
-                            <Pencil size={13} />
-                        </button>
-                    )}
+                        <div className="flex-1 overflow-hidden min-w-0 pt-1">
+                            {isEditingTalhao ? (
+                                <input autoFocus value={talhaoEditData.nome} onChange={e=>setTalhaoEditData({...talhaoEditData, nome: e.target.value})} className="w-full text-base font-black bg-slate-50 border rounded-xl px-2 py-1 outline-none focus:border-emerald-500" />
+                            ) : (
+                                <>
+                                    <h3 className="text-xl font-black text-slate-900 truncate tracking-tight">{talhao.nome || "Talhão"}</h3>
+                                    <p className="text-sm text-slate-500 font-bold tracking-tight">{talhao.cultura || "Geral"} • {areaFormatada} ha</p>
+                                </>
+                            )}
+                        </div>
+                        <div className="flex gap-1 pt-1">
+                            {isEditingTalhao ? (
+                                <button onClick={handleSaveTalhaoHeader} className="p-2 text-white bg-emerald-600 rounded-xl shadow-lg"><Save size={16} /></button>
+                            ) : (
+                                <button onClick={()=>setIsEditingTalhao(true)} className="p-2.5 text-slate-400 bg-slate-50 rounded-2xl hover:text-emerald-600 transition-all"><Edit2 size={16} /></button>
+                            )}
+                            <button onClick={onClose} className="p-2.5 text-slate-300 hover:text-slate-500 transition-all"><X size={20} /></button>
+                        </div>
+                    </div>
                     
-                    {!isEditingTalhao && (
-                        <button 
-                            onClick={() => setShowDeleteTalhaoConfirm(true)}
-                            className="p-1.5 text-red-500 bg-red-50 rounded-full hover:bg-red-100 transition-colors"
-                            title="Excluir Talhão"
-                        >
-                            <Trash2 size={13} />
+                    <div className="flex bg-slate-100/80 p-1.5 shrink-0 mb-6 rounded-2xl mx-4 border border-slate-200/20 backdrop-blur-sm">
+                        <button onClick={() => setTabIndex(0)} className={cn("flex-1 py-3 text-[11px] font-black uppercase tracking-[0.15em] flex items-center justify-center gap-2 rounded-xl transition-all", tabIndex === 0 ? "bg-white shadow-md text-emerald-700" : "text-slate-400")}>
+                            <LayoutGrid size={16} /> Estrutura
                         </button>
-                    )}
-
-                    <button onClick={onClose} className="p-1.5 text-slate-300 hover:text-slate-500 transition-all">
-                        <X size={18} />
-                    </button>
-                </div>
-            </div>                {/* Body Content (Invisible Scrollarea) */}
-                <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-4 pt-0 pb-6">
-                    {/* Insights/Soil Progress */}
-                    <div className="space-y-4">
-                        {/* Nested Data Card (Seeding/Area) */}
-                        <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                            <div className="flex items-center justify-between mb-2">
-                                <div>
-                                    <h4 className="text-xs font-bold text-slate-900">Propriedades</h4>
-                                    <div className="flex items-center gap-2 text-[10px] text-emerald-600 font-bold mt-1">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                        <span>EM PRODUÇÃO</span>
-                                    </div>
-                                </div>
-                                <button className="text-emerald-600 text-[11px] font-bold hover:underline">
-                                    Editar mapa +
-                                </button>
-                            </div>
-                            
-                            <div className="grid grid-cols-3 gap-2">
-                                <div className="space-y-0.5">
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Área</p>
-                                    <p className="text-2xl font-black text-slate-900 leading-none">{areaFormatada}</p>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase">hectares</p>
-                                </div>
-                                <div className="space-y-0.5">
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Perímetro</p>
-                                    <p className="text-2xl font-black text-slate-900 leading-none">
-                                        {perimetroKm ? Math.round(perimetroKm).toLocaleString('pt-BR') : '--'}
-                                    </p>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase">metros</p>
-                                </div>
-                                <div className="space-y-0.5">
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Altivez</p>
-                                    <p className="text-2xl font-black text-slate-900 leading-none">850</p>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase">m (nível mar)</p>
-                                </div>
-                            </div>
-                    </div>
-                </div>
-                
-                    {/* Tabs */}
-                    <div className="flex bg-slate-50/50 border-b border-slate-100 shrink-0 mb-2 rounded-lg overflow-hidden">
-                        <button
-                            onClick={() => setTabIndex(0)}
-                            className={cn(
-                                "flex-1 py-2.5 text-[11px] font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 border-b-2 transition-all",
-                                 tabIndex === 0 ? "text-emerald-600 border-emerald-600 bg-white" : "text-slate-400 border-transparent hover:text-slate-600"
-                            )}
-                        >
-                            <LayoutGrid size={16} />
-                            Estrutura
-                        </button>
-                        <button
-                            onClick={() => setTabIndex(1)}
-                            className={cn(
-                                "flex-1 py-2.5 text-[11px] font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 border-b-2 transition-all",
-                                 tabIndex === 1 ? "text-emerald-600 border-emerald-600 bg-white" : "text-slate-400 border-transparent hover:text-slate-600"
-                            )}
-                        >
-                            <FlaskConical size={16} />
-                            Saúde Solo
+                        <button onClick={() => setTabIndex(1)} className={cn("flex-1 py-3 text-[11px] font-black uppercase tracking-[0.15em] flex items-center justify-center gap-2 rounded-xl transition-all", tabIndex === 1 ? "bg-white shadow-md text-emerald-700" : "text-slate-400")}>
+                            <FlaskConical size={16} /> Saúde Solo
                         </button>
                     </div>
 
-                    {/* Content Area */}
-                    <div className="flex-1">
-                        {/* Tab 0: Structure */}
+                    <div className="flex-1 overflow-y-auto px-6 pb-6">
                         {tabIndex === 0 && (
-                            <div className="animate-in fade-in duration-300">
-                                {(!talhao.canteiros || talhao.canteiros.length === 0) ? (
-                                    <div className="py-20 px-10 text-center">
-                                        <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-200">
-                                            <Sprout size={40} />
-                                        </div>
-                                        <h4 className="text-lg font-bold text-slate-900 mb-2">Sem estruturas</h4>
-                                        <p className="text-sm text-slate-500 mb-8">Nenhum canteiro, linha ou tanque cadastrado para este talhão.</p>
-                                        <button
-                                            onClick={handleOpenCreateModal}
-                                             className="px-8 py-3 bg-emerald-600 text-white font-bold rounded-2xl shadow-lg shadow-emerald-100 hover:bg-emerald-700 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                                        >
-                                            Adicionar Agora
-                                        </button>
+                            <div className="space-y-4 animate-in fade-in duration-300">
+                                {talhao.canteiros?.length === 0 ? (
+                                    <div className="py-20 text-center bg-slate-50/50 rounded-[40px] border border-dashed border-slate-200">
+                                        <Sprout size={48} className="mx-auto text-slate-200 mb-4" />
+                                        <h4 className="font-black text-slate-900">Sem estruturas</h4>
+                                        <button onClick={()=>setCreateModalOpen(true)} className="mt-6 px-8 py-3 bg-emerald-600 text-white font-black text-[10px] uppercase rounded-xl">Adicionar Agora</button>
                                     </div>
                                 ) : (
-                                    <>
-                                        <div className="bg-green-50/50 px-6 py-2 border-b border-green-100">
-                                            <span className="text-[10px] font-black text-green-700 uppercase tracking-widest">
-                                                {talhao.canteiros.length} ESTRUTURAS REGISTRADAS
-                                            </span>
-                                        </div>
-                                        <div className="divide-y divide-slate-50 mb-20">
-                                            {talhao.canteiros.map((canteiro: any) => (
-                                                <div key={canteiro.id} className="p-4 px-6 hover:bg-slate-50 group transition-colors">
-                                                    {editingCanteiroId === canteiro.id ? (
-                                                        <div className="space-y-3 animate-in slide-in-from-top-1 duration-200">
-                                                            <div className="flex items-center gap-2">
-                                                                <input 
-                                                                    value={canteiroEditData.nome}
-                                                                    onChange={(e) => setCanteiroEditData(p => ({ ...p, nome: e.target.value }))}
-                                                                    className="flex-1 text-sm font-bold bg-white border border-slate-200 rounded-lg px-3 py-1.5 outline-none focus:border-emerald-500"
-                                                                    placeholder="Nome"
-                                                                />
-                                                            </div>
-                                                            <div className="grid grid-cols-2 gap-2">
-                                                                <div className="space-y-1">
-                                                                    <p className="text-[9px] font-bold text-slate-400 uppercase">Largura (m)</p>
-                                                                    <input 
-                                                                        type="text"
-                                                                        value={canteiroEditData.largura}
-                                                                        onChange={(e) => setCanteiroEditData(p => ({ ...p, largura: e.target.value }))}
-                                                                        className="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-1.5 outline-none focus:border-emerald-500"
-                                                                        placeholder="0,00"
-                                                                    />
-                                                                </div>
-                                                                <div className="space-y-1">
-                                                                    <p className="text-[9px] font-bold text-slate-400 uppercase">Comprimento (m)</p>
-                                                                    <input 
-                                                                        type="text"
-                                                                        value={canteiroEditData.comprimento}
-                                                                        onChange={(e) => setCanteiroEditData(p => ({ ...p, comprimento: e.target.value }))}
-                                                                        className="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-1.5 outline-none focus:border-emerald-500"
-                                                                        placeholder="0,00"
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex justify-end gap-2 mt-2">
-                                                                <button onClick={() => setEditingCanteiroId(null)} className="px-3 py-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-600">Cancelar</button>
-                                                                <button 
-                                                                    onClick={handleSaveCanteiroEdit}
-                                                                    className="px-4 py-1.5 bg-emerald-600 text-white text-[10px] font-bold rounded-lg hover:bg-emerald-700 shadow-lg shadow-emerald-100"
-                                                                >
-                                                                    Salvar
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="flex items-center justify-between">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="p-1.5 bg-white rounded-lg shadow-sm border border-slate-100">
-                                                                    {getIcon(canteiro.nome)}
-                                                                </div>
-                                                                <div>
-                                                                    <h4 className="text-xs font-bold text-slate-800 leading-tight">{canteiro.nome}</h4>
-                                                                    <div className="flex gap-2 text-[9px] text-slate-400 font-medium">
-                                                                        {canteiro.largura_metros && <span>{String(canteiro.largura_metros).replace('.', ',')}m larg.</span>}
-                                                                        {canteiro.comprimento_metros && <span>{String(canteiro.comprimento_metros).replace('.', ',')}m comp.</span>}
-                                                                        {!canteiro.largura_metros && !canteiro.comprimento_metros && <span>Dimensões não info.</span>}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                                                                <button
-                                                                    onClick={() => handleStartEditCanteiro(canteiro)}
-                                                                    className="p-2 text-slate-300 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
-                                                                    title="Editar"
-                                                                >
-                                                                    <Pencil size={14} />
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => onDeleteCanteiro(canteiro.id)}
-                                                                    className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                                                                    title="Excluir"
-                                                                >
-                                                                    <Trash2 size={16} />
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    )}
+                                    talhao.canteiros?.map((c: any) => (
+                                        <div key={c.id} className="p-4 bg-white border border-slate-100 rounded-3xl flex items-center justify-between group transition-all hover:border-emerald-200 hover:shadow-lg">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center group-hover:bg-emerald-50 transition-colors">{getIcon(c.nome)}</div>
+                                                <div>
+                                                    <h4 className="text-sm font-black">{c.nome}</h4>
+                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{c.largura_metros}m x {c.comprimento_metros}m</p>
                                                 </div>
-                                            ))}
+                                            </div>
+                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                                <button onClick={()=>handleStartEditCanteiro(c)} className="p-2 text-slate-400 hover:text-emerald-600 transition-colors"><Pencil size={14} /></button>
+                                                <button onClick={()=>onDeleteCanteiro(c.id)} className="p-2 text-slate-400 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
+                                            </div>
                                         </div>
-                                    </>
+                                    ))
                                 )}
+                                <button onClick={()=>setCreateModalOpen(true)} className="w-full h-16 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm uppercase tracking-widest rounded-[24px] shadow-2xl shadow-emerald-500/20 transition-all mt-4">+ Nova Estrutura</button>
                             </div>
                         )}
 
-                        {/* Tab 1: Soil Health */}
                         {tabIndex === 1 && (
-                            <div className="p-5 space-y-8 animate-in fade-in duration-300">
-                                <div className="flex items-center justify-between">
-                                         <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                                        <div className="w-1.5 h-6 bg-emerald-600 rounded-full" />
-                                        Métricas de Fertilidade
-                                    </h4>
-                                    <button
-                                        onClick={isEditing ? handleSave : () => setIsEditing(true)}
-                                        disabled={saving}
-                                        className={cn(
-                                            "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm",
-                                            isEditing
-                                                 ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                                                : "bg-white text-slate-600 border border-slate-200 hover:border-emerald-600 hover:text-emerald-600"
-                                        )}
-                                    >
-                                        {isEditing ? (saving ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />) : <Edit2 size={14} />}
-                                        {isEditing ? (saving ? "Salvando..." : "Salvar") : "Editar"}
-                                    </button>
-                                </div>
-
-                                {isEditing ? (
-                                    <div className="space-y-6">
-                                        <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl flex items-center gap-3 text-blue-700">
-                                            <Info size={18} />
-                                            <span className="text-xs font-semibold uppercase tracking-tight">Insira os dados técnicos da última análise de solo.</span>
-                                        </div>
-
-                                        <div className="space-y-4">
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Atributos Químicos</p>
-                                            <div className="grid grid-cols-3 gap-3">
-                                                <div className="space-y-1">
-                                                    <label className="text-[9px] font-bold text-slate-500 ml-2">pH (H₂O)</label>
-                                                     <input type="text" name="ph_solo" value={formData.ph_solo} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition-all" />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <label className="text-[9px] font-bold text-slate-500 ml-2">M.O. (%)</label>
-                                                     <input type="text" name="materia_organica" value={formData.materia_organica} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition-all" />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <label className="text-[9px] font-bold text-slate-500 ml-2">V (%)</label>
-                                                     <input type="text" name="v_percent" value={formData.v_percent} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition-all" />
-                                                </div>
+                            <div className="space-y-6 animate-in fade-in duration-500">
+                                {/* PHYSICAL COMPOSITION - LIGHT PREMIUM CARD */}
+                                <div className="bg-white border border-slate-100 rounded-[32px] p-6 shadow-sm relative overflow-hidden group mx-1">
+                                    <div className="flex items-center justify-between mb-8">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-emerald-50 rounded-2xl flex items-center justify-center border border-emerald-100/50">
+                                                <Layers size={20} className="text-emerald-600" />
                                             </div>
-                                            <div className="grid grid-cols-2 gap-3">
-                                                <div className="space-y-1">
-                                                    <label className="text-[9px] font-bold text-slate-500 ml-2">P (mg/dm³)</label>
-                                                     <input type="text" name="fosforo" value={formData.fosforo} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition-all" />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <label className="text-[9px] font-bold text-slate-500 ml-2">K (mg/dm³)</label>
-                                                     <input type="text" name="potassio" value={formData.potassio} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition-all" />
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-4 mt-8">
-                                            <div className="flex justify-between items-center">
-                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Textura (%)</p>
-                                                <div className="flex bg-slate-100 rounded-lg p-0.5 border border-slate-200">
-                                                    <button onClick={() => setUnitMode('percent')} className={cn("px-3 py-1 text-[10px] font-bold rounded-md transition-all", unitMode === 'percent' ? "bg-white text-emerald-600 shadow-sm" : "text-slate-400 hover:text-slate-600")}>%</button>
-                                                    <button onClick={() => setUnitMode('g_kg')} className={cn("px-3 py-1 text-[10px] font-bold rounded-md transition-all", unitMode === 'g_kg' ? "bg-white text-emerald-600 shadow-sm" : "text-slate-400 hover:text-slate-600")}>g/kg</button>
-                                                </div>
-                                            </div>
-                                            <div className="grid grid-cols-3 gap-3">
-                                                <div className="space-y-1">
-                                                    <label className="text-[9px] font-bold text-amber-600 ml-2">Argila</label>
-                                                    <input type="text" name="teor_argila" value={formData.teor_argila} onChange={handleChange} className="w-full bg-white border border-amber-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition-all shadow-[0_4px_12px_rgba(217,119,6,0.05)]" />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <label className="text-[9px] font-bold text-slate-500 ml-2">Silte</label>
-                                                     <input type="text" name="silte" value={formData.silte} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition-all" />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <label className="text-[9px] font-bold text-slate-500 ml-2">Areia</label>
-                                                     <input type="text" name="areia" value={formData.areia} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition-all" />
-                                                </div>
-                                            </div>
-                                            <div className="flex justify-between items-center px-2">
-                                                <span className="text-[10px] font-black text-amber-700 bg-amber-100/50 px-2 py-0.5 rounded uppercase">{classificacao}</span>
-                                                <span className={cn("text-[10px] font-black uppercase", isTotalCorrect ? "text-emerald-600" : "text-red-500")}>
-                                                    Total: {total.toFixed(1)} / {baseEsperada}
-                                                </span>
+                                            <div>
+                                                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">Composição Física</p>
+                                                <p className="text-lg font-black text-slate-900">{classificacao || 'Analisando...'}</p>
                                             </div>
                                         </div>
                                     </div>
-                                ) : (
-                                    <div className="space-y-8 animate-in fade-in duration-500">
-                                        {/* Gauges View (Dashboard Style) */}
-                                        <div className="grid grid-cols-1 gap-6 px-2">
-                                            {/* pH */}
-                                            <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
-                                                <div className="flex justify-between items-baseline mb-3">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-1.5 h-4 bg-emerald-500 rounded-full" />
-                                                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">pH do Solo</span>
-                                                    </div>
-                                                    <span className="text-sm font-black text-slate-900">{formData.ph_solo || '-'}</span>
-                                                </div>
-                                                <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-                                                    <div
-                                                        className="h-full bg-emerald-500 transition-all duration-1000"
-                                                        style={{ width: `${Math.min((Number(formData.ph_solo) / 8) * 100, 100)}%` }}
-                                                    />
-                                                </div>
-                                                <div className="flex justify-between mt-1 px-0.5">
-                                                    <span className="text-[8px] font-bold text-slate-500 uppercase">Ácido</span>
-                                                    <span className="text-[8px] font-bold text-slate-500 uppercase">Neutro</span>
-                                                    <span className="text-[8px] font-bold text-slate-500 uppercase">Alcalino</span>
-                                                </div>
-                                            </div>
- 
-                                            {/* V% */}
-                                            <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
-                                                <div className="flex justify-between items-baseline mb-3">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-1.5 h-4 bg-blue-500 rounded-full" />
-                                                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Saturação por Bases</span>
-                                                    </div>
-                                                    <span className="text-sm font-black text-slate-900">{formData.v_percent || '-'}%</span>
-                                                </div>
-                                                <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-                                                    <div
-                                                        className="h-full bg-blue-500 transition-all duration-1000"
-                                                        style={{ width: `${Number(formData.v_percent) || 0}%` }}
-                                                    />
-                                                </div>
-                                            </div>
+                                    
+                                    {/* SEGMENTED BAR */}
+                                    <div className="h-4 w-full bg-slate-100 rounded-full overflow-hidden flex gap-0.5 mb-6">
+                                        <div className="h-full bg-emerald-500 transition-all duration-1000" style={{ width: `${Math.min(100, (argila/baseEsperada)*100)}%` }} />
+                                        <div className="h-full bg-amber-400 transition-all duration-1000 delay-200" style={{ width: `${Math.min(100, (silte/baseEsperada)*100)}%` }} />
+                                        <div className="h-full bg-sky-400 transition-all duration-1000 delay-400" style={{ width: `${Math.min(100, (areia/baseEsperada)*100)}%` }} />
+                                    </div>
 
-                                            {/* Nutrients Row */}
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
-                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Fósforo (P)</p>
-                                                    <h3 className="text-base font-black text-slate-900 flex items-baseline gap-1">
-                                                        {formData.fosforo || '-'}
-                                                        <span className="text-[10px] font-bold text-slate-300">mg</span>
-                                                    </h3>
-                                                </div>
-                                                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
-                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Potássio (K)</p>
-                                                    <h3 className="text-base font-black text-slate-900 flex items-baseline gap-1">
-                                                        {formData.potassio || '-'}
-                                                        <span className="text-[10px] font-bold text-slate-300">mg</span>
-                                                    </h3>
-                                                </div>
-                                            </div>
+                                    {/* LEGEND DOTS */}
+                                    <div className="flex items-center gap-6 justify-center">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Argila {argila}%</span>
                                         </div>
-
-                                        {/* Physical / Texture Card */}
-                                        <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 space-y-4">
-                                            <div className="flex justify-between items-center">
-                                                <h5 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Textura Física</h5>
-                                                <span className="text-[10px] font-black bg-slate-900 text-white px-3 py-1 rounded-full">{classificacao}</span>
-                                            </div>
-
-                                            <div className="h-4 w-full bg-slate-200 rounded-full overflow-hidden flex">
-                                                <div className="h-full bg-[#5D4037] transition-all duration-1000" style={{ width: `${argilaPct}%` }} />
-                                                <div className="h-full bg-slate-400 transition-all duration-1000" style={{ width: `${siltePct}%` }} />
-                                                <div className="h-full bg-amber-400 transition-all duration-1000" style={{ width: `${areiaPct}%` }} />
-                                            </div>
-
-                                            <div className="flex justify-center gap-6">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-2 h-2 rounded-full bg-[#5D4037]" />
-                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Argila</span>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-2 h-2 rounded-full bg-slate-400" />
-                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Silte</span>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-2 h-2 rounded-full bg-amber-400" />
-                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Areia</span>
-                                                </div>
-                                            </div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Silte {silte}%</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2.5 h-2.5 rounded-full bg-sky-400" />
+                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Areia {areia}%</span>
                                         </div>
                                     </div>
-                                )}
+                                </div>
+
+                                {/* CHEMICAL METRICS - BENTO GRID */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    {[
+                                        { l: 'pH', v: formData.ph_solo, u: 'CaCl2', i: <FlaskConical size={14} />, c: 'emerald', s: Number(formData.ph_solo) >= 6 && Number(formData.ph_solo) <= 7 ? 'Ideal' : 'Ajustar' },
+                                        { l: 'V%', v: formData.v_percent, u: '%', i: <Droplets size={14} />, c: 'blue', s: Number(formData.v_percent) >= 60 ? 'Ideal' : 'Baixo' },
+                                        { l: 'M.O.', v: formData.materia_organica, u: 'g/dm³', i: <Layers size={14} />, c: 'amber', s: Number(formData.materia_organica) >= 2.5 ? 'Ideal' : 'Baixo' },
+                                        { l: 'P', v: formData.fosforo, u: 'mg', i: <Sprout size={14} />, c: 'emerald', s: Number(formData.fosforo) >= 20 ? 'Ideal' : 'Baixo' }
+                                    ].map((m, i) => (
+                                        <div key={i} className="bg-slate-50/50 border border-slate-100 p-5 rounded-[28px] group transition-all hover:bg-white hover:shadow-xl hover:-translate-y-1 relative overflow-hidden">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center", m.c === 'emerald' ? "bg-emerald-100 text-emerald-600" : m.c === 'blue' ? "bg-blue-100 text-blue-600" : "bg-amber-100 text-amber-600")}>
+                                                    {m.i}
+                                                </div>
+                                                <span className={cn("text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full", m.s === 'Ideal' ? "bg-emerald-500/10 text-emerald-600" : "bg-amber-500/10 text-amber-600")}>{m.s}</span>
+                                            </div>
+                                            <div className="text-center py-2">
+                                                <p className="text-3xl font-black text-slate-900 mb-1">{m.v || '--'}</p>
+                                                <div className="flex items-center justify-center gap-1">
+                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{m.l}</span>
+                                                    <span className="text-[9px] font-bold text-slate-300">({m.u})</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <button onClick={()=>setIsEditing(true)} className="w-full py-4 bg-emerald-50 text-emerald-700 font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-emerald-100 transition-all border border-emerald-200/50 mt-2">Editar Análise Completa</button>
                             </div>
                         )}
-                    </div>
-
-                    {/* Footer Actions (Inside Scrollarea) */}
-                    {tabIndex === 0 && (
-                        <div className="mt-10 mb-2">
-                             <button
-                                onClick={handleOpenCreateModal}
-                                className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-emerald-100 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                            >
-                                <Plus size={18} />
-                                Nova Estrutura
-                            </button>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </div>
-
-                {/* --- CREATE MODAL --- */}
-            <div className={cn(
-                "fixed inset-0 z-[2000] flex items-center justify-center p-4 transition-all duration-200",
-                createModalOpen ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
-            )}>
-                <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setCreateModalOpen(false)} />
-                <div className={cn(
-                    "relative bg-white w-full max-w-md max-h-[calc(100dvh-4rem)] rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 transform",
-                    createModalOpen ? "scale-100 translate-y-0" : "scale-95 translate-y-4"
-                )}>
-                    {/* Modal Header */}
-                    <div className="p-6 border-b border-slate-50 flex items-center justify-between">
-                        <h3 className="text-xl font-black text-slate-900 tracking-tight">Nova Estrutura</h3>
-                        <button onClick={() => setCreateModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 rounded-full">
-                            <X size={20} />
-                        </button>
-                    </div>
-
-                    {/* Modal Content - Invisible Scroll area */}
-                    <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] p-6 space-y-6 pb-12">
-                        {/* Type Selection */}
-                        <div className="space-y-3">
-                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Tipo de Estrutura</label>
-                            <div className="grid grid-cols-3 gap-2">
-                                {['canteiro', 'linha', 'tanque'].map((t) => (
-                                    <button
-                                        key={t}
-                                        onClick={() => setBatchData({ ...batchData, type: t })}
-                                        className={cn(
-                                            "py-2 px-1 text-[10px] font-black uppercase rounded-xl border transition-all",
-                                            batchData.type === t
-                                                ? "bg-emerald-50 text-emerald-700 border-emerald-200 shadow-inner ring-2 ring-emerald-600/5"
-                                                : "bg-white text-slate-400 border-slate-100 hover:bg-slate-50"
-                                        )}
-                                    >
-                                        {t}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Basic Info */}
-                        <div className="space-y-2">
-                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                                {batchData.isBatch ? "Nome Base" : "Nome da Estrutura"}
-                            </label>
-                            <input
-                                type="text"
-                                value={batchData.baseName}
-                                onChange={(e) => setBatchData({ ...batchData, baseName: e.target.value })}
-                                placeholder={batchData.isBatch ? "Ex: Linha" : "Ex: Canteiro 1"}
-                                className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-600 transition-all placeholder:text-slate-300"
-                            />
-                        </div>
-
-                        {/* Dimensions */}
-                        <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 text-center block">Largura (m)</label>
-                                <input
-                                    type="text"
-                                    value={batchData.width}
-                                    onChange={(e) => setBatchData({ ...batchData, width: e.target.value })}
-                                    className="w-full bg-white border border-slate-200 rounded-2xl px-5 py-3 text-sm font-black text-center text-slate-700 focus:outline-none focus:border-emerald-600 transition-all"
-                                    placeholder="0,00"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 text-center block">Comp. (m)</label>
-                                <input
-                                    type="text"
-                                    value={batchData.length}
-                                    onChange={(e) => setBatchData({ ...batchData, length: e.target.value })}
-                                    className="w-full bg-white border border-slate-200 rounded-2xl px-5 py-3 text-sm font-black text-center text-slate-700 focus:outline-none focus:border-emerald-600 transition-all"
-                                    placeholder="0,00"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Tangue Specific: Profundidade e Volume */}
-                        {batchData.type === 'tanque' && (
-                            <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-top-2 duration-200">
-                                <div className="space-y-2">
-                                    <label className="text-[11px] font-black text-blue-400 uppercase tracking-widest ml-1 text-center block">Profundidade (m)</label>
-                                    <input
-                                        type="text"
-                                        value={batchData.depth}
-                                        onChange={(e) => setBatchData({ ...batchData, depth: e.target.value })}
-                                        className="w-full bg-blue-50/30 border border-blue-100 rounded-2xl px-5 py-3 text-sm font-black text-center text-blue-700 focus:outline-none focus:border-blue-500 transition-all"
-                                        placeholder="0,00"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[11px] font-black text-blue-400 uppercase tracking-widest ml-1 text-center block">Volume (m³)</label>
-                                    <input
-                                        type="text"
-                                        value={batchData.volume}
-                                        onChange={(e) => {
-                                            setBatchData({ ...batchData, volume: e.target.value, isManualVolume: true });
-                                        }}
-                                        className={cn(
-                                            "w-full border rounded-2xl px-5 py-3 text-sm font-black text-center transition-all focus:outline-none",
-                                            batchData.isManualVolume 
-                                                ? "bg-amber-50 border-amber-200 text-amber-700 focus:border-amber-500" 
-                                                : "bg-blue-50/30 border-blue-100 text-blue-700 focus:border-blue-500"
-                                        )}
-                                        placeholder="0,00"
-                                    />
-                                    {batchData.isManualVolume && (
-                                        <button 
-                                            onClick={() => setBatchData(prev => ({ ...prev, isManualVolume: false }))}
-                                            className="text-[9px] font-bold text-amber-600 uppercase tracking-tight w-full hover:underline"
-                                        >
-                                            Resetar para Automático
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {!batchData.isBatch && (
-                            <div className="space-y-2">
-                                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Quantidade de Estruturas</label>
-                                <input
-                                    type="number"
-                                    value={batchData.quantity}
-                                    onChange={(e) => setBatchData({ ...batchData, quantity: Math.max(1, parseInt(e.target.value) || 1) })}
-                                    className="w-full bg-white border border-slate-200 rounded-2xl px-5 py-3 text-sm font-black text-slate-700 focus:outline-none focus:border-emerald-600 transition-all"
-                                />
-                            </div>
-                        )}
-
-                        {/* Batch Switch */}
-                        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                            <div>
-                                <h5 className="text-xs font-black text-slate-800 uppercase tracking-widest">Gerar Múltiplos</h5>
-                                <p className="text-[9px] font-bold text-slate-400 uppercase mt-0.5">Criar lotes automaticamente</p>
-                            </div>
-                            <button
-                                onClick={() => setBatchData({ ...batchData, isBatch: !batchData.isBatch })}
-                                className={cn(
-                                    "w-12 h-6 rounded-full p-1 transition-all duration-300",
-                                    batchData.isBatch ? "bg-emerald-600" : "bg-slate-300"
-                                )}
-                            >
-                                <div className={cn(
-                                    "w-4 h-4 bg-white rounded-full shadow-md transition-transform duration-300",
-                                    batchData.isBatch ? "translate-x-6" : "translate-x-0"
-                                )} />
-                            </button>
-                        </div>
-
-                        {/* Batch Fields */}
-                        {batchData.isBatch && (
-                            <div className="grid grid-cols-2 gap-4 p-5 bg-green-50/50 rounded-3xl border border-green-100/50 animate-in zoom-in duration-200">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-green-700 uppercase tracking-widest ml-1 block text-center">Quantidade</label>
-                                    <input
-                                        type="number"
-                                        value={batchData.quantity}
-                                        onChange={(e) => setBatchData({ ...batchData, quantity: Math.max(1, parseInt(e.target.value) || 0) })}
-                                        className="w-full bg-white border border-green-200 rounded-2xl px-4 py-2 text-sm font-black text-center text-green-700 focus:outline-none"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-green-700 uppercase tracking-widest ml-1 block text-center">Nº Inicial</label>
-                                    <input
-                                        type="number"
-                                        value={batchData.startNumber}
-                                        onChange={(e) => setBatchData({ ...batchData, startNumber: Math.max(0, parseInt(e.target.value) || 0) })}
-                                        className="w-full bg-white border border-green-200 rounded-2xl px-4 py-2 text-sm font-black text-center text-green-700 focus:outline-none"
-                                    />
-                                </div>
-                                <p className="col-span-2 text-[10px] text-green-600/60 font-medium italic text-center mt-2">
-                                    Serão criadas {batchData.quantity} estruturas: "{batchData.baseName || 'Item'} {batchData.startNumber}" até "{batchData.baseName || 'Item'} {batchData.startNumber + batchData.quantity - 1}"
-                                </p>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Modal Footer */}
-                    <div className="p-6 border-t border-slate-50 bg-slate-50/50 flex gap-3">
-                        <button
-                            onClick={() => setCreateModalOpen(false)}
-                            className="flex-1 py-3 text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-2xl transition-all"
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            onClick={handleBatchSave}
-                            className="flex-[2] py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm rounded-2xl shadow-xl shadow-emerald-900/10 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                        >
-                            {batchData.isBatch ? `Gerar ${batchData.quantity} itens` : 'Criar Estrutura'}
-                        </button>
                     </div>
                 </div>
             </div>
 
-            {snackbar.open && (
-                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[3000] animate-in slide-in-from-bottom-5 fade-in duration-300 px-4 w-full max-w-md pointer-events-none">
-                    <div className={cn(
-                        "flex items-center gap-4 px-6 py-4 rounded-3xl shadow-2xl border backdrop-blur-md pointer-events-auto",
-                        snackbar.severity === 'success' ? "bg-emerald-600/90 text-white border-emerald-400/50" : "bg-red-600/90 text-white border-red-500/50"
-                    )}>
-                        {snackbar.severity === 'success' ? <CheckCircle2 size={24} /> : <AlertCircle size={24} />}
-                        <div className="flex-1 overflow-hidden font-bold text-sm">{snackbar.message}</div>
-                        <button onClick={() => setSnackbar(p => ({ ...p, open: false }))} className="p-1 hover:bg-white/10 rounded-lg transition-colors"><X size={18} /></button>
+            {isEditing && (
+                <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-white w-full max-w-lg rounded-[40px] p-8 shadow-2xl overflow-y-auto max-h-[90vh] [&::-webkit-scrollbar]:hidden">
+                        <h3 className="text-2xl font-black text-slate-900 mb-8">Análise de Solo</h3>
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase">pH Solo</label><input className="w-full p-3 bg-slate-50 border rounded-2xl outline-none focus:border-emerald-500" name="ph_solo" value={formData.ph_solo} onChange={handleChange} /></div>
+                                <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase">V %</label><input className="w-full p-3 bg-slate-50 border rounded-2xl outline-none focus:border-emerald-500" name="v_percent" value={formData.v_percent} onChange={handleChange} /></div>
+                            </div>
+                            <div className="grid grid-cols-3 gap-4 border-t pt-6">
+                                <div className="space-y-1"><label className="text-[10px] font-black text-emerald-600 uppercase">Argila</label><input className="w-full p-3 bg-emerald-50/50 border border-emerald-100 rounded-2xl" name="teor_argila" value={formData.teor_argila} onChange={handleChange} /></div>
+                                <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase">Silte</label><input className="w-full p-3 bg-slate-50 border rounded-2xl" name="silte" value={formData.silte} onChange={handleChange} /></div>
+                                <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase">Areia</label><input className="w-full p-3 bg-slate-50 border rounded-2xl" name="areia" value={formData.areia} onChange={handleChange} /></div>
+                            </div>
+                        </div>
+                        <div className="mt-10 flex gap-4"><button onClick={()=>setIsEditing(false)} className="flex-1 py-4 font-black text-slate-400">Cancelar</button><button onClick={handleSave} className="flex-[2] py-4 bg-emerald-600 text-white font-black rounded-2xl shadow-xl">Salvar Dados</button></div>
                     </div>
                 </div>
             )}
 
-            {/* MODAL: CONFIRMAR EXCLUSÃO DO TALHÃO */}
-            <div className={cn(
-                "fixed inset-0 z-[3000] flex items-center justify-center p-4 transition-all duration-200",
-                showDeleteTalhaoConfirm ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
-            )}>
-                <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowDeleteTalhaoConfirm(false)} />
-                <div className={cn(
-                    "relative bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden p-8 flex flex-col items-center text-center transition-all duration-300 transform",
-                    showDeleteTalhaoConfirm ? "scale-100 translate-y-0" : "scale-95 translate-y-4"
-                )}>
-                    <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
-                        <Trash2 size={40} />
-                    </div>
-                    <h3 className="text-xl font-black text-slate-900 tracking-tight mb-2">Excluir Talhão?</h3>
-                    <p className="text-sm text-slate-500 mb-8 font-medium px-4">Esta ação irá remover permanentemente o <strong>{talhao.nome}</strong> e todas as suas estruturas vinculadas. Deseja continuar?</p>
-
-                    <div className="w-full flex flex-col gap-2">
-                        <button
-                            onClick={() => {
-                                if (onDeleteTalhao) onDeleteTalhao(talhao.id);
-                                setShowDeleteTalhaoConfirm(false);
-                            }}
-                            className="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-black text-sm rounded-2xl shadow-xl shadow-red-900/10 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                        >
-                            Sim, Excluir Talhão
-                        </button>
-                        <button
-                            onClick={() => setShowDeleteTalhaoConfirm(false)}
-                            className="w-full py-3 text-xs font-bold text-slate-400 hover:text-slate-600 transition-all"
-                        >
-                            Cancelar
-                        </button>
+            {createModalOpen && (
+                <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+                    <div className="bg-white w-full max-w-md rounded-[40px] p-8 shadow-2xl">
+                        <h3 className="text-2xl font-black text-slate-900 mb-8">Nova Estrutura</h3>
+                        <div className="space-y-6">
+                            <input className="w-full bg-slate-50 border p-4 rounded-2xl font-black" value={batchData.baseName} onChange={e=>setBatchData({...batchData, baseName: e.target.value})} placeholder="Nome (ex: Canteiro 1)" />
+                            <div className="grid grid-cols-2 gap-4">
+                                <input className="bg-slate-50 border p-4 rounded-2xl text-center font-black" value={batchData.width} onChange={e=>setBatchData({...batchData, width: e.target.value})} placeholder="Largura" />
+                                <input className="bg-slate-50 border p-4 rounded-2xl text-center font-black" value={batchData.length} onChange={e=>setBatchData({...batchData, length: e.target.value})} placeholder="Comp." />
+                            </div>
+                        </div>
+                        <button onClick={handleBatchSave} className="w-full py-5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl mt-8 shadow-xl">Criar Estrutura</button>
+                        <button onClick={()=>setCreateModalOpen(false)} className="w-full py-4 text-slate-400 font-bold uppercase tracking-widest text-xs">Descartar</button>
                     </div>
                 </div>
-            </div>
-        </>
+            )}
+        </div>
     );
 };
 

@@ -1,0 +1,9 @@
+node_modules
+.git
+pmo-frontend/node_modules
+pmo-bot-go/server.exe
+pmo-bot-go/chat_tester.exe
+pmo-bot-go/tmp_bot
+dist
+.env
+*.log

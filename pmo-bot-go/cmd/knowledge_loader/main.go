@@ -1,131 +1,46 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"io"
+	"context"
 	"log"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
+	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
+	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 )
 
-type Config struct {
-	APIKey string
-}
-
-func loadConfig() Config {
+func main() {
+	// 1. Carregar configuração
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Println("⚠️ Aviso: não foi possível carregar o arquivo .env, usando variáveis de sistema.")
 	}
 
-	apiKey := os.Getenv("GEMINI_API_KEY")
-	if apiKey == "" {
-		apiKey = os.Getenv("GOOGLE_API_KEY")
+	geminiKey := os.Getenv("GEMINI_API_KEY")
+	sbURL := os.Getenv("SUPABASE_URL")
+	sbKey := os.Getenv("SUPABASE_SERVICE_ROLE_KEY")
+
+	if geminiKey == "" || sbURL == "" || sbKey == "" {
+		log.Fatal("❌ Variáveis de ambiente faltando (GEMINI_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)")
 	}
 
-	if apiKey == "" {
-		log.Fatal("❌ GEMINI_API_KEY ou GOOGLE_API_KEY não encontrada no ambiente.")
-	}
-
-	return Config{APIKey: apiKey}
-}
-
-// 1. Create a File Search Store
-func createFileSearchStore(apiKey string) (string, error) {
-	reqURL := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/fileSearchStores?key=%s", apiKey)
-
-	payload := map[string]string{
-		"displayName": "ManejoORG Knowledge Base",
-	}
-	body, _ := json.Marshal(payload)
-
-	resp, err := http.Post(reqURL, "application/json", bytes.NewBuffer(body))
+	// 2. Inicializar Clientes
+	gemClient, err := gemini.NewClient(gemini.Config{APIKey: geminiKey})
 	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		b, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("erro ao criar store: %s", string(b))
+		log.Fatalf("❌ Erro ao inicializar Gemini: %v", err)
 	}
 
-	var result struct {
-		Name string `json:"name"`
-	}
-	json.NewDecoder(resp.Body).Decode(&result)
-	return result.Name, nil
-}
-
-// 2. Upload File to Gemini
-func uploadFile(apiKey, filePath string) (string, error) {
-	reqURL := fmt.Sprintf("https://generativelanguage.googleapis.com/upload/v1beta/files?uploadType=media&key=%s", apiKey)
-
-	fileData, err := os.ReadFile(filePath)
+	sbClient, err := supabase.NewClient(supabase.Config{URL: sbURL, Key: sbKey})
 	if err != nil {
-		return "", err
+		log.Fatalf("❌ Erro ao inicializar Supabase: %v", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewReader(fileData))
-	if err != nil {
-		return "", err
-	}
-	req.Header.Set("Content-Type", "application/pdf")
-
-	client := &http.Client{Timeout: 60 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		b, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("erro ao enviar arquivo %s: %s", filePath, string(b))
-	}
-
-	var result struct {
-		File struct {
-			Name string `json:"name"`
-		} `json:"file"`
-	}
-	json.NewDecoder(resp.Body).Decode(&result)
-	return result.File.Name, nil
-}
-
-// 3. Import File to Store
-func importFileToStore(apiKey, storeName, fileName string) error {
-	reqURL := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/%s:importFile?key=%s", storeName, apiKey)
-
-	payload := map[string]string{
-		"fileName": fileName,
-	}
-	body, _ := json.Marshal(payload)
-
-	resp, err := http.Post(reqURL, "application/json", bytes.NewBuffer(body))
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		b, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("erro ao importar arquivo para a store: %s", string(b))
-	}
-
-	return nil
-}
-
-func main() {
-	cfg := loadConfig()
-	log.Println("🚀 Iniciando o Ingestor RAG do Gemini (File Search API)!")
+	log.Println("🚀 Iniciando o Ingestor RAG Multimodal (Supabase pgvector)!")
 
 	docsDir := filepath.Join("docs", "knowledge_base")
 	files, err := os.ReadDir(docsDir)
@@ -133,60 +48,92 @@ func main() {
 		log.Fatalf("❌ Erro ao ler o diretório de documentos: %v", err)
 	}
 
-	var pdfFiles []string
 	for _, f := range files {
-		if !f.IsDir() && strings.HasSuffix(strings.ToLower(f.Name()), ".pdf") {
-			pdfFiles = append(pdfFiles, filepath.Join(docsDir, f.Name()))
-		}
-	}
-
-	if len(pdfFiles) == 0 {
-		log.Println("⚠️ Nenhum arquivo PDF encontrado em", docsDir)
-		return
-	}
-
-	// 1. Criar o Store
-	log.Println("📦 Criando um novo FileSearchStore...")
-	storeName, err := createFileSearchStore(cfg.APIKey)
-	if err != nil {
-		log.Fatalf("❌ Falha crítica: %v", err)
-	}
-	log.Printf("✅ Store Criada! ID: %s", storeName)
-
-	// 2. Upload e Vinculação
-	for i, pdfPath := range pdfFiles {
-		log.Printf("\n[%d/%d] 📄 Processando arquivo: %s", i+1, len(pdfFiles), pdfPath)
-
-		// a) Upload
-		log.Println("   Enviando para o Google Cloud (Upload API)...")
-		uploadedFileName, err := uploadFile(cfg.APIKey, pdfPath)
-		if err != nil {
-			log.Printf("   ❌ Erro no upload: %v", err)
+		if f.IsDir() {
 			continue
 		}
-		log.Printf("   ✅ Upload concluído! Arquivo gerado: %s", uploadedFileName)
 
-		// Rate limit protection step A
-		log.Println("   ⏳ Aguardando 15s para respeitar o Rate Limit do Gemini...")
-		time.Sleep(15 * time.Second)
+		path := filepath.Join(docsDir, f.Name())
+		ext := strings.ToLower(filepath.Ext(f.Name()))
 
-		// b) Import into Store
-		log.Println("   Vinculando arquivo ao FileSearchStore...")
-		err = importFileToStore(cfg.APIKey, storeName, uploadedFileName)
-		if err != nil {
-			log.Printf("   ❌ Erro ao vincular: %v", err)
-			continue
+		log.Printf("\n📄 Processando: %s", f.Name())
+
+		if ext == ".pdf" {
+			processPDF(gemClient, sbClient, path, f.Name())
+		} else if ext == ".jpg" || ext == ".jpeg" || ext == ".png" {
+			processImage(gemClient, sbClient, path, f.Name())
+		} else {
+			log.Printf("⚠️ Extensão %s não suportada, pulando.", ext)
 		}
-		log.Println("   ✅ Arquivo vinculado com sucesso à base de conhecimento!")
-
-		// Rate limit protection step B
-		log.Println("   ⏳ Aguardando 15s para respeitar o Rate Limit do Gemini...")
-		time.Sleep(15 * time.Second)
 	}
 
 	log.Println("\n========================================================")
 	log.Println("🎉 PROCESSO CONCLUÍDO COM SUCESSO!")
-	log.Printf("⭐ Cole o seguinte ID no seu arquivo .env:")
-	log.Printf("GEMINI_STORE_ID=\"%s\"", storeName)
 	log.Println("========================================================")
+}
+
+func processPDF(gem *gemini.Client, sb *supabase.Client, path, name string) {
+	content, err := utils.ExtractTextFromPDF(path)
+	if err != nil {
+		log.Printf("❌ Erro ao extrair PDF %s: %v", name, err)
+		return
+	}
+
+	chunks := utils.SimpleChunking(content, 1200, 200)
+	log.Printf("🧩 PDF extraído (%d chunks). Gerando embeddings...", len(chunks))
+
+	for i, chunk := range chunks {
+		emb, err := gem.GenerateEmbedding(chunk)
+		if err != nil {
+			log.Printf("⚠️ Erro no embedding do chunk %d: %v", i, err)
+			continue
+		}
+
+		// pmo_id = 0 significa documento GLOBAL
+		err = sb.InsertFarmDocument(0, name, chunk, emb)
+		if err != nil {
+			log.Printf("❌ Erro ao inserir no Supabase: %v", err)
+		}
+
+		// Respeitar rate limits (15 RPM para tokens gratuitos ou safe buffer)
+		time.Sleep(2 * time.Second)
+	}
+	log.Printf("✅ PDF %s processado com sucesso.", name)
+}
+
+func processImage(gem *gemini.Client, sb *supabase.Client, path, name string) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		log.Printf("❌ Erro ao ler imagem: %v", err)
+		return
+	}
+
+	mimeType := "image/jpeg"
+	if strings.HasSuffix(strings.ToLower(name), ".png") {
+		mimeType = "image/png"
+	}
+
+	log.Println("🔍 Solicitando descrição agronômica ao Gemini 2.5 Flash...")
+	description, err := gem.DescribeAgronomicImage(context.Background(), data, mimeType)
+	if err != nil {
+		log.Printf("❌ Erro na descrição: %v", err)
+		return
+	}
+
+	log.Printf("📝 Descrição gerada: %s", description)
+
+	emb, err := gem.GenerateEmbedding(description)
+	if err != nil {
+		log.Printf("❌ Erro no embedding da descrição: %v", err)
+		return
+	}
+
+	err = sb.InsertFarmDocument(0, name, description, emb)
+	if err != nil {
+		log.Printf("❌ Erro ao inserir no Supabase: %v", err)
+	}
+	log.Printf("✅ Imagem %s processada com sucesso.", name)
+	
+	// Respeitar rate limits
+	time.Sleep(2 * time.Second)
 }

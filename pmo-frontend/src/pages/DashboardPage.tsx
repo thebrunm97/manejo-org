@@ -66,7 +66,9 @@ const WeatherWidget: React.FC<{
   const conditionIconUrl = current.conditionIcon;
   
   const todayForecast = forecast && forecast.length > 0 ? forecast[0] : null;
-  const rainChance = todayForecast ? todayForecast.day.daily_chance_of_rain : 0;
+  // Threshold de 15% para evitar "falsos positivos" de chuva insignificante
+  const rawRainChance = todayForecast ? todayForecast.day.daily_chance_of_rain : 0;
+  const rainChance = rawRainChance > 15 ? rawRainChance : 0;
   
   const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
@@ -80,12 +82,14 @@ const WeatherWidget: React.FC<{
 
     const iconStr = f.day.condition.icon;
     const finalIcon = iconStr.startsWith('http') ? iconStr : `https:${iconStr}`;
+    const chance = f.day.daily_chance_of_rain;
     
     return {
       day: dayStr,
       min: Math.round(f.day.mintemp_c),
       max: Math.round(f.day.maxtemp_c),
-      rain: f.day.daily_chance_of_rain > 0 ? `${f.day.daily_chance_of_rain}%` : null,
+      // Only show rain if chance > 15%
+      rain: (chance > 15) ? `${chance}%` : null,
       iconUrl: finalIcon
     };
   });
