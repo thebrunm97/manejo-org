@@ -175,16 +175,19 @@ const FarmMap: React.FC<FarmMapProps> = ({
         // 1. Immediate trigger on state change
         performResize();
 
-        // 2. Native Event Listeners (Plan C: Deep Mobile Bypass)
-        // MapboxDraw is known to swallow `click` events on mobile devices.
-        // We implement an explicit tap detector using native touchstart and touchend.
-        let touchStartPoint: maplibregl.Point | null = null;
+        // 2. Native Event Listeners (Plan D: Raw DOM Capture)
+        // MapboxDraw is known to swallow `click` and map-level touch events on mobile.
+        // We bypass this by attaching listeners directly to the WebGL canvas with `capture: true`.
+        const canvas = mapInstance?.getCanvas();
+        if (!canvas || !mapInstance) return;
+
+        let touchStartPos: { x: number, y: number } | null = null;
         let touchStartTime = 0;
 
-        const handleTapOrClick = (point: maplibregl.Point | { x: number, y: number }, type: string) => {
+        const handleInteraction = (point: { x: number, y: number }, type: string) => {
             if (isDrawingMode) return;
             
-            console.log(`📍 [FarmMap] Custom ${type} Interaction at:`, point);
+            console.log(`🔥 [FarmMap] RAW ${type} Interaction at:`, point);
             
             const tolerance = 20; // 20px tolerance for mobile/fat-finger
             const bbox: [maplibregl.PointLike, maplibregl.PointLike] = [
@@ -192,84 +195,92 @@ const FarmMap: React.FC<FarmMapProps> = ({
                 [point.x + tolerance, point.y + tolerance]
             ];
             
-            if (mapInstance) {
-                const features = mapInstance.queryRenderedFeatures(bbox, {
-                    layers: ['talhoes-fill']
-                });
-                
-                if (features && features.length > 0 && onTalhaoClick) {
-                    const feature = features[0];
-                    const talhaoId = feature.properties?.id;
-                    console.log('✅ [FarmMap] Plot Detected:', talhaoId);
-                    const talhao = talhoes.find(t => String(t.id) === String(talhaoId));
-                    if (talhao) {
-                        onTalhaoClick(talhao);
-                    }
-                } else {
-                    console.log('❌ [FarmMap] No plot detected at interaction point');
+            const features = mapInstance.queryRenderedFeatures(bbox, {
+                layers: ['talhoes-fill']
+            });
+            
+            if (features && features.length > 0 && onTalhaoClick) {
+                const feature = features[0];
+                const talhaoId = feature.properties?.id;
+                console.log('✅ [FarmMap] Plot Detected via RAW:', talhaoId);
+                const talhao = talhoes.find(t => String(t.id) === String(talhaoId));
+                if (talhao) {
+                    onTalhaoClick(talhao);
                 }
+            } else {
+                console.log('❌ [FarmMap] No plot detected via RAW at:', point);
             }
         };
 
-        const onNativeClick = (e: any) => {
-            // Se foi um toque simulado por click (ex: desktop)
-            handleTapOrClick(e.point, 'click');
-        };
-
-        const onTouchStart = (e: any) => {
-            if (e.points && e.points.length > 0) {
-                touchStartPoint = e.points[0];
+        const onTouchStart = (e: TouchEvent) => {
+            if (e.touches && e.touches.length > 0) {
+                const touch = e.touches[0];
+                const rect = canvas.getBoundingClientRect();
+                touchStartPos = {
+                    x: touch.clientX - rect.left,
+                    y: touch.clientY - rect.top
+                };
                 touchStartTime = Date.now();
-                console.log('👉 [FarmMap] Native touchstart registered');
+                console.log('👉 [FarmMap] RAW Canvas touchstart registered');
             }
         };
 
-        const onTouchMove = (e: any) => {
-            if (!touchStartPoint || !e.points || e.points.length === 0) return;
-            const currentPoint = e.points[0];
-            const dx = currentPoint.x - touchStartPoint.x;
-            const dy = currentPoint.y - touchStartPoint.y;
+        const onTouchMove = (e: TouchEvent) => {
+            if (!touchStartPos || !e.touches || e.touches.length === 0) return;
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const currentX = touch.clientX - rect.left;
+            const currentY = touch.clientY - rect.top;
+            
+            const dx = currentX - touchStartPos.x;
+            const dy = currentY - touchStartPos.y;
+            
             // Cancel tap if movement exceeds 10 pixels (drag/pan)
             if (Math.sqrt(dx * dx + dy * dy) > 10) {
-                touchStartPoint = null;
+                touchStartPos = null;
             }
         };
 
         const onTouchEnd = () => {
-            if (!touchStartPoint) return;
+            if (!touchStartPos) return;
             
             const duration = Date.now() - touchStartTime;
-            const point = touchStartPoint;
-            
-            // If it's a quick tap without much movement
             if (duration < 500) {
-                 handleTapOrClick(point, 'tap');
+                handleInteraction(touchStartPos, 'tap');
             }
-            touchStartPoint = null;
+            touchStartPos = null;
         };
 
-        if (mapInstance) {
-            mapInstance.on('click', onNativeClick);
-            mapInstance.on('touchstart', onTouchStart);
-            mapInstance.on('touchmove', onTouchMove);
-            mapInstance.on('touchend', onTouchEnd);
-        }
+        const onMouseClick = (e: MouseEvent) => {
+            // Desktop fallback
+            const rect = canvas.getBoundingClientRect();
+            const point = {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+            handleInteraction(point, 'click');
+        };
 
-        // 3. Window-level listeners for absolute sync (orientation change, zoom, etc.)
-        window.addEventListener('resize', performResize);
-        window.addEventListener('load', performResize);
+        // Attach with capture: true to ensure we run BEFORE Draw or other plugins
+        canvas.addEventListener('touchstart', onTouchStart, { capture: true, passive: true });
+        canvas.addEventListener('touchmove', onTouchMove, { capture: true, passive: true });
+        canvas.addEventListener('touchend', onTouchEnd, { capture: true, passive: true });
+        canvas.addEventListener('click', onMouseClick, { capture: true });
+
+        // 3. Window-level listeners for absolute sync
+        const onWindowResize = () => performResize();
+        window.addEventListener('resize', onWindowResize);
+        window.addEventListener('load', onWindowResize);
 
         return () => {
             cancelAnimationFrame(frame1);
             cancelAnimationFrame(frame2);
-            if (mapInstance) {
-                mapInstance.off('click', onNativeClick);
-                mapInstance.off('touchstart', onTouchStart);
-                mapInstance.off('touchmove', onTouchMove);
-                mapInstance.off('touchend', onTouchEnd);
-            }
-            window.removeEventListener('resize', performResize);
-            window.removeEventListener('load', performResize);
+            canvas.removeEventListener('touchstart', onTouchStart, { capture: true });
+            canvas.removeEventListener('touchmove', onTouchMove, { capture: true });
+            canvas.removeEventListener('touchend', onTouchEnd, { capture: true });
+            canvas.removeEventListener('click', onMouseClick, { capture: true });
+            window.removeEventListener('resize', onWindowResize);
+            window.removeEventListener('load', onWindowResize);
         };
     }, [isDrawerOpen, isDrawingMode, mapInstance, talhoes, onTalhaoClick]);
 
