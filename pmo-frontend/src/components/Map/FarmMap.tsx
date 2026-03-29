@@ -175,18 +175,13 @@ const FarmMap: React.FC<FarmMapProps> = ({
         // 1. Immediate trigger on state change
         performResize();
 
-        // 2. Add touchstart sync: force re-calc right before a potential click event
-        const container = mapInstance.getContainer();
-        container.addEventListener('touchstart', performResize, { passive: true });
-
-        // 3. Window-level listeners for absolute sync (orientation change, zoom, etc.)
+        // 2. Window-level listeners for absolute sync (orientation change, zoom, etc.)
         window.addEventListener('resize', performResize);
         window.addEventListener('load', performResize);
 
         return () => {
             cancelAnimationFrame(frame1);
             cancelAnimationFrame(frame2);
-            container.removeEventListener('touchstart', performResize);
             window.removeEventListener('resize', performResize);
             window.removeEventListener('load', performResize);
         };
@@ -299,9 +294,10 @@ const FarmMap: React.FC<FarmMapProps> = ({
                     let clickedFeatures = e.features;
                     
                     if ((!clickedFeatures || clickedFeatures.length === 0) && e.target) {
+                        const tolerance = 12; // 12px tolerance for mobile/fat-finger
                         const bbox: [maplibregl.PointLike, maplibregl.PointLike] = [
-                            [e.point.x - 8, e.point.y - 8],
-                            [e.point.x + 8, e.point.y + 8]
+                            [e.point.x - tolerance, e.point.y - tolerance],
+                            [e.point.x + tolerance, e.point.y + tolerance]
                         ];
                         clickedFeatures = e.target.queryRenderedFeatures(bbox, {
                             layers: ['talhoes-fill']
