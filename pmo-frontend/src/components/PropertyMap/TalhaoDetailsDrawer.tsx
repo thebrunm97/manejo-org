@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
-    X, Edit2, Trash2, Sprout, Layers, FlaskConical, 
-    Plus, Info, Save, Loader2, Check, CheckCircle2, 
-    AlertCircle, LayoutGrid, Pencil, Droplets, TreePine
+    X, Trash, Trash2, Sprout, Layers, FlaskConical, 
+    Save, CheckCircle2, AlertCircle, LayoutGrid, 
+    Pencil, Droplets, TreePine
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
@@ -10,11 +10,11 @@ interface TalhaoDetailsDrawerProps {
     open: boolean;
     onClose: () => void;
     talhao: any;
-    onDeleteCanteiro: (id: string) => void;
-    onUpdateCanteiro: (id: string, data: any) => void;
+    onDeleteCanteiro: (id: string | number) => void;
+    onUpdateCanteiro: (id: string | number, data: any) => void;
     onCreateCanteiros: (data: any) => void;
-    onDeleteTalhao?: (id: string) => void;
-    onUpdateTalhao?: (id: string, data: any) => void;
+    onDeleteTalhao?: (id: string | number) => void;
+    onUpdateTalhao?: (id: string | number, data: any) => void;
 }
 
 const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
@@ -29,12 +29,12 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
     const [talhaoEditData, setTalhaoEditData] = useState({
         nome: '', cultura: '', fillColor: '#10B981', borderColor: '#059669'
     });
-    const [editingCanteiroId, setEditingCanteiroId] = useState<string | null>(null);
+    const [editingCanteiroId, setEditingCanteiroId] = useState<string | number | null>(null);
     const [canteiroEditData, setCanteiroEditData] = useState({ nome: '', largura: '', comprimento: '' });
     const [formData, setFormData] = useState({
         ph_solo: '', v_percent: '', materia_organica: '', fosforo: '', potassio: '', teor_argila: '', silte: '', areia: ''
     });
-    const [unitMode, setUnitMode] = useState<'percent' | 'g_kg'>('percent');
+    const [unitMode] = useState<'percent' | 'g_kg'>('percent');
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
     const [batchData, setBatchData] = useState({
         type: 'canteiro', baseName: '', width: '', length: '', quantity: 1, isBatch: false, startNumber: 1, depth: '', volume: '', isManualVolume: false
@@ -125,7 +125,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
     const handleBatchSave = async () => {
         if (!onCreateCanteiros) return;
         try {
-            const structs = [];
+            const structs: any[] = [];
             const qty = batchData.isBatch ? batchData.quantity : 1;
             for (let i = 0; i < qty; i++) {
                 structs.push({
@@ -172,7 +172,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
     return (
         <div className="talhao-details-container">
             <div className={cn("fixed inset-x-0 bottom-0 md:inset-y-0 md:right-8 md:left-auto md:max-w-md z-[2000] pointer-events-none transition-all duration-500 flex md:items-center", open ? "visible" : "invisible")}>
-                <div className={cn("relative bg-white/95 backdrop-blur-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-500 transform pointer-events-auto", "md:w-[28rem] md:rounded-[40px] md:max-h-[92vh] md:border md:border-white/20", "top-auto left-0 right-0 bottom-0 w-full h-[85vh] rounded-t-[40px]", open ? "translate-y-0 md:translate-x-0 opacity-100" : "translate-y-full md:translate-x-12 opacity-0")}>
+                <div className={cn("relative bg-white/95 backdrop-blur-3xl shadow-soft flex flex-col overflow-hidden transition-all duration-500 transform pointer-events-auto", "md:w-[28rem] md:rounded-[40px] md:max-h-[92vh] md:border md:border-slate-200/60", "top-auto left-0 right-0 bottom-0 w-full h-[85vh] rounded-t-[40px]", open ? "translate-y-0 md:translate-x-0 opacity-100" : "translate-y-full md:translate-x-12 opacity-0")}>
                     <div className="flex items-start gap-4 p-6 shrink-0 bg-transparent">
                         <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg bg-emerald-500/10 border border-white/40 overflow-hidden relative group" style={{ backgroundColor: `${talhao.fill_color || '#10B981'}15` }}>
                             {getIcon(talhao.nome, talhao.fill_color)}
@@ -187,17 +187,44 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                 </>
                             )}
                         </div>
-                        <div className="flex gap-1 pt-1">
-                            {isEditingTalhao ? (
-                                <button onClick={handleSaveTalhaoHeader} className="p-2 text-white bg-emerald-600 rounded-xl shadow-lg"><Save size={16} /></button>
+                        <div className="flex items-center gap-2 shrink-0">
+                            {!isEditingTalhao ? (
+                                <>
+                                    <button 
+                                        onClick={() => setIsEditingTalhao(true)} 
+                                        className="w-10 h-10 flex items-center justify-center text-slate-400 bg-slate-50 rounded-2xl hover:text-emerald-600 transition-all cursor-pointer border border-slate-100"
+                                        title="Editar"
+                                    >
+                                        <Pencil size={18} />
+                                    </button>
+                                    <button 
+                                        onClick={() => setShowDeleteTalhaoConfirm(true)} 
+                                        className="w-10 h-10 flex items-center justify-center text-red-400 bg-red-50/50 rounded-2xl hover:text-red-600 transition-all cursor-pointer border border-red-100/50"
+                                        title="Excluir"
+                                    >
+                                        <Trash size={18} />
+                                    </button>
+                                </>
                             ) : (
-                                <button onClick={()=>setIsEditingTalhao(true)} className="p-2.5 text-slate-400 bg-slate-50 rounded-2xl hover:text-emerald-600 transition-all"><Edit2 size={16} /></button>
+                                <button 
+                                    onClick={handleSaveTalhaoHeader} 
+                                    className="w-10 h-10 flex items-center justify-center text-white bg-emerald-600 rounded-2xl shadow-lg hover:bg-emerald-700 transition-all cursor-pointer"
+                                    title="Salvar"
+                                >
+                                    <Save size={18} />
+                                </button>
                             )}
-                            <button onClick={onClose} className="p-2.5 text-slate-300 hover:text-slate-500 transition-all"><X size={20} /></button>
+                            <button 
+                                onClick={onClose} 
+                                className="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-slate-500 transition-all cursor-pointer"
+                                title="Fechar"
+                            >
+                                <X size={24} />
+                            </button>
                         </div>
                     </div>
                     
-                    <div className="flex bg-slate-100/80 p-1.5 shrink-0 mb-6 rounded-2xl mx-4 border border-slate-200/20 backdrop-blur-sm">
+                    <div className="flex bg-slate-100/50 p-1.5 shrink-0 mb-6 rounded-2xl mx-4 border border-slate-200/40 backdrop-blur-sm">
                         <button onClick={() => setTabIndex(0)} className={cn("flex-1 py-3 text-[11px] font-black uppercase tracking-[0.15em] flex items-center justify-center gap-2 rounded-xl transition-all", tabIndex === 0 ? "bg-white shadow-md text-emerald-700" : "text-slate-400")}>
                             <LayoutGrid size={16} /> Estrutura
                         </button>
@@ -217,7 +244,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                     </div>
                                 ) : (
                                     talhao.canteiros?.map((c: any) => (
-                                        <div key={c.id} className="p-4 bg-white border border-slate-100 rounded-3xl flex items-center justify-between group transition-all hover:border-emerald-200 hover:shadow-lg">
+                                        <div key={c.id} className="p-4 bg-white border border-slate-200/60 rounded-3xl flex items-center justify-between group transition-all hover:border-emerald-200/60 hover:shadow-soft">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center group-hover:bg-emerald-50 transition-colors">{getIcon(c.nome)}</div>
                                                 <div>
@@ -225,9 +252,25 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{c.largura_metros}m x {c.comprimento_metros}m</p>
                                                 </div>
                                             </div>
-                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                                                <button onClick={()=>handleStartEditCanteiro(c)} className="p-2 text-slate-400 hover:text-emerald-600 transition-colors"><Pencil size={14} /></button>
-                                                <button onClick={()=>onDeleteCanteiro(c.id)} className="p-2 text-slate-400 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
+                                            <div className="flex items-center gap-2 opacity-100 transition-opacity">
+                                                <button 
+                                                    onClick={(e)=>{
+                                                        e.stopPropagation();
+                                                        handleStartEditCanteiro(c);
+                                                    }} 
+                                                    className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-emerald-600 transition-colors cursor-pointer bg-slate-50/50 rounded-xl"
+                                                >
+                                                    <Pencil size={16} />
+                                                </button>
+                                                <button 
+                                                    onClick={(e)=>{
+                                                        e.stopPropagation();
+                                                        onDeleteCanteiro(c.id);
+                                                    }} 
+                                                    className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors cursor-pointer bg-slate-50/50 rounded-xl"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
                                             </div>
                                         </div>
                                     ))
@@ -239,7 +282,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                         {tabIndex === 1 && (
                             <div className="space-y-6 animate-in fade-in duration-500">
                                 {/* PHYSICAL COMPOSITION - LIGHT PREMIUM CARD */}
-                                <div className="bg-white border border-slate-100 rounded-[32px] p-6 shadow-sm relative overflow-hidden group mx-1">
+                                <div className="bg-white border border-slate-200/60 rounded-[32px] p-6 shadow-soft relative overflow-hidden group mx-1">
                                     <div className="flex items-center justify-between mb-8">
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 bg-emerald-50 rounded-2xl flex items-center justify-center border border-emerald-100/50">
@@ -284,7 +327,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                         { l: 'M.O.', v: formData.materia_organica, u: 'g/dm³', i: <Layers size={14} />, c: 'amber', s: Number(formData.materia_organica) >= 2.5 ? 'Ideal' : 'Baixo' },
                                         { l: 'P', v: formData.fosforo, u: 'mg', i: <Sprout size={14} />, c: 'emerald', s: Number(formData.fosforo) >= 20 ? 'Ideal' : 'Baixo' }
                                     ].map((m, i) => (
-                                        <div key={i} className="bg-slate-50/50 border border-slate-100 p-5 rounded-[28px] group transition-all hover:bg-white hover:shadow-xl hover:-translate-y-1 relative overflow-hidden">
+                                        <div key={i} className="bg-slate-50/50 border border-slate-200/60 p-5 rounded-[28px] group transition-all hover:bg-white hover:shadow-soft hover:-translate-y-1 relative overflow-hidden">
                                             <div className="flex items-center justify-between mb-4">
                                                 <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center", m.c === 'emerald' ? "bg-emerald-100 text-emerald-600" : m.c === 'blue' ? "bg-blue-100 text-blue-600" : "bg-amber-100 text-amber-600")}>
                                                     {m.i}
@@ -326,6 +369,63 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                         </div>
                         <div className="mt-10 flex gap-4"><button onClick={()=>setIsEditing(false)} className="flex-1 py-4 font-black text-slate-400">Cancelar</button><button onClick={handleSave} className="flex-[2] py-4 bg-emerald-600 text-white font-black rounded-2xl shadow-xl">Salvar Dados</button></div>
                     </div>
+                </div>
+            )}
+
+            {editingCanteiroId && (
+                <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-white w-full max-w-md rounded-[40px] p-8 shadow-2xl">
+                        <div className="flex items-center gap-3 mb-8">
+                            <div className="w-10 h-10 bg-emerald-50 rounded-2xl flex items-center justify-center">
+                                <Pencil size={20} className="text-emerald-600" />
+                            </div>
+                            <h3 className="text-xl font-black text-slate-900">Editar Estrutura</h3>
+                        </div>
+                        <div className="space-y-6">
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nome da Estrutura</label>
+                                <input className="w-full bg-slate-50 border p-4 rounded-2xl font-black focus:border-emerald-500 outline-none" value={canteiroEditData.nome} onChange={e=>setCanteiroEditData({...canteiroEditData, nome: e.target.value})} placeholder="Ex: Canteiro 1" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Largura (m)</label>
+                                    <input className="bg-slate-50 border p-4 rounded-2xl text-center font-black focus:border-emerald-500 outline-none" value={canteiroEditData.largura} onChange={e=>setCanteiroEditData({...canteiroEditData, largura: e.target.value})} placeholder="Largura" />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Comprimento (m)</label>
+                                    <input className="bg-slate-50 border p-4 rounded-2xl text-center font-black focus:border-emerald-500 outline-none" value={canteiroEditData.comprimento} onChange={e=>setCanteiroEditData({...canteiroEditData, comprimento: e.target.value})} placeholder="Comp." />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="mt-8 flex gap-4">
+                            <button onClick={()=>setEditingCanteiroId(null)} className="flex-1 py-4 font-black text-slate-400 uppercase text-[10px] tracking-widest">Cancelar</button>
+                            <button onClick={handleSaveCanteiroEdit} className="flex-[1.5] py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-xl transition-all">Salvar Alterações</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showDeleteTalhaoConfirm && (
+                <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in zoom-in duration-300">
+                    <div className="bg-white w-full max-w-sm rounded-[40px] p-8 shadow-2xl text-center">
+                        <div className="w-20 h-20 bg-red-50 rounded-[30px] flex items-center justify-center mx-auto mb-6">
+                            <AlertCircle size={40} className="text-red-500 underline-offset-4" />
+                        </div>
+                        <h3 className="text-xl font-black text-slate-900 mb-2">Excluir Talhão?</h3>
+                        <p className="text-sm text-slate-500 font-medium mb-8">Esta ação é irreversível e removerá todas as estruturas vinculadas a este talhão ({talhao.nome}).</p>
+                        <div className="flex flex-col gap-2">
+                            <button onClick={() => {onDeleteTalhao?.(talhao.id); setShowDeleteTalhaoConfirm(false);}} className="w-full py-4 bg-red-500 hover:bg-red-600 text-white font-black rounded-2xl shadow-lg shadow-red-200 transition-all">Sim, Excluir Tudo</button>
+                            <button onClick={()=>setShowDeleteTalhaoConfirm(false)} className="w-full py-4 text-slate-400 font-black uppercase tracking-widest text-[10px]">Manter Talhão</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {snackbar.open && (
+                <div className={cn("fixed bottom-10 left-1/2 -translate-x-1/2 z-[4000] px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-300", snackbar.severity === 'success' ? "bg-emerald-600 text-white" : "bg-red-600 text-white")}>
+                    {snackbar.severity === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+                    <span className="text-xs font-black uppercase tracking-wider">{snackbar.message}</span>
+                    <button onClick={()=>setSnackbar({...snackbar, open: false})} className="ml-2 hover:opacity-70"><X size={14} /></button>
                 </div>
             )}
 
