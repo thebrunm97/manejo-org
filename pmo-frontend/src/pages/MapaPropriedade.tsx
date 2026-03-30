@@ -22,7 +22,7 @@ const MapaPropriedade: React.FC = () => {
     const [pmoId, setPmoId] = useState<string | null>(null);
     const [propriedadeId, setPropriedadeId] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
-    const { isMobile } = useIsMobile();
+    const isMobile = useIsMobile();
 
     const loadTalhoes = useCallback(async () => {
         try {
@@ -121,6 +121,46 @@ const MapaPropriedade: React.FC = () => {
         }
     };
 
+    const handleUpdateTalhao = async (id: string | number, data: any) => {
+        try {
+            await locationService.updateTalhao(Number(id), data);
+            await loadTalhoes();
+        } catch (error) {
+            console.error("Erro ao atualizar talhão:", error);
+            throw error;
+        }
+    };
+
+    const handleDeleteCanteiro = async (id: string | number) => {
+        try {
+            await locationService.deleteCanteiro(id);
+            await loadTalhoes();
+        } catch (error) {
+            console.error("Erro ao deletar canteiro:", error);
+            throw error;
+        }
+    };
+
+    const handleUpdateCanteiro = async (id: string | number, data: any) => {
+        try {
+            await locationService.updateCanteiro(id, data);
+            await loadTalhoes();
+        } catch (error) {
+            console.error("Erro ao atualizar canteiro:", error);
+            throw error;
+        }
+    };
+
+    const handleCreateCanteiros = async (data: any[]) => {
+        try {
+            await locationService.createCanteirosBatch(data);
+            await loadTalhoes();
+        } catch (error) {
+            console.error("Erro ao criar canteiros:", error);
+            throw error;
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center h-[100vh]">
@@ -205,9 +245,11 @@ const MapaPropriedade: React.FC = () => {
                     open={isDrawerOpen}
                     onClose={handleCloseDrawer}
                     talhao={selectedTalhao}
-                    onDeleteCanteiro={() => loadTalhoes()} 
+                    onDeleteCanteiro={handleDeleteCanteiro}
+                    onUpdateCanteiro={handleUpdateCanteiro}
+                    onCreateCanteiros={handleCreateCanteiros}
                     onDeleteTalhao={handleDeleteTalhao}
-                    onUpdateStart={loadTalhoes}
+                    onUpdateTalhao={handleUpdateTalhao}
                 />
             )}
         </div>

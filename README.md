@@ -5,89 +5,199 @@
 ![PWA](https://img.shields.io/badge/PWA-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
+![MapLibre](https://img.shields.io/badge/MapLibre_GL-396CB2?style=for-the-badge&logo=maplibre&logoColor=white)
+![Gemini](https://img.shields.io/badge/Gemini-8E75C2?style=for-the-badge&logo=googlegemini&logoColor=white)
 
-Plataforma de **Inteligência Artificial de Grau Enterprise** para automação e gestão do manejo orgânico. O ecossistema integra um assistente inteligente via WhatsApp, um motor de processamento robusto em GoLang e um Dashboard administrativo moderno para visualização e compliance.
+Plataforma de Inteligência Artificial de grau enterprise para automação e gestão do manejo orgânico certificado. O ecossistema integra:
+
+- **Assistente inteligente via WhatsApp:** Processamento multimodal de textos, áudios e imagens para agilidade no campo.
+- **Motor de processamento em Go:** Arquitetura baseada em Máquina de Estados Finitos (FSM) e Orquestração Multi-Agente.
+- **Dashboard PWA offline-first:** Gestão completa da propriedade, talhões e canteiros com sincronização robusta.
+- **Compliance Automatizado:** Validação rigorosa de insumos e atividades conforme as normas de certificação (Lei 10.831 e IN 46).
 
 ---
 
-## 📐 Visão Geral da Arquitetura
+## 📌 Índice
+1. [Arquitetura](#-arquitetura)
+2. [Módulos do Sistema](#-módulos-do-sistema)
+3. [Quick Start](#-quick-start)
+4. [Variáveis de Ambiente](#-variáveis-de-ambiente)
+5. [Referência Técnica](#-referência-técnica)
+6. [Segurança](#-segurança)
+7. [Licença](#-licença)
 
-O sistema utiliza uma arquitetura distribuída e baseada em eventos, garantindo alta disponibilidade e respostas em tempo real.
+---
+
+## 📐 Arquitetura
+
+### Visão Geral
+O sistema utiliza uma abordagem de **Thin Backend** em Go, delegando a lógica pesada de negócio para RPCs atômicas no banco de dados e a inteligência para um roteador de agentes especializados.
 
 ```mermaid
 graph TD
-    User([Produtor/Usuário]) <-->|WhatsApp| WPP[WPPConnect Gateway]
-    WPP <-->|Webhook/REST| BE[Backend GoLang - PMO Bot]
-    BE <-->|FSM & Roteamento| LLM[Motor Cognitivo - Groq/Gemini]
-    BE <-->|Persistência| DB[(Supabase - PostgreSQL)]
-    FE[Frontend React PWA] <-->|Real-time App| DB
-    FE <-->|Offline Sync| IDB[(IndexedDB)]
+    User([Produtor]) <-->|WhatsApp| WPP[WPPConnect Gateway]
+    WPP <-->|Webhook POST + HMAC| BE[Backend Go - Gin]
+    BE -->|Intent Classification| ROUTER{AI Router}
+    ROUTER -->|Registro| DB_OP[DB Operator - Gemini 2.0 Flash]
+    ROUTER -->|Dúvida Técnica| AGRO[Agronomist - RAG + Gemini]
+    ROUTER -->|Chat| CHAT[Chat Agent]
+    DB_OP -->|RPC Atômico| DB[(Supabase PostgreSQL + pgvector)]
+    AGRO -->|Vector Search| DB
+    BE -->|Áudio| GROQ[Groq - Whisper Transcription]
+    BE -->|Imagem| GEMINI_V[Gemini 1.5 Flash - Vision]
+    BE -->|NER| GROQ_NER[Groq - Llama 3.3 70B]
+    FE[Frontend React PWA] <-->|Supabase SDK| DB
+    FE <-->|Offline Queue| IDB[(IndexedDB via idb)]
 ```
 
-### O Fluxo de Inteligência
-1. **Frontend PWA**: Interface principal do usuário para gestão de talhões, canteiros e registros manuais. Opera em modo *Offline-first*.
-2. **WhatsApp Bot**: Interface conversacional para agilidade no campo (textos e áudios).
-3. **Backend GoLang (Orchestrator)**: Atua como roteador inteligente, orquestrando múltiplos agentes e gerenciando a Máquina de Estados (FSM).
-4. **Declarative MCP & Fat Database**: 
-   - **Postgres RPC**: Toda a lógica pesada de negócio (resolução de nomes, geração de lotes) reside no banco de dados via RPCs.
-   - **Multi-Agent Engine**: Uso especializado de Groq e Gemini com prompts modulares (`agronomist`, `db_operator`).
+### Fluxo de Mensagem (Sequência)
+```mermaid
+sequenceDiagram
+    participant P as Produtor
+    participant W as WPPConnect
+    participant G as Go Backend
+    participant R as AI Router
+    participant A as Agent (DB/Agro)
+    participant S as Supabase
+
+    P->>W: Mensagem/Áudio WhatsApp
+    W->>G: POST /webhook/wppconnect (HMAC)
+    G->>G: Deduplica + Transcreve (se áudio)
+    G->>R: Classifica intenção
+    R->>A: Roteia para agente especialista
+    A->>S: RPC (ex: rpc_registrar_operacao_campo)
+    S-->>A: Resultado
+    A-->>G: Resposta formatada
+    G-->>W: Envia resposta
+    W-->>P: Mensagem no WhatsApp
+```
 
 ---
 
 ## 📦 Módulos do Sistema
 
-### 🖥️ Frontend (PWA)
-Desenvolvido com **React 19 + Vite**, focado em performance e usabilidade no campo.
-- **Offline-first**: Sincronização robusta via `idb` (IndexedDB) e Workbox.
-- **Geolocalização**: Mapas interativos via **Leaflet** com estratégia de *GeoJSON Placeholder* for visualização precisa de talhões e canteiros.
-- **Design System**: UI premium baseada na estética moderna com Tailwind CSS v4.
+### 5.1 Backend Go
+O motor principal de orquestração localizado em `pmo-bot-go/`.
+- **Entry point:** `cmd/server/main.go`
+- **Framework:** Gin (HTTP)
+- **FSM:** Máquina de estados para gestão de contexto e fluxos lineares.
+- **LoopGuard:** Middleware de proteção contra recursão infinita em tool calls.
+- **Infra:** Multi-stage Docker build resultando em imagens de apenas ~20MB.
 
-### ⚙️ Backend (GoLang - Thin Backend Layer)
-Motor de alta performance focado em orquestração e roteamento.
-- **FSM (Finite State Machine)**: Controle rigoroso dos estados da conversa, garantindo fluxos lineares e sem perda de contexto.
-- **Declarative Operations**: Integração profunda com Supabase via RPCs, eliminando lógica imperativa complexa no código Go.
-- **Security & Resilience**: Middlewares de proteção contra loops e recuperação de pânico em tempo real.
+### 5.2 Frontend PWA
+Interface de gestão moderna localizada em `pmo-frontend/`.
+- **Stack:** React 18+ com Vite.
+- **Mapas:** Integração nativa com **MapLibre GL JS + Esri World Imagery** para desenho de talhões (WebGL).
+- **Offline-first:** Sincronização via `useSyncEngine` com persistência em IndexedDB.
+- **Resiliência:** Backoff exponencial na fila de sincronização para garantir integridade dos dados.
 
-### 📊 Auditoria e Telemetria
-- **Rigor Financeiro**: Logs de consumo detalhados por PMO ID e User ID.
-- **Monitoramento**: Rastreabilidade total de tokens utilizados e tempos de resposta das LLMs.
-- **Compliance**: Validação automática de insumos contra as normas de certificação orgânica.
+### 5.3 Database (Supabase)
+Persistência e lógica procedural robusta.
+- **PostgreSQL:** Tabelas estruturadas para `pmos`, `talhoes`, `canteiros` e `caderno_campo`.
+- **pgvector:** Armazenamento de embeddings para o sistema RAG em `knowledge_chunks`.
+- **Atomização:** Uso extensivo de RPCs para garantir transações seguras entre múltiplos módulos.
+
+### 5.4 Compliance Engine
+O "coração" da certificação orgânica.
+- **Blacklist:** Bloqueio automático de substâncias como Glifosato, Ureia, NPK e 2,4-D.
+- **Validação de Especificidade:** Exigência de detalhamento para insumos (ex: tipo de esterco).
+- **Avisos:** Notificações de precaução baseadas em normas técnicas.
 
 ---
 
-## 🛠️ Setup Local (Orquestração Docker)
+## 🚀 Quick Start
 
-Para rodar o ecossistema completo localmente, siga os passos abaixo:
+### Pré-requisitos
+Go 1.23+ | Node 20+ | Docker 24+ | Docker Compose v2+
 
-### 1. Pré-requisitos
-- Docker & Docker Compose v2+
-- Variáveis de ambiente configuradas (`.env` no backend e frontend)
-
-### 2. Inicialização
-
-Os serviços de infraestrutura e o motor Go estão centralizados no diretório `pmo_bot`.
-
+### 1. Clonar o Repositório
 ```bash
-# Navegue até o diretório do motor
+git clone https://github.com/thebrunm97/manejo-org.git
+cd manejo-org
+```
+
+### 2. Configurar o Backend (Orquestrador)
+```bash
 cd pmo_bot
-
-# Derrube qualquer instância anterior e limpe volumes se necessário
-docker-compose down
-
-# Suba os containers com rebuild forçado
+# Copie o env.example se disponível ou use o .env configurado
 docker-compose up -d --build
 ```
 
-### 3. Serviços Disponíveis
-- **API (pmo-bot-go)**: `http://localhost:8080/health`
-- **WPPConnect Gateway**: `http://localhost:21465` (Porta do webhook central)
-- **Frontend (Dev)**: `cd pmo-frontend && npm run dev`
+### 3. Verificar Saúde do Sistema
+```bash
+curl http://localhost:8080/health
+```
+
+### 4. Configurar o Frontend
+```bash
+cd pmo-frontend
+npm install
+npm run dev
+```
 
 ---
 
-## 📄 Licença e Uso
+## 🔑 Variáveis de Ambiente
 
-Este projeto é de uso restrito e privado. Todos os direitos reservados.
+### Backend (`pmo-bot-go`)
+| Variável | Descrição | Obrigatório |
+| --- | --- | --- |
+| `WPPCONNECT_TOKEN` | Token de segurança para o webhook do WPPConnect | Sim |
+| `WPPCONNECT_URL` | Endpoint da instância do WPPConnect Server | Sim |
+| `GROQ_API_KEY` | Chave para transcrição Whisper e extração NER | Sim |
+| `GEMINI_API_KEY` | Chave para modelos de orquestração e visão | Sim |
+| `SUPABASE_URL` | URL do projeto Supabase | Sim |
+| `SUPABASE_KEY` | Anon Key ou Service Role do Supabase | Sim |
+
+### Frontend (`pmo-frontend`)
+| Variável | Descrição | Obrigatório |
+| --- | --- | --- |
+| `VITE_BOT_API_URL` | URL do Backend Go (ex: http://localhost:8080) | Sim |
+| `VITE_BOT_API_TOKEN` | Token de autenticação Bearer para o backend | Sim |
+| `VITE_WHATSAPP_BOT_NUMBER` | Número de contato do bot oficial | Sim |
 
 ---
-**Desenvolvido com 💚 para o Futuro do Manejo Orgânico.**
+
+## 📖 Referência Técnica
+
+### 8.1 Stack de Tecnologias
+
+| Tecnologia | Versão | Aplicação | Observação |
+|---|---|---|---|
+| **Go (Golang)** | 1.23+ | Backend | Core de processamento e FSM |
+| **React** | 19.1+ | Frontend | Interface PWA moderna |
+| **MapLibre GL JS** | 5.21.x | Frontend (Mapas) | Engine WebGL open-source (sem custos de API) |
+| **Esri World Imagery** | - | Frontend (Tiles) | Satélite de alta qualidade via ArcGIS REST |
+| **Turf.js** | - | Frontend + Cálculos | Geometria GeoJSON e cálculos espaciais |
+| **Supabase** | - | Database | PostgreSQL + pgvector + Auth |
+| **Gemini 2.0 Flash** | - | IA Engine | Orquestração e Visão Computacional |
+
+### 8.2 Endpoints HTTP
+| Método | Rota | Descrição |
+| --- | --- | --- |
+| `GET` | `/health` | Healthcheck de integridade do container |
+| `POST` | `/webhook/wppconnect` | Endpoint principal para mensagens do WhatsApp |
+| `POST` | `/webhook/knowledge` | Upload e ingestão de documentos para o RAG |
+
+### 8.2 RPCs Supabase (Principais)
+| RPC | Descrição |
+| --- | --- |
+| `rpc_registrar_operacao_campo` | Operação atômica que registra atividade e alimenta o Caderno de Campo |
+| `criar_infraestrutura_pmo` | Criação facilitada de talhões e canteiros via interface bot |
+| `match_farm_documents` | Busca semântica vetorial por similaridade de cosseno |
+
+---
+
+## 🔒 Segurança
+- **HMAC Validation:** Assinatura de payloads nos webhooks para evitar requisições forjadas.
+- **LoopGuard:** Proteção no nível da aplicação contra loops infinitos de ferramentas de IA.
+- **RLS (Row Level Security):** Políticas granulares no banco de dados para isolamento de usuários/PMOs.
+- **Attack Surface:** Imagens Docker minimalistas e isolamento de rede interna.
+
+---
+
+## 📄 Licença
+Este projeto é de uso restrito e privado. Todos os direitos reservados para **ManejoORG**.
+
+---
+**Desenvolvido com 💚 para o futuro da agricultura orgânica.**

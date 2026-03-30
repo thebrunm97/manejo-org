@@ -91,14 +91,14 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
   };
 
   const SidebarContent = ({ isDesktop = false }: { isDesktop?: boolean }) => (
-    <div className="flex flex-col h-full bg-[#111827] text-white overflow-hidden">
+    <div className="flex flex-col h-full bg-slate-900 text-white overflow-hidden">
       {/* 1. Logo */}
-      <div className="h-16 flex items-center px-6 border-b border-gray-800 shrink-0">
+      <div className="h-16 flex items-center px-6 border-b border-slate-800 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-green-900/20">
+          <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-emerald-900/20">
             {appInitials}
           </div>
-          <span className="font-bold text-lg tracking-wide text-white">
+          <span className="font-bold text-lg tracking-tight text-white">
             {appName}
           </span>
         </div>
@@ -196,7 +196,7 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
         {/* Sidebar Panel */}
         <div
           className={cn(
-            "absolute inset-y-0 left-0 w-[280px] bg-[#111827] shadow-2xl transition-transform duration-300 ease-in-out border-r border-gray-800",
+            "absolute inset-y-0 left-0 w-[280px] bg-slate-900 shadow-soft transition-transform duration-300 ease-in-out border-r border-slate-800",
             mobileOpen ? "translate-x-0" : "-translate-x-full"
           )}
         >
@@ -205,7 +205,7 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
       </div>
 
       {/* Desktop Sidebar (Persistent) */}
-      <aside className="hidden md:flex w-64 flex-col h-full bg-[#111827] border-r border-gray-800 text-white shrink-0 overflow-hidden">
+      <aside className="hidden md:flex w-64 flex-col h-full bg-slate-900 border-r border-slate-800 text-white shrink-0 overflow-hidden">
         <SidebarContent isDesktop />
       </aside>
     </>

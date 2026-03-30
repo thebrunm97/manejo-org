@@ -13,7 +13,7 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick, className }) => {
 
     return (
         <header className={cn(
-            "w-full h-16 flex-none flex items-center justify-between px-4 sm:px-6 bg-white border-b border-gray-200 shadow-sm md:hidden",
+            "w-full h-16 flex-none flex items-center justify-between px-4 sm:px-6 bg-white border-b border-slate-200/60 shadow-soft md:hidden",
             className
         )}>
             <div className="flex items-center gap-3">

@@ -1,11 +1,20 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 @layer base {
+  body {
+    @apply antialiased subpixel-antialiased text-slate-800 bg-slate-50;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight text-slate-900 font-bold;
+  }
 
   input,
   textarea,
   select {
-    @apply text-gray-900 bg-white placeholder-gray-400;
+    @apply text-slate-900 bg-white placeholder-slate-400 border-slate-200 focus:ring-emerald-500 focus:border-emerald-500;
   }
 }
 
@@ -24,6 +33,7 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 
   --pmo-color-primary: #0d6efd;
   --pmo-color-secondary: #0d6efd;
