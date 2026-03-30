@@ -1,0 +1,17 @@
+# 🏛️ Architecture Decision Records (ADR)
+
+Este diretório contém o registro das decisões arquiteturais significativas tomadas durante o desenvolvimento do ManejoORG. Cada ADR descreve o contexto, a decisão, a justificativa e as consequências de uma escolha técnica de alto nível.
+
+## Índice de Decisões
+
+| ID | Título | Status | Data |
+|---|---|---|---|
+| [**ADR-001**](./001-go-over-python.md) | Go sobre Python para o Backend | Aceito | Mar/2026 |
+| [**ADR-002**](./002-fat-database.md) | Fat Database — Lógica no PostgreSQL | Aceito | Fev/2026 |
+| [**ADR-003**](./003-offline-first.md) | Offline-First PWA via IndexedDB | Aceito | Jan/2026 |
+| [**ADR-004**](./004-multi-llm.md) | Multi-LLM — Gemini + Groq | Aceito | Mar/2026 |
+
+---
+
+## O que é um ADR?
+Um ADR (Architecture Decision Record) é um documento curto que captura uma decisão arquitetural, juntamente com seu contexto e consequências. Eles são essenciais para manter a memória técnica do projeto e ajudar novos desenvolvedores a entender o "porquê" por trás das escolhas de infraestrutura e design.
