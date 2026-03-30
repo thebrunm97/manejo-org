@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -61,6 +62,9 @@ func FetchWeather(apiKey string, location string) (*WeatherData, error) {
 
 	resp, err := client.Do(req)
 	if err != nil {
+		if os.IsTimeout(err) {
+			return nil, fmt.Errorf("timeout após 10s consultando WeatherAPI: %w", err)
+		}
 		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
 	defer resp.Body.Close()

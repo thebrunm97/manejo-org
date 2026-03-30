@@ -208,10 +208,8 @@ type PmoClimaInsert struct {
 }
 
 type PmoLocation struct {
-	ID        int64
-	Latitude  string
-	Longitude string
-	City      string
+	ID    int64
+	Query string
 }
 
 // ---------------------------------------------------------------------------
@@ -686,6 +684,100 @@ func (c *Client) GetIngestionStats(pmoID int64) (string, int, error) {
 	return tier, len(uniqueNames), nil
 }
 
+// extractCityFromAddress tenta extrair apenas a cidade de um endereço completo
+func extractCityFromAddress(address string) string {
+    if address == "" {
+        return ""
+    }
+    
+    parts := strings.Split(address, ",")
+    
+    // Endereço tem apenas 1-2 partes: provavelmente já é cidade
+    if len(parts) <= 2 {
+        return strings.TrimSpace(address)
+    }
+    
+    // Remover "Brasil" ou "BR" do final se existir
+    lastPart := strings.TrimSpace(parts[len(parts)-1])
+    if strings.EqualFold(lastPart, "brasil") || 
+       strings.EqualFold(lastPart, "brazil") || 
+       strings.EqualFold(lastPart, "br") {
+        parts = parts[:len(parts)-1]
+    }
+    
+    if len(parts) < 2 {
+        return strings.TrimSpace(address)
+    }
+    
+    // Pegar cidade (penúltimo) e estado (último)
+    city  := strings.TrimSpace(parts[len(parts)-2])
+    state := strings.TrimSpace(parts[len(parts)-1])
+    
+    // Extrair sigla do estado se vier como "São Paulo" → "SP"
+    stateClean := extractStateCode(state)
+    
+    return fmt.Sprintf("%s, %s", city, stateClean)
+}
+
+// extractStateCode limpa o campo de estado
+func extractStateCode(state string) string {
+    stateMap := map[string]string{
+        "são paulo": "SP", "minas gerais": "MG", "rio de janeiro": "RJ",
+        "bahia": "BA", "paraná": "PR", "rio grande do sul": "RS",
+        "pernambuco": "PE", "ceará": "CE", "goiás": "GO",
+        "mato grosso": "MT", "mato grosso do sul": "MS",
+        "santa catarina": "SC", "pará": "PA", "maranhão": "MA",
+        "amazonas": "AM", "espírito santo": "ES", "piauí": "PI",
+        "alagoas": "AL", "rio grande do norte": "RN", "tocantins": "TO",
+        "sergipe": "SE", "paraíba": "PB", "rondônia": "RO",
+        "acre": "AC", "amapá": "AP", "roraima": "RR",
+        "distrito federal": "DF",
+    }
+    
+    lower := strings.ToLower(strings.TrimSpace(state))
+    if code, ok := stateMap[lower]; ok {
+        return code
+    }
+    
+    // Já é sigla (2 letras maiúsculas)
+    if len(strings.TrimSpace(state)) == 2 {
+        return strings.ToUpper(strings.TrimSpace(state))
+    }
+    
+    return state
+}
+
+// buildWeatherQuery define a melhor query para a WeatherAPI
+// Prioridade: lat/lng > cidade > cidade extraída do endereço
+func buildWeatherQuery(pmoID int64, lat, lon, city, address string) string {
+    // Prioridade 1: coordenadas (mais preciso)
+    if lat != "" && lon != "" {
+        q := fmt.Sprintf("%s,%s", lat, lon)
+        log.Printf("📍 [WeatherClient] PMO=%d usando coordenadas: %s", pmoID, q)
+        return q
+    }
+    
+    // Prioridade 2: campo cidade diretamente (neste caso não temos um campo estrito "cidade", mas se tivéssemos)
+    // Se "city" vier de um campo específico de cidade do DB:
+    if city != "" {
+		// Just to be safe, maybe city is already cleaned.
+		// Usually city variable is extracted from address. So we can skip to Prioridade 3.
+    }
+    
+    // Prioridade 3: extrair cidade do endereço completo
+    if address != "" {
+        extractedCity := extractCityFromAddress(address)
+        if extractedCity != "" {
+            log.Printf("🏙️ [WeatherClient] PMO=%d cidade extraída do endereço: %s → %s", 
+                pmoID, address, extractedCity)
+            return extractedCity
+        }
+    }
+    
+    log.Printf("❌ [WeatherClient] PMO=%d sem localização válida", pmoID)
+    return ""
+}
+
 // FetchActivePMOsLocations retrieves all PMOs that have valid locations for weather fetching.
 func (c *Client) FetchActivePMOsLocations() ([]PmoLocation, error) {
 	reqURL := fmt.Sprintf("%s/rest/v1/pmos?select=id,form_data", c.config.URL)
@@ -704,7 +796,7 @@ func (c *Client) FetchActivePMOsLocations() ([]PmoLocation, error) {
 
 	var results []PmoLocation
 	for _, p := range pmos {
-		var lat, lon, city string
+		var lat, lon, address string
 
 		if sec1, ok := p.FormData["secao_1_descricao_propriedade"].(map[string]interface{}); ok {
 			if coords, ok := sec1["coordenadas_geograficas"].(map[string]interface{}); ok {
@@ -717,17 +809,17 @@ func (c *Client) FetchActivePMOsLocations() ([]PmoLocation, error) {
 			}
 			if end, ok := sec1["dados_cadastrais"].(map[string]interface{}); ok {
 				if endProp, ok := end["endereco_propriedade_base_fisica_produtiva"].(string); ok && endProp != "" {
-					city = endProp
+					address = endProp
 				}
 			}
 		}
 
-		if (lat != "" && lon != "") || city != "" {
+		query := buildWeatherQuery(p.ID, lat, lon, "", address)
+		
+		if query != "" {
 			results = append(results, PmoLocation{
-				ID:        p.ID,
-				Latitude:  lat,
-				Longitude: lon,
-				City:      city,
+				ID:    p.ID,
+				Query: query,
 			})
 		}
 	}
@@ -765,6 +857,32 @@ func (c *Client) SaveWeatherDataBatch(data []PmoClimaInsert) error {
 	if resp.StatusCode >= 400 {
 		respBody, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("pmo_clima bulk insert error (%d): %s", resp.StatusCode, string(respBody))
+	}
+
+	return nil
+}
+
+// DeleteOlderThan removes records from a table older than the specified cutoffDate (YYYY-MM-DD).
+// This prevents tables like pmo_clima from growing indefinitely.
+func (c *Client) DeleteOlderThan(table string, timeColumn string, cutoffDate string) error {
+	reqURL := fmt.Sprintf("%s/rest/v1/%s?%s=lt.%s", c.config.URL, table, timeColumn, cutoffDate)
+	req, err := http.NewRequest(http.MethodDelete, reqURL, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create delete request: %w", err)
+	}
+
+	req.Header.Set("apikey", c.config.Key)
+	req.Header.Set("Authorization", "Bearer "+c.config.Key)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("delete HTTP failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("supabase delete error (%d): %s", resp.StatusCode, string(body))
 	}
 
 	return nil

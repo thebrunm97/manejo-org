@@ -170,18 +170,7 @@ func main() {
 	if weatherAPIKey == "" {
 		log.Println("⚠️ WEATHER_API_KEY não definida — rotina de clima desabilitada")
 	} else {
-		go func() {
-			// Start loop with small initial delay
-			time.Sleep(10 * time.Second)
-			weather.RunWeatherCronJob(context.Background(), sbClient, weatherAPIKey)
-
-			ticker := time.NewTicker(3 * time.Hour)
-			defer ticker.Stop()
-
-			for range ticker.C {
-				weather.RunWeatherCronJob(context.Background(), sbClient, weatherAPIKey)
-			}
-		}()
+		go weather.StartWeatherJob(context.Background(), sbClient, weatherAPIKey)
 	}
 
 	// --- Start ---

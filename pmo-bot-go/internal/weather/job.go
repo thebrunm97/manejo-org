@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 )
@@ -20,8 +21,55 @@ type Result struct {
 	Err      error
 }
 
+func StartWeatherJob(ctx context.Context, sbClient *supabase.Client, apiKey string) {
+	log.Println("🌤️ [WeatherJob] Executando na inicialização do serviço...")
+	time.Sleep(10 * time.Second) // aguardar inicialização
+	runWeatherJobSafe(ctx, sbClient, apiKey)
+
+	ticker := time.NewTicker(3 * time.Hour)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			runWeatherJobSafe(ctx, sbClient, apiKey)
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func runWeatherJobSafe(ctx context.Context, sbClient *supabase.Client, apiKey string) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("❌ [WeatherJob] PANIC recuperado: %v", r)
+		}
+	}()
+	RunWeatherCronJob(ctx, sbClient, apiKey)
+}
+
+func purgeOldWeatherData(ctx context.Context, sbClient *supabase.Client) {
+	cutoffDate := time.Now().AddDate(0, 0, -7).Format("2006-01-02")
+	
+	log.Printf("🗑️ [WeatherJob] Purgando registros anteriores a %s...", cutoffDate)
+	
+	err := sbClient.DeleteOlderThan("pmo_clima", "created_at", cutoffDate)
+	if err != nil {
+		log.Printf("⚠️ [WeatherJob] Falha no purge (não crítico): %v", err)
+		return
+	}
+	
+	log.Printf("✅ [WeatherJob] Purge concluído")
+}
+
 func RunWeatherCronJob(ctx context.Context, sbClient *supabase.Client, apiKey string) {
-	log.Println("🌦️ Iniciando rotina de atualização meteorológica via Worker Pool (AgTech Pro)...")
+	startTime := time.Now()
+	log.Printf("🌤️ [WeatherJob] ===== INÍCIO ===== %s", startTime.Format("2006-01-02 15:04:05"))
+
+	defer func() {
+		elapsed := time.Since(startTime)
+		log.Printf("🌤️ [WeatherJob] ===== FIM ===== duração: %v", elapsed)
+	}()
 
 	// 1. Fetch all PMOs
 	pmoLocations, err := sbClient.FetchActivePMOsLocations()
@@ -33,15 +81,10 @@ func RunWeatherCronJob(ctx context.Context, sbClient *supabase.Client, apiKey st
 	// 2. Group PMOs by Location to avoid redundant API calls
 	locationsMap := make(map[string][]int64)
 	for _, p := range pmoLocations {
-		var locStr string
-		if p.Latitude != "" && p.Longitude != "" {
-			locStr = p.Latitude + "," + p.Longitude
-		} else if p.City != "" {
-			locStr = p.City
-		}
-
-		if locStr != "" {
-			locationsMap[locStr] = append(locationsMap[locStr], p.ID)
+		if p.Query != "" {
+			locationsMap[p.Query] = append(locationsMap[p.Query], p.ID)
+		} else {
+			log.Printf("⚠️ [WeatherJob] PMO=%d ignorado na atualização (sem query válida)", p.ID)
 		}
 	}
 
@@ -113,11 +156,16 @@ func RunWeatherCronJob(ctx context.Context, sbClient *supabase.Client, apiKey st
 	if len(batchInserts) > 0 {
 		err := sbClient.SaveWeatherDataBatch(batchInserts)
 		if err != nil {
-			log.Printf("❌ Erro no Batch Insert do clima: %v", err)
+			log.Printf("❌ [WeatherJob] Erro no Batch Insert do clima: %v", err)
 		} else {
-			log.Printf("✅ Clima atualizado com sucesso! (Cidades: %d | Total PMOs: %d)", successCount, len(batchInserts))
+			log.Printf("✅ [WeatherJob] Clima atualizado com sucesso! (Cidades/Locais processados: %d | Total PMOs inseridos: %d)", successCount, len(batchInserts))
 		}
 	} else {
-		log.Println("Nenhum dado climático novo para inserir nesta rodada.")
+		log.Println("⚠️ [WeatherJob] Nenhum dado climático novo para inserir nesta rodada.")
 	}
+
+	log.Printf("📊 [WeatherJob] Resultado da extração: %d localidade(s) tratadas com sucesso.", successCount)
+
+	// 6. Purge old records (retain 7 days)
+	purgeOldWeatherData(ctx, sbClient)
 }
