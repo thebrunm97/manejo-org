@@ -1,5 +1,6 @@
 // src/components/Sidebar.tsx
 
+import { useState } from 'react';
 import {
   LayoutDashboard,
   Sprout,
@@ -9,12 +10,19 @@ import {
   Menu as MenuIcon,
   User as UserIcon,
   Database,
-  Sparkles
+  Sparkles,
+  Home,
+  ArrowRightLeft,
+  ChevronDown,
+  CircleDollarSign,
+  Building,
+  HandHelping,
 } from 'lucide-react';
 import { useAppNavigation } from '../hooks/navigation/useAppNavigation';
 import { SCREENS, RouteName } from '../routes/routeNames';
 import { useAuth } from '../context/AuthContext';
 import { cn } from '../utils/cn';
+import PropertySelectorModal from './Common/PropertySelectorModal';
 
 interface SidebarProps {
   mobileOpen?: boolean;
@@ -25,7 +33,8 @@ interface SidebarProps {
 
 const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) => {
   const { navigateTo, goToLogin, currentPath } = useAppNavigation();
-  const { profile, isAdmin, isLoadingRole } = useAuth();
+  const { profile, isAdmin, isLoadingRole, currentPropriedade, allPropriedades } = useAuth();
+  const [modalOpen, setModalOpen] = useState(false);
 
   const getDisplayName = () => {
     if (profile?.nome) {
@@ -38,30 +47,38 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
 
   const displayName = getDisplayName();
 
+  const hasPmoAtivo = !!profile?.pmo_ativo_id;
+  const isConventionalOnly = currentPropriedade?.modalidade_predominante === 'CONVENCIONAL' && !currentPropriedade?.tem_producao_paralela;
+
+  const shouldShowPmo = isAdmin || (hasPmoAtivo && !isConventionalOnly);
+  const shouldShowMap = isAdmin || !isConventionalOnly;
+
   const appName = import.meta.env.VITE_APP_NAME || 'Manejo Org';
   const appInitials = appName.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase();
 
-  const menuItems: { name: string; icon: any; path: RouteName }[] = [
+  const allMenuItems: { name: string; icon: any; path: RouteName; pmoOnly?: boolean; mapOnly?: boolean }[] = [
     { name: 'Visão Geral', icon: <LayoutDashboard size={22} />, path: SCREENS.HOME },
-    { name: 'Planos de Manejo', icon: <ClipboardList size={22} />, path: SCREENS.PMO_LIST },
+    { name: 'Planos de Manejo', icon: <ClipboardList size={22} />, path: SCREENS.PMO_LIST, pmoOnly: true },
     { name: 'Caderno de Campo', icon: <MenuIcon size={22} />, path: SCREENS.NOTEBOOK },
-    { name: 'Mapa da Propriedade', icon: <MapIcon size={22} />, path: SCREENS.MAP },
+    { name: 'Financeiro / DRE', icon: <CircleDollarSign size={22} />, path: SCREENS.FINANCEIRO },
+    { name: 'Mapa da Propriedade', icon: <MapIcon size={22} />, path: SCREENS.MAP, mapOnly: true },
     { name: 'Minhas Culturas', icon: <Sprout size={22} />, path: SCREENS.CROPS },
     { name: 'Novidades', icon: <Sparkles size={22} />, path: SCREENS.CHANGELOG },
-    { name: 'Meu Perfil', icon: <UserIcon size={22} />, path: SCREENS.PROFILE }, // Added Meu Perfil item
+    { name: 'Dados da Propriedade', icon: <Home size={22} />, path: SCREENS.PROPERTY_PROFILE },
+    { name: 'Meu Perfil', icon: <UserIcon size={22} />, path: SCREENS.PROFILE },
+    { name: 'Mural de Demandas', icon: <HandHelping size={22} />, path: SCREENS.MURAL },
+    { name: 'Painel Cooperativa', icon: <Building size={22} />, path: SCREENS.COOP_ORGANIZACOES },
   ];
 
+  const menuItems = allMenuItems.filter(item => {
+    if (item.pmoOnly) return shouldShowPmo;
+    if (item.mapOnly) return shouldShowMap;
+    return true;
+  });
+
   if (isAdmin || isLoadingRole) {
-    menuItems.push({
-      name: 'Administração',
-      icon: <LayoutDashboard size={22} />,
-      path: SCREENS.ADMIN
-    });
-    menuItems.push({
-      name: 'Ingestão (RAG)',
-      icon: <Database size={22} />,
-      path: SCREENS.KNOWLEDGE_MONITORING
-    });
+    menuItems.push({ name: 'Administração', icon: <LayoutDashboard size={22} />, path: SCREENS.ADMIN });
+    menuItems.push({ name: 'Ingestão (RAG)', icon: <Database size={22} />, path: SCREENS.KNOWLEDGE_MONITORING });
   }
 
   const handleLogout = async () => {
@@ -74,7 +91,6 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
     if (onClose) onClose();
   };
 
-  // Helper to map screens to paths for highlighting
   const getPathForScreen = (screen: RouteName) => {
     switch (screen) {
       case SCREENS.HOME: return '/dashboard';
@@ -85,7 +101,11 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
       case SCREENS.CHANGELOG: return '/changelog';
       case SCREENS.ADMIN: return '/admin';
       case SCREENS.KNOWLEDGE_MONITORING: return '/admin/conhecimento';
-      case SCREENS.PROFILE: return '/perfil'; // Added path for profile
+      case SCREENS.PROFILE: return '/perfil';
+      case SCREENS.PROPERTY_PROFILE: return '/propriedade';
+      case SCREENS.FINANCEIRO: return '/financeiro';
+      case SCREENS.COOP_ORGANIZACOES: return '/coop/organizacoes';
+      case SCREENS.MURAL: return '/mural';
       default: return '';
     }
   };
@@ -103,6 +123,43 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
           </span>
         </div>
       </div>
+
+      {/* 1b. Property Switcher (shown when user has properties) */}
+      {currentPropriedade && (
+        <div className="px-3 py-3 border-b border-slate-800 shrink-0">
+          <button
+            onClick={() => setModalOpen(true)}
+            className={cn(
+              "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl",
+              "bg-slate-800/60 hover:bg-slate-700/80 transition-all group",
+              allPropriedades.length <= 1 && "cursor-default hover:bg-slate-800/60"
+            )}
+            title={allPropriedades.length > 1 ? "Trocar fazenda" : currentPropriedade.nome}
+            disabled={allPropriedades.length <= 1}
+          >
+            <div className="w-7 h-7 bg-emerald-500/20 rounded-lg flex items-center justify-center shrink-0">
+              <Home size={14} className="text-emerald-400" />
+            </div>
+            <div className="flex-1 min-w-0 text-left">
+              <p className="text-xs font-bold text-white truncate leading-tight">{currentPropriedade.nome}</p>
+              <p className="text-[10px] text-slate-400 font-medium leading-tight capitalize">
+                {currentPropriedade.modalidade_predominante.toLowerCase()}
+              </p>
+            </div>
+            {allPropriedades.length > 1 && (
+              <div className="flex items-center gap-1 shrink-0">
+                <span className="text-[10px] font-bold text-slate-500 bg-slate-700 rounded-md px-1.5 py-0.5">
+                  {allPropriedades.length}
+                </span>
+                <ChevronDown size={13} className="text-slate-400 group-hover:text-emerald-400 transition-colors" />
+              </div>
+            )}
+            {allPropriedades.length > 1 && (
+              <ArrowRightLeft size={13} className="text-slate-500 group-hover:text-emerald-400 transition-colors opacity-0 group-hover:opacity-100 absolute" />
+            )}
+          </button>
+        </div>
+      )}
 
       {/* 2. Menu */}
       <div className="flex-1 overflow-y-auto py-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -187,19 +244,11 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
           mobileOpen ? "opacity-100 pointer-events-auto visible" : "opacity-0 pointer-events-none invisible"
         )}
       >
-        {/* Backdrop overlay */}
-        <div
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-          onClick={onClose}
-        />
-
-        {/* Sidebar Panel */}
-        <div
-          className={cn(
-            "absolute inset-y-0 left-0 w-[280px] bg-slate-900 shadow-soft transition-transform duration-300 ease-in-out border-r border-slate-800",
-            mobileOpen ? "translate-x-0" : "-translate-x-full"
-          )}
-        >
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+        <div className={cn(
+          "absolute inset-y-0 left-0 w-[280px] bg-slate-900 shadow-soft transition-transform duration-300 ease-in-out border-r border-slate-800",
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        )}>
           <SidebarContent />
         </div>
       </div>
@@ -208,6 +257,9 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
       <aside className="hidden md:flex w-64 flex-col h-full bg-slate-900 border-r border-slate-800 text-white shrink-0 overflow-hidden">
         <SidebarContent isDesktop />
       </aside>
+
+      {/* Property Selector Modal */}
+      <PropertySelectorModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
     </>
   );
 };

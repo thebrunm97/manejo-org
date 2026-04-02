@@ -100,7 +100,28 @@ export function useSyncEngine() {
                     // Remove da fila em caso de sucesso
                     await localDb.delete(item.id, SYNC_QUEUE_STORE);
                     successCount++;
-                } catch (err) {
+                } catch (err: any) {
+                    const isAuthError = err.status === 401 || 
+                                       err.code === 'PGRST301' || 
+                                       err.message?.toLowerCase().includes('jwt') ||
+                                       err.message?.toLowerCase().includes('unauthorized');
+
+                    if (isAuthError) {
+                        console.warn(`[SyncEngine] Erro de autenticação no item ${item.id}. Interrompendo sincronização.`);
+                        toast.error('Sessão expirada. Faça login novamente para sincronizar seus dados.', { 
+                            toastId: 'auth-error-sync',
+                            autoClose: 5000 
+                        });
+                        
+                        // Desbloqueia o item mas não incrementa retries (foi erro de auth, não de rede)
+                        await localDb.set({ ...item, syncing: false }, SYNC_QUEUE_STORE);
+                        
+                        isSyncingRef.current = false;
+                        setSyncStatus('error');
+                        toast.dismiss(toastId);
+                        return; // PAUSA O LOOP IMEDIATAMENTE
+                    }
+
                     console.error(`[SyncEngine] Falha no item ${item.id}:`, err);
                     failCount++;
                     
@@ -147,7 +168,7 @@ export function useSyncEngine() {
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, []);
 
-    // Executa ao montar e quando voltar a ficar online
+    // Executa ao montar e quando voltar a ficar online ou a aba ganhar foco
     useEffect(() => {
         syncPendingRecords();
 
@@ -156,8 +177,28 @@ export function useSyncEngine() {
             syncPendingRecords();
         };
 
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                console.log('[SyncEngine] Aba focada. Verificando fila de sincronização...');
+                syncPendingRecords();
+            }
+        };
+
+        // Sync periódico a cada 2 minutos (fallback para stale syncs)
+        const periodicSync = setInterval(() => {
+            if (!isSyncingRef.current) {
+                syncPendingRecords();
+            }
+        }, 120000);
+
         window.addEventListener('online', handleOnline);
-        return () => window.removeEventListener('online', handleOnline);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            clearInterval(periodicSync);
+        };
     }, [syncPendingRecords]);
 
     return { 

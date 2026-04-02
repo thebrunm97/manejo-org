@@ -42,7 +42,7 @@ const HarvestDashboard: React.FC<HarvestDashboardProps> = ({ harvestStats, recen
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6 pb-2 mb-6">
         {Object.entries(harvestStats).length === 0 ? (
           <div className="col-span-full px-4 py-3 text-sm text-slate-800 bg-slate-50 border border-slate-200 rounded-2xl">
-            Nenhuma colheita registrada neste plano ainda.
+            Nenhuma atividade de colheita registrada recentemente.
           </div>
         ) : (
           Object.entries(harvestStats).map(([key, dados]) => (

@@ -10,7 +10,7 @@ import {
 export const getRegistros = async (pmoId?: number | null, propriedadeId?: number): Promise<CadernoEntry[]> => {
     let query = supabase
         .from('caderno_campo')
-        .select('*, talhoes ( nome ), caderno_campo_canteiros(canteiros(id, nome))')
+        .select('*, talhoes(nome), caderno_campo_canteiros(canteiros(id, nome))')
         .order('data_registro', { ascending: false });
 
     let limpezaQuery = supabase

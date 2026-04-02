@@ -2,10 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { AlertTriangle, Loader2, LayoutGrid, Map as MapIcon } from 'lucide-react';
-import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
-import { getPmoDetails } from '../services/pmoService';
-import { fetchUserProperties } from '../services/profileService';
 import PropertyMap from '../components/PropertyMap/PropertyMap';
 import TalhaoDetailsDrawer from '../components/PropertyMap/TalhaoDetailsDrawer';
 import { locationService } from '../services/locationService';
@@ -14,24 +11,29 @@ import { useIsMobile } from '../hooks/useIsMobile';
 import { cn } from '../utils/cn';
 
 const MapaPropriedade: React.FC = () => {
-    const { user } = useAuth();
+    const { currentPropriedade, profile } = useAuth();
     const [viewMode, setViewMode] = useState<'croqui' | 'mapa'>('croqui');
     const [talhoes, setTalhoes] = useState<Talhao[]>([]);
     const [selectedTalhao, setSelectedTalhao] = useState<Talhao | null>(null);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-    const [pmoId, setPmoId] = useState<string | null>(null);
-    const [propriedadeId, setPropriedadeId] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
     const isMobile = useIsMobile();
 
     const loadTalhoes = useCallback(async () => {
+        if (!currentPropriedade?.id) {
+            setLoading(false);
+            return;
+        }
         try {
-            const data = await locationService.getTalhoes();
+            setLoading(true);
+            const data = await locationService.getTalhoes(currentPropriedade.id);
             setTalhoes((data || []) as unknown as Talhao[]);
         } catch (error) {
             console.error("Erro ao buscar talhões", error);
+        } finally {
+            setLoading(false);
         }
-    }, []);
+    }, [currentPropriedade?.id]);
 
     useEffect(() => {
         loadTalhoes();
@@ -49,56 +51,6 @@ const MapaPropriedade: React.FC = () => {
             }
         }
     }, [talhoes, selectedTalhao]);
-
-    useEffect(() => {
-        const loadInitialData = async () => {
-            try {
-                if (!user) {
-                    setLoading(false);
-                    return;
-                }
-
-                const { data: profile, error: profileError } = await supabase
-                    .from('profiles')
-                    .select('pmo_ativo_id')
-                    .eq('id', user.id)
-                    .single();
-
-                if (profileError) {
-                    console.error("Erro ao carregar perfil:", profileError);
-                }
-
-                if (profile?.pmo_ativo_id) {
-                    setPmoId(profile.pmo_ativo_id);
-
-                    // Busca contexto completo
-                    const result = await getPmoDetails(profile.pmo_ativo_id);
-
-                    if (result.success && result.data?.propriedade_id) {
-                        setPropriedadeId(result.data.propriedade_id);
-                        console.log('📍 Contexto de Mapa:', result.data.nomePropriedade);
-                    } else {
-                        // Fallback logic preserved from previous fix
-                        console.warn('[MapaPropriedade] PMO sem propriedade vinculada. Tentando fallback...');
-                        const userProps = await fetchUserProperties(user.id);
-                        if (userProps.success && userProps.data && userProps.data.length > 0) {
-                            const firstProp = userProps.data[0];
-                            console.log('📍 Contexto de Mapa (Fallback):', firstProp.nome);
-                            setPropriedadeId(firstProp.id);
-                        } else {
-                            console.error('[MapaPropriedade] Falha crítica: Nenhuma propriedade encontrada.');
-                        }
-                    }
-                }
-            } catch (err) {
-                console.error("Erro inesperado:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        loadInitialData();
-    }, [user]);
 
     const handleOpenDrawer = (talhao: Talhao) => {
         setSelectedTalhao(talhao);
@@ -170,15 +122,15 @@ const MapaPropriedade: React.FC = () => {
         );
     }
 
-    if (!pmoId) {
+    if (!currentPropriedade) {
         return (
             <div className="p-8 text-center flex flex-col items-center justify-center">
                 <AlertTriangle className="text-red-500 mb-4" size={48} />
                 <h6 className="text-xl font-bold text-red-600 mb-2">
-                    Nenhum Plano de Manejo Ativo encontrado.
+                    Nenhuma Propriedade Ativa encontrada.
                 </h6>
                 <p className="text-slate-500">
-                    Por favor, selecione ou crie um plano no seu perfil.
+                    Por favor, selecione uma propriedade no Hub.
                 </p>
             </div>
         );
@@ -224,7 +176,7 @@ const MapaPropriedade: React.FC = () => {
             {/* JAULA DO MAPA (FULL-BLEED) */}
             <div className="absolute inset-0 overflow-hidden z-0 bg-white">
                 <PropertyMap 
-                    propriedadeId={propriedadeId} 
+                    propriedadeId={currentPropriedade?.id} 
                     talhoes={talhoes}
                     viewMode={viewMode}
                     setViewMode={setViewMode}
@@ -235,7 +187,7 @@ const MapaPropriedade: React.FC = () => {
                     loadTalhoes={loadTalhoes}
                     loading={loading}
                     isDrawerOpen={isDrawerOpen}
-                    pmoId={pmoId}
+                    pmoId={profile?.pmo_ativo_id}
                 />
             </div>
 

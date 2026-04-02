@@ -63,7 +63,7 @@ const RecordDetailsDialog: React.FC<RecordDetailsDialogProps> = ({ open, onClose
         : (record.talhao_canteiro || '').split(';').map(part => part.trim()).filter(Boolean);
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm overflow-hidden" aria-modal="true" role="dialog">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm" aria-modal="true" role="dialog">
             <div className="w-full max-w-lg bg-white rounded-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
 
                 {/* Header */}

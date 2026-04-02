@@ -1,6 +1,6 @@
 // src/components/PropertyMap/PropertyMap.tsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
     LayoutGrid,
     Edit2,
@@ -8,7 +8,6 @@ import {
     Plus,
     Sprout,
     X,
-    CheckCircle2,
     AlertCircle,
     Loader2,
     Droplets,
@@ -16,13 +15,14 @@ import {
     Check
 } from 'lucide-react';
 import area from '@turf/area';
-import { useAuthCore } from '../../context/AuthContext';
-import { cn } from '../../utils/cn';
-
+import { toast } from 'react-toastify';
 // Componentes Internos
 import FarmMap from '../Map/FarmMap';
 import { locationService } from '../../services/locationService';
 import { Talhao } from '../../domain/geo/geoTypes';
+import { podeCriarTalhao } from '../../utils/limitesCultivo';
+import { useAuth } from '../../context/AuthContext';
+import { cn } from '../../utils/cn';
 
 const formatArea = (m2: number) => {
     if (!m2) return '0 m²';
@@ -61,7 +61,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
     isDrawerOpen,
     pmoId
 }) => {
-    const { user } = useAuthCore();
+    const { user, profile } = useAuth();
 
     // Estado para Novo Talhão
     const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -81,19 +81,6 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [canteiroToDelete, setCanteiroToDelete] = useState<string | null>(null);
 
-    // Snackbar State
-    const [snackbar, setSnackbar] = useState<{ open: boolean, message: string, severity: 'success' | 'alert' | 'error' }>({
-        open: false,
-        message: '',
-        severity: 'success'
-    });
-
-    useEffect(() => {
-        if (snackbar.open) {
-            const timer = setTimeout(() => setSnackbar(prev => ({ ...prev, open: false })), 4000);
-            return () => clearTimeout(timer);
-        }
-    }, [snackbar.open]);
 
     // Handlers
     const confirmDeleteCanteiro = async () => {
@@ -107,10 +94,10 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
                 const updatedCanteiros = selectedTalhao.canteiros.filter(c => String(c.id) !== String(canteiroToDelete));
                 setSelectedTalhao({ ...selectedTalhao, canteiros: updatedCanteiros });
             }
-            setSnackbar({ open: true, message: 'Canteiro removido com sucesso!', severity: 'success' });
+            toast.success('Canteiro removido com sucesso!');
         } catch (error) {
             console.error("Erro ao deletar canteiro", error);
-            setSnackbar({ open: true, message: 'Erro ao remover canteiro.', severity: 'error' });
+            toast.error('Erro ao remover canteiro.');
         } finally {
             setDeleteConfirmOpen(false);
             setCanteiroToDelete(null);
@@ -124,6 +111,15 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
 
 
     // --- CRIAÇÃO DE TALHÃO ---
+    const handleStartDrawing = () => {
+        const { can, message } = podeCriarTalhao(profile, talhoes.length);
+        if (!can) {
+            toast.warn(message || 'Limite de talhões atingido.');
+            return;
+        }
+        setIsDrawingMode(true);
+    };
+
     const handleDrawCreate = (e: any) => {
         const feature = e.features[0];
         if (!feature) return;
@@ -156,12 +152,12 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
         if (!pendingTalhao) return;
 
         if (!propriedadeId) {
-            setSnackbar({ open: true, message: 'Erro: Propriedade não identificada.', severity: 'error' });
+            toast.error('Erro: Propriedade não identificada.');
             return;
         }
 
         if (!user?.id) {
-            setSnackbar({ open: true, message: 'Erro: Usuário não identificado.', severity: 'error' });
+            toast.error('Erro: Usuário não identificado.');
             return;
         }
 
@@ -180,7 +176,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
                 cor: newTalhaoData.fillColor, // Backward compatibility
                 propriedade_id: propriedadeId,
                 pmo_id: pmoId ? parseInt(String(pmoId)) : null,
-                user_id: user.id
+                // user_id: user.id // SEC-01 Fix: Never send user_id from frontend. RLS/Trigger should handle it.
             };
 
             if (locationService.createTalhao) {
@@ -190,14 +186,14 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
 
             setCreateModalOpen(false);
             setPendingTalhao(null);
-            setSnackbar({ open: true, message: 'Talhão salvo com sucesso!', severity: 'success' });
+            toast.success('Talhão salvo com sucesso!');
 
         } catch (error: any) {
             console.error("Erro ao salvar novo talhão", error);
             const msg = error.message?.includes('violates row-level security')
                 ? 'Permissão negada (RLS).'
                 : 'Erro ao salvar talhão.';
-            setSnackbar({ open: true, message: msg, severity: 'error' });
+            toast.error(msg);
         } finally {
             setSavingNew(false);
         }
@@ -238,10 +234,10 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
             // 3. SINCRONIA FINAL (Recarrega a lista global sem bloquear)
             loadTalhoes?.().catch(console.error);
             
-            setSnackbar({ open: true, message: 'Geometria e métricas atualizadas!', severity: 'success' });
+            toast.success('Geometria e métricas atualizadas!');
         } catch (error) {
             console.error("Erro ao atualizar geometria:", error);
-            setSnackbar({ open: true, message: 'Falha ao salvar mudanças.', severity: 'error' });
+            toast.error('Falha ao salvar mudanças.');
         }
     };
 
@@ -267,7 +263,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                             {/* Botão de Adicionar */}
                             <button
-                                onClick={() => setViewMode('mapa')}
+                                onClick={handleStartDrawing}
                                 className="group relative min-h-[220px] rounded-3xl border-2 border-dashed border-slate-200 bg-white flex flex-col items-center justify-center gap-4 transition-all hover:border-emerald-500 hover:bg-emerald-50/30 overflow-hidden"
                             >
                                 <div className="absolute inset-0 bg-emerald-500/0 group-hover:bg-emerald-500/5 transition-colors opacity-0 group-hover:opacity-100" />
@@ -377,7 +373,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
                             {!isDrawingMode && !createModalOpen && !selectedTalhao && (
                                 <div className="absolute bottom-24 right-6">
                                     <button
-                                        onClick={() => setIsDrawingMode(true)}
+                                        onClick={handleStartDrawing}
                                         className="w-14 h-14 bg-emerald-600 text-white rounded-full shadow-[0_8px_30px_rgb(16,185,129,0.3)] border border-emerald-400/40 flex items-center justify-center hover:bg-emerald-500 hover:scale-110 active:scale-90 transition-all outline-none pointer-events-auto"
                                         title="Novo Talhão"
                                     >
@@ -601,27 +597,6 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
                 </div>
             </div>
 
-            {/* CUSTOM SNACKBAR */}
-            {snackbar.open && (
-                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] animate-in slide-in-from-bottom-5 fade-in duration-300 px-4 w-full max-w-md">
-                    <div className={cn(
-                        "flex items-center gap-4 px-6 py-4 rounded-3xl shadow-2xl border backdrop-blur-md",
-                        snackbar.severity === 'success'
-                            ? "bg-emerald-600/90 text-white border-emerald-400/50"
-                            : snackbar.severity === 'alert'
-                                ? "bg-amber-500/90 text-white border-amber-400/50"
-                                : "bg-red-600/90 text-white border-red-500/50"
-                    )}>
-                        {snackbar.severity === 'success' ? <CheckCircle2 size={24} /> : <AlertCircle size={24} />}
-                        <div className="flex-1 overflow-hidden">
-                            <p className="text-sm font-black tracking-tight">{snackbar.message}</p>
-                        </div>
-                        <button onClick={() => setSnackbar(prev => ({ ...prev, open: false }))} className="p-1 hover:bg-white/10 rounded-lg transition-colors">
-                            <X size={18} />
-                        </button>
-                    </div>
-                </div>
-            )}
 
         </div>
     );

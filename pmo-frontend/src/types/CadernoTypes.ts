@@ -145,6 +145,8 @@ export type DetalhesTecnicos =
 export interface BaseRegistro {
     id: string;
     pmo_id: number;
+    propriedade_id?: any;
+    user_id?: string;
     created_at?: string;
     data_registro: string;
     talhao_canteiro?: string;

@@ -13,7 +13,7 @@ interface DashboardLayoutProps {
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     const [mobileOpen, setMobileOpen] = useState(false);
-    const { user, logout } = useAuth();
+    const { user, logout, propertyContextKey } = useAuth();
     const location = useLocation();
 
     const isMapView = location.pathname === '/mapa';
@@ -39,12 +39,20 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 {/* Navbar with Z-Index Shield */}
                 <Navbar onMenuClick={handleDrawerToggle} className="z-[100]" />
 
-                <main className={cn(
-                    "flex-1 w-full relative scroll-smooth",
-                    isMapView 
-                        ? "p-0 overflow-hidden" 
-                        : "p-4 md:p-6 overflow-y-auto overflow-x-hidden"
-                )}>
+                {/*
+                 * FENCE KEY: propertyContextKey changes whenever the user switches farms.
+                 * React treats this as a new element, unmounting all children and wiping
+                 * their local state — preventing data leakage between properties.
+                 */}
+                <main
+                    key={propertyContextKey}
+                    className={cn(
+                        "flex-1 w-full relative scroll-smooth",
+                        isMapView
+                            ? "p-0 overflow-hidden"
+                            : "p-4 md:p-6 overflow-y-auto overflow-x-hidden"
+                    )}
+                >
                     <div className={cn(
                         "w-full h-full box-border",
                         isMapView ? "h-full w-full" : "max-w-7xl mx-auto px-2 sm:px-4"

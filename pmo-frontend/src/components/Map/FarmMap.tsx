@@ -6,6 +6,7 @@ import MapboxDraw from '@mapbox/mapbox-gl-draw';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { Talhao, GeoJSONGeometry } from '../../domain/geo/geoTypes';
 import { ESRI_SATELLITE_STYLE } from './mapStyles';
+import { useAuth } from '../../context/AuthContext';
 
 // Tipagem para GeoJSON FeatureCollection
 interface GeoJSONData {
@@ -119,7 +120,7 @@ const MapController: React.FC<{ talhoes: Talhao[], focusTarget?: Talhao | null, 
  * Gerencia listeners de pointer events e resize internos, com acesso total ao hook useMap().
  */
 const MapInteractionHandler: React.FC<{
-    containerRef: React.RefObject<HTMLDivElement>,
+    containerRef: React.RefObject<HTMLDivElement | null>,
     isMobile: boolean,
     isDrawingMode: boolean,
     talhoes: Talhao[],
@@ -361,7 +362,7 @@ const FarmMap: React.FC<FarmMapProps> = ({
     };
 
     return (
-        <div ref={containerRef} className="relative w-full h-full z-0" style={{ touchAction: 'none', userSelect: 'none' }}>
+        <div ref={containerRef as any} className="relative w-full h-full z-0" style={{ touchAction: 'none', userSelect: 'none' }}>
             <MapProvider>
                 <Map
                     cursor={cursor}
@@ -381,7 +382,7 @@ const FarmMap: React.FC<FarmMapProps> = ({
                 >
                     {/* PLAN G: Interaction Handler correctly placed inside context */}
                     <MapInteractionHandler 
-                        containerRef={containerRef}
+                        containerRef={containerRef as React.RefObject<HTMLDivElement>}
                         isMobile={isMobile}
                         isDrawingMode={isDrawingMode}
                         talhoes={talhoes}
@@ -494,4 +495,3 @@ const FarmMap: React.FC<FarmMapProps> = ({
 };
 
 export default FarmMap;
-

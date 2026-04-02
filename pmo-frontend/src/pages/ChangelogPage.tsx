@@ -6,14 +6,10 @@ import {
     Tag,
     Calendar,
     CheckCircle,
-    AlertCircle,
-    Zap,
-    Star,
     ArrowLeft,
     Sparkles,
     Rocket,
-    Wrench,
-    Clock
+    Wrench
 } from 'lucide-react';
 
 const ChangelogPage: React.FC = () => {

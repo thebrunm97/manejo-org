@@ -18,7 +18,6 @@ import {
   CloudSun,
   MapPin,
   Link,
-  Unlink,
 } from "lucide-react";
 
 import { useDashboardLogic } from "../hooks/dashboard/useDashboardLogic";
@@ -63,7 +62,6 @@ const WeatherWidget: React.FC<{
   const hojeLocal = new Date().toISOString().split('T')[0];
   const RAIN_CHANCE_THRESHOLD = 5;
 
-  const todayForecast = (forecast || []).find((f: any) => f.date === hojeLocal);
   const isWeatherStale = !forecast || !forecast.some((f: any) => f.date === hojeLocal);
   const lastUpdatedAt = current.temperature ? 'Agora' : 'Desconhecido';
 

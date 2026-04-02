@@ -9,7 +9,7 @@ import { talhaoService, Talhao } from '../../services/talhaoService';
 import { calculatePolygonArea } from '../../domain/geo/geoUtils';
 import { GeoPoint } from '../../domain/geo/geoTypes';
 
-export function useTalhaoManager(pmoId: string, propriedadeId?: number) {
+export function useTalhaoManager(pmoId?: string | null, propriedadeId?: number | null) {
     const [talhoes, setTalhoes] = useState<Talhao[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -17,11 +17,22 @@ export function useTalhaoManager(pmoId: string, propriedadeId?: number) {
 
     // Carrega talhões
     const loadTalhoes = useCallback(async () => {
-        if (!pmoId) return;
+        // Se temos propriedadeId, usamos ela como fonte da verdade (Suporta Convencional e Paralela)
+        // Se não, tentamos pmoId (Legacy)
+        if (!propriedadeId && !pmoId) {
+            setLoading(false);
+            return;
+        }
+
         setLoading(true);
         setError(null);
         try {
-            const data = await talhaoService.fetchByPmo(pmoId);
+            let data: Talhao[] = [];
+            if (propriedadeId) {
+                data = await talhaoService.getTalhoesByPropriedade(propriedadeId);
+            } else if (pmoId) {
+                data = await talhaoService.fetchByPmo(pmoId);
+            }
             setTalhoes(data);
         } catch (err) {
             console.error("Erro ao carregar talhões:", err);
@@ -29,7 +40,7 @@ export function useTalhaoManager(pmoId: string, propriedadeId?: number) {
         } finally {
             setLoading(false);
         }
-    }, [pmoId]);
+    }, [pmoId, propriedadeId]);
 
     useEffect(() => {
         loadTalhoes();
@@ -46,7 +57,7 @@ export function useTalhaoManager(pmoId: string, propriedadeId?: number) {
 
             // 3. Usa Service para salvar
             const newTalhao = await talhaoService.create({
-                propriedade_id: propriedadeId, // ← NOVO: Inclui propriedade_id
+                propriedade_id: propriedadeId ?? undefined, // ← Garante compatibility com Omit<Talhao, 'id'>
                 geometria: coords,
                 nome,
                 area_hectares: area,
