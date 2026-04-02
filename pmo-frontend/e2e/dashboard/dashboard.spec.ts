@@ -20,7 +20,7 @@ test.describe('Dashboard (Visualização)', () => {
         await expect(page.getByRole('button', { name: 'Novo Registro' })).toBeVisible();
 
         // Verificar Card do Assistente Inteligente
-        await expect(page.getByText('Assistente Inteligente')).toBeVisible();
+        await expect(page.getByText('Assistente de I.A.')).toBeVisible();
 
         // Verificar se o Weather Widget renderizou (pode estar carregando, então wait)
         // O WeatherWidget tem texto "LOCAL ATUAL"

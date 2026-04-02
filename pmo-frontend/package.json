@@ -24,6 +24,7 @@
     "@types/qrcode.react": "^1.0.5",
     "axios": "^1.10.0",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
     "driver.js": "^1.4.0",
     "geolib": "^3.3.4",
     "idb": "^8.0.3",
