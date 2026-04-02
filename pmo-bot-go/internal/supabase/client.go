@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/utils"
+	"sync"
 )
 
 // Config represents the Supabase credentials
@@ -22,8 +23,10 @@ type Config struct {
 
 // Client wraps HTTP communication with Supabase REST API
 type Client struct {
-	config     Config
-	httpClient *http.Client
+	config         Config
+	httpClient     *http.Client
+	blacklistCache []string
+	cacheMutex     sync.RWMutex
 }
 
 // NewClient initializes the Supabase client
@@ -31,12 +34,19 @@ func NewClient(cfg Config) (*Client, error) {
 	if cfg.URL == "" || cfg.Key == "" {
 		return nil, fmt.Errorf("SUPABASE_URL or SUPABASE_KEY is missing")
 	}
-	return &Client{
+	c := &Client{
 		config: cfg,
 		httpClient: &http.Client{
 			Timeout: 15 * time.Second,
 		},
-	}, nil
+	}
+	
+	// Initial load of blacklist
+	if err := c.RefreshBlacklist(); err != nil {
+		log.Printf("⚠️ [Supabase] Falha inicial ao carregar blacklist: %v", err)
+	}
+
+	return c, nil
 }
 
 // ---------------------------------------------------------------------------
@@ -44,10 +54,20 @@ func NewClient(cfg Config) (*Client, error) {
 // ---------------------------------------------------------------------------
 
 type Profile struct {
-	ID         string `json:"id"`
-	Nome       string `json:"nome,omitempty"`
-	Telefone   string `json:"telefone,omitempty"`
-	PmoAtivoID int64  `json:"pmo_ativo_id,omitempty"`
+	ID                     string   `json:"id"`
+	Nome                   string   `json:"nome,omitempty"`
+	Telefone               string   `json:"telefone,omitempty"`
+	PmoAtivoID           int64    `json:"pmo_ativo_id,omitempty"`
+	PropriedadeAtivaID    int64    `json:"propriedade_ativa_id,omitempty"`
+	ModalidadePredominante string   `json:"modalidade_predominante,omitempty"`
+	TemProducaoParalela    bool     `json:"tem_producao_paralela,omitempty"`
+	Talhoes                []Talhao `json:"talhoes,omitempty"`
+}
+
+type Talhao struct {
+	ID                int64  `json:"id"`
+	Nome              string `json:"nome"`
+	ModalidadeProducao string `json:"modalidade_producao"`
 }
 
 type LidMapping struct {
@@ -212,6 +232,97 @@ type PmoLocation struct {
 	Query string
 }
 
+type InsumoProibido struct {
+	Nome string `json:"nome"`
+}
+
+type DemandaColetiva struct {
+	ID            string    `json:"id"`
+	Titulo        string    `json:"titulo"`
+	Cultura       string    `json:"cultura"`
+	Quantidade    float64   `json:"quantidade"`
+	Unidade       string    `json:"unidade"`
+	DataEntrega   string    `json:"data_entrega"`
+	PrecoBase     float64   `json:"preco_base"`
+	Status        string    `json:"status"` // aberta, em_captacao, preenchida, encerrada, cancelada
+	Modalidade    string    `json:"modalidade"` // TODAS, ORGANICO, etc
+}
+
+type CotaProdutorInsert struct {
+	DemandaID     string  `json:"demanda_id"`
+	PropriedadeID int64   `json:"propriedade_id"`
+	UsuarioID     string  `json:"usuario_id"`
+	Quantidade    float64 `json:"quantidade"`
+}
+
+type CronogramaPlantioInsert struct {
+	CotaID      string `json:"cota_id"`
+	DataPlantio string `json:"data_plantio"`
+	Observacao  string `json:"observacao_ia,omitempty"`
+}
+
+// RefreshBlacklist fetches the current prohibited inputs from the database
+func (c *Client) RefreshBlacklist() error {
+	reqURL := fmt.Sprintf("%s/rest/v1/insumos_proibidos?select=nome", c.config.URL)
+	body, err := c.doRequest(http.MethodGet, reqURL, nil)
+	if err != nil {
+		return err
+	}
+
+	var items []InsumoProibido
+	if err := json.Unmarshal(body, &items); err != nil {
+		return err
+	}
+
+	newCache := make([]string, len(items))
+	for i, item := range items {
+		newCache[i] = utils.Normalize(item.Nome)
+	}
+
+	c.cacheMutex.Lock()
+	c.blacklistCache = newCache
+	c.cacheMutex.Unlock()
+
+	log.Printf("✅ [Supabase] Blacklist carregada: %d itens", len(newCache))
+	return nil
+}
+
+// IsProhibitedCheck goes through the cached blacklist to check for chemical inputs
+func (c *Client) IsProhibitedCheck(input string) bool {
+	c.cacheMutex.RLock()
+	defer c.cacheMutex.RUnlock()
+
+	inputLower := utils.Normalize(input)
+	for _, item := range c.blacklistCache {
+		// Busca parcial simples (contém)
+		if strings.Contains(inputLower, item) {
+			return true
+		}
+	}
+	return false
+}
+
+// StartBlacklistAutoRefresh creates a background routine to refresh the blacklist cache
+func (c *Client) StartBlacklistAutoRefresh(ctx context.Context, interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	// We don't defer ticker.Stop() here because this is intended to run for the life of the app
+	// unless the context is canceled.
+	
+	log.Printf("🔄 [Supabase] Blacklist Auto-Refresh iniciado (intervalo: %v)", interval)
+	
+	for {
+		select {
+		case <-ticker.C:
+			if err := c.RefreshBlacklist(); err != nil {
+				log.Printf("❌ [Supabase] Erro no auto-refresh da blacklist: %v", err)
+			}
+		case <-ctx.Done():
+			ticker.Stop()
+			return
+		}
+	}
+}
+
 // ---------------------------------------------------------------------------
 // Main Methods
 // ---------------------------------------------------------------------------
@@ -252,32 +363,44 @@ func (c *Client) ResolvePhone(from string) (string, error) {
 func (c *Client) GetProfileByPhone(phone string) (*Profile, error) {
 	phone = utils.SanitizePhone(phone)
 
-	// Primeira tentativa: Buscar pelo número exato fornecido
-	reqURL := fmt.Sprintf("%s/rest/v1/profiles?telefone=eq.%s&select=*", c.config.URL, phone)
+	// Fetch profile with active property and its talhões (Corrected nesting: properties -> talhoes)
+	selectQuery := "*,propriedades:propriedade_ativa_id(modalidade_predominante,tem_producao_paralela,talhoes:talhoes(id,nome,modalidade_producao))"
+	reqURL := fmt.Sprintf("%s/rest/v1/profiles?telefone=eq.%s&select=%s", c.config.URL, phone, selectQuery)
+	var results []struct {
+		Profile
+		Propriedades struct {
+			ModalidadePredominante string   `json:"modalidade_predominante"`
+			TemProducaoParalela    bool     `json:"tem_producao_paralela"`
+			Talhoes                []Talhao `json:"talhoes"`
+		} `json:"propriedades"`
+	}
+
 	body, err := c.doRequest(http.MethodGet, reqURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	var profiles []Profile
-	if err := json.Unmarshal(body, &profiles); err != nil {
-		return nil, err
-	}
-
-	if len(profiles) > 0 {
-		return &profiles[0], nil
+	if err == nil {
+		if err := json.Unmarshal(body, &results); err == nil && len(results) > 0 {
+			p := results[0].Profile
+			p.ModalidadePredominante = results[0].Propriedades.ModalidadePredominante
+			p.TemProducaoParalela = results[0].Propriedades.TemProducaoParalela
+			p.Talhoes = results[0].Propriedades.Talhoes
+			return &p, nil
+		}
+	} else {
+		log.Printf("⚠️ [Supabase] Falha na consulta de perfil complexa (detalhes: %v). Tentando fallbacks...", err)
 	}
 
 	// Segunda tentativa: Formato BR sem o 9º dígito
 	if len(phone) == 13 && strings.HasPrefix(phone, "55") {
 		fallbackPhone := phone[:4] + phone[5:]
-		reqURL = fmt.Sprintf("%s/rest/v1/profiles?telefone=eq.%s&select=*", c.config.URL, fallbackPhone)
+		reqURL = fmt.Sprintf("%s/rest/v1/profiles?telefone=eq.%s&select=%s", c.config.URL, fallbackPhone, selectQuery)
 
 		body, err = c.doRequest(http.MethodGet, reqURL, nil)
 		if err == nil {
-			var fallbackProfiles []Profile
-			if err := json.Unmarshal(body, &fallbackProfiles); err == nil && len(fallbackProfiles) > 0 {
-				return &fallbackProfiles[0], nil
+			if err := json.Unmarshal(body, &results); err == nil && len(results) > 0 {
+				p := results[0].Profile
+				p.ModalidadePredominante = results[0].Propriedades.ModalidadePredominante
+				p.TemProducaoParalela = results[0].Propriedades.TemProducaoParalela
+				p.Talhoes = results[0].Propriedades.Talhoes
+				return &p, nil
 			}
 		}
 	}
@@ -285,12 +408,15 @@ func (c *Client) GetProfileByPhone(phone string) (*Profile, error) {
 	// Terceira tentativa: Tentar LIKE pegando os ultimos 8 digitos
 	if len(phone) >= 8 {
 		last8 := phone[len(phone)-8:]
-		reqURL = fmt.Sprintf("%s/rest/v1/profiles?telefone=ilike.*%s*&select=*", c.config.URL, last8)
+		reqURL = fmt.Sprintf("%s/rest/v1/profiles?telefone=ilike.*%s*&select=%s", c.config.URL, last8, selectQuery)
 		body, err = c.doRequest(http.MethodGet, reqURL, nil)
 		if err == nil {
-			var fallbackProfiles []Profile
-			if err := json.Unmarshal(body, &fallbackProfiles); err == nil && len(fallbackProfiles) > 0 {
-				return &fallbackProfiles[0], nil
+			if err := json.Unmarshal(body, &results); err == nil && len(results) > 0 {
+				p := results[0].Profile
+				p.ModalidadePredominante = results[0].Propriedades.ModalidadePredominante
+				p.TemProducaoParalela = results[0].Propriedades.TemProducaoParalela
+				p.Talhoes = results[0].Propriedades.Talhoes
+				return &p, nil
 			}
 		}
 	}
@@ -338,6 +464,72 @@ func (c *Client) RegistrarAtividadeRPC(ctx context.Context, args map[string]inte
 	}
 
 	return result, nil
+}
+
+// RegistrarTransacaoComRateioRPC calls the 'rpc_registrar_transacao_com_rateio' function.
+// This handles complex transactions with split-billing (allocations) in a single atomic call.
+func (c *Client) RegistrarTransacaoComRateioRPC(ctx context.Context, args map[string]interface{}) (map[string]interface{}, error) {
+	reqURL := fmt.Sprintf("%s/rest/v1/rpc/rpc_registrar_transacao_com_rateio", c.config.URL)
+
+	payload, err := json.Marshal(args)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal RPC payload: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewReader(payload))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create RPC request: %w", err)
+	}
+
+	req.Header.Set("apikey", c.config.Key)
+	req.Header.Set("Authorization", "Bearer "+c.config.Key)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("RPC execution HTTP failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read RPC response: %w", err)
+	}
+
+	if resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("supabase RPC error (%d): %s", resp.StatusCode, string(body))
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse RPC response: %w", err)
+	}
+
+	return result, nil
+}
+
+// GetCategoriaFinanceiraByName looks up a category UUID by its name and type.
+func (c *Client) GetCategoriaFinanceiraByName(nome string, tipo string) (string, error) {
+	reqURL := fmt.Sprintf("%s/rest/v1/categorias_financeiras?nome=ilike.%s&tipo=eq.%s&select=id", 
+		c.config.URL, nome, tipo)
+
+	body, err := c.doRequest(http.MethodGet, reqURL, nil)
+	if err != nil {
+		return "", err
+	}
+
+	var results []struct {
+		ID string `json:"id"`
+	}
+	if err := json.Unmarshal(body, &results); err != nil {
+		return "", err
+	}
+
+	if len(results) == 0 {
+		return "", fmt.Errorf("categoria '%s' não encontrada", nome)
+	}
+
+	return results[0].ID, nil
 }
 
 // RegistrarCompraInsumoRPC calls the 'rpc_registrar_compra_insumo' function.
@@ -774,7 +966,7 @@ func buildWeatherQuery(pmoID int64, lat, lon, city, address string) string {
         }
     }
     
-    log.Printf("❌ [WeatherClient] PMO=%d sem localização válida", pmoID)
+    log.Printf("❌ [WeatherClient] PMO=%d sem localização válida. Verifique se as coordenadas ou o endereço estão preenchidos na Seção 1 (Descrição da Propriedade) do painel.", pmoID)
     return ""
 }
 
@@ -798,6 +990,7 @@ func (c *Client) FetchActivePMOsLocations() ([]PmoLocation, error) {
 	for _, p := range pmos {
 		var lat, lon, address string
 
+		// Extrair dados base do form_data
 		if sec1, ok := p.FormData["secao_1_descricao_propriedade"].(map[string]interface{}); ok {
 			if coords, ok := sec1["coordenadas_geograficas"].(map[string]interface{}); ok {
 				if latStr, ok := coords["latitude"].(string); ok && latStr != "" {
@@ -810,6 +1003,40 @@ func (c *Client) FetchActivePMOsLocations() ([]PmoLocation, error) {
 			if end, ok := sec1["dados_cadastrais"].(map[string]interface{}); ok {
 				if endProp, ok := end["endereco_propriedade_base_fisica_produtiva"].(string); ok && endProp != "" {
 					address = endProp
+				}
+			}
+		}
+
+		// Fallback: Se não tem lat/lng, tentar buscar de um talhão vinculado
+		if lat == "" || lon == "" {
+			talhoes, err := c.FetchTalhoes(p.ID)
+			if err == nil && len(talhoes) > 0 {
+				for _, t := range talhoes {
+					if geom, ok := t["geometry"].(map[string]interface{}); ok {
+						// Tentar extrair do GeoJSON (Polygon ou Point)
+						// Simplificação: pegar o primeiro ponto se for Polygon
+						if coords, ok := geom["coordinates"].([]interface{}); ok && len(coords) > 0 {
+							if gType, ok := geom["type"].(string); ok {
+								if gType == "Polygon" {
+									// coordinates[0][0] -> [lng, lat]
+									if rings, ok := coords[0].([]interface{}); ok && len(rings) > 0 {
+										if pt, ok := rings[0].([]interface{}); ok && len(pt) >= 2 {
+											lon = fmt.Sprintf("%v", pt[0])
+											lat = fmt.Sprintf("%v", pt[1])
+											log.Printf("📍 [WeatherSync] PMO=%d lat/lng obtida do talhão '%v'", p.ID, t["nome"])
+											break
+										}
+									}
+								} else if gType == "Point" {
+									if len(coords) >= 2 {
+										lon = fmt.Sprintf("%v", coords[0])
+										lat = fmt.Sprintf("%v", coords[1])
+										break
+									}
+								}
+							}
+						}
+					}
 				}
 			}
 		}
@@ -1131,4 +1358,160 @@ func (c *Client) doRequest(method, url string, payload []byte) ([]byte, error) {
 	}
 
 	return body, nil
+}
+
+// ---------------------------------------------------------------------------
+// Collective Planning (Phase 04)
+// ---------------------------------------------------------------------------
+
+// GetDemandaAtivaPorCultura finds an open demand for a specific crop.
+func (c *Client) GetDemandaAtivaPorCultura(ctx context.Context, cultura string) (*DemandaColetiva, error) {
+	// Filter by culture (case insensitive) and active status.
+	reqURL := fmt.Sprintf("%s/rest/v1/demandas_coletivas?cultura=ilike.%s&status=in.(\"aberta\",\"em_captacao\")&limit=1", 
+		c.config.URL, strings.ToUpper(cultura))
+
+	body, err := c.doRequest(http.MethodGet, reqURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var demands []DemandaColetiva
+	if err := json.Unmarshal(body, &demands); err != nil {
+		return nil, err
+	}
+
+	if len(demands) == 0 {
+		return nil, fmt.Errorf("no active demand found for culture %s", cultura)
+	}
+
+	return &demands[0], nil
+}
+
+// RegistrarCotaComCronograma performs a coordinated insertion into quotas and schedules.
+func (c *Client) RegistrarCotaComCronograma(ctx context.Context, payload map[string]interface{}) error {
+	// Extraction from generic payload
+	demandaID, _ := payload["demanda_id"].(string)
+	propriedadeID, _ := payload["propriedade_id"].(int64)
+	usuarioID, _ := payload["usuario_id"].(string)
+	quantidade, _ := payload["quantidade"].(float64)
+	dataPlantio, _ := payload["data_plantio"].(string)
+	observacao, _ := payload["observacao_ia"].(string)
+
+	// 1. Insert into cotas_produtores
+	cotaRecord := CotaProdutorInsert{
+		DemandaID:     demandaID,
+		PropriedadeID: propriedadeID,
+		UsuarioID:     usuarioID,
+		Quantidade:    quantidade,
+	}
+
+	cotaJSON, _ := json.Marshal(cotaRecord)
+	reqURL := fmt.Sprintf("%s/rest/v1/cotas_produtores", c.config.URL)
+	
+	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewReader(cotaJSON))
+	req.Header.Set("apikey", c.config.Key)
+	req.Header.Set("Authorization", "Bearer "+c.config.Key)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Prefer", "return=representation")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to insert quota: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode >= 400 {
+		return fmt.Errorf("quota insert error (%d): %s", resp.StatusCode, string(body))
+	}
+
+	var createdCota []struct {
+		ID string `json:"id"`
+	}
+	json.Unmarshal(body, &createdCota)
+	if len(createdCota) == 0 {
+		return fmt.Errorf("failed to retrieve created quota ID")
+	}
+
+	// 2. Insert into cronograma_plantio
+	cronRecord := CronogramaPlantioInsert{
+		CotaID:      createdCota[0].ID,
+		DataPlantio: dataPlantio,
+		Observacao:  observacao,
+	}
+
+	cronJSON, _ := json.Marshal(cronRecord)
+	reqURLCron := fmt.Sprintf("%s/rest/v1/cronograma_plantio", c.config.URL)
+	
+	reqCron, _ := http.NewRequestWithContext(ctx, http.MethodPost, reqURLCron, bytes.NewReader(cronJSON))
+	reqCron.Header.Set("apikey", c.config.Key)
+	reqCron.Header.Set("Authorization", "Bearer "+c.config.Key)
+	reqCron.Header.Set("Content-Type", "application/json")
+
+	respCron, err := c.httpClient.Do(reqCron)
+	if err != nil {
+		return fmt.Errorf("failed to insert schedule: %w", err)
+	}
+	defer respCron.Body.Close()
+
+	if respCron.StatusCode >= 400 {
+		bodyCron, _ := io.ReadAll(respCron.Body)
+		return fmt.Errorf("schedule insert error (%d): %s", respCron.StatusCode, string(bodyCron))
+	}
+
+	return nil
+}
+
+// ObterAlertasPlantioPendentes retrieves all scheduled alerts for today or earlier.
+func (c *Client) ObterAlertasPlantioPendentes(ctx context.Context) ([]map[string]interface{}, error) {
+	// Simple query with embedding: 
+	// - Get cronograma_plantio where alerta_enviado is false and data_alerta_whatsapp <= today
+	// - Embed cotas_produtores -> profiles (for phone)
+	// - Embed cotas_produtores -> demandas_coletivas (for culture)
+	today := time.Now().Format("2006-01-02")
+	reqURL := fmt.Sprintf("%s/rest/v1/cronograma_plantio?select=id,cota_id,data_alerta_whatsapp,cotas_produtores(quantidade_assumida,profiles(telefone),demandas_coletivas(cultura))&alerta_enviado=eq.false&data_alerta_whatsapp=lte.%s", 
+		c.config.URL, today)
+
+	body, err := c.doRequest(http.MethodGet, reqURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []map[string]interface{}
+	if err := json.Unmarshal(body, &results); err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
+// MarcarAlertaComoEnviado sets the alert status to true.
+func (c *Client) MarcarAlertaComoEnviado(ctx context.Context, cronogramaID string) error {
+	reqURL := fmt.Sprintf("%s/rest/v1/cronograma_plantio?id=eq.%s", c.config.URL, cronogramaID)
+	payload := map[string]interface{}{
+		"alerta_enviado": true,
+	}
+	body, _ := json.Marshal(payload)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, reqURL, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("apikey", c.config.Key)
+	req.Header.Set("Authorization", "Bearer "+c.config.Key)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("failed to mark alert as sent (%d): %s", resp.StatusCode, string(respBody))
+	}
+
+	return nil
 }

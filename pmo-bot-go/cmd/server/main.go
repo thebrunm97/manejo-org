@@ -12,6 +12,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
+	"github.com/thebrunm97/pmo-bot-go/internal/jobs"
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
@@ -165,6 +166,9 @@ func main() {
 		}
 	}()
 
+	// --- Blacklist Auto-Refresh (every 24 hours) ---
+	go sbClient.StartBlacklistAutoRefresh(context.Background(), 24*time.Hour)
+
 	// --- Weather Fetch goroutine (every 3 hours) ---
 	weatherAPIKey := os.Getenv("WEATHER_API_KEY")
 	if weatherAPIKey == "" {
@@ -172,6 +176,9 @@ func main() {
 	} else {
 		go weather.StartWeatherJob(context.Background(), sbClient, weatherAPIKey)
 	}
+
+	// --- Planting Reminders Job (Phase 04) ---
+	go jobs.StartPlantioReminderJob(sbClient, wpClient)
 
 	// --- Start ---
 	log.Printf("🚀 PMO-Bot-Go v0.11.5 listening on 0.0.0.0:%s", port)

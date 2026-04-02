@@ -27,11 +27,16 @@ const (
 // NER Extraction Structs (mapped from records.py + parsing.py)
 // ---------------------------------------------------------------------------
 
+type Alocacao struct {
+	TalhaoNome string  `json:"talhao_nome"`
+	Valor      float64 `json:"valor"`
+}
+
 // Localizacao maps to LocalEstruturado in Python.
-// Canteiros is a slice to support N:N bed references (golang-guerrilha Rule #5).
 type Localizacao struct {
-	Talhao    string   `json:"talhao"`
-	Canteiros []string `json:"canteiros"`
+	Talhao           string   `json:"talhao"`
+	Canteiros        []string `json:"canteiros"`
+	TalhoesAplicados []string `json:"talhoes_aplicados"`
 }
 
 // ExtractionResult is the structured JSON returned by the LLM.
@@ -68,6 +73,32 @@ type ExtractionResult struct {
 	Lote              string      `json:"lote"`
 	Cliente           string      `json:"cliente"`
 	ValorTotal        interface{} `json:"valor_total"`
+	Alocacoes         []Alocacao  `json:"alocacoes"`
+	QuantidadeAssumida interface{} `json:"quantidade_assumida"`
+}
+
+// ---------------------------------------------------------------------------
+// Ledger Entity Structs (Phase 01)
+// ---------------------------------------------------------------------------
+
+type CategoriaFinanceira struct {
+	ID        string `json:"id"`
+	Nome      string `json:"nome"`
+	Tipo      string `json:"tipo"` // RECEITA or DESPESA
+	Descricao string `json:"descricao"`
+}
+
+type TransacaoFinanceira struct {
+	ID              string  `json:"id"`
+	PropriedadeID   int64   `json:"propriedade_id"`
+	PmoID           *int64  `json:"pmo_id"`
+	CategoriaID     string  `json:"categoria_id"`
+	Tipo            string  `json:"tipo"`
+	ValorTotal      float64 `json:"valor_total"`
+	DataCompetencia string  `json:"data_competencia"` // YYYY-MM-DD
+	Fornecedor      string  `json:"fornecedor_cliente"`
+	NotaFiscal      string  `json:"nota_fiscal"`
+	Status          string  `json:"status_pagamento"`
 }
 
 // ---------------------------------------------------------------------------
