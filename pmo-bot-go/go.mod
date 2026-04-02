@@ -7,6 +7,7 @@ require (
 	github.com/google/generative-ai-go v0.20.1
 	github.com/joho/godotenv v1.5.1
 	github.com/ledongthuc/pdf v0.0.0-20250511090121-5959a4027728
+	golang.org/x/text v0.35.0
 	golang.org/x/time v0.15.0
 	google.golang.org/api v0.272.0
 )
@@ -61,7 +62,6 @@ require (
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect
-	golang.org/x/text v0.35.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260217215200-42d3e9bedb6d // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260311181403-84a4fc48630c // indirect
 	google.golang.org/grpc v1.79.2 // indirect

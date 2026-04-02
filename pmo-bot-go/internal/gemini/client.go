@@ -9,6 +9,7 @@ import (
 	"google.golang.org/api/option"
 
 	_ "embed"
+	"strings"
 )
 
 //go:embed prompts/system_prompt.md
@@ -26,15 +27,32 @@ var systemPromptAgronomistVision string
 // GetPromptForIntent selects the correct specialist system prompt based on the
 // classified Intent from the Router. Falls back to the default monolithic prompt
 // for CHAT or any unrecognized intent to avoid breaking the existing flow.
-func GetPromptForIntent(intent Intent) string {
+// GetPromptForIntent selects the correct specialist system prompt and injects property context.
+func GetPromptForIntent(intent Intent, modality string, temProducaoParalela bool) string {
+	var prompt string
 	switch intent {
 	case IntentRAG:
-		return systemPromptAgronomist
+		prompt = systemPromptAgronomist
 	case IntentDatabase:
-		return systemPromptDBOperator
+		prompt = systemPromptDBOperator
 	default:
-		return systemPrompt
+		prompt = systemPrompt
 	}
+
+	// Inject dynamic context (Simple string replacement as placeholder for a template engine)
+	prompt = strings.ReplaceAll(prompt, "{{MODALIDADE_PREDOMINANTE}}", modality)
+	
+	parallelMsg := ""
+	if temProducaoParalela {
+		parallelMsg = "SIM"
+	} else {
+		parallelMsg = "NÃO"
+	}
+	prompt = strings.ReplaceAll(prompt, "{{TEM_PRODUCAO_PARALELA}}", parallelMsg)
+
+	// Note: For more complex logic like {% if %}, a real template engine like text/template should be used.
+	// For now, these basic replacements satisfy the current prompt structure if we adapt the prompts slightly.
+	return prompt
 }
 
 // Config holds Gemini API configuration
@@ -92,13 +110,18 @@ func (c *Client) GenerateEmbedding(text string) ([]float32, error) {
 }
 
 // AskExpert asks a question using the legacy simple flow (for backward compatibility if needed)
-func (c *Client) AskExpert(question string) (string, error) {
+func (c *Client) AskExpert(question string, customInstruction ...string) (string, error) {
 	ctx := context.Background()
 	model := c.client.GenerativeModel(c.Config.Model)
 
 	// Set system instruction
+	instruction := systemPrompt
+	if len(customInstruction) > 0 && customInstruction[0] != "" {
+		instruction = customInstruction[0]
+	}
+
 	model.SystemInstruction = &genai.Content{
-		Parts: []genai.Part{genai.Text(systemPrompt)},
+		Parts: []genai.Part{genai.Text(instruction)},
 	}
 
 	model.SetTemperature(0.2)

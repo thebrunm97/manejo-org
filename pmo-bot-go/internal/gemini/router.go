@@ -21,6 +21,9 @@ const (
 	// Routes to the db_operator specialist with all write tools.
 	IntentDatabase Intent = "DATABASE"
 
+	// IntentFinance is for financial records like expenses, sales, and revenue.
+	IntentFinance Intent = "REGISTRO_FINANCEIRO"
+
 	// IntentChat is for greetings and off-topic messages.
 	// No tools are injected; the model responds directly.
 	IntentChat Intent = "CHAT"
@@ -36,7 +39,7 @@ type RouterResult struct {
 // routerSystemPrompt is the ultra-focused prompt for the Router agent.
 // It has NO tools, NO history, and runs at temperature 0.
 // It only classifies — it never answers the user directly.
-const routerSystemPrompt = `Você é um roteador de intenções. Classifique a mensagem do usuário em exatamente um dos três intents abaixo.
+const routerSystemPrompt = `Você é um roteador de intenções. Classifique a mensagem do usuário em exatamente um dos quatro intents abaixo.
 
 Responda APENAS em JSON válido com o seguinte schema:
 {"intent": "...", "confidence": 0.95, "reasoning": "..."}

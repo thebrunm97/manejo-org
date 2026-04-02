@@ -84,7 +84,7 @@ func RunWeatherCronJob(ctx context.Context, sbClient *supabase.Client, apiKey st
 		if p.Query != "" {
 			locationsMap[p.Query] = append(locationsMap[p.Query], p.ID)
 		} else {
-			log.Printf("⚠️ [WeatherJob] PMO=%d ignorado na atualização (sem query válida)", p.ID)
+			log.Printf("⚠️ [WeatherJob] PMO=%d ignorado na atualização (sem query/coordenada válida no form_data)", p.ID)
 		}
 	}
 

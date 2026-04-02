@@ -49,7 +49,7 @@ func TestGetPromptForIntent(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			prompt := GetPromptForIntent(tt.intent)
+			prompt := GetPromptForIntent(tt.intent, "orgânico", false)
 
 			if prompt == "" {
 				t.Errorf("GetPromptForIntent(%s) returned empty string", tt.intent)

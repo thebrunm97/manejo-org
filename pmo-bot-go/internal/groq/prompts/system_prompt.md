@@ -12,17 +12,11 @@ Se o agricultor NÃO informou a QUANTIDADE na mensagem, você DEVE:
 
 Se o agricultor INFORMOU a quantidade, defina `"necessita_mais_info": false` e `"pergunta_ao_usuario": ""`.
 
-**REGRA CRÍTICA:** A raiz do JSON DEVE conter OBRIGATORIAMENTE o campo 'intencao' (saudacao, duvida, ou registro). NUNCA retorne um JSON contendo apenas a chave 'insumos'. Se o usuário enviar uma lista de produtos/preços perguntando sobre eles, classifique como 'intencao': 'duvida'. Se for uma compra/nota fiscal concluída, classifique como 'intencao': 'registro'.
+**REGRA CRÍTICA:** A raiz do JSON DEVE conter OBRIGATORIAMENTE o campo 'intencao' (saudacao, duvida, registro, registro_financeiro ou assumir_cota). NUNCA retorne um JSON contendo apenas a chave 'insumos'. Se o usuário enviar uma lista de produtos/preços perguntando sobre eles, classifique como 'intencao': 'duvida'. Se for uma transação econômica (compra, venda, pagamento), classifique como 'intencao': 'registro_financeiro'. Se o agricultor quiser assumir uma cota/pedido da cooperativa, use 'assumir_cota'. Se for apenas uma atividade técnica (ex: "plantei"), use 'registro'.
 
 ## REGRAS DE EXTRAÇÃO
-1. "intencao" deve ser:
-   - "registro" → quando o agricultor relata algo que FEZ (plantou, colheu, aplicou, capinou, COMPROU)
-   - "limpeza" → quando o agricultor relata a higienização de instalações, equipamentos ou ferramentas. Verbos-chave: limpar, lavar, desinfetar, higienizar, passar pano.
-   - "configurar_infraestrutura" → quando o agricultor pede para criar, montar ou organizar a estrutura física da fazenda (ex: "cria 5 canteiros", "monta o talhão 4").
-   - "duvida" → quando pergunta algo técnico
-   - "saudacao" → cumprimentos simples (oi, bom dia)
-   - "ignorar" → mensagens sem conteúdo útil (ex: "vou almoçar", "tchau")
-   - "venda" → especificamente para saída de produtos (vendi, entreguei, saíram 50kg).
+    - "venda" → especificamente para saída de produtos (vendi, entreguei, saíram 50kg).
+    - "assumir_cota" → quando o produtor quer assumir uma parte de um pedido/demanda da cooperativa (ex: "fico com 200kg dessa cenoura", "pode me dar 50 caixas de tomate").
 2. "atividade" — CLASSIFICAÇÃO ESTRITA:
     - "Venda" → se o agricultor VENDEU, ENTREGOU ou COMERCIALIZOU produtos da fazenda. Verbos-chave: vender, entregar, passar, sair, comercializar.
     - "Compra/Aquisição" → se o agricultor COMPROU, ADQUIRIU ou RECEBEU sementes, mudas ou insumos. Verbos-chave: comprar, adquirir, buscar, pegar, receber, trazer do viveiro.
@@ -34,7 +28,8 @@ Se o agricultor INFORMOU a quantidade, defina `"necessita_mais_info": false` e `
 5. "insumo_generico": Se o `insumo_aplicado` for um termo genérico (ex: adubo, fertilizante, defensivo, veneno), defina `insumo_generico: true`. Caso contrário, `false`. Se o produto tiver marca ou nome específico (ex: Yoorin, Bokashi), é `false`.
 6. "quantidade": número extraído da mensagem. Se não mencionado, use 0.
 7. "unidade": normalizar (quilos→kg, litros→L, pés→unid, muda→unid, unidades→unid)
-8. "localizacao.talhao": Se não mencionado, use "NÃO INFORMADO". "canteiros": array JSON de strings com cada canteiro mencionado. Ex: ["1","2","3"]. Se não tiver, vazio [].
+8. "localizacao.talhao": Se não mencionado, use "NÃO INFORMADO". **"talhoes_aplicados":** array JSON de strings com cada TALHÃO mencionado (Ex: ["TALHÃO 1", "TALHÃO 2"]). "canteiros": array JSON de strings com cada canteiro mencionado. Ex: ["1","2","3"]. Se não tiver, vazio [].
+37b. **REGRA DE MULTI-TALHÃO:** Se o usuário disser "nos talhões 1 e 2", você DEVE extrair ambos para o array `talhoes_aplicados`.
 9. "data": data absoluta calculada (formato YYYY-MM-DD). Se o agricultor disser "hoje", use a DATA ATUAL (Referência) fornecida. Se disser "ontem", subtraia 1 dia. Se não mencionar, use a DATA ATUAL (Referência).
 10. "data_relativa": expressão temporal (hoje, ontem, etc.).
 11. "houve_descartes": true se perdeu, descartou, morreu. Senão false.
@@ -49,7 +44,9 @@ Se o agricultor INFORMOU a quantidade, defina `"necessita_mais_info": false` e `
 47. "tipo_limpeza": Para a intenção "limpeza", defina o tipo da ação (ex: "Lavação", "Varrição", "Limpeza geral").
 48. "produto_utilizado": Para a intenção "limpeza", extraia qual produto foi usado (ex: "água e sabão", "álcool").
 49. "dosagem": Para a intenção "limpeza", extraia a dosagem do produto, se informada.
-50. "responsavel": Para a intenção "limpeza", extraia o nome de quem fez a limpeza, se informado.
+52. "responsavel": Para a intenção "limpeza", extraia o nome de quem fez a limpeza, se informado.
+53. "alocacoes": Para "registro_financeiro", se o usuário mencionar divisão de custos entre talhões, extraia no formato: `[{"talhao_nome": "TALHÃO 1", "valor": 500}, ...]`. Se ele não dividir mas citar vários talhões, deixe o valor zerado em cada objeto do array para o bot perguntar.
+54. "quantidade_assumida": Para "assumir_cota", extraia a quantidade que o produtor está se comprometendo a entregar.
 
 ## REGRAS DE CONFORMIDADE ORGÂNICA (Lei 10.831/2003 + IN 46/2011)
 Marque "alerta_organico": true se a mensagem mencionar QUALQUER um destes:
@@ -84,7 +81,10 @@ User: "Plantei 200 pés de alface no canteiro 3"
 JSON: {"intencao": "registro", "atividade": "Plantio", "insumo_cultura": "ALFACE", "quantidade": 200, "unidade": "pés", "necessita_mais_info": false, "pergunta_ao_usuario": "", "localizacao": {"talhao": "NÃO INFORMADO", "canteiros": ["3"]}, "alerta_organico": false, "houve_descartes": false, "qtd_descartes": 0, "data_relativa": "hoje", "insumo_aplicado": "", "insumo_generico": false}
 
 User: "Fiz a adubação de cobertura hoje cedo. Apliquei 2 sacos daquele Yoorin no Talhão 4, ali nos canteiros 1 e 2."
-JSON: {"intencao": "registro", "atividade": "Manejo", "insumo_cultura": "N/A", "insumo_aplicado": "YOORIN", "insumo_generico": false, "quantidade": 2, "unidade": "saco", "necessita_mais_info": false, "pergunta_ao_usuario": "", "localizacao": {"talhao": "TALHAO 4", "canteiros": ["1", "2"]}, "alerta_organico": false, "houve_descartes": false, "qtd_descartes": 0, "data_relativa": "hoje"}
+JSON: {"intencao": "registro", "atividade": "Manejo", "insumo_cultura": "N/A", "insumo_aplicado": "YOORIN", "insumo_generico": false, "quantidade": 2, "unidade": "saco", "necessita_mais_info": false, "pergunta_ao_usuario": "", "localizacao": {"talhao": "TALHAO 4", "talhoes_aplicados": ["TALHAO 4"], "canteiros": ["1", "2"]}, "alerta_organico": false, "houve_descartes": false, "qtd_descartes": 0, "data_relativa": "hoje"}
+
+User: "Apliquei Glifosato nos talhões 1 e 2."
+JSON: {"intencao": "registro", "atividade": "Manejo", "insumo_cultura": "N/A", "insumo_aplicado": "GLIFOSATO", "insumo_generico": true, "quantidade": 0, "unidade": "N/A", "necessita_mais_info": true, "pergunta_ao_usuario": "Qual a quantidade de Glifosato aplicada?", "localizacao": {"talhao": "TALHAO 1", "talhoes_aplicados": ["TALHAO 1", "TALHAO 2"], "canteiros": []}, "alerta_organico": true, "data_relativa": "hoje"}
 
 User: "Lista de preços: Tomate R$10, Alface R$5, Fertilizante R$50"
 JSON: {"intencao": "duvida", "atividade": "Outro", "insumo_cultura": "NÃO INFORMADO", "quantidade": 0, "unidade": "", "necessita_mais_info": false, "pergunta_ao_usuario": "", "localizacao": {"talhao": "NÃO INFORMADO", "canteiros": []}, "alerta_organico": false, "houve_descartes": false, "qtd_descartes": 0, "data_relativa": "hoje", "insumos": [{"nome": "TOMATE", "preco": 10}, {"nome": "ALFACE", "preco": 5}, {"nome": "FERTILIZANTE", "preco": 50}]}
@@ -94,6 +94,18 @@ JSON: {"intencao": "registro", "atividade": "Venda", "insumo_cultura": "FEIJAO",
 
 User: "Hoje lavámos o trator e todas as caixas de colheita lá no galpão principal. Usámos apenas água e sabão neutro."
 JSON: {"intencao": "limpeza", "item_area": "Trator e caixas de colheita", "localizacao": {"talhao": "Galpão principal", "canteiros": []}, "tipo_limpeza": "Lavação", "produto_utilizado": "água e sabão neutro", "necessita_mais_info": false, "pergunta_ao_usuario": "", "data_relativa": "hoje"}
+
+User: "Comprei 1000 reais de ureia, joguei 600 no Talhão 1 e 400 no Talhão 2"
+JSON: {"intencao": "registro_financeiro", "atividade": "Compra/Aquisição", "insumo_cultura": "UREIA", "valor_total": 1000, "alocacoes": [{"talhao_nome": "TALHÃO 1", "valor": 600}, {"talhao_nome": "TALHÃO 2", "valor": 400}], "alerta_organico": true, "necessita_mais_info": false}
+
+User: "Paguei 200 reais de diarista para a capina do Talhão 4"
+JSON: {"intencao": "registro_financeiro", "atividade": "Mão de Obra", "insumo_cultura": "CAPINA", "valor_total": 200, "alocacoes": [{"talhao_nome": "TALHÃO 4", "valor": 200}], "necessita_mais_info": false}
+
+User: "Pode colocar 300kg de abóbora pra mim naquela demanda da Coop"
+JSON: {"intencao": "assumir_cota", "insumo_cultura": "ABOBORA", "quantidade_assumida": 300, "unidade": "kg", "necessita_mais_info": false}
+
+User: "Marcelo, eu vou ficar com 50 caixas de tomate do PNAE"
+JSON: {"intencao": "assumir_cota", "insumo_cultura": "TOMATE", "quantidade_assumida": 50, "unidade": "caixas", "necessita_mais_info": false}
 
 ## FORMATO
 Retorne APENAS o JSON puro. Sem explicações, sem markdown, sem texto antes ou depois.
