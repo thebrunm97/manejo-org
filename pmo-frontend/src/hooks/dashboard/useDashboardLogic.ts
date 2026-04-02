@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
 import {
   dashboardService,
+  supabase,
   HarvestSummary,
 } from "../../services/dashboardService";
 import { getCurrentWeather, WeatherData } from "../../services/weatherService";
@@ -12,17 +13,20 @@ export interface DashboardData {
   weather: WeatherData | null;
   harvestStats: HarvestSummary;
   lastActivity: Date | null;
-  recentActivities: any[]; // Adicionado: Lista de atividades
+  recentActivities: any[];
   pmoId: string | null;
   pmoName: string | null;
   pmoVersion: number | null;
   userProfile: { telefone?: string } | null;
+  whatsappStatus: {
+    status: string;
+    last_heartbeat: string | null;
+    details: any;
+  } | null;
 }
 
-// Geolocalização não é mais necessária (Clima via Supabase backend)
-
 export function useDashboardLogic() {
-  const { user, profile } = useAuth();
+  const { user, currentPropriedade, profile } = useAuth();
   const hasFetchedDashboardRef = useRef<string | null>(null);
 
   // Estado Combinado
@@ -30,63 +34,41 @@ export function useDashboardLogic() {
     weather: null,
     harvestStats: {},
     lastActivity: null,
-    recentActivities: [], // Init empty
+    recentActivities: [],
     pmoId: null,
     pmoName: null,
     pmoVersion: null,
     userProfile: null,
+    whatsappStatus: null,
   });
 
   const [isLoading, setIsLoading] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
 
-  // Geolocalização removida: o clima agora vem do Supabase via background Cron do PMO
-
-
-
   const refreshDashboard = useCallback(async () => {
-    if (!user?.id) {
-      console.log("DashboardLogic: Skipping load, no user ID.");
-      return;
-    }
+    if (!user?.id) return;
 
-    console.log("DashboardLogic: Starting refreshDashboard for user:", user.id);
     setIsLoading(true);
     setDataError(null);
 
     try {
-      // Passo 1: O Perfil já foi injetado pelo AuthContext
       const userTelefone = profile?.telefone;
+      const pmoId = profile?.pmo_ativo_id;
 
-      let pmoId: string | null = null;
       let pmoName: string | null = null;
       let pmoVersion: number = 0;
       let harvestStats: HarvestSummary = {};
       let lastActivity: Date | null = null;
       let recentActivities: any[] = [];
 
-      if (profile?.pmo_ativo_id) {
-        console.log("DashboardLogic: Step 3.2 - Fetching Active PMO Data (Parallelizing)...");
-        pmoId = profile.pmo_ativo_id;
-
+      // 1. Carregar dados do PMO (se existir) ou Propriedade
+      if (pmoId || currentPropriedade?.id) {
         const [pmoResult, recentRes, harvestRes, lastActRes] = await Promise.all([
-          fetchDashboardPmoDetails(pmoId),
-          dashboardService.fetchRecentActivities(pmoId, 5),
-          dashboardService.fetchHarvestSummary(pmoId),
-          dashboardService.fetchLastActivity(pmoId)
+          pmoId ? fetchDashboardPmoDetails(pmoId) : Promise.resolve({ success: false, data: undefined }),
+          dashboardService.fetchRecentActivities(pmoId || '', 5, currentPropriedade?.id),
+          dashboardService.fetchHarvestSummary(pmoId || '', currentPropriedade?.id),
+          dashboardService.fetchLastActivity(pmoId || '', currentPropriedade?.id)
         ]);
-
-        // FIRE AND FORGET WEATHER FETCH: Using pmoId from profile
-        const loadWeatherAsync = async (id: string) => {
-          try {
-            console.log("DashboardLogic: Requesting Weather from Supabase (Background)...");
-            const weather = await getCurrentWeather(id);
-            setData((prev) => ({ ...prev, weather }));
-          } catch (e) {
-            console.warn("DashboardLogic: Weather fetch failed silently", e);
-          }
-        };
-        loadWeatherAsync(pmoId);
 
         if (pmoResult.success && pmoResult.data) {
           pmoName = pmoResult.data.nome_identificador;
@@ -98,38 +80,84 @@ export function useDashboardLogic() {
         lastActivity = lastActRes;
       }
 
-      console.log("DashboardLogic: Data fetch complete. Processing...");
+      // 2. Clima
+      if (pmoId) {
+        const loadWeatherAsync = async (id: string) => {
+          try {
+            const weather = await getCurrentWeather(id);
+            setData((prev) => ({ ...prev, weather }));
+          } catch (e) {
+            console.warn("DashboardLogic: Weather fetch failed", e);
+          }
+        };
+        loadWeatherAsync(pmoId);
+      }
 
-      // Montar objeto final (Weather continua com o valor atual até a promise resolver)
+      // 3. Update State
       setData((prev) => ({
         ...prev,
         harvestStats,
         lastActivity,
         recentActivities,
-        pmoId: pmoId,
-        pmoName: pmoName,
+        pmoId: pmoId || null,
+        pmoName: pmoName || currentPropriedade?.nome || "Minha Propriedade",
         pmoVersion: pmoVersion,
         userProfile: { telefone: userTelefone },
       }));
     } catch (err: any) {
-      console.error("Erro no Dashboard (Manual Flow):", err);
+      console.error("Erro no Dashboard:", err);
       setDataError(err.message || "Falha ao carregar dashboard.");
     } finally {
-      console.log("DashboardLogic: Finished. Setting isLoading=false");
       setIsLoading(false);
     }
-  }, [user?.id, profile?.pmo_ativo_id, profile?.telefone]);
+  }, [user?.id, profile, currentPropriedade]);
 
-  // Initial Load & React Loop Shield
+  // Status do WhatsApp em Tempo Real
   useEffect(() => {
-    const targetId = profile?.pmo_ativo_id || "NONE";
+    if (!user?.id) return;
 
-    // Impede loop infinito barrando execuções secundárias para o mesmo Alvo
-    if (hasFetchedDashboardRef.current !== targetId && user?.id) {
-      hasFetchedDashboardRef.current = targetId;
+    const fetchBotStatus = async () => {
+      const { data: botStatus } = await supabase
+        .from('bot_status')
+        .select('*')
+        .eq('session_name', 'pmo-bot')
+        .maybeSingle();
+      
+      if (botStatus) {
+        setData(prev => ({ ...prev, whatsappStatus: botStatus }));
+      }
+    };
+
+    fetchBotStatus();
+
+    const channel = supabase
+      .channel('bot-status-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bot_status',
+          filter: `session_name=eq.pmo-bot`,
+        },
+        (payload) => {
+          setData(prev => ({ ...prev, whatsappStatus: payload.new as any }));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
+    const targetId = currentPropriedade?.id || profile?.pmo_ativo_id || "NONE";
+    if (hasFetchedDashboardRef.current !== String(targetId) && user?.id) {
+      hasFetchedDashboardRef.current = String(targetId);
       refreshDashboard();
     }
-  }, [user?.id, profile?.pmo_ativo_id, refreshDashboard]);
+  }, [user?.id, profile?.pmo_ativo_id, currentPropriedade?.id, refreshDashboard]);
 
   return {
     ...data,
