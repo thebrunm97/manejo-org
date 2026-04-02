@@ -140,7 +140,7 @@ const PmoFormPage: React.FC = () => {
     // UI HANDLERS (simple, no business logic)
     // ─────────────────────────────────────────────────────────────────
     const handleAttemptExit = () => {
-        if (isDirty) { setConfirmExitOpen(true); } else { navigate('/'); }
+        if (isDirty) { setConfirmExitOpen(true); } else { navigate('/dashboard'); }
     };
 
     const handleCancelExit = () => setConfirmExitOpen(false);
@@ -155,7 +155,7 @@ const PmoFormPage: React.FC = () => {
     const handleSaveAndExit = async () => {
         await saveDraft();
         setConfirmExitOpen(false);
-        navigate('/');
+        navigate('/dashboard');
     };
 
     // ─────────────────────────────────────────────────────────────────
@@ -312,7 +312,7 @@ const PmoFormPage: React.FC = () => {
                         </div>
                         <div className="flex justify-end gap-2 px-5 py-4 border-t border-gray-200">
                             <button type="button" onClick={handleCancelExit} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md">Cancelar</button>
-                            <button type="button" onClick={() => { setConfirmExitOpen(false); navigate('/'); }} className="px-4 py-2 text-sm text-red-600 border border-red-200 hover:bg-red-50 rounded-md">
+                            <button type="button" onClick={() => { setConfirmExitOpen(false); navigate('/dashboard'); }} className="px-4 py-2 text-sm text-red-600 border border-red-200 hover:bg-red-50 rounded-md">
                                 Sair sem Salvar
                             </button>
                             <button type="button" onClick={handleSaveAndExit} className="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 font-medium">

@@ -105,7 +105,7 @@ const PmoDetailPage: React.FC = () => {
                 <div className="flex flex-wrap justify-between items-center mb-4 gap-2">
                     <h1 className="text-2xl font-bold text-gray-900">{pmo.nome_identificador}</h1>
                     <div className="flex gap-2">
-                        <button type="button" onClick={() => navigate('/')} className="inline-flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"><ArrowLeft size={16} />Voltar</button>
+                        <button type="button" onClick={() => navigate('/dashboard')} className="inline-flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"><ArrowLeft size={16} />Voltar</button>
                         <button type="button" onClick={() => navigate(`/pmo/${pmoId}/editar`)} className="inline-flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"><Pencil size={16} />Editar</button>
                         <button type="button" onClick={() => window.print()} className="inline-flex items-center gap-1.5 px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 font-medium"><Printer size={16} />Exportar PDF</button>
                     </div>

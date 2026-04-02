@@ -25,10 +25,24 @@ const MinhasCulturas = lazy(() => import('./pages/MinhasCulturas'));
 const DesignLab = lazy(() => import('./pages/DesignLab'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const KnowledgeMonitoringPage = lazy(() => import('./pages/admin/KnowledgeMonitoringPage'));
+const PropertyProfilePage = lazy(() => import('./pages/PropertyProfilePage'));
 const ChangelogPage = lazy(() => import('./pages/ChangelogPage'));
+const TraceabilityPage = lazy(() => import('./pages/public/TraceabilityPage'));
+const PublicTraceabilityPage = lazy(() => import('./pages/PublicTraceabilityPage'));
+const OrganizacoesPage = lazy(() => import('./pages/coop/OrganizacoesPage'));
+const OrganizacaoDetailsPage = lazy(() => import('./pages/coop/OrganizacaoDetailsPage'));
+const FinanceiroPage = lazy(() => import('./pages/FinanceiroPage'));
+const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
+const CoopDashboardPage = lazy(() => import('./pages/coop/CoopDashboardPage'));
+const CoopDemandasPage = lazy(() => import('./pages/coop/CoopDemandasPage'));
+const MuralDemandas = lazy(() => import('./pages/MuralDemandas'));
+
 
 const DiarioDeCampo = lazy(() => import('./components/DiarioDeCampo'));
+const FarmHubPage = lazy(() => import('./pages/FarmHubPage'));
 import { AdminRoute } from './routes/AdminRoute';
+import { GestaoRoute } from './routes/GestaoRoute';
+import { ModalityGuard } from './routes/ModalityGuard';
 import ReloadPrompt from './components/ReloadPrompt';
 
 const LoadingFallback = () => (
@@ -48,6 +62,8 @@ const App: React.FC = () => {
                 {/* Rota de Debug (Visibilidade) - Acesso Livre (Híbrido) */}
                 <Route path="/lab" element={<DesignLab />} />
                 <Route path="/changelog" element={<ChangelogPage />} />
+                <Route path="/trace/:codigoLote" element={<TraceabilityPage />} />
+                <Route path="/t/:id" element={<PublicTraceabilityPage />} />
 
 
                 {/* Landing Page - Acesso Híbrido (Logado ou Não) */}
@@ -66,10 +82,38 @@ const App: React.FC = () => {
             */}
                 <Route element={<RouteGuard isPrivate={true} />}>
 
+                    {/* Hub de Seleção Multi-Fazenda */}
+                    <Route
+                        path="/hub"
+                        element={
+                            <DebugErrorBoundary name="FarmHubPage">
+                                <FarmHubPage />
+                            </DebugErrorBoundary>
+                        }
+                    />
+
+                    {/* Onboarding Wizard */}
+                    <Route
+                        path="/onboarding"
+                        element={
+                            <DebugErrorBoundary name="OnboardingPage">
+                                <OnboardingPage />
+                            </DebugErrorBoundary>
+                        }
+                    />
+
+                    <Route
+                        path="/financeiro"
+                        element={
+                            <DebugErrorBoundary name="FinanceiroPage">
+                                <FinanceiroPage />
+                            </DebugErrorBoundary>
+                        }
+                    />
+
                     {/* Redirect Logic */}
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-                    {/* PERFIL */}
                     <Route
                         path="/perfil"
                         element={
@@ -78,6 +122,17 @@ const App: React.FC = () => {
                             </DebugErrorBoundary>
                         }
                     />
+
+                    {/* CONFIGURAÇÕES DA PROPRIEDADE */}
+                    <Route
+                        path="/propriedade"
+                        element={
+                            <DebugErrorBoundary name="PropertyProfilePage">
+                                <PropertyProfilePage />
+                            </DebugErrorBoundary>
+                        }
+                    />
+
 
                     {/* VISÃO GERAL (HOME - Now /dashboard) */}
                     <Route
@@ -89,25 +144,61 @@ const App: React.FC = () => {
                         }
                     />
 
-                    {/* PLANOS DE MANEJO (PMO_LIST) */}
                     <Route
-                        path="/planos"
+                        path="/mural"
                         element={
-                            <DebugErrorBoundary name="PlanosManejoList">
-                                <PlanosManejoList />
+                            <DebugErrorBoundary name="MuralDemandas">
+                                <MuralDemandas />
                             </DebugErrorBoundary>
                         }
                     />
 
-                    {/* MAPA (MAP) */}
-                    <Route
-                        path="/mapa"
-                        element={
-                            <DebugErrorBoundary name="MapaPropriedade">
-                                <MapaPropriedade />
-                            </DebugErrorBoundary>
-                        }
-                    />
+                    {/* --- Rotas Restritas à Modalidade Orgânica/Paralela --- */}
+                    <Route element={<ModalityGuard />}>
+                        {/* PLANOS DE MANEJO (PMO_LIST) */}
+                        <Route
+                            path="/planos"
+                            element={
+                                <DebugErrorBoundary name="PlanosManejoList">
+                                    <PlanosManejoList />
+                                </DebugErrorBoundary>
+                            }
+                        />
+
+                        {/* MAPA (MAP) */}
+                        <Route
+                            path="/mapa"
+                            element={
+                                <DebugErrorBoundary name="MapaPropriedade">
+                                    <MapaPropriedade />
+                                </DebugErrorBoundary>
+                            }
+                        />
+
+                        {/* --- Rotas PMO (Create/Edit/Detail) --- */}
+
+                        {/* Novo Plano */}
+                        <Route
+                            path="/pmo/novo"
+                            element={<PmoFormPage />}
+                        />
+
+                        {/* Editar Plano */}
+                        <Route
+                            path="/pmo/:pmoId/editar"
+                            element={<PmoFormPage />}
+                        />
+
+                        {/* Detalhes do Plano */}
+                        <Route
+                            path="/pmo/:pmoId"
+                            element={
+                                <DebugErrorBoundary name="PmoDetailPage">
+                                    <PmoDetailPage />
+                                </DebugErrorBoundary>
+                            }
+                        />
+                    </Route>
 
                     {/* CADERNO DE CAMPO (NOTEBOOK) */}
                     <Route
@@ -129,32 +220,51 @@ const App: React.FC = () => {
                         }
                     />
 
-                    {/* --- Rotas PMO (Create/Edit/Detail) --- */}
-
-                    {/* Novo Plano */}
                     <Route
-                        path="/pmo/novo"
-                        element={<PmoFormPage />}
-                    />
-
-                    {/* Editar Plano */}
-                    <Route
-                        path="/pmo/:pmoId/editar"
-                        element={<PmoFormPage />}
-                    />
-
-                    {/* Detalhes do Plano */}
-                    <Route
-                        path="/pmo/:pmoId"
+                        path="/mural"
                         element={
-                            <DebugErrorBoundary name="PmoDetailPage">
-                                <PmoDetailPage />
+                            <DebugErrorBoundary name="MuralDemandas">
+                                <MuralDemandas />
                             </DebugErrorBoundary>
                         }
                     />
 
+                </Route>
 
-
+                {/* Rotas de Gestão (Cooperativas/Associações) */}
+                <Route element={<GestaoRoute />}>
+                    <Route 
+                        path="/coop/organizacoes" 
+                        element={
+                            <DebugErrorBoundary name="OrganizacoesPage">
+                                <OrganizacoesPage />
+                            </DebugErrorBoundary>
+                        } 
+                    />
+                    <Route 
+                        path="/coop/organizacao/:slug" 
+                        element={
+                            <DebugErrorBoundary name="OrganizacaoDetailsPage">
+                                <OrganizacaoDetailsPage />
+                            </DebugErrorBoundary>
+                        } 
+                    />
+                    <Route 
+                        path="/coop/organizacao/:slug/dashboard" 
+                        element={
+                            <DebugErrorBoundary name="CoopDashboardPage">
+                                <CoopDashboardPage />
+                            </DebugErrorBoundary>
+                        } 
+                    />
+                    <Route 
+                        path="/coop/organizacao/:slug/demandas" 
+                        element={
+                            <DebugErrorBoundary name="CoopDemandasPage">
+                                <CoopDemandasPage />
+                            </DebugErrorBoundary>
+                        } 
+                    />
                 </Route>
 
                 {/* Rotas Admin (Protected by Role) */}

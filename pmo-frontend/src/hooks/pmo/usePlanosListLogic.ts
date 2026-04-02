@@ -186,7 +186,7 @@ export function usePlanosListLogic(
             // Update local state (optimistic)
             setUserProfile(prev => prev
                 ? { ...prev, pmo_ativo_id: pmoId }
-                : { id: user.id, pmo_ativo_id: pmoId }
+                : null
             );
 
             return true;

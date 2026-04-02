@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuthProfile } from '../context/AuthContext';
+import { useAuth, useAuthProfile } from '../context/AuthContext';
 import { useSearchParams } from 'react-router-dom';
 import { X } from 'lucide-react';
 
@@ -14,9 +14,11 @@ import { useFieldDiary } from '../hooks/useFieldDiary';
 import ManualRecordDialog from './Dashboard/ManualRecordDialog';
 import RecordDetailsDialog from './Dashboard/RecordDetailsDialog';
 import FieldDiaryTableV2 from './FieldDiaryTableV2';
+import QRCodeModal from './Traceability/QRCodeModal';
 
 const DiarioDeCampo: React.FC = () => {
-    const { pmoAtivoId: authPmoId } = useAuthProfile();
+    const { profile } = useAuthProfile();
+    const authPmoId = profile?.pmo_ativo_id;
     const [searchParams] = useSearchParams();
     const queryPmoId = searchParams.get('pmoId');
     
@@ -32,20 +34,33 @@ const DiarioDeCampo: React.FC = () => {
   const [selectedRecord, setSelectedRecord] = useState<CadernoCampoRecord | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
 
+  // Estados de Rastreabilidade
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [loteGerado, setLoteGerado] = useState<{ id: string, cultura: string } | null>(null);
 
+
+  const { currentPropriedade } = useAuth();
   // 2. Use Custom Hook for Logic
   const {
     logs, totalLogs, loading, error,
     filters, setFilters,
     page, rowsPerPage, setPage, setRowsPerPage,
     refresh
-  } = useFieldDiary(internalPmoId);
+  } = useFieldDiary(internalPmoId, currentPropriedade?.id);
 
   // --- ACTIONS HANDLERS ---
   const handleOpenDetails = (reg: CadernoCampoRecord) => { setSelectedRecord(reg); setDetailsOpen(true); };
   const handleEditRecord = (reg: CadernoCampoRecord) => { setRecordToEdit(reg); setOpenManualDialog(true); };
   const handleCloseManualDialog = () => { setOpenManualDialog(false); setTimeout(() => setRecordToEdit(null), 200); };
   const handleDeleteClick = (reg: CadernoCampoRecord) => { setRecordToDelete(reg); setDeleteReason(''); setDeleteDialogOpen(true); };
+
+  const handleGerarRastreabilidade = (reg: CadernoCampoRecord) => {
+      setLoteGerado({
+          id: reg.id,
+          cultura: reg.produto || 'Produto'
+      });
+      setShowQRModal(true);
+  };
 
   const handleConfirmDelete = async () => {
     if (!recordToDelete || !deleteReason.trim()) return;
@@ -83,6 +98,7 @@ const DiarioDeCampo: React.FC = () => {
         onExcluir={handleDeleteClick}
         onAtualizar={refresh}
         onNovoRegistro={() => { setRecordToEdit(null); setOpenManualDialog(true); }}
+        onGerarRastreabilidade={handleGerarRastreabilidade}
       />
 
       {/* DIALOGS */}
@@ -98,6 +114,16 @@ const DiarioDeCampo: React.FC = () => {
         onClose={() => setDetailsOpen(false)}
         record={selectedRecord}
       />
+
+      {loteGerado && (
+        <QRCodeModal
+          isOpen={showQRModal}
+          onClose={() => setShowQRModal(false)}
+          publicUrl={`${window.location.origin}/t/${loteGerado.id}`}
+          codigoLote={loteGerado.id.split('-').shift() || loteGerado.id}
+          cultura={loteGerado.cultura}
+        />
+      )}
 
       {/* DIALOG DE CONFIRMAÇÃO DE CANCELAMENTO */}
       {deleteDialogOpen && (

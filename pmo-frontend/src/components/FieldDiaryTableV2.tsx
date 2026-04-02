@@ -1,7 +1,7 @@
 import React from 'react';
 import {
     Filter, RefreshCw, Plus, Eye, Pencil, Trash2,
-    AlertOctagon, Ban, ListChecks, X, Calendar, MapPin, Mic
+    AlertOctagon, Ban, ListChecks, X, Calendar, MapPin, Mic, QrCode
 } from 'lucide-react';
 
 import {
@@ -40,6 +40,7 @@ interface FieldDiaryTableV2Props {
     onExcluir: (reg: CadernoCampoRecord) => void;
     onAtualizar: () => void;
     onNovoRegistro: () => void;
+    onGerarRastreabilidade?: (reg: CadernoCampoRecord) => void;
 }
 
 // --- Chip color helper ---
@@ -79,7 +80,8 @@ const FieldDiaryTableV2: React.FC<FieldDiaryTableV2Props> = ({
     onEditar,
     onExcluir,
     onAtualizar,
-    onNovoRegistro
+    onNovoRegistro,
+    onGerarRastreabilidade
 }) => {
     // --- UI STATE ONLY (Filter Popover) ---
     const [filterAnchorEl, setFilterAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -520,6 +522,16 @@ const FieldDiaryTableV2: React.FC<FieldDiaryTableV2Props> = ({
                                                             >
                                                                 <Trash2 className="w-4 h-4" />
                                                             </button>
+                                                            {(reg.tipo_atividade === ActivityType.COLHEITA || reg.tipo_atividade === 'Colheita') && onGerarRastreabilidade && (
+                                                                <button
+                                                                    type="button"
+                                                                    title="Gerar Rastreabilidade"
+                                                                    className="inline-flex items-center justify-center p-1.5 text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md hover:bg-emerald-100 transition-colors"
+                                                                    onClick={() => onGerarRastreabilidade(reg)}
+                                                                >
+                                                                    <QrCode className="w-4 h-4" />
+                                                                </button>
+                                                            )}
                                                         </>
                                                     )}
                                                 </div>
@@ -618,8 +630,17 @@ const FieldDiaryTableV2: React.FC<FieldDiaryTableV2Props> = ({
                                                 >
                                                     <Trash2 className="w-4 h-4" /> EXCLUIR
                                                 </button>
-                                            </>
-                                        )}
+                                            {(reg.tipo_atividade === ActivityType.COLHEITA || reg.tipo_atividade === 'Colheita') && onGerarRastreabilidade && (
+                                                <button
+                                                    type="button"
+                                                    className="flex items-center justify-center flex-1 px-2 py-2 gap-1 text-xs sm:text-sm font-bold text-emerald-700 rounded-md hover:bg-emerald-50 transition-colors"
+                                                    onClick={() => onGerarRastreabilidade(reg)}
+                                                >
+                                                    <QrCode className="w-4 h-4" /> SELO
+                                                </button>
+                                            )}
+                                        </>
+                                    )}
                                     </div>
                                 </div>
                             );

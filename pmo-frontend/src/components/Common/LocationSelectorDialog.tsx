@@ -14,6 +14,7 @@ interface LocationSelectorProps {
     onClose: () => void;
     onConfirm: (locais: string[]) => void;
     pmoId: number;
+    propriedadeId?: number;
     initialSelected?: string[];
 }
 
@@ -31,6 +32,7 @@ const LocationSelectorDialog: React.FC<LocationSelectorProps> = ({
     onClose,
     onConfirm,
     pmoId,
+    propriedadeId,
     initialSelected = []
 }) => {
     const [loading, setLoading] = useState(false);
@@ -54,12 +56,18 @@ const LocationSelectorDialog: React.FC<LocationSelectorProps> = ({
 
         try {
             // 1. BUSCA ESTRUTURAL
-            const { data, error } = await supabase
+            let query = supabase
                 .from('talhoes')
                 .select(`
                   nome,
                   canteiros ( nome )
                 `);
+
+            if (propriedadeId) {
+                query = query.eq('propriedade_id', propriedadeId);
+            }
+
+            const { data, error } = await query;
 
             if (error) throw error;
 
@@ -142,7 +150,7 @@ const LocationSelectorDialog: React.FC<LocationSelectorProps> = ({
 
     return (
         /* --- Root Modal Overlay --- */
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm overflow-y-auto">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
 
             {/* --- Modal Container --- */}
             <div className="relative w-full max-w-lg bg-white rounded-lg shadow-2xl flex flex-col max-h-[90vh]">

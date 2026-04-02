@@ -1,4 +1,4 @@
-﻿// src/components/PmoForm/Secao2RecordDetailsDialog.tsx
+// src/components/PmoForm/Secao2RecordDetailsDialog.tsx
 // Refatorado — Zero MUI. Usa Tailwind + lucide-react.
 
 import React from 'react';
@@ -68,7 +68,7 @@ const Secao2RecordDetailsDialog: React.FC<Secao2RecordDetailsDialogProps> = ({
 
     return (
         <div className="fixed inset-0 z-[100] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
                 {/* HEADER */}
                 <div className="flex items-center justify-between p-5 pb-3">
                     <div className="flex items-center gap-3">
@@ -88,7 +88,7 @@ const Secao2RecordDetailsDialog: React.FC<Secao2RecordDetailsDialogProps> = ({
                 </div>
 
                 {/* BODY */}
-                <div className="px-5 pb-5 flex flex-col gap-4 border-t border-gray-100 pt-4">
+                <div className="flex-1 overflow-y-auto px-5 pb-5 flex flex-col gap-4 border-t border-gray-100 pt-4">
 
                     {/* SEÇÃO 1: INFORMAÇÕES PRINCIPAIS */}
                     <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200">

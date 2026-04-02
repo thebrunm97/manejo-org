@@ -240,6 +240,11 @@ export type PmoFormData = PMOFormData;
 export type PmoStatus = 'RASCUNHO' | 'CONCLUÍDO' | 'APROVADO' | 'REPROVADO';
 
 /**
+ * Modalidades de produção suportadas pelo sistema.
+ */
+export type ModalidadeProducao = 'ORGANICO' | 'CONVENCIONAL' | 'TRANSICAO';
+
+/**
  * Payload completo de um PMO para persistência.
  */
 export interface PmoPayload {
@@ -284,6 +289,7 @@ export interface UserProfile {
     nome?: string;
     avatar_url?: string;
     pmo_ativo_id: string | null;
+    propriedade_ativa_id: number | null; // Novo: Contexto de propriedade
     telefone?: string;
     role?: 'user' | 'admin'; // Role based access control
     plan_tier?: string; // Plan tier (e.g., 'free', 'pro')
@@ -416,4 +422,36 @@ export interface VegetalItem extends TableRowBase {
     producao_esperada_ano?: number;
     producao_unidade?: string;
     data_plantio_temp?: string; // Campo opcional para importação
+}
+
+// ==================================================================
+// ||                   GEOSPATIAL / PHYSICAL TYPES                ||
+// ==================================================================
+
+export interface Talhao {
+    id: string | number;
+    pmo_id: string | null;
+    propriedade_id: number | null;
+    nome: string;
+    geometria: any[]; // GeoPoint[] or similar
+    area_hectares: number;
+    modalidade_producao: ModalidadeProducao;
+    cor?: string;
+    cultura?: string;
+    user_id?: string;
+}
+
+export interface Propriedade {
+    id: number;
+    nome: string;
+    area_total_ha: number;
+    tem_producao_paralela: boolean;
+    modalidade_predominante: ModalidadeProducao;
+    user_id: string;
+    created_at?: string;
+    // Campos legais e cadastrais (Tech Debt fix)
+    car?: string;
+    inscricao_estadual?: string;
+    matricula?: string;
+    endereco_cadastral?: string;
 }

@@ -29,7 +29,7 @@ const MinhasCulturas: React.FC = () => {
                 </div>
 
                 <button
-                    onClick={() => navigate('/')}
+                    onClick={() => navigate('/dashboard')}
                     className="mt-8 inline-flex items-center gap-2 px-8 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-2xl shadow-lg shadow-green-600/20 transition-all hover:-translate-y-0.5"
                 >
                     <ArrowLeft size={20} />

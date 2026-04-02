@@ -25,8 +25,8 @@ export const locationService = {
     /**
      * Busca todos os talhões ativos da propriedade.
      */
-    getTalhoes: async (): Promise<TalhaoWithCanteiros[]> => {
-        const { data, error } = await supabase
+    getTalhoes: async (propriedadeId?: number | string): Promise<TalhaoWithCanteiros[]> => {
+        let query = supabase
             .from('talhoes')
             .select(`
                 *,
@@ -42,8 +42,13 @@ export const locationService = {
                     quantidade,
                     area_total_m2
                 )
-            `)
-            .order('nome', { ascending: true });
+            `);
+        
+        if (propriedadeId) {
+            query = query.eq('propriedade_id', propriedadeId);
+        }
+
+        const { data, error } = await query.order('nome', { ascending: true });
 
         if (error) {
             console.error('Erro ao buscar talhões:', error);

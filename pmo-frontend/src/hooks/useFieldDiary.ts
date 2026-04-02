@@ -44,7 +44,7 @@ const INITIAL_FILTERS: FieldDiaryFilters = {
     incluirCancelados: false
 };
 
-export const useFieldDiary = (pmoId?: number): UseFieldDiaryReturn => {
+export const useFieldDiary = (pmoId?: number | null, propriedadeId?: number): UseFieldDiaryReturn => {
     const [rawRegistros, setRawRegistros] = useState<CadernoCampoRecord[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -58,7 +58,7 @@ export const useFieldDiary = (pmoId?: number): UseFieldDiaryReturn => {
 
     // Fetch Data
     const fetchRegistros = useCallback(async () => {
-        if (!pmoId) return;
+        if (!pmoId && !propriedadeId) return;
 
         try {
             setLoading(true);
@@ -66,7 +66,7 @@ export const useFieldDiary = (pmoId?: number): UseFieldDiaryReturn => {
 
             // Note: Currently fetching ALL records for client-side filtering.
             // In a future "Backend Refactor", this could accept filter params.
-            const data = await cadernoService.getRegistros(pmoId);
+            const data = await cadernoService.getRegistros(pmoId, propriedadeId);
             setRawRegistros(data || []);
 
         } catch (err: any) {
@@ -75,7 +75,7 @@ export const useFieldDiary = (pmoId?: number): UseFieldDiaryReturn => {
         } finally {
             setLoading(false);
         }
-    }, [pmoId]);
+    }, [pmoId, propriedadeId]);
 
     // Initial load
     useEffect(() => {
