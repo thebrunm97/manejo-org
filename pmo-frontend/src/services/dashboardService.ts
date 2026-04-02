@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+export { supabase }; // Export standard instance for Realtime use
 import { PostgrestError } from '@supabase/supabase-js';
 
 // Types
@@ -34,18 +35,21 @@ export const dashboardService = {
     /**
      * Busca resumo de colheitas agrupado por produto.
      */
-    async fetchHarvestSummary(pmoId: string | number): Promise<HarvestSummary> {
+    async fetchHarvestSummary(pmoId: string | number, propriedadeId?: number | string): Promise<HarvestSummary> {
         this._checkInit();
-        if (!pmoId) return {};
+        if (!pmoId && !propriedadeId) return {};
 
         try {
-            const { data, error } = await supabase
+            let query = supabase
                 .from('caderno_campo')
                 .select('produto, quantidade_valor, quantidade_unidade')
                 .eq('tipo_atividade', 'Colheita')
-                .eq('pmo_id', pmoId)
-                .neq('tipo_atividade', 'CANCELADO')
-                .order('data_registro', { ascending: false });
+                .neq('tipo_atividade', 'CANCELADO');
+
+            if (pmoId) query = query.eq('pmo_id', pmoId);
+            if (propriedadeId) query = query.eq('propriedade_id', propriedadeId);
+
+            const { data, error } = await query.order('data_registro', { ascending: false });
 
             if (error) throw error;
 
@@ -76,14 +80,18 @@ export const dashboardService = {
     /**
      * Busca a atividade mais recente para exibir no card "Última Atividade".
      */
-    async fetchLastActivity(pmoId: string | number): Promise<Date | null> {
-        if (!pmoId) return null;
+    async fetchLastActivity(pmoId: string | number, propriedadeId?: number | string): Promise<Date | null> {
+        if (!pmoId && !propriedadeId) return null;
 
         try {
-            const { data, error } = await supabase
+            let query = supabase
                 .from('caderno_campo')
-                .select('criado_em')
-                .eq('pmo_id', pmoId)
+                .select('criado_em');
+
+            if (pmoId) query = query.eq('pmo_id', pmoId);
+            if (propriedadeId) query = query.eq('propriedade_id', propriedadeId);
+
+            const { data, error } = await query
                 .order('criado_em', { ascending: false })
                 .limit(1);
 
@@ -123,7 +131,6 @@ export const dashboardService = {
                         id, 
                         nome_identificador, 
                         version, 
-                        form_data, 
                         created_at,
                         caderno_campo (
                             id, 
@@ -141,7 +148,8 @@ export const dashboardService = {
                 .single();
 
             // Race the DB call against the timeout
-            const { data: profile, error: profileError } = await Promise.race([dbPromise, timeout]) as any;
+            const resultPromise = Promise.race([dbPromise, timeout]) as any;
+            const { data: profile, error: profileError } = await resultPromise;
 
             if (profileError) throw profileError;
             return profile;
@@ -155,15 +163,19 @@ export const dashboardService = {
     /**
      * Busca lista das atividades mais recentes.
      */
-    async fetchRecentActivities(pmoId: string | number, limit = 5): Promise<RecentActivity[]> {
-        if (!pmoId) return [];
+    async fetchRecentActivities(pmoId: string | number, limit = 5, propriedadeId?: number | string): Promise<RecentActivity[]> {
+        if (!pmoId && !propriedadeId) return [];
 
         try {
-            const { data, error } = await supabase
+            let query = supabase
                 .from('caderno_campo')
                 .select('*, talhoes(nome), caderno_campo_canteiros(canteiros(id, nome))')
-                .eq('pmo_id', pmoId)
-                .neq('tipo_atividade', 'CANCELADO')
+                .neq('tipo_atividade', 'CANCELADO');
+
+            if (pmoId) query = query.eq('pmo_id', pmoId);
+            if (propriedadeId) query = query.eq('propriedade_id', propriedadeId);
+
+            const { data, error } = await query
                 .order('data_registro', { ascending: false })
                 .limit(limit);
 
