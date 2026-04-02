@@ -30,7 +30,7 @@ services:
       - SESSION_SECRET_KEY=${WPPCONNECT_TOKEN}
       - AUTHENTICATION_TYPE=secret
       - TZ=America/Sao_Paulo
-      - PUPPETEER_ARGS="--no-sandbox --disable-setuid-sandbox"
+      - PUPPETEER_ARGS=--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage
       - PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
       - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
     deploy:

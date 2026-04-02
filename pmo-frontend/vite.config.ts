@@ -54,23 +54,23 @@ export default defineConfig({
                 name: 'Manejo Org - Gestão Orgânica',
                 short_name: 'Manejo Org',
                 description: 'Sistema de Manejo Orgânico e Rastreabilidade',
-                theme_color: '#10b981', // Forest Green Tailwind 500 equivalent
+                theme_color: '#16a34a', // Forest Green Tailwind 600
                 background_color: '#ffffff',
                 display: 'standalone',
                 orientation: 'portrait',
                 icons: [
                     {
-                        src: 'pwa-192x192.png',
+                        src: '/icon-192x192.png',
                         sizes: '192x192',
                         type: 'image/png'
                     },
                     {
-                        src: 'pwa-512x512.png',
+                        src: '/icon-512x512.png',
                         sizes: '512x512',
                         type: 'image/png'
                     },
                     {
-                        src: 'pwa-512x512.png',
+                        src: '/icon-512x512.png',
                         sizes: '512x512',
                         type: 'image/png',
                         purpose: 'any maskable'

@@ -14,7 +14,13 @@ if [ -d "$USER_DATA_DIR" ]; then
   find "$USER_DATA_DIR" -name "Lock" -delete 2>/dev/null || true
   find "$USER_DATA_DIR" -name ".org.chromium.*" -delete 2>/dev/null || true
   find "$USER_DATA_DIR" -name "*.lock" -delete 2>/dev/null || true
+  find "$USER_DATA_DIR" -name "DevToolsActivePort" -delete 2>/dev/null || true
 fi
+
+# Limpeza de temporários do Puppeteer e processos órfãos
+echo "🧹 Faxina em /tmp e processos chrome..."
+rm -rf /tmp/puppeteer* 2>/dev/null || true
+pkill -9 -f chrome 2>/dev/null || true
 
 # Garantir que o Webhook URL estÃ¡ preenchido (Fallback de seguranÃ§a)
 export WPPCONNECT_TOKEN=${WPPCONNECT_TOKEN:-${SECRET_KEY}}
@@ -46,6 +52,9 @@ cat <<EOF > /usr/src/wpp-server/config.json
     "onLabelUpdated": true,
     "onSelfMessage": false,
     "ignore": ["status@broadcast"]
+  },
+  "createOptions": {
+    "autoClose": 0
   },
   "log": {
     "level": "silly",
