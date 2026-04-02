@@ -13,7 +13,16 @@ const ROUTE_PATHS: Partial<Record<keyof RootStackParamList, string>> = {
     [SCREENS.ADMIN]: '/admin',
     [SCREENS.CHANGELOG]: '/changelog',
     [SCREENS.PROFILE]: '/perfil',
+    [SCREENS.PROPERTY_PROFILE]: '/propriedade',
+    [SCREENS.HUB]: '/hub',
     [SCREENS.KNOWLEDGE_MONITORING]: '/admin/conhecimento',
+    [SCREENS.TRACEABILITY]: '/trace/:codigoLote',
+    [SCREENS.COOP_ORGANIZACOES]: '/coop/organizacoes',
+    [SCREENS.COOP_ORGANIZACAO_DETAILS]: '/coop/organizacao/:slug',
+    [SCREENS.COOP_DASHBOARD]: '/coop/organizacao/:slug/dashboard',
+    [SCREENS.COOP_DEMANDAS]: '/coop/organizacao/:slug/demandas',
+    [SCREENS.FINANCEIRO]: '/financeiro',
+    [SCREENS.MURAL]: '/mural',
 };
 
 
@@ -40,8 +49,27 @@ export function useAppNavigation() {
                 path = '/pmo/novo';
             }
         }
+        else if (screen === SCREENS.TRACEABILITY) {
+            const codigoLote = (routeParams as any)?.codigoLote;
+            path = generatePath('/trace/:codigoLote', { codigoLote });
+        }
+        else if (screen === SCREENS.COOP_ORGANIZACAO_DETAILS) {
+            const slug = (routeParams as any)?.slug;
+            path = generatePath('/coop/organizacao/:slug', { slug });
+        }
+        else if (screen === SCREENS.COOP_DASHBOARD) {
+            const slug = (routeParams as any)?.slug;
+            path = generatePath('/coop/organizacao/:slug/dashboard', { slug });
+        }
+        else if (screen === SCREENS.COOP_DEMANDAS) {
+            const slug = (routeParams as any)?.slug;
+            path = generatePath('/coop/organizacao/:slug/demandas', { slug });
+        }
         else {
             path = ROUTE_PATHS[screen] || '/';
+            if (!ROUTE_PATHS[screen]) {
+                console.warn(`[Navigation] Rota não mapeada: ${screen}. Verifique useAppNavigation.ts`);
+            }
         }
 
         navigate(path);
@@ -61,6 +89,10 @@ export function useAppNavigation() {
         goToPmoDetail: (pmoId: string) => navigateTo(SCREENS.PMO_DETAIL, { pmoId }),
         goToPmoEdit: (pmoId: string) => navigateTo(SCREENS.PMO_EDITOR, { pmoId }),
         goToNewPmo: () => navigateTo(SCREENS.PMO_EDITOR),
+        goToCoopOrganizacoes: () => navigateTo(SCREENS.COOP_ORGANIZACOES),
+        goToCoopOrganizacaoDetails: (slug: string) => navigateTo(SCREENS.COOP_ORGANIZACAO_DETAILS, { slug }),
+        goToCoopDemandas: (slug: string) => navigateTo(SCREENS.COOP_DEMANDAS, { slug }),
+        goToFinanceiro: () => navigateTo(SCREENS.FINANCEIRO),
         currentPath: location.pathname
     };
 }
