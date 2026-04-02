@@ -4,20 +4,17 @@ O ManejoORG atua como um guardião da certificação, implementando regras autom
 
 ---
 
-## 1. Blacklist de Substâncias Proibidas
-O sistema monitora todas as mensagens de registro em busca de termos que violem as normas orgânicas (Lei 10.831 e IN 46). Caso um desses termos seja detectado (mesmo parcialmente ou em variações de escrita), o registro é **bloqueado imediatamente**.
+## 1. Blacklist de Substâncias Proibidas (Dinâmica)
+O sistema monitora todas as mensagens de registro em busca de termos que violem as normas orgânicas (Lei 10.831 e IN 46). 
 
-Lista de termos monitorados (extraído de `fsm.go`):
+Diferente de versões anteriores, a **blacklist agora é dinâmica**, armazenada na tabela `public.insumos_proibidos`. Isso permite que agrônomos atualizem as regras de compliance em tempo real sem necessidade de novo deploy do backend.
 
-| Termo | Categoria | Ação |
-|---|---|---|
-| **GLIFOSATO** | Herbicida Químico | Bloqueio Crítico |
-| **UREIA** | Fertilizante Altamente Solúvel | Bloqueio Crítico |
-| **NPK** | Fertilizante Químico Sintético | Bloqueio Crítico |
-| **SULFATODEAMONIO** | Fertilizante Químico | Bloqueio Crítico |
-| **2,4-D** | Herbicida Hormonal | Bloqueio Crítico |
-| **HERBICIDA** | Categoria Proibida | Bloqueio Crítico |
-| **VENENO** | Termo Genérico de Risco | Bloqueio Crítico |
+### Categorias de Bloqueio
+- **Herbicidas e Fertilizantes Químicos**: Glifosato, Ureia, NPK, Paraquat, etc.
+- **Termos Genéricos**: "Veneno", "Agrotóxico".
+
+### Fluxo de Sincronização
+O backend Go mantém um **BlacklistCache** em memória, atualizado automaticamente a cada 24 horas via Goroutine/Ticker, garantindo performance ultra-rápida na triagem de mensagens do WhatsApp.
 
 ---
 
@@ -62,7 +59,16 @@ flowchart TD
 
 ---
 
-## 4. Rastreabilidade e Auditoria
+## 4. Implementação Técnica (Thread-Safety & Normalização)
+Para garantir a resiliência no backend Go:
+
+- **Thread-Safety**: O cache utiliza `sync.RWMutex` para permitir múltiplas leituras simultâneas e exclusividade absoluta durante a escrita (refresh).
+- **Normalização de Strings**: Todas as entradas do usuário passam por um processo de normalização (via `internal/utils/string_utils.go`) que remove acentos (diacríticos), excesso de espaços (`TrimSpace`) e converte para minúsculas antes do matching. Isso evita que variações como " Uréia " ou "GLIFOSATO" burlem o filtro.
+- **Fallback de Banco**: Embora o Go intercepte 99% das tentativas incorretas, a autoridade final reside no banco de dados através da função RPC `is_chemical_input`.
+
+---
+
+## 5. Rastreabilidade e Auditoria
 Todas as decisões tomadas pelo motor de compliance são registradas na tabela `logs_processamento` do Supabase:
 
 - **`intencao`:** Marcada como `alerta_conformidade` ou `pedido_especificidade`.

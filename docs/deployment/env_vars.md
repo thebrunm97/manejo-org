@@ -19,7 +19,11 @@ Localização: `pmo-bot-go/.env`
 | `WPP_SESSION` | Nome da sessão no WhatsApp Web | `pmo-session` |
 | `WEBHOOK_URL` | URL onde o bot receberá mensagens | `https://seu-dominio.com/webhook` |
 | `GIN_MODE` | Modo do framework Gin | `release` ou `debug` |
-| `WEATHER_API_KEY` | Chave para integração de clima (OpenWeather) | `12345...` |
+| `WEATHER_API_KEY` | Chave para WeatherAPI (Legado/Fallback) | `12345...` |
+> [!NOTE]
+> **Open-Meteo**: O sistema migrou para o Open-Meteo (ECMWF). Não requer API key. 
+> Gratuito até 10.000 chamadas/dia (uso não comercial).
+> Coordenadas lat/lng são obrigatórias para cada PMO (preenchidas via Dashboard ou Talhões).
 | `GEMINI_API_VERSION` | Versão da API (padrão v1beta) | `v1beta` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Key de serviço usada no knowledge_loader | Mesma que `SUPABASE_KEY` |
 | `MOCK_WHATSAPP` | Ativa simulação do WhatsApp (testes) | `true` ou `false` |
