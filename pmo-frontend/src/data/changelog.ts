@@ -11,6 +11,28 @@ export interface ChangelogEntry {
 
 export const changelogData: ChangelogEntry[] = [
     {
+        version: "0.14.0",
+        date: "2026-04-02",
+        title: "A Era da Gestão Analítica 📈",
+        description: "Nesta atualização, transformamos o ManejoORG em uma ferramenta poderosa para aumentar as suas vendas e controlar o seu lucro real.",
+        sections: [
+            {
+                type: "New",
+                items: [
+                    "🤝 Novo Mural de Oportunidades: Veja exatamente o que as cooperativas estão precisando comprar e ofereça a sua colheita diretamente pelo aplicativo.",
+                    "💰 Visão Financeira da Fazenda: Quer saber se um plantio deu lucro ou prejuízo? O novo painel financeiro mostra para onde o seu dinheiro está indo, talhão por talhão."
+                ]
+            },
+            {
+                type: "Improvements",
+                items: [
+                    "⚡ Diário de Campo Super Rápido: Deixamos o aplicativo muito mais leve. Agora, registrar seus manejos e colheitas é instantâneo, sem travamentos, mesmo em celulares mais antigos.",
+                    "🤖 Assistente do WhatsApp Mais Inteligente: O nosso robô consultor está mais rápido e entende ainda melhor as suas dúvidas do dia a dia no campo."
+                ]
+            }
+        ]
+    },
+    {
         version: "0.13.2",
         date: "29 de Março de 2026",
         title: "Mapa de volta à velocidade da luz",
