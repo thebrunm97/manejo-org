@@ -22,6 +22,7 @@ Especializada para o Formulário 06 (Aquisição).
 Função polimórfica que lida com operações técnicas específicas.
 - **Tipos de Operação:** `Limpeza`, `Propagacao`, `Manejo`, `Compostagem`.
 - **Diferencial:** Aceita uma estrutura JSON flexível para `detalhes_arg`, permitindo campos específicos para cada tipo de tarefa (ex: temperatura da pilha de compostagem).
+- **Hardening (Zero-Trust):** Inclui validação server-side via `is_chemical_input`. Esta função consulta a tabela `insumos_proibidos` dinamicamente. Se o talhão for `ORGANICO` ou `TRANSICAO`, a função bloqueia sumariamente qualquer insumo que conste na blacklist química, retornando um erro `P0001` (Raise Exception).
 
 ---
 

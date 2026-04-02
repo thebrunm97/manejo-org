@@ -34,17 +34,16 @@ Quando `tipo_atividade = "Manejo"`, o bot classifica em:
 
 ---
 
-## ⛔ Produtos Proibidos (BLOQUEIO)
+## ⛔ Produtos Proibidos (Compliance Dinâmico)
 
-O uso destes produtos **BLOQUEIA** o registro e notifica o usuário:
+O monitoramento de substâncias proibidas é realizado de forma dinâmica e automatizada. O sistema recusa o registro e notifica o usuário se detectar produtos que violem a **Lei 10.831** e a **Portaria MAPA 52/2021**.
 
-```
-GLIFOSATO, ROUNDUP, PARAQUAT, 2,4-D, FIPRONIL, METOMIL,
-CARBOFURAN, ATRAZINA, GRAMOXONE, DDT, SULFATO DE AMÔNIO,
-URÉIA, N-P-K, CLORETO DE POTÁSSIO, MALATHION
-```
+### Mecanismo de Verificação
+- **Base de Dados**: A lista oficial de substâncias e produtos proibidos reside na tabela `insumos_proibidos` do Supabase.
+- **Performance (Go Cache)**: Para garantir baixa latência no WhatsApp, o backend mantém um cache em memória (`internal/compliance/blacklist.go`) protegido por um `sync.RWMutex`.
+- **Auto-Refresh**: O cache é atualizado automaticamente a cada 24 horas via Goroutine em background, permitindo que alterações no compliance sejam aplicadas sem downtime.
 
-**Mensagem de bloqueio**:
+**Mensagem de bloqueio padrão**:
 > "⛔ REGISTRO RECUSADO: O produto '{nome}' contém substâncias proibidas (Lei 10.831). O uso de sintéticos pode cancelar sua certificação."
 
 ---

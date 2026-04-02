@@ -10,6 +10,9 @@ A arquitetura foi projetada para ser resiliente, escalável e focada na conformi
 - **Offline-first PWA:** Reconhecendo a instabilidade de conexão no campo, o frontend prioriza o armazenamento local (IndexedDB) e a sincronização assíncrona.
 - **Multi-Agent AI com Especialização:** Em vez de um único prompt monolítico, utilizamos agentes especialistas (Agrônomo, Operador de Banco) coordenados por um roteador de intenções.
 - **Compliance by Design:** A conformidade com as normas orgânicas é verificada em tempo real pela FSM antes de qualquer persistência no banco.
+- **Multi-Modality Support:** O sistema suporta propriedades com produção paralela (Orgânico e Convencional). A segurança é garantida por uma triagem rápida no backend (cache) e uma validação rigorosa no banco de dados (RPCs).
+- **Segurança Híbrida Zero-Trust:** Implementamos uma estratégia de defesa em profundidade onde o Go faz o bloqueio preventivo para UX rápida (feedback imediato no WhatsApp), enquanto o PostgreSQL atua como a autoridade final, rejeitando transações que violem o compliance em áreas protegidas.
+- **Resiliência de Integrações (Weather):** O sistema utiliza uma estratégia multi-camada para dados externos críticos, com retries de *exponential backoff* e fallbacks automáticos entre provedores (Open-Meteo para WeatherAPI) para garantir operação em zonas rurais com latência instável.
 
 ---
 
@@ -47,6 +50,7 @@ graph TD
 | **IA (Vision)** | Gemini 1.5 Flash | Análise de anexos e fotos do campo |
 | **Banco de Dados** | Supabase (PostgreSQL) | Persistência, RPCs, pgvector |
 | **Geolocalização** | MapLibre / Esri / Turf.js | Gestão de Talhões e Canteiros (WebGL) |
+| **Clima (Weather)** | Open-Meteo / WeatherAPI | Micro-previsão com fallback e tolerância a falhas de rede |
 | **Infraestrutura** | Docker / Docker Compose | Isolamento e Deploy |
 
 ---

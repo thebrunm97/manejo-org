@@ -38,6 +38,7 @@ A camada de persistência e lógica de servidor:
 |---|---|
 | [**Schema do Banco**](./database/schema.md) | Diagrama ER, Tabelas principais e RLS. |
 | [**Funções Postgres (RPCs)**](./database/rpcs.md) | Lógica de negócio encapsulada no banco de dados. |
+| [**Módulo de Clima**](./backend/weather.md) | Integração com Open-Meteo, Fallback e Retries. |
 
 ---
 

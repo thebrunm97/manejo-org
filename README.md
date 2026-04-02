@@ -11,9 +11,9 @@
 Plataforma de Inteligência Artificial de grau enterprise para automação e gestão do manejo orgânico certificado. O ecossistema integra:
 
 - **Assistente inteligente via WhatsApp:** Processamento multimodal de textos, áudios e imagens para agilidade no campo.
-- **Motor de processamento em Go:** Arquitetura baseada em Máquina de Estados Finitos (FSM) e Orquestração Multi-Agente.
+- **Motor de orquestração em Go:** Arquitetura limpa baseada em um Orquestrador central e Handlers modulares por domínio.
 - **Dashboard PWA offline-first:** Gestão completa da propriedade, talhões e canteiros com sincronização robusta.
-- **Compliance Automatizado:** Validação rigorosa de insumos e atividades conforme as normas de certificação (Lei 10.831 e IN 46).
+- **Compliance Dinâmico:** Validação rigorosa de insumos baseada em regras atualizáveis via banco de dados (Lei 10.831 e IN 46).
 
 ---
 
@@ -25,6 +25,11 @@ Plataforma de Inteligência Artificial de grau enterprise para automação e ges
 5. [Referência Técnica](#-referência-técnica)
 6. [Segurança](#-segurança)
 7. [Licença](#-licença)
+
+---
+
+> [!IMPORTANT]
+> **Documentação Técnica Completa**: Mergulhe nos detalhes de arquitetura, fluxos e especificações na nossa [Central de Documentação (SAD)](./docs/README.md).
 
 ---
 
@@ -78,9 +83,9 @@ sequenceDiagram
 
 ### 5.1 Backend Go
 O motor principal de orquestração localizado em `pmo-bot-go/`.
+- **Arquitetura:** Orquestrador principal (`fsm.go`) com Handlers modulares (Manejo, Financeiro, Limpeza).
 - **Entry point:** `cmd/server/main.go`
 - **Framework:** Gin (HTTP)
-- **FSM:** Máquina de estados para gestão de contexto e fluxos lineares.
 - **LoopGuard:** Middleware de proteção contra recursão infinita em tool calls.
 - **Infra:** Multi-stage Docker build resultando em imagens de apenas ~20MB.
 
@@ -99,7 +104,7 @@ Persistência e lógica procedural robusta.
 
 ### 5.4 Compliance Engine
 O "coração" da certificação orgânica.
-- **Blacklist:** Bloqueio automático de substâncias como Glifosato, Ureia, NPK e 2,4-D.
+- **Blacklist Dinâmica:** Bloqueio automático baseado na tabela `insumos_proibidos` do Supabase com cache thread-safe em Go.
 - **Validação de Especificidade:** Exigência de detalhamento para insumos (ex: tipo de esterco).
 - **Avisos:** Notificações de precaução baseadas em normas técnicas.
 
@@ -118,7 +123,7 @@ cd manejo-org
 
 ### 2. Configurar o Backend (Orquestrador)
 ```bash
-cd pmo_bot
+cd pmo-bot-go
 # Copie o env.example se disponível ou use o .env configurado
 docker-compose up -d --build
 ```
@@ -171,6 +176,7 @@ npm run dev
 | **Turf.js** | - | Frontend + Cálculos | Geometria GeoJSON e cálculos espaciais |
 | **Supabase** | - | Database | PostgreSQL + pgvector + Auth |
 | **Gemini 2.0 Flash** | - | IA Engine | Orquestração e Visão Computacional |
+| **Open-Meteo (ECMWF)** | - | Weather Source | Previsão rural de alta precisão sem API Key |
 
 ### 8.2 Endpoints HTTP
 | Método | Rota | Descrição |
