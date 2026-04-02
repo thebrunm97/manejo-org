@@ -12,6 +12,8 @@
 export { useRecordValidation } from './useRecordValidation';
 export { useUnitSelection, getUnitsByCategory } from './useUnitSelection';
 export { useRecordFormState } from './useRecordFormState';
+export { useManualRecordSave } from './useManualRecordSave';
+export { useManualRecordDrafts } from './useManualRecordDrafts';
 
 // --- Type Exports ---
 export type {

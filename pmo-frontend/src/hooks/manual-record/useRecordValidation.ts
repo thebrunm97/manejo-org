@@ -9,6 +9,7 @@ import {
     ManejoSubtype,
     UnitType
 } from '../../types/CadernoTypes';
+import { Talhao } from '../../domain/pmo/pmoTypes';
 
 // --- Types ---
 export type TipoRegistro = 'plantio' | 'manejo' | 'colheita' | 'outro' | 'limpeza' | 'compostagem' | 'compras' | 'vendas';
@@ -147,7 +148,7 @@ export const useRecordValidation = () => {
     /**
      * Validates a Manejo (management) draft including organic input checks.
      */
-    const validateManejo = useCallback((draft: ManejoDraft): { errors: ValidationErrors; warning: OrganicRule | null } => {
+    const validateManejo = useCallback((draft: ManejoDraft, talhoesData: Talhao[] = []): { errors: ValidationErrors; warning: OrganicRule | null } => {
         const newErrors: ValidationErrors = {};
         let warning: OrganicRule | null = null;
 
@@ -168,12 +169,21 @@ export const useRecordValidation = () => {
                 if (!draft.dosagem.trim()) newErrors.dosagem = 'Dose obrigatória';
 
                 // === VALIDAÇÃO DE INSUMOS ORGÂNICOS ===
-                const organicRule = checkOrganicInput(draft.insumo);
-                if (organicRule) {
-                    if (organicRule.status === 'proibido') {
-                        newErrors.insumo = organicRule.msg;
-                    } else if (organicRule.status === 'atencao') {
-                        warning = organicRule;
+                // NOVO: Se o talhão for CONVENCIONAL, a regra orgânica é ignorada no frontend
+                // (A RPC do banco ainda fará a validação Zero-Trust final)
+                const selectedNames = draft.locais;
+                const isConventionalTarget = talhoesData.some(t => 
+                    selectedNames.includes(t.nome) && t.modalidade_producao === 'CONVENCIONAL'
+                );
+
+                if (!isConventionalTarget) {
+                    const organicRule = checkOrganicInput(draft.insumo);
+                    if (organicRule) {
+                        if (organicRule.status === 'proibido') {
+                            newErrors.insumo = organicRule.msg;
+                        } else if (organicRule.status === 'atencao') {
+                            warning = organicRule;
+                        }
                     }
                 }
             } else if (draft.subtipoManejo === ManejoSubtype.MANEJO_CULTURAL) {
@@ -305,7 +315,7 @@ export const useRecordValidation = () => {
      * @param activeTab - The current activity type tab
      * @returns ValidationResult with isValid flag, errors object, and optional organic warning
      */
-    const validate = useCallback((draft: AnyDraft, activeTab: TipoRegistro): ValidationResult => {
+    const validate = useCallback((draft: AnyDraft, activeTab: TipoRegistro, talhoesData: Talhao[] = []): ValidationResult => {
         let newErrors: ValidationErrors = {};
         let warning: OrganicRule | null = null;
 
@@ -314,7 +324,7 @@ export const useRecordValidation = () => {
                 newErrors = validatePlantio(draft as PlantioDraft);
                 break;
             case 'manejo': {
-                const result = validateManejo(draft as ManejoDraft);
+                const result = validateManejo(draft as ManejoDraft, talhoesData);
                 newErrors = result.errors;
                 warning = result.warning;
                 break;
