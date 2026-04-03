@@ -162,7 +162,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
             recordToEdit || null, 
             justificativa
         );
-    }, [getCurrentDraft, activeTab, currentPropriedade, profile, user, isEditMode, recordToEdit, justificativa, executeSaveImpl]);
+    }, [getCurrentDraft, activeTab, currentPropriedade, user, isEditMode, recordToEdit, justificativa, executeSaveImpl]);
 
     const handleClose = useCallback(() => {
         resetAllDrafts();
