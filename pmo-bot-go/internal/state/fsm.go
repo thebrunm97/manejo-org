@@ -1,4 +1,4 @@
-package state
+package state // State machine and intent routing logic.
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/generative-ai-go/genai"
 	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
@@ -100,6 +101,23 @@ func ProcessMessage(ctx context.Context, from string, body string, msgID string,
 		return ProcessResult{Success: false, Reason: "quota_exceeded"}
 	}
 
+	// NEW: Architecture Hardening (Phase 4)
+	// 1. LoopGuard Initialization (per-request)
+	guard := mcp.NewLoopGuard(2)
+
+	// 2. High-Level Intent Classification (Router)
+	routerCtx, routerCancel := context.WithTimeout(ctx, 10*time.Second)
+	defer routerCancel()
+
+	routed, err := gemClient.ClassifyIntent(routerCtx, body)
+	if err != nil {
+		log.Printf("⚠️ [FSM] Router falhou: %v. Usando fallback.", err)
+	}
+
+	// 3. Dynamic Tool Filtering
+	filteredTools := mcpServer.GetToolsForIntent(routed.Intent)
+	log.Printf("🧭 [FSM] Intent: %s | Tools: %d | Guard: ON", routed.Intent, len(filteredTools))
+
 	extracted, err := groqClient.Extract(body)
 	if err != nil {
 		return ProcessResult{Success: false, Reason: "llm_error"}
@@ -127,14 +145,19 @@ func ProcessMessage(ctx context.Context, from string, body string, msgID string,
 		return handleAssumirCota(ctx, extracted, profile, sbClient, wpClient, gemClient, ttsClient, from, body, respondWithAudio, startTime)
 
 	case "duvida":
-		// Multi-Agent Flow Placeholder (extracted to handleDuvidaFallback)
-		return handleDuvidaFallback(wpClient, ttsClient, from, gemClient, body, respondWithAudio, sbClient, profile, startTime, extracted.TokensPrompt, extracted.TokensCompletion, "duvida")
+		// Multi-Agent Flow: Pass parameters to specialized handler
+		return handleDuvidaFallback(wpClient, ttsClient, from, gemClient, body, respondWithAudio, sbClient, profile, startTime, extracted.TokensPrompt, extracted.TokensCompletion, string(routed.Intent), filteredTools, guard, historyManager, mcpServer)
 
 	case "saudacao":
 		sendFeedback(wpClient, ttsClient, from, "Olá! Sou o assistente do ManejoORG. Como posso ajudar com seu registro ou dúvida hoje?", respondWithAudio)
 		return ProcessResult{Success: true, Reason: "greeting"}
 
 	default:
+		// If Router identified a DATABASE task but Groq didn't catch the NER 'registro', 
+		// we can still route to the agentic flow if intent is RAG or DATABASE.
+		if routed.Intent == "RAG" {
+			return handleDuvidaFallback(wpClient, ttsClient, from, gemClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, string(routed.Intent), filteredTools, guard, historyManager, mcpServer)
+		}
 		return ProcessResult{Success: true, Reason: "ignored"}
 	}
 }

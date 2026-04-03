@@ -446,6 +446,10 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
                     "relative bg-white w-full md:w-96 md:h-full md:rounded-none rounded-t-[2.5rem] shadow-2xl overflow-hidden flex flex-col transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) transform pointer-events-auto",
                     createModalOpen ? "translate-x-0 translate-y-0" : "md:translate-x-full translate-y-full"
                 )}>
+                    {/* Mobile Handle */}
+                    <div className="md:hidden w-full flex justify-center pt-4 pb-0 shrink-0">
+                        <div className="w-12 h-1.5 bg-slate-200 rounded-full" />
+                    </div>
                     {/* Header Slim */}
                     <div className="px-6 py-4 border-b border-slate-50 flex items-center justify-between bg-white">
                         <div className="flex items-center gap-3">
@@ -566,14 +570,18 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
 
             {/* MODAL: CONFIRMAR EXCLUSÃO */}
             <div className={cn(
-                "fixed inset-0 z-[130] flex items-center justify-center p-4 transition-all duration-200",
+                "fixed inset-0 z-[130] flex md:items-center items-end justify-center p-0 md:p-4 transition-all duration-200",
                 deleteConfirmOpen ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
             )}>
                 <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setDeleteConfirmOpen(false)} />
                 <div className={cn(
-                    "relative bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden p-8 flex flex-col items-center text-center transition-all duration-300 transform",
+                    "relative bg-white w-full max-w-sm md:rounded-3xl rounded-t-[2.5rem] shadow-2xl overflow-hidden p-6 md:p-8 flex flex-col items-center text-center transition-all duration-300 transform animate-in slide-in-from-bottom-10",
                     deleteConfirmOpen ? "scale-100 translate-y-0" : "scale-95 translate-y-4"
                 )}>
+                    {/* Mobile Handle */}
+                    <div className="md:hidden w-full flex justify-center pb-6">
+                        <div className="w-12 h-1.5 bg-slate-100 rounded-full" />
+                    </div>
                     <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
                         <AlertCircle size={40} />
                     </div>

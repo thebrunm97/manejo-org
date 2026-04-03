@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
     X, Trash, Trash2, Sprout, Layers, FlaskConical, 
     Save, CheckCircle2, AlertCircle, LayoutGrid, 
-    Pencil, Droplets, TreePine
+    Pencil, Droplets, TreePine, Loader2
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
@@ -109,6 +109,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
 
     const handleSaveCanteiroEdit = async () => {
         if (!editingCanteiroId) return;
+        setSaving(true);
         try {
             await onUpdateCanteiro(editingCanteiroId, {
                 nome: canteiroEditData.nome, 
@@ -119,11 +120,14 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
             setSnackbar({ open: true, message: 'Estrutura atualizada!', severity: 'success' });
         } catch (error) {
             setSnackbar({ open: true, message: 'Erro ao atualizar.', severity: 'error' });
+        } finally {
+            setSaving(false);
         }
     };
 
     const handleBatchSave = async () => {
         if (!onCreateCanteiros) return;
+        setSaving(true);
         try {
             const structs: any[] = [];
             const qty = batchData.isBatch ? batchData.quantity : 1;
@@ -139,9 +143,11 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
             }
             await onCreateCanteiros(structs);
             setCreateModalOpen(false);
-            setSnackbar({ open: true, message: `${qty} estrutura(s) criada(s)!`, severity: 'success' });
+            setSnackbar({ open: true, message: 'Estrutura criada!', severity: 'success' });
         } catch (error) {
             setSnackbar({ open: true, message: 'Erro ao criar.', severity: 'error' });
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -172,8 +178,12 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
     return (
         <div className="talhao-details-container">
             <div className={cn("fixed inset-x-0 bottom-0 md:inset-y-0 md:right-8 md:left-auto md:max-w-md z-[2000] pointer-events-none transition-all duration-500 flex md:items-center", open ? "visible" : "invisible")}>
-                <div className={cn("relative bg-white/95 backdrop-blur-3xl shadow-soft flex flex-col overflow-hidden transition-all duration-500 transform pointer-events-auto", "md:w-[28rem] md:rounded-[40px] md:max-h-[92vh] md:border md:border-slate-200/60", "top-auto left-0 right-0 bottom-0 w-full h-[85vh] rounded-t-[40px]", open ? "translate-y-0 md:translate-x-0 opacity-100" : "translate-y-full md:translate-x-12 opacity-0")}>
-                    <div className="flex items-start gap-4 p-6 shrink-0 bg-transparent">
+                <div className={cn("relative bg-white/95 backdrop-blur-3xl shadow-soft flex flex-col overflow-hidden transition-all duration-500 transform pointer-events-auto", "md:w-[28rem] md:rounded-[40px] md:max-h-[92vh] md:border md:border-slate-200/60", "top-auto left-0 right-0 bottom-0 w-full h-[85vh] rounded-t-[40px] pb-safe", open ? "translate-y-0 md:translate-x-0 opacity-100" : "translate-y-full md:translate-x-12 opacity-0")}>
+                    {/* Mobile Handle Indicator */}
+                    <div className="md:hidden w-full flex justify-center pt-3 pb-1 shrink-0">
+                        <div className="w-12 h-1.5 bg-slate-300/40 rounded-full" />
+                    </div>
+                    <div className="flex items-start gap-4 p-5 md:p-6 shrink-0 bg-transparent">
                         <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg bg-emerald-500/10 border border-white/40 overflow-hidden relative group" style={{ backgroundColor: `${talhao.fill_color || '#10B981'}15` }}>
                             {getIcon(talhao.nome, talhao.fill_color)}
                         </div>
@@ -208,10 +218,11 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                             ) : (
                                 <button 
                                     onClick={handleSaveTalhaoHeader} 
-                                    className="w-10 h-10 flex items-center justify-center text-white bg-emerald-600 rounded-2xl shadow-lg hover:bg-emerald-700 transition-all cursor-pointer"
+                                    disabled={saving}
+                                    className="w-10 h-10 flex items-center justify-center text-white bg-emerald-600 rounded-2xl shadow-lg hover:bg-emerald-700 transition-all cursor-pointer disabled:opacity-50"
                                     title="Salvar"
                                 >
-                                    <Save size={18} />
+                                    {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
                                 </button>
                             )}
                             <button 
@@ -353,8 +364,12 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
             </div>
 
             {isEditing && (
-                <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
-                    <div className="bg-white w-full max-w-lg rounded-[40px] p-8 shadow-2xl overflow-y-auto max-h-[90vh] [&::-webkit-scrollbar]:hidden">
+                <div className="fixed inset-0 z-[3000] flex md:items-center items-end justify-center p-0 md:p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-white w-full max-w-lg md:rounded-[40px] rounded-t-[40px] p-6 md:p-8 shadow-2xl overflow-y-auto max-h-[90dvh] md:max-h-[90vh] [&::-webkit-scrollbar]:hidden animate-in slide-in-from-bottom-10 duration-500">
+                        {/* Mobile Handle */}
+                        <div className="md:hidden w-full flex justify-center pb-6">
+                            <div className="w-12 h-1.5 bg-slate-200 rounded-full" />
+                        </div>
                         <h3 className="text-2xl font-black text-slate-900 mb-8">Análise de Solo</h3>
                         <div className="space-y-6">
                             <div className="grid grid-cols-2 gap-4">
@@ -367,14 +382,28 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                 <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase">Areia</label><input className="w-full p-3 bg-slate-50 border rounded-2xl" name="areia" value={formData.areia} onChange={handleChange} /></div>
                             </div>
                         </div>
-                        <div className="mt-10 flex gap-4"><button onClick={()=>setIsEditing(false)} className="flex-1 py-4 font-black text-slate-400">Cancelar</button><button onClick={handleSave} className="flex-[2] py-4 bg-emerald-600 text-white font-black rounded-2xl shadow-xl">Salvar Dados</button></div>
+                        <div className="mt-10 flex gap-4">
+                            <button onClick={()=>setIsEditing(false)} className="flex-1 py-4 font-black text-slate-400">Cancelar</button>
+                            <button 
+                                onClick={handleSave} 
+                                disabled={saving}
+                                className="flex-[2] py-4 bg-emerald-600 text-white font-black rounded-2xl shadow-xl disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {saving && <Loader2 size={16} className="animate-spin" />}
+                                {saving ? 'Salvando...' : 'Salvar Dados'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
 
             {editingCanteiroId && (
-                <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
-                    <div className="bg-white w-full max-w-md rounded-[40px] p-8 shadow-2xl">
+                <div className="fixed inset-0 z-[3000] flex md:items-center items-end justify-center p-0 md:p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-white w-full max-w-md md:rounded-[40px] rounded-t-[40px] p-6 md:p-8 shadow-2xl animate-in slide-in-from-bottom-10 duration-500">
+                        {/* Mobile Handle */}
+                        <div className="md:hidden w-full flex justify-center pb-6">
+                            <div className="w-12 h-1.5 bg-slate-200 rounded-full" />
+                        </div>
                         <div className="flex items-center gap-3 mb-8">
                             <div className="w-10 h-10 bg-emerald-50 rounded-2xl flex items-center justify-center">
                                 <Pencil size={20} className="text-emerald-600" />
@@ -399,15 +428,26 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                         </div>
                         <div className="mt-8 flex gap-4">
                             <button onClick={()=>setEditingCanteiroId(null)} className="flex-1 py-4 font-black text-slate-400 uppercase text-[10px] tracking-widest">Cancelar</button>
-                            <button onClick={handleSaveCanteiroEdit} className="flex-[1.5] py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-xl transition-all">Salvar Alterações</button>
+                            <button 
+                                onClick={handleSaveCanteiroEdit} 
+                                disabled={saving}
+                                className="flex-[1.5] py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {saving && <Loader2 size={16} className="animate-spin" />}
+                                {saving ? 'Salvando...' : 'Salvar Alterações'}
+                            </button>
                         </div>
                     </div>
                 </div>
             )}
 
             {showDeleteTalhaoConfirm && (
-                <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in zoom-in duration-300">
-                    <div className="bg-white w-full max-w-sm rounded-[40px] p-8 shadow-2xl text-center">
+                <div className="fixed inset-0 z-[3000] flex md:items-center items-end justify-center p-0 md:p-4 bg-slate-900/60 backdrop-blur-md animate-in zoom-in duration-300">
+                    <div className="bg-white w-full max-w-sm md:rounded-[40px] rounded-t-[40px] p-6 md:p-8 shadow-2xl text-center animate-in slide-in-from-bottom-10 duration-500">
+                        {/* Mobile Handle */}
+                        <div className="md:hidden w-full flex justify-center pb-6">
+                            <div className="w-12 h-1.5 bg-slate-100 rounded-full" />
+                        </div>
                         <div className="w-20 h-20 bg-red-50 rounded-[30px] flex items-center justify-center mx-auto mb-6">
                             <AlertCircle size={40} className="text-red-500 underline-offset-4" />
                         </div>
@@ -430,8 +470,12 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
             )}
 
             {createModalOpen && (
-                <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-                    <div className="bg-white w-full max-w-md rounded-[40px] p-8 shadow-2xl">
+                <div className="fixed inset-0 z-[3000] flex md:items-center items-end justify-center p-0 md:p-4 bg-slate-900/60 backdrop-blur-md">
+                    <div className="bg-white w-full max-w-md md:rounded-[40px] rounded-t-[40px] p-6 md:p-8 shadow-2xl animate-in slide-in-from-bottom-10 duration-500">
+                        {/* Mobile Handle */}
+                        <div className="md:hidden w-full flex justify-center pb-6">
+                            <div className="w-12 h-1.5 bg-slate-200 rounded-full" />
+                        </div>
                         <h3 className="text-2xl font-black text-slate-900 mb-8">Nova Estrutura</h3>
                         <div className="space-y-6">
                             <input className="w-full bg-slate-50 border p-4 rounded-2xl font-black" value={batchData.baseName} onChange={e=>setBatchData({...batchData, baseName: e.target.value})} placeholder="Nome (ex: Canteiro 1)" />
@@ -440,7 +484,14 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                 <input className="bg-slate-50 border p-4 rounded-2xl text-center font-black" value={batchData.length} onChange={e=>setBatchData({...batchData, length: e.target.value})} placeholder="Comp." />
                             </div>
                         </div>
-                        <button onClick={handleBatchSave} className="w-full py-5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl mt-8 shadow-xl">Criar Estrutura</button>
+                        <button 
+                            onClick={handleBatchSave} 
+                            disabled={saving}
+                            className="w-full py-5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl mt-8 shadow-xl disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                            {saving && <Loader2 size={18} className="animate-spin" />}
+                            {saving ? 'Criando...' : 'Criar Estrutura'}
+                        </button>
                         <button onClick={()=>setCreateModalOpen(false)} className="w-full py-4 text-slate-400 font-bold uppercase tracking-widest text-xs">Descartar</button>
                     </div>
                 </div>
