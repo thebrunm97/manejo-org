@@ -120,7 +120,7 @@ export function useDashboardLogic() {
       const { data: botStatus } = await supabase
         .from('bot_status')
         .select('*')
-        .eq('session_name', 'pmo-bot')
+        .eq('session_name', 'agro_vivo')
         .maybeSingle();
       
       if (botStatus) {
@@ -138,7 +138,7 @@ export function useDashboardLogic() {
           event: '*',
           schema: 'public',
           table: 'bot_status',
-          filter: `session_name=eq.pmo-bot`,
+          filter: `session_name=eq.agro_vivo`,
         },
         (payload) => {
           setData(prev => ({ ...prev, whatsappStatus: payload.new as any }));

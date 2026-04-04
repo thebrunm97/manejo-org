@@ -60,6 +60,32 @@ export function getEffectiveStatus(
 }
 
 /**
+ * Activity recorded by the bot in caderno_campo or logs_processamento.
+ */
+export interface BotActivity {
+    id: string;
+    created_at: string;
+    tipo: string;
+    descricao: string;
+}
+
+/**
+ * Fetch the 3 most recent activities processed by the bot.
+ * Uses the 'get_recent_bot_activities' RPC.
+ */
+export async function fetchRecentBotActivities(): Promise<BotActivity[]> {
+    const { data, error } = await supabase
+        .rpc('get_recent_bot_activities');
+
+    if (error) {
+        console.error('[botStatusService] Error fetching recent activities:', error);
+        return [];
+    }
+
+    return data as BotActivity[];
+}
+
+/**
  * Format a timestamp into a human-readable relative string (PT-BR).
  */
 export function formatRelativeTime(isoString: string): string {

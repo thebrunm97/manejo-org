@@ -10,22 +10,18 @@ import HarvestDashboard from "../components/Dashboard/HarvestDashboard";
 import PlanoAtualCard from "../components/Dashboard/PlanoAtualCard";
 import ManualRecordDialog from "../components/Dashboard/ManualRecordDialog";
 import WhatsappConnectDialog from "../components/Dashboard/WhatsappConnectDialog";
-
+import WhatsappAssistantCard from "../components/Dashboard/WhatsappAssistantCard";
 import {
   Plus,
   Settings,
-  Smartphone,
   CloudSun,
   MapPin,
-  Link,
 } from "lucide-react";
 
 import { useDashboardLogic } from "../hooks/dashboard/useDashboardLogic";
 import { WeatherData } from "../services/weatherService";
 import { unlinkWhatsapp } from "../services/whatsappService";
 import {
-  formatarTelefone,
-  formatarDataRelativa,
   obterSaudacao,
 } from "../utils/formatters";
 
@@ -140,7 +136,6 @@ const DashboardPage: React.FC = () => {
   const {
     weather,
     harvestStats,
-    lastActivity,
     recentActivities,
     pmoName,
     pmoVersion,
@@ -155,15 +150,6 @@ const DashboardPage: React.FC = () => {
   const [recordToEdit, setRecordToEdit] = useState<any>(null);
   const [openWhatsappDialog, setOpenWhatsappDialog] = useState(false);
 
-  const getWppStatusInfo = () => {
-    if (!userProfile?.telefone) return { label: "OFFLINE", color: "bg-slate-100 text-slate-500", iconColor: "bg-slate-50 text-slate-500" };
-    const botStatus = whatsappStatus?.status || "offline";
-    if (botStatus === "connected" || botStatus === "active") return { label: "CONECTADO", color: "bg-green-100 text-green-700", iconColor: "bg-green-50 text-green-600" };
-    if (botStatus === "pairing" || botStatus === "connecting") return { label: "PAREAMENTO", color: "bg-amber-100 text-amber-700", iconColor: "bg-amber-50 text-amber-600" };
-    return { label: "BOT OFFLINE", color: "bg-red-100 text-red-700", iconColor: "bg-red-50 text-red-600" };
-  };
-
-  const wppInfo = getWppStatusInfo();
   const hoje = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
 
   return (
@@ -197,28 +183,17 @@ const DashboardPage: React.FC = () => {
           <PlanoAtualCard nomePlano={pmoName} versao={pmoVersion || 1} status="Em andamento" onVer={() => navigate("/caderno")} onEditar={() => navigate("/planos")} />
           <WeatherWidget weather={weather} loading={false} />
 
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm flex flex-col justify-between">
-            <div>
-              <div className="flex justify-between items-start">
-                <div className={`p-2.5 rounded-2xl ${wppInfo.iconColor}`}><Smartphone size={22} /></div>
-                <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${wppInfo.color}`}>{wppInfo.label}</span>
-              </div>
-              <h4 className="text-xl font-extrabold text-slate-900 mt-4">Assistente de I.A.</h4>
-              <span className="text-sm font-semibold text-slate-500">{formatarTelefone(userProfile?.telefone) || "WhatsApp não conectado"}</span>
-            </div>
-            
-            {!userProfile?.telefone ? (
-              <button onClick={() => setOpenWhatsappDialog(true)} className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-semibold"><Link size={16} className="inline mr-2"/>Conectar WhatsApp</button>
-            ) : (
-              <div className="mt-4">
-                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 mb-2">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">Última Atividade</span>
-                  <p className="text-sm font-semibold">{formatarDataRelativa(lastActivity)}</p>
-                </div>
-                <button onClick={async () => { if (window.confirm("Desconectar WhatsApp?")) { await unlinkWhatsapp(user?.id || ""); refreshDashboard(); } }} className="w-full text-slate-400 hover:text-red-500 text-xs font-semibold py-2">Desconectar</button>
-              </div>
-            )}
-          </div>
+          <WhatsappAssistantCard
+            telefone={userProfile?.telefone}
+            whatsappStatus={whatsappStatus as any}
+            onConnect={() => setOpenWhatsappDialog(true)}
+            onUnlink={async () => {
+              if (window.confirm("Desconectar WhatsApp?")) {
+                await unlinkWhatsapp(user?.id || "");
+                refreshDashboard();
+              }
+            }}
+          />
 
           <div className="col-span-1 md:col-span-2 xl:col-span-2">
             <HarvestDashboard harvestStats={harvestStats || {}} recentActivity={recentActivities || []} onEditRecord={(record) => { setRecordToEdit(record); setOpenRecordDialog(true); }} />
