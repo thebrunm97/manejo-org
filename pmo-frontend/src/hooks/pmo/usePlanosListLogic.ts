@@ -12,6 +12,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useAuthProfile } from '../../context/AuthProfileContext';
 
 // Domain Types
 import type { PmoListItem, UserProfile } from '../../domain/pmo/pmoTypes';
@@ -93,6 +94,7 @@ export function usePlanosListLogic(
 ): UsePlanosListLogicReturn {
     const { autoLoad = true } = options;
     const { user } = useAuth();
+    const { currentPropriedade } = useAuthProfile();
 
     // ─────────────────────────────────────────────────────────────
     // STATE
@@ -128,8 +130,15 @@ export function usePlanosListLogic(
         setError(null);
 
         try {
+            // Se não houver propriedade selecionada, não busca e limpa a lista
+            if (!currentPropriedade?.id) {
+                setPmos([]);
+                setListLoading(false);
+                return;
+            }
+
             // Fetch PMO list and User Profile concurrently
-            const pmoPromise = fetchAllPmos(user?.id);
+            const pmoPromise = fetchAllPmos(currentPropriedade.id, user?.id);
             const profilePromise = user?.id ? fetchUserProfile(user.id) : Promise.resolve({ success: false, data: null });
 
             const [pmosResultObj, profileResultObj] = await Promise.allSettled([pmoPromise, profilePromise]);
@@ -157,7 +166,7 @@ export function usePlanosListLogic(
         } finally {
             setListLoading(false);
         }
-    }, [user?.id]);
+    }, [user?.id, currentPropriedade?.id]);
 
     /**
      * Ativa um PMO para o usuário.

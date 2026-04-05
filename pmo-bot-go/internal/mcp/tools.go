@@ -13,8 +13,35 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 )
 
+// CalcularAdubacaoTool is the agronomic calculation engine tool.
+var CalcularAdubacaoTool = Tool{
+	Name:        "calcular_recomendacao_adubacao",
+	Description: "Calcula a dose recomendada de adubo orgânico (NPK) baseada na cultura, meta de produtividade e adubo disponível. Use esta ferramenta sempre que o usuário pedir recomendações de adubação ou quiser saber quanto de adubo usar.",
+	Category:    CategoryDatabase,
+	InputSchema: map[string]interface{}{
+		"type": "object",
+		"properties": map[string]interface{}{
+			"cultura": map[string]interface{}{
+				"type":        "string",
+				"description": "Nome da cultura (ex: Alface, Tomate).",
+			},
+			"meta_produtividade": map[string]interface{}{
+				"type":        "number",
+				"description": "Meta de produtividade desejada em toneladas por hectare (t/ha).",
+			},
+			"adubo_base_nome": map[string]interface{}{
+				"type":        "string",
+				"description": "Nome do adubo orgânico disponível (ex: Esterco Bovino Curtido, Torta de Mamona).",
+			},
+		},
+		"required": []string{"cultura", "meta_produtividade", "adubo_base_nome"},
+	},
+}
+
 // InitializeTools registers the initial set of tools to the MCP server
 func (s *Server) InitializeTools() {
+	s.RegisterTool(CalcularAdubacaoTool)
+	
 	s.RegisterTool(Tool{
 		Name:        "consultar_base_conhecimento",
 		Description: "Usa esta ferramenta para pesquisar manuais, regras de plantio, histórico da fazenda e normas globais orgânicas.",

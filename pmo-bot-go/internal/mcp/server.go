@@ -118,7 +118,7 @@ func (s *Server) GetToolsForIntent(intent gemini.Intent) []*genai.Tool {
 					{
 						Name:        t.Name,
 						Description: t.Description,
-						Parameters:  mapToSchema(t.InputSchema),
+						Parameters:  mapToGenaiSchema(t.InputSchema, true),
 					},
 				},
 			})
@@ -128,12 +128,113 @@ func (s *Server) GetToolsForIntent(intent gemini.Intent) []*genai.Tool {
 	return filtered
 }
 
-// mapToSchema converts the generic InputSchema map to a genai.Schema
-func mapToSchema(m map[string]interface{}) *genai.Schema {
-	jsonBytes, _ := json.Marshal(m)
-	var s genai.Schema
-	_ = json.Unmarshal(jsonBytes, &s)
-	return &s
+// mapToGenaiSchema converts the generic InputSchema map to a genai.Schema
+// It applies Gemini's strict schema rules: TypeObject, TypeString for enums, no empty props, array requirements.
+func mapToGenaiSchema(m map[string]interface{}, isRoot bool) *genai.Schema {
+	if m == nil {
+		m = make(map[string]interface{})
+	}
+
+	s := &genai.Schema{}
+
+	// Fallback de Tipos
+	if pType, ok := m["type"].(string); ok {
+		switch pType {
+		case "integer":
+			s.Type = genai.TypeInteger
+		case "number":
+			s.Type = genai.TypeNumber
+		case "boolean":
+			s.Type = genai.TypeBoolean
+		case "string":
+			s.Type = genai.TypeString
+		case "object":
+			s.Type = genai.TypeObject
+		case "array":
+			s.Type = genai.TypeArray
+		default:
+			if isRoot {
+				s.Type = genai.TypeObject
+			} else {
+				s.Type = genai.TypeString
+			}
+		}
+	} else {
+		if isRoot {
+			s.Type = genai.TypeObject
+		} else {
+			s.Type = genai.TypeString
+		}
+	}
+
+	if desc, ok := m["description"].(string); ok {
+		s.Description = desc
+	}
+
+	// Enums Estritos
+	if enumVal, exists := m["enum"]; exists {
+		s.Type = genai.TypeString // MUST be string for Gemini
+		var strList []string
+
+		if enumList, ok := enumVal.([]string); ok {
+			strList = enumList
+		} else if enumList, ok := enumVal.([]interface{}); ok {
+			for _, item := range enumList {
+				strList = append(strList, fmt.Sprintf("%v", item))
+			}
+		}
+		s.Enum = strList
+	}
+
+	// Regras para TypeObject
+	if s.Type == genai.TypeObject {
+		s.Properties = make(map[string]*genai.Schema)
+
+		if props, ok := m["properties"].(map[string]interface{}); ok {
+			for k, v := range props {
+				if propMap, ok := v.(map[string]interface{}); ok {
+					s.Properties[k] = mapToGenaiSchema(propMap, false)
+				}
+			}
+		}
+
+		// A Armadilha do Objeto Vazio: Injeta dummy se não houver propriedades na raiz
+		if isRoot && len(s.Properties) == 0 {
+			s.Properties["_dummy"] = &genai.Schema{
+				Type:        genai.TypeString,
+				Description: "Campo ignorado.",
+			}
+		}
+
+		if reqVal, exists := m["required"]; exists {
+			var required []string
+			if reqList, ok := reqVal.([]string); ok {
+				required = reqList
+			} else if reqList, ok := reqVal.([]interface{}); ok {
+				for _, r := range reqList {
+					if strReq, ok := r.(string); ok {
+						required = append(required, strReq)
+					}
+				}
+			}
+			s.Required = required
+		}
+	}
+
+	// Regras para TypeArray
+	if s.Type == genai.TypeArray {
+		if itemsVal, exists := m["items"]; exists {
+			if itemsMap, ok := itemsVal.(map[string]interface{}); ok {
+				s.Items = mapToGenaiSchema(itemsMap, false)
+			} else {
+				s.Items = &genai.Schema{Type: genai.TypeString}
+			}
+		} else {
+			s.Items = &genai.Schema{Type: genai.TypeString}
+		}
+	}
+
+	return s
 }
 
 // GetToolDeclarations returns tools formatted for Gemini's genai SDK
@@ -141,78 +242,10 @@ func (s *Server) GetToolDeclarations() []*genai.Tool {
 	var declarations []*genai.FunctionDeclaration
 
 	for _, t := range s.tools {
-		// 1. Safe extraction of required fields (handling []string or []interface{})
-		var required []string
-		if reqVal, ok := t.InputSchema["required"]; ok {
-			if reqList, ok := reqVal.([]string); ok {
-				required = reqList
-			} else if reqList, ok := reqVal.([]interface{}); ok {
-				for _, r := range reqList {
-					if s, ok := r.(string); ok {
-						required = append(required, s)
-					}
-				}
-			}
-		}
-
 		decl := &genai.FunctionDeclaration{
 			Name:        t.Name,
 			Description: t.Description,
-			Parameters: &genai.Schema{
-				Type:       genai.TypeObject,
-				Properties: make(map[string]*genai.Schema),
-				Required:   required,
-			},
-		}
-
-		// 2. Safe extraction of properties
-		props, _ := t.InputSchema["properties"].(map[string]interface{})
-		if props == nil {
-			props = make(map[string]interface{})
-		}
-
-		for k, v := range props {
-			propMap, ok := v.(map[string]interface{})
-			if !ok {
-				continue
-			}
-
-			propType := genai.TypeString
-			if pType, ok := propMap["type"].(string); ok {
-				switch pType {
-				case "integer":
-					propType = genai.TypeInteger
-				case "number":
-					propType = genai.TypeNumber
-				case "boolean":
-					propType = genai.TypeBoolean
-				}
-			}
-
-			desc, _ := propMap["description"].(string)
-
-			propSchema := &genai.Schema{
-				Type:        propType,
-				Description: desc,
-			}
-
-			// Handle Enums manually
-			if enumVal, exists := propMap["enum"]; exists {
-				if enumList, ok := enumVal.([]string); ok {
-					propSchema.Enum = enumList
-				} else if enumList, ok := enumVal.([]interface{}); ok {
-					// Handle cases where we get []interface{} from JSON
-					var strList []string
-					for _, item := range enumList {
-						if s, ok := item.(string); ok {
-							strList = append(strList, s)
-						}
-					}
-					propSchema.Enum = strList
-				}
-			}
-
-			decl.Parameters.Properties[k] = propSchema
+			Parameters:  mapToGenaiSchema(t.InputSchema, true),
 		}
 		declarations = append(declarations, decl)
 	}

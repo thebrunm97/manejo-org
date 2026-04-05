@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/generative-ai-go/genai"
 	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
