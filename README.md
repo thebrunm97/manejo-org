@@ -44,13 +44,14 @@ graph TD
     WPP <-->|Webhook POST + HMAC| BE[Backend Go - Gin]
     BE -->|Intent Classification| ROUTER{AI Router}
     ROUTER -->|Registro| DB_OP[DB Operator - Gemini 2.0 Flash]
-    ROUTER -->|Dúvida Técnica| AGRO[Agronomist - RAG + Gemini]
+    ROUTER -->|Agrônomo| AGRO[Agronomist - Digital Engine]
+    ROUTER -->|Cooperativo| COOP[Cooperative Specialist]
     ROUTER -->|Chat| CHAT[Chat Agent]
     DB_OP -->|RPC Atômico| DB[(Supabase PostgreSQL + pgvector)]
-    AGRO -->|Vector Search| DB
+    AGRO -->|Vector Search + NPK| DB
+    COOP -->|Marketplace Queries| DB
     BE -->|Áudio| GROQ[Groq - Whisper Transcription]
     BE -->|Imagem| GEMINI_V[Gemini 1.5 Flash - Vision]
-    BE -->|NER| GROQ_NER[Groq - Llama 3.3 70B]
     FE[Frontend React PWA] <-->|Supabase SDK| DB
     FE <-->|Offline Queue| IDB[(IndexedDB via idb)]
 ```
@@ -107,6 +108,26 @@ O "coração" da certificação orgânica.
 - **Blacklist Dinâmica:** Bloqueio automático baseado na tabela `insumos_proibidos` do Supabase com cache thread-safe em Go.
 - **Validação de Especificidade:** Exigência de detalhamento para insumos (ex: tipo de esterco).
 - **Avisos:** Notificações de precaução baseadas em normas técnicas.
+
+### 5.5 Marketplace B2B2C & Mural de Demandas
+Ecossistema de comercialização integrada.
+- **Mural de Oportunidades:** Interface para produtores visualizarem e responderem a demandas coletivas de mercado.
+- **Torre de Controlo:** Painel administrativo para gestores de cooperativas orquestrarem a oferta e demanda da rede.
+
+### 5.6 Dashboard Analítico Financeiro
+Gestão econômica de alta precisão.
+- **Performance:** Motor de visualização de performance com DRE (Demonstrativo de Resultados) automatizado.
+- **Rentabilidade:** Cálculo de Lucro/Prejuízo granular por Talhão e Canteiro, integrando custos de insumos e mão de obra.
+
+### 5.7 Rastreabilidade Pública (INC 02/2018)
+Transparência total do campo à mesa.
+- **QR Code Dinâmico:** Geração de etiquetas de rastreabilidade para produtos finais.
+- **Página Pública:** Interface mobile-first onde o consumidor consulta a origem, manejo e certificações do lote em tempo real.
+
+### 5.8 Inteligência Artificial (Orquestração)
+O "cérebro" do ManejoORG.
+- **Engenheiro Agrônomo Digital:** O PMO-Bot agora integra RAG (Retrieval-Augmented Generation) com Function Calling para realizar recomendações técnicas e cálculos complexos de adubação (NPK).
+- **Especialista Cooperativo:** Agente dedicado a mediar negociações no Mural de Demandas e facilitar a logística coletiva.
 
 ---
 
