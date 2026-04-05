@@ -616,6 +616,54 @@ func (c *Client) RegistrarOperacaoCampoRPC(ctx context.Context, args map[string]
 	return result, nil
 }
 
+// CalcularBalancoNutricional chama a RPC 'calcular_balanco_nutricional' para obter a dose recomendada de adubo.
+func (c *Client) CalcularBalancoNutricional(ctx context.Context, cultura string, meta float64, aduboNome string) (map[string]interface{}, error) {
+	reqURL := fmt.Sprintf("%s/rest/v1/rpc/calcular_balanco_nutricional", c.config.URL)
+
+	args := map[string]interface{}{
+		"p_cultura":     cultura,
+		"p_meta_t_ha":   meta,
+		"p_adubo_nome": aduboNome,
+	}
+
+	payload, err := json.Marshal(args)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal RPC payload: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewReader(payload))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create RPC request: %w", err)
+	}
+
+	req.Header.Set("apikey", c.config.Key)
+	req.Header.Set("Authorization", "Bearer "+c.config.Key)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("RPC execution HTTP failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read RPC response: %w", err)
+	}
+
+	if resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("supabase RPC error (%d): %s", resp.StatusCode, string(body))
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse RPC response: %w", err)
+	}
+
+	return result, nil
+}
+
+
 // InsertLogProcessamento saves AI processing audit data for the admin dashboard.
 func (c *Client) InsertLogProcessamento(logData LogProcessamentoInsert) error {
 	reqURL := fmt.Sprintf("%s/rest/v1/logs_processamento", c.config.URL)

@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 
 // Hook com toda a lógica
 import { usePlanosListLogic } from "../hooks/pmo/usePlanosListLogic";
+import { useAuthProfile } from "../context/AuthProfileContext";
 
 // Domain Types
 import type { PmoListItem } from "../domain/pmo/pmoTypes";
@@ -27,6 +28,8 @@ import {
   BookOpen,
   Power,
   FileQuestion,
+  ShieldAlert,
+  Settings,
 } from "lucide-react";
 
 // ==================================================================
@@ -238,6 +241,11 @@ const PlanosManejoList: React.FC = () => {
     handleDeletePmo,
   } = usePlanosListLogic();
 
+  const { currentPropriedade } = useAuthProfile();
+
+  // Regra de Negócio: Ocultar para Convencional
+  const isConvencional = currentPropriedade?.modalidade_predominante === 'CONVENCIONAL';
+
   // Local State (Modal)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [pmoToDelete, setPmoToDelete] = useState<PmoListItem | null>(null);
@@ -273,23 +281,47 @@ const PlanosManejoList: React.FC = () => {
             Visualize, edite ou crie novos planos digitais.
           </p>
         </div>
-        <button
-          onClick={() => navigate("/pmo/novo")}
-          className="
-                        inline-flex items-center justify-center gap-2 
-                        px-4 py-2.5 rounded-lg 
-                        bg-green-600 hover:bg-green-700 
-                        text-white font-medium shadow-sm transition-colors
-                        w-full md:w-auto
-                    "
-        >
-          <Plus size={20} />
-          Novo Plano
-        </button>
+        {!isConvencional && (
+          <button
+            onClick={() => navigate("/pmo/novo")}
+            className="
+                          inline-flex items-center justify-center gap-2 
+                          px-4 py-2.5 rounded-lg 
+                          bg-green-600 hover:bg-green-700 
+                          text-white font-medium shadow-sm transition-colors
+                          w-full md:w-auto
+                      "
+          >
+            <Plus size={20} />
+            Novo Plano
+          </button>
+        )}
       </div>
 
       {/* List */}
-      {listLoading ? (
+      {isConvencional ? (
+        // Blocked State for Conventional
+        <div className="flex flex-col items-center justify-center py-20 px-6 bg-amber-50/30 border-2 border-dashed border-amber-200 rounded-3xl text-center animate-in fade-in zoom-in duration-500">
+          <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mb-6 shadow-sm border border-amber-200">
+            <ShieldAlert className="h-10 w-10 text-amber-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900 mb-3">
+            Recurso Exclusivo
+          </h2>
+          <p className="text-slate-600 max-w-lg mx-auto leading-relaxed mb-8">
+            O <strong>Plano de Manejo Orgânico (PMO)</strong> é uma ferramenta exclusiva para propriedades com certificação orgânica ou em período de conversão.
+            <br />
+            Sua propriedade atual está configurada na modalidade <strong>Convencional</strong>.
+          </p>
+          <button
+            onClick={() => navigate("/propriedade/perfil")}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 font-semibold shadow-sm transition-all hover:shadow-md"
+          >
+            <Settings size={20} className="text-slate-400" />
+            Configurações da Propriedade
+          </button>
+        </div>
+      ) : listLoading ? (
         /* ---------------- SKELETON LOADER ---------------- */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 w-full min-w-0 animate-pulse">
           {[1, 2, 3, 4].map((i) => (

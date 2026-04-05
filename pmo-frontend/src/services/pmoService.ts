@@ -359,17 +359,19 @@ export async function syncManejoInsumos(
 // ==================================================================
 
 /**
- * Busca todos os PMOs do usuário (lista leve, sem form_data).
+ * Busca todos os PMOs de uma propriedade específica (lista leve, sem form_data).
  * Ordenados por data de criação (mais recente primeiro).
  * 
- * @param userId - Opcional: ID do usuário para filtrar (se não passar, confia no RLS)
+ * @param propriedadeId - ID da propriedade para filtrar os planos
+ * @param userId - Opcional: ID do usuário para filtrar adicionalmente
  * @returns FetchResult com array de PmoListItem
  */
-export async function fetchAllPmos(userId?: string): Promise<FetchResult<PmoListItem[]>> {
+export async function fetchAllPmos(propriedadeId: number, userId?: string): Promise<FetchResult<PmoListItem[]>> {
     try {
         let query = supabase
             .from('pmos')
             .select('id, nome_identificador, status, version, created_at')
+            .eq('propriedade_id', propriedadeId)
             .order('created_at', { ascending: false });
 
         // Se userId for fornecido, filtra explicitamente
@@ -422,7 +424,7 @@ export async function deletePmo(pmoId: string): Promise<SaveResult> {
 /**
  * Busca sugestões de planejamento pendentes do bot.
  */
-export async function fetchPlanningSuggestions(userId: string): Promise<FetchResult<any[]>> {
+export async function fetchPlanningSuggestions(userId: string): Promise<FetchResult<Record<string, unknown>[]>> {
     try {
         console.log('[pmoService] fetchPlanningSuggestions for user:', userId);
         const { data, error } = await supabase
@@ -463,7 +465,7 @@ export async function markSuggestionAsProcessed(logId: string): Promise<SaveResu
  */
 export async function logFeedback(
     logId: string,
-    finalData: any,
+    finalData: Record<string, unknown>,
     foiEditado: boolean = false
 ): Promise<SaveResult> {
     try {
@@ -500,7 +502,7 @@ export async function logFeedback(
  */
 export async function saveRefinedSuggestion(
     logId: string,
-    finalData: any
+    finalData: Record<string, unknown>
 ): Promise<SaveResult> {
     try {
         console.log(`[PMO-Bot] Salvando refinamento para log ${logId}`);

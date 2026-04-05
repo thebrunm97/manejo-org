@@ -2,6 +2,7 @@ package state
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"time"
@@ -65,6 +66,12 @@ func handleDuvidaFallback(wpClient *whatsapp.Client, ttsClient *tts.Orchestrator
 	var botResponse string
 	var currentQuestion = body
 
+	// Log JSON payload to inspect what we're sending to Gemini
+	if len(tools) > 0 {
+		toolJSON, _ := json.MarshalIndent(tools, "", "  ")
+		log.Printf("📥 [FSM] Payload Tools enviado para o Gemini:\n%s", string(toolJSON))
+	}
+
 	for i := 0; i < 5; i++ {
 		resp, session, err := gemClient.GenerateContentWithTools(ctx, currentQuestion, genaiHistory, tools, specPrompt)
 		if err != nil {
@@ -90,7 +97,22 @@ func handleDuvidaFallback(wpClient *whatsapp.Client, ttsClient *tts.Orchestrator
 		// CASE B: Model requested tool calls
 		if funcCall, ok := part.(genai.FunctionCall); ok {
 			log.Printf("🛠️ [FSM] Chamando ferramenta: %s", funcCall.Name)
-			
+			// Interceptador para o Motor Agronômico (Passo 4.3)
+			if funcCall.Name == "calcular_recomendacao_adubacao" {
+				funcResponse, err := executeCalcularAdubacao(ctx, sbClient, &funcCall)
+				if err != nil {
+					log.Printf("⚠️ [FSM] Erro no Motor Agronômico: %v", err)
+					currentQuestion = fmt.Sprintf("Erro no motor agronômico: %v", err)
+					continue
+				}
+				
+				// Bypass SDK ChatSession bugs (Thought Signature missing) by using the Simplified Loop!
+				// Convert the FunctionResponse map into a text response and restart the turn.
+				resultJSON, _ := json.Marshal(funcResponse.Response)
+				currentQuestion = fmt.Sprintf("[RESULTADO DA FERRAMENTA %s: %s]\nApresente esse cálculo ao produtor de forma amigável e técnica.", funcCall.Name, string(resultJSON))
+				continue
+			}
+
 			result, err := mcpServer.CallToolWithGuard(guard, funcCall.Name, funcCall.Args)
 			if err != nil {
 				log.Printf("⚠️ [FSM] LoopGuard ou Erro na Tool: %v", err)

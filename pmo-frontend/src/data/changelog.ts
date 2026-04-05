@@ -12,22 +12,23 @@ export interface ChangelogEntry {
 export const changelogData: ChangelogEntry[] = [
     {
         version: "0.14.0",
-        date: "2026-04-02",
-        title: "A Era da Gestão Analítica 📈",
-        description: "Nesta atualização, transformamos o ManejoORG em uma ferramenta poderosa para aumentar as suas vendas e controlar o seu lucro real.",
+        date: "2026-04-04",
+        title: "A Era da Gestão Analítica e Consultoria IA 📈",
+        description: "Nesta atualização, transformamos o ManejoORG na sua maior ferramenta para alavancar vendas, garantir lucro real e receber consultoria técnica especializada direto no campo.",
         sections: [
             {
                 type: "New",
                 items: [
-                    "🤝 Novo Mural de Oportunidades: Veja exatamente o que as cooperativas estão precisando comprar e ofereça a sua colheita diretamente pelo aplicativo.",
-                    "💰 Visão Financeira da Fazenda: Quer saber se um plantio deu lucro ou prejuízo? O novo painel financeiro mostra para onde o seu dinheiro está indo, talhão por talhão."
+                    "🤝 Mural de Oportunidades B2B2C: Veja com clareza o que as maiores cooperativas estão buscando no mercado hoje e oferte sua safra num clique.",
+                    "💰 Raio-X Financeiro da Lavoura: Chega de cálculos no papel! O novo painel financeiro DRE revela o lucro/prejuízo preciso, talhão por talhão.",
+                    "👨‍🌾 Motor Agronômico Inteligente (IA): Nosso consultor pelo WhatsApp agora entrega cálculos matemáticos de adubação (NPK real!) poupando seu dinheiro com gastos excessivos de insumos."
                 ]
             },
             {
                 type: "Improvements",
                 items: [
-                    "⚡ Diário de Campo Super Rápido: Deixamos o aplicativo muito mais leve. Agora, registrar seus manejos e colheitas é instantâneo, sem travamentos, mesmo em celulares mais antigos.",
-                    "🤖 Assistente do WhatsApp Mais Inteligente: O nosso robô consultor está mais rápido e entende ainda melhor as suas dúvidas do dia a dia no campo."
+                    "⚡ Diário de Campo a Jato: Desmontamos a base dos formulários e dividimos os registros. Agora salvar seus manejos e infraestruturas não trava mais o seu celular, mesmo nas piores redes 3G rurais.",
+                    "🔒 Estabilidade e Velocidade Blindada: O coração dos servidores foi reotimizado (novos índices espaciais). Pesquisas rápidas anti-travamento para que você se foque 100% no trabalho no campo."
                 ]
             }
         ]

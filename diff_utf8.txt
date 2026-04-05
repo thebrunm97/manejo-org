@@ -1,0 +1,2030 @@
+diff --git a/pmo-frontend/src/context/AuthContext.tsx b/pmo-frontend/src/context/AuthContext.tsx
+index d4478bd..df61cbc 100644
+--- a/pmo-frontend/src/context/AuthContext.tsx
++++ b/pmo-frontend/src/context/AuthContext.tsx
+@@ -1,6 +1,6 @@
+ // src/context/AuthContext.tsx
+ 
+-import React, { createContext, useState, useContext, useEffect, useCallback, useMemo, ReactNode } from 'react';
++import React, { createContext, useState, useContext, useEffect, useCallback, useMemo, ReactNode, useRef } from 'react';
+ import { useNavigate } from 'react-router-dom';
+ import { User, Session, Provider } from '@supabase/supabase-js';
+ import { supabase } from '../supabaseClient';
+@@ -73,39 +73,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
+         }
+     }, []);
+ 
+-    // 3. Separate Admin Check (Critical Security) - SECURITY DEFINER RPC
+-    const checkAdminRPC = useCallback(async () => {
+-        const MAX_RETRIES = 2;
+-
+-        for (let i = 0; i <= MAX_RETRIES; i++) {
+-            console.log(`[AuthContext] Checking Admin RPC (Attempt ${i + 1}/${MAX_RETRIES + 1})...`);
+-
+-            try {
+-                // 15s timeout per attempt to avoid kicking users out on slow connections
+-                const timeoutPromise = new Promise((_, reject) => {
+-                    setTimeout(() => reject(new Error('RPC Timeout')), 15000);
+-                });
+-
+-                const { data, error } = await Promise.race([
+-                    supabase.rpc('is_admin'),
+-                    timeoutPromise
+-                ]) as any;
+-
+-                if (error) throw error;
+-
+-                console.log('[AuthContext] RPC Success:', data);
+-                return !!data; // Success
+-            } catch (err) {
+-                console.warn(`[AuthContext] Attempt ${i + 1} failed:`, err);
+-                if (i < MAX_RETRIES) {
+-                    await new Promise(r => setTimeout(r, 1000)); // Wait 1s before retry
+-                }
+-            }
+-        }
+-
+-        console.error('[AuthContext] All RPC attempts failed. Defaulting to FALSE.');
+-        return false;
+-    }, []);
+ 
+     // 4. Auth Actions
+     const login = useCallback(async (email: string, password: string) => {
+@@ -168,103 +135,74 @@ export function AuthProvider({ children }: AuthProviderProps) {
+     useEffect(() => {
+         let mounted = true;
+ 
+-        const initAuth = async () => {
+-            console.log('[AuthContext] Initializing Auth...');
+-            setIsLoadingRole(true); // Garante que começa true
++        // Função que verifica a sessão E a role, só libertando a UI no final
++        const loadSessionAndRole = async (session: Session | null) => {
++            if (!session) {
++                if (mounted) {
++                    setAuthToken(null);
++                    setUser(null);
++                    setProfile(null);
++                    setIsAdmin(false);
++                    setIsLoadingRole(false);
++                    setIsLoading(false);
++                }
++                return;
++            }
+ 
+             try {
+-                // Check active session
+-                const { data: { session } } = await supabase.auth.getSession();
+-
+-                if (session) {
+-                    if (mounted) {
+-                        setAuthToken(session.access_token);
+-                        setUser(session.user);
+-
+-                        // CRITICAL: Wait for Admin Check
+-                        console.log('[AuthContext] Session found. Checking Admin...');
+-                        try {
+-                            const adminStatus = await checkAdminRPC(); // This waits!
+-                            if (mounted) {
+-                                setIsAdmin(adminStatus);
+-                                console.log(`[AuthContext] Admin Status Set: ${adminStatus}`);
+-                            }
+-                        } finally {
+-                            if (mounted) setIsLoadingRole(false); // Finaliza loadingRole
+-                        }
++                // Bloqueia a UI explicitamente até o DB responder
++                const { data, error } = await supabase.rpc('is_admin');
++                if (mounted) {
++                    setIsAdmin(!!data && !error);
++                }
+ 
+-                        if (mounted) {
+-                            // Fetch Profile in Background (Doesn't block UI)
+-                            fetchProfile(session.user.id).then(p => {
+-                                if (mounted && p) setProfile(p);
+-                            });
+-                        }
+-                    }
+-                } else {
+-                    console.log('[AuthContext] No active session found.');
+-                    if (mounted) setIsLoadingRole(false); // Sem sessão, não está carregando role
++                // Profile fetch
++                const profileData = await fetchProfile(session.user.id);
++                if (mounted && profileData) {
++                    setProfile(profileData);
+                 }
++
+             } catch (error) {
+-                console.error("Auth check failed", error);
+-                if (mounted) setIsLoadingRole(false); // Erro, para loading
++                console.error("Erro ao carregar permissões ou perfil:", error);
++                if (mounted) setIsAdmin(false);
+             } finally {
++                // SÓ LIBERTA A UI AQUI, depois de ter 100% certeza de tudo!
+                 if (mounted) {
+-                    console.log('[AuthContext] Loading finished.');
++                    setIsLoadingRole(false);
+                     setIsLoading(false);
+                 }
+             }
+         };
+ 
+-        // Run check
+-        initAuth();
+-
+-        const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+-            if (!mounted) return;
+-            console.log(`[AuthContext] Auth Change: ${event}`);
+-
+-            if (session) {
+-                // If we are already loaded and just refreshing token, don't full reset
+-                if (event === 'TOKEN_REFRESHED') {
+-                    console.log('[AuthContext] Token refreshed. Updating state.');
+-                    setAuthToken(session.access_token);
+-                    // We don't strictly need to re-check admin on every refresh unless we suspect revocation
+-                    return;
+-                }
+-
+-                if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
+-                    // Start role check loading specifically for sign-in event
+-                    setIsLoadingRole(true);
+-
+-                    setAuthToken(session.access_token);
+-                    setUser(session.user);
+-
+-                    // If we just signed in, check admin again to be safe
+-                    try {
+-                        const adminStatus = await checkAdminRPC();
+-                        if (mounted) setIsAdmin(adminStatus);
+-                    } finally {
+-                        if (mounted) setIsLoadingRole(false); // Terminou check
+-                    }
+-
+-                    fetchProfile(session.user.id).then(p => {
+-                        if (mounted && p) setProfile(p);
+-                    });
++        // O onAuthStateChange do Supabase V2 dispara 'INITIAL_SESSION' automaticamente no load (F5)
++        const { data: authListener } = supabase.auth.onAuthStateChange(
++            (event, session) => {
++                if (!mounted) return;
++                console.log(`[AuthContext] Auth Change: ${event}`);
++
++                setAuthToken(session?.access_token ?? null);
++                setUser(session?.user ?? null);
++
++                if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
++                    setIsLoading(true);     // Previne que a UI renderize sem saber a role
++                    setIsLoadingRole(true); // Indica carregamento do painel admin
++                    loadSessionAndRole(session);
++                } else if (event === 'SIGNED_OUT') {
++                    setAuthToken(null);
++                    setUser(null);
++                    setProfile(null);
++                    setIsAdmin(false);
++                    setIsLoadingRole(false);
++                    setIsLoading(false);
+                 }
+-            } else if (event === 'SIGNED_OUT') {
+-                setAuthToken(null);
+-                setUser(null);
+-                setProfile(null);
+-                setIsAdmin(false);
+-                setIsLoadingRole(false);
+-                setIsLoading(false); // Ensure we aren't stuck loading
+             }
+-        });
++        );
+ 
+         return () => {
+             mounted = false;
+             authListener?.subscription.unsubscribe();
+         };
+-    }, [fetchProfile, checkAdminRPC]);
++    }, [fetchProfile]);
+ 
+     // Value Memo (Using direct isAdmin state)
+     const value = useMemo<AuthContextType>(() => ({
+@@ -275,9 +213,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
+ 
+     if (isLoading) {
+         return (
+-            <div style={{ padding: 20, textAlign: 'center', backgroundColor: '#f0f0f0', height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+-                <h2>Carregando Autenticação...</h2>
+-                <p>Verifique o console se isso demorar.</p>
++            <div className="flex flex-col items-center justify-center h-screen bg-slate-50">
++                <div className="w-10 h-10 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mb-4"></div>
++                <p className="text-sm font-medium text-slate-500 animate-pulse">Carregando...</p>
+             </div>
+         );
+     }
+diff --git a/pmo-frontend/src/hooks/dashboard/useDashboardLogic.ts b/pmo-frontend/src/hooks/dashboard/useDashboardLogic.ts
+index c2dbd32..93c0dd1 100644
+--- a/pmo-frontend/src/hooks/dashboard/useDashboardLogic.ts
++++ b/pmo-frontend/src/hooks/dashboard/useDashboardLogic.ts
+@@ -1,272 +1,166 @@
+-import { useState, useEffect, useCallback } from 'react';
+-import { useAuth } from '../../context/AuthContext';
+-import { dashboardService, HarvestSummary } from '../../services/dashboardService';
+-import { getCurrentWeather, WeatherData } from '../../services/weatherService';
+-import { fetchUserProfile, fetchPmoById } from '../../services/pmoService';
+-import { supabase } from '../../supabaseClient';
+-
+-console.log('[useDashboardLogic] Imported supabase:', supabase);
+-
+-
++import { useState, useEffect, useCallback, useRef } from "react";
++import { useAuth } from "../../context/AuthContext";
++import {
++  dashboardService,
++  HarvestSummary,
++} from "../../services/dashboardService";
++import { getCurrentWeather, WeatherData } from "../../services/weatherService";
++import { fetchUserProfile, fetchDashboardPmoDetails } from "../../services/pmoService";
++import { supabase } from "../../supabaseClient";
++
++console.log("[useDashboardLogic] Imported supabase:", supabase);
+ 
+ // Tipos do Estado do Dashboard
+ export interface DashboardData {
+-    weather: WeatherData | null;
+-    harvestStats: HarvestSummary;
+-    lastActivity: Date | null;
+-    recentActivities: any[]; // Adicionado: Lista de atividades
+-    pmoId: string | null;
+-    pmoName: string | null;
+-    pmoVersion: number | null;
+-    userProfile: { telefone?: string } | null;
++  weather: WeatherData | null;
++  harvestStats: HarvestSummary;
++  lastActivity: Date | null;
++  recentActivities: any[]; // Adicionado: Lista de atividades
++  pmoId: string | null;
++  pmoName: string | null;
++  pmoVersion: number | null;
++  userProfile: { telefone?: string } | null;
+ }
+ 
+ // Coordenadas padrão (Araguari, MG) - Fallback
+ const DEFAULT_LAT = -18.900582;
+-const DEFAULT_LON = -48.250880;
++const DEFAULT_LON = -48.25088;
+ 
+ export function useDashboardLogic() {
+-    const { user } = useAuth();
+-
+-    // Estado Combinado
+-    const [data, setData] = useState<DashboardData>({
+-        weather: null,
+-        harvestStats: {},
+-        lastActivity: null,
+-        recentActivities: [], // Init empty
+-        pmoId: null,
+-        pmoName: null,
+-        pmoVersion: null,
+-        userProfile: null
++  const { user, profile } = useAuth();
++  const hasFetchedDashboardRef = useRef<string | null>(null);
++
++  // Estado Combinado
++  const [data, setData] = useState<DashboardData>({
++    weather: null,
++    harvestStats: {},
++    lastActivity: null,
++    recentActivities: [], // Init empty
++    pmoId: null,
++    pmoName: null,
++    pmoVersion: null,
++    userProfile: null,
++  });
++
++  const [isLoading, setIsLoading] = useState(true);
++  const [dataError, setDataError] = useState<string | null>(null);
++
++  // Função auxiliar para obter localização (Promise-based)
++  const getCoordinates = () => {
++    return new Promise<{ lat: number; lng: number }>((resolve) => {
++      if (!navigator.geolocation) {
++        resolve({ lat: DEFAULT_LAT, lng: DEFAULT_LON });
++        return;
++      }
++
++      navigator.geolocation.getCurrentPosition(
++        (pos) => {
++          resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude });
++        },
++        (err) => {
++          console.warn("Geolocalização negada ou falhou, usando padrão.", err);
++          resolve({ lat: DEFAULT_LAT, lng: DEFAULT_LON });
++        },
++        { timeout: 5000 }, // Timeout curto para não travar o load
++      );
+     });
++  };
+ 
+-    const [isLoading, setIsLoading] = useState(true);
+-    const [dataError, setDataError] = useState<string | null>(null);
+-
+-    // Função auxiliar para obter localização (Promise-based)
+-    const getCoordinates = () => {
+-        return new Promise<{ lat: number; lng: number }>((resolve) => {
+-            if (!navigator.geolocation) {
+-                resolve({ lat: DEFAULT_LAT, lng: DEFAULT_LON });
+-                return;
+-            }
+ 
+-            navigator.geolocation.getCurrentPosition(
+-                (pos) => {
+-                    resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+-                },
+-                (err) => {
+-                    console.warn('Geolocalização negada ou falhou, usando padrão.', err);
+-                    resolve({ lat: DEFAULT_LAT, lng: DEFAULT_LON });
+-                },
+-                { timeout: 5000 } // Timeout curto para não travar o load
+-            );
+-        });
+-    };
+ 
+-    const loadDashboardData = useCallback(async () => {
+-        if (!user) return;
++  const refreshDashboard = useCallback(async () => {
++    if (!user?.id) {
++      console.log("DashboardLogic: Skipping load, no user ID.");
++      return;
++    }
+ 
+-        setIsLoading(true);
+-        setDataError(null);
++    console.log("DashboardLogic: Starting refreshDashboard for user:", user.id);
++    setIsLoading(true);
++    setDataError(null);
+ 
++    try {
++      // FIRE AND FORGET WEATHER FETCH: does not block the main dashboard load
++      const loadWeatherAsync = async () => {
+         try {
+-            // Check Supabase init
+-            if (!supabase) {
+-                throw new Error('Supabase Client IS UNDEFINED. Check initialization.');
+-            }
+-
+-            // 1. Identificar Usuário e PMO Ativo
+-            // Buscamos o perfil primeiro para saber qual PMO carregar
+-            const profileResult = await fetchUserProfile(user.id);
+-            if (!profileResult.success || !profileResult.data) {
+-                throw new Error(profileResult.error || 'Não foi possível carregar o perfil.');
+-            }
+-
+-            const profile = profileResult.data;
+-            const pmoDetails = { id: null as string | null, nome: null as string | null, version: null as number | null };
+-
+-            if (profile.pmo_ativo_id) {
+-                pmoDetails.id = profile.pmo_ativo_id;
+-                // Carregar detalhes básicos do PMO
+-                const pmoResult = await fetchPmoById(profile.pmo_ativo_id);
+-                if (pmoResult.success && pmoResult.data) {
+-                    pmoDetails.nome = pmoResult.data.nome_identificador;
+-                    pmoDetails.version = Number(pmoResult.data.version) || 0;
+-                }
+-            }
+-
+-            // 2. Carregamento Paralelo (Core Data)
+-            // Weather pode rodar independente do PMO
+-            // Harvest e Activity dependem do PMO (se houver)
+-
+-            const activePmoId = pmoDetails.id || '';
+-
+-            const [coords, weatherData, harvestStats, lastActivity] = await Promise.all([
+-                getCoordinates(), // Resolve rápido
+-                (async () => {
+-                    const c = await getCoordinates(); // Chamada redundante mas ok, ou poderíamos encadear. 
+-                    // Melhor estratégia: pegar coord antes. Vamos ajustar.
+-                    return getCurrentWeather(c.lat, c.lng);
+-                })(),
+-                // Nota: O weather acima espera a promise de coords. 
+-                // Vamos refazer a estrutura do Promise.all para ser mais limpa abaixo.
+-
+-                dashboardService.fetchHarvestSummary(activePmoId),
+-                dashboardService.fetchLastActivity(activePmoId)
+-            ]);
+-
+-            // Correção da lógica paralela acima:
+-            // O weather depende de coords. Então não dá pra paralelizar TOTALMENTE tudo no nível raiz bruta
+-            // A menos que usemos .then().
+-
+-            // Vamos refazer o bloco paralelo real:
+-
+-            /*
+-            const coordsPromise = getCoordinates();
+-            const weatherPromise = coordsPromise.then(c => getCurrentWeather(c.lat, c.lng));
+-            const harvestPromise = dashboardService.fetchHarvestSummary(activePmoId);
+-            const activityPromise = dashboardService.fetchLastActivity(activePmoId);
+-            
+-            const [weather, harvest, activity] = await Promise.all([weatherPromise, harvestPromise, activityPromise]);
+-            */
+-
+-            // No entanto, para simplicidade do código e como coords é local/rápido ou timeout, vamos fazer sequencial o coords e paralelo o resto.
+-        } catch (err: any) {
+-            // Placeholder catch, lógica real abaixo
++          console.log("DashboardLogic: Requesting Coordinates (Background)...");
++          const coords = await getCoordinates();
++          console.log("DashboardLogic: Requesting Weather (Background)...");
++          const weather = await getCurrentWeather(coords.lat, coords.lng);
++          setData((prev) => ({ ...prev, weather }));
++        } catch (e) {
++          console.warn("DashboardLogic: Weather fetch failed silently", e);
+         }
+-
+-    }, [user]);
+-
+-    const refreshDashboard = useCallback(async () => {
+-        if (!user?.id) {
+-            console.log('DashboardLogic: Skipping load, no user ID.');
+-            return;
++      };
++      loadWeatherAsync();
++
++      // Passo 1: O Perfil já foi injetado pelo AuthContext
++      const userTelefone = profile?.telefone;
++
++      let pmoId: string | null = null;
++      let pmoName: string | null = null;
++      let pmoVersion: number = 0;
++      let harvestStats: HarvestSummary = {};
++      let lastActivity: Date | null = null;
++      let recentActivities: any[] = [];
++
++      if (profile?.pmo_ativo_id) {
++        console.log("DashboardLogic: Step 3.2 - Fetching Active PMO Data (Parallelizing)...");
++        pmoId = profile.pmo_ativo_id;
++
++        const [pmoResult, recentRes, harvestRes, lastActRes] = await Promise.all([
++          fetchDashboardPmoDetails(pmoId),
++          dashboardService.fetchRecentActivities(pmoId, 5),
++          dashboardService.fetchHarvestSummary(pmoId),
++          dashboardService.fetchLastActivity(pmoId)
++        ]);
++
++        if (pmoResult.success && pmoResult.data) {
++          pmoName = pmoResult.data.nome_identificador;
++          pmoVersion = Number(pmoResult.data.version) || 0;
+         }
+ 
+-        console.log('DashboardLogic: Starting refreshDashboard for user:', user.id);
+-        setIsLoading(true);
+-        setDataError(null);
+-
+-        try {
+-            // Passo 1: Busca Coordenadas (latência local/baixa)
+-            console.log('DashboardLogic: Requesting Coordinates...');
+-            const coords = await getCoordinates();
+-            console.log('DashboardLogic: Coordinates received:', coords);
+-
+-            // Passo 2: Busca Weather (independente)
+-            console.log('DashboardLogic: Requesting Weather...');
+-            const weather = await getCurrentWeather(coords.lat, coords.lng);
+-            console.log('DashboardLogic: Weather received:', weather ? 'OK' : 'NULL');
+-
+-            // Passo 3: Busca Dados do Banco (SEQUENCIAL / MANUAL FETCH)
+-            // Evita deadlock de RLS e queries muito pesadas
+-            console.log('DashboardLogic: Step 3 - Fetching Profile separately...');
+-
+-            // 3.1 Busca Perfil
+-            const profileResult = await fetchUserProfile(user.id);
+-            if (!profileResult.success || !profileResult.data) {
+-                throw new Error(profileResult.error || 'Perfil não encontrado.');
+-            }
+-            const profile = profileResult.data;
+-            const userTelefone = profile.telefone;
+-
+-            let activePmo: any = null;
+-            let pmoId: string | null = null;
+-            let pmoName: string | null = null;
+-            let pmoVersion: number = 0;
+-            let cadernoCampo: any[] = [];
+-
+-            // 3.2 Busca PMO se houver
+-            if (profile.pmo_ativo_id) {
+-                console.log('DashboardLogic: Step 3.2 - Fetching Active PMO...');
+-                const pmoResult = await fetchPmoById(profile.pmo_ativo_id);
+-                if (pmoResult.success && pmoResult.data) {
+-                    activePmo = pmoResult.data;
+-                    pmoId = activePmo.id;
+-                    pmoName = activePmo.nome_identificador;
+-                    pmoVersion = Number(activePmo.version) || 0;
+-
+-                    // 3.3 Busca Caderno de Campo (Recentes)
+-                    console.log('DashboardLogic: Step 3.3 - Fetching Activities...');
+-                    // Usando service direto para evitar complexidade
+-                    const { data: ccData, error: ccError } = await supabase
+-                        .from('caderno_campo')
+-                        .select('*')
+-                        .eq('pmo_id', pmoId)
+-                        .order('data_registro', { ascending: false })
+-                        .limit(50);
+-
+-                    if (!ccError && ccData) {
+-                        cadernoCampo = ccData;
+-                    }
+-                }
+-            }
+-
+-            console.log('DashboardLogic: Data fetch complete. Processing...');
+-
+-            // Processamento Client-side
+-            // 1. Resumo de Colheita
+-            const harvestStats: HarvestSummary = cadernoCampo
+-                .filter((i: any) => i.tipo_atividade === 'Colheita' && i.tipo_atividade !== 'CANCELADO')
+-                .reduce((acc: HarvestSummary, item: any) => {
+-                    const prod = item.produto || 'NÃO IDENTIFICADO';
+-                    const qtd = parseFloat(String(item.quantidade_valor || 0));
+-                    if (!acc[prod]) {
+-                        acc[prod] = { produto: prod, total: 0, unidade: item.quantidade_unidade };
+-                    }
+-                    acc[prod].total += qtd;
+-                    return acc;
+-                }, {});
+-
+-            // 2. Última Atividade e Recentes
+-            const sortedActivities = [...cadernoCampo].sort((a: any, b: any) =>
+-                new Date(b.created_em || b.data_registro).getTime() - new Date(a.created_em || a.data_registro).getTime()
+-            );
+-
+-            const lastActivity = sortedActivities.length > 0 ? new Date(sortedActivities[0].created_em || sortedActivities[0].data_registro) : null;
+-
+-            const recentActivities = sortedActivities.slice(0, 5).map((item: any) => ({
+-                id: item.id,
+-                tipo: item.tipo_atividade,
+-                descricao: `${item.tipo_atividade}${item.talhao_canteiro ? ' • ' + item.talhao_canteiro : ''}`,
+-                data: item.data_registro,
+-                raw: item,
+-                produto: item.produto,
+-                talhao_canteiro: item.talhao_canteiro,
+-                data_registro: item.data_registro
+-            }));
+-
+-            // Montar objeto final
+-            setData({
+-                weather,
+-                harvestStats,
+-                lastActivity,
+-                recentActivities,
+-                pmoId: pmoId,
+-                pmoName: pmoName,
+-                pmoVersion: pmoVersion,
+-                userProfile: { telefone: userTelefone }
+-            });
+-
+-        } catch (err: any) {
+-            console.error('Erro no Dashboard (Manual Flow):', err);
+-            setDataError(err.message || 'Falha ao carregar dashboard.');
+-        } finally {
+-            console.log('DashboardLogic: Finished. Setting isLoading=false');
+-            setIsLoading(false);
+-        }
+-    }, [user?.id]); // ✅ Dependência correta (apenas user.id)
+-
+-    // Initial Load
+-    useEffect(() => {
+-        refreshDashboard();
+-    }, [refreshDashboard]);
+-
+-    return {
+-        ...data,
+-        isLoading,
+-        dataError,
+-        refreshDashboard
+-    };
++        recentActivities = recentRes;
++        harvestStats = harvestRes;
++        lastActivity = lastActRes;
++      }
++
++      console.log("DashboardLogic: Data fetch complete. Processing...");
++
++      // Montar objeto final (Weather continua com o valor atual até a promise resolver)
++      setData((prev) => ({
++        ...prev,
++        harvestStats,
++        lastActivity,
++        recentActivities,
++        pmoId: pmoId,
++        pmoName: pmoName,
++        pmoVersion: pmoVersion,
++        userProfile: { telefone: userTelefone },
++      }));
++    } catch (err: any) {
++      console.error("Erro no Dashboard (Manual Flow):", err);
++      setDataError(err.message || "Falha ao carregar dashboard.");
++    } finally {
++      console.log("DashboardLogic: Finished. Setting isLoading=false");
++      setIsLoading(false);
++    }
++  }, [user?.id, profile?.pmo_ativo_id, profile?.telefone]);
++
++  // Initial Load & React Loop Shield
++  useEffect(() => {
++    const targetId = profile?.pmo_ativo_id || "NONE";
++
++    // Impede loop infinito barrando execuções secundárias para o mesmo Alvo
++    if (hasFetchedDashboardRef.current !== targetId && user?.id) {
++      hasFetchedDashboardRef.current = targetId;
++      refreshDashboard();
++    }
++  }, [user?.id, profile?.pmo_ativo_id, refreshDashboard]);
++
++  return {
++    ...data,
++    isLoading,
++    dataError,
++    refreshDashboard,
++  };
+ }
+diff --git a/pmo-frontend/src/hooks/pmo/usePlanosListLogic.ts b/pmo-frontend/src/hooks/pmo/usePlanosListLogic.ts
+index 903e0b6..4144dbf 100644
+--- a/pmo-frontend/src/hooks/pmo/usePlanosListLogic.ts
++++ b/pmo-frontend/src/hooks/pmo/usePlanosListLogic.ts
+@@ -129,17 +129,24 @@ export function usePlanosListLogic(
+         setError(null);
+ 
+         try {
+-            // Fetch PMO list
+-            // Passamos user?.id para garantir que, mesmo sendo admin, busque apenas OS SEUS planos nesta tela
+-            const pmosResult = await fetchAllPmos(user?.id);
+-            if (!pmosResult.success) {
+-                throw new Error(pmosResult.error || 'Erro ao carregar planos');
++            // Fetch PMO list and User Profile concurrently
++            const pmoPromise = fetchAllPmos(user?.id);
++            const profilePromise = user?.id ? fetchUserProfile(user.id) : Promise.resolve({ success: false, data: null });
++
++            const [pmosResultObj, profileResultObj] = await Promise.allSettled([pmoPromise, profilePromise]);
++
++            if (pmosResultObj.status === 'fulfilled') {
++                const pmosResult = pmosResultObj.value;
++                if (!pmosResult.success) {
++                    throw new Error(pmosResult.error || 'Erro ao carregar planos');
++                }
++                setPmos(pmosResult.data || []);
++            } else {
++                throw new Error('Erro ao carregar planos');
+             }
+-            setPmos(pmosResult.data || []);
+ 
+-            // Fetch user profile for active PMO
+-            if (user?.id) {
+-                const profileResult = await fetchUserProfile(user.id);
++            if (profileResultObj.status === 'fulfilled') {
++                const profileResult = profileResultObj.value;
+                 if (profileResult.success && profileResult.data) {
+                     setUserProfile(profileResult.data);
+                 }
+diff --git a/pmo-frontend/src/pages/DashboardPage.tsx b/pmo-frontend/src/pages/DashboardPage.tsx
+index 1bc4292..3cc27a6 100644
+--- a/pmo-frontend/src/pages/DashboardPage.tsx
++++ b/pmo-frontend/src/pages/DashboardPage.tsx
+@@ -1,246 +1,346 @@
+ // src/pages/DashboardPage.tsx
+ 
+-import React, { useState } from 'react';
+-import { useNavigate } from 'react-router-dom';
+-import { ProductTour } from '../components/Common/ProductTour';
+-import ProfileIncompleteAlert from '../components/Common/ProfileIncompleteAlert';
+-import { useAuth } from '../context/AuthContext';
++import React, { useState } from "react";
++import { useNavigate } from "react-router-dom";
++import { ProductTour } from "../components/Common/ProductTour";
++import ProfileIncompleteAlert from "../components/Common/ProfileIncompleteAlert";
++import { useAuth } from "../context/AuthContext";
+ 
+-import HarvestDashboard from '../components/Dashboard/HarvestDashboard';
+-import PlanoAtualCard from '../components/Dashboard/PlanoAtualCard';
+-import ManualRecordDialog from '../components/Dashboard/ManualRecordDialog';
+-import WhatsappConnectDialog from '../components/Dashboard/WhatsappConnectDialog';
++import HarvestDashboard from "../components/Dashboard/HarvestDashboard";
++import PlanoAtualCard from "../components/Dashboard/PlanoAtualCard";
++import ManualRecordDialog from "../components/Dashboard/ManualRecordDialog";
++import WhatsappConnectDialog from "../components/Dashboard/WhatsappConnectDialog";
+ 
+-import { supabase } from '../supabaseClient';
++import { supabase } from "../supabaseClient";
+ 
+-import { Plus, Settings, Smartphone, CloudSun, MapPin, CloudRain, Link, Unlink } from 'lucide-react';
++import {
++  Plus,
++  Settings,
++  Smartphone,
++  CloudSun,
++  MapPin,
++  CloudRain,
++  Link,
++  Unlink,
++} from "lucide-react";
+ 
+-import { useDashboardLogic } from '../hooks/dashboard/useDashboardLogic';
+-import { WeatherData } from '../services/weatherService';
+-import { unlinkWhatsapp } from '../services/whatsappService';
+-import { formatarTelefone, formatarDataRelativa, obterSaudacao } from '../utils/formatters';
++import { useDashboardLogic } from "../hooks/dashboard/useDashboardLogic";
++import { WeatherData } from "../services/weatherService";
++import { unlinkWhatsapp } from "../services/whatsappService";
++import {
++  formatarTelefone,
++  formatarDataRelativa,
++  obterSaudacao,
++} from "../utils/formatters";
+ 
+ // Weather Widget (In-memory component)
+-const WeatherWidget: React.FC<{ weather: WeatherData | null; loading: boolean }> = ({ weather, loading }) => {
+-    if (loading || !weather) return <div className="h-40 bg-slate-100 rounded-3xl animate-pulse" />;
+-
+-    const { current, daily } = weather;
+-    const temp = current.temperature;
+-    const humidity = current.humidity;
+-    const rainChance = daily.rainChance;
+-
+-    return (
+-        <div className="rounded-3xl p-6 bg-gradient-to-br from-cyan-50 to-white border border-cyan-100 shadow-sm relative overflow-hidden flex flex-col justify-between h-full min-h-[160px] transition-transform hover:-translate-y-0.5 hover:shadow-md">
+-            <div className="flex justify-between items-start mb-2">
+-                <div>
+-                    <h3 className="text-4xl font-extrabold text-cyan-900 tracking-tight">{temp}°C</h3>
+-                    <div className="flex items-center gap-1 mt-1 text-cyan-700">
+-                        <MapPin size={14} />
+-                        <span className="text-[10px] font-bold uppercase tracking-wider">LOCAL ATUAL</span>
+-                    </div>
+-                </div>
+-                <CloudSun size={32} className="text-cyan-500" />
+-            </div>
++const WeatherWidget: React.FC<{
++  weather: WeatherData | null;
++  loading: boolean;
++}> = ({ weather, loading }) => {
++  if (loading || !weather)
++    return <div className="h-40 bg-slate-100 rounded-3xl animate-pulse" />;
+ 
+-            <div className="mt-4 pt-3 border-t border-cyan-900/10 flex items-center justify-between">
+-                <div>
+-                    <span className="block text-xs font-semibold text-cyan-700">Umidade</span>
+-                    <span className="text-sm font-bold text-cyan-900">{humidity}%</span>
+-                </div>
+-                <div className="text-right">
+-                    <span className="block text-xs font-semibold text-cyan-700">Chuva (Hoje)</span>
+-                    <div className="flex items-center gap-1 justify-end">
+-                        <CloudRain size={16} className={rainChance && rainChance > 50 ? "text-sky-600" : "text-cyan-400"} />
+-                        <span className="text-sm font-bold text-cyan-900">{rainChance}%</span>
+-                    </div>
+-                </div>
+-            </div>
++  const { current, daily } = weather;
++  const temp = current.temperature;
++  const humidity = current.humidity;
++  const rainChance = daily.rainChance;
++
++  return (
++    <div className="rounded-3xl p-6 bg-gradient-to-br from-cyan-50 to-white border border-cyan-100 shadow-sm relative overflow-hidden flex flex-col justify-between h-full min-h-[160px] transition-transform hover:-translate-y-0.5 hover:shadow-md">
++      <div className="flex justify-between items-start mb-2">
++        <div>
++          <h3 className="text-4xl font-extrabold text-cyan-900 tracking-tight">
++            {temp}°C
++          </h3>
++          <div className="flex items-center gap-1 mt-1 text-cyan-700">
++            <MapPin size={14} />
++            <span className="text-[10px] font-bold uppercase tracking-wider">
++              LOCAL ATUAL
++            </span>
++          </div>
++        </div>
++        <CloudSun size={32} className="text-cyan-500" />
++      </div>
++
++      <div className="mt-4 pt-3 border-t border-cyan-900/10 flex items-center justify-between">
++        <div>
++          <span className="block text-xs font-semibold text-cyan-700">
++            Umidade
++          </span>
++          <span className="text-sm font-bold text-cyan-900">{humidity}%</span>
+         </div>
+-    );
++        <div className="text-right">
++          <span className="block text-xs font-semibold text-cyan-700">
++            Chuva (Hoje)
++          </span>
++          <div className="flex items-center gap-1 justify-end">
++            <CloudRain
++              size={16}
++              className={
++                rainChance && rainChance > 50 ? "text-sky-600" : "text-cyan-400"
++              }
++            />
++            <span className="text-sm font-bold text-cyan-900">
++              {rainChance}%
++            </span>
++          </div>
++        </div>
++      </div>
++    </div>
++  );
+ };
+ 
+ const DashboardPage: React.FC = () => {
+-    const { user, profile: authProfile } = useAuth();
+-    const navigate = useNavigate();
+-    const [openRecordDialog, setOpenRecordDialog] = useState(false);
+-    const [openWhatsappDialog, setOpenWhatsappDialog] = useState(false);
+-
+-    // DB Probe for Debugging
+-    const [dbProbe, setDbProbe] = useState<any>(null);
+-    React.useEffect(() => {
+-        if (user?.id) {
+-            supabase.from('profiles').select('*').eq('id', user.id).single()
+-                .then(res => setDbProbe(res));
+-        }
+-    }, [user]);
+-
+-
+-    // Conectando o cérebro
+-    const {
+-        weather,
+-        harvestStats,
+-        lastActivity,
+-        recentActivities,
+-        pmoId,
+-        pmoName,
+-        pmoVersion,
+-        userProfile,
+-        isLoading,
+-        dataError,
+-        refreshDashboard
+-    } = useDashboardLogic();
+-
+-    const hoje = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+-    const saudacao = obterSaudacao();
+-
+-    const pmoIdNumber = pmoId ? Number(pmoId) : 0; // Adaptação para props legadas
+-
+-    const isPageReady = !isLoading;
+-
+-    return (
+-        <div className="pb-8 overflow-x-hidden">
+-            <ProfileIncompleteAlert show={!userProfile?.telefone} />
+-            <ProductTour ready={isPageReady} />
+-            <ManualRecordDialog
+-                open={openRecordDialog}
+-                onClose={() => setOpenRecordDialog(false)}
+-                pmoId={pmoIdNumber}
+-                onRecordSaved={refreshDashboard}
+-            />
++  const { user, profile: authProfile } = useAuth();
++  const navigate = useNavigate();
++  const [openRecordDialog, setOpenRecordDialog] = useState(false);
++  const [openWhatsappDialog, setOpenWhatsappDialog] = useState(false);
+ 
+-            <WhatsappConnectDialog
+-                open={openWhatsappDialog}
+-                onClose={() => setOpenWhatsappDialog(false)}
+-                userId={user?.id || ''}
+-                onSuccess={refreshDashboard}
+-            />
++  // DB Probe for Debugging
++  const [dbProbe, setDbProbe] = useState<any>(null);
++  React.useEffect(() => {
++    if (user?.id) {
++      supabase
++        .from("profiles")
++        .select("*")
++        .eq("id", user.id)
++        .single()
++        .then((res) => setDbProbe(res));
++    }
++  }, [user]);
+ 
+-            {/* Header */}
+-            <div className="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-0 mb-8 w-full max-w-full overflow-hidden">
+-                <div className="min-w-0 max-w-full break-words whitespace-normal flex-wrap">
+-                    <h1 id="tour-welcome" className="text-3xl font-extrabold text-slate-900 tracking-tight mb-1 break-words">
+-                        {saudacao}, {user?.email?.split('@')[0]}! 🚜
+-                    </h1>
+-                    <p className="text-slate-500 text-base break-words">
+-                        Resumo da produção em <span className="capitalize font-semibold text-slate-700">{hoje}</span>.
+-                    </p>
+-                </div>
+-                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+-                    <button
+-                        onClick={() => navigate('/planos')}
+-                        className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-slate-300 text-slate-600 font-semibold hover:bg-slate-50 transition-colors w-full sm:w-auto"
+-                    >
+-                        <Settings size={18} />
+-                        Gerenciar Planos
+-                    </button>
+-                    <button
+-                        onClick={() => setOpenRecordDialog(true)}
+-                        className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 shadow-lg shadow-green-600/20 transition-all w-full sm:w-auto hover:-translate-y-0.5 active:translate-y-0"
+-                    >
+-                        <Plus size={20} />
+-                        Novo Registro
+-                    </button>
+-                </div>
++  // Conectando o cérebro
++  const {
++    weather,
++    harvestStats,
++    lastActivity,
++    recentActivities,
++    pmoId,
++    pmoName,
++    pmoVersion,
++    userProfile,
++    isLoading,
++    dataError,
++    refreshDashboard,
++  } = useDashboardLogic();
++
++  const hoje = new Date().toLocaleDateString("pt-BR", {
++    weekday: "long",
++    day: "numeric",
++    month: "long",
++  });
++  const saudacao = obterSaudacao();
++
++  const pmoIdNumber = pmoId ? Number(pmoId) : 0; // Adaptação para props legadas
++
++  const isPageReady = !isLoading;
++
++  return (
++    <div className="pb-8 overflow-x-hidden">
++      <ProfileIncompleteAlert show={!userProfile?.telefone} />
++      <ProductTour ready={isPageReady} />
++      <ManualRecordDialog
++        open={openRecordDialog}
++        onClose={() => setOpenRecordDialog(false)}
++        pmoId={pmoIdNumber}
++        onRecordSaved={refreshDashboard}
++      />
++
++      <WhatsappConnectDialog
++        open={openWhatsappDialog}
++        onClose={() => setOpenWhatsappDialog(false)}
++        userId={user?.id || ""}
++        onSuccess={refreshDashboard}
++      />
++
++      {/* Header */}
++      <div className="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-0 mb-8 w-full max-w-full overflow-hidden">
++        <div className="min-w-0 max-w-full break-words whitespace-normal flex-wrap">
++          <h1
++            id="tour-welcome"
++            className="text-3xl font-extrabold text-slate-900 tracking-tight mb-1 break-words"
++          >
++            {saudacao}, {user?.email?.split("@")[0]}! 🚜
++          </h1>
++          <p className="text-slate-500 text-base break-words">
++            Resumo da produção em{" "}
++            <span className="capitalize font-semibold text-slate-700">
++              {hoje}
++            </span>
++            .
++          </p>
++        </div>
++        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
++          <button
++            onClick={() => navigate("/planos")}
++            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-slate-300 text-slate-600 font-semibold hover:bg-slate-50 transition-colors w-full sm:w-auto"
++          >
++            <Settings size={18} />
++            Gerenciar Planos
++          </button>
++          <button
++            onClick={() => setOpenRecordDialog(true)}
++            className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 shadow-lg shadow-green-600/20 transition-all w-full sm:w-auto hover:-translate-y-0.5 active:translate-y-0"
++          >
++            <Plus size={20} />
++            Novo Registro
++          </button>
++        </div>
++      </div>
++
++      {dataError && (
++        <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
++          <p className="font-bold mb-1">Erro no carregamento:</p>
++          <p className="text-sm mb-2">{dataError}</p>
++          <button
++            onClick={refreshDashboard}
++            className="px-3 py-1.5 bg-white border border-red-200 text-red-600 text-xs font-bold rounded-lg hover:bg-red-50"
++          >
++            Tentar Novamente
++          </button>
++        </div>
++      )}
++
++      {isLoading ? (
++        /* ---------------- SKELETON LOADER ---------------- */
++        <div className="flex flex-col lg:flex-row gap-6 items-start mb-8 w-full min-w-0 animate-pulse">
++          {/* Left Column Skeleton */}
++          <div className="flex flex-col gap-6 w-full lg:w-1/3 min-w-0">
++            {/* Plano Atual Skeleton */}
++            <div className="h-[220px] bg-white rounded-3xl border border-slate-100 shadow-sm p-6 w-full">
++              <div className="w-1/2 h-4 bg-slate-300 rounded mb-4"></div>
++              <div className="w-3/4 h-6 bg-slate-300 rounded mb-6"></div>
++              <div className="w-full h-8 bg-slate-300 rounded mt-auto"></div>
+             </div>
+ 
+-            {dataError && (
+-                <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+-                    <p className="font-bold mb-1">Erro no carregamento:</p>
+-                    <p className="text-sm mb-2">{dataError}</p>
+-                    <button
+-                        onClick={refreshDashboard}
+-                        className="px-3 py-1.5 bg-white border border-red-200 text-red-600 text-xs font-bold rounded-lg hover:bg-red-50"
+-                    >
+-                        Tentar Novamente
+-                    </button>
+-                </div>
+-            )}
++            {/* Weather Skeleton */}
++            <div className="h-[160px] bg-white rounded-3xl border border-slate-100 shadow-sm p-6 w-full">
++              <div className="w-1/3 h-8 bg-slate-300 rounded mb-4"></div>
++              <div className="w-2/3 h-4 bg-slate-300 rounded mb-6"></div>
++              <div className="w-full h-4 bg-slate-300 rounded"></div>
++            </div>
+ 
+-            {isLoading && !weather && (
+-                <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-8">
+-                    <div className="h-full bg-green-500 w-1/3 animate-[indeterminate_1.5s_infinite_ease-in-out] rounded-full origin-left" style={{ width: '50%' }}></div>
+-                </div>
+-            )}
+-
+-            {/* Grid Layout */}
+-            <div className="flex flex-col lg:flex-row gap-6 items-start mb-8 w-full min-w-0">
+-                {/* Left Column */}
+-                <div className="flex flex-col gap-6 w-full lg:w-1/3 min-w-0">
+-                    <div id="tour-pmo-card">
+-                        <PlanoAtualCard
+-                            nomePlano={pmoName}
+-                            versao={pmoVersion || 1}
+-                            status="Em andamento"
+-                            onVer={() => navigate('/caderno')}
+-                            onEditar={() => navigate('/planos')}
+-                        />
+-                    </div>
++            {/* Bot Skeleton */}
++            <div className="h-[200px] bg-white rounded-3xl border border-slate-100 shadow-sm p-6 w-full">
++              <div className="bg-slate-300 w-10 h-10 rounded-lg mb-4"></div>
++              <div className="w-2/3 h-5 bg-slate-300 rounded mb-6"></div>
++              <div className="w-full h-10 bg-slate-300 rounded"></div>
++            </div>
++          </div>
+ 
+-                    <WeatherWidget weather={weather} loading={isLoading} />
+-
+-                    {/* Bot Card */}
+-                    <div id="tour-whatsapp-card" className="h-full w-full">
+-                        <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow h-full">
+-                            <div className="flex justify-between items-start mb-2">
+-                                <div className={`p-2 rounded-lg ${userProfile?.telefone ? 'bg-green-100/50 text-green-600' : 'bg-slate-100 text-slate-500'}`}>
+-                                    <Smartphone size={20} />
+-                                </div>
+-                                <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase ${userProfile?.telefone ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
+-                                    {userProfile?.telefone ? "ATIVO" : "OFFLINE"}
+-                                </span>
+-                            </div>
+-                            <h4 className="text-lg font-bold text-slate-900 leading-tight">Assistente Inteligente</h4>
+-                            <span className="block text-xs font-medium text-slate-500 mb-4 mt-1">
+-                                {formatarTelefone(userProfile?.telefone)}
+-                            </span>
+-
+-                            {/* Connection Button or Last Activity */}
+-                            {!userProfile?.telefone ? (
+-                                <button
+-                                    onClick={() => setOpenWhatsappDialog(true)}
+-                                    className="w-full mt-2 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors"
+-                                >
+-                                    <Link size={16} />
+-                                    Conectar WhatsApp
+-                                </button>
+-                            ) : (
+-                                <div>
+-                                    <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 mb-3">
+-                                        <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">Última Atividade</span>
+-                                        <p className="text-sm font-semibold text-slate-900">{formatarDataRelativa(lastActivity)}</p>
+-                                    </div>
+-                                    <button
+-                                        onClick={async () => {
+-                                            if (window.confirm('Tem certeza que deseja desconectar o WhatsApp?')) {
+-                                                try {
+-                                                    await unlinkWhatsapp(user?.id || '');
+-                                                    refreshDashboard();
+-                                                } catch (err) {
+-                                                    alert('Erro ao desconectar. Tente novamente.');
+-                                                }
+-                                            }
+-                                        }}
+-                                        className="w-full flex items-center justify-center gap-2 text-red-500 hover:bg-red-50 py-2 rounded-lg text-xs font-semibold transition-colors"
+-                                    >
+-                                        <Unlink size={14} />
+-                                        Desconectar
+-                                    </button>
+-                                </div>
+-                            )}
+-                        </div>
+-                    </div>
+-                </div>
++          {/* Right Column Skeleton (Harvest Stats) */}
++          <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm min-h-[600px] w-full lg:w-2/3 min-w-0 flex flex-col">
++            <div className="w-1/3 h-6 bg-slate-300 rounded mb-8"></div>
++            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
++              <div className="h-24 bg-slate-300 rounded-xl"></div>
++              <div className="h-24 bg-slate-300 rounded-xl"></div>
++              <div className="h-24 hidden md:block bg-slate-300 rounded-xl"></div>
++            </div>
++            <div className="w-1/4 h-5 bg-slate-300 rounded mb-6 mt-8"></div>
++            <div className="space-y-4">
++              <div className="w-full h-16 bg-slate-300 rounded-xl"></div>
++              <div className="w-full h-16 bg-slate-300 rounded-xl"></div>
++              <div className="w-full h-16 bg-slate-300 rounded-xl"></div>
++              <div className="w-full h-16 bg-slate-300 rounded-xl"></div>
++            </div>
++          </div>
++        </div>
++      ) : (
++        /* ---------------- REAL DASHBOARD CONTENT ---------------- */
++        <div className="flex flex-col lg:flex-row gap-6 items-start mb-8 w-full min-w-0">
++          {/* Left Column */}
++          <div className="flex flex-col gap-6 w-full lg:w-1/3 min-w-0">
++            <div id="tour-pmo-card">
++              <PlanoAtualCard
++                nomePlano={pmoName}
++                versao={pmoVersion || 1}
++                status="Em andamento"
++                onVer={() => navigate("/caderno")}
++                onEditar={() => navigate("/planos")}
++              />
++            </div>
++
++            <WeatherWidget weather={weather} loading={false} />
+ 
+-                {/* Right Column */}
+-                <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm min-h-full w-full lg:w-2/3 min-w-0">
+-                    <HarvestDashboard
+-                        harvestStats={harvestStats || {}}
+-                        recentActivity={recentActivities || []}
+-                    />
++            {/* Bot Card */}
++            <div id="tour-whatsapp-card" className="h-full w-full">
++              <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow h-full">
++                <div className="flex justify-between items-start mb-2">
++                  <div
++                    className={`p-2 rounded-lg ${userProfile?.telefone ? "bg-green-100/50 text-green-600" : "bg-slate-100 text-slate-500"}`}
++                  >
++                    <Smartphone size={20} />
++                  </div>
++                  <span
++                    className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase ${userProfile?.telefone ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"}`}
++                  >
++                    {userProfile?.telefone ? "ATIVO" : "OFFLINE"}
++                  </span>
+                 </div>
++                <h4 className="text-lg font-bold text-slate-900 leading-tight">
++                  Assistente Inteligente
++                </h4>
++                <span className="block text-xs font-medium text-slate-500 mb-4 mt-1">
++                  {formatarTelefone(userProfile?.telefone)}
++                </span>
++
++                {/* Connection Button or Last Activity */}
++                {!userProfile?.telefone ? (
++                  <button
++                    onClick={() => setOpenWhatsappDialog(true)}
++                    className="w-full mt-2 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors"
++                  >
++                    <Link size={16} />
++                    Conectar WhatsApp
++                  </button>
++                ) : (
++                  <div>
++                    <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 mb-3">
++                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">
++                        Última Atividade
++                      </span>
++                      <p className="text-sm font-semibold text-slate-900">
++                        {formatarDataRelativa(lastActivity)}
++                      </p>
++                    </div>
++                    <button
++                      onClick={async () => {
++                        if (
++                          window.confirm(
++                            "Tem certeza que deseja desconectar o WhatsApp?",
++                          )
++                        ) {
++                          try {
++                            await unlinkWhatsapp(user?.id || "");
++                            refreshDashboard();
++                          } catch (err) {
++                            alert("Erro ao desconectar. Tente novamente.");
++                          }
++                        }
++                      }}
++                      className="w-full flex items-center justify-center gap-2 text-red-500 hover:bg-red-50 py-2 rounded-lg text-xs font-semibold transition-colors"
++                    >
++                      <Unlink size={14} />
++                      Desconectar
++                    </button>
++                  </div>
++                )}
++              </div>
+             </div>
++          </div>
++
++          {/* Right Column */}
++          <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm min-h-full w-full lg:w-2/3 min-w-0">
++            <HarvestDashboard
++              harvestStats={harvestStats || {}}
++              recentActivity={recentActivities || []}
++            />
++          </div>
+         </div>
+-    );
++      )}
++    </div>
++  );
+ };
+ 
+ export default DashboardPage;
+diff --git a/pmo-frontend/src/pages/PlanosManejoList.tsx b/pmo-frontend/src/pages/PlanosManejoList.tsx
+index 29461f2..d1e594e 100644
+--- a/pmo-frontend/src/pages/PlanosManejoList.tsx
++++ b/pmo-frontend/src/pages/PlanosManejoList.tsx
+@@ -1,43 +1,51 @@
+ /**
+  * @file PlanosManejoList.tsx
+  * @description View para listagem de PMOs (Planos de Manejo Orgânico).
+- * 
++ *
+  * ✅ REFACTORED: Toda lógica extraída para usePlanosListLogic hook.
+  * ✅ Sestilo: Tailwind CSS (SaaS Moderno).
+  */
+ 
+-import React, { useState } from 'react';
+-import { useNavigate } from 'react-router-dom';
++import React, { useState } from "react";
++import { useNavigate } from "react-router-dom";
+ 
+ // Hook com toda a lógica
+-import { usePlanosListLogic } from '../hooks/pmo/usePlanosListLogic';
++import { usePlanosListLogic } from "../hooks/pmo/usePlanosListLogic";
+ 
+ // Domain Types
+-import type { PmoListItem } from '../domain/pmo/pmoTypes';
++import type { PmoListItem } from "../domain/pmo/pmoTypes";
+ 
+ // Ícones (Lucide)
+ import {
+-    Plus,
+-    FileText,
+-    CheckCircle,
+-    Hourglass,
+-    Edit,
+-    AlertCircle,
+-    Trash2,
+-    BookOpen,
+-    Power,
+-    FileQuestion
+-} from 'lucide-react';
++  Plus,
++  FileText,
++  CheckCircle,
++  Hourglass,
++  Edit,
++  AlertCircle,
++  Trash2,
++  BookOpen,
++  Power,
++  FileQuestion,
++} from "lucide-react";
+ 
+ // ==================================================================
+ // ||                    COMPONENTS HELPERS                        ||
+ // ==================================================================
+ 
+-const Spinner = ({ size = 'small', color = 'border-green-600' }: { size?: 'small' | 'medium', color?: string }) => {
+-    const dim = size === 'small' ? 'h-4 w-4' : 'h-8 w-8';
+-    return (
+-        <div className={`animate-spin rounded-full ${dim} border-b-2 ${color}`}></div>
+-    );
++const Spinner = ({
++  size = "small",
++  color = "border-green-600",
++}: {
++  size?: "small" | "medium";
++  color?: string;
++}) => {
++  const dim = size === "small" ? "h-4 w-4" : "h-8 w-8";
++  return (
++    <div
++      className={`animate-spin rounded-full ${dim} border-b-2 ${color}`}
++    ></div>
++  );
+ };
+ 
+ // ==================================================================
+@@ -45,138 +53,171 @@ const Spinner = ({ size = 'small', color = 'border-green-600' }: { size?: 'small
+ // ==================================================================
+ 
+ interface PmoCardProps {
+-    pmo: PmoListItem;
+-    isActive: boolean;
+-    isActivating: boolean;
+-    isDeleting: boolean;
+-    onActivate: (pmoId: string) => void;
+-    onDelete: (pmo: PmoListItem) => void;
++  pmo: PmoListItem;
++  isActive: boolean;
++  isActivating: boolean;
++  isDeleting: boolean;
++  onActivate: (pmoId: string) => void;
++  onDelete: (pmo: PmoListItem) => void;
+ }
+ 
+ const PmoCard: React.FC<PmoCardProps> = ({
+-    pmo,
+-    isActive,
+-    isActivating,
+-    isDeleting,
+-    onActivate,
+-    onDelete
++  pmo,
++  isActive,
++  isActivating,
++  isDeleting,
++  onActivate,
++  onDelete,
+ }) => {
+-    const navigate = useNavigate();
+-
+-    const statusConfig: Record<string, { label: string; bg: string; text: string; icon: React.ElementType }> = {
+-        'RASCUNHO': { label: 'Rascunho', bg: 'bg-gray-100', text: 'text-gray-700', icon: Edit },
+-        'CONCLUÍDO': { label: 'Concluído', bg: 'bg-blue-50', text: 'text-blue-700', icon: Hourglass },
+-        'APROVADO': { label: 'Aprovado', bg: 'bg-green-50', text: 'text-green-700', icon: CheckCircle },
+-        'REPROVADO': { label: 'Reprovado', bg: 'bg-red-50', text: 'text-red-700', icon: AlertCircle },
+-    };
+-    const currentStatus = statusConfig[pmo.status] || statusConfig['RASCUNHO'];
+-    const StatusIcon = currentStatus.icon;
+-
+-    // Actions disabled
+-    const isBusy = isActivating || isDeleting;
+-
+-    return (
+-        <div className={`
++  const navigate = useNavigate();
++
++  const statusConfig: Record<
++    string,
++    { label: string; bg: string; text: string; icon: React.ElementType }
++  > = {
++    RASCUNHO: {
++      label: "Rascunho",
++      bg: "bg-gray-100",
++      text: "text-gray-700",
++      icon: Edit,
++    },
++    CONCLUÍDO: {
++      label: "Concluído",
++      bg: "bg-blue-50",
++      text: "text-blue-700",
++      icon: Hourglass,
++    },
++    APROVADO: {
++      label: "Aprovado",
++      bg: "bg-green-50",
++      text: "text-green-700",
++      icon: CheckCircle,
++    },
++    REPROVADO: {
++      label: "Reprovado",
++      bg: "bg-red-50",
++      text: "text-red-700",
++      icon: AlertCircle,
++    },
++  };
++  const currentStatus = statusConfig[pmo.status] || statusConfig["RASCUNHO"];
++  const StatusIcon = currentStatus.icon;
++
++  // Actions disabled
++  const isBusy = isActivating || isDeleting;
++
++  return (
++    <div
++      className={`
+             bg-white rounded-lg border border-gray-200 p-6 shadow-sm 
+             hover:shadow-md hover:-translate-y-1 transition-all duration-200 
+             flex flex-col h-full min-w-0
+-            ${isActive ? 'ring-2 ring-green-500 border-transparent shadow-[0_4px_20px_rgba(22,163,74,0.15)]' : ''}
+-            ${isBusy ? 'opacity-70 pointer-events-none' : ''}
+-        `}>
+-            {/* Header: Icon + Title + Status */}
+-            <div className="flex items-start justify-between mb-4">
+-                <div className="flex items-start gap-3 min-w-0">
+-                    <div className={`
++            ${isActive ? "ring-2 ring-green-500 border-transparent shadow-[0_4px_20px_rgba(22,163,74,0.15)]" : ""}
++            ${isBusy ? "opacity-70 pointer-events-none" : ""}
++        `}
++    >
++      {/* Header: Icon + Title + Status */}
++      <div className="flex items-start justify-between mb-4">
++        <div className="flex items-start gap-3 min-w-0">
++          <div
++            className={`
+                         p-2.5 rounded-lg flex-shrink-0
+-                        ${isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}
+-                    `}>
+-                        <FileText size={24} />
+-                    </div>
+-                    <div className="min-w-0 flex-1">
+-                        <h3
+-                            className="text-lg font-semibold text-gray-900 truncate pr-2"
+-                            title={pmo.nome_identificador}
+-                        >
+-                            {pmo.nome_identificador}
+-                        </h3>
+-                        <p className="text-sm text-gray-500">Versão {pmo.version || '1'}</p>
+-                    </div>
+-                </div>
+-            </div>
+-
+-            {/* Badges / Info */}
+-            <div className="mb-4 space-y-2">
+-                {isActive && (
+-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800 border border-green-200">
+-                        ✓ ATIVO NO ZAP
+-                    </span>
+-                )}
+-
+-                <div className="flex">
+-                    <span className={`
++                        ${isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}
++                    `}
++          >
++            <FileText size={24} />
++          </div>
++          <div className="min-w-0 flex-1">
++            <h3
++              className="text-lg font-semibold text-gray-900 truncate pr-2"
++              title={pmo.nome_identificador}
++            >
++              {pmo.nome_identificador}
++            </h3>
++            <p className="text-sm text-gray-500">Versão {pmo.version || "1"}</p>
++          </div>
++        </div>
++      </div>
++
++      {/* Badges / Info */}
++      <div className="mb-4 space-y-2">
++        {isActive && (
++          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800 border border-green-200">
++            ✓ ATIVO NO ZAP
++          </span>
++        )}
++
++        <div className="flex">
++          <span
++            className={`
+                         inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border
+                         ${currentStatus.bg} ${currentStatus.text} border-transparent
+-                    `}>
+-                        <StatusIcon size={12} />
+-                        {currentStatus.label}
+-                    </span>
+-                </div>
+-            </div>
+-
+-            {/* Date */}
+-            <div className="mt-auto">
+-                <p className="text-xs text-gray-400 mb-4 pt-4 border-t border-gray-100">
+-                    Criado em: {new Date(pmo.created_at).toLocaleDateString('pt-BR')}
+-                </p>
+-
+-                {/* Actions Footer */}
+-                <div className="flex items-center gap-2 pt-2">
+-                    {/* Primary Actions */}
+-                    <button
+-                        onClick={() => navigate(`/pmo/${pmo.id}/editar?aba=caderno`)}
+-                        className="p-2 text-gray-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+-                        title="Abrir Caderno de Campo"
+-                        disabled={isBusy}
+-                    >
+-                        <BookOpen size={20} />
+-                    </button>
+-
+-                    <button
+-                        onClick={() => onActivate(pmo.id)}
+-                        className={`p-2 rounded-lg transition-colors ${isActive
+-                            ? 'text-green-600 cursor-default'
+-                            : 'text-gray-400 hover:text-green-600 hover:bg-green-50'
+-                            }`}
+-                        title={isActive ? "Plano Ativo" : "Ativar no WhatsApp"}
+-                        disabled={isActive || isBusy}
+-                    >
+-                        {isActivating ? <Spinner /> : <Power size={20} />}
+-                    </button>
+-
+-                    <div className="flex-1"></div>
+-
+-                    {/* Secondary Actions */}
+-                    <button
+-                        onClick={() => navigate(`/pmo/${pmo.id}/editar`)}
+-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+-                        title="Editar Plano"
+-                        disabled={isBusy}
+-                    >
+-                        <Edit size={20} />
+-                    </button>
+-
+-                    <button
+-                        onClick={() => onDelete(pmo)}
+-                        className="p-2 text-red-400 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+-                        title="Excluir Plano"
+-                        disabled={isBusy}
+-                    >
+-                        {isDeleting ? <Spinner color="border-red-600" /> : <Trash2 size={20} />}
+-                    </button>
+-                </div>
+-            </div>
++                    `}
++          >
++            <StatusIcon size={12} />
++            {currentStatus.label}
++          </span>
++        </div>
++      </div>
++
++      {/* Date */}
++      <div className="mt-auto">
++        <p className="text-xs text-gray-400 mb-4 pt-4 border-t border-gray-100">
++          Criado em: {new Date(pmo.created_at).toLocaleDateString("pt-BR")}
++        </p>
++
++        {/* Actions Footer */}
++        <div className="flex items-center gap-2 pt-2">
++          {/* Primary Actions */}
++          <button
++            onClick={() => navigate(`/pmo/${pmo.id}/editar?aba=caderno`)}
++            className="p-2 text-gray-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
++            title="Abrir Caderno de Campo"
++            disabled={isBusy}
++          >
++            <BookOpen size={20} />
++          </button>
++
++          <button
++            onClick={() => onActivate(pmo.id)}
++            className={`p-2 rounded-lg transition-colors ${isActive
++                ? "text-green-600 cursor-default"
++                : "text-gray-400 hover:text-green-600 hover:bg-green-50"
++              }`}
++            title={isActive ? "Plano Ativo" : "Ativar no WhatsApp"}
++            disabled={isActive || isBusy}
++          >
++            {isActivating ? <Spinner /> : <Power size={20} />}
++          </button>
++
++          <div className="flex-1"></div>
++
++          {/* Secondary Actions */}
++          <button
++            onClick={() => navigate(`/pmo/${pmo.id}/editar`)}
++            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
++            title="Editar Plano"
++            disabled={isBusy}
++          >
++            <Edit size={20} />
++          </button>
++
++          <button
++            onClick={() => onDelete(pmo)}
++            className="p-2 text-red-400 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
++            title="Excluir Plano"
++            disabled={isBusy}
++          >
++            {isDeleting ? (
++              <Spinner color="border-red-600" />
++            ) : (
++              <Trash2 size={20} />
++            )}
++          </button>
+         </div>
+-    );
++      </div>
++    </div>
++  );
+ };
+ 
+ // ==================================================================
+@@ -184,144 +225,165 @@ const PmoCard: React.FC<PmoCardProps> = ({
+ // ==================================================================
+ 
+ const PlanosManejoList: React.FC = () => {
+-    const navigate = useNavigate();
+-
+-    // Hook Data
+-    const {
+-        pmos,
+-        activePmoId,
+-        listLoading,
+-        activatingId,
+-        deletingId,
+-        handleActivatePmo,
+-        handleDeletePmo
+-    } = usePlanosListLogic();
+-
+-    // Local State (Modal)
+-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+-    const [pmoToDelete, setPmoToDelete] = useState<PmoListItem | null>(null);
+-
+-    const handleOpenDeleteDialog = (pmo: PmoListItem) => {
+-        setPmoToDelete(pmo);
+-        setDeleteDialogOpen(true);
+-    };
+-
+-    const handleCloseDeleteDialog = () => {
+-        setDeleteDialogOpen(false);
+-        setPmoToDelete(null);
+-    };
+-
+-    const handleConfirmDelete = async () => {
+-        if (pmoToDelete) {
+-            await handleDeletePmo(pmoToDelete.id);
+-        }
+-        handleCloseDeleteDialog();
+-    };
+-
+-    // Render Loading
+-    if (listLoading) {
+-        return (
+-            <div className="flex items-center justify-center min-h-screen text-green-600">
+-                <Spinner size="medium" color="border-green-600" />
+-            </div>
+-        );
++  const navigate = useNavigate();
++
++  // Hook Data
++  const {
++    pmos,
++    activePmoId,
++    listLoading,
++    activatingId,
++    deletingId,
++    handleActivatePmo,
++    handleDeletePmo,
++  } = usePlanosListLogic();
++
++  // Local State (Modal)
++  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
++  const [pmoToDelete, setPmoToDelete] = useState<PmoListItem | null>(null);
++
++  const handleOpenDeleteDialog = (pmo: PmoListItem) => {
++    setPmoToDelete(pmo);
++    setDeleteDialogOpen(true);
++  };
++
++  const handleCloseDeleteDialog = () => {
++    setDeleteDialogOpen(false);
++    setPmoToDelete(null);
++  };
++
++  const handleConfirmDelete = async () => {
++    if (pmoToDelete) {
++      await handleDeletePmo(pmoToDelete.id);
+     }
+-
+-    return (
+-        <div className="p-4 md:p-8 min-h-full pb-20">
+-            {/* Header */}
+-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+-                <div>
+-                    <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
+-                        Gerenciar Planos
+-                    </h1>
+-                    <p className="text-slate-500 mt-1">
+-                        Visualize, edite ou crie novos planos digitais.
+-                    </p>
+-                </div>
+-                <button
+-                    onClick={() => navigate('/pmo/novo')}
+-                    className="
++    handleCloseDeleteDialog();
++  };
++
++  // Removed early return for listLoading to allow the header to render before the skeletons
++
++  return (
++    <div className="p-4 md:p-8 min-h-full pb-20">
++      {/* Header */}
++      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
++        <div>
++          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
++            Gerenciar Planos
++          </h1>
++          <p className="text-slate-500 mt-1">
++            Visualize, edite ou crie novos planos digitais.
++          </p>
++        </div>
++        <button
++          onClick={() => navigate("/pmo/novo")}
++          className="
+                         inline-flex items-center justify-center gap-2 
+                         px-4 py-2.5 rounded-lg 
+                         bg-green-600 hover:bg-green-700 
+                         text-white font-medium shadow-sm transition-colors
+                         w-full md:w-auto
+                     "
+-                >
+-                    <Plus size={20} />
+-                    Novo Plano
+-                </button>
+-            </div>
+-
+-            {/* List */}
+-            {pmos.length > 0 ? (
+-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 w-full min-w-0">
+-                    {pmos.map(pmo => (
+-                        <PmoCard
+-                            key={pmo.id}
+-                            pmo={pmo}
+-                            isActive={activePmoId === pmo.id}
+-                            isActivating={activatingId === pmo.id}
+-                            isDeleting={deletingId === pmo.id}
+-                            onActivate={handleActivatePmo}
+-                            onDelete={handleOpenDeleteDialog}
+-                        />
+-                    ))}
++        >
++          <Plus size={20} />
++          Novo Plano
++        </button>
++      </div>
++
++      {/* List */}
++      {listLoading ? (
++        /* ---------------- SKELETON LOADER ---------------- */
++        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 w-full min-w-0 animate-pulse">
++          {[1, 2, 3, 4].map((i) => (
++            <div
++              key={i}
++              className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm h-[200px] flex flex-col"
++            >
++              <div className="flex items-start gap-3 mb-4">
++                <div className="w-12 h-12 bg-slate-300 rounded-lg flex-shrink-0"></div>
++                <div className="flex-1">
++                  <div className="h-5 bg-slate-300 rounded w-3/4 mb-2"></div>
++                  <div className="h-3 bg-slate-300 rounded w-1/4"></div>
+                 </div>
+-            ) : (
+-                // Empty State
+-                <div className="text-center py-16 px-4 border-2 border-dashed border-slate-200 rounded-lg bg-slate-50">
+-                    <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-slate-100 mb-4">
+-                        <FileQuestion className="h-8 w-8 text-slate-400" />
+-                    </div>
+-                    <h3 className="text-lg font-medium text-slate-900">Nenhum plano encontrado</h3>
+-                    <p className="mt-1 text-sm text-slate-500 max-w-sm mx-auto">
+-                        Você ainda não tem nenhum Plano de Manejo Orgânico cadastrado.
+-                    </p>
+-                    <div className="mt-6">
+-                        <button
+-                            onClick={() => navigate('/pmo/novo')}
+-                            className="inline-flex items-center gap-2 px-4 py-2 border border-green-600 text-green-700 bg-white rounded-lg hover:bg-green-50 font-medium transition-colors"
+-                        >
+-                            <Plus size={18} />
+-                            Criar meu primeiro plano
+-                        </button>
+-                    </div>
+-                </div>
+-            )}
+-
+-            {/* Delete Modal (Native-ish Tailwind) */}
+-            {deleteDialogOpen && (
+-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+-                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 transform transition-all scale-100">
+-                        <h3 className="text-lg font-bold text-gray-900 mb-2">
+-                            Confirmar Exclusão
+-                        </h3>
+-                        <p className="text-gray-600 mb-6">
+-                            Tem certeza que deseja excluir <strong>"{pmoToDelete?.nome_identificador}"</strong>?
+-                            <br />
+-                            <span className="text-sm text-red-600 mt-1 block">Esta ação não pode ser desfeita.</span>
+-                        </p>
+-                        <div className="flex justify-end gap-3">
+-                            <button
+-                                onClick={handleCloseDeleteDialog}
+-                                className="px-4 py-2 rounded-lg text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 font-medium transition-colors"
+-                            >
+-                                Cancelar
+-                            </button>
+-                            <button
+-                                onClick={handleConfirmDelete}
+-                                className="px-4 py-2 rounded-lg text-white bg-red-600 hover:bg-red-700 font-medium shadow-sm transition-colors"
+-                            >
+-                                Excluir Permanentemente
+-                            </button>
+-                        </div>
+-                    </div>
+-                </div>
+-            )}
++              </div>
++              <div className="h-4 bg-slate-300 rounded w-1/3 mb-4"></div>
++              <div className="mt-auto flex gap-2">
++                <div className="h-8 w-8 bg-slate-300 rounded-lg"></div>
++                <div className="h-8 w-8 bg-slate-300 rounded-lg"></div>
++              </div>
++            </div>
++          ))}
++        </div>
++      ) : pmos.length > 0 ? (
++        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 w-full min-w-0">
++          {pmos.map((pmo) => (
++            <PmoCard
++              key={pmo.id}
++              pmo={pmo}
++              isActive={activePmoId === pmo.id}
++              isActivating={activatingId === pmo.id}
++              isDeleting={deletingId === pmo.id}
++              onActivate={handleActivatePmo}
++              onDelete={handleOpenDeleteDialog}
++            />
++          ))}
++        </div>
++      ) : (
++        // Empty State
++        <div className="text-center py-16 px-4 border-2 border-dashed border-slate-200 rounded-lg bg-slate-50">
++          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-slate-100 mb-4">
++            <FileQuestion className="h-8 w-8 text-slate-400" />
++          </div>
++          <h3 className="text-lg font-medium text-slate-900">
++            Nenhum plano encontrado
++          </h3>
++          <p className="mt-1 text-sm text-slate-500 max-w-sm mx-auto">
++            Você ainda não tem nenhum Plano de Manejo Orgânico cadastrado.
++          </p>
++          <div className="mt-6">
++            <button
++              onClick={() => navigate("/pmo/novo")}
++              className="inline-flex items-center gap-2 px-4 py-2 border border-green-600 text-green-700 bg-white rounded-lg hover:bg-green-50 font-medium transition-colors"
++            >
++              <Plus size={18} />
++              Criar meu primeiro plano
++            </button>
++          </div>
++        </div>
++      )}
++
++      {/* Delete Modal (Native-ish Tailwind) */}
++      {deleteDialogOpen && (
++        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
++          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 transform transition-all scale-100">
++            <h3 className="text-lg font-bold text-gray-900 mb-2">
++              Confirmar Exclusão
++            </h3>
++            <p className="text-gray-600 mb-6">
++              Tem certeza que deseja excluir{" "}
++              <strong>"{pmoToDelete?.nome_identificador}"</strong>?
++              <br />
++              <span className="text-sm text-red-600 mt-1 block">
++                Esta ação não pode ser desfeita.
++              </span>
++            </p>
++            <div className="flex justify-end gap-3">
++              <button
++                onClick={handleCloseDeleteDialog}
++                className="px-4 py-2 rounded-lg text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 font-medium transition-colors"
++              >
++                Cancelar
++              </button>
++              <button
++                onClick={handleConfirmDelete}
++                className="px-4 py-2 rounded-lg text-white bg-red-600 hover:bg-red-700 font-medium shadow-sm transition-colors"
++              >
++                Excluir Permanentemente
++              </button>
++            </div>
++          </div>
+         </div>
+-    );
++      )}
++    </div>
++  );
+ };
+ 
+ export default PlanosManejoList;
+diff --git a/pmo-frontend/src/pages/admin/AdminDashboard.tsx b/pmo-frontend/src/pages/admin/AdminDashboard.tsx
+index 8f44a4d..044a261 100644
+--- a/pmo-frontend/src/pages/admin/AdminDashboard.tsx
++++ b/pmo-frontend/src/pages/admin/AdminDashboard.tsx
+@@ -65,26 +65,38 @@ const AdminDashboard = () => {
+     const fetchData = async () => {
+         setLoading(true);
+         try {
+-            const { data: rpcData, error: rpcError } = await supabase.rpc('get_dashboard_stats');
+-            if (rpcError) console.error('Error fetching stats:', rpcError);
+-            else setStats(rpcData);
+-
+-            const { data: logsData, error: logsError } = await supabase
++            const statsPromise = supabase.rpc('get_dashboard_stats');
++            const logsPromise = supabase
+                 .from('logs_consumo')
+                 .select('*')
+                 .order('created_at', { ascending: false })
+                 .limit(100);
+-            if (logsError) console.error('Error logs:', logsError);
+-            else setAuditLogs(logsData || []);
+-
+-            const { data: trainData, error: trainError } = await supabase
++            const trainingPromise = supabase
+                 .from('logs_treinamento')
+-                .select('*')
++                .select('id, criado_em, texto_usuario, json_corrigido, json_extraido')
+                 .order('criado_em', { ascending: false })
+                 .limit(50);
+ 
+-            if (trainError) console.error('Error training:', trainError);
+-            else setTrainingLogs(trainData || []);
++            const [statsRes, logsRes, trainRes] = await Promise.allSettled([
++                statsPromise,
++                logsPromise,
++                trainingPromise
++            ]);
++
++            if (statsRes.status === 'fulfilled') {
++                if (statsRes.value.error) console.error('Error fetching stats:', statsRes.value.error);
++                else setStats(statsRes.value.data as any);
++            }
++
++            if (logsRes.status === 'fulfilled') {
++                if (logsRes.value.error) console.error('Error logs:', logsRes.value.error);
++                else setAuditLogs(logsRes.value.data || []);
++            }
++
++            if (trainRes.status === 'fulfilled') {
++                if (trainRes.value.error) console.error('Error training:', trainRes.value.error);
++                else setTrainingLogs(trainRes.value.data || []);
++            }
+ 
+         } catch (err) {
+             console.error('Unexpected error:', err);
+diff --git a/pmo-frontend/src/services/dashboardService.ts b/pmo-frontend/src/services/dashboardService.ts
+index 5c8061c..6a65d16 100644
+--- a/pmo-frontend/src/services/dashboardService.ts
++++ b/pmo-frontend/src/services/dashboardService.ts
+@@ -41,7 +41,7 @@ export const dashboardService = {
+         try {
+             const { data, error } = await supabase
+                 .from('caderno_campo')
+-                .select('*')
++                .select('produto, quantidade_valor, quantidade_unidade')
+                 .eq('tipo_atividade', 'Colheita')
+                 .eq('pmo_id', pmoId)
+                 .neq('tipo_atividade', 'CANCELADO')
+diff --git a/pmo-frontend/src/services/pmoService.ts b/pmo-frontend/src/services/pmoService.ts
+index b921284..9ddac79 100644
+--- a/pmo-frontend/src/services/pmoService.ts
++++ b/pmo-frontend/src/services/pmoService.ts
+@@ -160,6 +160,36 @@ export async function fetchPmoById(pmoId: string): Promise<FetchResult<PmoRecord
+     }
+ }
+ 
++/**
++ * Busca detalhes MINIMOS de um PMO para exibição no Dashboard.
++ * Ignora propositalmente a coluna `form_data` (JSONB) que pode conter megabytes de texto.
++ * 
++ * @param pmoId - ID do PMO a buscar
++ * @returns FetchResult com nome_identificador, version e id.
++ */
++export async function fetchDashboardPmoDetails(pmoId: string): Promise<FetchResult<{ id: string, nome_identificador: string, version: number }>> {
++    try {
++        const { data, error } = await supabase
++            .from('pmos')
++            .select('id, nome_identificador, version')
++            .eq('id', pmoId)
++            .single();
++
++        if (error) {
++            return { success: false, error: error.message };
++        }
++
++        if (!data) {
++            return { success: false, error: `PMO Dashboard Info com ID ${pmoId} não encontrado.` };
++        }
++
++        return { success: true, data };
++    } catch (err) {
++        const message = err instanceof Error ? err.message : 'Erro ao buscar Detalhes do PMO';
++        return { success: false, error: message };
++    }
++}
++
+ /**
+  * Busca detalhes simplificados de um PMO (útil para resolução de propriedade_id e nome).
+  * 
+diff --git a/wppconnect-server b/wppconnect-server
+--- a/wppconnect-server
++++ b/wppconnect-server
+@@ -1 +1 @@
+-Subproject commit 752b83dda48d728044b596287fd6fd892eca4ac5
++Subproject commit 752b83dda48d728044b596287fd6fd892eca4ac5-dirty
