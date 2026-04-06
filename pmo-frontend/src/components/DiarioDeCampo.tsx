@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth, useAuthProfile } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import { useSearchParams } from 'react-router-dom';
 import { X } from 'lucide-react';
 
@@ -17,13 +17,11 @@ import FieldDiaryTableV2 from './FieldDiaryTableV2';
 import QRCodeModal from './Traceability/QRCodeModal';
 
 const DiarioDeCampo: React.FC = () => {
-    const { profile } = useAuthProfile();
-    const authPmoId = profile?.pmo_ativo_id;
     const [searchParams] = useSearchParams();
     const queryPmoId = searchParams.get('pmoId');
     
-    // Prioridade: Query Param > Auth Profile
-    const internalPmoId = queryPmoId ? Number(queryPmoId) : (authPmoId ? Number(authPmoId) : undefined);
+    // Prioridade: Apenas Query Param. Se não tiver, undefined para buscar via propriedade
+    const internalPmoId = queryPmoId ? Number(queryPmoId) : undefined;
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [recordToDelete, setRecordToDelete] = useState<CadernoCampoRecord | null>(null);
   const [deleteReason, setDeleteReason] = useState('');

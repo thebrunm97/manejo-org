@@ -7,13 +7,13 @@ import (
 	"time"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
+	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
-	"github.com/thebrunm97/pmo-bot-go/internal/whatsapp"
 )
 
 // handleLimpeza implements SEBRAE Form 04 logic for rural infrastructure cleaning
-func handleLimpeza(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, wpClient *whatsapp.Client, ttsClient *tts.Orchestrator, from string, body string, respondWithAudio bool, startTime time.Time, model string, pTokens int, cTokens int) ProcessResult {
+func handleLimpeza(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, from string, body string, respondWithAudio bool, startTime time.Time, model string, pTokens int, cTokens int) ProcessResult {
 	log.Printf("🧼 [FSM] Processando Intenção de Limpeza (Form 04)")
 	
 	pmoID := profile.PmoAtivoID

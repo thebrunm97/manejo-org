@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
-	"github.com/thebrunm97/pmo-bot-go/internal/whatsapp"
 )
 
 const (
@@ -21,7 +21,7 @@ const (
 )
 
 // sendFeedback encapsulates the logic of responding to the user via WhatsApp and/or TTS
-func sendFeedback(wpClient *whatsapp.Client, ttsClient *tts.Orchestrator, from string, message string, respondWithAudio bool) error {
+func sendFeedback(wpClient ports.MessageSender, ttsClient *tts.Orchestrator, from string, message string, respondWithAudio bool) error {
 	if respondWithAudio && ttsClient != nil {
 		log.Printf("🔊 [FSM] Gerando áudio para resposta...")
 		audioURL, err := ttsClient.GenerateSpeech(context.Background(), message)

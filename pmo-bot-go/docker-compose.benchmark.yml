@@ -1,0 +1,108 @@
+services:
+  evo-node:
+    image: evoapicloud/evolution-api:latest
+    container_name: evo-node-benchmark
+    restart: on-failure
+    ports:
+      - "8081:8080"
+    environment:
+      - SERVER_TYPE=http
+      - SERVER_PORT=8080
+      - SERVER_URL=http://localhost:8081
+      - DOCKER_ENV=true
+      - AUTHENTICATION_TYPE=apikey
+      - AUTHENTICATION_API_KEY=coliseu-api-key-2026
+      - DATABASE_ENABLED=true
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_URI=postgresql://postgres:password@postgres-evo:5432/evolution_node?sslmode=disable
+      - CACHE_REDIS_ENABLED=true
+      - CACHE_REDIS_URI=redis://redis-evo:6379/0
+      - CACHE_REDIS_PREFIX=EVO_NODE_BENCH
+      - SWAGGER_ENABLED=true
+      - SWAGGER_PATH=docs
+      - RESOURCES_API_DOCS=true
+      - GENERATE_TYPE_DOCS=true
+      - LOG_COLOR=true
+      - NODE_OPTIONS=--max-old-space-size=4096
+    volumes:
+      - ./evo-instances:/evolution/instances
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    depends_on:
+      postgres-evo:
+        condition: service_healthy
+      redis-evo:
+        condition: service_started
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - coliseu-net
+
+  postgres-evo:
+    image: postgres:15
+    container_name: postgres-evo
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - coliseu-net
+
+  redis-evo:
+    image: redis:7-alpine
+    container_name: redis-evo
+    ports:
+      - "6380:6379"
+    networks:
+      - coliseu-net
+
+  evo-go:
+    build:
+      context: ../evolution-go-source
+      dockerfile: Dockerfile
+    container_name: evo-go-benchmark
+    restart: on-failure
+    ports:
+      - "8082:8080"
+    environment:
+      - GLOBAL_API_KEY=coliseu-api-key-2026
+      - POSTGRES_AUTH_DB=postgresql://postgres:password@postgres-evo:5432/evolution_go?sslmode=disable
+      - POSTGRES_USERS_DB=postgresql://postgres:password@postgres-evo:5432/evolution_go?sslmode=disable
+      - DATABASE_SAVE_MESSAGES=false
+      - SERVER_PORT=8080
+      - WPPCONNECT_TOKEN=benchmark_secret
+      - WPPCONNECT_URL=http://host.docker.internal:3333
+      - WPP_SESSION=teste-instancia
+      - GROQ_API_KEY=mock-key
+      - GEMINI_API_KEY=mock-key
+      - SUPABASE_URL=http://mock-supabase
+      - SUPABASE_KEY=mock-key
+      - GIN_MODE=release
+    depends_on:
+      postgres-evo:
+        condition: service_healthy
+      redis-evo:
+        condition: service_started
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - coliseu-net
+
+volumes:
+  evo-node-data:
+
+networks:
+  coliseu-net:
+    driver: bridge

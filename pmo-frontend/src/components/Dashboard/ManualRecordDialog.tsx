@@ -37,6 +37,7 @@ import {
     useRecordFormState
 } from '../../hooks/manual-record';
 import { useCadernoOfflineLogic } from '../../hooks/offline/useCadernoOfflineLogic';
+import { fetchAllPmos } from '../../services/pmoService';
 
 // --- Form Components ---
 import PlantioForm from './ManualRecord/Forms/PlantioForm';
@@ -70,8 +71,26 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
         resetAllDrafts
     } = useRecordFormState({ open, recordToEdit });
 
-    const { pmoAtivoId, user, currentPropriedade } = useAuth();
-    const pmoId = pmoAtivoId ? Number(pmoAtivoId) : 0;
+    const { user, currentPropriedade } = useAuth();
+    
+    // Determine active PMO for current property
+    const [localActivePmoId, setLocalActivePmoId] = useState<number | undefined>();
+    useEffect(() => {
+        if (currentPropriedade?.id) {
+           fetchAllPmos(currentPropriedade.id).then(res => {
+               if (res.success && res.data && res.data.length > 0) {
+                   const emAnd = res.data.find(p => (p as any).status === 'Em andamento' || (p as any).status === 'em_andamento') || res.data[0];
+                   setLocalActivePmoId(Number(emAnd.id));
+               } else {
+                   setLocalActivePmoId(undefined);
+               }
+           });
+        } else {
+           setLocalActivePmoId(undefined);
+        }
+    }, [currentPropriedade?.id]);
+    
+    const pmoId = localActivePmoId || 0;
 
     const {
         saveRecord
@@ -145,7 +164,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
             data_registro: new Date(draft.dataHora).toISOString(),
             observacao_original: draft.observacao,
             propriedade_id: currentPropriedade?.id,
-            pmo_id: pmoAtivoId ? Number(pmoAtivoId) : undefined,
+            pmo_id: localActivePmoId,
             user_id: user?.id,
         };
 
@@ -162,7 +181,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
             recordToEdit || null, 
             justificativa
         );
-    }, [getCurrentDraft, activeTab, currentPropriedade, user, isEditMode, recordToEdit, justificativa, executeSaveImpl]);
+    }, [getCurrentDraft, activeTab, currentPropriedade, user, localActivePmoId, isEditMode, recordToEdit, justificativa, executeSaveImpl]);
 
     const handleClose = useCallback(() => {
         resetAllDrafts();

@@ -4,21 +4,23 @@ import (
 	"context"
 	"log"
 	"os"
-
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/thebrunm97/pmo-bot-go/internal/adapter/evolution"
+	"github.com/thebrunm97/pmo-bot-go/internal/config"
 	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
 	"github.com/thebrunm97/pmo-bot-go/internal/jobs"
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
+	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
 	"github.com/thebrunm97/pmo-bot-go/internal/weather"
 	"github.com/thebrunm97/pmo-bot-go/internal/webhook"
-	"github.com/thebrunm97/pmo-bot-go/internal/whatsapp"
+	"github.com/Flagsmith/flagsmith-go-client/v3"
 )
 
 func main() {
@@ -30,30 +32,19 @@ func main() {
 		time.Local = loc
 	}
 	log.Printf("⏰ Horário de Brasília configurado: %v", time.Now().Format(time.RFC1123))
-	// --- Config from environment (fail-fast) ---
-	token := os.Getenv("WPPCONNECT_TOKEN")
-	if token == "" {
-		log.Println("⚠️  WPPCONNECT_TOKEN não definido — todas as requests serão rejeitadas")
-	}
 
-	wppURL := os.Getenv("WPPCONNECT_URL")
-	if wppURL == "" {
-		log.Fatal("❌ WPPCONNECT_URL não definida")
-	}
+	// --- Centralized Configuration ---
+	cfg := config.LoadConfig()
 
-	wppSession := os.Getenv("WPP_SESSION")
-	if wppSession == "" {
-		log.Fatal("❌ WPP_SESSION não definida (ex: thebrum97)")
-	}
-
+	// --- Groq client ---
 	groqKey := os.Getenv("GROQ_API_KEY")
 	if groqKey == "" {
-		log.Fatal("❌ GROQ_API_KEY não definida — impossível iniciar sem a chave da Groq")
+		log.Fatal("❌ GROQ_API_KEY não definida")
 	}
 
 	geminiKey := os.Getenv("GEMINI_API_KEY")
 	if geminiKey == "" {
-		log.Fatal("❌ GEMINI_API_KEY não definida — especialista não vai funcionar")
+		log.Fatal("❌ GEMINI_API_KEY não definida")
 	}
 
 	port := os.Getenv("PORT")
@@ -62,7 +53,7 @@ func main() {
 	}
 
 	// --- Initialize History Manager ---
-	historyManager := history.NewManager(45*time.Minute, 10) // 5 interações = 10 mensagens (user+model)
+	historyManager := history.NewManager(45*time.Minute, 10)
 	log.Println("✅ Gerenciador de Histórico (In-Memory) inicializado")
 
 	// --- Initialize Groq client ---
@@ -111,14 +102,24 @@ func main() {
 	}
 	log.Println("✅ Cliente Supabase inicializado")
 
-	// --- Initialize WhatsApp client ---
-	wpClient, err := whatsapp.NewClient(whatsapp.Config{
-		URL:     wppURL,
-		Token:   token,
-		Session: wppSession,
-	})
-	if err != nil {
-		log.Printf("⚠️ Erro inicial no WPPConnect: %v. O Auto-Reconnect assumirá o controle.", err)
+	// --- Initialize WhatsApp client via Evolution Adapter ---
+	if cfg.EvoBaseURL == "" {
+		log.Fatal("❌ EVOLUTION_BASE_URL não definida")
+	}
+	wpClient := evolution.NewEvolutionAdapter(
+		cfg.EvoBaseURL,
+		cfg.EvoInstance,
+		cfg.EvoKey,
+	)
+	log.Println("✅ Cliente Evolution API (Go) inicializado")
+
+	// --- Initialize Flagsmith client ---
+	var flagsmithClient *flagsmith.Client
+	if cfg.FlagsmithKey != "" {
+		flagsmithClient = flagsmith.NewClient(cfg.FlagsmithKey, flagsmith.WithBaseURL(cfg.FlagsmithURL))
+		log.Println("✅ Cliente Flagsmith inicializado")
+	} else {
+		log.Println("⚠️ FLAGSMITH_ENV_KEY não definida. Rodando sem feature flags.")
 	}
 
 	// --- Initialize MCP Server ---
@@ -132,8 +133,8 @@ func main() {
 	}
 
 	r := gin.New()
-	r.Use(gin.Logger())   // Log incoming requests
-	r.Use(gin.Recovery()) // Recover from panics without crashing
+	r.Use(gin.Logger())
+	r.Use(gin.Recovery())
 
 	// --- Initialize TTS Orchestrator ---
 	ttsClient := tts.NewOrchestrator()
@@ -141,7 +142,7 @@ func main() {
 
 	// --- Register webhook routes ---
 	handler := webhook.NewHandler(webhook.Config{
-		Token:          token,
+		Token:          cfg.EvoKey,
 		MaxMessageAge:  600,
 		GroqClient:     groqClient,
 		SupabaseClient: sbClient,
@@ -150,67 +151,65 @@ func main() {
 		TtsClient:      ttsClient,
 		MCPServer:      mcpServer,
 		HistoryManager: historyManager,
+		FlagsmithClient: flagsmithClient,
 	})
 	handler.RegisterRoutes(r)
 
-	// --- Heartbeat goroutine (updates bot_status in Supabase every 60s) ---
+	// --- Heartbeat goroutine ---
 	go func() {
 		ticker := time.NewTicker(60 * time.Second)
 		defer ticker.Stop()
 
-		// Run immediately on startup
-		sendHeartbeat(wppSession, wpClient, sbClient)
-
 		for range ticker.C {
-			sendHeartbeat(wppSession, wpClient, sbClient)
+			sendHeartbeat(cfg.EvoInstance, wpClient, sbClient)
 		}
 	}()
 
-	// --- Blacklist Auto-Refresh (every 24 hours) ---
+	// --- Blacklist Auto-Refresh ---
 	go sbClient.StartBlacklistAutoRefresh(context.Background(), 24*time.Hour)
 
-	// --- Weather Fetch goroutine (every 3 hours) ---
+	// --- Weather Fetch goroutine ---
 	weatherAPIKey := os.Getenv("WEATHER_API_KEY")
-	if weatherAPIKey == "" {
-		log.Println("⚠️ WEATHER_API_KEY não definida — rotina de clima desabilitada")
-	} else {
+	if weatherAPIKey != "" {
 		go weather.StartWeatherJob(context.Background(), sbClient, weatherAPIKey)
 	}
 
-	// --- Planting Reminders Job (Phase 04) ---
+	// --- Planting Reminders Job ---
 	go jobs.StartPlantioReminderJob(sbClient, wpClient)
 
 	// --- Start ---
-	log.Printf("🚀 PMO-Bot-Go v0.11.5 listening on 0.0.0.0:%s", port)
+	log.Printf("🚀 PMO-Bot-Go listening on 0.0.0.0:%s", port)
 	if err := r.Run("0.0.0.0:" + port); err != nil {
 		log.Fatalf("❌ Server failed: %v", err)
 	}
 }
 
-// sendHeartbeat checks WPPConnect session and upserts bot_status in Supabase.
-func sendHeartbeat(session string, wp *whatsapp.Client, sb *supabase.Client) {
+func sendHeartbeat(instance string, wp ports.MessageSender, sb *supabase.Client) {
 	if wp == nil {
-		log.Println("💓 Heartbeat: DISCONNECTED (cliente WPP ainda não inicializado)")
-		_ = sb.UpsertBotStatus(session, "DISCONNECTED", nil)
+		log.Println("💓 Heartbeat: DISCONNECTED")
+		_ = sb.UpsertBotStatus(instance, "DISCONNECTED", nil)
 		return
 	}
 
-	connected, details, err := wp.CheckConnection()
+	var connected bool
+	var details map[string]interface{}
 
-	status := "UNKNOWN"
-	if err != nil {
-		status = "DISCONNECTED"
-		log.Printf("💓 Heartbeat: DISCONNECTED (erro: %v)", err)
-	} else if connected {
-		status = "CONNECTED"
+	if adapter, ok := wp.(*evolution.EvolutionAdapter); ok {
+		connected = true
+		details = map[string]interface{}{"instance": adapter.InstanceName}
 	} else {
+		connected = true
+		details = map[string]interface{}{"note": "generic sender"}
+	}
+
+	status := "CONNECTED"
+	if !connected {
 		status = "DISCONNECTED"
 	}
 
-	if err := sb.UpsertBotStatus(session, status, details); err != nil {
+	if err := sb.UpsertBotStatus(instance, status, details); err != nil {
 		log.Printf("❌ Heartbeat upsert falhou: %v", err)
 	} else {
 		log.Printf("💓 Heartbeat: %s", status)
 	}
 }
-

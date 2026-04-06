@@ -30,12 +30,23 @@ Antes de modificar o frontend, consultar:
 - **Sync:** usa backoff exponencial em caso de falha.
 - **Novos stores:** DEVEM ser documentados em [offline.md](file:///c:/Users/brunn/Documents/PROGRAMAÇÃO/manejo-org-app-clean/docs/frontend/offline.md).
 
-## Regras de Estilo
-- **CSS:** usar CSS-Direct ou Tailwind v4 nas áreas refatoradas.
-- **Manter consistência** com o estilo existente da página/componente.
-- **Componentes de UI** devem ser responsivos (mobile-first).
+## Performance e Estado (Expert)
+- **Evitar Re-renders:** Usar `useMemo` e `useCallback` em componentes de lista complexos (ex: `MuralDemandas.tsx`) e passar dependências mínimas.
+- **Context optimization:** Não colocar estados que mudam frequentemente no `AuthContext` ou root context para evitar re-render da árvore toda.
+- **Loading Skeletons:** Usar skeletons em vez de spinners genéricos para melhorar a percepção de performance (LCP).
+- **Virtualização:** Para listas com mais de 50 itens (histórico de atividades, mural), usar `react-window` ou similar.
+
+## Regras de Mobile UX (PWA)
+- **Touch Optimization:** Botões e elementos clicáveis DEVEM ter área de toque mínima de 44x44px.
+- **Bottom Sheets:** Usar o componente `ResponsiveModal` para formulários e detalhes no mobile, seguindo o padrão de gaveta inferior (drawer).
+- **Feedback Tátil:** Implementar loading states visuais imediatos em ações de "Salvar" ou "Enviar".
+- **Keyboard Awareness:** Garantir que inputs não sejam cobertos pelo teclado virtual no mobile.
+
+## Regras de Estilo e Tailwind
+- **Tailwind v4:** Usar a configuração CSS-first. Preferir utilitários de container queries (`@task`) para layouts complexos.
+- **Design Tokens:** Seguir os tokens de cores e sombras definidos para o modo dark/glassmorphism do PMO.
 
 ## Regras de Qualidade
-- **Novos componentes de página** devem ser documentados com comentário de header.
-- **Queries ao Supabase** devem tratar erro e estado de loading.
-- **Dados sensíveis** NUNCA no client-side (usar Supabase RLS).
+- **Data Fetching:** Usar patterns de cache (ex: `React Query` ou cache interno no store) para evitar requisições redundantes ao Supabase.
+- **Segurança:** Dados sensíveis NUNCA no client-side; aplicar RLS rigoroso no backend.
+- **Build Clean:** Ativar lint e type-checking no CI/CD para garantir zero erros de build.
