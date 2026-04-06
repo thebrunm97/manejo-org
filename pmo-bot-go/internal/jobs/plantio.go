@@ -6,12 +6,12 @@ import (
 	"log"
 	"time"
 
+	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
-	"github.com/thebrunm97/pmo-bot-go/internal/whatsapp"
 )
 
 // StartPlantioReminderJob kicks off a ticker to scan for pending planting alerts.
-func StartPlantioReminderJob(sbClient *supabase.Client, wpClient *whatsapp.Client) {
+func StartPlantioReminderJob(sbClient *supabase.Client, wpClient ports.MessageSender) {
 	log.Println("🌱 [Job-Plantio] Background worker started")
 
 	// Usually daily, but let's use 12 hours to be safer for close deadlines
@@ -26,7 +26,7 @@ func StartPlantioReminderJob(sbClient *supabase.Client, wpClient *whatsapp.Clien
 	}
 }
 
-func runPlantioCheck(sbClient *supabase.Client, wpClient *whatsapp.Client) {
+func runPlantioCheck(sbClient *supabase.Client, wpClient ports.MessageSender) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 

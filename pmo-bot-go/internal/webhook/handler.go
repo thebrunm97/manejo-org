@@ -16,130 +16,19 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/thebrunm97/pmo-bot-go/internal/adapter/evolution"
 	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
+	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/state"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
 	"github.com/thebrunm97/pmo-bot-go/internal/utils"
-	"github.com/thebrunm97/pmo-bot-go/internal/whatsapp"
 	"golang.org/x/time/rate"
+	"github.com/Flagsmith/flagsmith-go-client/v3"
 )
-
-// ---------------------------------------------------------------------------
-// WPPConnect Payload Structs (mapped 1:1 from pmo_bot/models/whatsapp.py)
-// ---------------------------------------------------------------------------
-
-// SenderProfile contains nested sender info that WPPConnect includes.
-type SenderProfile struct {
-	ID              interface{} `json:"id"`
-	ProfilePicThumb interface{} `json:"profilePicThumbObj,omitempty"`
-}
-
-// WPPMessage is the strongly-typed struct for the WPPConnect webhook payload.
-type WPPMessage struct {
-	Event     string         `json:"event"`
-	From      string         `json:"from"`
-	FromMe    bool           `json:"fromMe"`
-	ID        interface{}    `json:"id"`
-	Type      string         `json:"type"`
-	Body      string         `json:"body"`
-	ChatID    interface{}    `json:"chatId"`
-	Timestamp *float64       `json:"timestamp"`
-	MimeType  *string        `json:"mimetype,omitempty"`
-	Sender    *SenderProfile `json:"sender,omitempty"`
-}
-
-// NormalizedChatID extracts a clean string from the chatId field.
-func (m *WPPMessage) NormalizedChatID() string {
-	switch v := m.ChatID.(type) {
-	case string:
-		return v
-	case map[string]interface{}:
-		if s, ok := v["_serialized"].(string); ok {
-			return s
-		}
-		user, _ := v["user"].(string)
-		server, _ := v["server"].(string)
-		if server == "" {
-			server = "c.us"
-		}
-		return user + "@" + server
-	}
-	return ""
-}
-
-// MessageID extracts a clean string ID for deduplication.
-func (m *WPPMessage) MessageID() string {
-	switch v := m.ID.(type) {
-	case string:
-		return v
-	case map[string]interface{}:
-		if s, ok := v["_serialized"].(string); ok {
-			return s
-		}
-		if s, ok := v["id"].(string); ok {
-			return s
-		}
-	}
-	return ""
-}
-
-// ShouldProcess checks if the message should be processed.
-func (m *WPPMessage) ShouldProcess() bool {
-	event := strings.ToLower(m.Event)
-	if m.FromMe {
-		return false
-	}
-	return event == "onmessage" || event == "on-message"
-}
-
-// IsAudio checks if the message is an audio/voice note.
-func (m *WPPMessage) IsAudio() bool {
-	if m.Type == "ptt" || m.Type == "audio" {
-		return true
-	}
-	if m.MimeType != nil {
-		mime := strings.ToLower(*m.MimeType)
-		return strings.Contains(mime, "audio")
-	}
-	return false
-}
-
-// IsImage checks if the message is an image.
-func (m *WPPMessage) IsImage() bool {
-	if m.Type == "image" {
-		return true
-	}
-	if m.MimeType != nil {
-		mime := strings.ToLower(*m.MimeType)
-		return strings.Contains(mime, "image")
-	}
-	return false
-}
-
-// IsBroadcast checks if the sender is a broadcast channel.
-func (m *WPPMessage) IsBroadcast() bool {
-	from := m.From
-	if len(from) >= 16 && from[len(from)-10:] == "@broadcast" {
-		return true
-	}
-	return from == "status@broadcast"
-}
-
-// AgeSeconds returns the age of the message in seconds.
-func (m *WPPMessage) AgeSeconds() float64 {
-	if m.Timestamp == nil {
-		return -1
-	}
-	ts := *m.Timestamp
-	if ts > 100_000_000_000 {
-		ts /= 1000.0
-	}
-	return float64(time.Now().Unix()) - ts
-}
 
 // ---------------------------------------------------------------------------
 // Config
@@ -150,11 +39,12 @@ type Config struct {
 	MaxMessageAge  float64
 	GroqClient     *groq.Client
 	SupabaseClient *supabase.Client
-	WhatsAppClient *whatsapp.Client
+	WhatsAppClient ports.MessageSender
 	GeminiClient   *gemini.Client
 	TtsClient      *tts.Orchestrator
 	MCPServer      *mcp.Server
 	HistoryManager *history.Manager
+	FlagsmithClient *flagsmith.Client
 }
 
 // ---------------------------------------------------------------------------
@@ -203,7 +93,7 @@ func (h *Handler) RegisterRoutes(r *gin.Engine) {
 }
 
 // SetWhatsAppClient updates the WhatsApp client (used for lazy reconnection).
-func (h *Handler) SetWhatsAppClient(c *whatsapp.Client) {
+func (h *Handler) SetWhatsAppClient(c ports.MessageSender) {
 	h.cfg.WhatsAppClient = c
 }
 
@@ -227,48 +117,55 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 		return
 	}
 
-	// 2. Parse the WPPConnect payload
-	var payload WPPMessage
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		log.Printf("❌ JSON inválido: %v", err)
-		c.JSON(http.StatusOK, gin.H{"status": "invalid_json", "error": err.Error()})
+	// 2. Parse the Evolution payload via Adapter
+	rawBody, _ := c.GetRawData()
+	payload, err := evolution.ParseWebhook(rawBody)
+	if err != nil {
+		log.Printf("❌ Falha no Parse do Webhook: %v", err)
+		c.JSON(http.StatusOK, gin.H{"status": "parse_error", "error": err.Error()})
+		return
+	}
+
+	if payload == nil {
+		log.Println("⏭️ Evento ignorado (não é messages.upsert)")
+		c.JSON(http.StatusOK, gin.H{"status": "ignored_event"})
 		return
 	}
 
 	// 3. Broadcast filter
-	if payload.IsBroadcast() {
+	if payload.IsBroadcast {
 		c.JSON(http.StatusOK, gin.H{"status": "ignored_broadcast"})
 		return
 	}
 
-	// 4. Self-message filter
-	if !payload.ShouldProcess() {
-		log.Printf("⏭️  Mensagem ignorada (FromMe: %v, Event: %s)", payload.FromMe, payload.Event)
-		c.JSON(http.StatusOK, gin.H{"status": "ignored", "reason": "fromMe or not onmessage"})
+	// 4. Self-message filter (simplified in port)
+	if payload.IsFromMe {
+		log.Printf("⏭️  Mensagem enviada pelo bot — ignorando")
+		c.JSON(http.StatusOK, gin.H{"status": "ignored", "reason": "isFromMe"})
 		return
 	}
 
 	// 5. TTL check
-	age := payload.AgeSeconds()
-	if age >= 0 && age > h.cfg.MaxMessageAge {
+	age := time.Since(payload.Timestamp).Seconds()
+	if age > h.cfg.MaxMessageAge {
 		log.Printf("⏳ TTL DROP: Mensagem de %.1fs atrás ignorada (Max: %.1fs)", age, h.cfg.MaxMessageAge)
 		c.JSON(http.StatusOK, gin.H{"status": "ignored_old", "age": age})
 		return
 	}
 
 	// 6. Log receipt
-	log.Printf("📨 [%s] De: %s | Tipo: %s | Body: %.100s",
-		payload.Event, payload.From, payload.Type, payload.Body)
+	log.Printf("📨 Recebida De: %s | Tipo: %s | Body: %.100s",
+		payload.From, payload.Type, payload.Body)
 
 	// 7. Skip non-text messages if not audio or image
-	if payload.Body == "" && !payload.IsAudio() && !payload.IsImage() {
+	if payload.Body == "" && !payload.IsAudio && !payload.IsImage {
 		log.Println("⏭️  Mensagem sem texto (mídia não-suportada) — ignorando")
 		c.JSON(http.StatusOK, gin.H{"status": "received", "note": "media not supported yet"})
 		return
 	}
 
 	// 8. Session-Level Mutex & Message Deduplication
-	msgID := payload.MessageID()
+	msgID := payload.ID
 	if msgID != "" {
 		if _, loaded := processedMu.LoadOrStore(msgID, struct{}{}); loaded {
 			log.Printf("🔁 [DEDUP] Mensagem %s já em processamento — ignorando duplicata", msgID)
@@ -283,7 +180,7 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 	}
 
 	// Delegate business logic orchestration to FSM asynchronously
-	go func(msg WPPMessage) {
+	go func(msg ports.IncomingMessage) {
 		// Layer 0: Panic Recovery
 		defer func() {
 			if r := recover(); r != nil {
@@ -298,15 +195,15 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 		mu.Lock()
 		defer mu.Unlock()
 
-		// Layer 3: Context with timeout — prevent goroutine leaks (120s extended for Multi-Agent)
+		// Layer 3: Context with timeout
 		ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 		defer cancel()
 
-		result := state.ProcessMessage(ctx, msg.From, msg.Body, msg.MessageID(), msg.IsAudio(), msg.IsImage(), h.cfg.SupabaseClient, h.cfg.GroqClient, h.cfg.WhatsAppClient, h.cfg.GeminiClient, h.cfg.TtsClient, h.cfg.MCPServer, h.cfg.HistoryManager)
+		result := state.ProcessMessage(ctx, msg, h.cfg.SupabaseClient, h.cfg.GroqClient, h.cfg.WhatsAppClient, h.cfg.GeminiClient, h.cfg.TtsClient, h.cfg.MCPServer, h.cfg.HistoryManager, h.cfg.FlagsmithClient)
 		if !result.Success {
 			log.Printf("⚠️ [FSM] Background processing completed with issues: %s", result.Reason)
 		}
-	}(payload)
+	}(*payload)
 
 	// 9. Always Respond 200 OK
 	c.JSON(http.StatusOK, gin.H{

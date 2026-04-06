@@ -10,12 +10,12 @@ import (
 	"strings"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
+	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
-	"github.com/thebrunm97/pmo-bot-go/internal/whatsapp"
 )
 
-func handleRegistroFinanceiro(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, wpClient *whatsapp.Client, ttsClient *tts.Orchestrator, from string, respondWithAudio bool) ProcessResult {
+func handleRegistroFinanceiro(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, from string, respondWithAudio bool) ProcessResult {
 	// 1. Extração e Normalização do Valor Total
 	valorTotal, err := parseNumeric(ext.ValorTotal)
 	if err != nil || valorTotal <= 0 {

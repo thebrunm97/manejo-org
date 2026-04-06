@@ -2,11 +2,11 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
 import {
   dashboardService,
-  supabase,
   HarvestSummary,
 } from "../../services/dashboardService";
 import { getCurrentWeather, WeatherData } from "../../services/weatherService";
-import { fetchDashboardPmoDetails } from "../../services/pmoService";
+import { fetchAllPmos } from "../../services/pmoService";
+import { supabase } from "../../supabaseClient";
 
 // Tipos do Estado do Dashboard
 export interface DashboardData {
@@ -53,27 +53,34 @@ export function useDashboardLogic() {
 
     try {
       const userTelefone = profile?.telefone;
-      const pmoId = profile?.pmo_ativo_id;
-
+      
+      let activePmoId: string | null = profile?.pmo_ativo_id || null;
       let pmoName: string | null = null;
       let pmoVersion: number = 0;
       let harvestStats: HarvestSummary = {};
       let lastActivity: Date | null = null;
       let recentActivities: any[] = [];
 
-      // 1. Carregar dados do PMO (se existir) ou Propriedade
-      if (pmoId || currentPropriedade?.id) {
-        const [pmoResult, recentRes, harvestRes, lastActRes] = await Promise.all([
-          pmoId ? fetchDashboardPmoDetails(pmoId) : Promise.resolve({ success: false, data: undefined }),
-          dashboardService.fetchRecentActivities(pmoId || '', 5, currentPropriedade?.id),
-          dashboardService.fetchHarvestSummary(pmoId || '', currentPropriedade?.id),
-          dashboardService.fetchLastActivity(pmoId || '', currentPropriedade?.id)
-        ]);
-
-        if (pmoResult.success && pmoResult.data) {
-          pmoName = pmoResult.data.nome_identificador;
-          pmoVersion = Number(pmoResult.data.version) || 0;
+      // 1. Carregar PMOs da propriedade para definir o PMO ativo REAL da fazenda selecionada
+      if (currentPropriedade?.id) {
+        const pmosRes = await fetchAllPmos(currentPropriedade.id);
+        if (pmosRes.success && pmosRes.data && pmosRes.data.length > 0) {
+          const emAndamento = pmosRes.data.find(p => (p as any).status === 'Em andamento' || (p as any).status === 'em_andamento') || pmosRes.data[0];
+          activePmoId = emAndamento.id;
+          pmoName = emAndamento.nome_identificador;
+          pmoVersion = Number(emAndamento.version) || 1;
+        } else {
+          activePmoId = null; // sem PMO na propriedade atual
         }
+      }
+
+      // Buscar as estatísticas com o PMO / Propriedade correto
+      if (activePmoId || currentPropriedade?.id) {
+        const [recentRes, harvestRes, lastActRes] = await Promise.all([
+          dashboardService.fetchRecentActivities(activePmoId || '', 5, currentPropriedade?.id),
+          dashboardService.fetchHarvestSummary(activePmoId || '', currentPropriedade?.id),
+          dashboardService.fetchLastActivity(activePmoId || '', currentPropriedade?.id)
+        ]);
 
         recentActivities = recentRes;
         harvestStats = harvestRes;
@@ -81,7 +88,7 @@ export function useDashboardLogic() {
       }
 
       // 2. Clima
-      if (pmoId) {
+      if (activePmoId) {
         const loadWeatherAsync = async (id: string) => {
           try {
             const weather = await getCurrentWeather(id);
@@ -90,7 +97,7 @@ export function useDashboardLogic() {
             console.warn("DashboardLogic: Weather fetch failed", e);
           }
         };
-        loadWeatherAsync(pmoId);
+        loadWeatherAsync(activePmoId);
       }
 
       // 3. Update State
@@ -99,7 +106,7 @@ export function useDashboardLogic() {
         harvestStats,
         lastActivity,
         recentActivities,
-        pmoId: pmoId || null,
+        pmoId: activePmoId,
         pmoName: pmoName || currentPropriedade?.nome || "Minha Propriedade",
         pmoVersion: pmoVersion,
         userProfile: { telefone: userTelefone },

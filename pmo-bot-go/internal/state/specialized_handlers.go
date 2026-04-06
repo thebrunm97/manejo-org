@@ -11,13 +11,13 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
+	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
-	"github.com/thebrunm97/pmo-bot-go/internal/whatsapp"
 )
 
 // handleActiveState routes a message when the user is in a middle of an interview (FSM State != Initial)
-func handleActiveState(state string, ctxMap map[string]interface{}, body string, from string, phone string, profile *supabase.Profile, respondWithAudio bool, sbClient *supabase.Client, wpClient *whatsapp.Client, ttsClient *tts.Orchestrator, historyManager *history.Manager, startTime time.Time) ProcessResult {
+func handleActiveState(state string, ctxMap map[string]interface{}, body string, from string, phone string, profile *supabase.Profile, respondWithAudio bool, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, historyManager *history.Manager, startTime time.Time) ProcessResult {
 	switch state {
 	case StateAguardandoQuantidade:
 		return handleAguardandoQuantidade(context.Background(), body, from, phone, profile, respondWithAudio, sbClient, wpClient, ttsClient, historyManager, ctxMap, startTime)
@@ -32,7 +32,7 @@ func handleActiveState(state string, ctxMap map[string]interface{}, body string,
 
 // handleDuvidaFallback is the specialist multi-agent entry point.
 // It uses modular prompts, filtered tools, loop protection, and short-term memory injection.
-func handleDuvidaFallback(wpClient *whatsapp.Client, ttsClient *tts.Orchestrator, from string, gemClient *gemini.Client, body string, respondWithAudio bool, sbClient *supabase.Client, profile *supabase.Profile, startTime time.Time, promptTokens int, completionTokens int, finalIntent string, tools []*genai.Tool, guard *mcp.LoopGuard, historyManager *history.Manager, mcpServer *mcp.Server) ProcessResult {
+func handleDuvidaFallback(wpClient ports.MessageSender, ttsClient *tts.Orchestrator, from string, gemClient *gemini.Client, body string, respondWithAudio bool, sbClient *supabase.Client, profile *supabase.Profile, startTime time.Time, promptTokens int, completionTokens int, finalIntent string, tools []*genai.Tool, guard *mcp.LoopGuard, historyManager *history.Manager, mcpServer *mcp.Server) ProcessResult {
 	log.Printf("🤖 [FSM] Iniciando Fluxo Especialista (Intent: %s)", finalIntent)
 
 	// 1. Prepare Specialized Context
