@@ -15,7 +15,7 @@ import (
 )
 
 // handleAssumirCota processes the intent where a producer commits to a cooperative demand.
-func handleAssumirCota(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, wpClient ports.MessageSender, gemClient *gemini.Client, ttsClient *tts.Orchestrator, from string, originalBody string, respondWithAudio bool, startTime time.Time) ProcessResult {
+func handleAssumirCota(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, wpClient ports.MessageSender, gemClient *gemini.Client, ttsClient *tts.Orchestrator, from string, originalBody string, respondWithAudio bool, startTime time.Time, modelConfigured string, modelEffective string) ProcessResult {
 	log.Printf("🤝 [FSM-COLETIVO] Iniciando captação de cota: %s (%v)", ext.InsumoCultura, ext.QuantidadeAssumida)
 
 	// 1. Validate property
@@ -44,10 +44,11 @@ Sabendo o ciclo médio dessa cultura na região Sul/Sudeste do Brasil, em qual d
 Leve em conta o tempo de desenvolvimento até a colheita técnica.
 Responda de forma extremamente curta e direta, apenas a data ou um pequeno intervalo (ex: "Entre 10 e 15 de maio").`, cultura, demanda.DataEntrega)
 
-	dataSugerida, err := gemClient.AskExpert("Qual a data de plantio ideal?", promptPlantio)
+	dataSugerida, modelUsed, err := gemClient.AskExpert("Qual a data de plantio ideal?", promptPlantio)
 	if err != nil {
 		log.Printf("⚠️ [FSM-COLETIVO] Erro ao consultar Gemini para plantio: %v", err)
 		dataSugerida = "Data não calculada"
+		modelUsed = "gemini-1.5-flash"
 	}
 
 	// 4. Save to Database
@@ -91,7 +92,8 @@ Responda de forma extremamente curta e direta, apenas a data ou um pequeno inter
 	sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio)
 	
 	// Record log for analytics
-	recordLog(sbClient, profile, originalBody, botResponse, "gemini-flash-agronomist", 0, 0, "assumir_cota", toMap(ext), startTime, true)
+	// Note: For AskExpert we don't return tokens yet, using 0 for now.
+	recordLog(sbClient, profile, originalBody, botResponse, modelConfigured, modelUsed, 0, 0, "assumir_cota", toMap(ext), startTime, true, nil)
 
 	return ProcessResult{Success: true, Reason: "quota_assumed"}
 }

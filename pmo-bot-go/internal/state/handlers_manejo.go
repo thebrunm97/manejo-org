@@ -15,7 +15,7 @@ import (
 )
 
 // handleAguardandoQuantidade processes the second turn of an active interview for quantity
-func handleAguardandoQuantidade(ctx context.Context, body string, from string, phone string, profile *supabase.Profile, respondWithAudio bool, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, historyManager *history.Manager, extraction map[string]interface{}, startTime time.Time) ProcessResult {
+func handleAguardandoQuantidade(ctx context.Context, body string, from string, phone string, profile *supabase.Profile, respondWithAudio bool, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, historyManager *history.Manager, extraction map[string]interface{}, startTime time.Time, modelConfigured string) ProcessResult {
 	log.Printf("📥 [FSM-TURN2] Recebida quantidade: %s", body)
 	
 	// Convert interface map back to ExtractionResult (simplified)
@@ -31,11 +31,11 @@ func handleAguardandoQuantidade(ctx context.Context, body string, from string, p
 	
 	// Recursively call the registration flow with the new data
 	// Note: For now we'll implement the logic here to avoid circular complexity
-	return finalizeRegistration(ctx, &ext, profile, sbClient, wpClient, ttsClient, from, body, respondWithAudio, startTime, historyManager, phone)
+	return finalizeRegistration(ctx, &ext, profile, sbClient, wpClient, ttsClient, from, body, respondWithAudio, startTime, historyManager, phone, modelConfigured)
 }
 
 // handleAguardandoCompra processes the second turn for purchase details (fornecedor)
-func handleAguardandoCompra(ctx context.Context, body string, from string, phone string, profile *supabase.Profile, respondWithAudio bool, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, historyManager *history.Manager, extraction map[string]interface{}, startTime time.Time) ProcessResult {
+func handleAguardandoCompra(ctx context.Context, body string, from string, phone string, profile *supabase.Profile, respondWithAudio bool, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, historyManager *history.Manager, extraction map[string]interface{}, startTime time.Time, modelConfigured string) ProcessResult {
 	log.Printf("📥 [FSM-TURN2] Recebido fornecedor: %s", body)
 	
 	var ext groq.ExtractionResult
@@ -47,11 +47,11 @@ func handleAguardandoCompra(ctx context.Context, body string, from string, phone
 	
 	ext.Fornecedor = body // Turn 2 input
 	
-	return finalizeRegistration(ctx, &ext, profile, sbClient, wpClient, ttsClient, from, body, respondWithAudio, startTime, historyManager, phone)
+	return finalizeRegistration(ctx, &ext, profile, sbClient, wpClient, ttsClient, from, body, respondWithAudio, startTime, historyManager, phone, modelConfigured)
 }
 
 // finalizeRegistration is the common sink for all Manejo and Purchase recordings
-func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, from string, originalBody string, respondWithAudio bool, startTime time.Time, historyManager *history.Manager, phone string) ProcessResult {
+func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, from string, originalBody string, respondWithAudio bool, startTime time.Time, historyManager *history.Manager, phone string, modelConfigured string) ProcessResult {
 	pmoID := profile.PmoAtivoID
 	
 	// 1. Compliance Check (Spatial-Aware) - Reused from fsm.go
@@ -88,7 +88,7 @@ func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profi
 		if temOrganicoNoMeio {
 			botResponse := fmt.Sprintf("🚨 *ALERTA DE NÃO-CONFORMIDADE!*\n\n⚠️ O uso de *%s* é proibido em áreas orgânicas. Registro **BLOQUEADO**.", produtoAlvo)
 			sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio)
-			recordLog(sbClient, profile, originalBody, botResponse, "fsm-v4", 0, 0, "alerta_conformidade", nil, startTime, false)
+			recordLog(sbClient, profile, originalBody, botResponse, modelConfigured, "fsm-v4", 0, 0, "alerta_conformidade", nil, startTime, false, nil)
 			return ProcessResult{Success: false, Reason: "organic_compliance_block"}
 		}
 	}
@@ -141,7 +141,7 @@ func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profi
 	
 	botResponse := fmt.Sprintf("✅ *Registro Salvo!*\n*Atividade:* %s\n*Item:* %s\n*Qtd:* %v %s", ext.Atividade, ext.InsumoCultura, ext.Quantidade, ext.Unidade)
 	sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio)
-	recordLog(sbClient, profile, originalBody, botResponse, "fsm-v4", 0, 0, "registro", toMap(ext), startTime, true)
+	recordLog(sbClient, profile, originalBody, botResponse, modelConfigured, "fsm-v4", 0, 0, "registro", toMap(ext), startTime, true, nil)
 	
 	return ProcessResult{Success: true, Reason: "record_saved"}
 }
