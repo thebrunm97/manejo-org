@@ -5,10 +5,15 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/google/generative-ai-go/genai"
-	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
+	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 )
+
+// Embedder defines the contract for generating text embeddings,
+// allowing the MCP server to remain agnostic of the specific LLM provider.
+type Embedder interface {
+	GenerateEmbedding(text string) ([]float32, error)
+}
 
 // LoopGuard prevents infinite tool-calling loops by tracking repeated calls with same args.
 type LoopGuard struct {
@@ -35,10 +40,11 @@ func (lg *LoopGuard) CheckAndRecord(name string, args map[string]interface{}) bo
 	return true
 }
 
-// Server represents an MCP server that manages tools and interacts with Supabase
+// Server represents an MCP server that manages tools and interacts with Supabase.
+// It is now provider-agnostic.
 type Server struct {
 	supabase *supabase.Client
-	gemini   *gemini.Client
+	embedder Embedder
 	tools    map[string]Tool
 }
 
@@ -50,209 +56,67 @@ const (
 	CategoryDatabase ToolCategory = "DATABASE" // Farm management records (CRUD)
 )
 
-// Tool represents a registered MCP tool
+// Tool represents a registered MCP tool, wrapping its agnostic definition and handler.
 type Tool struct {
-	Name        string                                                 `json:"name"`
-	Description string                                                 `json:"description"`
-	Category    ToolCategory                                           `json:"category"`
-	InputSchema map[string]interface{}                                 `json:"inputSchema"`
-	Handler     func(args map[string]interface{}) (interface{}, error) `json:"-"`
+	Definition llm.FerramentaAgnostica
+	Category   ToolCategory
+	Handler    func(args map[string]interface{}) (interface{}, error) `json:"-"`
 }
 
-// NewServer initializes a new MCP server
-func NewServer(sb *supabase.Client, gem *gemini.Client) *Server {
+// NewServer initializes a new agnostic MCP server.
+func NewServer(sb *supabase.Client, emb Embedder) *Server {
 	return &Server{
 		supabase: sb,
-		gemini:   gem,
+		embedder: emb,
 		tools:    make(map[string]Tool),
 	}
 }
 
-// RegisterTool adds a tool to the server
+// RegisterTool adds a tool to the server.
 func (s *Server) RegisterTool(tool Tool) {
-	s.tools[tool.Name] = tool
-	log.Printf("🛠️ [MCP] Ferramenta registrada: %s", tool.Name)
+	s.tools[tool.Definition.Name] = tool
+	log.Printf("🛠️ [MCP] Ferramenta registrada: %s", tool.Definition.Name)
 }
 
-// ListTools returns the list of registered tools for the MCP protocol
-func (s *Server) ListTools() []Tool {
-	var list []Tool
+// ListTools returns the list of registered tools for the MCP protocol.
+func (s *Server) ListTools() []llm.FerramentaAgnostica {
+	var list []llm.FerramentaAgnostica
 	for _, t := range s.tools {
-		list = append(list, t)
+		list = append(list, t.Definition)
 	}
 	return list
 }
 
 // GetToolsForIntent filters registered tools based on the user's classified intent.
-// RAG: Knowledge base + local farm data consultation.
-// DATABASE: Production records + local farm data consultation.
-// CHAT: No tools.
-func (s *Server) GetToolsForIntent(intent gemini.Intent) []*genai.Tool {
-	var filtered []*genai.Tool
+// It returns agnostic definitions, leaving the provider-specific conversion to the caller.
+func (s *Server) GetToolsForIntent(intent string) []llm.FerramentaAgnostica {
+	log.Printf("🛠️ [MCP] GetToolsForIntent: intent='%s' total_registered=%d", intent, len(s.tools))
+	var filtered []llm.FerramentaAgnostica
 
 	for _, t := range s.tools {
 		include := false
 
 		switch intent {
-		case gemini.IntentRAG:
-			// RAG specialist gets knowledge base and farm data lookups
-			// UPDATED: Also gets database tools to allow "advice + action" flow.
+		case "RAG":
 			if t.Category == CategoryRAG || t.Category == CategoryDatabase {
 				include = true
 			}
 
-		case gemini.IntentDatabase:
-			// DB specialist gets all write tools + farm data lookups (but NOT knowledge base)
-			if t.Category == CategoryDatabase || t.Name == "consultar_dados_fazenda" {
+		case "DATABASE":
+			if t.Category == CategoryDatabase || t.Definition.Name == "consultar_dados_fazenda" {
 				include = true
 			}
 
-		case gemini.IntentChat:
-			// Basic chat gets no tools to keep it light
+		case "CHAT":
 			include = false
 		}
 
 		if include {
-			filtered = append(filtered, &genai.Tool{
-				FunctionDeclarations: []*genai.FunctionDeclaration{
-					{
-						Name:        t.Name,
-						Description: t.Description,
-						Parameters:  mapToGenaiSchema(t.InputSchema, true),
-					},
-				},
-			})
+			filtered = append(filtered, t.Definition)
 		}
 	}
 
 	return filtered
-}
-
-// mapToGenaiSchema converts the generic InputSchema map to a genai.Schema
-// It applies Gemini's strict schema rules: TypeObject, TypeString for enums, no empty props, array requirements.
-func mapToGenaiSchema(m map[string]interface{}, isRoot bool) *genai.Schema {
-	if m == nil {
-		m = make(map[string]interface{})
-	}
-
-	s := &genai.Schema{}
-
-	// Fallback de Tipos
-	if pType, ok := m["type"].(string); ok {
-		switch pType {
-		case "integer":
-			s.Type = genai.TypeInteger
-		case "number":
-			s.Type = genai.TypeNumber
-		case "boolean":
-			s.Type = genai.TypeBoolean
-		case "string":
-			s.Type = genai.TypeString
-		case "object":
-			s.Type = genai.TypeObject
-		case "array":
-			s.Type = genai.TypeArray
-		default:
-			if isRoot {
-				s.Type = genai.TypeObject
-			} else {
-				s.Type = genai.TypeString
-			}
-		}
-	} else {
-		if isRoot {
-			s.Type = genai.TypeObject
-		} else {
-			s.Type = genai.TypeString
-		}
-	}
-
-	if desc, ok := m["description"].(string); ok {
-		s.Description = desc
-	}
-
-	// Enums Estritos
-	if enumVal, exists := m["enum"]; exists {
-		s.Type = genai.TypeString // MUST be string for Gemini
-		var strList []string
-
-		if enumList, ok := enumVal.([]string); ok {
-			strList = enumList
-		} else if enumList, ok := enumVal.([]interface{}); ok {
-			for _, item := range enumList {
-				strList = append(strList, fmt.Sprintf("%v", item))
-			}
-		}
-		s.Enum = strList
-	}
-
-	// Regras para TypeObject
-	if s.Type == genai.TypeObject {
-		s.Properties = make(map[string]*genai.Schema)
-
-		if props, ok := m["properties"].(map[string]interface{}); ok {
-			for k, v := range props {
-				if propMap, ok := v.(map[string]interface{}); ok {
-					s.Properties[k] = mapToGenaiSchema(propMap, false)
-				}
-			}
-		}
-
-		// A Armadilha do Objeto Vazio: Injeta dummy se não houver propriedades na raiz
-		if isRoot && len(s.Properties) == 0 {
-			s.Properties["_dummy"] = &genai.Schema{
-				Type:        genai.TypeString,
-				Description: "Campo ignorado.",
-			}
-		}
-
-		if reqVal, exists := m["required"]; exists {
-			var required []string
-			if reqList, ok := reqVal.([]string); ok {
-				required = reqList
-			} else if reqList, ok := reqVal.([]interface{}); ok {
-				for _, r := range reqList {
-					if strReq, ok := r.(string); ok {
-						required = append(required, strReq)
-					}
-				}
-			}
-			s.Required = required
-		}
-	}
-
-	// Regras para TypeArray
-	if s.Type == genai.TypeArray {
-		if itemsVal, exists := m["items"]; exists {
-			if itemsMap, ok := itemsVal.(map[string]interface{}); ok {
-				s.Items = mapToGenaiSchema(itemsMap, false)
-			} else {
-				s.Items = &genai.Schema{Type: genai.TypeString}
-			}
-		} else {
-			s.Items = &genai.Schema{Type: genai.TypeString}
-		}
-	}
-
-	return s
-}
-
-// GetToolDeclarations returns tools formatted for Gemini's genai SDK
-func (s *Server) GetToolDeclarations() []*genai.Tool {
-	var declarations []*genai.FunctionDeclaration
-
-	for _, t := range s.tools {
-		decl := &genai.FunctionDeclaration{
-			Name:        t.Name,
-			Description: t.Description,
-			Parameters:  mapToGenaiSchema(t.InputSchema, true),
-		}
-		declarations = append(declarations, decl)
-	}
-
-	return []*genai.Tool{
-		{FunctionDeclarations: declarations},
-	}
 }
 
 // JSON-RPC models for MCP
@@ -323,7 +187,6 @@ func (s *Server) HandleProcess(payload []byte) ([]byte, error) {
 	return json.Marshal(resp)
 }
 
-// CallTool executes a tool by name
 // CallToolWithGuard executes a tool while checking for infinite loops.
 func (s *Server) CallToolWithGuard(lg *LoopGuard, name string, args map[string]interface{}) (interface{}, error) {
 	if lg != nil {
@@ -334,6 +197,7 @@ func (s *Server) CallToolWithGuard(lg *LoopGuard, name string, args map[string]i
 	return s.CallTool(name, args)
 }
 
+// CallTool executes a tool by name
 func (s *Server) CallTool(name string, args map[string]interface{}) (interface{}, error) {
 	tool, ok := s.tools[name]
 	if !ok {
@@ -342,3 +206,4 @@ func (s *Server) CallTool(name string, args map[string]interface{}) (interface{}
 
 	return tool.Handler(args)
 }
+

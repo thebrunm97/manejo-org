@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"time"
 
@@ -56,6 +57,23 @@ func (a *EvolutionAdapter) SendVoice(to, base64Audio string, isPtt bool) error {
 	return a.doRequest(http.MethodPost, url, payload)
 }
 
+// SetPresence sends a presence update (composing, recording, etc.) to a chat.
+func (a *EvolutionAdapter) SetPresence(to string, presence string) error {
+	url := fmt.Sprintf("%s/message/presence", a.BaseURL)
+	payload := map[string]interface{}{
+		"number":       to,
+		"state":        presence,
+		"delay":        15000,
+		"instanceName": a.InstanceName,
+	}
+	
+	err := a.doRequest(http.MethodPost, url, payload)
+	if err != nil {
+		log.Printf("⚠️ [Evolution] Falha ao definir presença (%s) para %s: %v", presence, to, err)
+	}
+	return err
+}
+
 // SendReply is not fully implemented yet in Evolution Go, returning a stub.
 func (a *EvolutionAdapter) SendReply(to, message, replyToMessageID string) error {
 	return errors.New("SendReply not implemented yet for Evolution API")
@@ -69,6 +87,49 @@ func (a *EvolutionAdapter) DownloadAudio(messageID string) ([]byte, error) {
 // DownloadImage is not fully implemented yet, returning a stub.
 func (a *EvolutionAdapter) DownloadImage(messageID string) ([]byte, string, error) {
 	return nil, "", errors.New("DownloadImage not implemented yet for Evolution API")
+}
+
+// GetConnectionState returns the current state of the WhatsApp connection.
+func (a *EvolutionAdapter) GetConnectionState() (string, error) {
+	// For Evolution Go, the correct endpoint is /instance/status
+	// The apikey identifies which instance to check.
+	url := fmt.Sprintf("%s/instance/status", a.BaseURL)
+	
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("apikey", a.APIKey)
+
+	// Use a short timeout for the connection state check
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("unexpected status %d: %s", resp.StatusCode, string(body))
+	}
+
+	// Evolution Go returns {"message": "success", "data": {"Connected": true, "LoggedIn": true}}
+	var result struct {
+		Data struct {
+			Connected bool `json:"Connected"`
+		} `json:"data"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return "", fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	if result.Data.Connected {
+		return "open", nil
+	}
+	return "close", nil
 }
 
 // doRequest helper to handle HTTP requests and error responses.
@@ -106,31 +167,25 @@ func (a *EvolutionAdapter) doRequest(method, url string, payload interface{}) er
 
 // Webhook handling
 
-// EvolutionWebhook represents the top-level webhook structure.
+// EvolutionWebhook represents the top-level webhook structure (compatible with Go version).
 type EvolutionWebhook struct {
-	Event string      `json:"event"`
-	Data  WebhookData `json:"data"`
-}
-
-// WebhookData represents the 'data' field in the webhook.
-type WebhookData struct {
-	Key              WebhookKey     `json:"key"`
-	Message          WebhookMessage `json:"message"`
-	MessageTimestamp int64          `json:"messageTimestamp"`
-	PushName         string         `json:"pushName"`
-	InstanceName     string         `json:"instanceName"`
-}
-
-// WebhookKey represents the message identification key.
-type WebhookKey struct {
-	RemoteJid string `json:"remoteJid"`
-	FromMe    bool   `json:"fromMe"`
-	ID        string `json:"id"`
-}
-
-// WebhookMessage represents the actual message content.
-type WebhookMessage struct {
-	Conversation string `json:"conversation"`
+	Event string `json:"event"`
+	Data  struct {
+		Info struct {
+			ID        string `json:"ID"`
+			Chat      string `json:"Chat"`
+			Sender    string `json:"Sender"`
+			IsFromMe  bool   `json:"IsFromMe"`
+			Timestamp string `json:"Timestamp"`
+			Type      string `json:"Type"`
+		} `json:"info"`
+		Message struct {
+			Conversation        string `json:"conversation"`
+			ExtendedTextMessage struct {
+				Text string `json:"text"`
+			} `json:"extendedTextMessage"`
+		} `json:"message"`
+	} `json:"data"`
 }
 
 // ParseWebhook converts an Evolution API webhook payload into a ports.IncomingMessage.
@@ -140,17 +195,42 @@ func ParseWebhook(rawBody []byte) (*ports.IncomingMessage, error) {
 		return nil, fmt.Errorf("failed to unmarshal webhook: %w", err)
 	}
 
-	// Only process messages.upsert
-	if payload.Event != "messages.upsert" {
+	// Evolution Go uses "Message", Legacy Evolution Node uses "messages.upsert"
+	if payload.Event != "messages.upsert" && payload.Event != "Message" {
 		return nil, nil // Ignored event
 	}
 
+	// Extract body
+	body := payload.Data.Message.Conversation
+	if body == "" && payload.Data.Message.ExtendedTextMessage.Text != "" {
+		body = payload.Data.Message.ExtendedTextMessage.Text
+	}
+
+	// Extract Sender/Chat correctly
+	from := payload.Data.Info.Chat
+	if from == "" {
+		from = payload.Data.Info.Sender
+	}
+
+	// Parse Timestamp
+	ts := time.Now()
+	if payload.Data.Info.Timestamp != "" {
+		if t, err := time.Parse(time.RFC3339, payload.Data.Info.Timestamp); err == nil {
+			ts = t
+		}
+	}
+
+	// If timestamp is still zero or very old, use current time
+	if ts.IsZero() {
+		ts = time.Now()
+	}
+
 	return &ports.IncomingMessage{
-		ID:        payload.Data.Key.ID,
-		From:      payload.Data.Key.RemoteJid,
-		Body:      payload.Data.Message.Conversation,
-		IsFromMe:  payload.Data.Key.FromMe,
-		Timestamp: time.Unix(payload.Data.MessageTimestamp, 0),
-		Type:      "text", // Default to text for now
+		ID:        payload.Data.Info.ID,
+		From:      from,
+		Body:      body,
+		IsFromMe:  payload.Data.Info.IsFromMe,
+		Timestamp: ts,
+		Type:      "text",
 	}, nil
 }
