@@ -13,7 +13,7 @@ import (
 )
 
 // handleLimpeza implements SEBRAE Form 04 logic for rural infrastructure cleaning
-func handleLimpeza(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, from string, body string, respondWithAudio bool, startTime time.Time, model string, pTokens int, cTokens int) ProcessResult {
+func handleLimpeza(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, from string, body string, respondWithAudio bool, startTime time.Time, modelConfigured string, modelEffective string, pTokens int, cTokens int) ProcessResult {
 	log.Printf("🧼 [FSM] Processando Intenção de Limpeza (Form 04)")
 	
 	pmoID := profile.PmoAtivoID
@@ -49,7 +49,7 @@ func handleLimpeza(ctx context.Context, ext *groq.ExtractionResult, profile *sup
 		ext.ItemArea, dataLimpeza, ext.ProdutoUtilizado, ext.Responsavel)
 	
 	sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio)
-	recordLog(sbClient, profile, body, botResponse, model, pTokens, cTokens, "limpeza", toMap(ext), startTime, true)
+	recordLog(sbClient, profile, body, botResponse, modelConfigured, modelEffective, pTokens, cTokens, "limpeza", toMap(ext), startTime, true, nil)
 	
 	return ProcessResult{Success: true, Reason: "limpeza_saved", TransactionID: resp["id"]}
 }

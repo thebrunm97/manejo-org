@@ -33,23 +33,64 @@ func sendFeedback(wpClient ports.MessageSender, ttsClient *tts.Orchestrator, fro
 	return wpClient.SendMessage(from, message)
 }
 
+// CalculateAICost returns the estimated cost in USD based on model and token usage
+func CalculateAICost(model string, pTokens, cTokens int) float64 {
+	// Reference prices per 1M tokens
+	var inputPrice, outputPrice float64
+
+	m := strings.ToLower(model)
+	switch {
+	case strings.Contains(m, "gemini-3.1") || strings.Contains(m, "flash-lite"):
+		// Flash Lite is generally cheaper, but using Flash baseline for safety
+		inputPrice = 0.075
+		outputPrice = 0.30
+	case strings.Contains(m, "gemini-2.0") || strings.Contains(m, "gemini-2.5") || strings.Contains(m, "flash"):
+		inputPrice = 0.10
+		outputPrice = 0.40
+	case strings.Contains(m, "groq"):
+		inputPrice = 0.05
+		outputPrice = 0.05
+	default:
+		// Default to 1.5-flash prices if unknown but clearly Gemini
+		if strings.Contains(m, "gemini") {
+			inputPrice = 0.075
+			outputPrice = 0.30
+		} else {
+			return 0
+		}
+	}
+
+	cost := (float64(pTokens)/1000000.0)*inputPrice + (float64(cTokens)/1000000.0)*outputPrice
+	return cost
+}
+
 // recordLog is a helper to centralize all logging to Supabase (Telemetry + Process Log)
-func recordLog(sbClient *supabase.Client, profile *supabase.Profile, msgIn string, msgOut string, model string, pTokens int, cTokens int, intent string, extraction map[string]interface{}, startTime time.Time, success bool) {
+func recordLog(sbClient *supabase.Client, profile *supabase.Profile, msgIn string, msgOut string, modelConfigured string, modelEffective string, pTokens int, cTokens int, intent string, extraction map[string]interface{}, startTime time.Time, success bool, raciocinio interface{}) {
 	if sbClient == nil || profile == nil {
 		return
 	}
 
 	duration := time.Since(startTime).Milliseconds()
+	custo := CalculateAICost(modelEffective, pTokens, cTokens)
 
 	// 1. Log de Processamento (Audit)
+	var pmoIDPtr *int64
+	if profile.PmoAtivoID > 0 {
+		val := profile.PmoAtivoID
+		pmoIDPtr = &val
+	}
+
 	_ = sbClient.InsertLogProcessamento(supabase.LogProcessamentoInsert{
-		PmoID:            profile.PmoAtivoID,
-		MensagemUsuario:  msgIn,
-		RespostaBot:      msgOut,
-		ModeloIA:         model,
-		TokensPrompt:     pTokens,
-		TokensCompletion: cTokens,
-		Intencao:         intent,
+		PmoID:             pmoIDPtr,
+		MensagemUsuario:   msgIn,
+		RespostaBot:       msgOut,
+		ModeloConfigurado: modelConfigured,
+		ModeloEfetivo:     modelEffective,
+		TokensPrompt:      pTokens,
+		TokensCompletion:  cTokens,
+		Intencao:          intent,
+		CustoDolar:        custo,
+		RaciocinioAgente:  raciocinio,
 	})
 
 	// 2. Log de Consumo (Billing/Quota)
@@ -58,8 +99,9 @@ func recordLog(sbClient *supabase.Client, profile *supabase.Profile, msgIn strin
 		TokensPrompt:     pTokens,
 		TokensCompletion: cTokens,
 		TotalTokens:      pTokens + cTokens,
-		ModeloIA:         model,
+		ModeloIA:         modelEffective,
 		Acao:             intent,
+		CustoEstimado:    custo,
 		Status:           "success",
 		DuracaoMs:        duration,
 	})
@@ -67,12 +109,12 @@ func recordLog(sbClient *supabase.Client, profile *supabase.Profile, msgIn strin
 	// 3. Log de Treinamento (Feedback Loop) - Apenas se houver extração
 	if extraction != nil && success {
 		_ = sbClient.InsertLogTreinamento(supabase.LogTreinamentoInsert{
-			PmoID:         profile.PmoAtivoID,
+			PmoID:         pmoIDPtr,
 			UserID:        profile.ID,
 			TextoUsuario:  msgIn,
 			JsonExtraido:  extraction,
 			TipoAtividade: intent,
-			ModeloIA:      model,
+			ModeloIA:      modelEffective,
 		})
 	}
 }
