@@ -10,15 +10,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 )
 
-// CalcularAdubacaoTool is the agronomic calculation engine tool.
-var CalcularAdubacaoTool = Tool{
+// CalcularAdubacaoDef is the agnostic definition for the agronomic calculation tool.
+var CalcularAdubacaoDef = llm.FerramentaAgnostica{
 	Name:        "calcular_recomendacao_adubacao",
 	Description: "Calcula a dose recomendada de adubo orgânico (NPK) baseada na cultura, meta de produtividade e adubo disponível. Use esta ferramenta sempre que o usuário pedir recomendações de adubação ou quiser saber quanto de adubo usar.",
-	Category:    CategoryDatabase,
-	InputSchema: map[string]interface{}{
+	Parameters: map[string]interface{}{
 		"type": "object",
 		"properties": map[string]interface{}{
 			"cultura": map[string]interface{}{
@@ -40,316 +40,397 @@ var CalcularAdubacaoTool = Tool{
 
 // InitializeTools registers the initial set of tools to the MCP server
 func (s *Server) InitializeTools() {
-	s.RegisterTool(CalcularAdubacaoTool)
-	
 	s.RegisterTool(Tool{
-		Name:        "consultar_base_conhecimento",
-		Description: "Usa esta ferramenta para pesquisar manuais, regras de plantio, histórico da fazenda e normas globais orgânicas.",
-		Category:    CategoryRAG,
-		InputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"pmo_id": map[string]interface{}{
-					"type":        "integer",
-					"description": "ID do PMO (fazenda) do usuário para filtrar os documentos.",
-				},
-				"pergunta": map[string]interface{}{
-					"type":        "string",
-					"description": "A pergunta ou termo de busca para pesquisar na base de conhecimento.",
-				},
-			},
-			"required": []string{"pmo_id", "pergunta"},
-		},
-		Handler: s.handleConsultarBaseConhecimento,
+		Definition: CalcularAdubacaoDef,
+		Category:   CategoryDatabase,
+		Handler:    s.handleCalcularAdubacao,
 	})
 
 	s.RegisterTool(Tool{
-		Name:        "consultar_dados_fazenda",
-		Description: "Usa esta ferramenta para consultar dados estruturados da fazenda como talhões, canteiros ativos e registros recentes do caderno de campo.",
-		Category:    CategoryRAG,
-		InputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"pmo_id": map[string]interface{}{
-					"type":        "integer",
-					"description": "ID do PMO (fazenda) do usuário.",
+		Definition: llm.FerramentaAgnostica{
+			Name:        "consultar_base_conhecimento",
+			Description: "Usa esta ferramenta para pesquisar manuais, regras de plantio, histórico da fazenda e normas globais orgânicas.",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"pmo_id": map[string]interface{}{
+						"type":        "integer",
+						"description": "ID do PMO (fazenda) do usuário para filtrar os documentos.",
+					},
+					"pergunta": map[string]interface{}{
+						"type":        "string",
+						"description": "A pergunta ou termo de busca para pesquisar na base de conhecimento.",
+					},
 				},
-				"tabela": map[string]interface{}{
-					"type":        "string",
-					"enum":        []string{"talhoes", "canteiros", "caderno_recente"},
-					"description": "A categoria de dados que deseja consultar.",
-				},
-				"talhao_id": map[string]interface{}{
-					"type":        "integer",
-					"description": "Obrigatório se a tabela for 'canteiros'. ID do talhão para filtrar canteiros.",
-				},
+				"required": []string{"pmo_id", "pergunta"},
 			},
-			"required": []string{"pmo_id", "tabela"},
 		},
-		Handler: s.handleConsultarDadosFazenda,
+		Category: CategoryRAG,
+		Handler:  s.handleConsultarBaseConhecimento,
 	})
 
 	s.RegisterTool(Tool{
-		Name:        "criar_infraestrutura_fazenda",
-		Description: "Cria um talhão completo e opcionalmente uma sequência de canteiros em um único passo. Use esta ferramenta sempre que o usuário pedir para 'criar a fazenda', 'adicionar talhão com canteiros' ou 'montar infraestrutura'.",
-		Category:    CategoryDatabase,
-		InputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"nome_talhao": map[string]interface{}{
-					"type":        "string",
-					"description": "Nome do talhão (ex: Gleba A).",
+		Definition: llm.FerramentaAgnostica{
+			Name:        "consultar_dados_fazenda",
+			Description: "Usa esta ferramenta para consultar dados estruturados da fazenda como talhões, canteiros ativos e registros recentes do caderno de campo.",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"pmo_id": map[string]interface{}{
+						"type":        "integer",
+						"description": "ID do PMO (fazenda) do usuário.",
+					},
+					"tabela": map[string]interface{}{
+						"type":        "string",
+						"enum":        []string{"talhoes", "canteiros", "caderno_recente"},
+						"description": "A categoria de dados que deseja consultar.",
+					},
+					"talhao_id": map[string]interface{}{
+						"type":        "integer",
+						"description": "Obrigatório se a tabela for 'canteiros'. ID do talhão para filtrar canteiros.",
+					},
 				},
-				"area_hectares": map[string]interface{}{
-					"type":        "number",
-					"description": "Área do talhão em hectares.",
-				},
-				"quantidade_canteiros": map[string]interface{}{
-					"type":        "integer",
-					"description": "Número de canteiros a serem gerados dentro do talhão (opcional, default 0).",
-				},
+				"required": []string{"pmo_id", "tabela"},
 			},
-			"required": []string{"nome_talhao", "area_hectares"},
 		},
-		Handler: s.handleCriarInfraestruturaFazenda,
+		Category: CategoryRAG,
+		Handler:  s.handleConsultarDadosFazenda,
 	})
 
 	s.RegisterTool(Tool{
-		Name:        "adicionar_insumo_pmo",
-		Description: "Usa esta ferramenta para cadastrar insumos e equipamentos (Seção 8 do PMO) como fertilizantes, sementes compradas, substratos ou ferramentas novas.",
-		Category:    CategoryDatabase,
-		InputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"pmo_id": map[string]interface{}{"type": "integer"},
-				"produto_manejo": map[string]interface{}{
-					"type":        "string",
-					"description": "Nome do insumo ou equipamento (Ex: Esterco de curral, Enxada, Substrato).",
+		Definition: llm.FerramentaAgnostica{
+			Name:        "criar_infraestrutura_fazenda",
+			Description: "Ferramenta PRINCIPAL para configuração da estrutura física. Cria um talhão completo e seus canteiros em um único passo. Use esta ferramenta sempre que o usuário pedir para 'montar', 'criar' ou 'configurar' a infraestrutura da fazenda.",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"nome_talhao": map[string]interface{}{
+						"type":        "string",
+						"description": "Nome do talhão (ex: Gleba A).",
+					},
+					"area_hectares": map[string]interface{}{
+						"type":        "number",
+						"description": "Área do talhão em hectares.",
+					},
+					"quantidade_canteiros": map[string]interface{}{
+						"type":        "integer",
+						"description": "Número de canteiros a serem gerados dentro do talhão (opcional, default 0).",
+					},
 				},
-				"cultura_destino": map[string]interface{}{
-					"type":        "string",
-					"description": "Para qual cultura este insumo será usado (Ex: Alface, Milho).",
-				},
-				"epoca_frequencia": map[string]interface{}{
-					"type":        "string",
-					"description": "Quando é aplicado (Ex: No plantio, Mensalmente).",
-				},
-				"procedencia": map[string]interface{}{
-					"type":        "string",
-					"description": "Origem do insumo (Ex: Compra comercial, Produção própria).",
-				},
-				"composicao": map[string]interface{}{
-					"type":        "string",
-					"description": "Do que é feito (Ex: NPK, Orgânico 100%).",
-				},
-				"marca": map[string]interface{}{
-					"type":        "string",
-					"description": "Marca comercial, se houver.",
-				},
-				"dosagem": map[string]interface{}{
-					"type":        "string",
-					"description": "OBRIGATÓRIO. Quantidade ou dose recomendada (Ex: 10kg/ha). Se o usuário não informou, NÃO invente e NÃO chame a função. Pergunte primeiro.",
-				},
+				"required": []string{"nome_talhao", "area_hectares"},
 			},
-			"required": []string{"pmo_id", "produto_manejo", "dosagem"},
 		},
-		Handler: s.handleAdicionarInsumoPMO,
+		Category: CategoryDatabase,
+		Handler:  s.handleCriarInfraestruturaFazenda,
 	})
 
 	s.RegisterTool(Tool{
-		Name:        "registrar_propagacao_vegetal",
-		Description: "Usa esta ferramenta para registrar a origem de sementes, mudas ou material propagativo (Seção 9 do PMO).",
-		Category:    CategoryDatabase,
-		InputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"pmo_id": map[string]interface{}{"type": "integer"},
-				"tipo": map[string]interface{}{
-					"type":        "string",
-					"description": "Atividade realizada: Compra/Aquisição (se apenas comprou), Plantio (se colocou na terra), Semeadura ou Transplante.",
-					"enum":        []string{"Compra/Aquisição", "Plantio", "Semeadura", "Transplante"},
+		Definition: llm.FerramentaAgnostica{
+			Name:        "adicionar_insumo_pmo",
+			Description: "Usa esta ferramenta para cadastrar insumos e equipamentos (Seção 8 do PMO) como fertilizantes, sementes compradas, substratos ou ferramentas novas.",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"pmo_id": map[string]interface{}{"type": "integer"},
+					"produto_manejo": map[string]interface{}{
+						"type":        "string",
+						"description": "Nome do insumo ou equipamento (Ex: Esterco de curral, Enxada, Substrato).",
+					},
+					"cultura_destino": map[string]interface{}{
+						"type":        "string",
+						"description": "Para qual cultura este insumo será usado (Ex: Alface, Milho).",
+					},
+					"epoca_frequencia": map[string]interface{}{
+						"type":        "string",
+						"description": "Quando é aplicado (Ex: No plantio, Mensalmente).",
+					},
+					"procedencia": map[string]interface{}{
+						"type":        "string",
+						"description": "Origem do insumo (Ex: Compra comercial, Produção própria).",
+					},
+					"composicao": map[string]interface{}{
+						"type":        "string",
+						"description": "Do que é feito (Ex: NPK, Orgânico 100%).",
+					},
+					"marca": map[string]interface{}{
+						"type":        "string",
+						"description": "Marca comercial, se houver.",
+					},
+					"dosagem": map[string]interface{}{
+						"type":        "string",
+						"description": "OBRIGATÓRIO. Quantidade ou dose recomendada (Ex: 10kg/ha). Se o usuário não informou, NÃO invente e NÃO chame a função. Pergunte primeiro.",
+					},
 				},
-				"especies": map[string]interface{}{
-					"type":        "string",
-					"description": "Espécie ou cultivar (Ex: Alface Crespa, Tomate Cereja).",
-				},
-				"origem": map[string]interface{}{
-					"type":        "string",
-					"description": "Fornecedor ou origem (Ex: Sementes Isla, Produção Própria).",
-				},
-				"quantidade": map[string]interface{}{
-					"type":        "string",
-					"description": "OBRIGATÓRIO. A quantidade exata (ex: 50 mudas, 2 kg). Se o utilizador não mencionou, NÃO adivinhe e NÃO chame a função. Pergunte primeiro.",
-				},
-				"sistema_organico": map[string]interface{}{
-					"type":        "boolean",
-					"description": "Indica se o material é certificado orgânico.",
-				},
-				"data_compra": map[string]interface{}{
-					"type":        "string",
-					"description": "Data no formato YYYY-MM-DD.",
-				},
+				"required": []string{"pmo_id", "produto_manejo", "dosagem"},
 			},
-			"required": []string{"pmo_id", "tipo", "especies", "quantidade"},
 		},
-		Handler: s.handleRegistrarPropagacaoVegetal,
+		Category: CategoryDatabase,
+		Handler:  s.handleAdicionarInsumoPMO,
 	})
 
 	s.RegisterTool(Tool{
-		Name:        "registrar_limpeza",
-		Description: "Usa esta ferramenta para registrar a higienização de instalações, equipamentos ou ferramentas (Seção 4 / Formulário 04 do PMO).",
-		Category:    CategoryDatabase,
-		InputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"pmo_id":            map[string]interface{}{"type": "integer"},
-				"item_area":         map[string]interface{}{"type": "string", "description": "O que foi limpo (Ex: Trator, Galpão, Enxadas)."},
-				"tipo_limpeza":      map[string]interface{}{"type": "string", "description": "Como foi feito (Ex: Lavagem, Varrição, Desinfecção)."},
-				"produto_utilizado": map[string]interface{}{"type": "string", "description": "Produto usado, se houver (Ex: Sabão neutro, Álcool 70%)."},
-				"dosagem":           map[string]interface{}{"type": "string", "description": "Quantidade do produto usado."},
-				"responsavel":       map[string]interface{}{"type": "string", "description": "Quem realizou a limpeza (Default: Produtor)."},
+		Definition: llm.FerramentaAgnostica{
+			Name:        "registrar_propagacao_vegetal",
+			Description: "Usa esta ferramenta para registrar a origem de sementes, mudas ou material propagativo (Seção 9 do PMO).",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"pmo_id": map[string]interface{}{"type": "integer"},
+					"tipo": map[string]interface{}{
+						"type":        "string",
+						"description": "Atividade realizada: Compra/Aquisição (se apenas comprou), Plantio (se colocou na terra), Semeadura ou Transplante.",
+						"enum":        []string{"Compra/Aquisição", "Plantio", "Semeadura", "Transplante"},
+					},
+					"especies": map[string]interface{}{
+						"type":        "string",
+						"description": "Espécie ou cultivar (Ex: Alface Crespa, Tomate Cereja).",
+					},
+					"origem": map[string]interface{}{
+						"type":        "string",
+						"description": "Fornecedor ou origem (Ex: Sementes Isla, Produção Própria).",
+					},
+					"quantidade": map[string]interface{}{
+						"type":        "string",
+						"description": "OBRIGATÓRIO. A quantidade exata (ex: 50 mudas, 2 kg). Se o utilizador não mencionou, NÃO adivinhe e NÃO chame a função. Pergunte primeiro.",
+					},
+					"sistema_organico": map[string]interface{}{
+						"type":        "boolean",
+						"description": "Indica se o material é certificado orgânico.",
+					},
+					"data_compra": map[string]interface{}{
+						"type":        "string",
+						"description": "Data no formato YYYY-MM-DD.",
+					},
+				},
+				"required": []string{"pmo_id", "tipo", "especies", "quantidade"},
 			},
-			"required": []string{"pmo_id", "item_area", "tipo_limpeza"},
 		},
-		Handler: s.handleRegistrarLimpeza,
+		Category: CategoryDatabase,
+		Handler:  s.handleRegistrarPropagacaoVegetal,
 	})
 
 	s.RegisterTool(Tool{
-		Name:        "criar_talhao",
-		Description: "Usa esta ferramenta para criar um novo talhão (área produtiva) na fazenda.",
-		Category:    CategoryDatabase,
-		InputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"pmo_id":        map[string]interface{}{"type": "integer"},
-				"nome_talhao":   map[string]interface{}{"type": "string", "description": "Nome descritivo (Ex: Gleba 01, Horta dos Pomares)."},
-				"area_hectares": map[string]interface{}{"type": "number", "description": "Tamanho da área em hectares (Ex: 0.5, 1.2)."},
-				"cultura":       map[string]interface{}{"type": "string", "description": "Cultura principal plantada (Opcional)."},
+		Definition: llm.FerramentaAgnostica{
+			Name:        "registrar_limpeza",
+			Description: "Usa esta ferramenta para registrar a higienização de instalações, equipamentos ou ferramentas (Seção 4 / Formulário 04 do PMO).",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"pmo_id":            map[string]interface{}{"type": "integer"},
+					"item_area":         map[string]interface{}{"type": "string", "description": "O que foi limpo (Ex: Trator, Galpão, Enxadas)."},
+					"tipo_limpeza":      map[string]interface{}{"type": "string", "description": "Como foi feito (Ex: Lavagem, Varrição, Desinfecção)."},
+					"produto_utilizado": map[string]interface{}{"type": "string", "description": "Produto usado, se houver (Ex: Sabão neutro, Álcool 70%)."},
+					"dosagem":           map[string]interface{}{"type": "string", "description": "Quantidade do produto usado."},
+					"responsavel":       map[string]interface{}{"type": "string", "description": "Quem realizou a limpeza (Default: Produtor)."},
+				},
+				"required": []string{"pmo_id", "item_area", "tipo_limpeza"},
 			},
-			"required": []string{"pmo_id", "nome_talhao", "area_hectares"},
 		},
-		Handler: s.handleCriarNovoTalhao,
+		Category: CategoryDatabase,
+		Handler:  s.handleRegistrarLimpeza,
 	})
 
 	s.RegisterTool(Tool{
-		Name:        "criar_canteiros",
-		Description: "Cria canteiros em lote dentro de um talhão existente.",
-		Category:    CategoryDatabase,
-		InputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"talhao_id":             map[string]interface{}{"type": "integer"},
-				"quantidade":            map[string]interface{}{"type": "integer", "description": "Número de canteiros a criar."},
-				"identificador_inicial": map[string]interface{}{"type": "integer", "description": "Número do primeiro canteiro (Ex: 1)."},
+		Definition: llm.FerramentaAgnostica{
+			Name:        "criar_talhao",
+			Description: "Ferramenta OBRIGATÓRIA para criação de nova área produtiva (talhão). SEMPRE use esta tool para cadastrar o nome e área do talhão antes de registrar atividades nele. NÃO use ferramentas de colheita/venda para criar áreas.",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"pmo_id":         map[string]interface{}{"type": "integer"},
+					"propriedade_id": map[string]interface{}{"type": "integer", "description": "ID da propriedade (fazenda) onde o talhão será criado."},
+					"nome_talhao":   map[string]interface{}{"type": "string", "description": "Nome descritivo (Ex: Gleba 01, Horta dos Pomares)."},
+					"area_hectares": map[string]interface{}{"type": "number", "description": "Tamanho da área em hectares (Ex: 0.5, 1.2)."},
+					"cultura":       map[string]interface{}{"type": "string", "description": "Cultura principal plantada (Opcional)."},
+				},
+				"required": []string{"pmo_id", "propriedade_id", "nome_talhao", "area_hectares"},
 			},
-			"required": []string{"talhao_id", "quantidade", "identificador_inicial"},
 		},
-		Handler: s.handleCriarNovosCanteiros,
+		Category: CategoryDatabase,
+		Handler:  s.handleCriarNovoTalhao,
 	})
 
 	s.RegisterTool(Tool{
-		Name:        "registrar_compostagem",
-		Description: "Usa esta ferramenta para registrar a montagem, revirada, controle de temperatura, adição de água ou uso de lotes de compostagem (Formulário 05).",
-		Category:    CategoryDatabase,
-		InputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"pmo_id":              map[string]interface{}{"type": "integer"},
-				"acao":                map[string]interface{}{"type": "string", "description": "Ação realizada: 'Nova Pilha', 'Revirada', 'Temperatura', 'Agua' ou 'Uso'.", "enum": []string{"Nova Pilha", "Revirada", "Temperatura", "Agua", "Uso"}},
-				"identificador_pilha": map[string]interface{}{"type": "string", "description": "Identificador ou número da pilha (ex: 'Pilha 01')."},
-				"materiais":           map[string]interface{}{"type": "string", "description": "Apenas se acao = 'Nova Pilha'. Ingredientes adicionados."},
-				"temperatura":         map[string]interface{}{"type": "number", "description": "Apenas se fornecida temperatura (em ºC)."},
-				"observacao":          map[string]interface{}{"type": "string", "description": "Observações adicionais ou notas."},
+		Definition: llm.FerramentaAgnostica{
+			Name:        "criar_canteiros",
+			Description: "Ferramenta OBRIGATÓRIA para criação de canteiros em lote dentro de um talhão existente. Altera a configuração física da área.",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"talhao_id":             map[string]interface{}{"type": "integer"},
+					"quantidade":            map[string]interface{}{"type": "integer", "description": "Número de canteiros a criar."},
+					"identificador_inicial": map[string]interface{}{"type": "integer", "description": "Número do primeiro canteiro (Ex: 1)."},
+				},
+				"required": []string{"talhao_id", "quantidade", "identificador_inicial"},
 			},
-			"required": []string{"pmo_id", "acao", "identificador_pilha"},
 		},
-		Handler: s.handleRegistrarCompostagem,
+		Category: CategoryDatabase,
+		Handler:  s.handleCriarNovosCanteiros,
 	})
 
 	s.RegisterTool(Tool{
-		Name:        "registrar_compra_insumo",
-		Description: "Usa esta ferramenta para registrar a compra ou aquisição de um insumo, produto, semente, ferramenta ou serviço (Formulário 06 da certificação orgânica). Obrigatório quando o agricultor relatar que 'comprou' algo ou recebeu 'nota fiscal'.",
-		Category:    CategoryDatabase,
-		InputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"pmo_id": map[string]interface{}{"type": "integer"},
-				"produto": map[string]interface{}{
-					"type":        "string",
-					"description": "Nome do produto/insumo adquirido (Ex: Esterco, Enxada, Semente de Alface, Adubo orgânico).",
+		Definition: llm.FerramentaAgnostica{
+			Name:        "registrar_compostagem",
+			Description: "Usa esta ferramenta para registrar a montagem, revirada, controle de temperatura, adição de água ou uso de lotes de compostagem (Formulário 05).",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"pmo_id":              map[string]interface{}{"type": "integer"},
+					"acao":                map[string]interface{}{"type": "string", "description": "Ação realizada: 'Nova Pilha', 'Revirada', 'Temperatura', 'Agua' ou 'Uso'.", "enum": []string{"Nova Pilha", "Revirada", "Temperatura", "Agua", "Uso"}},
+					"identificador_pilha": map[string]interface{}{"type": "string", "description": "Identificador ou número da pilha (ex: 'Pilha 01')."},
+					"materiais":           map[string]interface{}{"type": "string", "description": "Apenas se acao = 'Nova Pilha'. Ingredientes adicionados."},
+					"temperatura":         map[string]interface{}{"type": "number", "description": "Apenas se fornecida temperatura (em ºC)."},
+					"observacao":          map[string]interface{}{"type": "string", "description": "Observações adicionais ou notas."},
 				},
-				"fornecedor": map[string]interface{}{
-					"type":        "string",
-					"description": "Nome do fornecedor, loja ou agropecuária onde foi comprado.",
-				},
-				"nota_fiscal": map[string]interface{}{
-					"type":        "string",
-					"description": "Número da Nota Fiscal (NF) ou recibo, se mencionado.",
-				},
-				"quantidade_valor": map[string]interface{}{
-					"type":        "number",
-					"description": "Valor numérico da quantidade comprada (Ex: 10, 50.5).",
-				},
-				"quantidade_unidade": map[string]interface{}{
-					"type":        "string",
-					"description": "Unidade de medida (Ex: kg, L, sacos, unidades, mudas).",
-				},
-				"data_compra": map[string]interface{}{
-					"type":        "string",
-					"description": "Data da compra no formato YYYY-MM-DD. Se o usuário não disser a data específica, deixe vazio para usar hoje.",
-				},
+				"required": []string{"pmo_id", "acao", "identificador_pilha"},
 			},
-			"required": []string{"pmo_id", "produto", "quantidade_valor", "quantidade_unidade"},
 		},
-		Handler: s.handleRegistrarCompraInsumo,
+		Category: CategoryDatabase,
+		Handler:  s.handleRegistrarCompostagem,
 	})
 
 	s.RegisterTool(Tool{
-		Name:        "registrar_colheita",
-		Description: "Usa esta ferramenta para registrar a colheita de produtos na fazenda (Formulário 07).",
-		Category:    CategoryDatabase,
-		InputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"pmo_id":          map[string]interface{}{"type": "integer"},
-				"data":            map[string]interface{}{"type": "string", "description": "Data da colheita (YYYY-MM-DD)."},
-				"cultura":         map[string]interface{}{"type": "string", "description": "Nome da cultura colhida (Ex: Alface Crespa, Tomate)."},
-				"talhao":          map[string]interface{}{"type": "string", "description": "Nome do talhão onde foi colhido (Ex: Talhão 01)."},
-				"quantidade":      map[string]interface{}{"type": "number", "description": "Quantidade colhida."},
-				"unidade":         map[string]interface{}{"type": "string", "description": "Unidade de medida (Ex: kg, maços, caixas)."},
-				"destino_inicial": map[string]interface{}{"type": "string", "description": "Para onde foi o produto logo após a colheita (Ex: Depósito, Câmara Fria, Lavagem).", "default": "Depósito"},
+		Definition: llm.FerramentaAgnostica{
+			Name:        "registrar_compra_insumo",
+			Description: "Usa esta ferramenta para registrar a compra ou aquisição de um insumo, produto, semente, ferramenta ou serviço (Formulário 06 da certificação orgânica). Obrigatório quando o agricultor relatar que 'comprou' algo ou recebeu 'nota fiscal'.",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"pmo_id": map[string]interface{}{"type": "integer"},
+					"produto": map[string]interface{}{
+						"type":        "string",
+						"description": "Nome do produto/insumo adquirido (Ex: Esterco, Enxada, Semente de Alface, Adubo orgânico).",
+					},
+					"fornecedor": map[string]interface{}{
+						"type":        "string",
+						"description": "Nome do fornecedor, loja ou agropecuária onde foi comprado.",
+					},
+					"nota_fiscal": map[string]interface{}{
+						"type":        "string",
+						"description": "Número da Nota Fiscal (NF) ou recibo, se mencionado.",
+					},
+					"quantidade_valor": map[string]interface{}{
+						"type":        "number",
+						"description": "Valor numérico da quantidade comprada (Ex: 10, 50.5).",
+					},
+					"quantidade_unidade": map[string]interface{}{
+						"type":        "string",
+						"description": "Unidade de medida (Ex: kg, L, sacos, unidades, mudas).",
+					},
+					"data_compra": map[string]interface{}{
+						"type":        "string",
+						"description": "Data da compra no formato YYYY-MM-DD. Se o usuário não disser a data específica, deixe vazio para usar hoje.",
+					},
+				},
+				"required": []string{"pmo_id", "produto", "quantidade_valor", "quantidade_unidade"},
 			},
-			"required": []string{"pmo_id", "cultura", "talhao", "quantidade", "unidade"},
 		},
-		Handler: s.handleRegistrarColheita,
+		Category: CategoryDatabase,
+		Handler:  s.handleRegistrarCompraInsumo,
 	})
 
 	s.RegisterTool(Tool{
-		Name:        "registrar_venda",
-		Description: "Usa esta ferramenta para registrar a venda, comercialização ou destinação final de produtos (Formulário 08). Saída de estoque.",
-		Category:    CategoryDatabase,
-		InputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"pmo_id":         map[string]interface{}{"type": "integer"},
-				"data":           map[string]interface{}{"type": "string", "description": "Data da venda/saída (YYYY-MM-DD)."},
-				"produto":        map[string]interface{}{"type": "string", "description": "Nome do produto vendido (Ex: Alface, Tomate)."},
-				"quantidade":     map[string]interface{}{"type": "number"},
-				"unidade":        map[string]interface{}{"type": "string", "description": "Unidade de medida (Ex: kg, maços, caixas)."},
-				"valor_unitario": map[string]interface{}{"type": "number", "description": "Valor por unidade vendida (opcional)."},
-				"cliente":        map[string]interface{}{"type": "string", "description": "Nome do comprador ou cliente."},
-				"destinacao": map[string]interface{}{
-					"type":        "string",
-					"enum":        []string{"venda", "doacao", "perda", "processamento", "consumo proprio"},
-					"description": "Tipo de saída/destinação.",
-					"default":     "venda",
+		Definition: llm.FerramentaAgnostica{
+			Name:        "registrar_colheita",
+			Description: "Registra a colheita em um talhão já existente. JAMAIS use esta ferramenta para criar um talhão novo; use 'criar_talhao' primeiro.",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"pmo_id":          map[string]interface{}{"type": "integer"},
+					"data":            map[string]interface{}{"type": "string", "description": "Data da colheita (YYYY-MM-DD)."},
+					"cultura":         map[string]interface{}{"type": "string", "description": "Nome da cultura colhida (Ex: Alface Crespa, Tomate)."},
+					"talhao":          map[string]interface{}{"type": "string", "description": "Nome do talhão onde foi colhido (Ex: Talhão 01)."},
+					"quantidade":      map[string]interface{}{"type": "number", "description": "Quantidade colhida."},
+					"unidade":         map[string]interface{}{"type": "string", "description": "Unidade de medida (Ex: kg, maços, caixas)."},
+					"destino_inicial": map[string]interface{}{"type": "string", "description": "Para onde foi o produto logo após a colheita (Ex: Depósito, Câmara Fria, Lavagem).", "default": "Depósito"},
 				},
-				"nota_fiscal": map[string]interface{}{"type": "string", "description": "Número da NF ou recibo."},
+				"required": []string{"pmo_id", "cultura", "talhao", "quantidade", "unidade"},
 			},
-			"required": []string{"pmo_id", "produto", "quantidade", "unidade", "destinacao"},
 		},
-		Handler: s.handleRegistrarVenda,
+		Category: CategoryDatabase,
+		Handler:  s.handleRegistrarColheita,
 	})
+
+	s.RegisterTool(Tool{
+		Definition: llm.FerramentaAgnostica{
+			Name:        "registrar_venda",
+			Description: "Registra a venda ou saída de produtos colhidos. Ferramenta de atividade de campo, não administrativa de infraestrutura.",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"pmo_id":         map[string]interface{}{"type": "integer"},
+					"data":           map[string]interface{}{"type": "string", "description": "Data da venda/saída (YYYY-MM-DD)."},
+					"produto":        map[string]interface{}{"type": "string", "description": "Nome do produto vendido (Ex: Alface, Tomate)."},
+					"quantidade":     map[string]interface{}{"type": "number"},
+					"unidade":        map[string]interface{}{"type": "string", "description": "Unidade de medida (Ex: kg, maços, caixas)."},
+					"valor_unitario": map[string]interface{}{"type": "number", "description": "Valor por unidade vendida (opcional)."},
+					"cliente":        map[string]interface{}{"type": "string", "description": "Nome do comprador ou cliente."},
+					"destinacao": map[string]interface{}{
+						"type":        "string",
+						"enum":        []string{"venda", "doacao", "perda", "processamento", "consumo proprio"},
+						"description": "Tipo de saída/destinação.",
+						"default":     "venda",
+					},
+					"nota_fiscal": map[string]interface{}{"type": "string", "description": "Número da NF ou recibo."},
+				},
+				"required": []string{"pmo_id", "produto", "quantidade", "unidade", "destinacao"},
+			},
+		},
+		Category: CategoryDatabase,
+		Handler:  s.handleRegistrarVenda,
+	})
+
+	s.RegisterTool(Tool{
+		Definition: llm.FerramentaAgnostica{
+			Name:        "selecionar_fazenda",
+			Description: "Usa esta ferramenta quando o agricultor quer trocar de fazenda ou pede para 'voltar' para outra propriedade. Atualiza a fazenda ativa no perfil do usuário.",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"propriedade_id":   map[string]interface{}{"type": "integer", "description": "O ID da propriedade (fazenda) que o usuário quer ativar."},
+					"nome_propriedade": map[string]interface{}{"type": "string", "description": "O nome da fazenda (para feedback amigável)."},
+				},
+				"required": []string{"propriedade_id"},
+			},
+		},
+		Category: CategoryDatabase,
+		Handler:  s.handleSelecionarFazenda,
+	})
+
+	s.RegisterTool(Tool{
+		Definition: llm.FerramentaAgnostica{
+			Name:        "selecionar_pmo",
+			Description: "Usa esta ferramenta quando o agricultor quer trocar o Plano de Manejo Orgânico (PMO) atual ou pede para trabalhar em outro ano/plano. Atualiza o PMO ativo no perfil do usuário.",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"pmo_id":    map[string]interface{}{"type": "integer", "description": "O ID do PMO que o usuário quer ativar."},
+					"ano_safra": map[string]interface{}{"type": "string", "description": "O ano ou identificador do PMO (para feedback amigável)."},
+				},
+				"required": []string{"pmo_id"},
+			},
+		},
+		Category: CategoryDatabase,
+		Handler:  s.handleSelecionarPMO,
+	})
+}
+
+func (s *Server) handleCalcularAdubacao(args map[string]interface{}) (interface{}, error) {
+	cultura := sanitize(args["cultura"])
+	meta, _ := parseArgToFloat(args["meta_produtividade"])
+	aduboNome := sanitize(args["adubo_base_nome"])
+
+	if cultura == "" || meta <= 0 || aduboNome == "" {
+		return nil, fmt.Errorf("argumentos insuficientes para cálculo: cultura=%s, meta=%v, adubo=%s", cultura, meta, aduboNome)
+	}
+
+	log.Printf("🧪 [MCP-TOOL] Calculando recomendação agronomica para %s (Meta: %v t/ha) com %s", cultura, meta, aduboNome)
+	res, err := s.supabase.CalcularBalancoNutricional(context.Background(), cultura, meta, aduboNome)
+	if err != nil {
+		return nil, fmt.Errorf("erro no motor agronômico: %w", err)
+	}
+
+	return res, nil
 }
 
 func (s *Server) handleConsultarDadosFazenda(args map[string]interface{}) (interface{}, error) {
@@ -410,8 +491,8 @@ func (s *Server) handleConsultarBaseConhecimento(args map[string]interface{}) (i
 
 	log.Printf("🔍 [MCP-TOOL] Consultando base para PMO %d: %s", pmoID, pergunta)
 
-	// 1. Gerar Embedding usando o Gemini
-	embedding, err := s.gemini.GenerateEmbedding(pergunta)
+	// 1. Gerar Embedding usando o motor agnóstico
+	embedding, err := s.embedder.GenerateEmbedding(pergunta)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao gerar embedding: %w", err)
 	}
@@ -459,11 +540,18 @@ func (s *Server) handleCriarNovoTalhao(args map[string]interface{}) (interface{}
 	if err != nil {
 		return nil, fmt.Errorf("pmo_id is required: %w", err)
 	}
+	var pmoIDPtr *int64
+	if pmoIDFloat > 0 {
+		val := int64(pmoIDFloat)
+		pmoIDPtr = &val
+	}
+
+	propriedadeIDFloat, _ := parseArgToFloat(args["propriedade_id"])
 	userID, _ := args["user_id"].(string)
 
-	log.Printf("🏗️ [MCP-TOOL] Criando novo talhão '%s' para PMO %d", nome, int64(pmoIDFloat))
+	log.Printf("🏗️ [MCP-TOOL] Criando novo talhão '%s' para PMO %v na Propriedade %d", nome, pmoIDPtr, int64(propriedadeIDFloat))
 
-	id, err := s.supabase.CriarTalhao(nome, areaHectares, cultura, int64(pmoIDFloat), userID)
+	id, err := s.supabase.CriarTalhao(nome, areaHectares, cultura, pmoIDPtr, int64(propriedadeIDFloat), userID)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao criar talhão: %w", err)
 	}
@@ -516,11 +604,17 @@ func (s *Server) handleCriarInfraestruturaFazenda(args map[string]interface{}) (
 	if err != nil {
 		return nil, fmt.Errorf("pmo_id is required: %w", err)
 	}
+	var pmoIDPtr *int64
+	if pmoIDFloat > 0 {
+		val := int64(pmoIDFloat)
+		pmoIDPtr = &val
+	}
+	propriedadeIDFloat, _ := parseArgToFloat(args["propriedade_id"])
 	userID, _ := args["user_id"].(string)
 
-	log.Printf("🏗️ [MCP-TOOL] Criando infraestrutura unificada para PMO %d: %s", int64(pmoIDFloat), nome)
+	log.Printf("🏗️ [MCP-TOOL] Criando infraestrutura unificada para PMO %v na Propriedade %d: %s", pmoIDPtr, int64(propriedadeIDFloat), nome)
 
-	res, err := s.supabase.CriarInfraestruturaCompleta(nome, areaHectares, cultura, int64(pmoIDFloat), userID, int(qtdCanteirosFloat))
+	res, err := s.supabase.CriarInfraestruturaCompleta(nome, areaHectares, cultura, pmoIDPtr, int64(propriedadeIDFloat), userID, int(qtdCanteirosFloat))
 	if err != nil {
 		return nil, fmt.Errorf("erro na infraestrutura unificada: %w", err)
 	}
@@ -532,10 +626,14 @@ func (s *Server) handleAdicionarInsumoPMO(args map[string]interface{}) (interfac
 	log.Printf("🚨 [DEBUG TOOL] handleAdicionarInsumoPMO Args recebidos do LLM: %+v", args)
 
 	pmoIDFloat, _ := parseArgToFloat(args["pmo_id"])
-	pmoID := int64(pmoIDFloat)
+	var pmoIDPtr *int64
+	if pmoIDFloat > 0 {
+		val := int64(pmoIDFloat)
+		pmoIDPtr = &val
+	}
 
 	record := supabase.PmoInsumoInsert{
-		PmoID:           pmoID,
+		PmoID:           pmoIDPtr,
 		ProdutoManejo:   sanitize(args["produto_manejo"]),
 		CulturaDestino:  sanitize(args["cultura_destino"]),
 		EpocaFrequencia: sanitize(args["epoca_frequencia"]),
@@ -545,7 +643,7 @@ func (s *Server) handleAdicionarInsumoPMO(args map[string]interface{}) (interfac
 		Dosagem:         sanitize(args["dosagem"]),
 	}
 
-	log.Printf("🧪 [MCP-TOOL] Registrando insumo '%s' para PMO %d", record.ProdutoManejo, pmoID)
+	log.Printf("🧪 [MCP-TOOL] Registrando insumo '%s' para PMO %v", record.ProdutoManejo, pmoIDPtr)
 
 	qtd := strings.TrimSpace(strings.ToUpper(record.Dosagem))
 	if record.ProdutoManejo == "" || qtd == "" || qtd == "0" || qtd == "NÃO INFORMADO" || qtd == "NULL" || qtd == "NENHUM" || strings.Contains(qtd, "0 ") {
@@ -577,8 +675,15 @@ func (s *Server) handleRegistrarLimpeza(args map[string]interface{}) (interface{
 		"data":              time.Now().Format("2006-01-02"),
 	}
 
+	var pmoIDValue interface{}
+	if pmoID > 0 {
+		pmoIDValue = pmoID
+	} else {
+		pmoIDValue = nil
+	}
+
 	res, err := s.supabase.RegistrarOperacaoCampoRPC(context.Background(), map[string]interface{}{
-		"pmo_id_arg":   pmoID,
+		"pmo_id_arg":   pmoIDValue,
 		"user_id_arg":  userID,
 		"tipo_arg":     "Limpeza",
 		"payload_arg":  payload,
@@ -615,8 +720,15 @@ func (s *Server) handleRegistrarPropagacaoVegetal(args map[string]interface{}) (
 		return "ERRO FATAL: Espécie, tipo e quantidade são obrigatórios.", nil
 	}
 
+	var pmoIDValue interface{}
+	if pmoID > 0 {
+		pmoIDValue = pmoID
+	} else {
+		pmoIDValue = nil
+	}
+
 	res, err := s.supabase.RegistrarOperacaoCampoRPC(context.Background(), map[string]interface{}{
-		"pmo_id_arg":   pmoID,
+		"pmo_id_arg":   pmoIDValue,
 		"user_id_arg":  userID,
 		"tipo_arg":     "Propagacao",
 		"payload_arg":  payload,
@@ -653,8 +765,15 @@ func (s *Server) handleRegistrarCompostagem(args map[string]interface{}) (interf
 		return "ERRO FATAL: Ação e identificador da pilha são obrigatórios.", nil
 	}
 
+	var pmoIDValue interface{}
+	if pmoID > 0 {
+		pmoIDValue = pmoID
+	} else {
+		pmoIDValue = nil
+	}
+
 	res, err := s.supabase.RegistrarOperacaoCampoRPC(context.Background(), map[string]interface{}{
-		"pmo_id_arg":   pmoID,
+		"pmo_id_arg":   pmoIDValue,
 		"user_id_arg":  userID,
 		"tipo_arg":     "Compostagem",
 		"payload_arg":  payload,
@@ -857,4 +976,70 @@ func (s *Server) handleRegistrarVenda(args map[string]interface{}) (interface{},
 	id := resp["id"]
 
 	return fmt.Sprintf("Registro de %s (%v %s) para '%s' salvo com sucesso (ID: %s).", produto, qtd, unidade, cliente, id), nil
+}
+
+func (s *Server) handleSelecionarFazenda(args map[string]interface{}) (interface{}, error) {
+	log.Printf("🚜 [MCP-TOOL] handleSelecionarFazenda Args: %+v", args)
+
+	propIDFloat, err := parseArgToFloat(args["propriedade_id"])
+	if err != nil {
+		return nil, fmt.Errorf("propriedade_id é obrigatório e deve ser numérico")
+	}
+	propID := int64(propIDFloat)
+	userID, _ := args["user_id"].(string)
+	nome, _ := args["nome_propriedade"].(string)
+
+	// Regra de Negócio: Verificar se a fazenda é CONVENCIONAL
+	fazenda, err := s.supabase.FetchPropriedade(propID)
+	if err != nil {
+		log.Printf("⚠️ [MCP-TOOL] Erro ao buscar modalidade da fazenda %d: %v", propID, err)
+	}
+
+	var pmoIDPtr *int64
+	feedbackExtra := ""
+	if fazenda != nil && fazenda["modalidade"] == "CONVENCIONAL" {
+		log.Printf("🚜 [MCP-TOOL] Fazenda CONVENCIONAL detectada. Forçando PMO para NULL.")
+		pmoIDPtr = nil // NULL no Postgres
+		feedbackExtra = " (Propriedade Convencional - PMO desativado)"
+	} else if fazenda != nil {
+		log.Printf("🚜 [MCP-TOOL] Fazenda ORGÂNICA/HÍBRIDA detectada. Mantendo PMO atual se existir.")
+		// Aqui poderíamos buscar o PMO mais recente se quisermos ser proativos,
+		// mas por enquanto apenas mantemos o comportamento de não forçar NULL.
+		// No entanto, para simplificar e garantir segurança, se trocou de fazenda,
+		// o ideal é o usuário selecionar o PMO daquela fazenda depois.
+	}
+
+	err = s.supabase.UpdateActivePropriedade(userID, propID, pmoIDPtr)
+	if err != nil {
+		return fmt.Sprintf("Erro ao trocar de fazenda: %v", err), nil
+	}
+
+	if nome == "" {
+		nome = fmt.Sprintf("ID %d", propID)
+	}
+
+	return fmt.Sprintf("Fazenda '%s'%s selecionada com sucesso. Agora todas as suas atividades serão registradas nesta propriedade.", nome, feedbackExtra), nil
+}
+
+func (s *Server) handleSelecionarPMO(args map[string]interface{}) (interface{}, error) {
+	log.Printf("📅 [MCP-TOOL] handleSelecionarPMO Args: %+v", args)
+
+	pmoIDFloat, err := parseArgToFloat(args["pmo_id"])
+	if err != nil {
+		return nil, fmt.Errorf("pmo_id é obrigatório e deve ser numérico")
+	}
+	pmoID := int64(pmoIDFloat)
+	userID, _ := args["user_id"].(string)
+	ano, _ := args["ano_safra"].(string)
+
+	err = s.supabase.UpdateActivePMO(userID, pmoID)
+	if err != nil {
+		return fmt.Sprintf("Erro ao trocar de PMO: %v", err), nil
+	}
+
+	if ano == "" {
+		ano = fmt.Sprintf("ID %d", pmoID)
+	}
+
+	return fmt.Sprintf("Plano de Manejo (PMO) '%s' selecionado com sucesso. Agora suas atividades e infraestruturas serão vinculadas a este plano.", ano), nil
 }

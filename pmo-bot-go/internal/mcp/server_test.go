@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/google/generative-ai-go/genai"
+	"google.golang.org/genai"
 )
 
 func TestMapToGenaiSchema(t *testing.T) {
