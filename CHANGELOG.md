@@ -2,6 +2,18 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [0.16.0] - 2026-04-09 - "Resiliência e IA Multiprovedor 🧬"
+
+### ✨ Funcionalidades (Features)
+* **Backend (pmo-bot-go):** Implementação de arquitetura de LLM agnóstica com suporte a fallback automático para OpenRouter/OpenAI em caso de falha no provedor principal (Gemini).
+* **Orquestração:** Novo `ExecuteAgenticLoop` resiliente com suporte a injeção de Reasoning Tokens e histórico de conversa comum entre provedores.
+
+### 🛠 Refatorações e Performance (Chores/Refactors)
+* **LLM:** Introdução de `FerramentaAgnostica` e adapters dedicados para cada provedor, desacoplando o negócio dos SDKs proprietários.
+* **Estado:** Limpeza de handlers redundantes e centralização da lógica de decisão no Orquestrador.
+
+## [0.15.0] - 2026-04-08 - "Blindagem de Tipos e Evolução do Cérebro IA 🧠"
+
 ## [0.14.0] - 2026-04-04 - "A Era da Gestão Analítica e Consultoria IA 📈"
 
 ### ✨ Funcionalidades (Features)

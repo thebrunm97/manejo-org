@@ -1,0 +1,69 @@
+name: pmo-prod-stack
+
+services:
+  # Serviço Principal (pmo-bot-go)
+  # Ultra-leve graças à compilação estática de Go e gestão eficiente de memória.
+  pmo-bot-go:
+    build:
+      context: ./pmo-bot-go
+    restart: always
+    env_file:
+      - .env.prod
+    ports:
+      - "8080:8080"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    networks:
+      - pmo_prod_net
+    depends_on:
+      - evolution-go
+      - redis
+
+  # Serviço do Motor de WhatsApp (evolution-go)
+  # A versão em Go da Evolution API permite limites de RAM drasticamente inferiores ao Node.js.
+  evolution-go:
+    build:
+      context: ./evolution-go-source
+    restart: always
+    env_file:
+      - .env.prod
+    ports:
+      - "8082:8082"
+    volumes:
+      - evolution_go_data:/data
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    networks:
+      - pmo_prod_net
+
+  # Serviço de Cache (Redis)
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - pmo_prod_net
+
+networks:
+  pmo_prod_net:
+    driver: bridge
+
+volumes:
+  evolution_go_data:
+  redis_data:
