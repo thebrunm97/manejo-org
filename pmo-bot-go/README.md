@@ -9,7 +9,7 @@ O ManejoORG Bot é a evolução de alta performance do sistema legado em Python,
 O coração do bot é a **FSM (Finite State Machine)** em `internal/state/fsm.go`. Ela orquestra as interações entre os componentes isolados, garantindo previsibilidade e evitando side-effects durante o fluxo assíncrono do WhatsApp.
 
 ### Componentes Principais:
-1. **Webhook Injetor (`gin`)**: Recebe payloads do WPPConnect.
+1. **Webhook Injetor (`gin`)**: Recebe payloads da Evolution API.
 2. **Orquestrador FSM**: Avalia o estado atual do usuário e transita entre Extração, Validação e Interceptadores Curtos (`/saldo`, `CONECTAR`).
 3. **Módulo de Mídia (Hands-Free Pipeline)**:
    - **Inbound**: Transcreve PTTs (Push-To-Talk) rurais via **Groq Whisper** (`whisper-large-v3-turbo`).
@@ -21,7 +21,7 @@ O coração do bot é a **FSM (Finite State Machine)** em `internal/state/fsm.go
 
 - **Código:** Go 1.22+
 - **API Web:** Gin Gonic
-- **Integração WhatsApp:** WPPConnect Server (API REST / Base64 Data URI)
+- **Integração WhatsApp:** Evolution API (REST / Base64 Data URI)
 - **Banco de Dados:** Supabase (PostgreSQL + PostgREST)
 - **LLMs:** Groq (STT Rápido / JSON Extraction) & Gemini (RAG Long Context)
 

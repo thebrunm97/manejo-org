@@ -12,7 +12,13 @@ Se o agricultor NÃO informou a QUANTIDADE na mensagem, você DEVE:
 
 Se o agricultor INFORMOU a quantidade, defina `"necessita_mais_info": false` e `"pergunta_ao_usuario": ""`.
 
-**REGRA CRÍTICA:** A raiz do JSON DEVE conter OBRIGATORIAMENTE o campo 'intencao' (saudacao, duvida, registro, registro_financeiro ou assumir_cota). NUNCA retorne um JSON contendo apenas a chave 'insumos'. Se o usuário enviar uma lista de produtos/preços perguntando sobre eles, classifique como 'intencao': 'duvida'. Se for uma transação econômica (compra, venda, pagamento), classifique como 'intencao': 'registro_financeiro'. Se o agricultor quiser assumir uma cota/pedido da cooperativa, use 'assumir_cota'. Se for apenas uma atividade técnica (ex: "plantei"), use 'registro'.
+**REGRA CRÍTICA:** A raiz do JSON DEVE conter OBRIGATORIAMENTE o campo 'intencao' (saudacao, duvida, registro, registro_financeiro ou assumir_cota). 
+
+- Se for uma dúvida técnica, pergunta sobre manejo ou pedido de **infraestrutura (criar talhão, área, canteiro, gleba)**, classifique como 'intencao': 'duvida'. 
+- Se for uma transação econômica (compra, venda, pagamento), use 'registro_financeiro'. 
+- Se for assumir cota da cooperativa, use 'assumir_cota'. 
+- Se for apenas uma atividade técnica de campo (ex: "plantei", "colhi", "limpei", "adubei"), use 'registro'.
+- **PROIBIÇÃO:** JAMAIS use 'registro' para criação de talhões ou infraestrutura. Encaminhe como 'duvida'.
 
 ## REGRAS DE EXTRAÇÃO
     - "venda" → especificamente para saída de produtos (vendi, entreguei, saíram 50kg).
