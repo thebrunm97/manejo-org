@@ -40,7 +40,7 @@ O sistema utiliza uma abordagem de **Thin Backend** em Go, delegando a lógica p
 
 ```mermaid
 graph TD
-    User([Produtor]) <-->|WhatsApp| WPP[WPPConnect Gateway]
+    User([Produtor]) <-->|WhatsApp| WPP[Evolution API Gateway]
     WPP <-->|Webhook POST + HMAC| BE[Backend Go - Gin]
     BE -->|Intent Classification| ROUTER{AI Router}
     ROUTER -->|Registro| DB_OP[DB Operator - Gemini 2.0 Flash]
@@ -61,13 +61,14 @@ graph TD
 sequenceDiagram
     participant P as Produtor
     participant W as WPPConnect
+    participant W as Evolution API
     participant G as Go Backend
     participant R as AI Router
     participant A as Agent (DB/Agro)
     participant S as Supabase
 
     P->>W: Mensagem/Áudio WhatsApp
-    W->>G: POST /webhook/wppconnect (HMAC)
+    W-->>G: POST /webhook/evolution (HMAC)
     G->>G: Deduplica + Transcreve (se áudio)
     G->>R: Classifica intenção
     R->>A: Roteia para agente especialista
@@ -168,8 +169,8 @@ npm run dev
 ### Backend (`pmo-bot-go`)
 | Variável | Descrição | Obrigatório |
 | --- | --- | --- |
-| `WPPCONNECT_TOKEN` | Token de segurança para o webhook do WPPConnect | Sim |
-| `WPPCONNECT_URL` | Endpoint da instância do WPPConnect Server | Sim |
+| `EVOLUTION_API_KEY` | Chave de segurança para o webhook da Evolution API | Sim |
+| `EVOLUTION_BASE_URL` | Endpoint da instância da Evolution API | Sim |
 | `GROQ_API_KEY` | Chave para transcrição Whisper e extração NER | Sim |
 | `GEMINI_API_KEY` | Chave para modelos de orquestração e visão | Sim |
 | `SUPABASE_URL` | URL do projeto Supabase | Sim |
@@ -203,7 +204,7 @@ npm run dev
 | Método | Rota | Descrição |
 | --- | --- | --- |
 | `GET` | `/health` | Healthcheck de integridade do container |
-| `POST` | `/webhook/wppconnect` | Endpoint principal para mensagens do WhatsApp |
+| `POST` | `/webhook/evolution` | Endpoint principal para mensagens do WhatsApp |
 | `POST` | `/webhook/knowledge` | Upload e ingestão de documentos para o RAG |
 
 ### 8.2 RPCs Supabase (Principais)

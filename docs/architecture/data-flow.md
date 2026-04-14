@@ -8,14 +8,14 @@ Este é o fluxo principal de interação do sistema, orquestrado pela FSM (Finit
 ```mermaid
 sequenceDiagram
     participant P as Produtor
-    participant W as WPPConnect
+    participant W as Evolution API
     participant G as Go Backend
     participant R as AI Router
     participant A as Agent (DB/Agro)
     participant S as Supabase
 
     P->>W: Mensagem/Áudio/Imagem
-    W->>G: POST /webhook/wppconnect (HMAC Signature)
+    W->>G: POST /webhook/evolution (HMAC Signature)
     G->>G: Valida HMAC + Deduplica Mensagem
     alt É Áudio
         G->>G: Transcreve via Groq (Whisper)
@@ -89,7 +89,7 @@ flowchart TD
 ## 4. Detalhes de Implementação
 
 ### 4.1 Validação HMAC
-Todas as requisições vindas do `WPPConnect` são validadas usando uma chave secreta e o algoritmo HMAC-SHA256 para garantir que a origem é autêntica.
+Todas as requisições vindas da `Evolution API` são validadas usando uma chave secreta e o algoritmo HMAC-SHA256 para garantir que a origem é autêntica.
 
 ### 4.2 LoopGuard
 Para evitar custos excessivos e loops infinitos da IA, o orquestrador Go mantém um contador de chamadas de ferramentas por turno. Se exceder o limite (default: 5), a IA é forçada a parar e retornar o estado atual.
