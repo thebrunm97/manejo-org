@@ -106,13 +106,22 @@ func recordLog(sbClient *supabase.Client, profile *supabase.Profile, msgIn strin
 		DuracaoMs:        duration,
 	})
 
-	// 3. Log de Treinamento (Feedback Loop) - Apenas se houver extração
-	if extraction != nil && success {
+	// 3. Log de Treinamento (Feedback Loop) - Garante que mesmo sem extração estruturada, o log exista
+	if success {
+		finalExtraction := extraction
+		if finalExtraction == nil {
+			// Synth extraction for RAG/Doubts
+			finalExtraction = map[string]interface{}{
+				"intent": intent,
+				"query":  msgIn,
+			}
+		}
+
 		_ = sbClient.InsertLogTreinamento(supabase.LogTreinamentoInsert{
 			PmoID:         pmoIDPtr,
 			UserID:        profile.ID,
 			TextoUsuario:  msgIn,
-			JsonExtraido:  extraction,
+			JsonExtraido:  finalExtraction,
 			TipoAtividade: intent,
 			ModeloIA:      modelEffective,
 		})
