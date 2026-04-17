@@ -19,7 +19,9 @@ export default function MapDrawControl(props: DrawControlProps) {
     displayControlsDefault: props.displayControlsDefault !== undefined ? props.displayControlsDefault : false,
     controls: props.controls || { polygon: true, trash: true },
     defaultMode: props.defaultMode || 'simple_select',
-    styles: mapLibreDrawStyle
+    styles: mapLibreDrawStyle,
+    touchBuffer: 2,
+    clickBuffer: 2
   }), []);
 
   useEffect(() => {

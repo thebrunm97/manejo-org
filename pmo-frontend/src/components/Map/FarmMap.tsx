@@ -6,7 +6,6 @@ import MapboxDraw from '@mapbox/mapbox-gl-draw';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { Talhao, GeoJSONGeometry } from '../../domain/geo/geoTypes';
 import { ESRI_SATELLITE_STYLE } from './mapStyles';
-import { useAuth } from '../../context/AuthContext';
 
 // Tipagem para GeoJSON FeatureCollection
 interface GeoJSONData {
@@ -258,18 +257,123 @@ const FarmMap: React.FC<FarmMapProps> = ({
     trashDrawingTrigger = 0
 }) => {
     const isMobile = useIsMobile();
+    const { current: mapInstance } = useMap();
     const [cursor, setCursor] = useState<string | undefined>(undefined);
     const [drawInstance, setDrawInstance] = useState<MapboxDraw | null>(null);
     const containerRef = React.useRef<HTMLDivElement>(null);
 
+    // Efeito para Gerenciar a Linha Guia (60fps) e Bloqueio de Pan
+    useEffect(() => {
+        if (!mapInstance) return;
+
+        const map = mapInstance.getMap(); // Get the underlying MapLibre instance
+        
+        const updateGuidanceLine = (e: any) => {
+            if (!drawInstance) return;
+
+            try {
+                const mode = drawInstance.getMode();
+                const source = map.getSource('dashed-line-source') as any;
+                if (!source) return;
+
+                // MODO DESENHO: Rubber Band (Último Vértice -> Cursor)
+                if (mode === 'draw_polygon' && isDrawingMode) {
+                    const features = drawInstance.getAll()?.features || [];
+                    if (features.length === 0) {
+                        source.setData({ type: 'FeatureCollection', features: [] });
+                        return;
+                    }
+
+                    const activeFeature = features[features.length - 1];
+
+                    if (activeFeature && activeFeature.geometry.type === 'Polygon') {
+                        const coords = (activeFeature.geometry as any).coordinates[0];
+                        if (coords && coords.length > 0) {
+                            const lastVertex = coords[coords.length - 1];
+                            const cursorCoord = [e.lngLat.lng, e.lngLat.lat];
+
+                            source.setData({
+                                type: 'FeatureCollection',
+                                features: [{
+                                    type: 'Feature',
+                                    geometry: {
+                                        type: 'LineString',
+                                        coordinates: [lastVertex, cursorCoord]
+                                    }
+                                }]
+                            });
+                            return;
+                        }
+                    }
+                }
+
+                // MODO EDIÇÃO: Point Guidance (Cursor -> Feedback do Vértice Arrastado)
+                if (mode === 'direct_select') {
+                    source.setData({
+                        type: 'FeatureCollection',
+                        features: [{
+                            type: 'Feature',
+                            geometry: {
+                                type: 'Point',
+                                coordinates: [e.lngLat.lng, e.lngLat.lat]
+                            }
+                        }]
+                    });
+                    return;
+                }
+
+                // Se não estiver em modo relevante, limpamos
+                source.setData({ type: 'FeatureCollection', features: [] });
+            } catch (err) {
+                // Silently avoid move crashes
+            }
+        };
+
+        const clearGuidanceLine = () => {
+            const source = map.getSource('dashed-line-source') as any;
+            if (source) {
+                source.setData({ type: 'FeatureCollection', features: [] });
+            }
+        };
+
+        if (isDrawingMode) {
+            // Desativa Pan e Interações de Zoom que conflitam com o toque/arraste
+            map.dragPan.disable();
+            map.touchZoomRotate.disable();
+            map.doubleClickZoom.disable();
+
+            map.on('mousemove', updateGuidanceLine);
+            map.on('touchmove', updateGuidanceLine);
+        } else {
+            map.dragPan.enable();
+            map.touchZoomRotate.enable();
+            map.doubleClickZoom.enable();
+            clearGuidanceLine();
+        }
+
+        return () => {
+            map.off('mousemove', updateGuidanceLine);
+            map.off('touchmove', updateGuidanceLine);
+            clearGuidanceLine();
+        };
+    }, [isDrawingMode, mapInstance, drawInstance]);
+
     // Efeito para ativar modo de desenho programaticamente
     useEffect(() => {
-        if (isDrawingMode && drawInstance) {
-            drawInstance.changeMode('draw_polygon');
-            setCursor('crosshair');
-        } else if (!isDrawingMode && drawInstance) {
-            drawInstance.changeMode('simple_select');
-            setCursor(undefined);
+        if (!drawInstance) return;
+
+        try {
+            const currentMode = drawInstance.getMode();
+            if (isDrawingMode && currentMode !== 'draw_polygon') {
+                drawInstance.changeMode('draw_polygon');
+                setCursor('crosshair');
+            } else if (!isDrawingMode && currentMode !== 'simple_select') {
+                drawInstance.changeMode('simple_select');
+                setCursor(undefined);
+            }
+        } catch (err) {
+            console.error("⚠️ Mapbox Draw mode change failed:", err);
+            // Non-fatal, prevent global crash
         }
     }, [isDrawingMode, drawInstance]);
 
@@ -444,6 +548,33 @@ const FarmMap: React.FC<FarmMapProps> = ({
                                     2
                                 ],
                                 'line-opacity': 1
+                            }}
+                        />
+                    </Source>
+
+                    {/* RUBBER BAND & DRAG GUIDANCE (Emerald Green 60fps) */}
+                    <Source id="dashed-line-source" type="geojson" data={{ type: 'FeatureCollection', features: [] }}>
+                        <Layer
+                            id="dashed-line-layer"
+                            type="line"
+                            filter={['==', '$type', 'LineString']}
+                            paint={{
+                                'line-color': '#10b981',
+                                'line-width': 4,
+                                'line-dasharray': [2, 2],
+                                'line-opacity': 0.8
+                            }}
+                        />
+                        <Layer
+                            id="dashed-line-point-layer"
+                            type="circle"
+                            filter={['==', '$type', 'Point']}
+                            paint={{
+                                'circle-radius': 6,
+                                'circle-color': '#FFFFFF',
+                                'circle-stroke-color': '#10b981',
+                                'circle-stroke-width': 3,
+                                'circle-opacity': 1
                             }}
                         />
                     </Source>

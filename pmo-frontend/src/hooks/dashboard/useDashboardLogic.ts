@@ -77,9 +77,9 @@ export function useDashboardLogic() {
       // Buscar as estatísticas com o PMO / Propriedade correto
       if (activePmoId || currentPropriedade?.id) {
         const [recentRes, harvestRes, lastActRes] = await Promise.all([
-          dashboardService.fetchRecentActivities(activePmoId || '', 5, currentPropriedade?.id),
-          dashboardService.fetchHarvestSummary(activePmoId || '', currentPropriedade?.id),
-          dashboardService.fetchLastActivity(activePmoId || '', currentPropriedade?.id)
+          dashboardService.fetchRecentActivities(null, 5, currentPropriedade?.id),
+          dashboardService.fetchHarvestSummary(null, currentPropriedade?.id),
+          dashboardService.fetchLastActivity(null, currentPropriedade?.id)
         ]);
 
         recentActivities = recentRes;
@@ -127,8 +127,9 @@ export function useDashboardLogic() {
       const { data: botStatus } = await supabase
         .from('bot_status')
         .select('*')
-        .eq('session_name', 'agro_vivo')
+        .eq('session_name', import.meta.env.VITE_BOT_SESSION_NAME || 'agro_vivo')
         .maybeSingle();
+
       
       if (botStatus) {
         setData(prev => ({ ...prev, whatsappStatus: botStatus }));
@@ -145,8 +146,9 @@ export function useDashboardLogic() {
           event: '*',
           schema: 'public',
           table: 'bot_status',
-          filter: `session_name=eq.agro_vivo`,
+          filter: `session_name=eq.${import.meta.env.VITE_BOT_SESSION_NAME || 'agro_vivo'}`,
         },
+
         (payload) => {
           setData(prev => ({ ...prev, whatsappStatus: payload.new as any }));
         }
