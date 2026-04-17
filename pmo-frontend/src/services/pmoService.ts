@@ -1,6 +1,6 @@
 /**
  * @file pmoService.ts
- * @description Serviço de dados para PMO (Plano de Manejo Orgânico).
+ * @description Serviço de dados para PMO (Plano de ManejoOrg).
  * 
  * Encapsula todas as operações de persistência do Supabase.
  * Componentes React NÃO devem chamar Supabase diretamente.

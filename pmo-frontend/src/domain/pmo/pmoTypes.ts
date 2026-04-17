@@ -1,6 +1,6 @@
 /**
  * @file pmoTypes.ts
- * @description Tipos puros para o domínio PMO (Plano de Manejo Orgânico).
+ * @description Tipos puros para o domínio PMO (Plano de ManejoOrg).
  * 
  * ⚠️ REGRA ARQUITETURAL: Este arquivo NÃO deve ter dependências de:
  *    - React (useState, useEffect, etc.)
