@@ -77,7 +77,7 @@ type LidMapping struct {
 }
 
 type CadernoCampoInsert struct {
-	PmoID              int64                  `json:"pmo_id,omitempty"`
+	PmoID              *int64                 `json:"pmo_id,omitempty"`
 	UsuarioID          string                 `json:"user_id,omitempty"`
 	TipoAtividade      string                 `json:"tipo_atividade"`
 	DataRegistro       string                 `json:"data_registro,omitempty"`
@@ -97,17 +97,20 @@ type CadernoCampoInsert struct {
 }
 
 type LogProcessamentoInsert struct {
-	PmoID            int64  `json:"pmo_id"`
-	MensagemUsuario  string `json:"mensagem_usuario"`
-	RespostaBot      string `json:"resposta_bot"`
-	ModeloIA         string `json:"modelo_ia"`
-	TokensPrompt     int    `json:"tokens_prompt"`
-	TokensCompletion int    `json:"tokens_completion"`
-	Intencao         string `json:"intencao"`
+	PmoID            *int64      `json:"pmo_id"`
+	MensagemUsuario  string      `json:"mensagem_usuario"`
+	RespostaBot      string      `json:"resposta_bot"`
+	ModeloConfigurado string     `json:"modelo_configurado"`
+	ModeloEfetivo    string      `json:"modelo_efetivo"`
+	TokensPrompt     int         `json:"tokens_prompt"`
+	TokensCompletion int         `json:"tokens_completion"`
+	Intencao         string      `json:"intencao"`
+	CustoDolar       float64     `json:"custo_dolar"`
+	RaciocinioAgente interface{} `json:"raciocinio_agente"`
 }
 
 type LogTreinamentoInsert struct {
-	PmoID         int64                  `json:"pmo_id"`
+	PmoID         *int64                 `json:"pmo_id"`
 	UserID        string                 `json:"user_id"`
 	TextoUsuario  string                 `json:"texto_usuario"`
 	JsonExtraido  map[string]interface{} `json:"json_extraido"`
@@ -140,12 +143,14 @@ type IngestionJob struct {
 }
 
 type TalhaoInsert struct {
-	PmoID       int64                  `json:"pmo_id"`
-	UserID      string                 `json:"user_id"`
-	Nome        string                 `json:"nome"`
-	AreaTotalM2 float64                `json:"area_total_m2"`
-	Cultura     string                 `json:"cultura,omitempty"`
-	Geometry    map[string]interface{} `json:"geometry"`
+	PmoID          *int64                 `json:"pmo_id"`
+	PropriedadeID  int64                  `json:"propriedade_id"` // Link obrigatório com a fazenda
+	UserID         string                 `json:"user_id"`
+	Nome           string                 `json:"nome"`
+	AreaTotalM2    float64                `json:"area_total_m2"`
+	AreaHectares   float64                `json:"area_ha"`
+	Cultura        string                 `json:"cultura"`
+	Geometry       map[string]interface{} `json:"geometry"`
 }
 
 type CanteiroInsert struct {
@@ -169,7 +174,7 @@ type DocumentMatch struct {
 }
 
 type PmoInsumoInsert struct {
-	PmoID           int64  `json:"pmo_id"`
+	PmoID           *int64 `json:"pmo_id"`
 	ProdutoManejo   string `json:"produto_manejo"`
 	CulturaDestino  string `json:"cultura_destino,omitempty"`
 	EpocaFrequencia string `json:"epoca_frequencia,omitempty"`
@@ -180,7 +185,7 @@ type PmoInsumoInsert struct {
 }
 
 type PmoPropagacaoInsert struct {
-	PmoID           int64  `json:"pmo_id"`
+	PmoID           *int64 `json:"pmo_id"`
 	Tipo            string `json:"tipo"` // semente, muda, etc
 	Especies        string `json:"especies"`
 	Origem          string `json:"origem,omitempty"`
@@ -190,7 +195,7 @@ type PmoPropagacaoInsert struct {
 }
 
 type PmoLimpezaInsert struct {
-	PmoID            int64  `json:"pmo_id"`
+	PmoID            *int64 `json:"pmo_id"`
 	DataLimpeza      string `json:"data_limpeza"`
 	ItemArea         string `json:"item_area"`
 	TipoLimpeza      string `json:"tipo_limpeza"`
@@ -201,7 +206,7 @@ type PmoLimpezaInsert struct {
 }
 
 type PmoCompostagemInsert struct {
-	PmoID        int64  `json:"pmo_id"`
+	PmoID        *int64 `json:"pmo_id"`
 	UserID       string `json:"user_id"`
 	NPilha       string `json:"n_pilha"`
 	Ingredientes string `json:"ingredientes,omitempty"`
@@ -218,7 +223,7 @@ type PmoCompostagemEventoInsert struct {
 }
 
 type PmoClimaInsert struct {
-	PmoID         int64       `json:"pmo_id"`
+	PmoID         *int64      `json:"pmo_id"`
 	TemperaturaC  float64     `json:"temperatura_c"`
 	Umidade       int         `json:"umidade"`
 	VentoKph      float64     `json:"vento_kph"`
@@ -327,7 +332,7 @@ func (c *Client) StartBlacklistAutoRefresh(ctx context.Context, interval time.Du
 // Main Methods
 // ---------------------------------------------------------------------------
 
-// ResolvePhone checks lid_mappings for a WPPConnect LID, otherwise assumes it's already a phone.
+// ResolvePhone checks lid_mappings for a WhatsApp LID, otherwise assumes it's already a phone.
 func (c *Client) ResolvePhone(from string) (string, error) {
 	// 1. Sanitize the string right away
 	sanitized := utils.SanitizePhone(from)
@@ -574,45 +579,45 @@ func (c *Client) RegistrarCompraInsumoRPC(ctx context.Context, args map[string]i
 	return result, nil
 }
 
-// RegistrarOperacaoCampoRPC calls the polymorphic 'rpc_registrar_operacao_campo' function.
-// This handles Limpeza, Propagacao, Manejo, and Compostagem in a single atomic call.
-func (c *Client) RegistrarOperacaoCampoRPC(ctx context.Context, args map[string]interface{}) (map[string]interface{}, error) {
+// RegistrarOperacaoCampoRPC uses the 'registrar_operacao_campo' RPC to save a activity.
+func (c *Client) RegistrarOperacaoCampoRPC(ctx context.Context, args map[string]interface{}, dataArg string) (map[string]interface{}, error) {
 	reqURL := fmt.Sprintf("%s/rest/v1/rpc/rpc_registrar_operacao_campo", c.config.URL)
-
+	if args == nil {
+		args = make(map[string]interface{})
+	}
+	args["data_arg"] = dataArg
 	payload, err := json.Marshal(args)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal RPC payload: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewReader(payload))
+	res, err := c.doRequest(http.MethodPost, reqURL, payload, true)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create RPC request: %w", err)
+		return nil, err
 	}
 
-	req.Header.Set("apikey", c.config.Key)
-	req.Header.Set("Authorization", "Bearer "+c.config.Key)
-	req.Header.Set("Content-Type", "application/json")
+	// Log the raw response for debugging traceability
+	log.Printf("📡 [Supabase] Raw RPC Response: %s", string(res))
 
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("RPC execution HTTP failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read RPC response: %w", err)
-	}
-
-	if resp.StatusCode >= 400 {
-		return nil, fmt.Errorf("supabase RPC error (%d): %s", resp.StatusCode, string(body))
+	if len(res) == 0 {
+		return nil, fmt.Errorf("empty response from RPC (check if Prefer: return=minimal is set)")
 	}
 
 	var result map[string]interface{}
-	if err := json.Unmarshal(body, &result); err != nil {
-		return nil, fmt.Errorf("failed to parse RPC response: %w", err)
+	// PostgREST often returns an array of results even for single objects
+	if res[0] == '[' {
+		var results []map[string]interface{}
+		if err := json.Unmarshal(res, &results); err != nil {
+			return nil, fmt.Errorf("failed to parse RPC array response: %w", err)
+		}
+		if len(results) > 0 {
+			result = results[0]
+		}
+	} else {
+		if err := json.Unmarshal(res, &result); err != nil {
+			return nil, fmt.Errorf("failed to parse RPC object response: %w", err)
+		}
 	}
-
 	return result, nil
 }
 
@@ -725,17 +730,32 @@ func (c *Client) MatchFarmDocuments(pmoID int64, embedding []float32, threshold 
 
 	payload, err := json.Marshal(params)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to marshal match params: %w", err)
 	}
 
 	body, err := c.doRequest(http.MethodPost, reqURL, payload)
 	if err != nil {
+		// doRequest already returns a formatted error with status code and body if >= 400
 		return nil, err
 	}
 
+	// DEBUG: Log the raw response to identify the unmarshal issue
+	log.Printf("📡 [Supabase RPC] Raw Result (match_farm_documents): %s", string(body))
+
 	var results []DocumentMatch
 	if err := json.Unmarshal(body, &results); err != nil {
-		return nil, fmt.Errorf("failed to parse match results: %w", err)
+		// If it's not a list, maybe it's a single object (PostgREST error or wrapper?)
+		var apiError struct {
+			Code    string `json:"code"`
+			Message string `json:"message"`
+			Hint    string `json:"hint"`
+			Details string `json:"details"`
+		}
+		if errJSON := json.Unmarshal(body, &apiError); errJSON == nil && apiError.Message != "" {
+			return nil, fmt.Errorf("supabase RPC error: %s (code: %s, hint: %s, details: %s)", apiError.Message, apiError.Code, apiError.Hint, apiError.Details)
+		}
+		
+		return nil, fmt.Errorf("failed to parse match results as []DocumentMatch: %w. Body: %s", err, string(body))
 	}
 
 	return results, nil
@@ -1014,7 +1034,8 @@ func buildWeatherQuery(pmoID int64, lat, lon, city, address string) string {
         }
     }
     
-    log.Printf("❌ [WeatherClient] PMO=%d sem localização válida. Verifique se as coordenadas ou o endereço estão preenchidos na Seção 1 (Descrição da Propriedade) do painel.", pmoID)
+    // Log suppressed as requested to avoid spam for test PMOs without location.
+    // log.Printf("❌ [WeatherClient] PMO=%d sem localização válida...", pmoID)
     return ""
 }
 
@@ -1212,8 +1233,23 @@ func (c *Client) FetchCadernoRecentes(pmoID int64, limit int) ([]map[string]inte
 	return results, nil
 }
 
-// CriarTalhao inserts a new talhão and returns its generated ID.
-func (c *Client) CriarTalhao(nome string, areaHectares float64, cultura string, pmoID int64, userID string) (int64, error) {
+// FetchPropriedade returns a property by ID, including its modality.
+func (c *Client) FetchPropriedade(propriedadeID int64) (map[string]interface{}, error) {
+	reqURL := fmt.Sprintf("%s/rest/v1/propriedades?id=eq.%d&select=*,modalidade_predominante", c.config.URL, propriedadeID)
+	body, err := c.doRequest(http.MethodGet, reqURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []map[string]interface{}
+	if err := json.Unmarshal(body, &results); err != nil || len(results) == 0 {
+		return nil, fmt.Errorf("propriedade não encontrada")
+	}
+	return results[0], nil
+}
+
+// CriarTalhao inserts a new talhao into the database.
+func (c *Client) CriarTalhao(nome string, areaHectares float64, cultura string, pmoID *int64, propriedadeID int64, userID string) (int64, error) {
 	areaM2 := areaHectares * 10000
 	geometry := map[string]interface{}{
 		"type":        "Polygon",
@@ -1221,12 +1257,14 @@ func (c *Client) CriarTalhao(nome string, areaHectares float64, cultura string, 
 	}
 
 	record := TalhaoInsert{
-		PmoID:       pmoID,
-		UserID:      userID,
-		Nome:        nome,
-		AreaTotalM2: areaM2,
-		Cultura:     cultura,
-		Geometry:    geometry,
+		PmoID:         pmoID,
+		PropriedadeID: propriedadeID,
+		UserID:        userID,
+		Nome:          nome,
+		AreaTotalM2:   areaM2,
+		AreaHectares:  areaHectares,
+		Cultura:       cultura,
+		Geometry:      geometry,
 	}
 
 	payload, err := json.Marshal(record)
@@ -1271,20 +1309,20 @@ func (c *Client) CriarTalhao(nome string, areaHectares float64, cultura string, 
 }
 
 // CriarInfraestruturaCompleta cria um talhão e, opcionalmente, uma sequência de canteiros vinculados.
-func (c *Client) CriarInfraestruturaCompleta(nomeTalhao string, areaHectares float64, cultura string, pmoID int64, userID string, qtdCanteiros int) (string, error) {
-	log.Printf("🏗️ [Supabase] Iniciando criação unificada: %s (%g ha) com %d canteiros", nomeTalhao, areaHectares, qtdCanteiros)
+func (c *Client) CriarInfraestruturaCompleta(nome string, area float64, cultura string, pmoID *int64, propriedadeID int64, userID string, qtdCanteiros int) (string, error) {
+	log.Printf("🏗️ [Supabase] Iniciando criação unificada: %s (%g ha) com %d canteiros", nome, area, qtdCanteiros)
 
 	// 1. Criar o Talhão
-	talhaoID, err := c.CriarTalhao(nomeTalhao, areaHectares, cultura, pmoID, userID)
+	talhaoID, err := c.CriarTalhao(nome, area, cultura, pmoID, propriedadeID, userID)
 	if err != nil {
-		return "", fmt.Errorf("falha ao criar talhão na infraestrutura unificada: %w", err)
+		return "", fmt.Errorf("falha ao criar talhão: %w", err)
 	}
 
-	resumo := fmt.Sprintf("Talhão '%s' (ID: %d) criado com sucesso.", nomeTalhao, talhaoID)
+	resumo := fmt.Sprintf("Talhão '%s' (ID: %d) criado com sucesso.", nome, talhaoID)
 
 	// 2. Criar Canteiros se solicitado
 	if qtdCanteiros > 0 {
-		err = c.CriarCanteirosEmLote(talhaoID, qtdCanteiros, 1) // Sempre iniciando do 1 para nova infraestrutura
+		err = c.CriarCanteirosEmLote(talhaoID, qtdCanteiros, 1)
 		if err != nil {
 			return resumo + " ⚠️ No entanto, houve um erro ao criar os canteiros: " + err.Error(), nil
 		}
@@ -1371,7 +1409,7 @@ func (c *Client) InsertPMOInsumo(record PmoInsumoInsert) error {
 // HTTP Helper
 // ---------------------------------------------------------------------------
 
-func (c *Client) doRequest(method, url string, payload []byte) ([]byte, error) {
+func (c *Client) doRequest(method, url string, payload []byte, ignoreMinimal ...bool) ([]byte, error) {
 	var bodyReader io.Reader
 	if payload != nil {
 		bodyReader = bytes.NewReader(payload)
@@ -1386,8 +1424,10 @@ func (c *Client) doRequest(method, url string, payload []byte) ([]byte, error) {
 	req.Header.Set("Authorization", "Bearer "+c.config.Key)
 	if payload != nil {
 		req.Header.Set("Content-Type", "application/json")
-		// Prefer returning the minimal representation to save bandwidth
-		req.Header.Set("Prefer", "return=minimal")
+		// Prefer returning the minimal representation to save bandwidth UNLESS it's an RPC that needs data back
+		if len(ignoreMinimal) == 0 || !ignoreMinimal[0] {
+			req.Header.Set("Prefer", "return=minimal")
+		}
 	}
 
 	resp, err := c.httpClient.Do(req)
@@ -1562,4 +1602,27 @@ func (c *Client) MarcarAlertaComoEnviado(ctx context.Context, cronogramaID strin
 	}
 
 	return nil
+}
+
+// UpdateActivePMO updates the active PMO ID in the user's profile.
+func (c *Client) UpdateActivePMO(userID string, pmoID int64) error {
+	payload := map[string]interface{}{
+		"pmo_ativo_id": pmoID,
+	}
+	body, _ := json.Marshal(payload)
+	reqURL := fmt.Sprintf("%s/rest/v1/profiles?id=eq.%s", c.config.URL, userID)
+	_, err := c.doRequest(http.MethodPatch, reqURL, body)
+	return err
+}
+
+// UpdateActivePropriedade updates the active Property ID and optionally nulls the PMO ID.
+func (c *Client) UpdateActivePropriedade(userID string, propriedadeID int64, pmoID *int64) error {
+	payload := map[string]interface{}{
+		"propriedade_ativa_id": propriedadeID,
+		"pmo_ativo_id":         pmoID,
+	}
+	body, _ := json.Marshal(payload)
+	reqURL := fmt.Sprintf("%s/rest/v1/profiles?id=eq.%s", c.config.URL, userID)
+	_, err := c.doRequest(http.MethodPatch, reqURL, body)
+	return err
 }
