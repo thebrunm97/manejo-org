@@ -9,7 +9,10 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
+
+	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 )
 
 // ---------------------------------------------------------------------------
@@ -27,54 +30,42 @@ const (
 // NER Extraction Structs (mapped from records.py + parsing.py)
 // ---------------------------------------------------------------------------
 
-type Alocacao struct {
-	TalhaoNome string  `json:"talhao_nome"`
-	Valor      float64 `json:"valor"`
-}
-
-// Localizacao maps to LocalEstruturado in Python.
-type Localizacao struct {
-	Talhao           string   `json:"talhao"`
-	Canteiros        []string `json:"canteiros"`
-	TalhoesAplicados []string `json:"talhoes_aplicados"`
-}
-
 // ExtractionResult is the structured JSON returned by the LLM.
 // Includes NecessitaMaisInfo/PerguntaAoUsuario for Active Interview pattern.
 type ExtractionResult struct {
-	Intencao          string      `json:"intencao"`
-	Atividade         string      `json:"atividade"`
-	InsumoCultura     string      `json:"insumo_cultura"`
-	InsumoAplicado    string      `json:"insumo_aplicado"`
-	InsumoGenerico    bool        `json:"insumo_generico"`
-	Quantidade        interface{} `json:"quantidade"`
-	Unidade           string      `json:"unidade"`
-	Localizacao       Localizacao `json:"localizacao"`
-	Data              string      `json:"data"`
-	DataRelativa      string      `json:"data_relativa"`
-	AlertaOrganico    bool        `json:"alerta_organico"`
-	TokensPrompt      int         `json:"tokens_prompt"`
-	TokensCompletion  int         `json:"tokens_completion"`
-	HouveDescartes    bool        `json:"houve_descartes"`
-	QtdDescartes      interface{} `json:"qtd_descartes"`
-	NecessitaMaisInfo bool        `json:"necessita_mais_info"`
-	PerguntaAoUsuario string      `json:"pergunta_ao_usuario"`
-	Fornecedor        string      `json:"fornecedor"`
-	NotaFiscal        string      `json:"nota_fiscal"`
-	Marca             string      `json:"marca"`
-	Composicao        string      `json:"composicao"`
-	Procedencia       string      `json:"procedencia"`
-	ItemArea          string      `json:"item_area"`
-	TipoLimpeza       string      `json:"tipo_limpeza"`
-	ProdutoUtilizado  string      `json:"produto_utilizado"`
-	Dosagem           string      `json:"dosagem"`
-	Responsavel       string      `json:"responsavel"`
-	Insumos           interface{} `json:"insumos,omitempty"` // Captured for fallback detection
-	Lote              string      `json:"lote"`
-	Cliente           string      `json:"cliente"`
-	ValorTotal        interface{} `json:"valor_total"`
-	Alocacoes         []Alocacao  `json:"alocacoes"`
-	QuantidadeAssumida interface{} `json:"quantidade_assumida"`
+	Intencao          string          `json:"intencao"`
+	Atividade         string          `json:"atividade"`
+	InsumoCultura     string          `json:"insumo_cultura"`
+	InsumoAplicado    string          `json:"insumo_aplicado"`
+	InsumoGenerico    bool            `json:"insumo_generico"`
+	Quantidade        interface{}     `json:"quantidade"`
+	Unidade           string          `json:"unidade"`
+	Localizacao       llm.Localizacao `json:"localizacao"`
+	Data              string          `json:"data"`
+	DataRelativa      string          `json:"data_relative"`
+	AlertaOrganico    bool            `json:"alerta_organico"`
+	TokensPrompt      int             `json:"tokens_prompt"`
+	TokensCompletion  int             `json:"tokens_completion"`
+	HouveDescartes    bool            `json:"houve_descartes"`
+	QtdDescartes      interface{}     `json:"qtd_descartes"`
+	NecessitaMaisInfo bool            `json:"necessita_mais_info"`
+	PerguntaAoUsuario string          `json:"pergunta_ao_usuario"`
+	Fornecedor        string          `json:"fornecedor"`
+	NotaFiscal        string          `json:"nota_fiscal"`
+	Marca             string          `json:"marca"`
+	Composicao        string          `json:"composicao"`
+	Procedencia       string          `json:"procedencia"`
+	ItemArea          string          `json:"item_area"`
+	TipoLimpeza       string          `json:"tipo_limpeza"`
+	ProdutoUtilizado  string          `json:"produto_utilizado"`
+	Dosagem           string          `json:"dosagem"`
+	Responsavel       string          `json:"responsavel"`
+	Insumos           interface{}     `json:"insumos,omitempty"` // Captured for fallback detection
+	Lote              string          `json:"lote"`
+	Cliente           string          `json:"cliente"`
+	ValorTotal        interface{}     `json:"valor_total"`
+	Alocacoes         []llm.Alocacao  `json:"alocacoes"`
+	QuantidadeAssumida interface{}    `json:"quantidade_assumida"`
 }
 
 // ---------------------------------------------------------------------------
@@ -269,6 +260,21 @@ func (c *Client) doRequest(payload []byte) (*ExtractionResult, error) {
 	var result ExtractionResult
 	if err := json.Unmarshal([]byte(content), &result); err != nil {
 		return nil, fmt.Errorf("failed to parse LLM JSON output: %w\nRaw: %s", err, content)
+	}
+
+	// [INTERCEPTOR HARDCODED] Ensure infrastructure tasks never bypass the agentic loop
+	infraKeywords := []string{"Talhao", "Talhão", "Canteiro", "Infraestrutura", "Gleba", "Cadastro"}
+	isInfra := false
+	for _, kw := range infraKeywords {
+		if strings.Contains(strings.ToLower(result.Atividade), strings.ToLower(kw)) {
+			isInfra = true
+			break
+		}
+	}
+
+	if isInfra {
+		log.Printf("🛡️ [GROQ INTERCEPTOR] Infraestrutura detectada ('%s'). Forçando intenção para 'duvida'.", result.Atividade)
+		result.Intencao = "duvida"
 	}
 
 	result.TokensPrompt = chatResp.Usage.PromptTokens
