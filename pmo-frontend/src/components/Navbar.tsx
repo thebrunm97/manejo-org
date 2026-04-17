@@ -28,8 +28,16 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick, className }) => {
                     >
                         <Menu size={24} />
                     </button>
-                    <div className="text-lg font-bold text-primary-main truncate md:hidden">
-                        {import.meta.env.VITE_APP_NAME || 'Manejo Org'}
+                    <div className="text-lg font-black text-agro-floresta truncate md:hidden uppercase tracking-tight">
+                        {(() => {
+                            const name = import.meta.env.VITE_APP_NAME || 'ManejoOrg';
+                            return name.toLowerCase().endsWith('org') ? (
+                                <>
+                                    {name.substring(0, name.length - 3)}
+                                    <span className="text-agro-ouro">ORG</span>
+                                </>
+                            ) : name;
+                        })()}
                     </div>
                 </div>
 

@@ -38,7 +38,7 @@ const ReloadPrompt: React.FC = () => {
                         </h3>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
                             {offlineReady
-                                ? 'O Manejo Orgânico agora funciona sem internet.'
+                                ? 'O ManejoOrg agora funciona sem internet.'
                                 : 'Uma nova versão do sistema com melhorias foi detectada.'}
                         </p>
                     </div>

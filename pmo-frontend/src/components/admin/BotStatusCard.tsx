@@ -1,7 +1,6 @@
-// src/components/admin/BotStatusCard.tsx
 /**
- * Card component showing the WppConnect bot connection status.
- * Reads from the Supabase `bot_status` table (written by the Python bot heartbeat).
+ * Card component showing the Evolution API bot connection status.
+ * Reads from the Supabase `bot_status` table (written by the Go bot heartbeat).
  */
 
 import React, { useState, useCallback } from 'react';
@@ -32,34 +31,34 @@ const STATUS_CONFIG: Record<BotStatusValue, {
 }> = {
     CONNECTED: {
         label: 'Online',
-        dotColor: 'bg-emerald-400',
-        bgColor: 'bg-emerald-50',
+        dotColor: 'bg-emerald-500',
+        bgColor: 'bg-emerald-50/50',
         textColor: 'text-emerald-700',
-        borderColor: 'border-emerald-200',
+        borderColor: 'border-emerald-200/50',
         icon: <Wifi size={20} />,
     },
     DISCONNECTED: {
         label: 'Offline',
-        dotColor: 'bg-rose-400',
-        bgColor: 'bg-rose-50',
+        dotColor: 'bg-rose-500',
+        bgColor: 'bg-rose-50/50',
         textColor: 'text-rose-700',
-        borderColor: 'border-rose-200',
+        borderColor: 'border-rose-200/50',
         icon: <WifiOff size={20} />,
     },
     WAITING_QR: {
         label: 'Aguardando QR',
-        dotColor: 'bg-amber-400',
-        bgColor: 'bg-amber-50',
+        dotColor: 'bg-amber-500',
+        bgColor: 'bg-amber-50/50',
         textColor: 'text-amber-700',
-        borderColor: 'border-amber-200',
+        borderColor: 'border-amber-200/50',
         icon: <AlertTriangle size={20} />,
     },
     UNKNOWN: {
         label: 'Desconhecido',
-        dotColor: 'bg-slate-300',
-        bgColor: 'bg-slate-50',
-        textColor: 'text-slate-500',
-        borderColor: 'border-slate-200',
+        dotColor: 'bg-slate-400',
+        bgColor: 'bg-slate-50/50',
+        textColor: 'text-slate-600',
+        borderColor: 'border-slate-200/50',
         icon: <WifiOff size={20} />,
     },
 };
@@ -83,83 +82,105 @@ const BotStatusCard: React.FC<BotStatusCardProps> = ({ botStatus, onStatusUpdate
     return (
         <div
             className={cn(
-                'bg-white rounded-3xl p-6 border shadow-sm transition-all',
-                config.borderColor,
-                'shadow-slate-200/50'
+                'bg-white rounded-[2.5rem] p-8 border border-agro-ouro/10 shadow-sm transition-all duration-700 animate-in fade-in slide-in-from-bottom-4 group relative overflow-hidden',
+                config.borderColor
             )}
         >
+            {/* Background Accent */}
+            <div className={cn("absolute top-0 right-0 w-32 h-32 opacity-[0.03] transition-opacity group-hover:opacity-[0.08]", config.textColor)}>
+                {React.cloneElement(config.icon as React.ReactElement<any>, { size: 128 })}
+            </div>
+
             {/* Header Row */}
-            <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-black uppercase tracking-widest text-slate-400">
-                    Status do Bot
+            <div className="flex items-center justify-between mb-8 relative z-10">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-agro-floresta/40 font-sans">
+                    Monitoramento da Orquestração
                 </span>
                 <button
                     type="button"
                     onClick={handleRefresh}
                     disabled={refreshing}
-                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all active:scale-95 disabled:opacity-50"
-                    title="Verificar agora"
+                    aria-label="Sincronizar status do bot"
+                    className="p-3 text-agro-floresta/40 hover:text-agro-floresta hover:bg-agro-floresta/5 rounded-2xl border border-agro-ouro/5 hover:border-agro-ouro/20 bg-white/50 backdrop-blur-sm shadow-sm transition-all active:scale-90 disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-agro-ouro"
                 >
                     {refreshing ? (
-                        <Loader2 size={16} className="animate-spin" />
+                        <Loader2 size={18} className="animate-spin text-agro-ouro" />
                     ) : (
-                        <RefreshCw size={16} />
+                        <RefreshCw size={18} className="transition-transform duration-700 group-hover:rotate-180" />
                     )}
                 </button>
             </div>
 
             {/* Status Display */}
-            <div className="flex items-center gap-3 mb-3">
-                {/* Animated dot */}
-                <div className="relative flex items-center justify-center">
-                    <span
-                        className={cn(
-                            'w-3 h-3 rounded-full',
-                            config.dotColor,
-                        )}
-                    />
-                    {effectiveStatus === 'CONNECTED' && (
-                        <span
-                            className={cn(
-                                'absolute w-3 h-3 rounded-full animate-ping opacity-75',
-                                config.dotColor,
-                            )}
-                        />
-                    )}
-                </div>
-
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 mb-8 relative z-10">
                 {/* Status Pill */}
                 <div
                     className={cn(
-                        'inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-bold',
+                        'inline-flex items-center gap-3 px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] shadow-sm border transition-shadow hover:shadow-md backdrop-blur-sm',
                         config.bgColor,
                         config.textColor,
+                        config.borderColor
                     )}
                 >
-                    {config.icon}
+                    <div className="relative flex items-center justify-center">
+                        <span
+                            className={cn(
+                                'w-2.5 h-2.5 rounded-full',
+                                config.dotColor,
+                            )}
+                        />
+                        {effectiveStatus === 'CONNECTED' && (
+                            <span
+                                className={cn(
+                                    'absolute w-2.5 h-2.5 rounded-full animate-ping opacity-75',
+                                    config.dotColor,
+                                )}
+                            />
+                        )}
+                    </div>
                     {config.label}
+                </div>
+                
+                <div className="h-px w-12 bg-agro-ouro/10 hidden sm:block" />
+                
+                <div className={cn("flex items-center gap-3 transition-colors", config.textColor)}>
+                    {React.cloneElement(config.icon as React.ReactElement<any>, { size: 24, className: "opacity-80" })}
+                    <div className="flex flex-col">
+                        <span className="text-[9px] font-black uppercase tracking-widest opacity-40">Protocolo</span>
+                        <span className="text-xs font-black uppercase tracking-widest">Evolution v2</span>
+                    </div>
                 </div>
             </div>
 
-            {/* Metadata */}
-            <div className="space-y-1">
-                {botStatus?.last_heartbeat && (
-                    <p className="text-[11px] font-medium text-slate-400">
-                        Último heartbeat:{' '}
-                        <span className="text-slate-500 font-bold">
-                            {formatRelativeTime(botStatus.last_heartbeat)}
-                        </span>
-                    </p>
-                )}
+            {/* Metadata Section */}
+            <div className="space-y-4 pt-6 border-t border-agro-ouro/5 relative z-10">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {botStatus?.last_heartbeat && (
+                        <div className="flex flex-col gap-1">
+                            <span className="text-[9px] font-black uppercase tracking-widest text-agro-floresta/40 font-sans">Sinal de Atividade</span>
+                            <span className="text-xs font-black text-agro-floresta font-sans inline-flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 bg-agro-ouro rounded-full animate-pulse" />
+                                {formatRelativeTime(botStatus.last_heartbeat)}
+                            </span>
+                        </div>
+                    )}
+                    {botStatus?.session_name && (
+                        <div className="flex flex-col gap-1">
+                            <span className="text-[9px] font-black uppercase tracking-widest text-agro-floresta/40 font-sans">Identificador de Sessão</span>
+                            <span className="text-xs font-black text-agro-floresta opacity-80 font-mono tracking-tighter bg-agro-floresta/5 px-2 py-0.5 rounded-lg border border-agro-floresta/5 w-fit">
+                                {botStatus.session_name}
+                            </span>
+                        </div>
+                    )}
+                </div>
+                
                 {isStale && botStatus && (
-                    <p className="text-[11px] font-bold text-amber-500">
-                        ⚠ Heartbeat antigo — o bot pode estar parado.
-                    </p>
-                )}
-                {botStatus?.session_name && (
-                    <p className="text-[10px] font-medium text-slate-300 uppercase tracking-wider">
-                        Sessão: {botStatus.session_name}
-                    </p>
+                    <div className="flex items-center gap-3 px-4 py-3 bg-rose-50/80 rounded-2xl border border-rose-100 shadow-sm animate-pulse-slow">
+                        <AlertTriangle size={16} className="text-rose-600" />
+                        <span className="text-[10px] font-black text-rose-600 uppercase tracking-widest">
+                            Incident Alert: Latency spike detected in heartbeat signal
+                        </span>
+                    </div>
                 )}
             </div>
         </div>
