@@ -140,8 +140,9 @@ func RunWeatherCronJob(ctx context.Context, sbClient *supabase.Client, apiKey st
 
 		successCount++
 		for _, pmoID := range res.PmoIDs {
+			id := pmoID // avoid pointer to range variable
 			batchInserts = append(batchInserts, supabase.PmoClimaInsert{
-				PmoID:         pmoID,
+				PmoID:         &id,
 				TemperaturaC:  res.Data.Current.TempC,
 				Umidade:       res.Data.Current.Humidity,
 				VentoKph:      res.Data.Current.WindKph,

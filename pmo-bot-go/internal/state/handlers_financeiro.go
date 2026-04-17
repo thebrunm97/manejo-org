@@ -15,13 +15,12 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
 )
 
-func handleRegistroFinanceiro(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, from string, respondWithAudio bool) ProcessResult {
+func handleRegistroFinanceiro(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, from string, respondWithAudio bool) (string, ProcessResult) {
 	// 1. Extração e Normalização do Valor Total
 	valorTotal, err := parseNumeric(ext.ValorTotal)
 	if err != nil || valorTotal <= 0 {
 		msg := "💰 Ops! Não consegui identificar o valor da transação. Pode repetir o valor, por favor?"
-		sendFeedback(wpClient, ttsClient, from, msg, respondWithAudio)
-		return ProcessResult{Success: false, Reason: "valor_invalido"}
+		return msg, ProcessResult{Success: false, Reason: "valor_invalido"}
 	}
 
 	// 2. Resolução de Categoria
@@ -70,8 +69,7 @@ func handleRegistroFinanceiro(ctx context.Context, ext *groq.ExtractionResult, p
 	// Se pediu alocação mas não resolveu nenhum talhão, avisa o usuário
 	if len(ext.Alocacoes) > 0 && len(alocacoes) == 0 {
 		msg := fmt.Sprintf("🧐 Não encontrei nenhum talhão com o nome mencionado. Seus talhões ativos são: %s", formatTalhoes(profile.Talhoes))
-		sendFeedback(wpClient, ttsClient, from, msg, respondWithAudio)
-		return ProcessResult{Success: false, Reason: "talhao_nao_encontrado"}
+		return msg, ProcessResult{Success: false, Reason: "talhao_nao_encontrado"}
 	}
 
 	// 4. Montagem do Payload para RPC
@@ -89,8 +87,7 @@ func handleRegistroFinanceiro(ctx context.Context, ext *groq.ExtractionResult, p
 	res, err := sbClient.RegistrarTransacaoComRateioRPC(ctx, payload)
 	if err != nil {
 		msg := "❌ Erro ao registrar transação no banco de dados. Por favor, tente novamente em instantes."
-		sendFeedback(wpClient, ttsClient, from, msg, respondWithAudio)
-		return ProcessResult{Success: false, Reason: "error_rpc"}
+		return msg, ProcessResult{Success: false, Reason: "error_rpc"}
 	}
 
 	// 6. Feedback de Sucesso
@@ -99,11 +96,11 @@ func handleRegistroFinanceiro(ctx context.Context, ext *groq.ExtractionResult, p
 		emoji = "💰"
 	}
 
-	msg := fmt.Sprintf("%s *Registro Financeiro Realizado!*\n\n", emoji)
+	msg := fmt.Sprintf("%s *Registro Financeiro:*\n", emoji)
 	msg += fmt.Sprintf("• *Tipo:* %s\n", tipo)
 	msg += fmt.Sprintf("• *Valor:* R$ %.2f\n", valorTotal)
 	if ext.Fornecedor != "" {
-		msg += fmt.Sprintf("• *Origem/Destino:* %s\n", ext.Fornecedor)
+		msg += fmt.Sprintf("• *Origem/Destino:* %s", ext.Fornecedor)
 	}
 
 	if len(talhoesResolvidos) > 0 {
@@ -112,8 +109,6 @@ func handleRegistroFinanceiro(ctx context.Context, ext *groq.ExtractionResult, p
 		msg += "\n📍 *Alocado na Propriedade (Geral)*"
 	}
 
-	sendFeedback(wpClient, ttsClient, from, msg, respondWithAudio)
-
 	transID := ""
 	if res != nil {
 		if id, ok := res["transacao_id"].(string); ok {
@@ -121,7 +116,7 @@ func handleRegistroFinanceiro(ctx context.Context, ext *groq.ExtractionResult, p
 		}
 	}
 
-	return ProcessResult{
+	return msg, ProcessResult{
 		Success:       true,
 		Reason:        "record_saved",
 		TransactionID: transID,
