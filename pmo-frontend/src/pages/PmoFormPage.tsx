@@ -1,6 +1,6 @@
 /**
  * @file PmoFormPage.tsx
- * @description View component for PMO (Plano de Manejo Orgânico) form.
+ * @description View component for PMO (Plano de ManejoOrg) form.
  * 
  * ✅ REFACTORED: Zero MUI. All visual elements use native HTML + Tailwind CSS.
  * All logic extracted to usePmoFormLogic hook.
