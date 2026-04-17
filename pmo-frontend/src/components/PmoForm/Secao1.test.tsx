@@ -5,7 +5,7 @@ import Secao1 from './Secao1';
 
 // Mock children to simplify testing logic and assume they work (they should have their own tests)
 vi.mock('./DadosCadastrais', () => ({
-    default: ({ onDataChange }) => (
+    default: ({ onDataChange }: { onDataChange: (d: any) => void }) => (
         <input
             data-testid="mock-dados-cadastrais"
             onChange={(e) => onDataChange({ nome: e.target.value })}

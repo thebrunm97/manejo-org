@@ -10,7 +10,7 @@ vi.mock('./TabelaDinamica.tsx', () => ({
 
 // CheckboxGroupMUI is used heavily, let's mock it
 vi.mock('./CheckboxGroup', () => ({
-    default: ({ onSelectionChange, selectedString }) => (
+    default: ({ onSelectionChange, selectedString }: { onSelectionChange: (v: any) => void, selectedString: any }) => (
         <button onClick={() => onSelectionChange('Opcao Teste')}>Update Checkbox {selectedString}</button>
     )
 }));

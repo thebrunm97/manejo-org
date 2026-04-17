@@ -17,31 +17,31 @@ const MetricCard: React.FC<MetricCardProps> = ({
     extraUnits,
 }) => {
     return (
-        <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col gap-2">
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col gap-2 group">
             {/* Icon container */}
-            <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
-                {icon || <Scale size={16} />}
+            <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-green-700 transition-transform group-hover:scale-110">
+                {icon || <Scale size={20} />}
             </div>
 
             {/* Value + Unit */}
-            <div>
-                <div className="text-3xl font-bold text-slate-900 leading-none tracking-tight font-['Inter']">
+            <div className="mt-2">
+                <div className="text-3xl font-black text-slate-950 leading-none tracking-tight font-sans">
                     {value}
-                    <span className="text-sm font-semibold text-slate-500 ml-1">
+                    <span className="text-sm font-bold text-slate-600 ml-1">
                         {unit}
                     </span>
                 </div>
 
                 {/* Extra units (e.g., "+ 30 maço") */}
                 {extraUnits && (
-                    <p className="text-xs text-slate-400 mt-1 block">
+                    <p className="text-xs text-slate-600 font-bold mt-1.5 block">
                         + {extraUnits}
                     </p>
                 )}
             </div>
 
             {/* Label */}
-            <p className="text-sm font-semibold text-slate-500 capitalize whitespace-nowrap overflow-hidden text-ellipsis">
+            <p className="text-sm font-bold text-slate-700 uppercase tracking-wide whitespace-nowrap overflow-hidden text-ellipsis mt-1">
                 {label}
             </p>
         </div>

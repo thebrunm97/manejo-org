@@ -337,7 +337,7 @@ const PmoParaImpressao: React.FC<PmoParaImpressaoProps> = ({ dadosPmo, onClose }
                 {/* Cabeçalho */}
                 <header style={{ borderBottom: '2px solid black', paddingBottom: '10px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                        <h1 style={{ fontSize: '24px', margin: 0, textTransform: 'uppercase' }}>Plano de Manejo Orgânico</h1>
+                        <h1 style={{ fontSize: '24px', margin: 0, textTransform: 'uppercase' }}>Plano de Manejo<span className="text-agro-ouro">Org</span></h1>
                         <p style={{ margin: '5px 0 0 0', fontSize: '12px' }}>Relatório Técnico Completo</p>
                     </div>
                     <div style={{ textAlign: 'right', fontSize: '12px' }}>
@@ -408,7 +408,7 @@ const PmoParaImpressao: React.FC<PmoParaImpressaoProps> = ({ dadosPmo, onClose }
 
                 {/* Rodapé do Relatório */}
                 <div style={{ marginTop: '50px', borderTop: '1px solid black', paddingTop: '10px', fontSize: '10px', textAlign: 'center' }}>
-                    <p>Este documento é parte integrante do Plano de Manejo Orgânico. Gerado via Sistema {import.meta.env.VITE_APP_NAME}.</p>
+                    <p>Este documento é parte integrante do Plano de ManejoOrg. Gerado via Sistema {import.meta.env.VITE_APP_NAME}.</p>
                 </div>
             </div>
         </div>

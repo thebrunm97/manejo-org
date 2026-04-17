@@ -5,7 +5,7 @@ import Secao10 from './Secao10';
 
 // Mock SectionContainer
 vi.mock('../Common/SectionContainer', () => ({
-    default: ({ children, onAdd, addButtonLabel }) => (
+    default: ({ children, onAdd, addButtonLabel }: { children: React.ReactNode, onAdd: () => void, addButtonLabel: string }) => (
         <div>
             <button onClick={onAdd}>{addButtonLabel}</button>
             <div>{children}</div>

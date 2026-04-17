@@ -65,7 +65,7 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({
                     
                     {/* Print Only Header */}
                     <div className="hidden print:flex flex-col items-center mb-8 w-full border-b-2 border-slate-900 pb-4">
-                        <h1 className="text-2xl font-black uppercase tracking-tighter">Manejo Orgânico Inteligente</h1>
+                        <h1 className="text-2xl font-black uppercase tracking-tighter">ManejoOrg Inteligente</h1>
                         <p className="text-sm font-bold">Rastreabilidade Garantida</p>
                     </div>
 

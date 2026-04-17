@@ -3,7 +3,7 @@ import { describe, test, expect, vi } from 'vitest';
 import Secao8 from './Secao8';
 
 vi.mock('./TabelaDinamica.tsx', () => ({
-    default: ({ onDataChange }) => (
+    default: ({ onDataChange }: { onDataChange: (d: any) => void }) => (
         <button onClick={() => onDataChange([{ produto_ou_manejo: 'Composto' }])}>
             Atualizar Insumos
         </button>

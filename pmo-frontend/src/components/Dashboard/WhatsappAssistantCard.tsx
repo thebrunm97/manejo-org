@@ -61,8 +61,8 @@ const WhatsappAssistantCard: React.FC<WhatsappAssistantCardProps> = ({
       default:
         return {
           label: 'OFFLINE',
-          color: 'bg-slate-100 text-slate-500',
-          dotColor: 'bg-slate-400',
+          color: 'bg-slate-200 text-slate-800',
+          dotColor: 'bg-slate-500',
           icon: <WifiOff size={14} />,
           ping: false,
         };
@@ -92,7 +92,7 @@ const WhatsappAssistantCard: React.FC<WhatsappAssistantCardProps> = ({
   }
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm flex flex-col h-full justify-between transition-all duration-300 hover:shadow-md group">
+    <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm flex flex-col h-full justify-between transition-all duration-300 hover:shadow-xl group">
       {/* Upper Section - Centered when card stretches */}
       <div className="flex-1 flex flex-col justify-center">
         <div className="flex justify-between items-start">
@@ -118,10 +118,10 @@ const WhatsappAssistantCard: React.FC<WhatsappAssistantCardProps> = ({
         </div>
 
         <div className="mt-5">
-          <h4 className="text-xl font-black text-slate-900 leading-tight">
+          <h4 className="text-xl font-black text-slate-950 leading-tight">
             Assistente de I.A.
           </h4>
-          <p className="text-sm font-semibold text-slate-500 mt-1">
+          <p className="text-sm font-bold text-slate-700 mt-1">
             {formatarTelefone(telefone) || "Vincule seu WhatsApp"}
           </p>
         </div>
@@ -130,7 +130,7 @@ const WhatsappAssistantCard: React.FC<WhatsappAssistantCardProps> = ({
         {isConnected && (
           <div className="mt-6 flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Atividade Recente</span>
+              <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Atividade Recente</span>
               {isFeedLoading && <Loader2 size={10} className="animate-spin text-slate-300" />}
             </div>
             
@@ -144,10 +144,10 @@ const WhatsappAssistantCard: React.FC<WhatsappAssistantCardProps> = ({
                         {actConfig.icon}
                       </div>
                       <div className="flex-1 min-w-0 border-l border-slate-100 pl-3">
-                        <p className="text-[11px] font-bold text-slate-700 truncate capitalize">
+                        <p className="text-[11px] font-black text-slate-900 truncate capitalize">
                           {act.descricao.toLowerCase()}
                         </p>
-                        <p className="text-[10px] font-medium text-slate-400">
+                        <p className="text-[10px] font-bold text-slate-600">
                           {actConfig.label} • {formatRelativeTime(act.created_at)}
                         </p>
                       </div>

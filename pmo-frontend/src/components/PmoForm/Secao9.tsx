@@ -35,7 +35,8 @@ const Secao9: React.FC<Secao9Props> = ({ data, onSectionChange }) => {
     const [errorMsg, setErrorMsg] = useState('');
 
     // Supondo pmoId = 1 para testes, na realidade viria via params ou props
-    const { pmoAtivoId: pmoId } = useAuthProfile();
+    const { profile } = useAuthProfile();
+    const pmoId = profile?.pmo_ativo_id;
 
     const loadData = async () => {
         setLoading(true);
