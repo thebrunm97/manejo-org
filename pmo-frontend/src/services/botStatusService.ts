@@ -24,8 +24,9 @@ export async function fetchBotStatus(): Promise<BotStatus | null> {
     const { data, error } = await supabase
         .from('bot_status')
         .select('session_name, status, last_heartbeat, phone_connected, details')
-        .eq('session_name', 'agro_vivo')
+        .eq('session_name', import.meta.env.VITE_BOT_SESSION_NAME || 'agro_vivo')
         .maybeSingle();
+
 
     if (error) {
         console.error('[botStatusService] Error fetching bot status:', error);

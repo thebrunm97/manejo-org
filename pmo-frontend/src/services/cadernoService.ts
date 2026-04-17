@@ -18,29 +18,25 @@ export const getRegistros = async (pmoId?: number | null, propriedadeId?: number
         .select('*')
         .order('data_limpeza', { ascending: false });
 
-    // Construir filtro OR para buscar registros associados à Propriedade OU ao PMO
-    const orConditions: string[] = [];
-
+    // Aplicar filtros de Propriedade e PMO (Lógica AND para isolamento estrito)
     if (propriedadeId) {
-        orConditions.push(`propriedade_id.eq.${propriedadeId}`);
+        query = query.eq('propriedade_id', propriedadeId);
+        limpezaQuery = limpezaQuery.eq('propriedade_id', propriedadeId);
     }
+    
     if (pmoId) {
-        orConditions.push(`pmo_id.eq.${pmoId}`);
+        query = query.eq('pmo_id', pmoId);
+        limpezaQuery = limpezaQuery.eq('pmo_id', pmoId);
     }
 
-    // Se temos condições, aplicar .or()
-    if (orConditions.length > 0) {
-        const cond = orConditions.join(',');
-        query = query.or(cond);
-        limpezaQuery = limpezaQuery.or(cond);
-    }
-    // Se pmoId for explicitamente null (novo PMO sem ID), buscar órfãos
-    else if (pmoId === null) {
+    // Caso não tenha nenhum ID e pmoId seja null (ex: formulário de criação), buscar órfãos
+    if (!propriedadeId && pmoId === null) {
         query = query.is('pmo_id', null);
         limpezaQuery = limpezaQuery.is('pmo_id', null);
     }
-    // Sem IDs válidos, retornar vazio
-    else {
+    
+    // Se não temos IDs válidos, retornar vazio por segurança
+    if (!propriedadeId && !pmoId) {
         return [];
     }
 

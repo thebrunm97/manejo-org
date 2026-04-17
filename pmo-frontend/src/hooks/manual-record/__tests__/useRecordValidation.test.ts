@@ -495,7 +495,7 @@ describe('useRecordValidation', () => {
         it('should return the rule for prohibited inputs', () => {
             const { result } = renderHook(() => useRecordValidation());
 
-            let rule;
+            let rule: any;
             act(() => {
                 rule = result.current.checkInsumoOrganico('Glifosato');
             });

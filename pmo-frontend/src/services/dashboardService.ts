@@ -35,7 +35,7 @@ export const dashboardService = {
     /**
      * Busca resumo de colheitas agrupado por produto.
      */
-    async fetchHarvestSummary(pmoId: string | number, propriedadeId?: number | string): Promise<HarvestSummary> {
+    async fetchHarvestSummary(pmoId: string | number | null, propriedadeId?: number | string): Promise<HarvestSummary> {
         this._checkInit();
         if (!pmoId && !propriedadeId) return {};
 
@@ -43,10 +43,10 @@ export const dashboardService = {
             let query = supabase
                 .from('caderno_campo')
                 .select('produto, quantidade_valor, quantidade_unidade')
-                .eq('tipo_atividade', 'Colheita')
+                .ilike('tipo_atividade', 'Colheita')
                 .neq('tipo_atividade', 'CANCELADO');
-
-            if (pmoId) query = query.eq('pmo_id', pmoId);
+// turbo
+            if (pmoId && pmoId !== '') query = query.eq('pmo_id', pmoId);
             if (propriedadeId) query = query.eq('propriedade_id', propriedadeId);
 
             const { data, error } = await query.order('data_registro', { ascending: false });
@@ -80,15 +80,15 @@ export const dashboardService = {
     /**
      * Busca a atividade mais recente para exibir no card "Última Atividade".
      */
-    async fetchLastActivity(pmoId: string | number, propriedadeId?: number | string): Promise<Date | null> {
+    async fetchLastActivity(pmoId: string | number | null, propriedadeId?: number | string): Promise<Date | null> {
         if (!pmoId && !propriedadeId) return null;
 
         try {
             let query = supabase
                 .from('caderno_campo')
                 .select('criado_em');
-
-            if (pmoId) query = query.eq('pmo_id', pmoId);
+// turbo
+            if (pmoId && pmoId !== '') query = query.eq('pmo_id', pmoId);
             if (propriedadeId) query = query.eq('propriedade_id', propriedadeId);
 
             const { data, error } = await query
@@ -131,17 +131,7 @@ export const dashboardService = {
                         id, 
                         nome_identificador, 
                         version, 
-                        created_at,
-                        caderno_campo (
-                            id, 
-                            tipo_atividade, 
-                            data_registro, 
-                            produto, 
-                            quantidade_valor, 
-                            quantidade_unidade, 
-                            talhao_canteiro,
-                            criado_em
-                        )
+                        created_at
                     )
                 `)
                 .eq('id', userId)
@@ -163,7 +153,7 @@ export const dashboardService = {
     /**
      * Busca lista das atividades mais recentes.
      */
-    async fetchRecentActivities(pmoId: string | number, limit = 5, propriedadeId?: number | string): Promise<RecentActivity[]> {
+    async fetchRecentActivities(pmoId: string | number | null, limit = 5, propriedadeId?: number | string): Promise<RecentActivity[]> {
         if (!pmoId && !propriedadeId) return [];
 
         try {
@@ -171,8 +161,8 @@ export const dashboardService = {
                 .from('caderno_campo')
                 .select('*, talhoes(nome), caderno_campo_canteiros(canteiros(id, nome))')
                 .neq('tipo_atividade', 'CANCELADO');
-
-            if (pmoId) query = query.eq('pmo_id', pmoId);
+// turbo
+            if (pmoId && pmoId !== '') query = query.eq('pmo_id', pmoId);
             if (propriedadeId) query = query.eq('propriedade_id', propriedadeId);
 
             const { data, error } = await query

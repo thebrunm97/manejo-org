@@ -27,8 +27,9 @@ describe('botStatusService', () => {
     describe('fetchBotStatus', () => {
         it('should return bot status correctly', async () => {
             const mockData = {
-                session_name: 'agro_vivo',
+                session_name: 'ManejoOrgInstance',
                 status: 'CONNECTED',
+
                 last_heartbeat: '2026-03-09T00:00:00Z'
             };
 
