@@ -41,20 +41,23 @@ func NewOrchestrator(gem *gemini.Client, sb *supabase.Client, mcpServer *mcp.Ser
 }
 
 // ExecuteAgenticLoop runs the agentic loop with manual tool calling and automatic fallback between providers.
-func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase.Profile, systemPrompt string, userMessage string, tools []llm.FerramentaAgnostica, history []llm.MensagemAgnostica, guard *mcp.LoopGuard) (string, []TraceEvent, llm.UsoMetadados, string, error) {
-	// 1. Fetch Context (Farm / Plots)
+func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase.Profile, systemPrompt string, userMessage string, tools []llm.FerramentaAgnostica, history []llm.MensagemAgnostica, guard *mcp.LoopGuard) (string, []llm.MensagemAgnostica, []TraceEvent, llm.UsoMetadados, string, error) {
+	// 1. Fetch Context (Farm / Plots / IDs)
 	farmContext := ""
-	if profile.PropriedadeAtivaID > 0 {
-		farmContext = fmt.Sprintf("\nCONTEXTO DO USUÁRIO:\n- Fazenda Ativa ID: %d\n", profile.PropriedadeAtivaID)
-		if len(profile.Talhoes) > 0 {
-			talhoesNames := []string{}
-			for _, t := range profile.Talhoes {
-				talhoesNames = append(talhoesNames, fmt.Sprintf("%s (ID: %d)", t.Nome, t.ID))
+	if profile.ID != "" {
+		farmContext = fmt.Sprintf("\n[CONTEXTO DO USUÁRIO]:\n- user_id: %s\n", profile.ID)
+		if profile.PropriedadeAtivaID > 0 {
+			farmContext += fmt.Sprintf("- propriedade_id: %d\n", profile.PropriedadeAtivaID)
+			if len(profile.Talhoes) > 0 {
+				talhoesNames := []string{}
+				for _, t := range profile.Talhoes {
+					talhoesNames = append(talhoesNames, fmt.Sprintf("%s (ID: %d)", t.Nome, t.ID))
+				}
+				farmContext += fmt.Sprintf("- Talhões Disponíveis: %s\n", strings.Join(talhoesNames, ", "))
 			}
-			farmContext += fmt.Sprintf("- Talhões Disponíveis: %s\n", strings.Join(talhoesNames, ", "))
 		}
 		if profile.PmoAtivoID > 0 {
-			farmContext += fmt.Sprintf("- PMO Ativo ID: %d\n", profile.PmoAtivoID)
+			farmContext += fmt.Sprintf("- pmo_id: %d\n", profile.PmoAtivoID)
 		}
 	}
 
@@ -63,6 +66,7 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 
 	var trace []TraceEvent
 	var usage llm.UsoMetadados
+	var lastToolMsg string
 	effectiveModel := o.Gemini.Config.Model
 
 	// Append initial user message if present
@@ -73,21 +77,43 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 		})
 	}
 
-	for i := 0; i < 6; i++ { // Loop Guard (max 6 steps)
+	for i := 0; i < 3; i++ { // Loop Guard (max 3 steps — cost control)
 		var resp llm.RespostaAgnostica
 		var err error
 
+		// Per-turn timeout: each LLM call gets its own 30s budget, independent from
+		// the outer webhook timeout. This prevents a slow provider from killing the
+		// whole loop and gives us time to attempt the fallback within the outer ctx.
+		turnCtx, turnCancel := context.WithTimeout(ctx, 30*time.Second)
+
 		// --- LOGICA DE FALLBACK (Try Google -> Fallback OpenRouter) ---
-		log.Printf("🤖 [Orchestrator] Turno %d: Tentando Google...", i+1)
-		resp, err = o.Gemini.CallGoogle(ctx, sysInst, history, tools)
+		log.Printf("🤖 [Orchestrator] Turno %d/%d: Tentando Google (%s)...", i+1, 3, o.Gemini.Config.Model)
+
+		// Reforce o prompt se já tivermos resultados de ferramentas no histórico
+		currentHistory := history
+		if i > 0 {
+			// Cria uma cópia rasa do slice original para não alterar o histórico real que é persistido
+			currentHistory = append([]llm.MensagemAgnostica{}, history...)
+			currentHistory = append(currentHistory, llm.MensagemAgnostica{
+				Role:    llm.PapelSystem,
+				Content: "RESUMO OBRIGATÓRIO: NUNCA retorne uma resposta vazia. Resuma os resultados das ferramentas executadas de forma amigável para o usuário.",
+			})
+		}
+
+		resp, err = o.Gemini.CallGoogle(turnCtx, sysInst, currentHistory, tools, nil)
 
 		if err != nil {
-			log.Printf("⚠️ [Orchestrator] Falha no Google: %v. Tentando OpenRouter...", err)
-			resp, err = o.Gemini.CallOpenRouter(ctx, history, tools)
+			googleErr := err // capture for structured logging
+			log.Printf("⚠️ [Orchestrator] Turno %d — Google falhou: [%T] %v — Tentando OpenRouter (%s)...", i+1, googleErr, googleErr, o.Gemini.Config.OpenRouterModel)
+			resp, err = o.Gemini.CallOpenRouter(turnCtx, sysInst, currentHistory, tools, nil)
 			if err != nil {
-				return "", trace, usage, effectiveModel, fmt.Errorf("ambos os provedores falharam: %w", err)
+				turnCancel()
+				criticalErr := fmt.Errorf("turno %d — ambos os provedores falharam: google=(%v) openrouter=(%w)", i+1, googleErr, err)
+				log.Printf("❌ [CRITICAL ORCHESTRATOR ERROR]: %v", criticalErr)
+				return "", history, trace, usage, effectiveModel, criticalErr
 			}
 		}
+		turnCancel()
 
 		// Acumular métricas
 		usage.PromptTokens += resp.Usage.PromptTokens
@@ -95,16 +121,29 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 		usage.TotalTokens += resp.Usage.TotalTokens
 		effectiveModel = resp.Model
 
-		// Guardar resposta da IA no histórico agnóstico
+		// Guardar resposta da IA no histórico agnóstico.
+		// IDs de ToolCalls vazios (vindo do Google) são normalizados no adaptador
+		// ParaOpenRouterHistory — a camada de orquestração não precisa saber disso.
 		history = append(history, llm.MensagemAgnostica{
-			Role:      llm.PapelAssistant,
-			Content:   resp.Texto,
-			ToolCalls: resp.ToolCalls,
+			Role:             llm.PapelAssistant,
+			Content:          resp.Texto,
+			ToolCalls:        resp.ToolCalls,
+			ThoughtSignature: resp.ThoughtSignature,
 		})
 
 		// Se não houver chamadas de ferramentas, retornamos o texto final
 		if len(resp.ToolCalls) == 0 {
-			return resp.Texto, trace, usage, effectiveModel, nil
+			finalTexto := resp.Texto
+			if finalTexto == "" && i > 0 {
+				if lastToolMsg != "" {
+					log.Printf("ℹ️ [Orchestrator] LLM retornou vazio no turno %d, usando mensagem da ferramenta como fallback.", i+1)
+					finalTexto = lastToolMsg
+				} else {
+					log.Printf("ℹ️ [Orchestrator] LLM retornou vazio no turno %d, usando mensagem genérica de sucesso.", i+1)
+					finalTexto = "✅ Operação registrada no sistema com sucesso!"
+				}
+			}
+			return finalTexto, history, trace, usage, effectiveModel, nil
 		}
 
 		// Se houver chamadas de ferramentas, executamos cada uma
@@ -139,15 +178,27 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 				if !ok {
 					resMap = map[string]interface{}{"result": result}
 				}
+
+				// Captura mensagem de sucesso para fallback caso o LLM retorne vazio depois
+				if msg, ok := resMap["message"].(string); ok && msg != "" {
+					lastToolMsg = msg
+				} else if res, ok := resMap["result"].(string); ok && res != "" {
+					lastToolMsg = res
+				} else if s, ok := result.(string); ok && s != "" {
+					lastToolMsg = s
+				}
 			}
 
 			outputJSON, _ := json.Marshal(resMap)
-			
-			// Adicionar resultado ao histórico agnóstico (Papel Tool)
+
+			// Adicionar resultado ao histórico agnóstico (Papel Tool).
+			// tc.ID foi garantido como não-vazio acima, portanto ToolCallID e ToolID
+			// estarão sempre consistentes com a mensagem do Assistant — conformidade OpenAI.
 			history = append(history, llm.MensagemAgnostica{
 				Role:    llm.PapelTool,
 				Content: string(outputJSON),
-				ToolID:  tc.ID, // Necessário para OpenAI, ignorado pelo adaptador do Google se preferir
+				ToolID:  tc.ID, // Referencia o ID gerado/recebido da chamada original
+				ToolName: tc.Nome, // Nome da ferramenta (exigido por alguns provedores)
 			})
 
 			trace = append(trace, TraceEvent{
@@ -160,5 +211,5 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 		// Continua o loop para que a IA processe os resultados das ferramentas
 	}
 
-	return "Desculpe, excedi o limite de passos para processar sua solicitação.", trace, usage, effectiveModel, nil
+	return "Desculpe, excedi o limite de passos para processar sua solicitação.", history, trace, usage, effectiveModel, nil
 }

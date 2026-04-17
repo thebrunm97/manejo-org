@@ -5,17 +5,21 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
+	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
 	"github.com/Flagsmith/flagsmith-go-client/v3"
 	"google.golang.org/genai"
+
+	"golang.org/x/sync/errgroup"
 )
 
 // ProcessResult gives insight into what happened (useful for tests/metrics)
@@ -36,8 +40,24 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 	}()
 
 	startTime := time.Now()
-	var botResponse string
 	var respondWithAudio = false
+
+	// 0. Ultra-Low Latency Greeting Guard (Immediate response for text greetings)
+	if !msg.IsAudio && !msg.IsImage && msg.Body != "" {
+		cleanBody := strings.ToUpper(strings.TrimSpace(msg.Body))
+		greetings := map[string]bool{
+			"OI": true, "OLA": true, "OLÁ": true, "BOM DIA": true, 
+			"BOA TARDE": true, "BOA NOITE": true, "EAI": true, "EAÍ": true,
+			"HELLO": true, "HI": true,
+		}
+		// Match pure greeting or greeting with exclamation/dot
+		base := strings.TrimRight(cleanBody, "!.")
+		if greetings[base] {
+			log.Printf("⚡ [FSM] Ultra-Fast Greeting Guard: intercepted '%s'", cleanBody)
+			wpClient.SendMessage(msg.From, "Olá! Sou o assistente do ManejoORG. Como posso ajudar com seu registro ou dúvida hoje?")
+			return ProcessResult{Success: true, Reason: "greeting_guard_ultra"}
+		}
+	}
 
 	// 1. Context Resolution & Authentication
 	phone, _ := sbClient.ResolvePhone(msg.From)
@@ -50,17 +70,35 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 
 	// 2a. Media Processing (Audio/Image)
 	if msg.IsAudio {
-		audioBytes, err := wpClient.DownloadAudio(msg.ID)
-		if err == nil {
-			transcription, err := groqClient.Transcribe(ctx, groq.AudioTranscriptionRequest{FileData: audioBytes, FileName: "audio.ogg"})
-			if err == nil {
-				initialParts = append(initialParts, &genai.Part{Text: transcription.Text})
-				body = transcription.Text
-				respondWithAudio = true
-			}
+		log.Printf("[AUDIO-DEBUG] Iniciando processamento de áudio (ID: %s)", msg.ID)
+		audioBytes, err := wpClient.DownloadAudio(msg.ID, msg.RawPayload)
+		if err != nil {
+			log.Printf("[AUDIO-DEBUG] Falha ao baixar áudio: %v", err)
+			sendFeedback(wpClient, ttsClient, msg.From, "Desculpe, não consegui ouvir o seu áudio. Pode repetir ou digitar?", false)
+			return ProcessResult{Success: false, Reason: "audio_download_failed"}
 		}
+
+		log.Printf("[AUDIO-DEBUG] Áudio baixado com %d bytes", len(audioBytes))
+		transcription, err := groqClient.Transcribe(ctx, groq.AudioTranscriptionRequest{FileData: audioBytes, FileName: "audio.ogg"})
+		if err != nil {
+			log.Printf("[AUDIO-DEBUG] Falha na transcrição Groq/Whisper: %v", err)
+			sendFeedback(wpClient, ttsClient, msg.From, "Desculpe, não consegui ouvir o seu áudio. Pode repetir ou digitar?", false)
+			return ProcessResult{Success: false, Reason: "audio_transcription_failed"}
+		}
+
+		cleanText := strings.TrimSpace(transcription.Text)
+		if cleanText == "" {
+			log.Printf("[AUDIO-DEBUG] Transcrição vazia recebida do Whisper")
+			sendFeedback(wpClient, ttsClient, msg.From, "Desculpe, não consegui ouvir o seu áudio. Pode repetir ou digitar?", false)
+			return ProcessResult{Success: false, Reason: "empty_audio_content"}
+		}
+
+		log.Printf("[AUDIO-DEBUG] Transcrição concluída: \"%s\"", cleanText)
+		initialParts = append(initialParts, &genai.Part{Text: cleanText})
+		body = cleanText
+		respondWithAudio = true
 	} else if msg.IsImage {
-		imageBytes, mimeType, err := wpClient.DownloadImage(msg.ID)
+		imageBytes, mimeType, err := wpClient.DownloadImage(msg.ID, msg.RawPayload)
 		if err == nil {
 			// Add photo to parts for the router
 			initialParts = append(initialParts, &genai.Part{InlineData: &genai.Blob{Data: imageBytes, MIMEType: mimeType}})
@@ -121,107 +159,235 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 	guard := mcp.NewLoopGuard(2)
 
 	// 2. High-Level Intent Classification (Router) & NER Extraction (Gemini Unified)
-	unifiedRes, routerModel, err := gemClient.ClassifyIntent(ctx, initialParts)
-	if err != nil {
-		log.Printf("⚠️ [FSM] Router Unificado falhou: %v. Usando fallback.", err)
-		unifiedRes = gemini.UnifiedIntentResult{Intent: gemini.IntentRAG, Intencao: "duvida"}
+	var unifiedRes llm.UnifiedIntentResult
+	var routerModel string
+	var err error
+
+	{
+		// Isolated local context with 10s timeout for the Router only
+		routerCtx, routerCancel := context.WithTimeout(ctx, 10*time.Second)
+		unifiedRes, routerModel, err = gemClient.ClassifyIntent(routerCtx, initialParts)
+		routerCancel()
 	}
 
-	// Use UnifiedIntentResult directly as it has all needed fields
-	routed := unifiedRes
-
-	// Map UnifiedIntentResult back to groq.ExtractionResult for legacy compatibility
-	var extracted = &groq.ExtractionResult{
-		Intencao:          unifiedRes.Intencao,
-		Atividade:         unifiedRes.Atividade,
-		InsumoCultura:     unifiedRes.InsumoCultura,
-		InsumoAplicado:    unifiedRes.InsumoAplicado,
-		InsumoGenerico:    unifiedRes.InsumoGenerico,
-		Quantidade:        unifiedRes.Quantidade,
-		Unidade:           unifiedRes.Unidade,
-		Localizacao:       unifiedRes.Localizacao,
-		Data:              unifiedRes.Data,
-		AlertaOrganico:    unifiedRes.AlertaOrganico,
-		HouveDescartes:    unifiedRes.HouveDescartes,
-		QtdDescartes:      unifiedRes.QtdDescartes,
-		NecessitaMaisInfo: unifiedRes.NecessitaMaisInfo,
-		PerguntaAoUsuario: unifiedRes.PerguntaAoUsuario,
-		Fornecedor:        unifiedRes.Fornecedor,
-		NotaFiscal:        unifiedRes.NotaFiscal,
-		Marca:             unifiedRes.Marca,
-		Composicao:        unifiedRes.Composicao,
-		Procedencia:       unifiedRes.Procedencia,
-		ItemArea:          unifiedRes.ItemArea,
-		TipoLimpeza:       unifiedRes.TipoLimpeza,
-		ProdutoUtilizado:  unifiedRes.ProdutoUtilizado,
-		Dosagem:           unifiedRes.Dosagem,
-		Responsavel:       unifiedRes.Responsavel,
-		Lote:              unifiedRes.Lote,
-		Cliente:           unifiedRes.Cliente,
-		ValorTotal:        unifiedRes.ValorTotal,
+	if err != nil {
+		log.Printf("⚠️ [FSM] Router Unificado falhou (timeout ou erro): %v. Usando fallback.", err)
+		unifiedRes = llm.UnifiedIntentResult{
+			Intent:   llm.IntentRAG,
+			Entities: []llm.AcaoEstruturada{{Intencao: "duvida"}},
+		}
 	}
 
 	// 3. Defensive Override for farm selection patterns (ensures tools are injected even if router stalls)
 	msgLower := strings.ToLower(body)
 	isSelection := strings.Contains(msgLower, "selecionar") || strings.Contains(msgLower, "fazenda") || strings.Contains(msgLower, "trabalhar na")
-	if isSelection && (routed.Intent == "RAG" || routed.Intent == "CHAT" || routed.Confidence < 0.8) {
-		log.Printf("🛡️ [FSM] Defensive Override: Intent '%s' forçado para DATABASE (Padrão de seleção detectado)", routed.Intent)
-		routed.Intent = "DATABASE"
+	if isSelection && (unifiedRes.Intent == llm.IntentRAG || unifiedRes.Intent == llm.IntentChat || unifiedRes.Confidence < 0.8) {
+		log.Printf("🛡️ [FSM] Defensive Override: Intent '%s' forçado para DATABASE (Padrão de seleção detectado)", unifiedRes.Intent)
+		unifiedRes.Intent = llm.IntentDatabase
 	}
 
 	// 4. Dynamic Tool Filtering
-	filteredTools := mcpServer.GetToolsForIntent(string(routed.Intent))
-	log.Printf("🧭 [FSM] Intent: %s | Tools: %d | Guard: ON", routed.Intent, len(filteredTools))
+	filteredTools := mcpServer.GetToolsForIntent(string(unifiedRes.Intent))
+	log.Printf("🧭 [FSM] Intent: %s | Entities: %d | Guard: ON", unifiedRes.Intent, len(unifiedRes.Entities))
 
-	// 8. Intent Routing
+	// 3. Fast-Track: Simple Chat Logic
+	if unifiedRes.Intent == llm.IntentChat && len(unifiedRes.Entities) == 0 {
+		log.Printf("⚡ [FSM] Fast-Track: Mensagem de CHAT simples.")
+		botResponse := "Olá! Sou o assistente do ManejoORG. Como posso ajudar você hoje?"
+		sendFeedback(wpClient, ttsClient, msg.From, botResponse, respondWithAudio)
+		recordLog(sbClient, profile, body, botResponse, string(routerModel), string(routerModel), 0, 0, "chat_fast", nil, startTime, true, nil)
+		return ProcessResult{Success: true, Reason: "chat_fast"}
+	}
+
+	// 4. Perceived Latency: Immediate ACK for complex requests or RAG/DOUBTS
+	isComplex := len(unifiedRes.Entities) > 1 || unifiedRes.Intent == llm.IntentRAG
+	// Self-check for single-entity doubts
+	if !isComplex && len(unifiedRes.Entities) == 1 && unifiedRes.Entities[0].Intencao == "duvida" {
+		isComplex = true
+	}
+	
+	if isComplex {
+		log.Printf("⏳ [FSM] Enviando ACK imediato para solicitação complexa")
+		go wpClient.SendMessage(msg.From, "⏳ Um momento... Estou processando seus registros e consultando a base de dados.")
+	}
+
+	// 5. Parallel Processing: Manage Goroutines with Limit & Context Cancellation
+	var finalResponses []string
+	var lastRes ProcessResult
+
+	// 5a. Zero-Entity Guard: CHAT/RAG/DUVIDA messages may return no structured entities.
+	if len(unifiedRes.Entities) == 0 {
+		log.Printf("💬 [FSM] Zero entities detected (Intent: %s). Routing to chat/duvida handler.", unifiedRes.Intent)
+		synthetic := llm.AcaoEstruturada{Intencao: "duvida"}
+		if unifiedRes.Intent == llm.IntentChat {
+			synthetic.Intencao = "saudacao"
+		}
+		resMsg, res := dispatchEntity(ctx, synthetic, profile, sbClient, wpClient, gemClient, ttsClient, mcpServer, historyManager, phone, body, respondWithAudio, startTime, unifiedRes.Intent, filteredTools, guard, routerModel)
+		if resMsg != "" {
+			finalResponses = append(finalResponses, resMsg)
+		}
+		lastRes = res
+	} else {
+		// 5b. Parallel Entity Loop using ErrGroup to handle multiple registrations efficiently
+		g, gCtx := errgroup.WithContext(ctx)
+		g.SetLimit(3) // Limit concurrency to avoid hitting LLM/DB rate limits
+
+		count := len(unifiedRes.Entities)
+		tempResponses := make([]string, count)
+		tempResults := make([]ProcessResult, count)
+		var mu sync.Mutex // Mutex for shared resources if any (index access is safe, but lastRes needs tracking)
+
+		for i, entity := range unifiedRes.Entities {
+			i, entity := i, entity // Capture loop variables
+			g.Go(func() error {
+				log.Printf("📑 [FSM-WORKER] Processando Ação %d/%d: %s", i+1, count, entity.Intencao)
+				
+				resMsg, res := dispatchEntity(gCtx, entity, profile, sbClient, wpClient, gemClient, ttsClient, mcpServer, historyManager, phone, body, respondWithAudio, startTime, unifiedRes.Intent, filteredTools, guard, routerModel)
+				
+				tempResponses[i] = resMsg
+				tempResults[i] = res
+
+				if !res.Success {
+					// Stop subsequent processing if this entity fails (e.g., missing data triggers interview)
+					return fmt.Errorf("interrupt_entity_%d", i)
+				}
+				return nil
+			})
+		}
+
+		// Wait for all to finish or first failure
+		err := g.Wait()
+		if err != nil {
+			log.Printf("⏳ [FSM] Loop interrompido: %v", err)
+		}
+
+		// 5c. Aggregation: Collect results in order until first failure
+		for i := 0; i < count; i++ {
+			if tempResponses[i] != "" {
+				finalResponses = append(finalResponses, tempResponses[i])
+			}
+			
+			lastRes = tempResults[i]
+
+			// If this one failed, stop aggregating further (as they might be cancelled or irrelevant now)
+			if !tempResults[i].Success {
+				mu.Lock() // Just in case, although single threaded here
+				// Prepend previous successes if any, as per "Partial Success" rule
+				if len(finalResponses) > 1 {
+					header := "✅ Processados até agora:\n" + strings.Join(finalResponses[:len(finalResponses)-1], "\n\n") + "\n\n---\n\n"
+					finalResponses[len(finalResponses)-1] = header + finalResponses[len(finalResponses)-1]
+				}
+				mu.Unlock()
+
+				sendFeedback(wpClient, ttsClient, msg.From, finalResponses[len(finalResponses)-1], respondWithAudio)
+				return lastRes
+			}
+		}
+	}
+
+	// 6. Consolidated Success Feedback
+	if len(finalResponses) > 0 {
+		aggregatedResponse := strings.Join(finalResponses, "\n\n---\n\n")
+		sendFeedback(wpClient, ttsClient, msg.From, aggregatedResponse, respondWithAudio)
+		return lastRes
+	}
+
+	// 7. Hard fallback: aggregatedResponse is empty after all processing.
+	// This should never happen in production, but protects against silent failures.
+	log.Printf("⚠️ [FSM] Nenhuma resposta gerada após processamento completo (Intent: %s). Enviando fallback.", unifiedRes.Intent)
+	sendFeedback(wpClient, ttsClient, msg.From, "Desculpe, não consegui processar sua mensagem. Pode tentar novamente?", respondWithAudio)
+	return ProcessResult{Success: false, Reason: "empty_aggregated_response"}
+}
+
+// dispatchEntity routes a single action to its respective handler and returns the response string
+func dispatchEntity(ctx context.Context, entity llm.AcaoEstruturada, profile *supabase.Profile, sbClient *supabase.Client, wpClient ports.MessageSender, gemClient *gemini.Client, ttsClient *tts.Orchestrator, mcpServer *mcp.Server, historyManager *history.Manager, phone string, body string, respondWithAudio bool, startTime time.Time, routedIntent llm.Intent, filteredTools []llm.FerramentaAgnostica, guard *mcp.LoopGuard, routerModel string) (string, ProcessResult) {
+	// Map AcaoEstruturada to groq.ExtractionResult for handler compatibility
+	extracted := &groq.ExtractionResult{
+		Intencao:          entity.Intencao,
+		Atividade:         entity.Atividade,
+		InsumoCultura:     entity.InsumoCultura,
+		InsumoAplicado:    entity.InsumoAplicado,
+		InsumoGenerico:    entity.InsumoGenerico,
+		Quantidade:        entity.Quantidade,
+		Unidade:           entity.Unidade,
+		Localizacao:       entity.Localizacao,
+		Data:              entity.Data,
+		AlertaOrganico:    entity.AlertaOrganico,
+		HouveDescartes:    entity.HouveDescartes,
+		QtdDescartes:      entity.QtdDescartes,
+		NecessitaMaisInfo: entity.NecessitaMaisInfo,
+		PerguntaAoUsuario: entity.PerguntaAoUsuario,
+		Fornecedor:        entity.Fornecedor,
+		NotaFiscal:        entity.NotaFiscal,
+		Marca:             entity.Marca,
+		Composicao:        entity.Composicao,
+		Procedencia:       entity.Procedencia,
+		ItemArea:          entity.ItemArea,
+		TipoLimpeza:       entity.TipoLimpeza,
+		ProdutoUtilizado:  entity.ProdutoUtilizado,
+		Dosagem:           entity.Dosagem,
+		Responsavel:       entity.Responsavel,
+		Lote:              entity.Lote,
+		Cliente:           entity.Cliente,
+		ValorTotal:        entity.ValorTotal,
+	}
+
 	switch extracted.Intencao {
 	case "registro":
-		// Choke Point: Missing Quantity
 		if parseToFloat(extracted.Quantidade) <= 0 && extracted.Atividade != "Compra/Aquisição" {
-			botResponse = "Qual a quantidade exata utilizada?"
+			botResponse := "Qual a quantidade exata utilizada?"
 			if historyManager != nil { historyManager.SetFSMState(phone, StateAguardandoQuantidade, toMap(extracted)) }
-			sendFeedback(wpClient, ttsClient, msg.From, botResponse, respondWithAudio)
-			return ProcessResult{Success: false, Reason: "missing_quantity"}
+			return botResponse, ProcessResult{Success: false, Reason: "missing_quantity"}
 		}
-		return finalizeRegistration(ctx, extracted, profile, sbClient, wpClient, ttsClient, msg.From, body, respondWithAudio, startTime, historyManager, phone, gemClient.Config.Model)
+		return finalizeRegistration(ctx, extracted, profile, sbClient, wpClient, ttsClient, phone, body, respondWithAudio, startTime, historyManager, phone, gemClient.Config.Model)
 
 	case "limpeza":
-		return handleLimpeza(ctx, extracted, profile, sbClient, wpClient, ttsClient, msg.From, body, respondWithAudio, startTime, gemClient.Config.Model, routerModel, extracted.TokensPrompt, extracted.TokensCompletion)
+		return handleLimpeza(ctx, extracted, profile, sbClient, wpClient, ttsClient, phone, body, respondWithAudio, startTime, gemClient.Config.Model, routerModel, 0, 0)
 
 	case "registro_financeiro":
-		return handleRegistroFinanceiro(ctx, extracted, profile, sbClient, wpClient, ttsClient, msg.From, respondWithAudio)
+		return handleRegistroFinanceiro(ctx, extracted, profile, sbClient, wpClient, ttsClient, phone, respondWithAudio)
 
 	case "assumir_cota":
-		return handleAssumirCota(ctx, extracted, profile, sbClient, wpClient, gemClient, ttsClient, msg.From, body, respondWithAudio, startTime, gemClient.Config.Model, routerModel)
+		// Note: handleAssumirCota might need similar refactor if used in loops, but for now we focus on records
+		return handleAssumirCota(ctx, extracted, profile, sbClient, wpClient, gemClient, ttsClient, phone, body, respondWithAudio, startTime, gemClient.Config.Model, routerModel)
 
 	case "duvida":
-		// Multi-Agent Flow: Pass parameters to specialized handler
-		return handleDuvidaFallback(ctx, wpClient, ttsClient, msg.From, gemClient, body, respondWithAudio, sbClient, profile, startTime, extracted.TokensPrompt, extracted.TokensCompletion, string(routed.Intent), filteredTools, guard, historyManager, mcpServer)
+		return handleDuvidaFallback(ctx, wpClient, ttsClient, phone, gemClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, string(routedIntent), filteredTools, guard, historyManager, mcpServer)
 
 	case "saudacao":
-		sendFeedback(wpClient, ttsClient, msg.From, "Olá! Sou o assistente do ManejoORG. Como posso ajudar com seu registro ou dúvida hoje?", respondWithAudio)
-		return ProcessResult{Success: true, Reason: "greeting"}
+		return "Olá! Sou o assistente do ManejoORG. Como posso ajudar com seu registro ou dúvida hoje?", ProcessResult{Success: true, Reason: "greeting"}
 
 	default:
-		// Se o Router identificou uma tarefa de DATABASE ou RAG, mas o Groq não pegou no NER 'registro',
-		// ainda assim devemos enviar para o loop agentico para que ele use as tools.
-		if routed.Intent == "RAG" || routed.Intent == "DATABASE" {
-			log.Printf("🔀 [FSM] Redirecionando intent '%s' para Loop Agentico (Fallthrough)", routed.Intent)
-			return handleDuvidaFallback(ctx, wpClient, ttsClient, msg.From, gemClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, string(routed.Intent), filteredTools, guard, historyManager, mcpServer)
+		// Resilience: If the router detected CHAT intent but extraction failed or produced unknown actions,
+		// we should still provide a friendly greeting instead of failing.
+		if routedIntent == llm.IntentChat {
+			return "Olá! Sou o assistente do ManejoORG. Como posso ajudar com seu registro ou dúvida hoje?", ProcessResult{Success: true, Reason: "greeting_fallback"}
 		}
-		return ProcessResult{Success: true, Reason: "ignored"}
+		
+		if routedIntent == llm.IntentRAG || routedIntent == llm.IntentDatabase {
+			return handleDuvidaFallback(ctx, wpClient, ttsClient, phone, gemClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, string(routedIntent), filteredTools, guard, historyManager, mcpServer)
+		}
+		return "", ProcessResult{Success: true, Reason: "ignored"}
 	}
 }
 
 // handleActiveState dispatches turn-2 messages to their respective handlers
 func handleActiveState(state string, ctxState map[string]interface{}, body string, from string, phone string, profile *supabase.Profile, respondWithAudio bool, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, historyManager *history.Manager, startTime time.Time, modelConfigured string) ProcessResult {
 	ctx := context.Background()
+	var botResponse string
+	var res ProcessResult
+
 	switch state {
 	case StateAguardandoQuantidade:
-		return handleAguardandoQuantidade(ctx, body, from, phone, profile, respondWithAudio, sbClient, wpClient, ttsClient, historyManager, ctxState, startTime, modelConfigured)
+		botResponse, res = handleAguardandoQuantidade(ctx, body, from, phone, profile, respondWithAudio, sbClient, wpClient, ttsClient, historyManager, ctxState, startTime, modelConfigured)
 	case StateAguardandoCompra:
-		return handleAguardandoCompra(ctx, body, from, phone, profile, respondWithAudio, sbClient, wpClient, ttsClient, historyManager, ctxState, startTime, modelConfigured)
+		botResponse, res = handleAguardandoCompra(ctx, body, from, phone, profile, respondWithAudio, sbClient, wpClient, ttsClient, historyManager, ctxState, startTime, modelConfigured)
 	default:
 		return ProcessResult{Success: false, Reason: "unknown_state"}
 	}
+
+	if botResponse != "" {
+		sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio)
+	}
+	return res
 }
