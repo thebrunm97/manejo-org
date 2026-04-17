@@ -3,6 +3,7 @@ package gemini
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -17,6 +18,7 @@ import (
 
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	openai "github.com/sashabaranov/go-openai"
+	"sync"
 )
 
 //go:embed prompts/system_prompt.md
@@ -35,12 +37,12 @@ var systemPromptAgronomistVision string
 // classified Intent from the Router. Falls back to the default monolithic prompt
 // for CHAT or any unrecognized intent to avoid breaking the existing flow.
 // GetPromptForIntent selects the correct specialist system prompt and injects property context.
-func GetPromptForIntent(intent Intent, modality string, temProducaoParalela bool) string {
+func GetPromptForIntent(intent llm.Intent, modality string, temProducaoParalela bool) string {
 	var prompt string
 	switch intent {
-	case IntentRAG:
+	case llm.IntentRAG:
 		prompt = systemPromptAgronomist
-	case IntentDatabase:
+	case llm.IntentDatabase:
 		prompt = systemPromptDBOperator
 	default:
 		prompt = systemPrompt
@@ -56,6 +58,12 @@ func GetPromptForIntent(intent Intent, modality string, temProducaoParalela bool
 		parallelMsg = "NÃO"
 	}
 	prompt = strings.ReplaceAll(prompt, "{{TEM_PRODUCAO_PARALELA}}", parallelMsg)
+
+	// Injetar Data Atual (Fix para evitar datas hardcoded nos prompts)
+	loc, _ := time.LoadLocation("America/Sao_Paulo")
+	now := time.Now().In(loc)
+	currentDateBR := now.Format("02 de Janeiro de 2006")
+	prompt = strings.ReplaceAll(prompt, "{{CURRENT_DATE_BR}}", currentDateBR)
 
 	// Note: For more complex logic like {% if %}, a real template engine like text/template should be used.
 	// For now, these basic replacements satisfy the current prompt structure if we adapt the prompts slightly.
@@ -74,9 +82,10 @@ type Config struct {
 
 // Client wraps communication with Gemini using the official SDK
 type Client struct {
-	Config Config
-	Client *genai.Client
-	OpenAI *openai.Client
+	Config               Config
+	Client               *genai.Client
+	OpenAI               *openai.Client
+	OpenRouterTransport *openRouterTransport
 }
 
 // NewClient initializes the Gemini and/or OpenRouter clients.
@@ -97,13 +106,10 @@ func NewClient(cfg Config) (*Client, error) {
 	}
 
 	if cfg.Model == "" {
-		cfg.Model = "gemini-3.1-flash-lite-preview"
+		cfg.Model = os.Getenv("GEMINI_MODEL")
 	}
 	if cfg.OpenRouterModel == "" {
 		cfg.OpenRouterModel = os.Getenv("OPENROUTER_MODEL")
-		if cfg.OpenRouterModel == "" {
-			cfg.OpenRouterModel = "google/gemini-2.5-flash-preview"
-		}
 	}
 
 	ctx := context.Background()
@@ -111,15 +117,19 @@ func NewClient(cfg Config) (*Client, error) {
 
 	// Initialize Google Gemini if Key is present
 	if cfg.APIKey != "" {
+		httpClient := &http.Client{
+			Timeout: 60 * time.Second,
+		}
 		genClient, err := genai.NewClient(ctx, &genai.ClientConfig{
-			APIKey:  cfg.APIKey,
-			Backend: genai.BackendGeminiAPI,
+			APIKey:     cfg.APIKey,
+			Backend:    genai.BackendGeminiAPI,
+			HTTPClient: httpClient,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to create genai client: %w", err)
 		}
 		c.Client = genClient
-		log.Printf("📡 [Gemini] Cliente Google inicializado.")
+		log.Printf("📡 [Gemini] Cliente Google inicializado com timeout de 60s.")
 	}
 
 	// Initialize OpenAI for OpenRouter if Key is present
@@ -128,13 +138,16 @@ func NewClient(cfg Config) (*Client, error) {
 		oaCfg.BaseURL = "https://openrouter.ai/api/v1"
 		
 		// Custom Transport para garantir headers corretos na OpenRouter
+		transport := &openRouterTransport{
+			apiKey: cfg.OpenRouterAPIKey,
+		}
 		oaCfg.HTTPClient = &http.Client{
-			Transport: &openRouterTransport{
-				apiKey: cfg.OpenRouterAPIKey,
-			},
+			Transport: transport,
+			Timeout:   60 * time.Second,
 		}
 		
 		c.OpenAI = openai.NewClientWithConfig(oaCfg)
+		c.OpenRouterTransport = transport
 		log.Printf("📡 [OpenRouter] Cliente OpenRouter inicializado (%s).", cfg.OpenRouterModel)
 	}
 
@@ -142,9 +155,11 @@ func NewClient(cfg Config) (*Client, error) {
 }
 
 // openRouterTransport injeta headers obrigatórios e o campo "reasoning" no body de cada pedido à OpenRouter.
-// Esta abordagem é necessária pois o go-openai não tem suporte nativo para ExtraBody.
+// Também lida com a injeção dinâmica de "response_format" para Structured Output via Context.
 type openRouterTransport struct {
-	apiKey string
+	apiKey         string
+	responseFormat map[string]interface{}
+	mu             sync.RWMutex
 }
 
 func (t *openRouterTransport) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -154,15 +169,25 @@ func (t *openRouterTransport) RoundTrip(req *http.Request) (*http.Response, erro
 	req.Header.Set("X-Title", "ManejoOrg PMO Bot")
 	req.Header.Set("Content-Type", "application/json")
 
-	// Injetar Reasoning Tokens: lê o body original, adiciona o campo e reenvia
+	// Injetar Reasoning Tokens e Response Format: lê o body original, adiciona os campos e reenvia
 	if req.Body != nil {
 		originalBody, err := io.ReadAll(req.Body)
 		if err == nil {
 			// Desserializar o body para um mapa
 			var bodyMap map[string]interface{}
 			if json.Unmarshal(originalBody, &bodyMap) == nil {
-				// Adicionar o campo de raciocínio com esforço reduzido
+				// 1. Adicionar o campo de raciocínio com esforço reduzido
 				bodyMap["reasoning"] = map[string]interface{}{"effort": "low"}
+
+				// 2. Injetar Response Format se presente no transport (definido via closure no CallOpenRouter)
+				t.mu.RLock()
+				fmtReq := t.responseFormat
+				t.mu.RUnlock()
+				
+				if fmtReq != nil {
+					bodyMap["response_format"] = fmtReq
+				}
+
 				if enrichedBody, err := json.Marshal(bodyMap); err == nil {
 					req.Body = io.NopCloser(bytes.NewReader(enrichedBody))
 					req.ContentLength = int64(len(enrichedBody))
@@ -223,7 +248,7 @@ func (c *Client) AskExpert(question string, customInstruction ...string) (string
 
 	res, modelUsed, err := c.withFallback(ctx, op)
 	if err != nil {
-		return "", "", fmt.Errorf("generate content error with fallback: %w", err)
+		return "", "", err
 	}
 
 	resp := res.(*genai.GenerateContentResponse)
@@ -239,58 +264,26 @@ func (c *Client) AskExpert(question string, customInstruction ...string) (string
 }
 
 // withFallback wraps a Gemini call with retry and fallback logic.
-// It implements an exponential backoff for 429/quota errors and falls back to a second model if primary retries fail.
 func (c *Client) withFallback(ctx context.Context, fn func(model string) (any, error)) (any, string, error) {
-	// 1. Try Primary Model (with Exponential Backoff for 429/Transient errors)
-	maxRetries := 2
-	for i := 0; i <= maxRetries; i++ {
-		resp, err := fn(c.Config.Model)
-		if err == nil {
-			return resp, c.Config.Model, nil
-		}
-
-		errStr := strings.ToLower(err.Error())
-		
-		// Immediate fallback for configuration errors
-		if strings.Contains(errStr, "404") || strings.Contains(errStr, "not found") {
-			log.Printf("⚠️ [GEMINI] Primary model %s not found (404). Falling back.", c.Config.Model)
-			break
-		}
-
-		// Handle Quota (429) or Server Busy (503/500)
-		if strings.Contains(errStr, "429") || strings.Contains(errStr, "quota") || 
-		   strings.Contains(errStr, "500") || strings.Contains(errStr, "503") ||
-		   strings.Contains(errStr, "overloaded") {
-			
-			if i < maxRetries {
-				// Exponential backoff: 1s, 2s
-				wait := time.Duration(1<<i) * time.Second
-				log.Printf("⏳ [GEMINI] Quota/Server error (%v). Retry %d/%d in %v...", err, i+1, maxRetries, wait)
-				
-				select {
-				case <-ctx.Done():
-					return nil, "", ctx.Err()
-				case <-time.After(wait):
-					continue
-				}
-			}
-		}
-		
-		// Other errors or exhausted retries, break to fallback
-		break
-	}
-
-	// 2. Try Fallback Model
-	log.Printf("🔄 [GEMINI] Trying fallback model: %s", c.Config.FallbackModel)
-	resp, err := fn(c.Config.FallbackModel)
+	// 1. Try Primary Model (No internal retries, immediate failure)
+	resp, err := fn(c.Config.Model)
 	if err == nil {
-		return resp, c.Config.FallbackModel, nil
+		return resp, c.Config.Model, nil
 	}
 
-	// 3. Last Resort: Final Attempt on Primary (if fallback also failed)
-	log.Printf("🆘 [GEMINI] Fallback failed (%v). Last resort attempt on primary.", err)
-	res, lastErr := fn(c.Config.Model)
-	return res, c.Config.Model, lastErr
+	log.Printf("⚠️ [GEMINI] Primary model (%s) failed: %v", c.Config.Model, err)
+
+	// 2. Try Fallback Model ONLY if primary fails (immediate, no retry)
+	if c.Config.FallbackModel != "" {
+		log.Printf("🔄 [GEMINI] Trying fallback model: %s", c.Config.FallbackModel)
+		resp, err = fn(c.Config.FallbackModel)
+		if err == nil {
+			return resp, c.Config.FallbackModel, nil
+		}
+		log.Printf("⚠️ [GEMINI] Fallback model (%s) failed: %v", c.Config.FallbackModel, err)
+	}
+
+	return nil, "", err
 }
 
 // isOverloadedError checks if the error is related to quota or high demand.
@@ -387,18 +380,32 @@ func (c *Client) DescribeAgronomicImage(ctx context.Context, imageBytes []byte, 
 
 // CallOpenRouter executes a completion request via OpenRouter (OpenAI-compatible).
 // It converts agnostic history and tools to the OpenAI format before calling and returns an agnostic response.
-func (c *Client) CallOpenRouter(ctx context.Context, history []llm.MensagemAgnostica, agnosticTools []llm.FerramentaAgnostica) (llm.RespostaAgnostica, error) {
+// Se agnosticSchema for fornecido, ele será injetado como response_format no payload.
+func (c *Client) CallOpenRouter(ctx context.Context, sysInst string, history []llm.MensagemAgnostica, agnosticTools []llm.FerramentaAgnostica, agnosticSchema map[string]interface{}) (llm.RespostaAgnostica, error) {
 	if c.OpenAI == nil {
 		return llm.RespostaAgnostica{}, fmt.Errorf("OpenRouter client not initialized (check API Key)")
 	}
 
+	// Injetar o schema no transport para esta chamada específica
+	if c.OpenRouterTransport != nil {
+		c.OpenRouterTransport.mu.Lock()
+		c.OpenRouterTransport.responseFormat = agnosticSchema
+		c.OpenRouterTransport.mu.Unlock()
+		
+		defer func() {
+			c.OpenRouterTransport.mu.Lock()
+			c.OpenRouterTransport.responseFormat = nil
+			c.OpenRouterTransport.mu.Unlock()
+		}()
+	}
+
 	model := c.Config.OpenRouterModel
 	if model == "" {
-		model = "google/gemini-2.5-flash-preview" // Default resiliente
+		model = "google/gemini-2.0-flash-001" // Default resiliente
 	}
 
 	// 1. Converter Histórico
-	messages := llm.ParaOpenRouterHistory(history)
+	messages := llm.ParaOpenRouterHistory(sysInst, history)
 
 	// 2. Converter Ferramentas
 	var tools []openai.Tool
@@ -451,10 +458,8 @@ func (c *Client) CallOpenRouter(ctx context.Context, history []llm.MensagemAgnos
 
 // CallGoogle executes a completion request via Google GenAI SDK.
 // It converts agnostic history and tools to the Google format and returns an agnostic response.
-func (c *Client) CallGoogle(ctx context.Context, sysInst string, history []llm.MensagemAgnostica, agnosticTools []llm.FerramentaAgnostica) (llm.RespostaAgnostica, error) {
+func (c *Client) CallGoogle(ctx context.Context, sysInst string, history []llm.MensagemAgnostica, agnosticTools []llm.FerramentaAgnostica, agnosticSchema *genai.Schema) (llm.RespostaAgnostica, error) {
 	modelName := c.Config.Model
-
-	// Converter Ferramentas
 	var tools []*genai.Tool
 	for _, f := range agnosticTools {
 		tools = append(tools, f.ParaGoogle())
@@ -466,6 +471,12 @@ func (c *Client) CallGoogle(ctx context.Context, sysInst string, history []llm.M
 			Parts: []*genai.Part{{Text: sysInst}},
 		},
 		Temperature: genai.Ptr[float32](0.2),
+	}
+
+	// Injetar Structured Output se schema presente
+	if agnosticSchema != nil {
+		config.ResponseMIMEType = "application/json"
+		config.ResponseSchema = agnosticSchema
 	}
 
 	// Converter Histórico
@@ -501,6 +512,9 @@ func (c *Client) CallGoogle(ctx context.Context, sysInst string, history []llm.M
 	for _, part := range candidate.Content.Parts {
 		if part.Text != "" {
 			agnosticResp.Texto += part.Text
+		}
+		if part.ThoughtSignature != nil {
+			agnosticResp.ThoughtSignature = base64.StdEncoding.EncodeToString(part.ThoughtSignature)
 		}
 		if part.FunctionCall != nil {
 			agnosticResp.ToolCalls = append(agnosticResp.ToolCalls, llm.ChamadaFerramentaAgnostica{

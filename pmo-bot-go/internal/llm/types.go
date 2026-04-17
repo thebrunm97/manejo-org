@@ -5,7 +5,10 @@
 package llm
 
 import (
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
+	"math/rand"
 
 	openai "github.com/sashabaranov/go-openai"
 	genai "google.golang.org/genai"
@@ -70,18 +73,18 @@ func (f FerramentaAgnostica) ParaGoogle() *genai.Tool {
 			{
 				Name:        f.Name,
 				Description: f.Description,
-				Parameters:  mapToGenaiSchema(f.Parameters, true),
+				Parameters:  MapToGenaiSchema(f.Parameters, true),
 			},
 		},
 	}
 }
 
-// mapToGenaiSchema recursively converts a JSON-Schema-style map into a
+// MapToGenaiSchema recursively converts a JSON-Schema-style map into a
 // *genai.Schema. This is the core of the Google adapter.
 //
 // isRoot should be true only for the top-level Parameters object,
 // which is always forced to TypeObject per Gemini's requirements.
-func mapToGenaiSchema(m map[string]interface{}, isRoot bool) *genai.Schema {
+func MapToGenaiSchema(m map[string]interface{}, isRoot bool) *genai.Schema {
 	if m == nil {
 		m = make(map[string]interface{})
 	}
@@ -137,7 +140,7 @@ func mapToGenaiSchema(m map[string]interface{}, isRoot bool) *genai.Schema {
 		if props, ok := m["properties"].(map[string]interface{}); ok {
 			for k, v := range props {
 				if propMap, ok := v.(map[string]interface{}); ok {
-					s.Properties[k] = mapToGenaiSchema(propMap, false)
+					s.Properties[k] = MapToGenaiSchema(propMap, false)
 				}
 			}
 		}
@@ -168,7 +171,7 @@ func mapToGenaiSchema(m map[string]interface{}, isRoot bool) *genai.Schema {
 	if s.Type == genai.TypeArray {
 		if itemsVal, exists := m["items"]; exists {
 			if itemsMap, ok := itemsVal.(map[string]interface{}); ok {
-				s.Items = mapToGenaiSchema(itemsMap, false)
+				s.Items = MapToGenaiSchema(itemsMap, false)
 			}
 		}
 		if s.Items == nil {
@@ -209,10 +212,12 @@ type ChamadaFerramentaAgnostica struct {
 
 // MensagemAgnostica is a provider-neutral representation of a message in a conversation.
 type MensagemAgnostica struct {
-	Role      Papel                        `json:"role"`
-	Content   string                       `json:"content"`
-	ToolCalls []ChamadaFerramentaAgnostica `json:"tool_calls,omitempty"`
-	ToolID    string                       `json:"tool_id,omitempty"` // Identificador da chamada (OpenRouter) ou Nome da tool (Google)
+	Role             Papel                        `json:"role"`
+	Content          string                       `json:"content"`
+	ToolCalls        []ChamadaFerramentaAgnostica `json:"tool_calls,omitempty"`
+	ToolID           string                       `json:"tool_id,omitempty"`   // ID da chamada (OpenRouter) ou Nome da tool (Google)
+	ToolName         string                       `json:"tool_name,omitempty"` // Nome da ferramenta para mensagens Tool (exigido pela spec OpenAI)
+	ThoughtSignature string                       `json:"thought_signature,omitempty"`
 }
 
 // ParaGoogleHistory converts agnostic messages to Gemini's genai.Content format.
@@ -230,11 +235,20 @@ func ParaGoogleHistory(history []MensagemAgnostica) []*genai.Content {
 			Role: role,
 		}
 
+		// 1. Thought Signature (mandatory for some Gemini 3.1 models if present)
+		if m.ThoughtSignature != "" {
+			sig, _ := base64.StdEncoding.DecodeString(m.ThoughtSignature)
+			content.Parts = append(content.Parts, &genai.Part{
+				ThoughtSignature: sig,
+			})
+		}
+
+		// 2. Text Content
 		if m.Content != "" {
 			content.Parts = append(content.Parts, &genai.Part{Text: m.Content})
 		}
 
-		// Tool Calls (Model -> Client)
+		// 3. Tool Calls (Model -> Client)
 		for _, tc := range m.ToolCalls {
 			content.Parts = append(content.Parts, &genai.Part{
 				FunctionCall: &genai.FunctionCall{
@@ -244,13 +258,22 @@ func ParaGoogleHistory(history []MensagemAgnostica) []*genai.Content {
 			})
 		}
 
-		// Tool Response (Client -> Model) - No Gemini 2.0 SDK, o papel é "tool"
+		// Tool Response (Client -> Model) - No Gemini 2.0 SDK, o papel é "tool".
+		// CRÍTICO: FunctionResponse.Name deve ser o NOME da função (ex: "consultar_base_conhecimento"),
+		// NÃO o ID da chamada (ex: "call_consultar_0_4821"). Usamos ToolName para isso.
+		// ToolID é o identificador da chamada — usado apenas pela OpenAI/OpenRouter.
 		if m.Role == PapelTool {
+			funcName := m.ToolName
+			if funcName == "" {
+				// Fallback de retrocompatibilidade: mensagens antigas que não têm ToolName
+				// ainda podem ter o nome em ToolID (antes da separação dos campos).
+				funcName = m.ToolID
+			}
 			content.Role = "tool"
 			content.Parts = []*genai.Part{
 				{
 					FunctionResponse: &genai.FunctionResponse{
-						Name:     m.ToolID, // Nome da função original
+						Name:     funcName,
 						Response: map[string]interface{}{"result": m.Content},
 					},
 				},
@@ -263,19 +286,37 @@ func ParaGoogleHistory(history []MensagemAgnostica) []*genai.Content {
 }
 
 // ParaOpenRouterHistory converts agnostic messages to OpenAI-compatible ChatCompletionMessage.
-func ParaOpenRouterHistory(history []MensagemAgnostica) []openai.ChatCompletionMessage {
+// It ensures full OpenAI API conformance:
+//   - Assistant messages with ToolCalls have IDs populated on every call.
+//   - Tool messages have both ToolCallID (links to the call) and Name populated.
+func ParaOpenRouterHistory(sysInst string, history []MensagemAgnostica) []openai.ChatCompletionMessage {
 	var messages []openai.ChatCompletionMessage
+
+	if sysInst != "" {
+		messages = append(messages, openai.ChatCompletionMessage{
+			Role:    openai.ChatMessageRoleSystem,
+			Content: sysInst,
+		})
+	}
+
 	for _, m := range history {
 		msg := openai.ChatCompletionMessage{
 			Role:    string(m.Role),
 			Content: m.Content,
 		}
 
-		// Tool Calls
+		// Assistant message: populate ToolCalls with IDs and function names.
+		// If the ID is empty (e.g. Google does not return call IDs), generate a
+		// stable synthetic one here at the adapter boundary so that the matching
+		// Tool response below can reference the same ID — conformidade OpenAI.
 		if len(m.ToolCalls) > 0 {
 			for _, tc := range m.ToolCalls {
+				callID := tc.ID
+				if callID == "" {
+					callID = fmt.Sprintf("call_%s_%d", tc.Nome, rand.Intn(99999))
+				}
 				msg.ToolCalls = append(msg.ToolCalls, openai.ToolCall{
-					ID:   tc.ID,
+					ID:   callID,
 					Type: openai.ToolTypeFunction,
 					Function: openai.FunctionCall{
 						Name:      tc.Nome,
@@ -285,9 +326,11 @@ func ParaOpenRouterHistory(history []MensagemAgnostica) []openai.ChatCompletionM
 			}
 		}
 
-		// Tool Response
+		// Tool response message: MUST have ToolCallID (links to call) and Name.
+		// Both are required by the OpenAI spec; missing either causes a 400.
 		if m.Role == PapelTool {
 			msg.ToolCallID = m.ToolID
+			msg.Name = m.ToolName
 		}
 
 		messages = append(messages, msg)
@@ -301,6 +344,73 @@ func marshalArgs(args map[string]interface{}) string {
 	return string(b)
 }
 
+// ─── Agnostic Intent & Extraction ───────────────────────────────────────────
+
+// Intent represents the classified user intent from the Router.
+type Intent string
+
+const (
+	IntentRAG               Intent = "RAG"
+	IntentDatabase          Intent = "DATABASE"
+	IntentFinance           Intent = "REGISTRO_FINANCEIRO"
+	IntentChat              Intent = "CHAT"
+)
+
+// Alocacao represents a distribution of values to specific areas (talhões).
+type Alocacao struct {
+	TalhaoNome string  `json:"talhao_nome" jsonschema:"description=Nome do talhão"`
+	Valor      float64 `json:"valor" jsonschema:"description=Valor ou quantidade alocada"`
+}
+
+// Localizacao represents structured location data (TALHÕES/CANTEIROS).
+type Localizacao struct {
+	Talhao           string   `json:"talhao" jsonschema:"description=Nome do talhão principal"`
+	Canteiros        []string `json:"canteiros" jsonschema:"description=Lista de canteiros específicos"`
+	TalhoesAplicados []string `json:"talhoes_aplicados,omitempty" jsonschema:"description=Outros talhões afetados"`
+}
+
+// AcaoEstruturada represents a single extracted action or entity.
+type AcaoEstruturada struct {
+	Intencao          string      `json:"intencao,omitempty" jsonschema:"description=Mapeamento para fluxo legado: registro, limpeza, propagacao, compostagem, registro_financeiro, duvida, saudacao"`
+	Atividade         string      `json:"atividade,omitempty" jsonschema:"description=Nome da atividade agrícola identificada"`
+	InsumoCultura     string      `json:"insumo_cultura,omitempty" jsonschema:"description=Cultura principal ou insumo base"`
+	InsumoAplicado    string      `json:"insumo_applied,omitempty" jsonschema:"description=Insumo específico aplicado"`
+	InsumoGenerico    bool        `json:"insumo_generico,omitempty"`
+	Quantidade        string      `json:"quantidade,omitempty" jsonschema:"description=Valor numérico da quantidade (ex: 10, 50.5)"`
+	Unidade           string      `json:"unidade,omitempty" jsonschema:"description=Unidade de medida (kg, L, m, canteiros)"`
+	Localizacao       Localizacao `json:"localizacao,omitempty"`
+	Data              string      `json:"data,omitempty" jsonschema:"description=Data no formato YYYY-MM-DD"`
+	AlertaOrganico    bool        `json:"alerta_organico,omitempty" jsonschema:"description=True se houver suspeita de insumo não permitido"`
+	HouveDescartes    bool        `json:"houve_descartes,omitempty"`
+	QtdDescartes      string      `json:"qtd_descartes,omitempty"`
+	NecessitaMaisInfo bool        `json:"necessita_mais_info,omitempty" jsonschema:"description=True se informações obrigatórias estiverem faltando"`
+	PerguntaAoUsuario string      `json:"pergunta_ao_usuario,omitempty" jsonschema:"description=Pergunta específica para solicitar dados faltantes"`
+	Fornecedor        string      `json:"fornecedor,omitempty"`
+	NotaFiscal        string      `json:"nota_fiscal,omitempty"`
+	Marca             string      `json:"marca,omitempty"`
+	Composicao        string      `json:"composicao,omitempty"`
+	Procedencia       string      `json:"procedencia,omitempty"`
+	ItemArea          string      `json:"item_area,omitempty"`
+	TipoLimpeza       string      `json:"tipo_limpeza,omitempty"`
+	ProdutoUtilizado  string      `json:"produto_utilizado,omitempty"`
+	Dosagem           string      `json:"dosagem,omitempty"`
+	Responsavel       string      `json:"responsavel,omitempty"`
+	Lote              string      `json:"lote,omitempty"`
+	Cliente           string      `json:"cliente,omitempty"`
+	ValorTotal        string      `json:"valor_total,omitempty" jsonschema:"description=Valor financeiro total (ex: 1500.00)"`
+}
+
+// UnifiedIntentResult combines classification and multi-entity extraction.
+// This is the SSOT (Single Source of Truth) for LLM structured responses.
+type UnifiedIntentResult struct {
+	Intent     Intent  `json:"intent" jsonschema:"required,enum=RAG,enum=DATABASE,enum=CHAT,enum=REGISTRO_FINANCEIRO" validate:"required,oneof=RAG DATABASE CHAT REGISTRO_FINANCEIRO"`
+	Confidence float64 `json:"confidence" jsonschema:"required,minimum=0,maximum=1" validate:"required,gte=0,lte=1"`
+	Reasoning  string  `json:"reasoning" jsonschema:"required,description=Explicação técnica da decisão sobre a classificação e a segmentação das entidades" validate:"required"`
+
+	// Multi-Entity Extraction
+	Entities []AcaoEstruturada `json:"entidades" jsonschema:"minItems=1,description=Lista de ações ou entidades independentes detectadas na mensagem. Cada entrada deve representar uma operação completa."`
+}
+
 // ─── Agnostic Response ───────────────────────────────────────────────────────
 
 // UsoMetadados identifies the token usage of a request.
@@ -312,9 +422,10 @@ type UsoMetadados struct {
 
 // RespostaAgnostica is a provider-neutral representation of an LLM response.
 type RespostaAgnostica struct {
-	Texto     string                       `json:"texto"`
-	ToolCalls []ChamadaFerramentaAgnostica `json:"tool_calls,omitempty"`
-	Usage     UsoMetadados                 `json:"usage"`
-	Model     string                       `json:"model"`
-	Provider  string                       `json:"provider"` // "google" ou "openrouter"
+	Texto            string                       `json:"texto"`
+	ToolCalls        []ChamadaFerramentaAgnostica `json:"tool_calls,omitempty"`
+	ThoughtSignature string                       `json:"thought_signature,omitempty"`
+	Usage            UsoMetadados                 `json:"usage"`
+	Model            string                       `json:"model"`
+	Provider         string                       `json:"provider"` // "google" ou "openrouter"
 }

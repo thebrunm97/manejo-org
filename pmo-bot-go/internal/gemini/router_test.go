@@ -2,13 +2,14 @@ package gemini
 
 import (
 	"testing"
+	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 )
 
 // TestIntentConstants verifies that the three Intent constants are correctly defined
 // and distinct from each other — a compile-time safety net.
 func TestIntentConstants(t *testing.T) {
-	intents := []Intent{IntentRAG, IntentDatabase, IntentChat}
-	seen := make(map[Intent]bool)
+	intents := []llm.Intent{llm.IntentRAG, llm.IntentDatabase, llm.IntentChat}
+	seen := make(map[llm.Intent]bool)
 
 	for _, intent := range intents {
 		if seen[intent] {
@@ -26,23 +27,23 @@ func TestIntentConstants(t *testing.T) {
 // string for each known intent and uses the correct specialist prompt.
 func TestGetPromptForIntent(t *testing.T) {
 	tests := []struct {
-		intent         Intent
+		intent         llm.Intent
 		expectContains string
 		name           string
 	}{
 		{
 			name:           "RAG intent returns agronomist prompt",
-			intent:         IntentRAG,
+			intent:         llm.IntentRAG,
 			expectContains: "Consultor Orgânico Especialista",
 		},
 		{
 			name:           "DATABASE intent returns db_operator prompt",
-			intent:         IntentDatabase,
+			intent:         llm.IntentDatabase,
 			expectContains: "Operador de Registros da Fazenda",
 		},
 		{
 			name:           "CHAT intent returns default fallback prompt",
-			intent:         IntentChat,
+			intent:         llm.IntentChat,
 			expectContains: "Consultor Especialista",
 		},
 	}
@@ -78,27 +79,27 @@ func TestGetPromptForIntent(t *testing.T) {
 // by the model, the ClassifyIntent function's validation logic would detect it.
 // This tests the RouterResult struct parsing, not a live API call.
 func TestRouterResultFallback(t *testing.T) {
-	knownIntents := map[Intent]bool{
-		IntentRAG:      true,
-		IntentDatabase: true,
-		IntentChat:     true,
+	knownIntents := map[llm.Intent]bool{
+		llm.IntentRAG:      true,
+		llm.IntentDatabase: true,
+		llm.IntentChat:     true,
 	}
 
-	unknownIntent := Intent("UNKNOWN_FUTURE_INTENT")
+	unknownIntent := llm.Intent("UNKNOWN_FUTURE_INTENT")
 	if knownIntents[unknownIntent] {
 		t.Errorf("Expected 'UNKNOWN_FUTURE_INTENT' to not be in the known intents map")
 	}
 
 	// Simulate the validation block inside ClassifyIntent
-	result := RouterResult{Intent: unknownIntent, Confidence: 0.5}
+	result := llm.UnifiedIntentResult{Intent: unknownIntent, Confidence: 0.5}
 	switch result.Intent {
-	case IntentRAG, IntentDatabase, IntentChat:
+	case llm.IntentRAG, llm.IntentDatabase, llm.IntentChat:
 		// valid
 	default:
-		result.Intent = IntentRAG // fallback applied
+		result.Intent = llm.IntentRAG // fallback applied
 	}
 
-	if result.Intent != IntentRAG {
+	if result.Intent != llm.IntentRAG {
 		t.Errorf("Expected fallback to IntentRAG for unknown intent, got %s", result.Intent)
 	}
 }

@@ -2,105 +2,96 @@ package gemini
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
+	"time"
 
-	"github.com/google/generative-ai-go/genai"
+	"github.com/thebrunm97/pmo-bot-go/internal/llm"
+	"github.com/thebrunm97/pmo-bot-go/internal/llm/schema"
+	"google.golang.org/genai"
 )
 
-// Intent represents the classified user intent from the Router.
-type Intent string
-
-const (
-	// IntentRAG is for technical questions about organic farming.
-	// Routes to the agronomist specialist with only RAG tools.
-	IntentRAG Intent = "RAG"
-
-	// IntentDatabase is for CRUD operations on the farm data.
-	// Routes to the db_operator specialist with all write tools.
-	IntentDatabase Intent = "DATABASE"
-
-	// IntentFinance is for financial records like expenses, sales, and revenue.
-	IntentFinance Intent = "REGISTRO_FINANCEIRO"
-
-	// IntentChat is for greetings and off-topic messages.
-	// No tools are injected; the model responds directly.
-	IntentChat Intent = "CHAT"
-)
-
-// RouterResult is the structured JSON output from the Router LLM call.
-type RouterResult struct {
-	Intent     Intent  `json:"intent"`
-	Confidence float64 `json:"confidence"` // 0.0 to 1.0
-	Reasoning  string  `json:"reasoning"`  // Internal reasoning (for debug logs)
-}
-
-// routerSystemPrompt is the ultra-focused prompt for the Router agent.
-// It has NO tools, NO history, and runs at temperature 0.
-// It only classifies — it never answers the user directly.
-const routerSystemPrompt = `Você é um roteador de intenções. Classifique a mensagem do usuário em exatamente um dos quatro intents abaixo.
-
-Responda APENAS em JSON válido com o seguinte schema:
-{"intent": "...", "confidence": 0.95, "reasoning": "..."}
+const routerSystemPrompt = `Você é um especialista em processamento de linguagem natural para agricultura orgânica.
+Sua tarefa é tripla:
+1. CLASSIFICAR a intenção do usuário (Intent).
+2. EXTRAIR múltiplas informações estruturadas (NER) se a mensagem contiver registros de atividade.
+3. FORNECER raciocínio técnico sobre a classificação e a segmentação das entidades.
 
 Intents disponíveis:
-- "RAG": O usuário tem uma DÚVIDA TÉCNICA sobre agricultura orgânica, normas (IN 46, Lei 10.831), pragas, compostagem, adubação, certificação. NÃO envolve criar, registrar ou modificar dados.
-  Exemplos: "qual o pH ideal para alface?", "posso usar calda bordalesa?", "o que diz a IN 46 sobre sementes?"
+- "RAG": DÚVIDA TÉCNICA sobre agricultura orgânica, normas (IN 46, sementes), pragas, adubação. NÃO envolve criar registros.
+- "DATABASE": O usuário quer REGISTRAR atividades (plantio, colheita, venda, limpeza, compostagem) ou CONSULTAR dados da fazenda.
+- "CHAT": Saudação, agradecimento ou conversa genérica.
 
-- "DATABASE": O usuário quer REGISTRAR, CRIAR, CONSULTAR ou MODIFICAR dados da fazenda: talhões, canteiros, colheitas, vendas, insumos, compostagem, limpeza, propagação vegetal, compras.
-  Exemplos: "crie o talhão A com 2 hectares", "colhi 50kg de tomate hoje", "comprei esterco na agropecuária", "quais são meus talhões?"
+Regras de Extração (para DATABASE):
+- Use o array "entidades" para listar todas as ações detectadas.
+- SEPARE frases complexas em múltiplos objetos. Ex: "Apliquei 10L no Talhão A e 5L no Talhão B" deve gerar DOIS objetos no array "entidades".
+- Cada objeto deve conter: intencao (registro, limpeza, financeiro, etc), produto, quantidade, unidade, localizacao e data (YYYY-MM-DD).
+- Se faltar informação crítica para uma ação (ex: sem quantidade), marque 'necessita_mais_info: true' e formule uma 'pergunta_ao_usuario' específica para essa ação.`
 
-- "CHAT": Saudação, agradecimento, conversa genérica, mensagem fora do domínio agrícola, ou intenção completamente ambígua.
-  Exemplos: "oi", "obrigado", "tudo bem?", "me fale sobre futebol"
+// ClassifyIntent performs a unified classification and extraction call.
+func (c *Client) ClassifyIntent(ctx context.Context, parts []*genai.Part) (llm.UnifiedIntentResult, string, error) {
+	// 1. Gerar Schemas Agnósticos (um para cada formato de provedor)
+	jsonSchemaBytes, _ := schema.Reflect[llm.UnifiedIntentResult]()
+	googleSchema, _ := schema.ForGoogle(jsonSchemaBytes)
+	openRouterSchema, _ := schema.ForOpenRouter(jsonSchemaBytes, "UnifiedIntentResult")
 
-Regra de desempate: se houver dúvida entre RAG e DATABASE, prefira DATABASE.`
-
-// ClassifyIntent performs a fast, deterministic LLM call to classify the user's intent.
-// It uses temperature=0 and forced JSON output — no tools, no chat history.
-// On any error, it safely falls back to IntentRAG to avoid blocking the main flow.
-func (c *Client) ClassifyIntent(ctx context.Context, userMessage string) (RouterResult, error) {
-	model := c.client.GenerativeModel(c.Config.Model)
-	model.SystemInstruction = &genai.Content{
-		Parts: []genai.Part{genai.Text(routerSystemPrompt)},
+	// Preparar log
+	logText := ""
+	for _, p := range parts {
+		if p.Text != "" {
+			logText += p.Text + " "
+		}
 	}
-	model.SetTemperature(0)
-	model.ResponseMIMEType = "application/json"
+	log.Printf("🧭 [UNIFIED-ROUTER] Analisando: '%s'", truncate(strings.TrimSpace(logText), 60))
 
-	log.Printf("🧭 [ROUTER] Classificando intenção: '%s'", truncate(userMessage, 60))
+	sysInst := routerSystemPrompt + fmt.Sprintf("\n\nData Atual: %s", time.Now().Format("2006-01-02"))
 
-	resp, err := model.GenerateContent(ctx, genai.Text(userMessage))
+	op := func(modelName string) (any, error) {
+		// Se for modelo da OpenRouter (verificado pelo prefixo do modelo ou se c.OpenAI estiver sendo usado via fallback)
+		if strings.Contains(modelName, "/") || c.OpenAI != nil {
+			// Nota: O fallback automático entre Google e OpenRouter é gerido pela lógica de flags no main/orquestrador.
+			// Aqui, simulamos a chamada dependendo de qual modelo o fallback escolher.
+			// Se o modelName vier do config da Google, usamos CallGoogle.
+			if modelName == c.Config.Model || modelName == c.Config.FallbackModel {
+				return c.CallGoogle(ctx, sysInst, []llm.MensagemAgnostica{{Role: llm.PapelUser, Content: logText}}, nil, googleSchema)
+			}
+			return c.CallOpenRouter(ctx, sysInst, []llm.MensagemAgnostica{
+				{Role: llm.PapelUser, Content: logText},
+			}, nil, openRouterSchema)
+		}
+
+		// Default: Google Gemini SDK
+		return c.CallGoogle(ctx, sysInst, []llm.MensagemAgnostica{{Role: llm.PapelUser, Content: logText}}, nil, googleSchema)
+	}
+
+	res, modelUsed, err := c.withFallback(ctx, op)
 	if err != nil {
-		return RouterResult{Intent: IntentRAG, Confidence: 0.5, Reasoning: "router_error_fallback"}, fmt.Errorf("router llm error: %w", err)
+		return llm.UnifiedIntentResult{Intent: llm.IntentRAG}, modelUsed, err
 	}
 
-	if len(resp.Candidates) == 0 || len(resp.Candidates[0].Content.Parts) == 0 {
-		return RouterResult{Intent: IntentRAG, Confidence: 0.5, Reasoning: "empty_response_fallback"}, fmt.Errorf("router: empty response from model")
+	// 2. Extrair Resposta (Pode vir de CallGoogle ou CallOpenRouter, ambos retornam RespostaAgnostica)
+	agnosticResp := res.(llm.RespostaAgnostica)
+	
+	// 3. Validar e Decodificar via motor agnóstico
+	result, err := schema.DecodeAndValidate[llm.UnifiedIntentResult](agnosticResp.Texto)
+	if err != nil {
+		log.Printf("⚠️ [ROUTER] Erro de Validação/Schema: %v. Raw: %s", err, agnosticResp.Texto)
+		// Fallback resiliente: tenta pelo menos identificar a intenção RAG se tudo falhar
+		return llm.UnifiedIntentResult{Intent: llm.IntentRAG, Confidence: 0.5, Reasoning: "schema_validation_error"}, modelUsed, nil
 	}
 
-	rawJSON, ok := resp.Candidates[0].Content.Parts[0].(genai.Text)
-	if !ok {
-		return RouterResult{Intent: IntentRAG, Confidence: 0.5, Reasoning: "non_text_fallback"}, fmt.Errorf("router: unexpected non-text response part")
+	// Normalização de Fallback se campos críticos estiverem vazios
+	if result.Intent == "" { result.Intent = llm.IntentRAG }
+	
+	firstIntencao := "duvida"
+	if len(result.Entities) > 0 && result.Entities[0].Intencao != "" {
+		firstIntencao = result.Entities[0].Intencao
 	}
 
-	var result RouterResult
-	if err := json.Unmarshal([]byte(rawJSON), &result); err != nil {
-		log.Printf("⚠️ [ROUTER] Falha ao parsear JSON da resposta: %v. Raw: %s", err, rawJSON)
-		return RouterResult{Intent: IntentRAG, Confidence: 0.5, Reasoning: "json_parse_error_fallback"}, nil
-	}
+	log.Printf("🧭 [ROUTER] Intent: %s (Primeira Entidade: %s) | Conf: %.2f | Reasoning: %s | Total: %d", result.Intent, firstIntencao, result.Confidence, result.Reasoning, len(result.Entities))
 
-	// Validate the intent value to prevent any unexpected output from slipping through.
-	switch result.Intent {
-	case IntentRAG, IntentDatabase, IntentChat:
-		// valid — continue
-	default:
-		log.Printf("⚠️ [ROUTER] Intent desconhecida recebida: '%s'. Usando fallback RAG.", result.Intent)
-		result.Intent = IntentRAG
-	}
-
-	log.Printf("🧭 [ROUTER] Intent: %s | Confidence: %.2f | Reasoning: %s", result.Intent, result.Confidence, result.Reasoning)
-
-	return result, nil
+	return result, modelUsed, nil
 }
 
 // truncate is a helper to safely shorten strings for logging.
