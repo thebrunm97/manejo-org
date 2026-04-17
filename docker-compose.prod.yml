@@ -9,6 +9,9 @@ services:
     restart: always
     env_file:
       - .env.prod
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     ports:
       - "8080:8080"
     deploy:
@@ -26,7 +29,7 @@ services:
       - redis
 
   # Serviço do Motor de WhatsApp (evolution-go)
-  # A versão em Go da Evolution API permite limites de RAM drasticamente inferiores ao Node.js.
+  # A versão em Go da Evolution API permite limites de RAM drasticaamente inferiores ao Node.js.
   evolution-go:
     build:
       context: ./evolution-go-source
