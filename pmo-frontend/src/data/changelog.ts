@@ -11,6 +11,52 @@ export interface ChangelogEntry {
 
 export const changelogData: ChangelogEntry[] = [
     {
+        version: "0.17.0",
+        date: "2026-04-14",
+        title: "Mais Segurança nos Seus Dados e Respostas da IA Mais Inteligentes 🛡️",
+        description: "Nesta atualização, focamos em garantir que cada anotação sua seja salva com perfeição e que o assistente do WhatsApp seja ainda mais confiável e preciso.",
+        sections: [
+            {
+                type: "Fixes",
+                items: [
+                    "Segurança Reforçada: Corrigimos uma falha que impedia o salvamento de dados em algumas propriedades, garantindo que suas informações estejam sempre seguras.",
+                    "Histórico de Dúvidas: Agora o sistema registra com detalhes como a IA ajudou a tirar suas dúvidas técnicos, facilitando sua conferência.",
+                    "Confirmações Reais: O assistente do WhatsApp agora só confirma o sucesso de uma tarefa após a conclusão real, eliminando mensagens confusas."
+                ]
+            }
+        ]
+    },
+    {
+        version: "0.16.0",
+        date: "2026-04-09",
+        title: "Atendimento Ininterrupto com Inteligência de Reserva 🧬",
+        description: "Preparamos o sistema para que você nunca fique na mão, mesmo que um dos nossos provedores de tecnologia passe por instabilidade momentânea.",
+        sections: [
+            {
+                type: "New",
+                items: [
+                    "Estabilidade Garantida: O seu assistente inteligente agora possui sistemas de reserva automáticos para nunca o deixar sem resposta. Se uma tecnologia falhar, a outra assume na hora.",
+                    "Raciocínio Aprimorado: Melhoramos a capacidade da IA de entender contextos rurais complexos e históricos de conversas longas."
+                ]
+            }
+        ]
+    },
+    {
+        version: "0.15.0",
+        date: "2026-04-08",
+        title: "Cérebro IA Mais Potente e Preciso 🧠",
+        description: "Fizemos uma grande atualização interna para que os cálculos agronômicos e as interpretações de texto sejam feitos com precisão absoluta.",
+        sections: [
+            {
+                type: "Improvements",
+                items: [
+                    "Cálculos de Campo Blindados: Fórmulas internas atualizadas para que a interpretação de quantidades e volumes seja 100% precisa.",
+                    "Memória de Trabalho: O robô agora guarda melhor o contexto da conversa, facilitando registros detalhados feitos em várias mensagens."
+                ]
+            }
+        ]
+    },
+    {
         version: "0.14.0",
         date: "2026-04-04",
         title: "A Era da Gestão Analítica e Consultoria IA 📈",

@@ -12,7 +12,6 @@ import {
   Database,
   Sparkles,
   Home,
-  ArrowRightLeft,
   ChevronDown,
   CircleDollarSign,
   Building,
@@ -111,51 +110,55 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
   };
 
   const SidebarContent = ({ isDesktop = false }: { isDesktop?: boolean }) => (
-    <div className="flex flex-col h-full bg-slate-900 text-white overflow-hidden">
+    <div className="flex flex-col h-full bg-agro-floresta text-agro-creme overflow-hidden">
       {/* 1. Logo */}
-      <div className="h-16 flex items-center px-6 border-b border-slate-800 shrink-0">
+      <div className="h-16 flex items-center px-6 border-b border-white/5 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-emerald-900/20">
+          <div className="w-8 h-8 bg-agro-ouro rounded-lg flex items-center justify-center text-agro-floresta font-black shadow-lg shadow-agro-ouro/20">
             {appInitials}
           </div>
-          <span className="font-bold text-lg tracking-tight text-white">
-            {appName}
+          <span className="font-black text-lg tracking-tight text-agro-creme uppercase">
+            {appName.toLowerCase().endsWith('org') ? (
+              <>
+                {appName.substring(0, appName.length - 3)}
+                <span className="text-agro-ouro group-hover:drop-shadow-[0_0_8px_rgba(197,160,89,0.4)] transition-all">ORG</span>
+              </>
+            ) : (
+              appName
+            )}
           </span>
         </div>
       </div>
 
       {/* 1b. Property Switcher (shown when user has properties) */}
       {currentPropriedade && (
-        <div className="px-3 py-3 border-b border-slate-800 shrink-0">
+        <div className="px-3 py-3 border-b border-white/5 shrink-0">
           <button
             onClick={() => setModalOpen(true)}
             className={cn(
-              "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl",
-              "bg-slate-800/60 hover:bg-slate-700/80 transition-all group",
-              allPropriedades.length <= 1 && "cursor-default hover:bg-slate-800/60"
+              "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-white/5",
+              "bg-white/5 hover:bg-white/10 transition-all group",
+              allPropriedades.length <= 1 && "cursor-default hover:bg-white/5"
             )}
             title={allPropriedades.length > 1 ? "Trocar fazenda" : currentPropriedade.nome}
             disabled={allPropriedades.length <= 1}
           >
-            <div className="w-7 h-7 bg-emerald-500/20 rounded-lg flex items-center justify-center shrink-0">
-              <Home size={14} className="text-emerald-400" />
+            <div className="w-7 h-7 bg-agro-ouro/20 rounded-lg flex items-center justify-center shrink-0">
+              <Home size={14} className="text-agro-ouro" />
             </div>
             <div className="flex-1 min-w-0 text-left">
-              <p className="text-xs font-bold text-white truncate leading-tight">{currentPropriedade.nome}</p>
-              <p className="text-[10px] text-slate-400 font-medium leading-tight capitalize">
+              <p className="text-xs font-black text-agro-creme truncate leading-tight uppercase tracking-wide">{currentPropriedade.nome}</p>
+              <p className="text-[10px] text-agro-creme/80 font-bold leading-tight capitalize">
                 {currentPropriedade.modalidade_predominante.toLowerCase()}
               </p>
             </div>
             {allPropriedades.length > 1 && (
               <div className="flex items-center gap-1 shrink-0">
-                <span className="text-[10px] font-bold text-slate-500 bg-slate-700 rounded-md px-1.5 py-0.5">
+                <span className="text-[10px] font-bold text-agro-creme/60 bg-white/5 rounded-md px-1.5 py-0.5 border border-white/5">
                   {allPropriedades.length}
                 </span>
-                <ChevronDown size={13} className="text-slate-400 group-hover:text-emerald-400 transition-colors" />
+                <ChevronDown size={13} className="text-agro-creme/60 group-hover:text-agro-ouro transition-colors" />
               </div>
-            )}
-            {allPropriedades.length > 1 && (
-              <ArrowRightLeft size={13} className="text-slate-500 group-hover:text-emerald-400 transition-colors opacity-0 group-hover:opacity-100 absolute" />
             )}
           </button>
         </div>
@@ -163,7 +166,7 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
 
       {/* 2. Menu */}
       <div className="flex-1 overflow-y-auto py-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        <div className="px-6 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+        <div className="px-6 mb-2 text-[10px] font-black text-agro-creme/40 uppercase tracking-[0.2em]">
           GESTÃO
         </div>
         <nav className="space-y-1">
@@ -186,13 +189,13 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
                 id={(isDesktop && item.path === SCREENS.MAP) ? "tour-sidebar-map" : undefined}
                 onClick={() => handleNavigate(item.path)}
                 className={cn(
-                  "w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg mx-2 mb-1 transition-all relative max-w-[calc(100%-16px)] group",
+                  "w-full flex items-center px-4 py-3 text-[13px] font-bold rounded-[0.9rem] mx-2 mb-1 transition-all relative max-w-[calc(100%-16px)] group",
                   active
-                    ? "bg-[#16a34a] text-white shadow-lg shadow-green-900/40"
-                    : "text-gray-400 hover:bg-gray-800/50 hover:text-white"
+                    ? "bg-agro-ouro text-agro-floresta shadow-lg shadow-agro-ouro/10"
+                    : "text-agro-creme/85 hover:bg-white/5 hover:text-agro-creme"
                 )}
               >
-                <span className={cn("mr-3 transition-colors", active ? "text-white" : "text-gray-400 group-hover:text-white text-gray-500")}>
+                <span className={cn("mr-3 transition-colors", active ? "text-agro-floresta" : "text-agro-creme/60 group-hover:text-agro-creme")}>
                   {item.icon}
                 </span>
                 {item.name}
@@ -203,17 +206,17 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
       </div>
 
       {/* 3. Rodapé */}
-      <div className="p-4 border-t border-gray-800 shrink-0">
+      <div className="p-4 border-t border-white/5 shrink-0">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center px-4 py-2 text-sm font-medium text-gray-400 rounded-lg hover:text-red-400 hover:bg-red-500/10 transition-colors group"
+          className="w-full flex items-center px-4 py-2.5 text-sm font-bold text-agro-creme/60 rounded-xl hover:text-rose-400 hover:bg-rose-500/10 transition-colors group"
         >
-          <LogOut size={20} className="mr-3 text-gray-500 group-hover:text-red-400" />
+          <LogOut size={20} className="mr-3 text-agro-creme/50 group-hover:text-rose-400" />
           Sair
         </button>
 
-        <div className="mt-4 p-3 bg-gray-900/50 rounded-lg flex items-center gap-3 border border-gray-800">
-          <div className="w-8 h-8 rounded-full bg-green-600/20 border border-green-600/30 flex items-center justify-center text-green-500 font-bold text-xs shrink-0 overflow-hidden">
+        <div className="mt-4 p-3 bg-white/5 rounded-2xl flex items-center gap-3 border border-white/5">
+          <div className="w-8 h-8 rounded-full bg-agro-ouro/20 border border-agro-ouro/30 flex items-center justify-center text-agro-ouro font-black text-xs shrink-0 overflow-hidden">
             {profile?.avatar_url ? (
               <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
             ) : user?.email ? (
@@ -223,10 +226,10 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
             )}
           </div>
           <div className="overflow-hidden">
-            <div className="text-sm font-medium text-gray-200 truncate">
+            <div className="text-sm font-black text-agro-creme truncate uppercase tracking-wide">
               {displayName}
             </div>
-            <div className="text-[10px] text-gray-500 uppercase tracking-tight">
+            <div className="text-[10px] text-agro-creme/50 font-black uppercase tracking-widest">
               Plano Premium
             </div>
           </div>
@@ -246,7 +249,7 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
       >
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
         <div className={cn(
-          "absolute inset-y-0 left-0 w-[280px] bg-slate-900 shadow-soft transition-transform duration-300 ease-in-out border-r border-slate-800",
+          "absolute inset-y-0 left-0 w-[280px] bg-agro-floresta shadow-soft transition-transform duration-300 ease-in-out border-r border-white/5",
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         )}>
           <SidebarContent />
@@ -254,7 +257,7 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
       </div>
 
       {/* Desktop Sidebar (Persistent) */}
-      <aside className="hidden md:flex w-64 flex-col h-full bg-slate-900 border-r border-slate-800 text-white shrink-0 overflow-hidden">
+      <aside className="hidden md:flex w-64 flex-col h-full bg-agro-floresta border-r border-white/5 text-agro-creme shrink-0 overflow-hidden">
         <SidebarContent isDesktop />
       </aside>
 

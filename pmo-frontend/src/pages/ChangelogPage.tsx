@@ -43,42 +43,58 @@ const ChangelogPage: React.FC = () => {
 
     const latestVersion = changelogData[0]?.version || 'v1.0.0';
 
+    const formatDate = (dateStr: string) => {
+        try {
+            const date = new Date(dateStr);
+            // Fallback for cases where direct date constructor fails with some strings
+            if (isNaN(date.getTime())) return dateStr;
+            return new Intl.DateTimeFormat('pt-BR', { 
+                day: 'numeric', 
+                month: 'long', 
+                year: 'numeric' 
+            }).format(date);
+        } catch (e) {
+            return dateStr;
+        }
+    };
+
     return (
-        <div className="min-h-screen bg-white font-sans selection:bg-emerald-100 selection:text-emerald-900">
+        <div className="min-h-screen bg-agro-creme font-sans selection:bg-agro-ouro/30 selection:text-agro-floresta relative overflow-hidden bg-grain">
             {/* Header / Nav */}
-            <header className="fixed top-0 left-0 right-0 z-50 bg-white/70 backdrop-blur-xl border-b border-slate-200/60 transition-all duration-300">
+            <header className="fixed top-0 left-0 right-0 z-50 bg-agro-creme/80 backdrop-blur-xl border-b border-agro-floresta/5 transition-all duration-300">
                 <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
                     <button
                         onClick={handleBack}
-                        className="group flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors"
+                        aria-label="Voltar para a página anterior"
+                        className="group flex items-center gap-2 text-agro-floresta/60 hover:text-agro-floresta transition-colors outline-none focus-visible:ring-2 focus-visible:ring-agro-ouro rounded-lg"
                     >
-                        <div className="p-2 rounded-full group-hover:bg-slate-100 transition-colors">
+                        <div className="p-2 rounded-full group-hover:bg-agro-floresta/5 transition-colors">
                             <ArrowLeft size={18} />
                         </div>
-                        <span className="text-sm font-medium">Voltar</span>
+                        <span className="text-sm font-bold tracking-tight">Voltar</span>
                     </button>
-                    <div className="h-6 w-px bg-slate-200 mx-4 hidden sm:block" />
+                    <div className="h-6 w-px bg-agro-floresta/10 mx-4 hidden sm:block" />
                     <div className="flex-1 hidden sm:flex items-center">
-                        <span className="text-sm font-semibold text-slate-900">Release Notes</span>
+                        <span className="text-sm font-black uppercase tracking-[0.15em] text-agro-floresta/40">Novidades da Plataforma</span>
                     </div>
                 </div>
             </header>
 
             <main className="pt-32 pb-24 px-6 md:px-8">
                 {/* Hero Section */}
-                <section className="max-w-3xl mx-auto text-center mb-24 animate-in fade-in slide-in-from-top-4 duration-700">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold mb-6 tracking-wide uppercase">
+                <section className="max-w-3xl mx-auto text-center mb-24 animate-pmo-reveal">
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-agro-ouro/10 border border-agro-ouro/20 text-agro-ouro text-[10px] font-black mb-6 tracking-[0.2em] uppercase">
                         <span className="relative flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-agro-ouro opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-agro-ouro"></span>
                         </span>
                         Versão Atual: {latestVersion}
                     </div>
-                    <h1 className="text-4xl md:text-6xl font-extrabold text-slate-900 mb-6 tracking-tight leading-[1.1]">
-                        Novidades do <span className="text-emerald-600">ManejoORG</span>
+                    <h1 className="text-4xl md:text-6xl font-black text-agro-floresta mb-6 tracking-tighter leading-[1.05] text-wrap-balance">
+                        Novidades do Manejo<span className="text-agro-ouro">Org</span>
                     </h1>
-                    <p className="text-lg md:text-xl text-slate-500 leading-relaxed max-w-2xl mx-auto">
-                        Acompanhe em tempo real cada melhoria, nova ferramenta e ajuste que criamos para simplificar sua vida no campo.
+                    <p className="text-lg md:text-xl text-agro-floresta/60 leading-relaxed max-w-2xl mx-auto font-medium">
+                        Acompanhe cada melhoria, nova ferramenta e ajuste que criamos para simplificar sua vida no campo.
                     </p>
                 </section>
 
@@ -89,31 +105,35 @@ const ChangelogPage: React.FC = () => {
 
                     <div className="space-y-24">
                         {changelogData.map((entry, index) => (
-                            <div key={index} className="relative grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-24 items-start">
+                            <div 
+                                key={entry.version} 
+                                className="relative grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-24 items-start animate-pmo-reveal"
+                                style={{ animationDelay: `${index * 150}ms` }}
+                            >
                                 {/* Dot Marker */}
                                 <div className="absolute left-0 md:left-1/2 md:-translate-x-1/2 top-2 z-10 flex items-center justify-center">
-                                    <div className="w-[23px] h-[23px] rounded-full bg-white border-2 border-slate-200 flex items-center justify-center group">
-                                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]" />
+                                    <div className="w-[23px] h-[23px] rounded-full bg-agro-creme border-2 border-agro-floresta/10 flex items-center justify-center group shadow-sm">
+                                        <div className="w-2.5 h-2.5 rounded-full bg-agro-ouro shadow-[0_0_10px_rgba(197,160,89,0.4)]" />
                                     </div>
                                 </div>
 
-                                {/* Link Metadata (Mobile & Desktop split) */}
+                                {/* Metadata (Versão & Data) */}
                                 <div className={`pl-10 md:pl-0 pt-1 flex flex-col ${index % 2 === 0 ? 'md:items-end md:text-right' : 'md:col-start-2'}`}>
-                                    <div className="flex items-center gap-1.5 text-emerald-600 font-bold text-sm mb-1">
+                                    <div className="flex items-center gap-1.5 text-agro-ouro font-black text-sm mb-1 tracking-widest uppercase">
                                         {entry.version}
                                     </div>
-                                    <div className="flex items-center gap-2 text-slate-400 text-sm font-medium">
-                                        <Calendar size={14} />
-                                        {entry.date}
+                                    <div className={`flex items-center gap-2 text-agro-floresta/40 text-xs font-bold uppercase tracking-wider ${index % 2 === 0 ? 'md:flex-row-reverse' : ''}`}>
+                                        <Calendar size={13} className="text-agro-floresta/30" />
+                                        {formatDate(entry.date)}
                                     </div>
                                 </div>
 
                                 {/* Content Card */}
                                 <div className={`pl-10 md:pl-0 ${index % 2 === 0 ? 'md:col-start-2' : 'md:row-start-1 md:col-start-1 md:text-right'}`}>
-                                    <h2 className="text-2xl font-bold text-slate-900 mb-3 tracking-tight">
+                                    <h2 className="text-2xl font-black text-agro-floresta mb-3 tracking-tight">
                                         {entry.title}
                                     </h2>
-                                    <p className="text-slate-600 leading-relaxed mb-8">
+                                    <p className="text-agro-floresta/70 leading-relaxed mb-8 font-medium">
                                         {entry.description}
                                     </p>
 
@@ -122,8 +142,8 @@ const ChangelogPage: React.FC = () => {
                                             <div key={sIndex} className={`space-y-4 ${index % 2 !== 0 ? 'md:flex md:flex-col md:items-end' : ''}`}>
                                                 {/* Section Header */}
                                                 <div className="flex items-center gap-2">
-                                                    <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-[10px] font-bold uppercase tracking-wider ${getTypeStyles(section.type)}`}>
-                                                        {getTypeIcon(section.type)}
+                                                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-black uppercase tracking-[0.1em] ${getTypeStyles(section.type).replace('emerald', 'agro-floresta').replace('blue', 'sky').replace('slate', 'stone').replace('amber', 'agro-ouro')}`}>
+                                                        {getTypeIcon(section.type).props.className.includes('emerald') ? <Rocket size={14} className="text-agro-floresta" /> : getTypeIcon(section.type)}
                                                         {section.type === 'Improvements' ? 'Melhorias' :
                                                             section.type === 'Fixes' ? 'Correções' :
                                                             section.type === 'Patches' ? 'Ajustes' : 'Novidades'}
@@ -131,10 +151,10 @@ const ChangelogPage: React.FC = () => {
                                                 </div>
 
                                                 {/* Items List */}
-                                                <ul className={`space-y-3 ${index % 2 !== 0 ? 'md:text-right' : ''}`}>
+                                                <ul className={`space-y-4 ${index % 2 !== 0 ? 'md:text-right' : ''}`}>
                                                     {section.items.map((item, iIndex) => (
-                                                        <li key={iIndex} className={`flex gap-3 text-slate-600 text-sm leading-relaxed ${index % 2 !== 0 ? 'md:flex-row-reverse md:text-right' : ''}`}>
-                                                            <div className={`mt-1.5 w-1.5 h-1.5 rounded-full bg-slate-200 shrink-0 ${index % 2 !== 0 ? 'md:mt-1.5' : ''}`} />
+                                                        <li key={iIndex} className={`flex gap-3 text-agro-floresta/80 text-[13px] leading-relaxed font-bold ${index % 2 !== 0 ? 'md:flex-row-reverse md:text-right' : ''}`}>
+                                                            <div className={`mt-2 w-1.5 h-1.5 rounded-full bg-agro-ouro/40 shrink-0 ${index % 2 !== 0 ? 'md:mt-2' : ''}`} />
                                                             <span>{item}</span>
                                                         </li>
                                                     ))}
@@ -149,16 +169,17 @@ const ChangelogPage: React.FC = () => {
                 </div>
 
                 {/* Footer CTA */}
-                <section className="max-w-3xl mx-auto mt-32 text-center p-12 rounded-[32px] bg-slate-50 border border-slate-100">
-                    <h3 className="text-xl font-bold text-slate-900 mb-2">Quer saber mais?</h3>
-                    <p className="text-slate-500 mb-6 font-medium">Fique por dentro das novidades em tempo real seguindo nosso Instagram.</p>
+                <section className="max-w-3xl mx-auto mt-32 text-center p-12 rounded-[40px] bg-agro-floresta text-agro-creme border border-white/5 shadow-2xl relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-agro-ouro/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                    <h3 className="text-2xl font-black mb-4 tracking-tight">Dúvidas sobre as atualizações?</h3>
+                    <p className="text-agro-creme/60 mb-8 font-bold leading-relaxed max-w-md mx-auto">Siga nosso canal oficial e acompanhe as demonstrações técnicas e novidades em tempo real.</p>
                     <a 
                         href="https://instagram.com/manejo_org" 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-slate-900 text-white font-bold hover:bg-slate-800 transition-all active:scale-95 shadow-lg shadow-slate-900/10"
+                        className="inline-flex items-center gap-3 px-10 py-4 rounded-full bg-agro-ouro text-agro-floresta font-black hover:shadow-xl hover:shadow-agro-ouro/20 transition-all active:scale-95 text-sm uppercase tracking-widest"
                     >
-                        Seguir @manejo_org
+                        Acessar Novidades @manejo<span className="opacity-50">org</span>
                     </a>
                 </section>
             </main>
