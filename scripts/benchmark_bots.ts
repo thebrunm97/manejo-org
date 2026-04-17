@@ -21,17 +21,27 @@ interface BenchmarkResult {
 const results: BenchmarkResult[] = [];
 // Use the global GO_BOT_URL defined above
 
-// Mock WPPConnect Routes
-app.post('/api/:session/:secret/generate-token', (req, res) => {
-    res.status(201).json({ token: 'mock-jwt-token' });
+// Mock Evolution API Routes
+app.post('/instance/status', (req, res) => {
+    res.status(200).json({ data: { Connected: true } });
 });
 
-app.get('/api/:session/check-connection-session', (req, res) => {
-    res.json({ status: true, message: 'Connected' });
+app.post('/send/text', (req, res) => {
+    const { text, number } = req.body;
+    const cleanPhone = number.split('@')[0];
+
+    const state = pendingResponses.get(cleanPhone);
+    if (state) {
+        const duration = Math.round(performance.now() - (state as any).startTime);
+        state.go = { text: text, time: duration };
+        state.resolver();
+    }
+
+    res.json({ status: 'success', response: { id: 'mock-id' } });
 });
 
-app.all('/api/*', (req, res) => {
-    // console.log(`[MOCK-WPP] Catch-all handled ${req.method} ${req.path}`);
+app.all('/*', (req, res) => {
+    // console.log(`[MOCK-EVO] Catch-all handled ${req.method} ${req.path}`);
     res.status(200).json({ status: 'ok', message: 'Mock handled' });
 });
 
@@ -39,21 +49,8 @@ app.all('/api/*', (req, res) => {
 const pendingResponses = new Map<string, {
     go?: { text: string; time: number };
     resolver: () => void;
+    startTime?: number;
 }>();
-
-app.post('/api/:session/send-message', (req, res) => {
-    const { message, phone } = req.body;
-    const cleanPhone = phone.split('@')[0];
-
-    const state = pendingResponses.get(cleanPhone);
-    if (state) {
-        const duration = Math.round(performance.now() - (state as any).startTime);
-        state.go = { text: message, time: duration };
-        state.resolver();
-    }
-
-    res.json({ status: 'success', response: { id: 'mock-id' } });
-});
 
 // Agricultural Scenarios
 const scenarios = [
@@ -93,20 +90,25 @@ async function runVU(vuId: number) {
         (pendingResponses.get(phone) as any).startTime = vuStartTime;
 
         const payload = {
-            event: 'onmessage',
-            session: SESSION_NAME,
-            token: TEST_TOKEN,
-            from: `${phone}@c.us`,
-            chatId: `${phone}@c.us`,
-            isGroupMsg: false,
-            type: 'chat',
-            body: scenario.text,
-            sender: { name: `VU ${vuId}`, pushname: `User ${vuId}` }
+            event: 'messages.upsert',
+            data: {
+                info: {
+                    ID: `msg_${Date.now()}_${vuId}`,
+                    Chat: `${phone}@c.us`,
+                    Sender: `${phone}@c.us`,
+                    IsFromMe: false,
+                    Timestamp: new Date().toISOString(),
+                    Type: 'text'
+                },
+                message: {
+                    conversation: scenario.text
+                }
+            }
         };
 
         const config = { headers: { 'Authorization': `Bearer ${TEST_TOKEN}` } };
 
-        axios.post(`${GO_BOT_URL}/webhook/wppconnect`, payload, config).catch(() => {});
+        axios.post(`${GO_BOT_URL}/webhook/evolution`, payload, config).catch(() => {});
 
         // Safety timeout (increased for concurrent Mutex/AI load)
         setTimeout(() => {
