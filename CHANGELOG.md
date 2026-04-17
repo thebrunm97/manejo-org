@@ -2,6 +2,13 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [0.17.0] - 2026-04-14 - "Integridade de Dados e Feedback IA 🛡️"
+
+### 🛠 Correções de Bugs (Bug Fixes)
+* **Backend (pmo-bot-go):** Solucionada falha silenciosa de persistência em fazendas convencionais. O sistema agora converte corretamente `pmo_id: 0` para `NULL` antes de enviar ao Supabase, evitando violações de chave estrangeira.
+* **Telemetria e Treinamento:** Restaurado o fluxo de logs para o Dashboard de Treinamento. Interações agênticas (RAG/Dúvidas) agora são registradas com extrações sintéticas enriquecidas com o `trace` de execução para facilitar auditorias técnicas.
+* **Prompts (IA):** Atualizado o `OUTPUT_FORMAT_SCHEMA` nos prompts de sistema para eliminar mensagens de "falso positivo". O bot agora aguarda a confirmação real da ferramenta antes de exibir emojis de sucesso.
+
 ## [0.16.0] - 2026-04-09 - "Resiliência e IA Multiprovedor 🧬"
 
 ### ✨ Funcionalidades (Features)
