@@ -4,7 +4,7 @@ import Secao9 from './Secao9';
 
 // Mock PropagacaoCard to simplify list view
 vi.mock('./cards/PropagacaoCard', () => ({
-    default: ({ item, onEdit }) => (
+    default: ({ item, onEdit }: { item: any, onEdit: () => void }) => (
         <div data-testid="propagacao-card">
             <span>{item.especies}</span>
             <button onClick={onEdit}>Editar</button>

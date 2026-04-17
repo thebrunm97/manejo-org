@@ -5,7 +5,7 @@ import Secao6 from './Secao6';
 
 // Mock CheckboxGroupMUI
 vi.mock('./CheckboxGroup', () => ({
-    default: ({ onSelectionChange, selectedString }) => (
+    default: ({ onSelectionChange, selectedString }: { onSelectionChange: (v: any) => void, selectedString: any }) => (
         <div>
             <input
                 data-testid="mock-checkbox-group"

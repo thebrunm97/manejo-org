@@ -5,7 +5,7 @@ import Secao2 from './Secao2';
 
 // Mock TabelaDinamicaMUI to avoid complexity
 vi.mock('./TabelaDinamica.tsx', () => ({
-    default: ({ onDataChange, itemName }) => (
+    default: ({ onDataChange, itemName }: { onDataChange: (d: any) => void, itemName: string }) => (
         <div>
             <span>Mock Table {itemName}</span>
             <button onClick={() => onDataChange([{ produto: 'Produto Teste' }])}>

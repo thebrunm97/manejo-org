@@ -33,7 +33,7 @@ const HarvestDashboard: React.FC<HarvestDashboardProps> = ({ harvestStats, recen
 
   return (
     <div className="flex-grow p-2 bg-white rounded-lg shadow">
-      <h6 className="mb-3 font-extrabold text-[#1b5e20] tracking-tight flex items-center gap-1">
+      <h6 className="mb-3 font-black text-[#1A3C34] tracking-tight flex items-center gap-2">
         <Tractor className="w-5 h-5 inline-block align-middle" />
         Monitoramento de Colheita
       </h6>
@@ -59,11 +59,11 @@ const HarvestDashboard: React.FC<HarvestDashboardProps> = ({ harvestStats, recen
               <div className="w-full">
                 <p className="text-3xl font-black text-slate-900 tracking-tight leading-none mb-1">
                   {dados.total.toLocaleString('pt-BR')}
-                  <span className="text-sm font-semibold text-slate-400 ml-1">
+                  <span className="text-sm font-black text-slate-600 ml-1">
                     {dados.unidade}
                   </span>
                 </p>
-                <p className="text-sm font-semibold text-slate-500 capitalize whitespace-nowrap overflow-hidden text-ellipsis">
+                <p className="text-sm font-bold text-slate-700 capitalize whitespace-nowrap overflow-hidden text-ellipsis">
                   {dados.produto.toLowerCase()}
                 </p>
               </div>
@@ -76,7 +76,7 @@ const HarvestDashboard: React.FC<HarvestDashboardProps> = ({ harvestStats, recen
       {(recentActivity || []).length > 0 && (
         <>
           <div className="flex justify-between items-center mt-4 mb-3">
-            <h6 className="text-slate-900 font-extrabold">
+            <h6 className="text-slate-950 font-black uppercase tracking-widest text-xs">
               Últimas Atividades
             </h6>
             <button
@@ -104,11 +104,11 @@ const HarvestDashboard: React.FC<HarvestDashboardProps> = ({ harvestStats, recen
                     {cfg.icon}
                   </div>
                   <div className="flex-grow min-w-0">
-                    <p className="text-base font-bold text-slate-900 leading-tight">{cfg.label}</p>
-                    <p className="text-sm text-slate-500 whitespace-nowrap overflow-hidden text-ellipsis">
+                    <p className="text-base font-black text-slate-950 leading-tight">{cfg.label}</p>
+                    <p className="text-sm text-slate-700 font-bold whitespace-nowrap overflow-hidden text-ellipsis">
                       {row.produto}
                       {row.talhao_canteiro && (
-                        <span className="text-slate-400">{' • '}{row.talhao_canteiro}</span>
+                        <span className="text-slate-600">{' • '}{row.talhao_canteiro}</span>
                       )}
                     </p>
                   </div>
