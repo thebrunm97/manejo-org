@@ -391,10 +391,10 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
                                         <div className="flex flex-col items-center gap-4">
                                             {/* Hint Card */}
                                             <div className="px-4 py-2 bg-slate-900/40 backdrop-blur-md border border-white/10 rounded-2xl shadow-xl animate-bounce">
-                                                <p className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
+                                                <div className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
                                                     <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />
                                                     Toque no mapa para definir {talhoes.length === 0 ? 'os vértices' : 'a área'}
-                                                </p>
+                                                </div>
                                             </div>
 
                                             {/* Action Toolbar */}

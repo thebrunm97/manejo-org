@@ -99,15 +99,15 @@ const WeatherWidget: React.FC<{
               <h3 className="text-5xl font-black text-cyan-900 tracking-tighter">{temp}°C</h3>
               <div className="flex items-center gap-1.5 mt-2 text-cyan-700 font-semibold bg-cyan-100/50 w-fit px-2.5 py-1 rounded-lg">
                 <MapPin size={14} />
-                <span className="text-[10px] font-bold uppercase tracking-wider">LOCAL ATUAL</span>
+                <span className="text-[10px] font-black uppercase tracking-wider">LOCAL ATUAL</span>
               </div>
             </div>
             {conditionIconUrl && <img src={conditionIconUrl} alt="Clima" className="w-16 h-16 object-contain" />}
           </div>
           <div className="flex items-center justify-between">
             <div>
-              <span className="block text-[11px] font-bold uppercase tracking-wider text-cyan-700">Umidade</span>
-              <span className="text-base font-extrabold text-cyan-900">{humidity}%</span>
+              <span className="block text-[11px] font-black uppercase tracking-wider text-cyan-800">Umidade</span>
+              <span className="text-base font-extrabold text-cyan-950">{humidity}%</span>
             </div>
           </div>
         </div>
@@ -116,10 +116,10 @@ const WeatherWidget: React.FC<{
           <div className="grid grid-cols-3 gap-2">
             {forecastList.map((f, i) => (
               <div key={i} className="text-center p-2 rounded-2xl hover:bg-white/60 transition-colors">
-                <span className="block text-[10px] font-bold uppercase text-cyan-600 mb-1">{f.day}</span>
+                <span className="block text-[10px] font-black uppercase text-cyan-800 mb-1">{f.day}</span>
                 {f.iconUrl && <img src={f.iconUrl} alt={f.day} className="w-8 h-8 mx-auto mb-1" />}
-                <div className="text-xs font-black text-cyan-900">{f.max}°<span className="text-cyan-600/50">{f.min}°</span></div>
-                {f.rain && <span className="text-[10px] font-bold text-blue-500">{f.rain}</span>}
+                <div className="text-xs font-black text-cyan-950">{f.max}°<span className="text-cyan-800/60">{f.min}°</span></div>
+                {f.rain && <span className="text-[10px] font-black text-blue-700">{f.rain}</span>}
               </div>
             ))}
           </div>
@@ -159,16 +159,16 @@ const DashboardPage: React.FC = () => {
       
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
         <div className="space-y-1.5">
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight">
-            {obterSaudacao()}, <span className="text-green-600">{profile?.nome?.split(' ')[0] || 'Produtor'}</span>!
+          <h2 className="text-3xl font-black text-slate-900 tracking-tight font-serif">
+            {obterSaudacao()}, <span className="text-green-700">{profile?.nome?.split(' ')[0] || 'Produtor'}</span>!
           </h2>
-          <p className="text-sm text-slate-500 font-medium">{hoje}</p>
+          <p className="text-sm text-slate-600 font-bold">{hoje}</p>
         </div>
         <div className="flex gap-3">
-          <button onClick={() => navigate("/planos")} className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-slate-300 text-slate-600 font-semibold hover:bg-slate-50">
+          <button onClick={() => navigate("/planos")} className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-bold hover:bg-slate-50 transition-colors">
             <Settings size={18} /> Gerenciar Planos
           </button>
-          <button onClick={() => { setRecordToEdit(null); setOpenRecordDialog(true); }} className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700">
+          <button onClick={() => { setRecordToEdit(null); setOpenRecordDialog(true); }} className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-green-600 text-white font-bold hover:bg-green-700 transition-all shadow-sm active:scale-95">
             <Plus size={20} /> Novo Registro
           </button>
         </div>
