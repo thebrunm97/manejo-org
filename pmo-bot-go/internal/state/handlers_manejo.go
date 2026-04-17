@@ -15,12 +15,10 @@ import (
 )
 
 // handleAguardandoQuantidade processes the second turn of an active interview for quantity
-func handleAguardandoQuantidade(ctx context.Context, body string, from string, phone string, profile *supabase.Profile, respondWithAudio bool, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, historyManager *history.Manager, extraction map[string]interface{}, startTime time.Time, modelConfigured string) ProcessResult {
+func handleAguardandoQuantidade(ctx context.Context, body string, from string, phone string, profile *supabase.Profile, respondWithAudio bool, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, historyManager *history.Manager, extraction map[string]interface{}, startTime time.Time, modelConfigured string) (string, ProcessResult) {
 	log.Printf("📥 [FSM-TURN2] Recebida quantidade: %s", body)
 	
-	// Convert interface map back to ExtractionResult (simplified)
 	var ext groq.ExtractionResult
-	// We can use toMap/json if needed, but for simplicity let's just use the data
 	ext.Intencao = "registro"
 	ext.Atividade, _ = extraction["atividade"].(string)
 	ext.InsumoCultura, _ = extraction["insumo_cultura"].(string)
@@ -29,13 +27,11 @@ func handleAguardandoQuantidade(ctx context.Context, body string, from string, p
 	
 	ext.Quantidade = body // Turn 2 input
 	
-	// Recursively call the registration flow with the new data
-	// Note: For now we'll implement the logic here to avoid circular complexity
 	return finalizeRegistration(ctx, &ext, profile, sbClient, wpClient, ttsClient, from, body, respondWithAudio, startTime, historyManager, phone, modelConfigured)
 }
 
 // handleAguardandoCompra processes the second turn for purchase details (fornecedor)
-func handleAguardandoCompra(ctx context.Context, body string, from string, phone string, profile *supabase.Profile, respondWithAudio bool, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, historyManager *history.Manager, extraction map[string]interface{}, startTime time.Time, modelConfigured string) ProcessResult {
+func handleAguardandoCompra(ctx context.Context, body string, from string, phone string, profile *supabase.Profile, respondWithAudio bool, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, historyManager *history.Manager, extraction map[string]interface{}, startTime time.Time, modelConfigured string) (string, ProcessResult) {
 	log.Printf("📥 [FSM-TURN2] Recebido fornecedor: %s", body)
 	
 	var ext groq.ExtractionResult
@@ -51,7 +47,7 @@ func handleAguardandoCompra(ctx context.Context, body string, from string, phone
 }
 
 // finalizeRegistration is the common sink for all Manejo and Purchase recordings
-func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, from string, originalBody string, respondWithAudio bool, startTime time.Time, historyManager *history.Manager, phone string, modelConfigured string) ProcessResult {
+func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, from string, originalBody string, respondWithAudio bool, startTime time.Time, historyManager *history.Manager, phone string, modelConfigured string) (string, ProcessResult) {
 	pmoID := profile.PmoAtivoID
 	
 	// 1. Compliance Check (Spatial-Aware) - Reused from fsm.go
@@ -67,8 +63,7 @@ func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profi
 
 		if len(talhoesExtraidos) == 0 && profile.TemProducaoParalela {
 			botResponse := "⚠️ Identifiquei um produto químico, mas como você possui produção paralela, preciso que especifique **em qual talhão** ele foi aplicado."
-			sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio)
-			return ProcessResult{Success: false, Reason: "parallel_prod_missing_context"}
+			return botResponse, ProcessResult{Success: false, Reason: "parallel_prod_missing_context"}
 		}
 
 		temOrganicoNoMeio := false
@@ -87,16 +82,13 @@ func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profi
 
 		if temOrganicoNoMeio {
 			botResponse := fmt.Sprintf("🚨 *ALERTA DE NÃO-CONFORMIDADE!*\n\n⚠️ O uso de *%s* é proibido em áreas orgânicas. Registro **BLOQUEADO**.", produtoAlvo)
-			sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio)
 			recordLog(sbClient, profile, originalBody, botResponse, modelConfigured, "fsm-v4", 0, 0, "alerta_conformidade", nil, startTime, false, nil)
-			return ProcessResult{Success: false, Reason: "organic_compliance_block"}
+			return botResponse, ProcessResult{Success: false, Reason: "organic_compliance_block"}
 		}
 	}
 
 	// 2. Database Recording (RPC)
 	if ext.Data == "" { ext.Data = time.Now().Format("2006-01-02") }
-	
-	var err error
 
 	if ext.Atividade == "Compra/Aquisição" {
 		rpcArgs := map[string]interface{}{
@@ -109,7 +101,23 @@ func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profi
 			"nota_fiscal_arg":        ext.NotaFiscal,
 			"data_compra_arg":        ext.Data,
 		}
-		_, err = sbClient.RegistrarCompraInsumoRPC(ctx, rpcArgs)
+		resp, err := sbClient.RegistrarCompraInsumoRPC(ctx, rpcArgs)
+		if err != nil {
+			return "❌ Falha técnica ao registrar compra no banco.", ProcessResult{Success: false, Reason: "rpc_http_error"}
+		}
+		
+		id := resp["id"]
+		if id == nil {
+			return "❌ Falha de Persistência: A compra foi processada, mas não retornou um ID. Verifique suas permissões.", ProcessResult{Success: false, Reason: "silent_failure_id_null"}
+		}
+
+		// Cleanup State and Feedback
+		if historyManager != nil { historyManager.ClearFSMState(phone) }
+		
+		botResponse := fmt.Sprintf("✅ *Compra Registrada com Sucesso!*\n*Item:* %s\n*Qtd:* %v %s\n*Fornecedor:* %s\n*ID:* %v", ext.InsumoCultura, ext.Quantidade, ext.Unidade, ext.Fornecedor, id)
+		recordLog(sbClient, profile, originalBody, botResponse, modelConfigured, "fsm-v4", 0, 0, "registro", toMap(ext), startTime, true, nil)
+		
+		return botResponse, ProcessResult{Success: true, Reason: "record_saved"}
 	} else {
 		payload := map[string]interface{}{
 			"data":                ext.Data,
@@ -123,25 +131,38 @@ func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profi
 			"metodo_aplicacao":    ext.Atividade,
 			"observacao_original": originalBody,
 		}
-		_, err = sbClient.RegistrarOperacaoCampoRPC(ctx, map[string]interface{}{
-			"pmo_id_arg":  pmoID,
-			"user_id_arg": profile.ID,
-			"tipo_arg":    ext.Atividade,
-			"payload_arg": payload,
-		})
+		resp, err := sbClient.RegistrarOperacaoCampoRPC(ctx, map[string]interface{}{
+			"pmo_id_arg":          pmoID,
+			"propriedade_id_arg":  profile.PropriedadeAtivaID,
+			"user_id_arg":         profile.ID,
+			"tipo_arg":            ext.Atividade,
+			"payload_arg":         payload,
+		}, ext.Data)
+
+		if err != nil {
+			return "❌ Falha técnica ao acessar o banco de dados.", ProcessResult{Success: false, Reason: "rpc_http_error"}
+		}
+
+		if status, ok := resp["status"].(string); ok && status == "error" {
+			return fmt.Sprintf("❌ Erro no Registro: %v", resp["message"]), ProcessResult{Success: false, Reason: "rpc_database_error"}
+		}
+
+		id := resp["id"]
+		lote := resp["lote"]
+
+		if id == nil {
+			return "❌ Falha de Persistência: O registro foi confirmado pela API, mas não retornou um ID (Bloqueio de RLS?). Verifique se você tem permissão nesta fazenda.", ProcessResult{Success: false, Reason: "silent_failure_id_null"}
+		}
+
+		// Cleanup State and Feedback
+		if historyManager != nil { historyManager.ClearFSMState(phone) }
+		
+		botResponse := fmt.Sprintf("✅ *Registro com Sucesso!*\n*Atividade:* %s\n*Item:* %s\n*Qtd:* %v %s\n*Lote:* %v\n*ID:* %v", ext.Atividade, ext.InsumoCultura, ext.Quantidade, ext.Unidade, lote, id)
+		recordLog(sbClient, profile, originalBody, botResponse, modelConfigured, "fsm-v4", 0, 0, "registro", toMap(ext), startTime, true, nil)
+		
+		return botResponse, ProcessResult{Success: true, Reason: "record_saved"}
 	}
 
-	if err != nil {
-		sendFeedback(wpClient, ttsClient, from, "❌ Falha técnica ao salvar no banco.", respondWithAudio)
-		return ProcessResult{Success: false, Reason: "rpc_error"}
-	}
-
-	// 3. Cleanup State and Feedback
-	if historyManager != nil { historyManager.ClearFSMState(phone) }
-	
-	botResponse := fmt.Sprintf("✅ *Registro Salvo!*\n*Atividade:* %s\n*Item:* %s\n*Qtd:* %v %s", ext.Atividade, ext.InsumoCultura, ext.Quantidade, ext.Unidade)
-	sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio)
-	recordLog(sbClient, profile, originalBody, botResponse, modelConfigured, "fsm-v4", 0, 0, "registro", toMap(ext), startTime, true, nil)
-	
-	return ProcessResult{Success: true, Reason: "record_saved"}
+	// Fallback for unexpected flows
+	return "❌ Erro inesperado no fluxo de finalização.", ProcessResult{Success: false, Reason: "unknown_flow"}
 }
