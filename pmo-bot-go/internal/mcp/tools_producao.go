@@ -1,0 +1,107 @@
+package mcp
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"time"
+)
+
+func (s *Server) handleRegistrarColheita(args map[string]interface{}) (interface{}, error) {
+	log.Printf("🧺 [MCP-TOOL] handleRegistrarColheita Args: %+v", args)
+
+	pmoIDFloat, _ := parseArgToFloat(args["pmo_id"])
+	pmoID := int64(pmoIDFloat)
+	userID, _ := args["user_id"].(string)
+
+	data := sanitize(args["data"])
+	if data == "" {
+		data = time.Now().Format("2006-01-02")
+	}
+
+	qtd, _ := parseArgToFloat(args["quantidade"])
+	unidade := sanitize(args["unidade"])
+	talhao := sanitize(args["talhao"])
+	cultura := sanitize(args["cultura"])
+
+	propIDFloat, _ := parseArgToFloat(args["propriedade_id"])
+	propID := int64(propIDFloat)
+
+	resp, err := s.supabase.RegistrarOperacaoCampoRPC(context.Background(), map[string]interface{}{
+		"pmo_id_arg":         pmoID,
+		"propriedade_id_arg": propID,
+		"user_id_arg":        userID,
+		"tipo_arg":           "Colheita",
+		"payload_arg": map[string]interface{}{
+			"data":                data,
+			"produto":             cultura,
+			"quantidade_valor":    qtd,
+			"quantidade_unidade":  unidade,
+			"talhao_nome":         talhao,
+			"destino_inicial":     sanitize(args["destino_inicial"]),
+			"observacao_original": fmt.Sprintf("Colheita de %s registrada via MCP Tool.", cultura),
+		},
+	}, data)
+	if err != nil {
+		return fmt.Sprintf("Erro ao registrar colheita via RPC: %v", err), nil
+	}
+
+	id := resp["id"]
+	lote := resp["lote"]
+
+	if id == nil {
+		return "Erro: O banco de dados confirmou a operação, mas não retornou um ID de registro (Silent Failure). O registro pode não ter sido salvo devido a permissões de segurança (RLS).", nil
+	}
+
+	return fmt.Sprintf("Colheita de %v %s de %s registrada com sucesso (Lote: %v).", qtd, unidade, cultura, lote), nil
+}
+
+func (s *Server) handleRegistrarVenda(args map[string]interface{}) (interface{}, error) {
+	log.Printf("💰 [MCP-TOOL] handleRegistrarVenda Args: %+v", args)
+
+	pmoIDFloat, _ := parseArgToFloat(args["pmo_id"])
+	pmoID := int64(pmoIDFloat)
+	userID, _ := args["user_id"].(string)
+
+	data := sanitize(args["data"])
+	if data == "" {
+		data = time.Now().Format("2006-01-02")
+	}
+
+	qtd, _ := parseArgToFloat(args["quantidade"])
+	unidade := sanitize(args["unidade"])
+	valorUnit, _ := parseArgToFloat(args["valor_unitario"])
+	produto := sanitize(args["produto"])
+	cliente := sanitize(args["cliente"])
+
+	propIDFloat, _ := parseArgToFloat(args["propriedade_id"])
+	propID := int64(propIDFloat)
+
+	resp, err := s.supabase.RegistrarOperacaoCampoRPC(context.Background(), map[string]interface{}{
+		"pmo_id_arg":         pmoID,
+		"propriedade_id_arg": propID,
+		"user_id_arg":        userID,
+		"tipo_arg":           "Venda",
+		"payload_arg": map[string]interface{}{
+			"data":                data,
+			"produto":             produto,
+			"quantidade_valor":    qtd,
+			"quantidade_unidade":  unidade,
+			"fornecedor":          cliente,
+			"destinacao":          sanitize(args["destinacao"]),
+			"valor_unitario":      valorUnit,
+			"observacao_original": fmt.Sprintf("Venda de %s para %s registrada via MCP Tool.", produto, cliente),
+		},
+	}, data)
+	if err != nil {
+		return fmt.Sprintf("Erro ao registrar venda via RPC: %v", err), nil
+	}
+
+	id := resp["id"]
+
+	if id == nil {
+		return "Erro: O banco de dados confirmou a venda, mas não retornou um ID de registro (Silent Failure). Verifique as permissões de acesso.", nil
+	}
+
+	return fmt.Sprintf("Venda de %s (%v %s) para '%s' salva com sucesso.", produto, qtd, unidade, cliente), nil
+}
