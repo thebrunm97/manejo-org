@@ -51,9 +51,9 @@ export default defineConfig({
             },
             includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
             manifest: {
-                name: 'Manejo Org - Gestão Orgânica',
-                short_name: 'Manejo Org',
-                description: 'Sistema de Manejo Orgânico e Rastreabilidade',
+                name: 'ManejoOrg - Gestão Rural Sustentável',
+                short_name: 'ManejoOrg',
+                description: 'Sistema de ManejoOrg & Rastreabilidade Rural',
                 theme_color: '#16a34a', // Forest Green Tailwind 600
                 background_color: '#ffffff',
                 display: 'standalone',

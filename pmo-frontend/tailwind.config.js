@@ -62,9 +62,16 @@ export default {
                     fgSecondary: '#334155',
                     fgMuted: '#64748B',
                 },
+                // High-End Agronomic Palette
+                'agro-creme': '#FDFCF0',    // Fundo papel/luxo
+                'agro-floresta': '#1A3C34', // Texto e botões principais
+                'agro-ouro': '#C5A059',     // Destaques e detalhes
             },
             fontFamily: {
-                sans: ['"Plus Jakarta Sans"', 'Inter', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+                // Títulos elegantes (Serif)
+                serif: ['Fraunces', 'serif'],
+                // Corpo de texto moderno (Sans)
+                sans: ['Outfit', 'sans-serif'],
             },
             boxShadow: {
                 'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
