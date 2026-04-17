@@ -12,7 +12,7 @@ var regexNumOnly = regexp.MustCompile(`\D`)
 // Remove sufixos como @c.us e @s.whatsapp.net, limpa não-numéricos, e
 // lida com o problema do nono dígito no formato 55 (Brasil).
 func SanitizePhone(phone string) string {
-	// 1. Limpa os identificadores do WPPConnect
+	// 1. Limpa os identificadores do WhatsApp (JID)
 	phone = strings.Split(phone, "@")[0]
 
 	// 2. Remove todos os caracteres não numéricos (+, -, (, ), espaços)

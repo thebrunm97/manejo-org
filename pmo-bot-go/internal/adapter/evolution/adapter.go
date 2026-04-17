@@ -2,12 +2,14 @@ package evolution
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
@@ -79,14 +81,127 @@ func (a *EvolutionAdapter) SendReply(to, message, replyToMessageID string) error
 	return errors.New("SendReply not implemented yet for Evolution API")
 }
 
-// DownloadAudio is not fully implemented yet, returning a stub.
-func (a *EvolutionAdapter) DownloadAudio(messageID string) ([]byte, error) {
-	return nil, errors.New("DownloadAudio not implemented yet for Evolution API")
+// DownloadAudio fetches the audio file from Evolution API and decodes it.
+func (a *EvolutionAdapter) DownloadAudio(messageID string, rawPayload []byte) ([]byte, error) {
+	fullURL := fmt.Sprintf("%s/message/downloadmedia", a.BaseURL)
+	log.Printf("📥 [Evolution-Go] Solicitando download de áudio. URL: %s | MessageID: %s", fullURL, messageID)
+
+	if len(rawPayload) == 0 {
+		return nil, errors.New("rawPayload is empty, cannot download media in Evolution-Go")
+	}
+
+	payload := map[string]interface{}{
+		"message": json.RawMessage(rawPayload),
+	}
+
+	bodyBytes, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal download payload: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, fullURL, bytes.NewReader(bodyBytes))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create download request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("apikey", a.APIKey)
+
+	resp, err := a.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("download request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	log.Printf("📡 [Evolution-Go] Resposta do Download: %d", resp.StatusCode)
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("evolution download error (status %d): %s", resp.StatusCode, string(respBody))
+	}
+
+	var result struct {
+		Data struct {
+			Base64 string `json:"base64"`
+		} `json:"data"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode base64 response: %w", err)
+	}
+
+	if result.Data.Base64 == "" {
+		return nil, errors.New("evolution returned empty base64 for audio in data field")
+	}
+
+	// Simple base64 decode - Strip Data URL prefix if exists
+	base64Str := result.Data.Base64
+	if idx := strings.Index(base64Str, ","); idx != -1 {
+		base64Str = base64Str[idx+1:]
+	}
+
+	data, err := base64.StdEncoding.DecodeString(base64Str)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode standard base64: %w", err)
+	}
+
+	log.Printf("✅ [Evolution-Go] Áudio baixado com sucesso: %d bytes", len(data))
+	return data, nil
 }
 
-// DownloadImage is not fully implemented yet, returning a stub.
-func (a *EvolutionAdapter) DownloadImage(messageID string) ([]byte, string, error) {
-	return nil, "", errors.New("DownloadImage not implemented yet for Evolution API")
+// DownloadImage fetches the image file from Evolution API and decodes it.
+func (a *EvolutionAdapter) DownloadImage(messageID string, rawPayload []byte) ([]byte, string, error) {
+	fullURL := fmt.Sprintf("%s/message/downloadmedia", a.BaseURL)
+	log.Printf("📥 [Evolution-Go] Solicitando download de imagem. URL: %s", fullURL)
+
+	if len(rawPayload) == 0 {
+		return nil, "", errors.New("rawPayload is empty, cannot download media in Evolution-Go")
+	}
+
+	payload := map[string]interface{}{
+		"message": json.RawMessage(rawPayload),
+	}
+
+	bodyBytes, err := json.Marshal(payload)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to marshal download payload: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, fullURL, bytes.NewReader(bodyBytes))
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to create download request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("apikey", a.APIKey)
+
+	resp, err := a.httpClient.Do(req)
+	if err != nil {
+		return nil, "", fmt.Errorf("download request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	log.Printf("📡 [Evolution-Go] Resposta do Download Image: %d", resp.StatusCode)
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		return nil, "", fmt.Errorf("evolution download error (status %d): %s", resp.StatusCode, string(respBody))
+	}
+
+	var result struct {
+		Data struct {
+			Base64 string `json:"base64"`
+		} `json:"data"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, "", fmt.Errorf("failed to decode base64 response: %w", err)
+	}
+
+	if result.Data.Base64 == "" {
+		return nil, "", errors.New("evolution returned empty base64 for image")
+	}
+
+	data, err := base64.StdEncoding.DecodeString(result.Data.Base64)
+	return data, "image/jpeg", nil
 }
 
 // GetConnectionState returns the current state of the WhatsApp connection.
@@ -130,6 +245,52 @@ func (a *EvolutionAdapter) GetConnectionState() (string, error) {
 		return "open", nil
 	}
 	return "close", nil
+}
+
+// ConfigureWebhooks ensures that only the correct webhook is registered for the instance.
+// It fetches existing webhooks and sets the new one, effectively overriding or cleaning up old ones.
+func (a *EvolutionAdapter) ConfigureWebhooks(webhookURL string) error {
+	log.Printf("🔄 [Evolution] Configurando webhooks para a instância: %s...", a.InstanceName)
+
+	// Payload for setting the webhook
+	payload := map[string]interface{}{
+		"url":     webhookURL,
+		"enabled": true,
+		"events": []string{
+			"MESSAGES_UPSERT",
+			"MESSAGES_UPDATE",
+			"SEND_MESSAGE",
+		},
+	}
+
+	// Evolution API's /webhook/set usually overrides the existing configuration for the instance.
+	// To be extra safe as requested, we use the set endpoint which guarantees the state.
+	url := fmt.Sprintf("%s/webhook/set/%s", a.BaseURL, a.InstanceName)
+	
+	err := a.doRequest(http.MethodPost, url, payload)
+	if err != nil {
+		return fmt.Errorf("failed to set webhook: %w", err)
+	}
+
+	log.Printf("✅ [Evolution] Webhook configurado com sucesso: %s", webhookURL)
+	return nil
+}
+
+// ConfigureWebhooksWithRetry calls ConfigureWebhooks with a retry mechanism.
+func (a *EvolutionAdapter) ConfigureWebhooksWithRetry(webhookURL string, maxRetries int, interval time.Duration) error {
+	var err error
+	for i := 1; i <= maxRetries; i++ {
+		log.Printf("🔄 [Evolution] Tentativa %d/%d de configurar webhook...", i, maxRetries)
+		err = a.ConfigureWebhooks(webhookURL)
+		if err == nil {
+			log.Printf("✅ [Evolution] Webhook configurado com sucesso após %d tentativas", i)
+			return nil
+		}
+		log.Printf("⚠️ [Evolution] Tentativa %d falhou: %v. Retentando em %v...", i, err, interval)
+		time.Sleep(interval)
+	}
+	log.Printf("❌ [Evolution] Falha final ao configurar webhook após %d tentativas: %v", maxRetries, err)
+	return fmt.Errorf("failed to configure webhooks after %d retries: %w", maxRetries, err)
 }
 
 // doRequest helper to handle HTTP requests and error responses.
@@ -179,12 +340,7 @@ type EvolutionWebhook struct {
 			Timestamp string `json:"Timestamp"`
 			Type      string `json:"Type"`
 		} `json:"info"`
-		Message struct {
-			Conversation        string `json:"conversation"`
-			ExtendedTextMessage struct {
-				Text string `json:"text"`
-			} `json:"extendedTextMessage"`
-		} `json:"message"`
+		Message json.RawMessage `json:"message"`
 	} `json:"data"`
 }
 
@@ -200,10 +356,23 @@ func ParseWebhook(rawBody []byte) (*ports.IncomingMessage, error) {
 		return nil, nil // Ignored event
 	}
 
+	// Extract message object
+	var internalMsg struct {
+		Conversation        string      `json:"conversation"`
+		ExtendedTextMessage struct {
+			Text string `json:"text"`
+		} `json:"extendedTextMessage"`
+		AudioMessage interface{} `json:"audioMessage"`
+		PtvMessage   interface{} `json:"ptvMessage"`
+	}
+	if err := json.Unmarshal(payload.Data.Message, &internalMsg); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal internal message: %w", err)
+	}
+
 	// Extract body
-	body := payload.Data.Message.Conversation
-	if body == "" && payload.Data.Message.ExtendedTextMessage.Text != "" {
-		body = payload.Data.Message.ExtendedTextMessage.Text
+	body := internalMsg.Conversation
+	if body == "" && internalMsg.ExtendedTextMessage.Text != "" {
+		body = internalMsg.ExtendedTextMessage.Text
 	}
 
 	// Extract Sender/Chat correctly
@@ -225,12 +394,25 @@ func ParseWebhook(rawBody []byte) (*ports.IncomingMessage, error) {
 		ts = time.Now()
 	}
 
+	// Detect Message Type
+	msgType := strings.ToLower(payload.Data.Info.Type)
+	isAudio := msgType == "audiomessage" || msgType == "ptvmessage" || internalMsg.AudioMessage != nil || internalMsg.PtvMessage != nil
+	
+	if isAudio {
+		log.Printf("🎙️ [Evolution] Detectada mensagem de áudio (Tipo: %s)", msgType)
+		if msgType == "" {
+			msgType = "audioMessage" // Force standard type for internal routing
+		}
+	}
+
 	return &ports.IncomingMessage{
 		ID:        payload.Data.Info.ID,
 		From:      from,
 		Body:      body,
 		IsFromMe:  payload.Data.Info.IsFromMe,
-		Timestamp: ts,
-		Type:      "text",
+		Timestamp:  ts,
+		Type:       msgType,
+		IsAudio:    isAudio,
+		RawPayload: payload.Data.Message,
 	}, nil
 }
