@@ -209,12 +209,12 @@ func (c *Client) SendReply(to, message, replyToMessageId string) error {
 	return err
 }
 
-func (c *Client) DownloadAudio(messageId string) ([]byte, error) {
+func (c *Client) DownloadAudio(messageId string, rawPayload []byte) ([]byte, error) {
 	data, _, err := c.downloadMedia(messageId)
 	return data, err
 }
 
-func (c *Client) DownloadImage(messageId string) ([]byte, string, error) {
+func (c *Client) DownloadImage(messageId string, rawPayload []byte) ([]byte, string, error) {
 	return c.downloadMedia(messageId)
 }
 

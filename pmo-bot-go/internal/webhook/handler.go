@@ -35,16 +35,22 @@ import (
 // ---------------------------------------------------------------------------
 
 type Config struct {
-	Token          string
-	MaxMessageAge  float64
-	GroqClient     *groq.Client
-	SupabaseClient *supabase.Client
-	WhatsAppClient ports.MessageSender
-	GeminiClient   *gemini.Client
-	TtsClient      *tts.Orchestrator
-	MCPServer      *mcp.Server
-	HistoryManager *history.Manager
+	Token           string
+	MaxMessageAge   float64
+	GroqClient      *groq.Client
+	SupabaseClient  *supabase.Client
+	WhatsAppClient  ports.MessageSender
+	GeminiClient    *gemini.Client
+	TtsClient       *tts.Orchestrator
+	MCPServer       *mcp.Server
+	HistoryManager  *history.Manager
 	FlagsmithClient *flagsmith.Client
+
+	// HarnessQueue é a fila PostgreSQL durável (Harness de Produção).
+	// Se nil, o handler opera em modo legado (goroutine direta).
+	HarnessQueue interface {
+		Enqueue(ctx context.Context, msg ports.IncomingMessage) error
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -86,7 +92,7 @@ func getSessionMutex(phone string) *sync.Mutex {
 // RegisterRoutes registers the webhook routes on the Gin engine.
 func (h *Handler) RegisterRoutes(r *gin.Engine) {
 	r.POST("/webhook", h.handleWebhook)
-	r.POST("/webhook/wppconnect", h.handleWebhook)   // Direct match for WEBHOOK_URL
+	r.POST("/webhook/evolution", h.handleWebhook)   // Primary route for Evolution API
 	r.POST("/api/:session/webhook", h.handleWebhook) // Fallback for session-prefixed webhooks
 	r.POST("/knowledge/upload", h.handleKnowledgeUpload)
 	r.GET("/health", h.handleHealth)
@@ -97,7 +103,7 @@ func (h *Handler) SetWhatsAppClient(c ports.MessageSender) {
 	h.cfg.WhatsAppClient = c
 }
 
-// handleWebhook processes incoming WPPConnect messages.
+// handleWebhook processes incoming Evolution API messages.
 // REGRA DE OURO: Always returns HTTP 200 to avoid sender retry loops.
 func (h *Handler) handleWebhook(c *gin.Context) {
 	log.Println("🔍 [DEBUG] handleWebhook ENTERED")
@@ -112,13 +118,15 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 	}
 
 	if !h.verifyToken(token) {
-		log.Println("🔒 Token inválido — acesso negado")
+		log.Printf("🔒 Token inválido (%s) — acesso negado", token)
 		c.JSON(http.StatusOK, gin.H{"status": "token_invalid", "error": "Access Denied"})
 		return
 	}
 
 	// 2. Parse the Evolution payload via Adapter
 	rawBody, _ := c.GetRawData()
+	log.Printf("Raw Webhook Body: %s", string(rawBody))
+
 	payload, err := evolution.ParseWebhook(rawBody)
 	if err != nil {
 		log.Printf("❌ Falha no Parse do Webhook: %v", err)
@@ -127,7 +135,7 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 	}
 
 	if payload == nil {
-		log.Println("⏭️ Evento ignorado (não é messages.upsert)")
+		log.Println("⏭️ Evento ignorado (não é Message ou messages.upsert)")
 		c.JSON(http.StatusOK, gin.H{"status": "ignored_event"})
 		return
 	}
@@ -157,6 +165,10 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 	log.Printf("📨 Recebida De: %s | Tipo: %s | Body: %.100s",
 		payload.From, payload.Type, payload.Body)
 
+	if payload.IsAudio {
+		log.Printf("[AUDIO-DEBUG] Recebida mensagem de áudio de %s (ID: %s)", payload.From, payload.ID)
+	}
+
 	// 7. Skip non-text messages if not audio or image
 	if payload.Body == "" && !payload.IsAudio && !payload.IsImage {
 		log.Println("⏭️  Mensagem sem texto (mídia não-suportada) — ignorando")
@@ -179,31 +191,26 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 		}(msgID)
 	}
 
-	// Delegate business logic orchestration to FSM asynchronously
-	go func(msg ports.IncomingMessage) {
-		// Layer 0: Panic Recovery
-		defer func() {
-			if r := recover(); r != nil {
-				log.Printf("🔥 [CRITICAL] Panic capturado na goroutine do webhook: %v", r)
-				// Tentar avisar o usuário se possível
-				h.cfg.WhatsAppClient.SendMessage(msg.From, "⚠️ Ocorreu um erro crítico inesperado. Minha equipe foi avisada.")
-			}
-		}()
+	// ─── Dispatch: Harness (Produção) vs. Legado ───────────────────────────
+	// Se HarnessQueue estiver configurado (HARNESS_ENABLED=true), a mensagem
+	// é inserida na fila PostgreSQL durável e os workers dedicados a processam.
+	// Se nil, cai no modo legado: goroutine direta (comportamento anterior).
+	// Para rollback imediato: basta remover HarnessQueue do Config e reiniciar.
+	if h.cfg.HarnessQueue != nil {
+		enqueueCtx, enqueueCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer enqueueCancel()
 
-		// Layer 2: Session-Level Mutex — serialize processing per phone number
-		mu := getSessionMutex(msg.From)
-		mu.Lock()
-		defer mu.Unlock()
-
-		// Layer 3: Context with timeout
-		ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
-		defer cancel()
-
-		result := state.ProcessMessage(ctx, msg, h.cfg.SupabaseClient, h.cfg.GroqClient, h.cfg.WhatsAppClient, h.cfg.GeminiClient, h.cfg.TtsClient, h.cfg.MCPServer, h.cfg.HistoryManager, h.cfg.FlagsmithClient)
-		if !result.Success {
-			log.Printf("⚠️ [FSM] Background processing completed with issues: %s", result.Reason)
+		if err := h.cfg.HarnessQueue.Enqueue(enqueueCtx, *payload); err != nil {
+			log.Printf("❌ [WEBHOOK] Falha ao enfileirar mensagem %s: %v — falling back to legacy", payload.ID, err)
+			// Fallback automático para goroutine legada se o Enqueue falhar
+			go h.processLegacy(*payload)
+		} else {
+			log.Printf("📬 [WEBHOOK] Mensagem %s enfileirada no Harness (from=%s)", payload.ID, payload.From)
 		}
-	}(*payload)
+	} else {
+		// Modo legado: goroutine direta (sem persistência de fila)
+		go h.processLegacy(*payload)
+	}
 
 	// 9. Always Respond 200 OK
 	c.JSON(http.StatusOK, gin.H{
@@ -216,6 +223,34 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 func (h *Handler) handleHealth(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
+
+// processLegacy executa o fluxo de processamento legado (goroutine direta, sem persistência).
+// Usado quando HARNESS_ENABLED=false ou como fallback automático se o Enqueue falhar.
+// O comportamento é idêntico ao que existia antes do Harness.
+func (h *Handler) processLegacy(msg ports.IncomingMessage) {
+	go h.cfg.WhatsAppClient.SetPresence(msg.From, "composing")
+	defer h.cfg.WhatsAppClient.SetPresence(msg.From, "available")
+
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("🔥 [CRITICAL] Panic no processamento legado: %v", r)
+			h.cfg.WhatsAppClient.SendMessage(msg.From, "⚠️ Ocorreu um erro crítico inesperado. Minha equipe foi avisada.")
+		}
+	}()
+
+	mu := getSessionMutex(msg.From)
+	mu.Lock()
+	defer mu.Unlock()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	defer cancel()
+
+	result := state.ProcessMessage(ctx, msg, h.cfg.SupabaseClient, h.cfg.GroqClient, h.cfg.WhatsAppClient, h.cfg.GeminiClient, h.cfg.TtsClient, h.cfg.MCPServer, h.cfg.HistoryManager, h.cfg.FlagsmithClient)
+	if !result.Success {
+		log.Printf("⚠️ [LEGACY] Processing completed with issues: %s", result.Reason)
+	}
+}
+
 
 // handleKnowledgeUpload handles the knowledge base update via PDF upload
 func (h *Handler) handleKnowledgeUpload(c *gin.Context) {
