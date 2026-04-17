@@ -69,7 +69,7 @@ func main() {
 
 	// 5. Chamada Isolada à OpenRouter
 	fmt.Println("📡 Enviando pedido para OpenRouter...")
-	resp, err := client.CallOpenRouter(context.Background(), history, []llm.FerramentaAgnostica{toolAdubacao})
+	resp, err := client.CallOpenRouter(context.Background(), "", history, []llm.FerramentaAgnostica{toolAdubacao}, nil)
 	if err != nil {
 		log.Fatalf("❌ Erro na chamada: %v", err)
 	}
