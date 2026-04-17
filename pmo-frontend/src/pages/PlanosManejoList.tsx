@@ -1,6 +1,6 @@
 /**
  * @file PlanosManejoList.tsx
- * @description View para listagem de PMOs (Planos de Manejo Orgânico).
+ * @description View para listagem de PMOs (Planos de ManejoOrg).
  *
  * ✅ REFACTORED: Toda lógica extraída para usePlanosListLogic hook.
  * ✅ Sestilo: Tailwind CSS (SaaS Moderno).
@@ -309,7 +309,7 @@ const PlanosManejoList: React.FC = () => {
             Recurso Exclusivo
           </h2>
           <p className="text-slate-600 max-w-lg mx-auto leading-relaxed mb-8">
-            O <strong>Plano de Manejo Orgânico (PMO)</strong> é uma ferramenta exclusiva para propriedades com certificação orgânica ou em período de conversão.
+            O <strong>Plano de ManejoOrg (PMO)</strong> é uma ferramenta essencial para propriedades em transição agroecológica, certificação orgânica ou produção sustentável.
             <br />
             Sua propriedade atual está configurada na modalidade <strong>Convencional</strong>.
           </p>
@@ -368,7 +368,7 @@ const PlanosManejoList: React.FC = () => {
             Nenhum plano encontrado
           </h3>
           <p className="mt-1 text-sm text-slate-500 max-w-sm mx-auto">
-            Você ainda não tem nenhum Plano de Manejo Orgânico cadastrado.
+            Você ainda não tem nenhum Plano de ManejoOrg cadastrado.
           </p>
           <div className="mt-6">
             <button

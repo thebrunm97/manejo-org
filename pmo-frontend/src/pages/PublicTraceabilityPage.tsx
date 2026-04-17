@@ -152,7 +152,7 @@ const PublicTraceabilityPage: React.FC = () => {
                                 <h4 className="font-semibold text-neutral-600">Origem Rastreada</h4>
                                 <div className="flex items-center text-sm text-neutral-500 mt-1">
                                     <ShieldCheck size={14} className="mr-1" />
-                                    <span>Sistema ManejoORG</span>
+                                    <span>Sistema Manejo<span className="text-emerald-700 font-bold">Org</span></span>
                                 </div>
                             </div>
                         </div>
@@ -162,7 +162,7 @@ const PublicTraceabilityPage: React.FC = () => {
                 {/* Footer Brand */}
                 <div className="text-center py-6 mt-auto">
                     <p className="text-xs text-neutral-400 font-medium">Tecnologia por</p>
-                    <p className="text-sm font-bold text-emerald-700">ManejoORG</p>
+                    <p className="text-sm font-bold text-emerald-700">Manejo<span className="text-agro-ouro">Org</span></p>
                 </div>
             </div>
         </div>

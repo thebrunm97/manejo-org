@@ -65,7 +65,7 @@ const PmoParaImpressao: React.FC<PmoParaImpressaoProps> = ({ pmoData }) => {
             </style>
 
             <header>
-                <h1>Plano de Manejo Orgânico</h1>
+                <h1>Plano de ManejoOrg</h1>
                 <h2>{pmoData.nome_identificador}</h2>
             </header>
 
