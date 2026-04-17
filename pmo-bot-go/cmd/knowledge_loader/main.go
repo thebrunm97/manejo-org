@@ -114,7 +114,8 @@ func processImage(gem *gemini.Client, sb *supabase.Client, path, name string) {
 	}
 
 	log.Println("🔍 Solicitando descrição agronômica ao Gemini 2.5 Flash...")
-	description, err := gem.DescribeAgronomicImage(context.Background(), data, mimeType)
+	description, modelUsed, err := gem.DescribeAgronomicImage(context.Background(), data, mimeType)
+	_ = modelUsed // Tracking not required for indexing
 	if err != nil {
 		log.Printf("❌ Erro na descrição: %v", err)
 		return

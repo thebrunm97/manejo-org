@@ -16,6 +16,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/jobs"
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
+	"github.com/thebrunm97/pmo-bot-go/internal/queue"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
 	"github.com/thebrunm97/pmo-bot-go/internal/weather"
@@ -72,11 +73,18 @@ func main() {
 	if geminiVersion == "" {
 		geminiVersion = "v1"
 	}
+	geminiFallback := os.Getenv("GEMINI_FALLBACK_MODEL")
+	if geminiFallback == "" {
+		geminiFallback = "gemini-1.5-flash"
+	}
 
 	geminiClient, err := gemini.NewClient(gemini.Config{
-		APIKey:     geminiKey,
-		Model:      geminiModel,
-		APIVersion: geminiVersion,
+		APIKey:           geminiKey,
+		OpenRouterAPIKey: cfg.OpenRouterKey,
+		Model:            geminiModel,
+		OpenRouterModel:  cfg.OpenRouterModel,
+		FallbackModel:    geminiFallback,
+		APIVersion:       geminiVersion,
 	})
 	if err != nil {
 		log.Fatalf("❌ Falha ao criar cliente Gemini: %v", err)
@@ -113,13 +121,30 @@ func main() {
 	)
 	log.Println("✅ Cliente Evolution API (Go) inicializado")
 
+	// --- Configure Evolution Webhooks (async with retry) ---
+	// Runs in a goroutine to avoid blocking server startup if Evolution API is not yet ready.
+	if cfg.WebhookURL != "" {
+		go func(webhookURL string) {
+			// Wait a few seconds so the server itself is up before first attempt
+			time.Sleep(5 * time.Second)
+			if err := wpClient.ConfigureWebhooksWithRetry(webhookURL, 10, 5*time.Second); err != nil {
+				log.Printf("❌ [Evolution] Falha permanente ao configurar webhook: %v", err)
+			}
+		}(cfg.WebhookURL)
+		log.Printf("⏳ [Evolution] Configuração de webhook agendada em background (10 tentativas × 5s).")
+	}
+
 	// --- Initialize Flagsmith client ---
 	var flagsmithClient *flagsmith.Client
 	if cfg.FlagsmithKey != "" {
-		flagsmithClient = flagsmith.NewClient(cfg.FlagsmithKey, flagsmith.WithBaseURL(cfg.FlagsmithURL))
-		log.Println("✅ Cliente Flagsmith inicializado")
+		flagsmithClient = flagsmith.NewClient(
+			cfg.FlagsmithKey,
+			flagsmith.WithBaseURL(cfg.FlagsmithURL),
+			flagsmith.WithEnvironmentRefreshInterval(1*time.Minute),
+		)
+		log.Printf("✅ Cliente Flagsmith inicializado (Refresh: 1m, URL: %s)", cfg.FlagsmithURL)
 	} else {
-		log.Println("⚠️ FLAGSMITH_ENV_KEY não definida. Rodando sem feature flags.")
+		log.Println("⚠️ FLAGSMITH_ENV_KEY não definida. Rodando sem feature flags (fallback seguro).")
 	}
 
 	// --- Initialize MCP Server ---
@@ -140,18 +165,67 @@ func main() {
 	ttsClient := tts.NewOrchestrator()
 	log.Println("✅ TTS Orchestrator inicializado")
 
+	// --- Harness de Produção (Feature Flag: HARNESS_ENABLED) ---
+	// HARNESS_ENABLED=true  → PostgreSQL queue + 3 Media Workers + 2 AI Workers
+	// HARNESS_ENABLED=false → comportamento legado (goroutines diretas, sem persistência)
+	//
+	// Para rollback imediato em produção: HARNESS_ENABLED=false + restart
+	harnessEnabled := os.Getenv("HARNESS_ENABLED") == "true"
+
+	var harnessQueue interface {
+		Enqueue(ctx context.Context, msg ports.IncomingMessage) error
+	}
+
+	if harnessEnabled {
+		log.Println("🚀 [Harness] HARNESS_ENABLED=true — iniciando modo produção com fila PostgreSQL")
+
+		queueManager := queue.NewManager(sbURL, sbKey)
+		harnessQueue = queueManager
+
+		harnessCtx, harnessCancel := context.WithCancel(context.Background())
+		_ = harnessCancel // O shutdown ocorre quando o processo termina (SIGINT → Gin.Run retorna)
+
+		h := queue.NewHarness(queue.HarnessConfig{
+			Concurrency: queue.HarnessConcurrency{
+				MediaWorkers: 3,
+				AIWorkers:    2,
+				CleanupEvery: 6 * time.Hour,
+			},
+			Media: queue.MediaWorkerConfig{
+				Queue:    queueManager,
+				WhatsApp: wpClient,
+				Groq:     groqClient,
+				Gemini:   geminiClient,
+			},
+			AI: queue.AIWorkerConfig{
+				Queue:    queueManager,
+				Supabase: sbClient,
+				WhatsApp: wpClient,
+				Gemini:   geminiClient,
+				TTS:      ttsClient,
+				MCP:      mcpServer,
+				History:  historyManager,
+			},
+		})
+		go h.Start(harnessCtx)
+		log.Printf("✅ [Harness] 3 Media Workers + 2 AI Workers iniciados")
+	} else {
+		log.Println("⚠️  [Harness] HARNESS_ENABLED=false — rodando em modo legado (goroutines diretas)")
+	}
+
 	// --- Register webhook routes ---
 	handler := webhook.NewHandler(webhook.Config{
-		Token:          cfg.EvoKey,
-		MaxMessageAge:  600,
-		GroqClient:     groqClient,
-		SupabaseClient: sbClient,
-		WhatsAppClient: wpClient,
-		GeminiClient:   geminiClient,
-		TtsClient:      ttsClient,
-		MCPServer:      mcpServer,
-		HistoryManager: historyManager,
+		Token:           cfg.WebhookToken,
+		MaxMessageAge:   600,
+		GroqClient:      groqClient,
+		SupabaseClient:  sbClient,
+		WhatsAppClient:  wpClient,
+		GeminiClient:    geminiClient,
+		TtsClient:       ttsClient,
+		MCPServer:       mcpServer,
+		HistoryManager:  historyManager,
 		FlagsmithClient: flagsmithClient,
+		HarnessQueue:    harnessQueue, // nil quando HARNESS_ENABLED=false (modo legado)
 	})
 	handler.RegisterRoutes(r)
 
@@ -186,30 +260,39 @@ func main() {
 
 func sendHeartbeat(instance string, wp ports.MessageSender, sb *supabase.Client) {
 	if wp == nil {
-		log.Println("💓 Heartbeat: DISCONNECTED")
+		log.Println("❌ Heartbeat: Adapter NOT Initialized")
 		_ = sb.UpsertBotStatus(instance, "DISCONNECTED", nil)
 		return
 	}
 
-	var connected bool
+	state := "DISCONNECTED"
 	var details map[string]interface{}
 
 	if adapter, ok := wp.(*evolution.EvolutionAdapter); ok {
-		connected = true
-		details = map[string]interface{}{"instance": adapter.InstanceName}
+		// Call Evolution API to get real connection state
+		evoState, err := adapter.GetConnectionState()
+		if err != nil {
+			log.Printf("⚠️ Heartbeat: Failed to get connection state: %v", err)
+			state = "ERROR"
+			details = map[string]interface{}{"error": err.Error()}
+		} else {
+			details = map[string]interface{}{"instance": adapter.InstanceName, "evolution_state": evoState}
+			if evoState == "open" {
+				state = "CONNECTED"
+			} else {
+				state = "DISCONNECTED"
+				log.Printf("❌ Heartbeat: WhatsApp DISCONNECTED (State: %s)", evoState)
+			}
+		}
 	} else {
-		connected = true
+		// Generic fallback
+		state = "CONNECTED"
 		details = map[string]interface{}{"note": "generic sender"}
 	}
 
-	status := "CONNECTED"
-	if !connected {
-		status = "DISCONNECTED"
-	}
-
-	if err := sb.UpsertBotStatus(instance, status, details); err != nil {
+	if err := sb.UpsertBotStatus(instance, state, details); err != nil {
 		log.Printf("❌ Heartbeat upsert falhou: %v", err)
-	} else {
-		log.Printf("💓 Heartbeat: %s", status)
+	} else if state == "CONNECTED" {
+		log.Printf("✅ Heartbeat: WhatsApp %s", state)
 	}
 }

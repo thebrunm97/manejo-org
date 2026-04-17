@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"google.golang.org/genai"
 )
 
@@ -85,7 +86,7 @@ func TestMapToGenaiSchema(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := mapToGenaiSchema(tt.input, tt.isRoot)
+			result := llm.MapToGenaiSchema(tt.input, tt.isRoot)
 			
 			// Optional: print marshalled to verify panic safety
 			_, err := json.Marshal(result)
