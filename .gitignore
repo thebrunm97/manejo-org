@@ -91,3 +91,8 @@ legacy_python/qrcode.html
 legacy_python/latest_qrcode.html
 legacy_python/test_output.txt
 
+
+# --- Temporary & Legacy (Added for release) ---
+.opencode/
+design-system/
+legacy_python/
