@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
+	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
@@ -14,6 +15,27 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
 	"strings"
 )
+
+// ActiveOutputJudge is the package-level output governance judge.
+// Set once at startup via SetOutputJudge; nil disables output governance.
+// Thread-safe for reads after initialization (set before any goroutine starts).
+var ActiveOutputJudge guardrails.OutputJudge
+
+// ActiveHITLController is the package-level HITL approval controller.
+// Set once at startup via SetHITL; nil disables HITL (development/test mode).
+var ActiveHITLController guardrails.HITLHandler
+
+// SetOutputJudge configures the package-level output judge.
+// Must be called before the first ProcessMessage invocation.
+func SetOutputJudge(judge guardrails.OutputJudge) {
+	ActiveOutputJudge = judge
+}
+
+// SetHITL configures the package-level HITL controller.
+// Must be called before the first ProcessMessage invocation.
+func SetHITL(h guardrails.HITLHandler) {
+	ActiveHITLController = h
+}
 
 // handleDuvidaFallback is the specialist multi-agent entry point.
 // It uses modular prompts, filtered tools, loop protection, and short-term memory injection.
@@ -48,6 +70,9 @@ func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, tts
 	
 	// 3. Execute Agentic Loop via Orchestrator (Agnostic)
 	orchestrator := NewOrchestrator(gemClient, sbClient, mcpServer)
+	orchestrator.OutputJudge = ActiveOutputJudge // wire output governance (nil = disabled)
+	orchestrator.HITL = ActiveHITLController     // wire HITL controller (nil = disabled)
+	orchestrator.Phone = phone                   // needed for HITL WhatsApp confirmation
 	
 	botResponse, newHistory, trace, usage, modelUsed, err := orchestrator.ExecuteAgenticLoop(ctx, profile, specPrompt, body, tools, agnosticHistory, guard)
 	if err != nil {

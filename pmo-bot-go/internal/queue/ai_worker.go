@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
+	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
@@ -39,6 +40,11 @@ type AIWorkerConfig struct {
 	MCP          *mcp.Server
 	History      *history.Manager
 	PollInterval time.Duration // Default: 200ms (polling mais rápido pois é downstream do media worker)
+
+	// GuardrailPipeline executes input validation before every LLM call.
+	// If nil, guardrails are disabled (legacy/test mode).
+	// Create via guardrails.NewDefaultPipeline() for production defaults.
+	GuardrailPipeline *guardrails.Pipeline
 }
 
 // AIWorker processa a camada de raciocínio e entrega de resposta.
@@ -117,8 +123,36 @@ func (w *AIWorker) processAIJob(ctx context.Context, job *Job, start time.Time) 
 	// O BodyText substitui o Body original (que pode ser vazio para áudios)
 	msg := job.RawPayload
 	msg.Body = job.BodyText
-	msg.IsAudio = false  // Já foi processado — IA enxerga apenas texto
-	msg.IsImage = false  // Já foi processado — IA enxerga apenas texto
+	msg.IsAudio = false // Já foi processado — IA enxerga apenas texto
+	msg.IsImage = false // Já foi processado — IA enxerga apenas texto
+
+	// ── Guardrail Layer 1: Input Validation Pipeline ──────────────────────────
+	// Runs PIIScrubber (redact) → InjectionDetector (block-or-pass).
+	// Adds < 2ms overhead on typical messages.  Attacks are blocked here,
+	// BEFORE any quota is consumed or the LLM is contacted.
+	if w.cfg.GuardrailPipeline != nil {
+		cleanInput, gr := w.cfg.GuardrailPipeline.Execute(ctx, msg.Body, job.FromPhone, job.ID)
+		if gr.Blocked {
+			log.Printf("🛡️ [AIWorker] Input BLOQUEADO pelo Guardrail [%s] job=%s reason=%s",
+				job.FromPhone, job.ID, gr.BlockReason)
+
+			// Notify the user with a clear, non-alarming message
+			_ = w.cfg.WhatsApp.SendMessage(msg.From,
+				"⚠️ Sua mensagem não pôde ser processada por violar políticas de segurança.\n"+
+					"Por favor, reformule sua pergunta e tente novamente.")
+
+			// Mark Done (not Failed) — blocked attacks should NOT be retried
+			_ = w.cfg.Queue.MarkDone(ctx, job.ID, JobMeta{Reason: "guardrail_input_blocked"})
+			return
+		}
+		// Use sanitized input (PII redacted) for all downstream processing
+		msg.Body = cleanInput
+		if len(gr.Violations) > 0 {
+			log.Printf("🛡️ [AIWorker] PII redactado no job=%s violations=%d risk=%.2f",
+				job.ID, len(gr.Violations), gr.RiskScore)
+		}
+	}
+	// ─────────────────────────────────────────────────────────────────────────
 
 	// Contexto com timeout generoso para o loop de IA (máx 90s)
 	aiCtx, cancel := context.WithTimeout(ctx, 90*time.Second)

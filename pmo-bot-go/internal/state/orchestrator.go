@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
+	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
@@ -26,9 +27,17 @@ type TraceEvent struct {
 
 // Orchestrator manages the lifecycle of an agentic session with context injection and traceability.
 type Orchestrator struct {
-	Gemini *gemini.Client
-	SB     *supabase.Client
-	MCP    *mcp.Server
+	Gemini      *gemini.Client
+	SB          *supabase.Client
+	MCP         *mcp.Server
+	// OutputJudge validates the LLM's final response before delivery.
+	// Set to nil to disable output governance (e.g. in tests).
+	OutputJudge guardrails.OutputJudge
+	// HITLController intercepts high-risk tool calls for producer confirmation.
+	// Set to nil to disable HITL (development/test mode).
+	HITL guardrails.HITLHandler
+	// Phone is the producer's WhatsApp number — required for HITL confirmation messages.
+	Phone string
 }
 
 // NewOrchestrator creates a new agentic orchestrator.
@@ -67,6 +76,7 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 	var trace []TraceEvent
 	var usage llm.UsoMetadados
 	var lastToolMsg string
+	var usedTools []string // track tool names for OutputJudge context
 	effectiveModel := o.Gemini.Config.Model
 
 	// Append initial user message if present
@@ -143,11 +153,32 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 					finalTexto = "✅ Operação registrada no sistema com sucesso!"
 				}
 			}
+
+			// ── Guardrail: Output Content Governance ─────────────────────────
+			// Run after every final LLM response (non-tool turns).
+			// Fail-open: if judge unavailable, delivers original text.
+			if finalTexto != "" && o.OutputJudge != nil {
+				verdict := o.OutputJudge.Judge(ctx, guardrails.JudgeRequest{
+					UserInput:    userMessage,
+					LLMOutput:    finalTexto,
+					Intent:       "", // Intent not available here; enriched by FSM if needed
+					ModalityFarm: profile.ModalidadePredominante,
+					ToolsUsed:    usedTools,
+				})
+				if !verdict.Approved {
+					log.Printf("🚨 [Judge] Resposta BLOQUEADA — violations=%v reason=%s",
+						verdict.Violations, verdict.Reason)
+					finalTexto = buildJudgeBlockedMessage(verdict)
+				}
+			}
+			// ───────────────────────────────────────────────────────────────
+
 			return finalTexto, history, trace, usage, effectiveModel, nil
 		}
 
 		// Se houver chamadas de ferramentas, executamos cada uma
 		for _, tc := range resp.ToolCalls {
+			usedTools = append(usedTools, tc.Nome) // record for OutputJudge
 			trace = append(trace, TraceEvent{
 				Action:   "tool_call",
 				Tool:     tc.Nome,
@@ -156,7 +187,7 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 				Time:     time.Now(),
 			})
 
-			// Context Injection
+		// Context Injection
 			args := tc.Args
 			if args == nil {
 				args = make(map[string]interface{})
@@ -164,6 +195,51 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 			args["user_id"] = profile.ID
 			args["pmo_id"] = profile.PmoAtivoID
 			args["propriedade_id"] = profile.PropriedadeAtivaID
+
+			// ── HITL: Intercept High-Risk Tools ──────────────────────────────
+			// Before ANY mutation, check if this tool requires producer approval.
+			// Strategy: soft-pause — inject a synthetic "awaiting_confirmation" tool
+			// result so the LLM generates a graceful hold message. The real
+			// execution happens in the webhook on SIM response.
+			if o.HITL != nil {
+				if needsHITL, label := guardrails.RequiresHITL(tc.Nome); needsHITL {
+					token, hitlErr := o.HITL.RequestApproval(ctx, guardrails.HITLRecord{
+						FromPhone:   o.Phone,
+						PmoID:       &profile.PmoAtivoID,
+						UserID:      profile.ID,
+						ToolName:    tc.Nome,
+						ToolArgs:    args,
+						ActionLabel: label,
+					})
+					if hitlErr == nil {
+						log.Printf("⏸️ [HITL] Aprovação solicitada — tool=%s token=%s phone=%s",
+							tc.Nome, token, o.Phone)
+						// Inject synthetic result — tells LLM the action is pending approval
+						synthResult := map[string]interface{}{
+							"status":  "awaiting_confirmation",
+							"message": fmt.Sprintf("Ação '%s' aguarda confirmação do produtor via WhatsApp.", label),
+							"token":   token,
+						}
+						synthJSON, _ := json.Marshal(synthResult)
+						history = append(history, llm.MensagemAgnostica{
+							Role:     llm.PapelTool,
+							Content:  string(synthJSON),
+							ToolID:   tc.ID,
+							ToolName: tc.Nome,
+						})
+						trace = append(trace, TraceEvent{
+							Action: "hitl_requested",
+							Tool:   tc.Nome,
+							Output: synthResult,
+							Time:   time.Now(),
+						})
+						continue // Skip actual tool execution — will resume on SIM
+					}
+					// HITL storage failed: fail-open → execute the tool normally
+					log.Printf("⚠️ [HITL] Falha ao solicitar aprovação — executando ferramenta diretamente: %v", hitlErr)
+				}
+			}
+			// ─────────────────────────────────────────────────────────────────
 
 			// Execute Tool via MCP (Agnóstico)
 			result, err := o.MCP.CallToolWithGuard(guard, tc.Nome, args)
@@ -213,3 +289,35 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 
 	return "Desculpe, excedi o limite de passos para processar sua solicitação.", history, trace, usage, effectiveModel, nil
 }
+
+// buildJudgeBlockedMessage constructs a safe, user-facing message when the
+// OutputJudge blocks a response. It avoids alarming language while being
+// honest that the content was reviewed and a specialist will follow up.
+func buildJudgeBlockedMessage(verdict guardrails.JudgeVerdict) string {
+	// Map policy codes to Portuguese user-friendly explanations
+	policyExplanations := map[string]string{
+		"PESTICIDAS_PROIBIDOS":   "menção a pesticidas proibidos no sistema orgânico",
+		"DOSAGEM_PERIGOSA":       "dosagem sugerida fora dos limites agronômicos seguros",
+		"ALUCINACAO_DADOS":       "informações não confirmadas nos seus registros",
+		"INFORMACAO_REGULATORIA": "orientação regulatória que requer verificação especializada",
+		"PII_VAZAMENTO":          "dados sensíveis detectados na resposta",
+		"CONTEUDO_OFENSIVO":      "conteúdo inadequado detectado",
+	}
+
+	reason := "política de segurança agronômica"
+	if len(verdict.Violations) > 0 {
+		if friendly, ok := policyExplanations[verdict.Violations[0]]; ok {
+			reason = friendly
+		}
+	}
+
+	return fmt.Sprintf(
+		"⚠️ *Atenção:* A resposta gerada foi revisada e continha %s.\n\n"+
+			"Para garantir a conformidade do seu sistema *orgânico*, "+
+			"um especialista será notificado e entrará em contato em breve.\n\n"+
+			"Enquanto isso, reformule sua pergunta ou consulte diretamente "+
+			"o seu técnico de campo. 🌱",
+		reason,
+	)
+}
+
