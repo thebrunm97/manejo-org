@@ -19,6 +19,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/adapter/evolution"
 	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
+	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
@@ -45,6 +46,10 @@ type Config struct {
 	MCPServer       *mcp.Server
 	HistoryManager  *history.Manager
 	FlagsmithClient *flagsmith.Client
+
+	// HITLController handles SIM/NÃO producer responses for high-risk tool approvals.
+	// If nil, HITL interception is disabled.
+	HITLController guardrails.HITLHandler
 
 	// HarnessQueue é a fila PostgreSQL durável (Harness de Produção).
 	// Se nil, o handler opera em modo legado (goroutine direta).
@@ -191,6 +196,22 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 		}(msgID)
 	}
 
+	// ─── HITL: SIM/NÃO intercept (before harness dispatch) ───────────────────
+	// Check if this is a producer response to a pending HITL approval.
+	// Pure text messages containing SIM/NÃO are matched against hitl_pending
+	// by phone number. If matched, execute the stored tool and short-circuit.
+	if h.cfg.HITLController != nil && !payload.IsAudio && !payload.IsImage {
+		bodyNorm := strings.ToUpper(strings.TrimSpace(payload.Body))
+		if bodyNorm == "SIM" || bodyNorm == "NAO" || bodyNorm == "NÃO" {
+			if h.handleHITLResponse(payload.From, bodyNorm) {
+				c.JSON(http.StatusOK, gin.H{"status": "hitl_processed"})
+				return
+			}
+			// No pending HITL found — fall through to normal processing
+		}
+	}
+	// ─────────────────────────────────────────────────────────────────────────
+
 	// ─── Dispatch: Harness (Produção) vs. Legado ───────────────────────────
 	// Se HarnessQueue estiver configurado (HARNESS_ENABLED=true), a mensagem
 	// é inserida na fila PostgreSQL durável e os workers dedicados a processam.
@@ -222,6 +243,75 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 // handleHealth is a simple liveness probe.
 func (h *Handler) handleHealth(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
+}
+
+// handleHITLResponse processes a SIM/NÃO reply from a producer.
+// Returns true if a pending HITL record was found and resolved (short-circuit the webhook).
+// Returns false if no pending record exists (caller should fall through to normal processing).
+func (h *Handler) handleHITLResponse(phone, response string) bool {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// 1. Look up the most recent waiting HITL approval for this phone
+	rec, err := h.cfg.HITLController.FindPendingByPhone(ctx, phone)
+	if err != nil {
+		log.Printf("⚠️ [HITL] Erro ao buscar aprovação pendente para %s: %v", phone, err)
+		return false
+	}
+	if rec == nil {
+		return false // No pending approval — not a HITL response
+	}
+
+	log.Printf("🔔 [HITL] Resposta recebida: phone=%s answer=%s tool=%s token=%s",
+		phone, response, rec.ToolName, rec.ID)
+
+	// 2. Handle REJECTION
+	isRejection := response == "NÃO" || response == "NAO"
+	if isRejection {
+		if err := h.cfg.HITLController.Reject(ctx, rec.ID); err != nil {
+			log.Printf("⚠️ [HITL] Erro ao rejeitar: %v", err)
+		}
+		_ = h.cfg.WhatsAppClient.SendMessage(phone,
+			"✅ Operação cancelada conforme solicitado. Nenhuma alteração foi registrada no sistema.")
+		return true
+	}
+
+	// 3. Handle APPROVAL — execute the stored tool args via MCP
+	toolName, toolArgs, err := h.cfg.HITLController.Approve(ctx, rec.ID)
+	if err != nil {
+		log.Printf("❌ [HITL] Erro ao aprovar registro: %v", err)
+		_ = h.cfg.WhatsAppClient.SendMessage(phone,
+			"⚠️ Ocorreu um erro ao processar sua confirmação. Por favor, tente registrar novamente.")
+		return true
+	}
+
+	// Execute via MCP server
+	toolCtx, toolCancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer toolCancel()
+
+	guard := mcp.NewLoopGuard(3) // single-tool execution, 3 max to be safe
+	result, toolErr := h.cfg.MCPServer.CallToolWithGuard(guard, toolName, toolArgs)
+
+	_ = toolCtx // context flows through CallToolWithGuard internally
+
+	if toolErr != nil {
+		log.Printf("❌ [HITL] Execução da ferramenta %s falhou: %v", toolName, toolErr)
+		_ = h.cfg.WhatsAppClient.SendMessage(phone,
+			fmt.Sprintf("❌ Ocorreu um erro ao executar o registro aprovado: %v\nPor favor, tente novamente.", toolErr))
+		return true
+	}
+
+	// Build success message
+	msg := "✅ *Operação confirmada e registrada com sucesso!*\n\n🌱 Seu caderno de campo foi atualizado."
+	if resMap, ok := result.(map[string]interface{}); ok {
+		if successMsg, ok := resMap["message"].(string); ok && successMsg != "" {
+			msg = "✅ " + successMsg
+		}
+	}
+
+	_ = h.cfg.WhatsAppClient.SendMessage(phone, msg)
+	log.Printf("✅ [HITL] Operação executada após aprovação: tool=%s phone=%s", toolName, phone)
+	return true
 }
 
 // processLegacy executa o fluxo de processamento legado (goroutine direta, sem persistência).

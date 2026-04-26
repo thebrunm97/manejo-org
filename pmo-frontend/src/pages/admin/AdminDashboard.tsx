@@ -12,13 +12,15 @@ import {
     XCircle,
     BookOpen,
     Timer,
-    Search
+    Search,
+    Shield,
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import LogDetailsDialog, { LogData } from '../../components/admin/LogDetailsDialog';
 import BotStatusCard from '../../components/admin/BotStatusCard';
 import KnowledgeBaseTab from '../../components/admin/KnowledgeBaseTab';
 import QueueDashboardTab from '../../components/admin/QueueDashboardTab';
+import GuardrailsDashboardTab from '../../components/admin/GuardrailsDashboardTab';
 import { BotStatus, fetchBotStatus } from '../../services/botStatusService';
 import { cn } from '../../utils/cn';
 
@@ -115,7 +117,8 @@ const AdminDashboard = () => {
         'finance': 1,
         'training': 2,
         'knowledge': 3,
-        'queue': 4
+        'queue': 4,
+        'security': 5,
     };
     
     const tabValue = tabMap[currentTab] ?? 0;
@@ -189,12 +192,9 @@ const AdminDashboard = () => {
         setModalOpen(true);
     };
 
-    const handleTabChange = (label: string) => {
-        const slug = Object.keys(tabMap).find(key => key === label.toLowerCase() || (label === 'Visão Geral' && key === 'overview') || (label === 'Financeiro' && key === 'finance') || (label === 'Treinamento' && key === 'training') || (label === 'Knowledge' && key === 'knowledge') || (label === 'Fila' && key === 'queue'));
-        if (slug) {
-            setSearchParams({ tab: slug });
-            setSearchTerm(''); // Reset search on tab change
-        }
+    const handleTabChange = (slug: string) => {
+        setSearchParams({ tab: slug });
+        setSearchTerm('');
     };
 
     const tabs = [
@@ -202,7 +202,8 @@ const AdminDashboard = () => {
         { label: 'Financeiro', slug: 'finance', icon: <DollarSign size={18} /> },
         { label: 'Treinamento', slug: 'training', icon: <Users size={18} /> },
         { label: 'Knowledge', slug: 'knowledge', icon: <BookOpen size={18} /> },
-        { label: 'Fila', slug: 'queue', icon: <Timer size={18} /> }
+        { label: 'Fila', slug: 'queue', icon: <Timer size={18} /> },
+        { label: 'Segurança', slug: 'security', icon: <Shield size={18} /> },
     ];
 
     // Filtered Data
@@ -260,7 +261,7 @@ const AdminDashboard = () => {
                     {tabs.map((tab) => (
                         <button
                             key={tab.slug}
-                            onClick={() => handleTabChange(tab.label)}
+                            onClick={() => handleTabChange(tab.slug)}
                             className={cn(
                                 "flex items-center gap-2.5 py-3 px-6 rounded-[1.25rem] text-xs font-black uppercase tracking-wider transition-all duration-500 whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-agro-ouro",
                                 currentTab === tab.slug
@@ -508,6 +509,13 @@ const AdminDashboard = () => {
             {tabValue === 4 && (
                 <div key="queue" className="animate-in fade-in zoom-in-95 duration-500">
                     <QueueDashboardTab />
+                </div>
+            )}
+
+            {/* TAB 6: GUARDRAILS SECURITY DASHBOARD */}
+            {tabValue === 5 && (
+                <div key="security" className="animate-in fade-in zoom-in-95 duration-500">
+                    <GuardrailsDashboardTab />
                 </div>
             )}
 

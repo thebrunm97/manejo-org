@@ -12,11 +12,13 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/config"
 	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
+	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
 	"github.com/thebrunm97/pmo-bot-go/internal/jobs"
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/queue"
+	"github.com/thebrunm97/pmo-bot-go/internal/state"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
 	"github.com/thebrunm97/pmo-bot-go/internal/weather"
@@ -176,11 +178,31 @@ func main() {
 		Enqueue(ctx context.Context, msg ports.IncomingMessage) error
 	}
 
+	// Declare guardrail dependencies at outer scope so the webhook handler can access them.
+	var hitlController guardrails.HITLHandler
+
 	if harnessEnabled {
 		log.Println("🚀 [Harness] HARNESS_ENABLED=true — iniciando modo produção com fila PostgreSQL")
 
 		queueManager := queue.NewManager(sbURL, sbKey)
 		harnessQueue = queueManager
+
+		// ── Guardrails: Input Pipeline + Output Judge ─────────────────────────
+		violationLogger := guardrails.NewSupabaseViolationLogger(sbURL, sbKey)
+		guardrailPipeline := guardrails.NewDefaultPipeline(violationLogger)
+
+		outputJudge := guardrails.NewGeminiFlashJudge(
+			func(prompt, sys string) (string, error) {
+				resp, _, err := geminiClient.AskExpert(prompt, sys)
+				return resp, err
+			},
+			violationLogger,
+		)
+		hitlController = guardrails.NewHITLController(sbURL, sbKey)
+		state.SetOutputJudge(outputJudge)
+		state.SetHITL(hitlController)
+		log.Println("✅ [Guardrails] Pipeline de Entrada + Output Judge + HITL ativados")
+		// ─────────────────────────────────────────────────────────────────────
 
 		harnessCtx, harnessCancel := context.WithCancel(context.Background())
 		_ = harnessCancel // O shutdown ocorre quando o processo termina (SIGINT → Gin.Run retorna)
@@ -198,13 +220,14 @@ func main() {
 				Gemini:   geminiClient,
 			},
 			AI: queue.AIWorkerConfig{
-				Queue:    queueManager,
-				Supabase: sbClient,
-				WhatsApp: wpClient,
-				Gemini:   geminiClient,
-				TTS:      ttsClient,
-				MCP:      mcpServer,
-				History:  historyManager,
+				Queue:             queueManager,
+				Supabase:          sbClient,
+				WhatsApp:          wpClient,
+				Gemini:            geminiClient,
+				TTS:               ttsClient,
+				MCP:               mcpServer,
+				History:           historyManager,
+				GuardrailPipeline: guardrailPipeline,
 			},
 		})
 		go h.Start(harnessCtx)
@@ -225,7 +248,8 @@ func main() {
 		MCPServer:       mcpServer,
 		HistoryManager:  historyManager,
 		FlagsmithClient: flagsmithClient,
-		HarnessQueue:    harnessQueue, // nil quando HARNESS_ENABLED=false (modo legado)
+		HarnessQueue:    harnessQueue,    // nil quando HARNESS_ENABLED=false (modo legado)
+		HITLController:  hitlController,  // nil quando HARNESS_ENABLED=false
 	})
 	handler.RegisterRoutes(r)
 
