@@ -127,7 +127,7 @@ func connectInstanceGo(baseURL string) {
 	url := fmt.Sprintf("%s/instance/connect", baseURL)
 	payload := map[string]interface{}{
 		"webhookUrl": webhookURL,
-		"subscribe":  []string{"MESSAGES_UPSERT", "MESSAGES_UPDATE", "SEND_MESSAGE"},
+		"subscribe":  []string{"MESSAGE", "SEND_MESSAGE", "CONNECTION"},
 		"immediate":  true,
 	}
 	body, _ := json.Marshal(payload)
@@ -136,7 +136,11 @@ func connectInstanceGo(baseURL string) {
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
-	resp, _ := client.Do(req)
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Warning: Failed to connect instance: %v", err)
+		return
+	}
 	defer resp.Body.Close()
 	fmt.Println("[✓] Go Instance connection initiated via /instance/connect")
 }
@@ -146,7 +150,7 @@ func setWebhookNode(baseURL string) {
 	payload := map[string]interface{}{
 		"enabled": true,
 		"url":     webhookURL,
-		"events":  []string{"MESSAGES_UPSERT", "MESSAGES_UPDATE", "SEND_MESSAGE"},
+		"events":  []string{"MESSAGE", "SEND_MESSAGE", "CONNECTION"},
 	}
 	body, _ := json.Marshal(payload)
 	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(body))

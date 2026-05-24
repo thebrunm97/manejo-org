@@ -15,9 +15,9 @@ curl --location --request POST "$EVOLUTION_BASE_URL/webhook/set/$INSTANCE_NAME" 
     \"url\": \"$WEBHOOK_URL\",
     \"enabled\": true,
     \"events\": [
-        \"MESSAGES_UPSERT\",
-        \"MESSAGES_UPDATE\",
-        \"SEND_MESSAGE\"
+        \"MESSAGE\",
+        \"SEND_MESSAGE\",
+        \"CONNECTION\"
     ]
 }"
 
