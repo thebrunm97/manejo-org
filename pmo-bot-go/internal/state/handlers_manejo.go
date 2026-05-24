@@ -118,51 +118,48 @@ func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profi
 		recordLog(sbClient, profile, originalBody, botResponse, modelConfigured, "fsm-v4", 0, 0, "registro", toMap(ext), startTime, true, nil)
 		
 		return botResponse, ProcessResult{Success: true, Reason: "record_saved"}
-	} else {
-		payload := map[string]interface{}{
-			"data":                ext.Data,
-			"produto":             ext.InsumoCultura,
-			"quantidade_valor":    parseToFloat(ext.Quantidade),
-			"quantidade_unidade":  ext.Unidade,
-			"talhao_nome":         ext.Localizacao.Talhao,
-			"canteiro_ids":        ext.Localizacao.Canteiros,
-			"fornecedor":          ext.Fornecedor,
-			"insumo_aplicado":     ext.InsumoAplicado,
-			"metodo_aplicacao":    ext.Atividade,
-			"observacao_original": originalBody,
-		}
-		resp, err := sbClient.RegistrarOperacaoCampoRPC(ctx, map[string]interface{}{
-			"pmo_id_arg":          pmoID,
-			"propriedade_id_arg":  profile.PropriedadeAtivaID,
-			"user_id_arg":         profile.ID,
-			"tipo_arg":            ext.Atividade,
-			"payload_arg":         payload,
-		}, ext.Data)
-
-		if err != nil {
-			return "❌ Falha técnica ao acessar o banco de dados.", ProcessResult{Success: false, Reason: "rpc_http_error"}
-		}
-
-		if status, ok := resp["status"].(string); ok && status == "error" {
-			return fmt.Sprintf("❌ Erro no Registro: %v", resp["message"]), ProcessResult{Success: false, Reason: "rpc_database_error"}
-		}
-
-		id := resp["id"]
-		lote := resp["lote"]
-
-		if id == nil {
-			return "❌ Falha de Persistência: O registro foi confirmado pela API, mas não retornou um ID (Bloqueio de RLS?). Verifique se você tem permissão nesta fazenda.", ProcessResult{Success: false, Reason: "silent_failure_id_null"}
-		}
-
-		// Cleanup State and Feedback
-		if historyManager != nil { historyManager.ClearFSMState(phone) }
-		
-		botResponse := fmt.Sprintf("✅ *Registro com Sucesso!*\n*Atividade:* %s\n*Item:* %s\n*Qtd:* %v %s\n*Lote:* %v\n*ID:* %v", ext.Atividade, ext.InsumoCultura, ext.Quantidade, ext.Unidade, lote, id)
-		recordLog(sbClient, profile, originalBody, botResponse, modelConfigured, "fsm-v4", 0, 0, "registro", toMap(ext), startTime, true, nil)
-		
-		return botResponse, ProcessResult{Success: true, Reason: "record_saved"}
 	}
 
-	// Fallback for unexpected flows
-	return "❌ Erro inesperado no fluxo de finalização.", ProcessResult{Success: false, Reason: "unknown_flow"}
+	payload := map[string]interface{}{
+		"data":                ext.Data,
+		"produto":             ext.InsumoCultura,
+		"quantidade_valor":    parseToFloat(ext.Quantidade),
+		"quantidade_unidade":  ext.Unidade,
+		"talhao_nome":         ext.Localizacao.Talhao,
+		"canteiro_ids":        ext.Localizacao.Canteiros,
+		"fornecedor":          ext.Fornecedor,
+		"insumo_aplicado":     ext.InsumoAplicado,
+		"metodo_aplicacao":    ext.Atividade,
+		"observacao_original": originalBody,
+	}
+	resp, err := sbClient.RegistrarOperacaoCampoRPC(ctx, map[string]interface{}{
+		"pmo_id_arg":          pmoID,
+		"propriedade_id_arg":  profile.PropriedadeAtivaID,
+		"user_id_arg":         profile.ID,
+		"tipo_arg":            ext.Atividade,
+		"payload_arg":         payload,
+	}, ext.Data)
+
+	if err != nil {
+		return "❌ Falha técnica ao acessar o banco de dados.", ProcessResult{Success: false, Reason: "rpc_http_error"}
+	}
+
+	if status, ok := resp["status"].(string); ok && status == "error" {
+		return fmt.Sprintf("❌ Erro no Registro: %v", resp["message"]), ProcessResult{Success: false, Reason: "rpc_database_error"}
+	}
+
+	id := resp["id"]
+	lote := resp["lote"]
+
+	if id == nil {
+		return "❌ Falha de Persistência: O registro foi confirmado pela API, mas não retornou um ID (Bloqueio de RLS?). Verifique se você tem permissão nesta fazenda.", ProcessResult{Success: false, Reason: "silent_failure_id_null"}
+	}
+
+	// Cleanup State and Feedback
+	if historyManager != nil { historyManager.ClearFSMState(phone) }
+	
+	botResponse := fmt.Sprintf("✅ *Registro com Sucesso!*\n*Atividade:* %s\n*Item:* %s\n*Qtd:* %v %s\n*Lote:* %v\n*ID:* %v", ext.Atividade, ext.InsumoCultura, ext.Quantidade, ext.Unidade, lote, id)
+	recordLog(sbClient, profile, originalBody, botResponse, modelConfigured, "fsm-v4", 0, 0, "registro", toMap(ext), startTime, true, nil)
+	
+	return botResponse, ProcessResult{Success: true, Reason: "record_saved"}
 }
