@@ -403,4 +403,23 @@ func (s *Server) InitializeTools() {
 		Category: CategoryDatabase,
 		Handler:  s.handleSelecionarPMO,
 	})
+
+	s.RegisterTool(Tool{
+		Definition: llm.FerramentaAgnostica{
+			Name:        "consultar_demandas_cooperativa",
+			Description: "Consulta o 'Mural de Demandas' das cooperativas e associações às quais o agricultor está vinculado. Use esta ferramenta sempre que o usuário perguntar sobre 'demandas atuais', 'o que a cooperativa está pedindo', 'quais produtos são necessários', 'contratos abertos' ou 'oportunidades de venda'. Esta ferramenta retorna dados estruturados e atualizados diretamente do banco de dados, sendo a fonte primária para informações de mercado.",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"propriedade_id": map[string]interface{}{
+						"type":        "integer",
+						"description": "ID da propriedade ativa do usuário (fazenda). OBRIGATÓRIO: Extraia do cabeçalho de contexto injetado pelo sistema.",
+					},
+				},
+				"required": []string{"propriedade_id"},
+			},
+		},
+		Category: CategoryDatabase,
+		Handler:  s.handleConsultarDemandasCooperativa,
+	})
 }

@@ -242,15 +242,15 @@ type InsumoProibido struct {
 }
 
 type DemandaColetiva struct {
-	ID            string    `json:"id"`
-	Titulo        string    `json:"titulo"`
-	Cultura       string    `json:"cultura"`
-	Quantidade    float64   `json:"quantidade"`
-	Unidade       string    `json:"unidade"`
-	DataEntrega   string    `json:"data_entrega"`
-	PrecoBase     float64   `json:"preco_base"`
-	Status        string    `json:"status"` // aberta, em_captacao, preenchida, encerrada, cancelada
-	Modalidade    string    `json:"modalidade"` // TODAS, ORGANICO, etc
+	ID                string  `json:"id"`
+	Titulo            string  `json:"titulo"`
+	Cultura           string  `json:"cultura"`
+	QuantidadeTotal   float64 `json:"quantidade_total"`
+	Unidade           string  `json:"unidade"`
+	DataEntrega       string  `json:"data_entrega"`
+	PrecoReferencia   float64 `json:"preco_referencia"`
+	Status            string  `json:"status"` // aberta, em_captacao, preenchida, encerrada, cancelada
+	ModalidadeExigida string  `json:"modalidade_exigida"`
 }
 
 type CotaProdutorInsert struct {
@@ -1625,4 +1625,49 @@ func (c *Client) UpdateActivePropriedade(userID string, propriedadeID int64, pmo
 	reqURL := fmt.Sprintf("%s/rest/v1/profiles?id=eq.%s", c.config.URL, userID)
 	_, err := c.doRequest(http.MethodPatch, reqURL, body)
 	return err
+}
+
+// FetchDemandasPorPropriedade busca todas as demandas abertas das organizações vinculadas a uma propriedade.
+func (c *Client) FetchDemandasPorPropriedade(propID int64) ([]DemandaColetiva, error) {
+	// 1. Buscar os IDs das organizações vinculadas à propriedade
+	reqURLVinculos := fmt.Sprintf("%s/rest/v1/organizacao_membros?propriedade_id=eq.%d&select=organizacao_id", c.config.URL, propID)
+	bodyVinculos, err := c.doRequest(http.MethodGet, reqURLVinculos, nil)
+	if err != nil {
+		return nil, fmt.Errorf("falha ao buscar vínculos de organização: %w", err)
+	}
+
+	var vinculos []struct {
+		OrganizacaoID string `json:"organizacao_id"`
+	}
+	if err := json.Unmarshal(bodyVinculos, &vinculos); err != nil {
+		return nil, fmt.Errorf("falha ao parsear vínculos: %w", err)
+	}
+
+	if len(vinculos) == 0 {
+		return nil, nil // Nenhuma organização vinculada
+	}
+
+	// Extrair IDs para o filtro IN
+	var orgIDs []string
+	for _, v := range vinculos {
+		orgIDs = append(orgIDs, fmt.Sprintf("\"%s\"", v.OrganizacaoID))
+	}
+	orgIDsStr := strings.Join(orgIDs, ",")
+
+	// 2. Buscar as demandas dessas organizações
+	today := time.Now().Format("2006-01-02")
+	reqURLDemandas := fmt.Sprintf("%s/rest/v1/demandas_coletivas?cooperativa_id=in.(%s)&status=eq.aberta&data_entrega=gte.%s&select=*&order=data_entrega.asc", 
+		c.config.URL, orgIDsStr, today)
+
+	bodyDemandas, err := c.doRequest(http.MethodGet, reqURLDemandas, nil)
+	if err != nil {
+		return nil, fmt.Errorf("falha ao buscar demandas: %w", err)
+	}
+
+	var demandas []DemandaColetiva
+	if err := json.Unmarshal(bodyDemandas, &demandas); err != nil {
+		return nil, fmt.Errorf("falha ao parsear demandas: %w", err)
+	}
+
+	return demandas, nil
 }

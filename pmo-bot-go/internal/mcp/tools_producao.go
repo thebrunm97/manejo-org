@@ -105,3 +105,58 @@ func (s *Server) handleRegistrarVenda(args map[string]interface{}) (interface{},
 
 	return fmt.Sprintf("Venda de %s (%v %s) para '%s' salva com sucesso.", produto, qtd, unidade, cliente), nil
 }
+
+func (s *Server) handleConsultarDemandasCooperativa(args map[string]interface{}) (interface{}, error) {
+	log.Printf("📋 [MCP-TOOL] handleConsultarDemandasCooperativa Args: %+v", args)
+
+	propIDFloat, _ := parseArgToFloat(args["propriedade_id"])
+	propID := int64(propIDFloat)
+
+	if propID == 0 {
+		return "Erro: propriedade_id não informado. Não consigo consultar as demandas sem saber a qual fazenda você pertence.", nil
+	}
+
+	demandas, err := s.supabase.FetchDemandasPorPropriedade(propID)
+	if err != nil {
+		return fmt.Sprintf("Erro ao consultar o mural de demandas: %v", err), nil
+	}
+
+	if len(demandas) == 0 {
+		return "Não encontrei nenhuma demanda aberta no mural das suas organizações no momento.", nil
+	}
+
+	var response string
+	response = "Aqui estão as demandas abertas para as suas organizações:\n\n"
+	for i, d := range demandas {
+		prazo := "sem prazo"
+		if d.DataEntrega != "" {
+			// Suportando formatos variados (YYYY-MM-DD ou RFC3339)
+			dateStr := d.DataEntrega
+			if len(dateStr) > 10 {
+				dateStr = dateStr[:10]
+			}
+			t, err := time.Parse("2006-01-02", dateStr)
+			if err == nil {
+				prazo = t.Format("02/01/2006")
+			} else {
+				prazo = d.DataEntrega
+			}
+		}
+
+		response += fmt.Sprintf("%d) *%s*\n", i+1, d.Titulo)
+		response += fmt.Sprintf("   • Produto: %s\n", d.Cultura)
+		response += fmt.Sprintf("   • Volume: %v %s\n", d.QuantidadeTotal, d.Unidade)
+		if d.PrecoReferencia > 0 {
+			response += fmt.Sprintf("   • Preço Ref.: R$ %.2f/%s\n", d.PrecoReferencia, d.Unidade)
+		}
+		response += fmt.Sprintf("   • Prazo: %s\n", prazo)
+		if d.ModalidadeExigida != "" {
+			response += fmt.Sprintf("   • Modalidade: %s\n", d.ModalidadeExigida)
+		}
+		response += "\n"
+	}
+
+	response += "Para ofertar sua produção para alguma destas demandas, você pode me informar por aqui que eu registro sua intenção."
+
+	return response, nil
+}
