@@ -254,12 +254,21 @@ func main() {
 	handler.RegisterRoutes(r)
 
 	// --- Heartbeat goroutine ---
+	// Also checks if webhook is still registered after reconnections.
+	// evolution-go loses webhook config on disconnect/reconnect cycles.
 	go func() {
 		ticker := time.NewTicker(60 * time.Second)
 		defer ticker.Stop()
 
 		for range ticker.C {
-			sendHeartbeat(cfg.EvoInstance, wpClient, sbClient)
+			isConnected := sendHeartbeat(cfg.EvoInstance, wpClient, sbClient)
+			if isConnected && cfg.WebhookURL != "" {
+				if err := wpClient.ConfigureWebhooks(cfg.WebhookURL); err != nil {
+					log.Printf("⚠️ [Heartbeat] Falha ao reconfigurar webhook: %v", err)
+				} else {
+					log.Printf("🔁 [Heartbeat] Webhook reconfigurado: %s", cfg.WebhookURL)
+				}
+			}
 		}
 	}()
 
@@ -282,41 +291,45 @@ func main() {
 	}
 }
 
-func sendHeartbeat(instance string, wp ports.MessageSender, sb *supabase.Client) {
+// sendHeartbeat checks WhatsApp connection state and updates the bot status in Supabase.
+// Returns true if the instance is currently connected.
+func sendHeartbeat(instance string, wp ports.MessageSender, sb *supabase.Client) bool {
 	if wp == nil {
 		log.Println("❌ Heartbeat: Adapter NOT Initialized")
 		_ = sb.UpsertBotStatus(instance, "DISCONNECTED", nil)
-		return
+		return false
 	}
 
-	state := "DISCONNECTED"
+	status := "DISCONNECTED"
 	var details map[string]interface{}
+	isConnected := false
 
 	if adapter, ok := wp.(*evolution.EvolutionAdapter); ok {
-		// Call Evolution API to get real connection state
 		evoState, err := adapter.GetConnectionState()
 		if err != nil {
 			log.Printf("⚠️ Heartbeat: Failed to get connection state: %v", err)
-			state = "ERROR"
+			status = "ERROR"
 			details = map[string]interface{}{"error": err.Error()}
 		} else {
 			details = map[string]interface{}{"instance": adapter.InstanceName, "evolution_state": evoState}
 			if evoState == "open" {
-				state = "CONNECTED"
+				status = "CONNECTED"
+				isConnected = true
 			} else {
-				state = "DISCONNECTED"
+				status = "DISCONNECTED"
 				log.Printf("❌ Heartbeat: WhatsApp DISCONNECTED (State: %s)", evoState)
 			}
 		}
 	} else {
-		// Generic fallback
-		state = "CONNECTED"
+		status = "CONNECTED"
+		isConnected = true
 		details = map[string]interface{}{"note": "generic sender"}
 	}
 
-	if err := sb.UpsertBotStatus(instance, state, details); err != nil {
+	if err := sb.UpsertBotStatus(instance, status, details); err != nil {
 		log.Printf("❌ Heartbeat upsert falhou: %v", err)
-	} else if state == "CONNECTED" {
-		log.Printf("✅ Heartbeat: WhatsApp %s", state)
+	} else if status == "CONNECTED" {
+		log.Printf("✅ Heartbeat: WhatsApp %s", status)
 	}
+	return isConnected
 }

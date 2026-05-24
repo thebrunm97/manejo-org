@@ -257,9 +257,9 @@ func (a *EvolutionAdapter) ConfigureWebhooks(webhookURL string) error {
 		"url":     webhookURL,
 		"enabled": true,
 		"events": []string{
-			"MESSAGES_UPSERT",
-			"MESSAGES_UPDATE",
+			"MESSAGE",
 			"SEND_MESSAGE",
+			"CONNECTION",
 		},
 	}
 

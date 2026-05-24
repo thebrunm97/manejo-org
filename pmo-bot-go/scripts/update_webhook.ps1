@@ -13,7 +13,7 @@ $headers = @{
 $body = @{
     "url" = $WEBHOOK_URL
     "enabled" = $true
-    "events" = @("MESSAGES_UPSERT", "MESSAGES_UPDATE", "SEND_MESSAGE")
+    "events" = @("MESSAGE", "SEND_MESSAGE", "CONNECTION")
 } | ConvertTo-Json
 
 Invoke-RestMethod -Uri "$EVOLUTION_BASE_URL/webhook/set/$INSTANCE_NAME" -Method Post -Headers $headers -Body $body
