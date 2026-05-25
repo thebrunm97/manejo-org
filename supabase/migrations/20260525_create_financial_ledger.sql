@@ -207,7 +207,6 @@ WITH raw_data AS (
         cc.fornecedor,
         cc.nota_fiscal,
         COALESCE(cc.user_id, (SELECT user_id FROM public.pmos WHERE id = cc.pmo_id)) AS u_id,
-        cc.created_at,
         cc.talhao_id
     FROM public.caderno_campo cc
     WHERE cc.valor_total IS NOT NULL 
@@ -228,8 +227,7 @@ ins_tx AS (
         fornecedor,
         fornecedor_cliente,
         nota_fiscal,
-        user_id,
-        created_at
+        user_id
     )
     SELECT 
         tx_id,
@@ -243,8 +241,7 @@ ins_tx AS (
         fornecedor,
         fornecedor,
         nota_fiscal,
-        u_id,
-        created_at
+        u_id
     FROM raw_data
 )
 INSERT INTO public.transacao_alocacoes (
