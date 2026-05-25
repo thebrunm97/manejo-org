@@ -422,4 +422,31 @@ func (s *Server) InitializeTools() {
 		Category: CategoryDatabase,
 		Handler:  s.handleConsultarDemandasCooperativa,
 	})
+
+	s.RegisterTool(Tool{
+		Definition: llm.FerramentaAgnostica{
+			Name:        "consultar_balanco_financeiro",
+			Description: "Retorna o balanço financeiro (DRE) da fazenda. Usa esta ferramenta para responder a perguntas sobre receitas, despesas, lucros ou categorias onde se gastou mais dinheiro.",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"propriedade_id": map[string]interface{}{
+						"type":        "integer",
+						"description": "ID da propriedade ativa do usuário (fazenda). OBRIGATÓRIO: Extraia do cabeçalho de contexto injetado pelo sistema.",
+					},
+					"ano": map[string]interface{}{
+						"type":        "integer",
+						"description": "O ano do balanço (ex: 2026). Se o utilizador não especificar, usa o ano atual.",
+					},
+					"mes": map[string]interface{}{
+						"type":        "integer",
+						"description": "O mês do balanço (1 a 12). Se o utilizador pedir o ano todo, deixa vazio.",
+					},
+				},
+				"required": []string{"propriedade_id", "ano"},
+			},
+		},
+		Category: CategoryDatabase,
+		Handler:  s.handleConsultarBalancoFinanceiro,
+	})
 }
