@@ -2,6 +2,7 @@ import React from 'react';
 import { MapPin, X } from 'lucide-react';
 import { ColheitaDraft, ValidationErrors } from '../../../../hooks/manual-record';
 import ColheitaTab from '../Tabs/ColheitaTab';
+import ValorTotalInput from './ValorTotalInput';
 
 interface ColheitaFormProps {
     formData: ColheitaDraft;
@@ -111,6 +112,16 @@ const ColheitaForm: React.FC<ColheitaFormProps> = ({
                 errors={errors}
                 isEditMode={isEditMode}
             />
+
+            {/* Custo da Operação (Integração Financeira Híbrida) */}
+            <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 sm:p-5">
+                <ValorTotalInput
+                    id="colheita-valor-total"
+                    value={formData.valor_total}
+                    onChange={(v) => updateForm('valor_total', v)}
+                    hint="Ex: custo com mão de obra, fretes ou embalagens desta colheita."
+                />
+            </div>
 
             {/* Campo de Observação Geral */}
             <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 sm:p-5">

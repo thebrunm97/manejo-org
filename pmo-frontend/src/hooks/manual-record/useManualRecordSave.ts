@@ -47,6 +47,7 @@ export function useManualRecordSave({
                     produto: d.produto,
                     quantidade_valor: parseFloat(d.quantidade) || 0,
                     quantidade_unidade: d.unidade,
+                    valor_total: d.valor_total ?? undefined,
                     detalhes_tecnicos: { 
                         variedade: d.variedade, 
                         lote_semente: d.loteSemente, 
@@ -85,6 +86,7 @@ export function useManualRecordSave({
                     ...payloadBase,
                     tipo_atividade: ActivityType.MANEJO,
                     produto: produtoRef || d.produto,
+                    valor_total: d.valor_total ?? undefined,
                     detalhes_tecnicos: detalhes
                 } as CadernoEntry;
             }
@@ -102,6 +104,7 @@ export function useManualRecordSave({
                     tipo_atividade: ActivityType.COLHEITA,
                     quantidade_valor: parseFloat(d.qtdColheita) || 0,
                     quantidade_unidade: d.unidadeColheita,
+                    valor_total: d.valor_total ?? undefined,
                     detalhes_tecnicos: detalhes,
                     houve_descartes: d.houveDescartes,
                     qtd_descartes: d.houveDescartes ? (parseFloat(d.qtdDescartes) || 0) : undefined,
@@ -140,6 +143,7 @@ export function useManualRecordSave({
                     quantidade_unidade: d.unidade,
                     fornecedor: d.cliente,
                     nota_fiscal: d.nf,
+                    valor_total: d.valor_total ?? undefined,
                     detalhes_tecnicos: detalhes
                 } as CadernoEntry;
             }
@@ -152,6 +156,7 @@ export function useManualRecordSave({
                     quantidade_unidade: d.unidade,
                     fornecedor: d.fornecedor,
                     nota_fiscal: d.nfRecibo,
+                    valor_total: d.valor_total ?? undefined,
                     detalhes_tecnicos: { tipo_registro: 'compra' }
                 } as CadernoEntry;
             }

@@ -3,6 +3,7 @@ import { MapPin, X } from 'lucide-react';
 import { ManejoDraft, ValidationErrors } from '../../../../hooks/manual-record';
 import { ManejoSubtype } from '../../../../types/CadernoTypes';
 import ManejoTab from '../Tabs/ManejoTab';
+import ValorTotalInput from './ValorTotalInput';
 
 interface ManejoFormProps {
     formData: ManejoDraft;
@@ -135,6 +136,17 @@ const ManejoForm: React.FC<ManejoFormProps> = ({
                 checkInsumoOrganico={checkInsumoOrganico}
                 organicWarning={organicWarning}
             />
+
+            {/* Campo de Observação Geral */}
+            {/* Custo da Operação (Integração Financeira Híbrida) */}
+            <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 sm:p-5">
+                <ValorTotalInput
+                    id="manejo-valor-total"
+                    value={formData.valor_total}
+                    onChange={(v) => updateForm('valor_total', v)}
+                    hint="Ex: custo de insumos aplicados ou serviços contratados nesta operação."
+                />
+            </div>
 
             {/* Campo de Observação Geral */}
             <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 sm:p-5">

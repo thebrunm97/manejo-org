@@ -34,7 +34,6 @@ import {
 } from '../../types/CadernoTypes';
 import {
     TipoRegistro,
-    useRecordFormState
 } from '../../hooks/manual-record';
 import { useCadernoOfflineLogic } from '../../hooks/offline/useCadernoOfflineLogic';
 import { fetchAllPmos } from '../../services/pmoService';

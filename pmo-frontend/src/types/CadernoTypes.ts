@@ -172,6 +172,9 @@ export interface BaseRegistro {
     qtd_descartes?: number;
     unidade_descartes?: string;
     caderno_campo_canteiros?: { canteiros: { id: number; nome: string } }[];
+
+    // Financial Ledger Integration (Hybrid Cost Tracking)
+    valor_total?: number;
 }
 
 export interface RegistroLimpeza extends BaseRegistro {
