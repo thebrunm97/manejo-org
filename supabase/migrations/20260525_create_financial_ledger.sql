@@ -14,12 +14,30 @@ BEGIN;
 -- 1.1 Categorias Financeiras
 CREATE TABLE IF NOT EXISTS public.categorias_financeiras (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    nome text NOT NULL UNIQUE,
+    nome text NOT NULL,
     tipo text NOT NULL CHECK (tipo IN ('RECEITA', 'DESPESA')),
     descricao text,
     pmo_id bigint REFERENCES public.pmos(id) ON DELETE CASCADE,
     created_at timestamptz DEFAULT now()
 );
+
+-- Deduplica antes de tentar adicionar a restrição UNIQUE
+DELETE FROM public.categorias_financeiras a 
+USING public.categorias_financeiras b 
+WHERE a.id < b.id AND a.nome = b.nome;
+
+-- Adiciona a constraint de UNIQUE no nome de forma segura
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM pg_constraint 
+        WHERE conname = 'categorias_financeiras_nome_key'
+    ) THEN
+        ALTER TABLE public.categorias_financeiras 
+            ADD CONSTRAINT categorias_financeiras_nome_key UNIQUE (nome);
+    END IF;
+END $$;
 
 -- 1.2 Transações Financeiras (O Fato)
 CREATE TABLE IF NOT EXISTS public.transacoes_financeiras (
