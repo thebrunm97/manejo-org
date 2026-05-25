@@ -133,7 +133,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 	if historyManager != nil {
 		state, ctxState, _ := historyManager.GetFSMState(phone)
 		if state != StateInitial {
-			return handleActiveState(state, ctxState, body, msg.From, phone, profile, respondWithAudio, sbClient, wpClient, ttsClient, historyManager, startTime, gemClient.Config.Model)
+			return handleActiveState(state, ctxState, body, msg.From, phone, profile, respondWithAudio, sbClient, wpClient, ttsClient, historyManager, startTime, gemClient.Config.Model, gemClient, mcpServer)
 		}
 	}
 
@@ -340,21 +340,30 @@ func dispatchEntity(ctx context.Context, entity llm.AcaoEstruturada, profile *su
 	switch extracted.Intencao {
 	case "registro":
 		if parseToFloat(extracted.Quantidade) <= 0 && extracted.Atividade != "Compra/Aquisição" {
-			botResponse := "Qual a quantidade exata utilizada?"
+			item := extracted.InsumoCultura
+			if item == "" {
+				item = extracted.InsumoAplicado
+			}
+			var botResponse string
+			if item != "" {
+				botResponse = fmt.Sprintf("Qual a quantidade exata de *%s* utilizada?", item)
+			} else {
+				botResponse = "Qual a quantidade exata utilizada?"
+			}
 			if historyManager != nil { historyManager.SetFSMState(phone, StateAguardandoQuantidade, toMap(extracted), nil) }
 			return botResponse, ProcessResult{Success: false, Reason: "missing_quantity"}
 		}
-		return finalizeRegistration(ctx, extracted, profile, sbClient, wpClient, ttsClient, phone, body, respondWithAudio, startTime, historyManager, phone, gemClient.Config.Model)
+		return finalizeRegistration(ctx, extracted, profile, sbClient, wpClient, ttsClient, phone, body, respondWithAudio, startTime, historyManager, phone, routerModel)
 
 	case "limpeza":
-		return handleLimpeza(ctx, extracted, profile, sbClient, wpClient, ttsClient, phone, body, respondWithAudio, startTime, gemClient.Config.Model, routerModel, 0, 0)
+		return handleLimpeza(ctx, extracted, profile, sbClient, wpClient, ttsClient, phone, body, respondWithAudio, startTime, routerModel, routerModel, 0, 0)
 
 	case "registro_financeiro":
 		return handleRegistroFinanceiro(ctx, extracted, profile, sbClient, wpClient, ttsClient, phone, respondWithAudio)
 
 	case "assumir_cota":
 		// Note: handleAssumirCota might need similar refactor if used in loops, but for now we focus on records
-		return handleAssumirCota(ctx, extracted, profile, sbClient, wpClient, gemClient, ttsClient, phone, body, respondWithAudio, startTime, gemClient.Config.Model, routerModel)
+		return handleAssumirCota(ctx, extracted, profile, sbClient, wpClient, gemClient, ttsClient, phone, body, respondWithAudio, startTime, routerModel, routerModel)
 
 	case "duvida":
 		return handleDuvidaFallback(ctx, wpClient, ttsClient, phone, gemClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, string(routedIntent), filteredTools, guard, historyManager, mcpServer)
@@ -377,10 +386,17 @@ func dispatchEntity(ctx context.Context, entity llm.AcaoEstruturada, profile *su
 }
 
 // handleActiveState dispatches turn-2 messages to their respective handlers
-func handleActiveState(state string, ctxState map[string]interface{}, body string, from string, phone string, profile *supabase.Profile, respondWithAudio bool, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, historyManager *history.Manager, startTime time.Time, modelConfigured string) ProcessResult {
+// handleActiveState dispatches turn-2 messages to their respective handlers
+func handleActiveState(state string, ctxState map[string]interface{}, body string, from string, phone string, profile *supabase.Profile, respondWithAudio bool, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, historyManager *history.Manager, startTime time.Time, modelConfigured string, gemClient *gemini.Client, mcpServer *mcp.Server) ProcessResult {
 	ctx := context.Background()
 	var botResponse string
 	var res ProcessResult
+
+	// 1. Fetch pending entities before executing the handler (because the handler might clear the FSM state)
+	var pending []llm.AcaoEstruturada
+	if historyManager != nil {
+		_, _, pending = historyManager.GetFSMState(phone)
+	}
 
 	switch state {
 	case StateAguardandoQuantidade:
@@ -389,6 +405,67 @@ func handleActiveState(state string, ctxState map[string]interface{}, body strin
 		botResponse, res = handleAguardandoCompra(ctx, body, from, phone, profile, respondWithAudio, sbClient, wpClient, ttsClient, historyManager, ctxState, startTime, modelConfigured)
 	default:
 		return ProcessResult{Success: false, Reason: "unknown_state"}
+	}
+
+	// 2. If the current action succeeded, consume pending entities
+	if res.Success && len(pending) > 0 {
+		responses := []string{botResponse}
+
+		for len(pending) > 0 {
+			next := pending[0]
+			pending = pending[1:]
+
+			log.Printf("🔄 [FSM-PENDING] Consumindo ação pendente do batch: %s", next.Intencao)
+			resMsg, nextRes := dispatchEntity(ctx, next, profile, sbClient, wpClient, gemClient, ttsClient, mcpServer, historyManager, phone, "", respondWithAudio, startTime, llm.IntentDatabase, nil, nil, modelConfigured)
+
+			if nextRes.Success {
+				if resMsg != "" {
+					responses = append(responses, resMsg)
+				}
+				res = nextRes
+			} else {
+				// The next entity needs more info and has set the FSM state.
+				// Save the remaining entities back to history.
+				if historyManager != nil {
+					currState, currCtx, _ := historyManager.GetFSMState(phone)
+					historyManager.SetFSMState(phone, currState, currCtx, pending)
+				}
+
+				activity := next.Atividade
+				if activity == "" {
+					activity = next.Intencao
+				}
+				activityDisplay := activity
+				if len(activity) > 0 {
+					activityDisplay = strings.ToUpper(activity[:1]) + strings.ToLower(activity[1:])
+				}
+
+				item := next.InsumoCultura
+				if item == "" {
+					item = next.InsumoAplicado
+				}
+
+				var transition string
+				if item != "" {
+					transition = fmt.Sprintf("📅 *Agora, em relação ao registro de %s (%s):*", item, activityDisplay)
+				} else {
+					transition = fmt.Sprintf("📅 *Agora, em relação ao registro de %s:*", activityDisplay)
+				}
+
+				if resMsg != "" {
+					resMsg = transition + "\n" + resMsg
+				}
+				responses = append(responses, resMsg)
+				res = nextRes
+				botResponse = strings.Join(responses, "\n\n---\n\n")
+				if botResponse != "" {
+					sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio)
+				}
+				return res
+			}
+		}
+
+		botResponse = strings.Join(responses, "\n\n---\n\n")
 	}
 
 	if botResponse != "" {
