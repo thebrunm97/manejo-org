@@ -21,6 +21,10 @@ CREATE TABLE IF NOT EXISTS public.categorias_financeiras (
     created_at timestamptz DEFAULT now()
 );
 
+-- Assegura que pmo_id existe se a tabela já existia antes
+ALTER TABLE public.categorias_financeiras
+    ADD COLUMN IF NOT EXISTS pmo_id bigint REFERENCES public.pmos(id) ON DELETE CASCADE;
+
 -- Deduplica antes de tentar adicionar a restrição UNIQUE
 DELETE FROM public.categorias_financeiras a 
 USING public.categorias_financeiras b 
@@ -58,6 +62,22 @@ CREATE TABLE IF NOT EXISTS public.transacoes_financeiras (
     user_id uuid REFERENCES auth.users(id) DEFAULT auth.uid()
 );
 
+-- Assegura colunas extras caso a tabela já existisse
+ALTER TABLE public.transacoes_financeiras
+    ADD COLUMN IF NOT EXISTS pmo_id bigint REFERENCES public.pmos(id) ON DELETE SET NULL,
+    ADD COLUMN IF NOT EXISTS propriedade_id bigint REFERENCES public.propriedades(id) ON DELETE CASCADE,
+    ADD COLUMN IF NOT EXISTS categoria_id uuid REFERENCES public.categorias_financeiras(id),
+    ADD COLUMN IF NOT EXISTS tipo text CHECK (tipo IN ('RECEITA', 'DESPESA')),
+    ADD COLUMN IF NOT EXISTS valor_total numeric(12,2) DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS data_competencia date DEFAULT CURRENT_DATE,
+    ADD COLUMN IF NOT EXISTS data_transacao date DEFAULT CURRENT_DATE,
+    ADD COLUMN IF NOT EXISTS fornecedor text,
+    ADD COLUMN IF NOT EXISTS fornecedor_cliente text,
+    ADD COLUMN IF NOT EXISTS nota_fiscal text,
+    ADD COLUMN IF NOT EXISTS status_pagamento text DEFAULT 'PAGO' CHECK (status_pagamento IN ('PAGO', 'PENDENTE', 'PROGRAMADO')),
+    ADD COLUMN IF NOT EXISTS observacao text,
+    ADD COLUMN IF NOT EXISTS user_id uuid REFERENCES auth.users(id) DEFAULT auth.uid();
+
 -- 1.3 Alocações (O Rateio)
 CREATE TABLE IF NOT EXISTS public.transacao_alocacoes (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -68,6 +88,14 @@ CREATE TABLE IF NOT EXISTS public.transacao_alocacoes (
     percentual_alocado numeric(5,2) DEFAULT 100.00,
     created_at timestamptz DEFAULT now()
 );
+
+-- Assegura colunas extras para alocações
+ALTER TABLE public.transacao_alocacoes
+    ADD COLUMN IF NOT EXISTS transacao_id uuid REFERENCES public.transacoes_financeiras(id) ON DELETE CASCADE,
+    ADD COLUMN IF NOT EXISTS talhao_id bigint REFERENCES public.talhoes(id) ON DELETE CASCADE,
+    ADD COLUMN IF NOT EXISTS caderno_campo_id uuid REFERENCES public.caderno_campo(id) ON DELETE SET NULL,
+    ADD COLUMN IF NOT EXISTS valor_alocado numeric(12,2) DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS percentual_alocado numeric(5,2) DEFAULT 100.00;
 
 -- ============================================================
 -- 2. Índices de Performance (Se não criados na migration de RPCs)
