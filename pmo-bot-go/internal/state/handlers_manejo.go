@@ -100,6 +100,7 @@ func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profi
 			"fornecedor_arg":         ext.Fornecedor,
 			"nota_fiscal_arg":        ext.NotaFiscal,
 			"data_compra_arg":        ext.Data,
+			"valor_total_arg":        parseToFloat(ext.ValorTotal),
 		}
 		resp, err := sbClient.RegistrarCompraInsumoRPC(ctx, rpcArgs)
 		if err != nil {
@@ -131,6 +132,7 @@ func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profi
 		"insumo_aplicado":     ext.InsumoAplicado,
 		"metodo_aplicacao":    ext.Atividade,
 		"observacao_original": originalBody,
+		"valor_total":         parseToFloat(ext.ValorTotal),
 	}
 	resp, err := sbClient.RegistrarOperacaoCampoRPC(ctx, map[string]interface{}{
 		"pmo_id_arg":          pmoID,
