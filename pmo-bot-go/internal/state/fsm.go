@@ -18,8 +18,6 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
 	"github.com/Flagsmith/flagsmith-go-client/v3"
 	"google.golang.org/genai"
-
-	"golang.org/x/sync/errgroup"
 )
 
 // ProcessResult gives insight into what happened (useful for tests/metrics)
@@ -228,57 +226,57 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 		}
 		lastRes = res
 	} else {
-		// 5b. Parallel Entity Loop using ErrGroup to handle multiple registrations efficiently
-		g, gCtx := errgroup.WithContext(ctx)
-		g.SetLimit(3) // Limit concurrency to avoid hitting LLM/DB rate limits
+		// 5b. Best-Effort Parallel Entity Loop.
+		// Uses WaitGroup + semaphore instead of errgroup.WithContext, so a failed entity
+		// does NOT cancel the shared context and kill sibling goroutines that are still running.
+		const workerLimit = 3
+		sem := make(chan struct{}, workerLimit)
+		var wg sync.WaitGroup
 
 		count := len(unifiedRes.Entities)
+		// Pre-allocate slices: each goroutine writes only to its own index,
+		// so no mutex is needed for the writes themselves.
 		tempResponses := make([]string, count)
 		tempResults := make([]ProcessResult, count)
-		var mu sync.Mutex // Mutex for shared resources if any (index access is safe, but lastRes needs tracking)
 
 		for i, entity := range unifiedRes.Entities {
-			i, entity := i, entity // Capture loop variables
-			g.Go(func() error {
+			i, entity := i, entity // Capture loop variables to avoid closure bugs
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				sem <- struct{}{}        // acquire slot (blocks if workerLimit reached)
+				defer func() { <-sem }() // always release slot on exit
+
 				log.Printf("📑 [FSM-WORKER] Processando Ação %d/%d: %s", i+1, count, entity.Intencao)
-				
-				resMsg, res := dispatchEntity(gCtx, entity, profile, sbClient, wpClient, gemClient, ttsClient, mcpServer, historyManager, phone, body, respondWithAudio, startTime, unifiedRes.Intent, filteredTools, guard, routerModel)
-				
+				resMsg, res := dispatchEntity(ctx, entity, profile, sbClient, wpClient, gemClient, ttsClient, mcpServer, historyManager, phone, body, respondWithAudio, startTime, unifiedRes.Intent, filteredTools, guard, routerModel)
+
+				// Index-based writes are goroutine-safe: each i is unique.
 				tempResponses[i] = resMsg
 				tempResults[i] = res
-
 				if !res.Success {
-					// Stop subsequent processing if this entity fails (e.g., missing data triggers interview)
-					return fmt.Errorf("interrupt_entity_%d", i)
+					log.Printf("⚠️ [FSM-WORKER] Ação %d/%d falhou (motivo: %s). Continuando demais workers.", i+1, count, res.Reason)
 				}
-				return nil
-			})
+			}()
 		}
 
-		// Wait for all to finish or first failure
-		err := g.Wait()
-		if err != nil {
-			log.Printf("⏳ [FSM] Loop interrompido: %v", err)
-		}
+		wg.Wait() // wait for ALL workers to complete, regardless of partial failures
 
-		// 5c. Aggregation: Collect results in order until first failure
+		// 5c. Aggregation: Collect results in order; stop displaying once we hit a failure
+		// that requires user input (e.g., interview state). Successes that ran before the
+		// failure are still surfaced to the user via the header.
 		for i := 0; i < count; i++ {
 			if tempResponses[i] != "" {
 				finalResponses = append(finalResponses, tempResponses[i])
 			}
-			
+
 			lastRes = tempResults[i]
 
-			// If this one failed, stop aggregating further (as they might be cancelled or irrelevant now)
 			if !tempResults[i].Success {
-				mu.Lock() // Just in case, although single threaded here
-				// Prepend previous successes if any, as per "Partial Success" rule
+				// Prepend confirmed successes so the user knows what was already saved.
 				if len(finalResponses) > 1 {
-					header := "✅ Processados até agora:\n" + strings.Join(finalResponses[:len(finalResponses)-1], "\n\n") + "\n\n---\n\n"
+					header := "✅ Processados com sucesso:\n" + strings.Join(finalResponses[:len(finalResponses)-1], "\n\n") + "\n\n---\n\n"
 					finalResponses[len(finalResponses)-1] = header + finalResponses[len(finalResponses)-1]
 				}
-				mu.Unlock()
-
 				sendFeedback(wpClient, ttsClient, msg.From, finalResponses[len(finalResponses)-1], respondWithAudio)
 				return lastRes
 			}
