@@ -10,10 +10,11 @@ import (
 
 // Conversation holds the history and FSM state for a specific phone number
 type Conversation struct {
-	Messages   []llm.MensagemAgnostica
-	LastUpdate time.Time
-	FSMState   string
-	FSMContext map[string]interface{}
+	Messages        []llm.MensagemAgnostica
+	LastUpdate      time.Time
+	FSMState        string
+	FSMContext      map[string]interface{}
+	PendingEntities []llm.AcaoEstruturada
 }
 
 // Manager handles in-memory conversation history with TTL
@@ -217,29 +218,37 @@ func (m *Manager) startCleanup() {
 	}
 }
 
-// GetFSMState returns the current state and context for a phone number
-func (m *Manager) GetFSMState(phone string) (string, map[string]interface{}) {
+// GetFSMState returns the current state, context, and pending entities for a phone number
+func (m *Manager) GetFSMState(phone string) (string, map[string]interface{}, []llm.AcaoEstruturada) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
 	conv, ok := m.conversations[phone]
 	if !ok {
-		return "", nil
+		return "", nil, nil
 	}
 
 	// Clone the map to prevent concurrent mutation outside the lock
-	if conv.FSMContext == nil {
-		return conv.FSMState, nil
+	var ctxClone map[string]interface{}
+	if conv.FSMContext != nil {
+		ctxClone = make(map[string]interface{}, len(conv.FSMContext))
+		for k, v := range conv.FSMContext {
+			ctxClone[k] = v
+		}
 	}
-	ctxClone := make(map[string]interface{}, len(conv.FSMContext))
-	for k, v := range conv.FSMContext {
-		ctxClone[k] = v
+
+	// Clone the pending entities slice
+	var pendingClone []llm.AcaoEstruturada
+	if conv.PendingEntities != nil {
+		pendingClone = make([]llm.AcaoEstruturada, len(conv.PendingEntities))
+		copy(pendingClone, conv.PendingEntities)
 	}
-	return conv.FSMState, ctxClone
+
+	return conv.FSMState, ctxClone, pendingClone
 }
 
-// SetFSMState updates the state and context for a phone number
-func (m *Manager) SetFSMState(phone string, state string, ctx map[string]interface{}) {
+// SetFSMState updates the state, context, and pending entities for a phone number
+func (m *Manager) SetFSMState(phone string, state string, ctx map[string]interface{}, pending []llm.AcaoEstruturada) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -252,6 +261,7 @@ func (m *Manager) SetFSMState(phone string, state string, ctx map[string]interfa
 	}
 	conv.FSMState = state
 	conv.FSMContext = ctx
+	conv.PendingEntities = pending
 	conv.LastUpdate = time.Now()
 }
 
@@ -264,6 +274,7 @@ func (m *Manager) ClearFSMState(phone string) {
 	if ok {
 		conv.FSMState = ""
 		conv.FSMContext = nil
+		conv.PendingEntities = nil
 		conv.LastUpdate = time.Now()
 	}
 }

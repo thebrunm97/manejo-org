@@ -131,7 +131,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 
 	// 4. State Management (Active Interviews)
 	if historyManager != nil {
-		state, ctxState := historyManager.GetFSMState(phone)
+		state, ctxState, _ := historyManager.GetFSMState(phone)
 		if state != StateInitial {
 			return handleActiveState(state, ctxState, body, msg.From, phone, profile, respondWithAudio, sbClient, wpClient, ttsClient, historyManager, startTime, gemClient.Config.Model)
 		}
@@ -272,6 +272,13 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 			lastRes = tempResults[i]
 
 			if !tempResults[i].Success {
+				// If there are subsequent entities in the batch, save them as pending
+				if historyManager != nil && i+1 < count {
+					pending := unifiedRes.Entities[i+1:]
+					currState, currCtx, _ := historyManager.GetFSMState(phone)
+					historyManager.SetFSMState(phone, currState, currCtx, pending)
+				}
+
 				// Prepend confirmed successes so the user knows what was already saved.
 				if len(finalResponses) > 1 {
 					header := "✅ Processados com sucesso:\n" + strings.Join(finalResponses[:len(finalResponses)-1], "\n\n") + "\n\n---\n\n"
@@ -334,7 +341,7 @@ func dispatchEntity(ctx context.Context, entity llm.AcaoEstruturada, profile *su
 	case "registro":
 		if parseToFloat(extracted.Quantidade) <= 0 && extracted.Atividade != "Compra/Aquisição" {
 			botResponse := "Qual a quantidade exata utilizada?"
-			if historyManager != nil { historyManager.SetFSMState(phone, StateAguardandoQuantidade, toMap(extracted)) }
+			if historyManager != nil { historyManager.SetFSMState(phone, StateAguardandoQuantidade, toMap(extracted), nil) }
 			return botResponse, ProcessResult{Success: false, Reason: "missing_quantity"}
 		}
 		return finalizeRegistration(ctx, extracted, profile, sbClient, wpClient, ttsClient, phone, body, respondWithAudio, startTime, historyManager, phone, gemClient.Config.Model)
