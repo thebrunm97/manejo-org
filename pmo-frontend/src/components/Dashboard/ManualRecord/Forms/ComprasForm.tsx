@@ -2,6 +2,7 @@ import React from 'react';
 import { ShoppingCart } from 'lucide-react';
 import { ComprasDraft, ValidationErrors } from '../../../../hooks/manual-record';
 import ComprasTab from '../Tabs/ComprasTab';
+import ValorTotalInput from './ValorTotalInput';
 
 interface ComprasFormProps {
     formData: ComprasDraft;
@@ -65,6 +66,17 @@ const ComprasForm: React.FC<ComprasFormProps> = ({
                 errors={errors}
                 isEditMode={isEditMode}
             />
+
+            {/* Custo Total (Integração Financeira Híbrida) */}
+            <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 sm:p-5">
+                <ValorTotalInput
+                    id="compras-valor-total"
+                    value={formData.valor_total}
+                    onChange={(v) => updateForm('valor_total', v)}
+                    label="Valor Total Pago (R$)"
+                    hint="Preencha para lançar automaticamente esta despesa no módulo financeiro."
+                />
+            </div>
 
             <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 sm:p-5">
                 <label htmlFor="obs-geral" className="block text-sm font-semibold text-slate-900 mb-1.5">Observações Adicionais</label>

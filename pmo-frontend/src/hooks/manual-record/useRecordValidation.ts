@@ -29,6 +29,7 @@ export interface PlantioDraft extends CommonDraft {
     houveDescartes: boolean;
     qtdDescartes: string;
     unidadeDescartes: UnitType;
+    valor_total?: number;
 }
 
 export interface ManejoDraft extends CommonDraft {
@@ -43,6 +44,7 @@ export interface ManejoDraft extends CommonDraft {
     produtoUtilizado: string;
     atividadeCultural: string;
     qtdTrabalhadores: string;
+    valor_total?: number;
 }
 
 export interface ColheitaDraft extends CommonDraft {
@@ -55,6 +57,7 @@ export interface ColheitaDraft extends CommonDraft {
     houveDescartes: boolean;
     qtdDescartes: string;
     unidadeDescartes: UnitType;
+    valor_total?: number;
 }
 
 export interface VendasDraft extends CommonDraft {
@@ -64,6 +67,7 @@ export interface VendasDraft extends CommonDraft {
     nf?: string;
     quantidade: string;
     unidade: UnitType;
+    valor_total?: number;
 }
 
 export interface OutroDraft extends CommonDraft {
@@ -100,6 +104,7 @@ export interface ComprasDraft extends CommonDraft {
     unidade: UnitType | string;
     fornecedor: string;
     nfRecibo: string;
+    valor_total?: number;
 }
 
 export type AnyDraft = PlantioDraft | ManejoDraft | ColheitaDraft | OutroDraft | LimpezaDraft | CompostagemDraft | ComprasDraft | VendasDraft;

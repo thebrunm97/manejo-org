@@ -55,3 +55,51 @@ export const getLucroPorTalhao = async (propriedadeId: number, ano: number) => {
         return { success: false, error: error.message, data: [] };
     }
 };
+
+export const getCategorias = async () => {
+    try {
+        const { data, error } = await supabase
+            .from('categorias_financeiras')
+            .select('*')
+            .order('tipo', { ascending: true })
+            .order('nome', { ascending: true });
+
+        if (error) throw error;
+        return { success: true, data };
+    } catch (error: any) {
+        console.error('[financeiroService] getCategorias:', error.message);
+        return { success: false, error: error.message, data: [] };
+    }
+};
+
+export interface TransacaoPayload {
+    propriedade_id: number;
+    tipo: 'RECEITA' | 'DESPESA';
+    valor_total: number;
+    categoria_id?: string;
+    fornecedor_cliente?: string;
+    user_id?: string;
+    pmo_id?: number;
+    data_competencia?: string;
+    alocacoes?: { talhao_id: number; valor_alocado: number }[];
+}
+
+export const registrarTransacaoPura = async (payload: TransacaoPayload) => {
+    try {
+        const { data, error } = await supabase.rpc('rpc_registrar_transacao_com_rateio', {
+            p_payload: payload
+        });
+
+        if (error) throw error;
+
+        // RPC returns JSONB with { status, message, transacao_id }
+        if (data && data.status === 'error') {
+            throw new Error(data.message || 'Erro na RPC de registro financeiro');
+        }
+
+        return { success: true, data };
+    } catch (error: any) {
+        console.error('[financeiroService] registrarTransacaoPura:', error.message);
+        return { success: false, error: error.message };
+    }
+};

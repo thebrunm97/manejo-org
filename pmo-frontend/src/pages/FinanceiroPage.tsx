@@ -25,6 +25,9 @@ import {
 } from 'recharts';
 import { useAuth } from '../context/AuthContext';
 import { useFinanceiroStats } from '../hooks/financeiro/useFinanceiroStats';
+import { useTransacoes } from '../hooks/financeiro/useTransacoes';
+import TransacoesTable from '../components/Financeiro/TransacoesTable';
+import TransacaoDialog from '../components/Financeiro/TransacaoDialog';
 
 const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -36,6 +39,7 @@ const formatCurrency = (value: number) => {
 const FinanceiroPage: React.FC = () => {
     const { currentPropriedade } = useAuth();
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+    const [isTransacaoModalOpen, setIsTransacaoModalOpen] = useState(false);
     
     const { 
         dataDRE, 
@@ -44,6 +48,12 @@ const FinanceiroPage: React.FC = () => {
         loading, 
         error 
     } = useFinanceiroStats(currentPropriedade?.id, selectedYear);
+
+    const {
+        transacoes,
+        loading: loadingTransacoes,
+        refetch: refetchTransacoes
+    } = useTransacoes(currentPropriedade?.id);
 
     const years = [2024, 2025, 2026];
 
@@ -66,17 +76,27 @@ const FinanceiroPage: React.FC = () => {
                     <p className="text-slate-500 text-sm">Demonstrativo de Resultados da Fazenda: {currentPropriedade?.nome}</p>
                 </div>
 
-                <div className="relative inline-block">
-                    <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2 shadow-sm">
-                        <Calendar size={18} className="text-slate-400" />
-                        <select 
-                            value={selectedYear}
-                            onChange={(e) => setSelectedYear(Number(e.target.value))}
-                            className="bg-transparent text-sm font-medium text-slate-700 outline-none cursor-pointer pr-4"
-                        >
-                            {years.map(y => <option key={y} value={y}>{y}</option>)}
-                        </select>
-                        <ChevronDown size={14} className="text-slate-400 absolute right-3 pointer-events-none" />
+                <div className="flex flex-wrap items-center gap-3">
+                    <button
+                        onClick={() => setIsTransacaoModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-bold rounded-lg hover:bg-emerald-700 hover:shadow-md transition-all flex-1 md:flex-none justify-center"
+                    >
+                        <DollarSign size={16} />
+                        Nova Transação
+                    </button>
+
+                    <div className="relative inline-block">
+                        <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2 shadow-sm">
+                            <Calendar size={18} className="text-slate-400" />
+                            <select 
+                                value={selectedYear}
+                                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                                className="bg-transparent text-sm font-medium text-slate-700 outline-none cursor-pointer pr-4"
+                            >
+                                {years.map(y => <option key={y} value={y}>{y}</option>)}
+                            </select>
+                            <ChevronDown size={14} className="text-slate-400 absolute right-3 pointer-events-none" />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -235,6 +255,18 @@ const FinanceiroPage: React.FC = () => {
                     )}
                 </div>
             </div>
+
+            {/* Tabela de Transações (Feed) */}
+            <div className="mt-8">
+                <TransacoesTable transacoes={transacoes} loading={loadingTransacoes} />
+            </div>
+
+            {/* Modal de Nova Transação */}
+            <TransacaoDialog
+                open={isTransacaoModalOpen}
+                onClose={() => setIsTransacaoModalOpen(false)}
+                onSuccess={() => refetchTransacoes()}
+            />
         </div>
     );
 };

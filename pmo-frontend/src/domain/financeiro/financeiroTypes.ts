@@ -24,3 +24,18 @@ export interface DRESummary {
     lucroLiquido: number;
     margemLiquida: number; // %
 }
+
+// Representa uma transação no Ledger Financeiro (tabela transacoes_financeiras com join em categorias)
+export interface TransacaoFinanceira {
+    id: string;
+    pmo_id?: number;
+    propriedade_id: number;
+    data_transacao: string;
+    valor_total: number;
+    tipo: 'RECEITA' | 'DESPESA';
+    fornecedor?: string;
+    nota_fiscal?: string;
+    created_at?: string;
+    // Campo que vem do join com categorias_financeiras
+    categoria_nome?: string;
+}
