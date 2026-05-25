@@ -63,13 +63,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
     recordToEdit,
     onRecordSaved
 }) => {
-    // --- Custom Hooks ---
-    const {
-        activeTab,
-        isEditMode,
-        setActiveTab,
-        resetAllDrafts
-    } = useRecordFormState({ open, recordToEdit });
+    const isEditMode = !!recordToEdit;
 
     const { user, currentPropriedade } = useAuth();
     
@@ -125,7 +119,10 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
         clearError,
         clearAllErrors,
         organicWarning,
-        checkInsumoOrganico
+        checkInsumoOrganico,
+        activeTab,
+        setActiveTab,
+        resetAllDrafts
     } = useManualRecordDrafts(isEditMode, recordToEdit);
 
     const { executeSave: executeSaveImpl } = useManualRecordSave({
@@ -393,9 +390,9 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                             <button
                                 type="button"
                                 onClick={handleSaveClick}
-                                disabled={loading}
+                                disabled={loading || Object.keys(errors).length > 0}
                                 className={`w-full md:w-auto px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-lg shadow-emerald-200 transition-all active:scale-95 flex items-center justify-center gap-2 group order-1 md:order-2
-                                    ${loading ? "opacity-70 cursor-not-allowed" : ""}
+                                    ${(loading || Object.keys(errors).length > 0) ? "opacity-50 cursor-not-allowed" : ""}
                                 `}
                             >
                                 {loading ? (
