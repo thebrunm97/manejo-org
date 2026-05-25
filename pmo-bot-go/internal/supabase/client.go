@@ -1671,3 +1671,48 @@ func (c *Client) FetchDemandasPorPropriedade(propID int64) ([]DemandaColetiva, e
 
 	return demandas, nil
 }
+
+// GetBalancoIA calls the rpc_get_balanco_ia to get aggregated financial data for the LLM
+func (c *Client) GetBalancoIA(ctx context.Context, propriedadeID int, ano int, mes *int) (string, error) {
+	reqURL := fmt.Sprintf("%s/rest/v1/rpc/rpc_get_balanco_ia", c.config.URL)
+
+	args := map[string]interface{}{
+		"p_propriedade_id": propriedadeID,
+		"p_ano":            ano,
+	}
+	if mes != nil {
+		args["p_mes"] = *mes
+	}
+
+	payload, err := json.Marshal(args)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal balanco params: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewReader(payload))
+	if err != nil {
+		return "", fmt.Errorf("failed to create balanco request: %w", err)
+	}
+
+	req.Header.Set("apikey", c.config.Key)
+	req.Header.Set("Authorization", "Bearer "+c.config.Key)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("balanco rpc request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read balanco rpc response: %w", err)
+	}
+
+	if resp.StatusCode >= 400 {
+		return "", fmt.Errorf("balanco rpc returned error %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	// Returning the raw JSON string because the LLM prefers minified string representation anyway
+	return string(bodyBytes), nil
+}
