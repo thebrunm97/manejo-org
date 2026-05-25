@@ -13,7 +13,10 @@ export function useManualRecordDrafts(isEditMode: boolean, recordToEdit: any) {
         vendasDraft,
         getCurrentDraft,
         updateDraft: updateDraftBase,
-        clearDraft
+        clearDraft,
+        activeTab,
+        setActiveTab,
+        resetAllDrafts
     } = useRecordFormState({ open: true, recordToEdit });
 
     const { validate, errors, clearError, clearAllErrors, organicWarning, checkInsumoOrganico } = useRecordValidation();
@@ -32,7 +35,7 @@ export function useManualRecordDrafts(isEditMode: boolean, recordToEdit: any) {
     }, [getCurrentDraft, validate]);
 
     return {
-        isEditMode, // Exporting to satisfy lint and for potential UI use
+        isEditMode,
         plantioDraft,
         manejoDraft,
         colheitaDraft,
@@ -49,6 +52,9 @@ export function useManualRecordDrafts(isEditMode: boolean, recordToEdit: any) {
         clearError,
         errors,
         organicWarning,
-        checkInsumoOrganico
+        checkInsumoOrganico,
+        activeTab,
+        setActiveTab,
+        resetAllDrafts
     };
 }

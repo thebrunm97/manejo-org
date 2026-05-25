@@ -52,9 +52,9 @@ A abordagem será progressiva, iniciando na camada de dados (Banco/RPCs), subind
 
 | ID | Perfil | Canal | Ação de Teste | Resultado Esperado | Status |
 |---|---|---|---|---|---|
-| **E2E-01** | 100% Convencional | Frontend | Acessar URL `/pmo/list` diretamente | Redirecionamento ou 403 (Proteção de Rota). | ⬜ |
+| **E2E-01** | 100% Convencional | Frontend | Acessar URL `/pmo/list` diretamente | Redirecionamento ou 403 (Proteção de Rota). | ✅ |
 | **E2E-02** | 100% Convencional | Bot (Txt) | "Passei Roundup hoje cedo" | Sucesso. Retorna nota informativa e salva. | ⬜ |
-| **E2E-03** | 100% Orgânico | Frontend | Submit Glifosato no formulário | Bloqueio client-side E server-side. | ⬜ |
+| **E2E-03** | 100% Orgânico | Frontend | Submit Glifosato no formulário | Bloqueio client-side E server-side. | ✅ |
 | **E2E-04** | Transição | Bot (Áudio) | "Apliquei NPK no canteiro 2" | Tratado com o mesmo rigor de Orgânico (Bloqueio). | ✅ |
 | **E2E-05** | Produção Paralela | Frontend | Adultera payload via API p/ Orgânico | RPC bloqueia inserção no banco (Zero-Trust). | ⬜ |
 | **E2E-06** | Produção Paralela | Bot (Txt) | "Passei veneno na divisa" | FSM entra em estado pendente: "Em qual talhão?" | ✅ |
