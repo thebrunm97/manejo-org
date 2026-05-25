@@ -104,11 +104,13 @@ ALTER TABLE public.transacoes_financeiras ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.transacao_alocacoes ENABLE ROW LEVEL SECURITY;
 
 -- 4.1 Categorias: Leitura para todos autenticados. Escrita apenas para administradores ou se customizadas.
+DROP POLICY IF EXISTS "Permitir leitura de categorias para todos autenticados" ON public.categorias_financeiras;
 CREATE POLICY "Permitir leitura de categorias para todos autenticados" 
 ON public.categorias_financeiras FOR SELECT 
 TO authenticated
 USING (true);
 
+DROP POLICY IF EXISTS "Administradores ou donos do PMO criam categorias" ON public.categorias_financeiras;
 CREATE POLICY "Administradores ou donos do PMO criam categorias"
 ON public.categorias_financeiras FOR ALL
 TO authenticated
@@ -119,6 +121,7 @@ USING (
 );
 
 -- 4.2 Transações: Restrição por pmo_id (ativo do perfil) ou criador.
+DROP POLICY IF EXISTS "Usuários gerenciam transações do seu PMO ativo" ON public.transacoes_financeiras;
 CREATE POLICY "Usuários gerenciam transações do seu PMO ativo"
 ON public.transacoes_financeiras FOR ALL
 TO authenticated
@@ -134,6 +137,7 @@ WITH CHECK (
 );
 
 -- 4.3 Alocações: Herdadas da transação pai.
+DROP POLICY IF EXISTS "Usuários gerenciam alocações das suas transações" ON public.transacao_alocacoes;
 CREATE POLICY "Usuários gerenciam alocações das suas transações"
 ON public.transacao_alocacoes FOR ALL
 TO authenticated
