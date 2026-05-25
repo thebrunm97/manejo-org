@@ -36,10 +36,16 @@ services:
     restart: always
     env_file:
       - .env.prod
+    environment:
+      # Override db paths to explicit /data directory which is bind-mounted to the host
+      DATABASE_CONNECTION_URI: file:/data/sqlite.db?_foreign_keys=on
+      POSTGRES_AUTH_DB: file:/data/auth.db?_pragma=foreign_keys(1)&_busy_timeout=5000&cache=shared&mode=rwc&_journal_mode=WAL
+      POSTGRES_USERS_DB: file:/data/users.db?_foreign_keys=on
     ports:
       - "8082:8082"
     volumes:
-      - evolution_go_data:/data
+      # Bind-mount to host directory: session survives container rebuilds
+      - ./evolution_data:/data
     dns:
       - 8.8.8.8
       - 1.1.1.1
@@ -68,5 +74,4 @@ networks:
     driver: bridge
 
 volumes:
-  evolution_go_data:
   redis_data:
