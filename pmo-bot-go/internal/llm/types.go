@@ -413,7 +413,7 @@ type UnifiedIntentResult struct {
 
 // EvidenceEvaluation represents the evaluation of a single RAG chunk.
 type EvidenceEvaluation struct {
-	ChunkIndex int    `json:"chunk_index" jsonschema:"required,description=Index of the chunk in the input list (0-based)" validate:"required"`
+	ChunkIndex int    `json:"chunk_index" jsonschema:"required,description=Index of the chunk in the input list (0-based)" validate:"min=0"`
 	Score      int    `json:"score" jsonschema:"required,description=Agronomic evidence relevance score (1 to 5)" validate:"required,min=1,max=5"`
 	Reasoning  string `json:"reasoning" jsonschema:"required,description=Detailed reasoning for the score based on Crop, Management practice, and Target/Goal" validate:"required"`
 }
