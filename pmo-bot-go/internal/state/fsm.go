@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
@@ -17,7 +16,6 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
 	"github.com/Flagsmith/flagsmith-go-client/v3"
-	"google.golang.org/genai"
 )
 
 // ProcessResult gives insight into what happened (useful for tests/metrics)
@@ -29,7 +27,7 @@ type ProcessResult struct {
 
 // ProcessMessage orchestrates the flow:
 // LID -> Phone -> Profile -> Media Handling -> State Logic -> Extraction -> Intent Routing
-func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *supabase.Client, groqClient *groq.Client, wpClient ports.MessageSender, gemClient *gemini.Client, ttsClient *tts.Orchestrator, mcpServer *mcp.Server, historyManager *history.Manager, flgClient *flagsmith.Client) (res ProcessResult) {
+func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *supabase.Client, groqClient *groq.Client, wpClient ports.MessageSender, llmClient llm.LLMProvider, ttsClient *tts.Orchestrator, mcpServer *mcp.Server, historyManager *history.Manager, flgClient *flagsmith.Client) (res ProcessResult) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("🔥 [FSM-PANIC] Erro interno catastrófico: %v", r)
@@ -64,7 +62,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 	body := msg.Body
 
 	// 2. Multimodal Parts Collection
-	var initialParts []*genai.Part
+	var routerText string
 
 	// 2a. Media Processing (Audio/Image)
 	if msg.IsAudio {
@@ -92,28 +90,26 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 		}
 
 		log.Printf("[AUDIO-DEBUG] Transcrição concluída: \"%s\"", cleanText)
-		initialParts = append(initialParts, &genai.Part{Text: cleanText})
+		routerText = cleanText
 		body = cleanText
 		respondWithAudio = true
 	} else if msg.IsImage {
 		imageBytes, mimeType, err := wpClient.DownloadImage(msg.ID, msg.RawPayload)
 		if err == nil {
-			// Add photo to parts for the router
-			initialParts = append(initialParts, &genai.Part{InlineData: &genai.Blob{Data: imageBytes, MIMEType: mimeType}})
-			
-			// If there's a caption, add it as text
-			if body != "" {
-				initialParts = append(initialParts, &genai.Part{Text: body})
-			}
-
-			// Keep legacy description for NER compatibility (Phase 1/2) until router fully handles vision extraction
-			description, _, err := gemClient.DescribeAgronomicImage(ctx, imageBytes, mimeType)
+			// Keep legacy description for NER compatibility
+			description, _, err := llmClient.DescribeImage(ctx, imageBytes, mimeType)
 			if err == nil {
 				body = description
 			}
+			// If there's a caption, prepend it
+			if msg.Body != "" {
+				routerText = msg.Body + "\n\n" + body
+			} else {
+				routerText = body
+			}
 		}
 	} else if body != "" {
-		initialParts = append(initialParts, &genai.Part{Text: body})
+		routerText = body
 	}
 
 	// 3. Unauthenticated Flow
@@ -133,7 +129,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 	if historyManager != nil {
 		state, ctxState, _ := historyManager.GetFSMState(phone)
 		if state != StateInitial {
-			return handleActiveState(state, ctxState, body, msg.From, phone, profile, respondWithAudio, sbClient, wpClient, ttsClient, historyManager, startTime, gemClient.Config.Model, gemClient, mcpServer)
+			return handleActiveState(state, ctxState, body, msg.From, phone, profile, respondWithAudio, sbClient, wpClient, ttsClient, historyManager, startTime, llmClient.ModelName(), llmClient, mcpServer)
 		}
 	}
 
@@ -164,7 +160,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 	{
 		// Isolated local context with 10s timeout for the Router only
 		routerCtx, routerCancel := context.WithTimeout(ctx, 10*time.Second)
-		unifiedRes, routerModel, err = gemClient.ClassifyIntent(routerCtx, initialParts)
+		unifiedRes, routerModel, err = llmClient.ClassifyIntent(routerCtx, routerText)
 		routerCancel()
 	}
 
@@ -220,7 +216,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 		if unifiedRes.Intent == llm.IntentChat {
 			synthetic.Intencao = "saudacao"
 		}
-		resMsg, res := dispatchEntity(ctx, synthetic, profile, sbClient, wpClient, gemClient, ttsClient, mcpServer, historyManager, phone, body, respondWithAudio, startTime, unifiedRes.Intent, filteredTools, guard, routerModel)
+		resMsg, res := dispatchEntity(ctx, synthetic, profile, sbClient, wpClient, llmClient, ttsClient, mcpServer, historyManager, phone, body, respondWithAudio, startTime, unifiedRes.Intent, filteredTools, guard, routerModel)
 		if resMsg != "" {
 			finalResponses = append(finalResponses, resMsg)
 		}
@@ -248,7 +244,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 				defer func() { <-sem }() // always release slot on exit
 
 				log.Printf("📑 [FSM-WORKER] Processando Ação %d/%d: %s", i+1, count, entity.Intencao)
-				resMsg, res := dispatchEntity(ctx, entity, profile, sbClient, wpClient, gemClient, ttsClient, mcpServer, historyManager, phone, body, respondWithAudio, startTime, unifiedRes.Intent, filteredTools, guard, routerModel)
+				resMsg, res := dispatchEntity(ctx, entity, profile, sbClient, wpClient, llmClient, ttsClient, mcpServer, historyManager, phone, body, respondWithAudio, startTime, unifiedRes.Intent, filteredTools, guard, routerModel)
 
 				// Index-based writes are goroutine-safe: each i is unique.
 				tempResponses[i] = resMsg
@@ -305,7 +301,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 }
 
 // dispatchEntity routes a single action to its respective handler and returns the response string
-func dispatchEntity(ctx context.Context, entity llm.AcaoEstruturada, profile *supabase.Profile, sbClient *supabase.Client, wpClient ports.MessageSender, gemClient *gemini.Client, ttsClient *tts.Orchestrator, mcpServer *mcp.Server, historyManager *history.Manager, phone string, body string, respondWithAudio bool, startTime time.Time, routedIntent llm.Intent, filteredTools []llm.FerramentaAgnostica, guard *mcp.LoopGuard, routerModel string) (string, ProcessResult) {
+func dispatchEntity(ctx context.Context, entity llm.AcaoEstruturada, profile *supabase.Profile, sbClient *supabase.Client, wpClient ports.MessageSender, llmClient llm.LLMProvider, ttsClient *tts.Orchestrator, mcpServer *mcp.Server, historyManager *history.Manager, phone string, body string, respondWithAudio bool, startTime time.Time, routedIntent llm.Intent, filteredTools []llm.FerramentaAgnostica, guard *mcp.LoopGuard, routerModel string) (string, ProcessResult) {
 	// Map AcaoEstruturada to groq.ExtractionResult for handler compatibility
 	extracted := &groq.ExtractionResult{
 		Intencao:          entity.Intencao,
@@ -363,10 +359,10 @@ func dispatchEntity(ctx context.Context, entity llm.AcaoEstruturada, profile *su
 
 	case "assumir_cota":
 		// Note: handleAssumirCota might need similar refactor if used in loops, but for now we focus on records
-		return handleAssumirCota(ctx, extracted, profile, sbClient, wpClient, gemClient, ttsClient, phone, body, respondWithAudio, startTime, routerModel, routerModel)
+		return handleAssumirCota(ctx, extracted, profile, sbClient, wpClient, llmClient, ttsClient, phone, body, respondWithAudio, startTime, routerModel, routerModel)
 
 	case "duvida":
-		return handleDuvidaFallback(ctx, wpClient, ttsClient, phone, gemClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, string(routedIntent), filteredTools, guard, historyManager, mcpServer)
+		return handleDuvidaFallback(ctx, wpClient, ttsClient, phone, llmClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, string(routedIntent), filteredTools, guard, historyManager, mcpServer)
 
 	case "saudacao":
 		return "Olá! Sou o assistente do ManejoORG. Como posso ajudar com seu registro ou dúvida hoje?", ProcessResult{Success: true, Reason: "greeting"}
@@ -379,7 +375,7 @@ func dispatchEntity(ctx context.Context, entity llm.AcaoEstruturada, profile *su
 		}
 		
 		if routedIntent == llm.IntentRAG || routedIntent == llm.IntentDatabase {
-			return handleDuvidaFallback(ctx, wpClient, ttsClient, phone, gemClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, string(routedIntent), filteredTools, guard, historyManager, mcpServer)
+				return handleDuvidaFallback(ctx, wpClient, ttsClient, phone, llmClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, string(routedIntent), filteredTools, guard, historyManager, mcpServer)
 		}
 		return "", ProcessResult{Success: true, Reason: "ignored"}
 	}
@@ -387,7 +383,7 @@ func dispatchEntity(ctx context.Context, entity llm.AcaoEstruturada, profile *su
 
 // handleActiveState dispatches turn-2 messages to their respective handlers
 // handleActiveState dispatches turn-2 messages to their respective handlers
-func handleActiveState(state string, ctxState map[string]interface{}, body string, from string, phone string, profile *supabase.Profile, respondWithAudio bool, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, historyManager *history.Manager, startTime time.Time, modelConfigured string, gemClient *gemini.Client, mcpServer *mcp.Server) ProcessResult {
+func handleActiveState(state string, ctxState map[string]interface{}, body string, from string, phone string, profile *supabase.Profile, respondWithAudio bool, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, historyManager *history.Manager, startTime time.Time, modelConfigured string, llmClient llm.LLMProvider, mcpServer *mcp.Server) ProcessResult {
 	ctx := context.Background()
 	var botResponse string
 	var res ProcessResult
@@ -416,7 +412,7 @@ func handleActiveState(state string, ctxState map[string]interface{}, body strin
 			pending = pending[1:]
 
 			log.Printf("🔄 [FSM-PENDING] Consumindo ação pendente do batch: %s", next.Intencao)
-			resMsg, nextRes := dispatchEntity(ctx, next, profile, sbClient, wpClient, gemClient, ttsClient, mcpServer, historyManager, phone, "", respondWithAudio, startTime, llm.IntentDatabase, nil, nil, modelConfigured)
+			resMsg, nextRes := dispatchEntity(ctx, next, profile, sbClient, wpClient, llmClient, ttsClient, mcpServer, historyManager, phone, "", respondWithAudio, startTime, llm.IntentDatabase, nil, nil, modelConfigured)
 
 			if nextRes.Success {
 				if resMsg != "" {

@@ -7,15 +7,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
+	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
 )
 
 // handleAssumirCota processes the intent where a producer commits to a cooperative demand.
-func handleAssumirCota(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, wpClient ports.MessageSender, gemClient *gemini.Client, ttsClient *tts.Orchestrator, from string, originalBody string, respondWithAudio bool, startTime time.Time, modelConfigured string, modelEffective string) (string, ProcessResult) {
+func handleAssumirCota(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, wpClient ports.MessageSender, llmClient llm.LLMProvider, ttsClient *tts.Orchestrator, from string, originalBody string, respondWithAudio bool, startTime time.Time, modelConfigured string, modelEffective string) (string, ProcessResult) {
 	log.Printf("🤝 [FSM-COLETIVO] Iniciando captação de cota: %s (%v)", ext.InsumoCultura, ext.QuantidadeAssumida)
 
 	// 1. Validate property
@@ -42,7 +42,7 @@ Sabendo o ciclo médio dessa cultura na região Sul/Sudeste do Brasil, em qual d
 Leve em conta o tempo de desenvolvimento até a colheita técnica.
 Responda de forma extremamente curta e direta, apenas a data ou um pequeno intervalo (ex: "Entre 10 e 15 de maio").`, cultura, demanda.DataEntrega)
 
-	dataSugerida, modelUsed, err := gemClient.AskExpert("Qual a data de plantio ideal?", promptPlantio)
+	dataSugerida, modelUsed, err := llmClient.AskSimple(ctx, "Qual a data de plantio ideal?", promptPlantio)
 	if err != nil {
 		log.Printf("⚠️ [FSM-COLETIVO] Erro ao consultar Gemini para plantio: %v", err)
 		dataSugerida = "Data não calculada"

@@ -63,42 +63,63 @@ func (s *Server) handleConsultarBaseConhecimento(args map[string]interface{}) (i
 		return nil, fmt.Errorf("pergunta is required and must be a string")
 	}
 
-	log.Printf("🔍 [MCP-TOOL] Consultando base para PMO %d: %s", pmoID, pergunta)
+	// Optional category filter (e.g. "institucional", "academico", "movimentos_sociais")
+	categoriaFiltro, _ := args["categoria_fonte"].(string)
 
-	// 1. Gerar Embedding usando o motor agnóstico
-	embedding, err := s.embedder.GenerateEmbedding(pergunta)
+	log.Printf("[MCP-TOOL] RAG query for PMO %d: %q (categoria_filtro=%q)", pmoID, pergunta, categoriaFiltro)
+
+	// 1. Generate query embedding with asymmetric task prefix (gemini-embedding-2)
+	embedding, err := s.embedder.GenerateQueryEmbedding(pergunta)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao gerar embedding: %w", err)
 	}
 
-	// 2. Buscar no Supabase (RPC match_farm_documents)
-	// Threshold 0.65 (Goldilocks Zone): balanceia precisão técnica com abrangência
-	// Top-K 3 para minimizar tokens e manter o foco do LLM
-	matches, err := s.supabase.MatchFarmDocuments(pmoID, embedding, 0.65, 3)
+	// 2. Vector search in Supabase (threshold 0.55, top-K 6 to account for category filter)
+	matches, err := s.supabase.MatchFarmDocuments(pmoID, embedding, 0.55, 6)
 	if err != nil {
 		return nil, fmt.Errorf("erro na busca vetorial: %w", err)
 	}
 
 	if len(matches) == 0 {
-		return "Nenhuma informação específica encontrada na base de conhecimento para esta pergunta.", nil
+		return "Nenhuma informacao especifica encontrada na base de conhecimento para esta pergunta.", nil
 	}
 
-	// 3. Formatar o resultado
+	// 3. Format results, optionally filtering by categoria_fonte in the JSONB metadata
 	var sb strings.Builder
 
 	for _, m := range matches {
+		// Category-filter: skip chunks that don't match the requested category
+		if categoriaFiltro != "" {
+			chunkCat, _ := m.Metadata["categoria_fonte"].(string)
+			if chunkCat != categoriaFiltro {
+				continue
+			}
+		}
+
 		cleanName := m.DocumentName
 		if idx := strings.LastIndex(cleanName, "."); idx > 0 {
 			cleanName = cleanName[:idx]
 		}
 		cleanName = strings.ReplaceAll(cleanName, "_", " ")
 
+		// Source label: include categoria_fonte so the LLM can cite provenance
+		chunkCat, _ := m.Metadata["categoria_fonte"].(string)
+		sourceLabel := cleanName
+		if chunkCat != "" {
+			sourceLabel = fmt.Sprintf("%s [%s]", cleanName, chunkCat)
+		}
+
 		if m.IsGlobal {
-			sb.WriteString(fmt.Sprintf("De acordo com o material técnico '%s':\n%s\n\n", cleanName, m.Content))
+			sb.WriteString(fmt.Sprintf("De acordo com o material tecnico '%s':\n%s\n\n", sourceLabel, m.Content))
 		} else {
-			sb.WriteString(fmt.Sprintf("Baseado no seu documento interno '%s':\n%s\n\n", cleanName, m.Content))
+			sb.WriteString(fmt.Sprintf("Baseado no seu documento interno '%s':\n%s\n\n", sourceLabel, m.Content))
 		}
 	}
 
-	return strings.TrimSpace(sb.String()), nil
+	result := strings.TrimSpace(sb.String())
+	if result == "" {
+		return "Nenhum resultado encontrado para a categoria solicitada. Tente sem o filtro de categoria.", nil
+	}
+
+	return result, nil
 }

@@ -19,8 +19,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
+	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 )
 
@@ -29,7 +29,7 @@ type MediaWorkerConfig struct {
 	Queue        *Manager
 	WhatsApp     ports.MessageSender
 	Groq         *groq.Client
-	Gemini       *gemini.Client
+	LLM          llm.LLMProvider
 	PollInterval time.Duration // Default: 500ms
 }
 
@@ -188,7 +188,7 @@ func (w *MediaWorker) processImage(ctx context.Context, msg ports.IncomingMessag
 		return "", false, fmt.Errorf("image_download_failed: %w", err)
 	}
 
-	description, _, err := w.cfg.Gemini.DescribeAgronomicImage(imageCtx, imageBytes, mimeType)
+	description, _, err := w.cfg.LLM.DescribeImage(imageCtx, imageBytes, mimeType)
 	if err != nil {
 		// Fallback: usa a legenda da imagem se disponível
 		if msg.Body != "" {

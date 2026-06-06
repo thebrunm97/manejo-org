@@ -10,6 +10,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
+	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 )
@@ -42,6 +43,9 @@ func main() {
 
 	log.Println("🚀 Iniciando o Ingestor RAG Multimodal (Supabase pgvector)!")
 
+	// Cast to agnostic LLM provider
+	var provider llm.LLMProvider = gemClient
+
 	docsDir := filepath.Join("docs", "knowledge_base")
 	files, err := os.ReadDir(docsDir)
 	if err != nil {
@@ -59,9 +63,9 @@ func main() {
 		log.Printf("\n📄 Processando: %s", f.Name())
 
 		if ext == ".pdf" {
-			processPDF(gemClient, sbClient, path, f.Name())
+			processPDF(provider, sbClient, path, f.Name())
 		} else if ext == ".jpg" || ext == ".jpeg" || ext == ".png" {
-			processImage(gemClient, sbClient, path, f.Name())
+			processImage(provider, sbClient, path, f.Name())
 		} else {
 			log.Printf("⚠️ Extensão %s não suportada, pulando.", ext)
 		}
@@ -72,7 +76,7 @@ func main() {
 	log.Println("========================================================")
 }
 
-func processPDF(gem *gemini.Client, sb *supabase.Client, path, name string) {
+func processPDF(provider llm.LLMProvider, sb *supabase.Client, path, name string) {
 	content, err := utils.ExtractTextFromPDF(path)
 	if err != nil {
 		log.Printf("❌ Erro ao extrair PDF %s: %v", name, err)
@@ -83,7 +87,7 @@ func processPDF(gem *gemini.Client, sb *supabase.Client, path, name string) {
 	log.Printf("🧩 PDF extraído (%d chunks). Gerando embeddings...", len(chunks))
 
 	for i, chunk := range chunks {
-		emb, err := gem.GenerateEmbedding(chunk)
+		emb, err := provider.Embedder().GenerateEmbedding(chunk)
 		if err != nil {
 			log.Printf("⚠️ Erro no embedding do chunk %d: %v", i, err)
 			continue
@@ -101,7 +105,7 @@ func processPDF(gem *gemini.Client, sb *supabase.Client, path, name string) {
 	log.Printf("✅ PDF %s processado com sucesso.", name)
 }
 
-func processImage(gem *gemini.Client, sb *supabase.Client, path, name string) {
+func processImage(provider llm.LLMProvider, sb *supabase.Client, path, name string) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		log.Printf("❌ Erro ao ler imagem: %v", err)
@@ -114,7 +118,7 @@ func processImage(gem *gemini.Client, sb *supabase.Client, path, name string) {
 	}
 
 	log.Println("🔍 Solicitando descrição agronômica ao Gemini 2.5 Flash...")
-	description, modelUsed, err := gem.DescribeAgronomicImage(context.Background(), data, mimeType)
+	description, modelUsed, err := provider.DescribeImage(context.Background(), data, mimeType)
 	_ = modelUsed // Tracking not required for indexing
 	if err != nil {
 		log.Printf("❌ Erro na descrição: %v", err)
@@ -123,7 +127,7 @@ func processImage(gem *gemini.Client, sb *supabase.Client, path, name string) {
 
 	log.Printf("📝 Descrição gerada: %s", description)
 
-	emb, err := gem.GenerateEmbedding(description)
+	emb, err := provider.Embedder().GenerateEmbedding(description)
 	if err != nil {
 		log.Printf("❌ Erro no embedding da descrição: %v", err)
 		return

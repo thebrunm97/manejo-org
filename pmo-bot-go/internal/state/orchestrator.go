@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
@@ -27,7 +26,7 @@ type TraceEvent struct {
 
 // Orchestrator manages the lifecycle of an agentic session with context injection and traceability.
 type Orchestrator struct {
-	Gemini      *gemini.Client
+	LLM         llm.LLMProvider
 	SB          *supabase.Client
 	MCP         *mcp.Server
 	// OutputJudge validates the LLM's final response before delivery.
@@ -41,11 +40,11 @@ type Orchestrator struct {
 }
 
 // NewOrchestrator creates a new agentic orchestrator.
-func NewOrchestrator(gem *gemini.Client, sb *supabase.Client, mcpServer *mcp.Server) *Orchestrator {
+func NewOrchestrator(provider llm.LLMProvider, sb *supabase.Client, mcpServer *mcp.Server) *Orchestrator {
 	return &Orchestrator{
-		Gemini: gem,
-		SB:     sb,
-		MCP:    mcpServer,
+		LLM: provider,
+		SB:  sb,
+		MCP: mcpServer,
 	}
 }
 
@@ -77,7 +76,7 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 	var usage llm.UsoMetadados
 	var lastToolMsg string
 	var usedTools []string // track tool names for OutputJudge context
-	effectiveModel := o.Gemini.Config.Model
+	effectiveModel := o.LLM.ModelName()
 
 	// Append initial user message if present
 	if userMessage != "" {
@@ -97,7 +96,7 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 		turnCtx, turnCancel := context.WithTimeout(ctx, 30*time.Second)
 
 		// --- LOGICA DE FALLBACK (Try Google -> Fallback OpenRouter) ---
-		log.Printf("🤖 [Orchestrator] Turno %d/%d: Tentando Google (%s)...", i+1, 3, o.Gemini.Config.Model)
+		log.Printf("🤖 [Orchestrator] Turno %d/%d: Tentando provider (%s)...", i+1, 3, o.LLM.ModelName())
 
 		// Reforce o prompt se já tivermos resultados de ferramentas no histórico
 		currentHistory := history
@@ -110,18 +109,16 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 			})
 		}
 
-		resp, err = o.Gemini.CallGoogle(turnCtx, sysInst, currentHistory, tools, nil)
+		resp, err = o.LLM.GenerateContent(turnCtx, llm.ContentRequest{
+			SystemInstruction: sysInst,
+			History:           currentHistory,
+			Tools:             tools,
+		})
 
 		if err != nil {
-			googleErr := err // capture for structured logging
-			log.Printf("⚠️ [Orchestrator] Turno %d — Google falhou: [%T] %v — Tentando OpenRouter (%s)...", i+1, googleErr, googleErr, o.Gemini.Config.OpenRouterModel)
-			resp, err = o.Gemini.CallOpenRouter(turnCtx, sysInst, currentHistory, tools, nil)
-			if err != nil {
-				turnCancel()
-				criticalErr := fmt.Errorf("turno %d — ambos os provedores falharam: google=(%v) openrouter=(%w)", i+1, googleErr, err)
-				log.Printf("❌ [CRITICAL ORCHESTRATOR ERROR]: %v", criticalErr)
-				return "", history, trace, usage, effectiveModel, criticalErr
-			}
+			turnCancel()
+			log.Printf("❌ [CRITICAL ORCHESTRATOR ERROR]: Turno %d — provider failed: %v", i+1, err)
+			return "", history, trace, usage, effectiveModel, fmt.Errorf("turno %d — provider failed: %w", i+1, err)
 		}
 		turnCancel()
 
