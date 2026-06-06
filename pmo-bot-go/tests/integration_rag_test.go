@@ -45,7 +45,7 @@ func TestRAGIntegration(t *testing.T) {
 
 	handler := webhook.NewHandler(webhook.Config{
 		SupabaseClient: sbClient,
-		GeminiClient:   gemClient,
+		LLMClient:      gemClient,
 		Token:          token,
 	})
 
@@ -98,7 +98,7 @@ func TestRAGIntegration(t *testing.T) {
 
 	// Create a real query for polling
 	queryText := "extrativismo"
-	pollEmb, _ := gemClient.GenerateEmbedding(queryText)
+	pollEmb, _ := gemClient.Embedder().GenerateEmbedding(queryText)
 
 	for i := 0; i < maxAttempts; i++ {
 		t.Logf("Attempt %d/%d: Checking Supabase for chunks with query '%s'...", i+1, maxAttempts, queryText)
@@ -120,7 +120,7 @@ func TestRAGIntegration(t *testing.T) {
 
 	// 6. Test Hybrid Retrieval
 	t.Log("🔍 Testing Hybrid Retrieval...")
-	queryEmb, _ := gemClient.GenerateEmbedding("extrativismo sustentável")
+	queryEmb, _ := gemClient.Embedder().GenerateEmbedding("extrativismo sustentável")
 	matches, err := sbClient.MatchFarmDocuments(pmoID, queryEmb, 0.5, 3)
 	if err != nil {
 		t.Errorf("Search failed: %v", err)

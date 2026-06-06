@@ -1,39 +1,67 @@
+import sys
 import os
+import re
 import json
 import time
 import hashlib
 import logging
 import shutil
 import requests
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 from pathlib import Path
 from pypdf import PdfReader, PdfWriter
 
-# External Libraries (Install via: pip install docling google-generativeai supabase langchain-text-splitters python-dotenv)
+# External Libraries (Install via: pip install docling google-genai supabase langchain-text-splitters python-dotenv)
 try:
     import torch
     from docling.document_converter import DocumentConverter, PdfFormatOption
     from docling.datamodel.base_models import InputFormat
     from docling.datamodel.pipeline_options import PdfPipelineOptions
     from docling.datamodel.accelerator_options import AcceleratorOptions, AcceleratorDevice
-    import google.generativeai as genai
+    from google import genai
+    from google.genai import types
     from supabase import create_client, Client
     from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
-    from dotenv import load_dotenv
+    from dotenv import load_dotenv, find_dotenv
 except ImportError as e:
-    print(f"Missing dependency: {e}. Please run: pip install docling google-generativeai supabase langchain-text-splitters python-dotenv")
-    exit(1)
+    print(f"Missing dependency: {e}. Please run: pip install docling google-genai supabase langchain-text-splitters python-dotenv")
+    sys.exit(1)
 
 # --- CONFIGURATION ---
-load_dotenv(".env.prod")
+# Load environment variables (.env.prod has priority, fallback to .env)
+env_file = find_dotenv(".env.prod")
+if not env_file:
+    env_file = find_dotenv(".env")
+
+if env_file:
+    print(f"[ENV] Carregando variaveis de ambiente de: {env_file}")
+    load_dotenv(env_file)
+else:
+    print("[WARNING] Nenhum arquivo .env ou .env.prod encontrado. Usando variaveis de ambiente do sistema.")
 
 # API Keys & URLs
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY") # Use service role for bulk inserts
+SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_KEY")
+
+# Diagnostic & Exit if missing
+missing_vars = []
+if not GEMINI_API_KEY:
+    missing_vars.append("GEMINI_API_KEY")
+if not SUPABASE_URL:
+    missing_vars.append("SUPABASE_URL")
+if not SUPABASE_KEY:
+    missing_vars.append("SUPABASE_SERVICE_ROLE_KEY (ou SUPABASE_KEY)")
+
+if missing_vars:
+    print("\n[ERROR] Erro de Configuracao: As seguintes variaveis de ambiente estao ausentes:")
+    for var in missing_vars:
+        print(f"   - {var}")
+    sys.exit("\nPor favor, declare estas variaveis no arquivo .env ou .env.prod correspondente.")
 
 # Model & Limits
-EMBEDDING_MODEL = "models/gemini-embedding-2-preview"
+EMBEDDING_MODEL = "gemini-embedding-001"
+EMBEDDING_DIMENSIONS = 3072  # Matryoshka dimension supported by gemini-embedding-2
 BATCH_SIZE = 50  # Number of chunks per embedding request (Google limit ~100)
 RPD_LIMIT = 1500  # Requests Per Day budget
 TPM_LIMIT = 1000000  # Tokens Per Minute limit (approx)
@@ -48,17 +76,19 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # --- INITIALIZATION ---
-genai.configure(api_key=GEMINI_API_KEY)
+client = genai.Client(api_key=GEMINI_API_KEY)
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # CUDA Diagnostic
 cuda_available = torch.cuda.is_available()
-print(f"🚀 CUDA Diagnostic: {'YES' if cuda_available else 'NO'}")
+print(f"CUDA Diagnostic: {'YES' if cuda_available else 'NO'}")
 if cuda_available:
-    print(f"🎸 GPU Device: {torch.cuda.get_device_name(0)}")
+    print(f"GPU Device: {torch.cuda.get_device_name(0)}")
 
-# Initialize Docling converter with CUDA support (requires CUDA 12.1 + Python 3.12 environment)
+# Initialize Docling converter using GPU acceleration when CUDA is available
 pipeline_options = PdfPipelineOptions()
+pipeline_options.do_ocr = True
+pipeline_options.do_table_structure = True
 if cuda_available:
     pipeline_options.accelerator_options.device = AcceleratorDevice.CUDA
     pipeline_options.accelerator_options.num_threads = 8
@@ -71,7 +101,7 @@ converter = DocumentConverter(
 
 def fatiar_pdf(caminho_arquivo: Path, paginas_por_fatia: int = 15) -> List[Path]:
     """Slices a large PDF into smaller ones to avoid memory issues with Docling."""
-    print(f"✂️ Fatiando PDF: {caminho_arquivo.name}...")
+    print(f"Fatiando PDF: {caminho_arquivo.name}...")
     temp_dir = Path("./temp_slices")
     if temp_dir.exists():
         shutil.rmtree(temp_dir)
@@ -93,11 +123,11 @@ def fatiar_pdf(caminho_arquivo: Path, paginas_por_fatia: int = 15) -> List[Path]
             writer.write(f)
         fatias.append(fatia_path)
         
-    print(f"✅ PDF fatiado em {len(fatias)} partes.")
+    print(f"PDF fatiado em {len(fatias)} partes.")
     return fatias
 
 def extrair_metadados_com_ia(texto_inicial):
-    print("🧠 Extraindo metadados da capa com Inteligência Artificial...")
+    print("Extraindo metadados da capa com Inteligencia Artificial...")
     
     prompt = f"""
     Analise o texto abaixo, que é a capa/início de um manual técnico agronômico.
@@ -113,8 +143,13 @@ def extrair_metadados_com_ia(texto_inicial):
 
     # 1. Tentar via Google SDK (Free Tier)
     try:
-        modelo = genai.GenerativeModel('gemini-2.0-flash')
-        resposta = modelo.generate_content(prompt, generation_config=genai.GenerationConfig(response_mime_type="application/json"))
+        resposta = client.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json"
+            )
+        )
         return json.loads(resposta.text)
     except Exception as e:
         logger.warning(f"⚠️ Google API falhou ou quota excedida: {e}. Tentando Fallback via OpenRouter...")
@@ -168,6 +203,26 @@ def save_checkpoint(checkpoint: Dict[str, Any]):
     with open(CHECKPOINT_FILE, "w") as f:
         json.dump(checkpoint, f, indent=2)
 
+def clean_markdown(text: str) -> str:
+    """Strip TOC noise, repeated page artifacts, and short orphan fragments from Docling Markdown."""
+    lines = text.split('\n')
+    cleaned = []
+
+    for line in lines:
+        # Drop table-of-contents entries (4+ dots = sumário/índice)
+        if re.search(r'\.{4,}', line):
+            continue
+        # Drop bare page numbers and single-word artifacts (< 20 chars, not a heading)
+        stripped = line.strip()
+        if 0 < len(stripped) < 20 and not stripped.startswith('#'):
+            continue
+        cleaned.append(line)
+
+    # Collapse triple+ blank lines into a single blank line
+    result = re.sub(r'\n{3,}', '\n\n', '\n'.join(cleaned))
+    return result.strip()
+
+
 def split_text(markdown_text: str) -> List[str]:
     """Split markdown into semantic chunks."""
     headers_to_split_on = [
@@ -195,8 +250,16 @@ def split_text(markdown_text: str) -> List[str]:
         
     return final_chunks
 
-def get_batch_embeddings(texts: List[str]) -> List[List[float]]:
-    """Fetch embeddings in batch with defensive rate limit logic."""
+def get_batch_embeddings(texts: List[str], document_name: str = "") -> List[List[float]]:
+    """Fetch embeddings in batch with the asymmetric 'title | text' prefix for document chunks."""
+    # Apply asymmetric prefix: title from doc name, text from chunk
+    # This pairs with the query-side prefix 'task: question answering | query: ...'
+    base_name = Path(document_name).stem.replace("_", " ") if document_name else ""
+    prefixed = [
+        f"title: {base_name} | text: {chunk}" if base_name else f"text: {chunk}"
+        for chunk in texts
+    ]
+
     quota_delay_seconds = 65
     max_quota_retries = 3
     quota_retries = 0
@@ -204,12 +267,15 @@ def get_batch_embeddings(texts: List[str]) -> List[List[float]]:
     # Total combined attempts (general errors + quota errors)
     for attempt in range(10):
         try:
-            result = genai.embed_content(
+            result = client.models.embed_content(
                 model=EMBEDDING_MODEL,
-                content=texts,
-                task_type="retrieval_document"
+                contents=prefixed,
+                config=types.EmbedContentConfig(
+                    task_type="RETRIEVAL_DOCUMENT",
+                    output_dimensionality=EMBEDDING_DIMENSIONS,
+                )
             )
-            return result['embedding']
+            return [emb.values for emb in result.embeddings]
         except Exception as e:
             error_msg = str(e).lower()
             
@@ -231,7 +297,14 @@ def get_batch_embeddings(texts: List[str]) -> List[List[float]]:
             
     raise Exception("Falha crítica ao obter embeddings após múltiplas tentativas.")
 
-def process_pdf(filepath: Path):
+def pad_embedding(embedding: List[float], target_dim: int = 3072) -> List[float]:
+    """Pad the embedding with zeros to match a higher-dimensional VECTOR column (e.g. 3072)."""
+    if len(embedding) < target_dim:
+        return embedding + [0.0] * (target_dim - len(embedding))
+    return embedding[:target_dim]
+
+
+def process_pdf(filepath: Path, categoria_fonte: str = "geral"):
     logger.info(f"Processing: {filepath.name}")
     
     # 1. Extraction (with Auto-Splitter)
@@ -255,9 +328,10 @@ def process_pdf(filepath: Path):
             shutil.rmtree(target_temp_dir)
         return
     
-    # 2. Chunking & Metadata Extraction
-    chunks = split_text(md_text_completo)
-    logger.info(f"Generated {len(chunks)} chunks for {filepath.name}")
+    # 2. Clean + Chunking & Metadata Extraction
+    md_text_limpo = clean_markdown(md_text_completo)
+    chunks = split_text(md_text_limpo)
+    logger.info(f"Generated {len(chunks)} chunks for {filepath.name} [categoria: {categoria_fonte}]")
     
     # AI Metadata Extraction from combined text
     meta_ia = extrair_metadados_com_ia(md_text_completo[:3000])
@@ -273,7 +347,7 @@ def process_pdf(filepath: Path):
         "institution": meta_ia.get("instituicao", "Desconhecido"),
         "updated_at": "now()"
     }
-    supabase.table("knowledge_documents").upsert(doc_payload).execute()
+    supabase.table("knowledge_documents").upsert(doc_payload, on_conflict="filename").execute()
     
     # 4. Batch Embedding & Insertion
     total_batches = (len(chunks) + BATCH_SIZE - 1) // BATCH_SIZE
@@ -283,7 +357,7 @@ def process_pdf(filepath: Path):
         batch_idx = (i // BATCH_SIZE) + 1
         
         logger.info(f"Embedding batch {batch_idx}/{total_batches} for {filepath.name}...")
-        embeddings = get_batch_embeddings(batch_texts)
+        embeddings = get_batch_embeddings(batch_texts, filepath.name)
         
         chunk_records = []
         for j, (text, emb) in enumerate(zip(batch_texts, embeddings)):
@@ -291,8 +365,12 @@ def process_pdf(filepath: Path):
                 "document_name": filepath.name,
                 "chunk_index": i + j,
                 "content": text,
-                "embedding": emb,
-                "metadata": {"source": filepath.name, "batch": batch_idx}
+                "embedding": pad_embedding(emb),
+                "metadata": {
+                    "source": filepath.name,
+                    "batch": batch_idx,
+                    "categoria_fonte": categoria_fonte,  # ← Meta-RAG label injected here
+                }
             })
             
         # Bulk insert into Supabase
@@ -301,42 +379,72 @@ def process_pdf(filepath: Path):
         # Respect Rate Limits
         time.sleep(SLEEP_BETWEEN_BATCHES)
 
+def discover_pdfs(base_dir: Path) -> List[Tuple[Path, str]]:
+    """Walk knowledge_repo/ subdirectories.
+
+    Returns a list of (pdf_path, categoria_fonte) tuples.
+    PDFs in the root folder are labeled 'geral'.
+    PDFs inside a subfolder inherit the subfolder name as the category.
+    """
+    results: List[Tuple[Path, str]] = []
+
+    # Categorized subfolders (institucional/, academico/, movimentos_sociais/, ...)
+    for subdir in sorted(base_dir.iterdir()):
+        if subdir.is_dir() and not subdir.name.startswith('.'):
+            categoria = subdir.name
+            for pdf in sorted(subdir.glob("*.pdf")):
+                results.append((pdf, categoria))
+
+    # Root-level PDFs → uncategorized fallback
+    for pdf in sorted(base_dir.glob("*.pdf")):
+        results.append((pdf, "geral"))
+
+    return results
+
+
 def main():
     if not INPUT_DIR.exists():
-        INPUT_DIR.mkdir()
-        logger.info(f"Created {INPUT_DIR}. Put your PDFs there.")
+        INPUT_DIR.mkdir(parents=True)
+        logger.info(
+            f"Created {INPUT_DIR}. Add PDFs inside subfolders:\n"
+            f"  {INPUT_DIR}/institucional/  → cartilhas EMBRAPA, MAPA\n"
+            f"  {INPUT_DIR}/academico/      → artigos, dissertações\n"
+            f"  {INPUT_DIR}/movimentos_sociais/ → MST, La Via Campesina"
+        )
         return
 
     checkpoint = load_checkpoint()
-    
-    pdf_files = list(INPUT_DIR.glob("*.pdf"))
+    pdf_files = discover_pdfs(INPUT_DIR)
+
     if not pdf_files:
-        logger.info("No PDF files found in knowledge_repo/")
+        logger.info("No PDF files found in knowledge_repo/ or its subfolders.")
         return
-        
-    for pdf_path in pdf_files:
+
+    logger.info(f"Found {len(pdf_files)} PDF(s) to process.")
+
+    for pdf_path, categoria_fonte in pdf_files:
         file_hash = get_file_hash(pdf_path)
-        
+
         if pdf_path.name in checkpoint and checkpoint[pdf_path.name]["hash"] == file_hash:
-            logger.info(f"Skipping {pdf_path.name} (already processed and unchanged)")
+            logger.info(f"Skipping {pdf_path.name} (unchanged, categoria={categoria_fonte})")
             continue
-            
+
         try:
-            process_pdf(pdf_path)
-            
-            # Update checkpoint
+            process_pdf(pdf_path, categoria_fonte)
+
             checkpoint[pdf_path.name] = {
                 "hash": file_hash,
-                "processed_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+                "processed_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "categoria_fonte": categoria_fonte,
             }
             save_checkpoint(checkpoint)
-            
+
         except Exception as e:
             logger.error(f"Fatal error processing {pdf_path.name}: {e}")
-            # Continue to next file
             continue
 
     logger.info("Ingestion process completed.")
+
 
 if __name__ == "__main__":
     main()

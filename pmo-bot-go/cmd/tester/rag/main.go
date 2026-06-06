@@ -35,7 +35,7 @@ func main() {
 
 	// 1. Ingest Global Knowledge
 	contentGlobal := "DICA GLOBAL: O manejo orgânico exige certificação anual."
-	embGlobal, err := gemClient.GenerateEmbedding(contentGlobal)
+	embGlobal, err := gemClient.Embedder().GenerateEmbedding(contentGlobal)
 	if err != nil {
 		log.Fatalf("Failed to gen embedding Global: %v", err)
 	}
@@ -47,7 +47,7 @@ func main() {
 
 	// 2. Ingest for Farm A
 	contentA := "PRIVADO A: O segredo da Fazenda A é plantar sob a lua cheia."
-	embA, err := gemClient.GenerateEmbedding(contentA)
+	embA, err := gemClient.Embedder().GenerateEmbedding(contentA)
 	if err != nil {
 		log.Fatalf("Failed to gen embedding A: %v", err)
 	}
@@ -59,7 +59,7 @@ func main() {
 
 	// 3. Search as Farm A
 	fmt.Println("\n🔍 Buscando como Fazenda A: 'Como funciona o manejo e qual o segredo?'")
-	queryEmb, err := gemClient.GenerateEmbedding("Como funciona o manejo e qual o segredo?")
+	queryEmb, err := gemClient.Embedder().GenerateEmbedding("Como funciona o manejo e qual o segredo?")
 	if err != nil {
 		log.Fatalf("Failed to gen query embedding: %v", err)
 	}

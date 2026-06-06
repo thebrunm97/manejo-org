@@ -3,17 +3,17 @@ package state
 import (
 	"context"
 	"log"
+	"strings"
 	"time"
 
-	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
+	"github.com/thebrunm97/pmo-bot-go/internal/prompt"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
-	"strings"
 )
 
 // ActiveOutputJudge is the package-level output governance judge.
@@ -39,7 +39,7 @@ func SetHITL(h guardrails.HITLHandler) {
 
 // handleDuvidaFallback is the specialist multi-agent entry point.
 // It uses modular prompts, filtered tools, loop protection, and short-term memory injection.
-func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, from string, gemClient *gemini.Client, body string, respondWithAudio bool, sbClient *supabase.Client, profile *supabase.Profile, startTime time.Time, promptTokens int, completionTokens int, finalIntent string, tools []llm.FerramentaAgnostica, guard *mcp.LoopGuard, historyManager *history.Manager, mcpServer *mcp.Server) (string, ProcessResult) {
+func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, from string, llmClient llm.LLMProvider, body string, respondWithAudio bool, sbClient *supabase.Client, profile *supabase.Profile, startTime time.Time, promptTokens int, completionTokens int, finalIntent string, tools []llm.FerramentaAgnostica, guard *mcp.LoopGuard, historyManager *history.Manager, mcpServer *mcp.Server) (string, ProcessResult) {
 	log.Printf("🤖 [FSM] Iniciando Fluxo Especialista (Intent: %s)", finalIntent)
 
 	// 1. Prepare Specialized Context
@@ -48,7 +48,7 @@ func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, tts
 	if modality == "" {
 		modality = "NÃO DEFINIDA"
 	}
-	specPrompt := gemini.GetPromptForIntent(llm.Intent(finalIntent), modality, profile.TemProducaoParalela)
+	specPrompt := prompt.ForIntent(llm.Intent(finalIntent), modality, profile.TemProducaoParalela)
 
 	// 2. Load History into Agnostic Format
 	var agnosticHistory []llm.MensagemAgnostica
@@ -69,7 +69,7 @@ func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, tts
 	var totalPromptTokens, totalCompletionTokens int
 	
 	// 3. Execute Agentic Loop via Orchestrator (Agnostic)
-	orchestrator := NewOrchestrator(gemClient, sbClient, mcpServer)
+	orchestrator := NewOrchestrator(llmClient, sbClient, mcpServer)
 	orchestrator.OutputJudge = ActiveOutputJudge // wire output governance (nil = disabled)
 	orchestrator.HITL = ActiveHITLController     // wire HITL controller (nil = disabled)
 	orchestrator.Phone = phone                   // needed for HITL WhatsApp confirmation
@@ -98,7 +98,7 @@ func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, tts
 			}
 		}
 
-		if shouldOmitHeader {
+		if shouldOmitHeader || finalIntent == "DATABASE" {
 			botResponse = trimmed // Keep clean confirmation/error
 		} else {
 			botResponse = "🌿 *Consulta Técnica:*\n\n" + trimmed
@@ -111,7 +111,7 @@ func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, tts
 		"query":  body,
 		"trace":  trace, // Include trace in training log for better debugging
 	}
-	recordLog(sbClient, profile, body, botResponse, gemClient.Config.Model, modelUsed, totalPromptTokens, totalCompletionTokens, finalIntent, extraction, startTime, true, trace)
+	recordLog(sbClient, profile, body, botResponse, llmClient.ModelName(), modelUsed, totalPromptTokens, totalCompletionTokens, finalIntent, extraction, startTime, true, trace)
 	
 	if historyManager != nil {
 		historyManager.AppendAgnosticHistory(phone, newHistory)

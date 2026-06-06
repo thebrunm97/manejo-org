@@ -10,65 +10,20 @@ import (
 	"log"
 	"net/http"
 	"os"
-
-	"google.golang.org/genai"
-	_ "embed"
 	"strings"
+	"sync"
 	"time"
 
-	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	openai "github.com/sashabaranov/go-openai"
-	"sync"
+	"google.golang.org/genai"
+
+	"github.com/thebrunm97/pmo-bot-go/internal/llm"
+	"github.com/thebrunm97/pmo-bot-go/internal/llm/schema"
+	"github.com/thebrunm97/pmo-bot-go/internal/prompt"
 )
 
-//go:embed prompts/system_prompt.md
-var systemPrompt string
-
-//go:embed prompts/agronomist.md
-var systemPromptAgronomist string
-
-//go:embed prompts/db_operator.md
-var systemPromptDBOperator string
-
-//go:embed prompts/agronomist_vision.md
-var systemPromptAgronomistVision string
-
-// GetPromptForIntent selects the correct specialist system prompt based on the
-// classified Intent from the Router. Falls back to the default monolithic prompt
-// for CHAT or any unrecognized intent to avoid breaking the existing flow.
-// GetPromptForIntent selects the correct specialist system prompt and injects property context.
-func GetPromptForIntent(intent llm.Intent, modality string, temProducaoParalela bool) string {
-	var prompt string
-	switch intent {
-	case llm.IntentRAG:
-		prompt = systemPromptAgronomist
-	case llm.IntentDatabase:
-		prompt = systemPromptDBOperator
-	default:
-		prompt = systemPrompt
-	}
-
-	// Inject dynamic context (Simple string replacement as placeholder for a template engine)
-	prompt = strings.ReplaceAll(prompt, "{{MODALIDADE_PREDOMINANTE}}", modality)
-	
-	parallelMsg := ""
-	if temProducaoParalela {
-		parallelMsg = "SIM"
-	} else {
-		parallelMsg = "NÃO"
-	}
-	prompt = strings.ReplaceAll(prompt, "{{TEM_PRODUCAO_PARALELA}}", parallelMsg)
-
-	// Injetar Data Atual (Fix para evitar datas hardcoded nos prompts)
-	loc, _ := time.LoadLocation("America/Sao_Paulo")
-	now := time.Now().In(loc)
-	currentDateBR := now.Format("02 de Janeiro de 2006")
-	prompt = strings.ReplaceAll(prompt, "{{CURRENT_DATE_BR}}", currentDateBR)
-
-	// Note: For more complex logic like {% if %}, a real template engine like text/template should be used.
-	// For now, these basic replacements satisfy the current prompt structure if we adapt the prompts slightly.
-	return prompt
-}
+// Compile-time check: *Client must satisfy llm.LLMProvider.
+var _ llm.LLMProvider = (*Client)(nil)
 
 // Config holds Gemini API configuration
 type Config struct {
@@ -199,38 +154,129 @@ func (t *openRouterTransport) RoundTrip(req *http.Request) (*http.Response, erro
 	return http.DefaultTransport.RoundTrip(req)
 }
 
-// Close closes the underlying genai client
+// Close releases resources held by the provider.
 func (c *Client) Close() error {
 	return nil
 }
 
-// GenerateEmbedding transforms a text chunk into a vector
-func (c *Client) GenerateEmbedding(text string) ([]float32, error) {
-	ctx := context.Background()
+// ─── llm.LLMProvider Implementation ──────────────────────────────────────────
 
+// ModelName returns the primary model name configured for logging/audit.
+func (c *Client) ModelName() string {
+	return c.Config.Model
+}
+
+// Embedder returns the embedding sub-interface.
+func (c *Client) Embedder() llm.Embedder {
+	return &embeddingAdapter{client: c}
+}
+
+// embeddingAdapter adapts *Client to the llm.Embedder interface.
+type embeddingAdapter struct {
+	client *Client
+}
+
+// GenerateEmbedding transforms a text chunk into a vector.
+func (e *embeddingAdapter) GenerateEmbedding(text string) ([]float32, error) {
+	ctx := context.Background()
 	log.Printf("📡 [GEMINI SDK] Gerando embedding para texto (%d chars)...", len(text))
-	res, err := c.Client.Models.EmbedContent(ctx, "gemini-embedding-001", genai.Text(text), nil)
+	res, err := e.client.Client.Models.EmbedContent(ctx, "gemini-embedding-001", genai.Text(text), nil)
 	if err != nil {
 		return nil, fmt.Errorf("embedding error: %w", err)
 	}
-
 	return res.Embeddings[0].Values, nil
 }
 
-// AskExpert asks a question using the legacy simple flow (for backward compatibility if needed)
-func (c *Client) AskExpert(question string, customInstruction ...string) (string, string, error) {
-	ctx := context.Background()
+// GenerateQueryEmbedding encodes a search query.
+func (e *embeddingAdapter) GenerateQueryEmbedding(query string) ([]float32, error) {
+	return e.GenerateEmbedding(query)
+}
 
-	// Set system instruction
-	instruction := systemPrompt
-	if len(customInstruction) > 0 && customInstruction[0] != "" {
-		instruction = customInstruction[0]
+// GenerateContent executes a full completion with history, tools and optional schema.
+// Encapsulates the Google → OpenRouter fallback internally.
+func (c *Client) GenerateContent(ctx context.Context, req llm.ContentRequest) (llm.RespostaAgnostica, error) {
+	// Convert agnostic schema to provider-specific formats
+	var googleSchema *genai.Schema
+	var openrouterSchema map[string]interface{}
+
+	if req.Schema != nil {
+		// Build Google schema from raw JSON Schema map
+		googleSchema = llm.MapToGenaiSchema(req.Schema, true)
+		openrouterSchema = req.Schema
+	}
+
+	// Try Google first
+	resp, err := c.CallGoogle(ctx, req.SystemInstruction, req.History, req.Tools, googleSchema)
+	if err != nil {
+		log.Printf("⚠️ [LLMProvider] Google failed: %v — trying OpenRouter...", err)
+		resp, err = c.CallOpenRouter(ctx, req.SystemInstruction, req.History, req.Tools, openrouterSchema)
+		if err != nil {
+			return llm.RespostaAgnostica{}, fmt.Errorf("all providers failed: %w", err)
+		}
+	}
+	return resp, nil
+}
+
+// ClassifyIntent performs unified intent classification + NER extraction.
+func (c *Client) ClassifyIntent(ctx context.Context, text string) (llm.UnifiedIntentResult, string, error) {
+	// Generate provider-specific schemas from the Go struct
+	jsonSchemaBytes, _ := schema.Reflect[llm.UnifiedIntentResult]()
+	googleSchema, _ := schema.ForGoogle(jsonSchemaBytes)
+	openRouterSchema, _ := schema.ForOpenRouter(jsonSchemaBytes, "UnifiedIntentResult")
+
+	log.Printf("🧭 [UNIFIED-ROUTER] Analisando: '%s'", truncateStr(strings.TrimSpace(text), 60))
+
+	sysInst := prompt.RouterSystemPrompt()
+
+	op := func(modelName string) (any, error) {
+		if strings.Contains(modelName, "/") || c.OpenAI != nil {
+			if modelName == c.Config.Model || modelName == c.Config.FallbackModel {
+				return c.CallGoogle(ctx, sysInst, []llm.MensagemAgnostica{{Role: llm.PapelUser, Content: text}}, nil, googleSchema)
+			}
+			return c.CallOpenRouter(ctx, sysInst, []llm.MensagemAgnostica{
+				{Role: llm.PapelUser, Content: text},
+			}, nil, openRouterSchema)
+		}
+		return c.CallGoogle(ctx, sysInst, []llm.MensagemAgnostica{{Role: llm.PapelUser, Content: text}}, nil, googleSchema)
+	}
+
+	res, modelUsed, err := c.withFallback(ctx, op)
+	if err != nil {
+		return llm.UnifiedIntentResult{Intent: llm.IntentRAG}, modelUsed, err
+	}
+
+	agnosticResp := res.(llm.RespostaAgnostica)
+
+	result, err := schema.DecodeAndValidate[llm.UnifiedIntentResult](agnosticResp.Texto)
+	if err != nil {
+		log.Printf("⚠️ [ROUTER] Erro de Validação/Schema: %v. Raw: %s", err, agnosticResp.Texto)
+		return llm.UnifiedIntentResult{Intent: llm.IntentRAG, Confidence: 0.5, Reasoning: "schema_validation_error"}, modelUsed, nil
+	}
+
+	if result.Intent == "" {
+		result.Intent = llm.IntentRAG
+	}
+
+	firstIntencao := "duvida"
+	if len(result.Entities) > 0 && result.Entities[0].Intencao != "" {
+		firstIntencao = result.Entities[0].Intencao
+	}
+
+	log.Printf("🧭 [ROUTER] Intent: %s (Primeira Entidade: %s) | Conf: %.2f | Reasoning: %s | Total: %d", result.Intent, firstIntencao, result.Confidence, result.Reasoning, len(result.Entities))
+
+	return result, modelUsed, nil
+}
+
+// AskSimple sends a single question without tools.
+func (c *Client) AskSimple(ctx context.Context, question string, systemInstruction string) (string, string, error) {
+	if systemInstruction == "" {
+		systemInstruction = prompt.ForIntent(llm.IntentChat, "", false)
 	}
 
 	op := func(modelName string) (any, error) {
 		config := &genai.GenerateContentConfig{
 			SystemInstruction: &genai.Content{
-				Parts: []*genai.Part{{Text: instruction}},
+				Parts: []*genai.Part{{Text: systemInstruction}},
 			},
 			Temperature: genai.Ptr[float32](0.2),
 		}
@@ -252,7 +298,6 @@ func (c *Client) AskExpert(question string, customInstruction ...string) (string
 	}
 
 	resp := res.(*genai.GenerateContentResponse)
-	// Extract text from parts
 	var result string
 	for _, part := range resp.Candidates[0].Content.Parts {
 		if part.Text != "" {
@@ -261,6 +306,54 @@ func (c *Client) AskExpert(question string, customInstruction ...string) (string
 	}
 
 	return result, modelUsed, nil
+}
+
+// DescribeImage analyzes an image and returns a technical description.
+func (c *Client) DescribeImage(ctx context.Context, imageBytes []byte, mimeType string) (string, string, error) {
+	modelName := "gemini-1.5-flash"
+
+	config := &genai.GenerateContentConfig{
+		SystemInstruction: &genai.Content{
+			Parts: []*genai.Part{{Text: prompt.VisionPrompt()}},
+		},
+		Temperature: genai.Ptr[float32](0.4),
+	}
+
+	log.Printf("📡 [GEMINI SDK] Descrevendo imagem (%s, %d bytes) com %s", mimeType, len(imageBytes), modelName)
+
+	parts := []*genai.Part{
+		{InlineData: &genai.Blob{Data: imageBytes, MIMEType: mimeType}},
+	}
+	contents := []*genai.Content{
+		{Parts: parts},
+	}
+
+	resp, err := c.Client.Models.GenerateContent(ctx, modelName, contents, config)
+	if err != nil {
+		return "", "", fmt.Errorf("vision description error: %w", err)
+	}
+
+	if len(resp.Candidates) == 0 || len(resp.Candidates[0].Content.Parts) == 0 {
+		return "", "", fmt.Errorf("empty vision response from %s", modelName)
+	}
+
+	var result string
+	for _, part := range resp.Candidates[0].Content.Parts {
+		if part.Text != "" {
+			result += part.Text
+		}
+	}
+
+	return result, modelName, nil
+}
+
+// truncateStr is a helper to safely shorten strings for logging.
+func truncateStr(s string, max int) string {
+	runes := []rune(s)
+	if len(runes) <= max {
+		return s
+	}
+	return string(runes[:max]) + "..."
 }
 
 // withFallback wraps a Gemini call with retry and fallback logic.
@@ -301,18 +394,18 @@ func isOverloadedError(err error) bool {
 }
 
 // GenerateContentWithTools handles the interactive tool calling flow with history support.
+// Deprecated: Use GenerateContent (LLMProvider interface) for new code.
 func (c *Client) GenerateContentWithTools(ctx context.Context, question string, history []*genai.Content, tools []*genai.Tool, systemInstruction ...string) (*genai.GenerateContentResponse, *genai.Chat, string, error) {
-	prompt := systemPrompt
+	sysPrompt := prompt.ForIntent(llm.IntentChat, "", false)
 	if len(systemInstruction) > 0 && systemInstruction[0] != "" {
-		prompt = systemInstruction[0]
+		sysPrompt = systemInstruction[0]
 	}
 
-	// We create a function that knows how to execute the call given a model name
 	op := func(modelName string) (any, error) {
 		config := &genai.GenerateContentConfig{
 			Tools: tools,
 			SystemInstruction: &genai.Content{
-				Parts: []*genai.Part{{Text: prompt}},
+				Parts: []*genai.Part{{Text: sysPrompt}},
 			},
 			Temperature: genai.Ptr[float32](0.2),
 		}
@@ -339,43 +432,10 @@ func (c *Client) GenerateContentWithTools(ctx context.Context, question string, 
 	return result[0].(*genai.GenerateContentResponse), result[1].(*genai.Chat), modelUsed, nil
 }
 
-// DescribeAgronomicImage analyzes an image and returns a technical description.
+// DescribeAgronomicImage is kept as a backward-compatible alias for DescribeImage.
+// Deprecated: Use DescribeImage (LLMProvider interface) for new code.
 func (c *Client) DescribeAgronomicImage(ctx context.Context, imageBytes []byte, mimeType string) (string, string, error) {
-	modelName := "gemini-1.5-flash"
-	
-	config := &genai.GenerateContentConfig{
-		SystemInstruction: &genai.Content{
-			Parts: []*genai.Part{{Text: systemPromptAgronomistVision}},
-		},
-		Temperature: genai.Ptr[float32](0.4),
-	}
-
-	log.Printf("📡 [GEMINI SDK] Descrevendo imagem (%s, %d bytes) com %s", mimeType, len(imageBytes), modelName)
-
-	parts := []*genai.Part{
-		{InlineData: &genai.Blob{Data: imageBytes, MIMEType: mimeType}},
-	}
-	contents := []*genai.Content{
-		{Parts: parts},
-	}
-
-	resp, err := c.Client.Models.GenerateContent(ctx, modelName, contents, config)
-	if err != nil {
-		return "", "", fmt.Errorf("vision description error: %w", err)
-	}
-
-	if len(resp.Candidates) == 0 || len(resp.Candidates[0].Content.Parts) == 0 {
-		return "", "", fmt.Errorf("empty vision response from %s", modelName)
-	}
-
-	var result string
-	for _, part := range resp.Candidates[0].Content.Parts {
-		if part.Text != "" {
-			result += part.Text
-		}
-	}
-
-	return result, modelName, nil
+	return c.DescribeImage(ctx, imageBytes, mimeType)
 }
 
 // CallOpenRouter executes a completion request via OpenRouter (OpenAI-compatible).

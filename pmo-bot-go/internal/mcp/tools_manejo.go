@@ -118,6 +118,8 @@ func (s *Server) handleRegistrarPropagacaoVegetal(args map[string]interface{}) (
 	pmoID := int64(pmoIDFloat)
 	userID, _ := args["user_id"].(string)
 
+	valorTotal, _ := parseArgToFloat(args["valor_total"])
+
 	payload := map[string]interface{}{
 		"tipo":             sanitize(args["tipo"]),
 		"especies":         sanitize(args["especies"]),
@@ -125,6 +127,7 @@ func (s *Server) handleRegistrarPropagacaoVegetal(args map[string]interface{}) (
 		"quantidade":       sanitize(args["quantidade"]),
 		"sistema_organico": args["sistema_organico"],
 		"data":             sanitize(args["data_compra"]),
+		"valor_total":      valorTotal,
 	}
 
 	if payload["especies"] == "" || payload["tipo"] == "" || payload["quantidade"] == "" {
@@ -231,6 +234,8 @@ func (s *Server) handleRegistrarCompraInsumo(args map[string]interface{}) (inter
 	propIDFloat, _ := parseArgToFloat(args["propriedade_id"])
 	propID := int64(propIDFloat)
 
+	valorTotal, _ := parseArgToFloat(args["valor_total"])
+
 	rpcArgs := map[string]interface{}{
 		"pmo_id_arg":             pmoID,
 		"propriedade_id_arg":     propID,
@@ -244,6 +249,7 @@ func (s *Server) handleRegistrarCompraInsumo(args map[string]interface{}) (inter
 		"marca_arg":              sanitize(args["marca"]),
 		"composicao_arg":         sanitize(args["composicao"]),
 		"procedencia_arg":        sanitize(args["procedencia"]),
+		"valor_total_arg":        valorTotal,
 	}
 
 	if produto == "" || qtdValor <= 0 || qtdUnidade == "" {

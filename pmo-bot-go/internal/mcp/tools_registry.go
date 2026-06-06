@@ -39,17 +39,22 @@ func (s *Server) InitializeTools() {
 	s.RegisterTool(Tool{
 		Definition: llm.FerramentaAgnostica{
 			Name:        "consultar_base_conhecimento",
-			Description: "Usa esta ferramenta para pesquisar manuais, regras de plantio, histórico da fazenda e normas globais orgânicas.",
+			Description: "Usa esta ferramenta para pesquisar manuais, regras de plantio, historico da fazenda e normas globais organicas. Os documentos sao categorizados por fonte: 'institucional' (EMBRAPA, MAPA), 'academico' (artigos, dissertacoes) e 'movimentos_sociais' (MST, agroecologia). Foreca categoria_fonte se o usuario indicar a origem do conhecimento desejado.",
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
 					"pmo_id": map[string]interface{}{
 						"type":        "integer",
-						"description": "ID do PMO (fazenda) do usuário para filtrar os documentos.",
+						"description": "ID do PMO (fazenda) do usuario para filtrar os documentos.",
 					},
 					"pergunta": map[string]interface{}{
 						"type":        "string",
 						"description": "A pergunta ou termo de busca para pesquisar na base de conhecimento.",
+					},
+					"categoria_fonte": map[string]interface{}{
+						"type":        "string",
+						"enum":        []string{"institucional", "academico", "movimentos_sociais", "geral"},
+						"description": "Filtro opcional: restringir a busca a uma categoria de fonte. Omita para buscar em todas as categorias.",
 					},
 				},
 				"required": []string{"pmo_id", "pergunta"},
@@ -186,6 +191,10 @@ func (s *Server) InitializeTools() {
 						"type":        "string",
 						"description": "Data no formato YYYY-MM-DD.",
 					},
+					"valor_total": map[string]interface{}{
+						"type":        "number",
+						"description": "O valor total em dinheiro gasto na operação/compra (opcional).",
+					},
 				},
 				"required": []string{"pmo_id", "propriedade_id", "tipo", "especies", "quantidade"},
 			},
@@ -309,6 +318,10 @@ func (s *Server) InitializeTools() {
 						"type":        "string",
 						"description": "Data da compra no formato YYYY-MM-DD. Se o usuário não disser a data específica, deixe vazio para usar hoje.",
 					},
+					"valor_total": map[string]interface{}{
+						"type":        "number",
+						"description": "O valor total em dinheiro gasto na operação/compra (opcional).",
+					},
 				},
 				"required": []string{"pmo_id", "propriedade_id", "produto", "quantidade_valor", "quantidade_unidade"},
 			},
@@ -332,6 +345,10 @@ func (s *Server) InitializeTools() {
 					"quantidade":      map[string]interface{}{"type": "number", "description": "Quantidade colhida."},
 					"unidade":         map[string]interface{}{"type": "string", "description": "Unidade de medida (Ex: kg, maços, caixas)."},
 					"destino_inicial": map[string]interface{}{"type": "string", "description": "Para onde foi o produto logo após a colheita (Ex: Depósito, Câmara Fria, Lavagem).", "default": "Depósito"},
+					"valor_total": map[string]interface{}{
+						"type":        "number",
+						"description": "O valor total em dinheiro gasto na operação (opcional).",
+					},
 				},
 				"required": []string{"pmo_id", "propriedade_id", "cultura", "talhao", "quantidade", "unidade"},
 			},
@@ -362,6 +379,10 @@ func (s *Server) InitializeTools() {
 						"default":     "venda",
 					},
 					"nota_fiscal": map[string]interface{}{"type": "string", "description": "Número da NF ou recibo."},
+					"valor_total": map[string]interface{}{
+						"type":        "number",
+						"description": "O valor total recebido na venda (opcional, se omitido calcula-se como quantidade * valor_unitario).",
+					},
 				},
 				"required": []string{"pmo_id", "propriedade_id", "produto", "quantidade", "unidade", "destinacao"},
 			},
@@ -426,7 +447,7 @@ func (s *Server) InitializeTools() {
 	s.RegisterTool(Tool{
 		Definition: llm.FerramentaAgnostica{
 			Name:        "consultar_balanco_financeiro",
-			Description: "Retorna o balanço financeiro (DRE) da fazenda. Usa esta ferramenta para responder a perguntas sobre receitas, despesas, lucros ou categorias onde se gastou mais dinheiro.",
+			Description: "Retorna o balanço financeiro (DRE) da fazenda (receitas, despesas, saldo, e top despesas). OBRIGATÓRIO: Use sempre o ano atual (2026) por padrão se o usuário não especificar o ano no contexto da pergunta.",
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
@@ -436,7 +457,7 @@ func (s *Server) InitializeTools() {
 					},
 					"ano": map[string]interface{}{
 						"type":        "integer",
-						"description": "O ano do balanço (ex: 2026). Se o utilizador não especificar, usa o ano atual.",
+						"description": "O ano do balanço (ex: 2026). OBRIGATÓRIO: Se o usuário não especificar o ano, você DEVE fornecer o ano atual (2026) como padrão.",
 					},
 					"mes": map[string]interface{}{
 						"type":        "integer",

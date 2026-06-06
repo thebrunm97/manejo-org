@@ -27,6 +27,8 @@ func (s *Server) handleRegistrarColheita(args map[string]interface{}) (interface
 	propIDFloat, _ := parseArgToFloat(args["propriedade_id"])
 	propID := int64(propIDFloat)
 
+	valorTotal, _ := parseArgToFloat(args["valor_total"])
+
 	resp, err := s.supabase.RegistrarOperacaoCampoRPC(context.Background(), map[string]interface{}{
 		"pmo_id_arg":         pmoID,
 		"propriedade_id_arg": propID,
@@ -40,6 +42,7 @@ func (s *Server) handleRegistrarColheita(args map[string]interface{}) (interface
 			"talhao_nome":         talhao,
 			"destino_inicial":     sanitize(args["destino_inicial"]),
 			"observacao_original": fmt.Sprintf("Colheita de %s registrada via MCP Tool.", cultura),
+			"valor_total":         valorTotal,
 		},
 	}, data)
 	if err != nil {
@@ -77,6 +80,11 @@ func (s *Server) handleRegistrarVenda(args map[string]interface{}) (interface{},
 	propIDFloat, _ := parseArgToFloat(args["propriedade_id"])
 	propID := int64(propIDFloat)
 
+	valorTotal, _ := parseArgToFloat(args["valor_total"])
+	if valorTotal <= 0 && valorUnit > 0 && qtd > 0 {
+		valorTotal = valorUnit * qtd
+	}
+
 	resp, err := s.supabase.RegistrarOperacaoCampoRPC(context.Background(), map[string]interface{}{
 		"pmo_id_arg":         pmoID,
 		"propriedade_id_arg": propID,
@@ -91,6 +99,7 @@ func (s *Server) handleRegistrarVenda(args map[string]interface{}) (interface{},
 			"destinacao":          sanitize(args["destinacao"]),
 			"valor_unitario":      valorUnit,
 			"observacao_original": fmt.Sprintf("Venda de %s para %s registrada via MCP Tool.", produto, cliente),
+			"valor_total":         valorTotal,
 		},
 	}, data)
 	if err != nil {

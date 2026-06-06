@@ -15,6 +15,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
 	"github.com/thebrunm97/pmo-bot-go/internal/jobs"
+	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/queue"
@@ -93,6 +94,11 @@ func main() {
 	}
 	log.Printf("✅ Cliente Gemini inicializado (modelo: %s, versão: %s)", geminiModel, geminiVersion)
 
+	// --- LLM Provider (Agnostic Interface) ---
+	// The gemini.Client satisfies llm.LLMProvider. All downstream code receives
+	// the interface, not the concrete type. To swap providers, change this line.
+	var llmProvider llm.LLMProvider = geminiClient
+
 	// --- Initialize Supabase client ---
 	sbURL := os.Getenv("SUPABASE_URL")
 	if sbURL == "" {
@@ -150,7 +156,7 @@ func main() {
 	}
 
 	// --- Initialize MCP Server ---
-	mcpServer := mcp.NewServer(sbClient, geminiClient)
+	mcpServer := mcp.NewServer(sbClient, llmProvider.Embedder())
 	mcpServer.InitializeTools()
 	log.Println("✅ Servidor MCP (Internal) inicializado com Tool RAG")
 
@@ -193,7 +199,7 @@ func main() {
 
 		outputJudge := guardrails.NewGeminiFlashJudge(
 			func(prompt, sys string) (string, error) {
-				resp, _, err := geminiClient.AskExpert(prompt, sys)
+				resp, _, err := llmProvider.AskSimple(context.Background(), prompt, sys)
 				return resp, err
 			},
 			violationLogger,
@@ -217,13 +223,13 @@ func main() {
 				Queue:    queueManager,
 				WhatsApp: wpClient,
 				Groq:     groqClient,
-				Gemini:   geminiClient,
+				LLM:      llmProvider,
 			},
 			AI: queue.AIWorkerConfig{
 				Queue:             queueManager,
 				Supabase:          sbClient,
 				WhatsApp:          wpClient,
-				Gemini:            geminiClient,
+				LLM:               llmProvider,
 				TTS:               ttsClient,
 				MCP:               mcpServer,
 				History:           historyManager,
@@ -243,7 +249,7 @@ func main() {
 		GroqClient:      groqClient,
 		SupabaseClient:  sbClient,
 		WhatsAppClient:  wpClient,
-		GeminiClient:    geminiClient,
+		LLMClient:       llmProvider,
 		TtsClient:       ttsClient,
 		MCPServer:       mcpServer,
 		HistoryManager:  historyManager,

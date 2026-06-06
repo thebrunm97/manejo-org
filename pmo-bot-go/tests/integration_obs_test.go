@@ -35,7 +35,7 @@ func TestIngestionObservability(t *testing.T) {
 	gemClient, _ := gemini.NewClient(gemini.Config{APIKey: geminiKey})
 	handler := webhook.NewHandler(webhook.Config{
 		SupabaseClient: sbClient,
-		GeminiClient:   gemClient,
+		LLMClient:      gemClient,
 		Token:          token,
 	})
 

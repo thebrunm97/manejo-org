@@ -20,9 +20,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
+	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/state"
@@ -35,7 +35,7 @@ type AIWorkerConfig struct {
 	Queue        *Manager
 	Supabase     *supabase.Client
 	WhatsApp     ports.MessageSender
-	Gemini       *gemini.Client
+	LLM          llm.LLMProvider
 	TTS          *tts.Orchestrator
 	MCP          *mcp.Server
 	History      *history.Manager
@@ -166,7 +166,7 @@ func (w *AIWorker) processAIJob(ctx context.Context, job *Job, start time.Time) 
 		w.cfg.Supabase,
 		nil, // groqClient: não necessário — áudio já foi transcrito pela Camada 3
 		w.cfg.WhatsApp,
-		w.cfg.Gemini,
+		w.cfg.LLM,
 		w.cfg.TTS,
 		w.cfg.MCP,
 		w.cfg.History,

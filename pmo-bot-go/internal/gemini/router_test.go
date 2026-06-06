@@ -2,7 +2,9 @@ package gemini
 
 import (
 	"testing"
+
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
+	"github.com/thebrunm97/pmo-bot-go/internal/prompt"
 )
 
 // TestIntentConstants verifies that the three Intent constants are correctly defined
@@ -23,7 +25,7 @@ func TestIntentConstants(t *testing.T) {
 	}
 }
 
-// TestGetPromptForIntent verifies that GetPromptForIntent returns a non-empty
+// TestGetPromptForIntent verifies that prompt.ForIntent returns a non-empty
 // string for each known intent and uses the correct specialist prompt.
 func TestGetPromptForIntent(t *testing.T) {
 	tests := []struct {
@@ -50,25 +52,24 @@ func TestGetPromptForIntent(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			prompt := GetPromptForIntent(tt.intent, "orgânico", false)
+			p := prompt.ForIntent(tt.intent, "orgânico", false)
 
-			if prompt == "" {
-				t.Errorf("GetPromptForIntent(%s) returned empty string", tt.intent)
+			if p == "" {
+				t.Errorf("prompt.ForIntent(%s) returned empty string", tt.intent)
 			}
 
 			// Verify the returned prompt contains a known marker from the correct file.
-			// This acts as a "canary" to detect if the embed or the switch was swapped.
 			if tt.expectContains != "" {
 				found := false
-				for i := 0; i+len(tt.expectContains) <= len(prompt); i++ {
-					if prompt[i:i+len(tt.expectContains)] == tt.expectContains {
+				for i := 0; i+len(tt.expectContains) <= len(p); i++ {
+					if p[i:i+len(tt.expectContains)] == tt.expectContains {
 						found = true
 						break
 					}
 				}
 				if !found {
-					t.Errorf("GetPromptForIntent(%s) prompt does not contain expected marker %q.\nGot (first 200 chars): %s",
-						tt.intent, tt.expectContains, truncate(prompt, 200))
+					t.Errorf("prompt.ForIntent(%s) prompt does not contain expected marker %q.\nGot (first 200 chars): %s",
+						tt.intent, tt.expectContains, truncate(p, 200))
 				}
 			}
 		})
@@ -77,7 +78,6 @@ func TestGetPromptForIntent(t *testing.T) {
 
 // TestRouterResultFallback verifies that when an unknown intent string is returned
 // by the model, the ClassifyIntent function's validation logic would detect it.
-// This tests the RouterResult struct parsing, not a live API call.
 func TestRouterResultFallback(t *testing.T) {
 	knownIntents := map[llm.Intent]bool{
 		llm.IntentRAG:      true,
@@ -102,4 +102,13 @@ func TestRouterResultFallback(t *testing.T) {
 	if result.Intent != llm.IntentRAG {
 		t.Errorf("Expected fallback to IntentRAG for unknown intent, got %s", result.Intent)
 	}
+}
+
+// truncate is a test helper to safely shorten strings for error messages.
+func truncate(s string, max int) string {
+	runes := []rune(s)
+	if len(runes) <= max {
+		return s
+	}
+	return string(runes[:max]) + "..."
 }

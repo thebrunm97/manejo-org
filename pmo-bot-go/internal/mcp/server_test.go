@@ -23,8 +23,8 @@ func TestMapToGenaiSchema(t *testing.T) {
 				if s.Type != genai.TypeObject {
 					t.Errorf("expected root type Object, got %v", s.Type)
 				}
-				if _, ok := s.Properties["_dummy"]; !ok {
-					t.Errorf("expected _dummy property injection for empty root")
+				if _, ok := s.Properties["_unused"]; !ok {
+					t.Errorf("expected _unused property injection for empty root")
 				}
 			},
 		},

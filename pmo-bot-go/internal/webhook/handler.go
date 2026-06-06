@@ -17,7 +17,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/thebrunm97/pmo-bot-go/internal/adapter/evolution"
-	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
+	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
 	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
@@ -41,7 +41,7 @@ type Config struct {
 	GroqClient      *groq.Client
 	SupabaseClient  *supabase.Client
 	WhatsAppClient  ports.MessageSender
-	GeminiClient    *gemini.Client
+	LLMClient       llm.LLMProvider
 	TtsClient       *tts.Orchestrator
 	MCPServer       *mcp.Server
 	HistoryManager  *history.Manager
@@ -335,7 +335,7 @@ func (h *Handler) processLegacy(msg ports.IncomingMessage) {
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
-	result := state.ProcessMessage(ctx, msg, h.cfg.SupabaseClient, h.cfg.GroqClient, h.cfg.WhatsAppClient, h.cfg.GeminiClient, h.cfg.TtsClient, h.cfg.MCPServer, h.cfg.HistoryManager, h.cfg.FlagsmithClient)
+	result := state.ProcessMessage(ctx, msg, h.cfg.SupabaseClient, h.cfg.GroqClient, h.cfg.WhatsAppClient, h.cfg.LLMClient, h.cfg.TtsClient, h.cfg.MCPServer, h.cfg.HistoryManager, h.cfg.FlagsmithClient)
 	if !result.Success {
 		log.Printf("⚠️ [LEGACY] Processing completed with issues: %s", result.Reason)
 	}
@@ -503,7 +503,7 @@ func (h *Handler) processKnowledgePDF(path string, originalName string, pmoID in
 					}
 
 					// Generate Embedding
-					embedding, err := h.cfg.GeminiClient.GenerateEmbedding(chunk)
+					embedding, err := h.cfg.LLMClient.Embedder().GenerateEmbedding(chunk)
 					if err != nil {
 						log.Printf("⚠️ [Worker-%d] Erro ao gerar embedding para chunk %d: %v", workerID, j.index, err)
 						// Check if it's a rate limit error (simplified check)
@@ -511,7 +511,7 @@ func (h *Handler) processKnowledgePDF(path string, originalName string, pmoID in
 							log.Printf("🚫 [Worker-%d] Rate limit hit (429). Retrying after brief pause...", workerID)
 							time.Sleep(2 * time.Second)
 							// Retry once or just log and continue
-							embedding, err = h.cfg.GeminiClient.GenerateEmbedding(chunk)
+							embedding, err = h.cfg.LLMClient.Embedder().GenerateEmbedding(chunk)
 							if err != nil {
 								log.Printf("❌ [Worker-%d] Retry failed for chunk %d: %v", workerID, j.index, err)
 								continue

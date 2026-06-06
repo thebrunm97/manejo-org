@@ -12,7 +12,10 @@ import (
 // Embedder defines the contract for generating text embeddings,
 // allowing the MCP server to remain agnostic of the specific LLM provider.
 type Embedder interface {
+	// GenerateEmbedding encodes a document chunk for indexing (title|text format).
 	GenerateEmbedding(text string) ([]float32, error)
+	// GenerateQueryEmbedding encodes a search query with the asymmetric task prefix.
+	GenerateQueryEmbedding(query string) ([]float32, error)
 }
 
 // LoopGuard prevents infinite tool-calling loops by tracking repeated calls with same args.
