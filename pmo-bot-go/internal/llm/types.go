@@ -411,6 +411,18 @@ type UnifiedIntentResult struct {
 	Entities []AcaoEstruturada `json:"entidades" jsonschema:"minItems=1,description=Lista de ações ou entidades independentes detectadas na mensagem. Cada entrada deve representar uma operação completa."`
 }
 
+// EvidenceEvaluation represents the evaluation of a single RAG chunk.
+type EvidenceEvaluation struct {
+	ChunkIndex int    `json:"chunk_index" jsonschema:"required,description=Index of the chunk in the input list (0-based)" validate:"required"`
+	Score      int    `json:"score" jsonschema:"required,description=Agronomic evidence relevance score (1 to 5)" validate:"required,min=1,max=5"`
+	Reasoning  string `json:"reasoning" jsonschema:"required,description=Detailed reasoning for the score based on Crop, Management practice, and Target/Goal" validate:"required"`
+}
+
+// MetaRAGResult wraps a slice of EvidenceEvaluation for structured JSON output.
+type MetaRAGResult struct {
+	Evaluations []EvidenceEvaluation `json:"evaluations" jsonschema:"required,description=List of evidence evaluations" validate:"required,dive"`
+}
+
 // ─── Agnostic Response ───────────────────────────────────────────────────────
 
 // UsoMetadados identifies the token usage of a request.

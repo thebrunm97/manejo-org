@@ -156,7 +156,7 @@ func main() {
 	}
 
 	// --- Initialize MCP Server ---
-	mcpServer := mcp.NewServer(sbClient, llmProvider.Embedder())
+	mcpServer := mcp.NewServer(sbClient, llmProvider.Embedder(), llmProvider)
 	mcpServer.InitializeTools()
 	log.Println("✅ Servidor MCP (Internal) inicializado com Tool RAG")
 

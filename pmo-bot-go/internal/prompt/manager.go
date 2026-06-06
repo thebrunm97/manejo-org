@@ -25,9 +25,17 @@ var systemPromptDBOperator string
 //go:embed prompts/agronomist_vision.md
 var systemPromptAgronomistVision string
 
+//go:embed prompts/meta_rag_judge.txt
+var systemPromptMetaRAGJudge string
+
 // VisionPrompt returns the system instruction for agronomic image analysis.
 func VisionPrompt() string {
 	return systemPromptAgronomistVision
+}
+
+// MetaRAGJudgePrompt returns the system instruction for the Meta-RAG CMM Judge.
+func MetaRAGJudgePrompt() string {
+	return systemPromptMetaRAGJudge
 }
 
 // ForIntent selects the correct specialist system prompt based on the
@@ -59,7 +67,9 @@ func ForIntent(intent llm.Intent, modality string, temProducaoParalela bool) str
 	currentDateBR := now.Format("02 de Janeiro de 2006")
 	p = strings.ReplaceAll(p, "{{CURRENT_DATE_BR}}", currentDateBR)
 
-	return p
+	// Injetar rigidamente no cabeçalho
+	header := fmt.Sprintf("Data atual do sistema: %s\n\n", now.Format("2006-01-02"))
+	return header + p
 }
 
 // RouterSystemPrompt returns the system instruction for intent classification.
@@ -81,5 +91,5 @@ Regras de Extração (para DATABASE):
 - Cada objeto deve conter: intencao (registro, limpeza, financeiro, etc), produto, quantidade, unidade, localizacao e data (YYYY-MM-DD).
 - Se faltar informação crítica para uma ação (ex: sem quantidade), marque 'necessita_mais_info: true' e formule uma 'pergunta_ao_usuario' específica para essa ação.
 
-Data Atual: %s`, time.Now().Format("2006-01-02"))
+Data atual do sistema: %s`, time.Now().Format("2006-01-02"))
 }

@@ -37,6 +37,9 @@ type LLMProvider interface {
 	// Used for logging and audit trails before a call is made.
 	ModelName() string
 
+	// EvaluateEvidenceListwise evaluates a list of retrieved chunks against a query.
+	EvaluateEvidenceListwise(ctx context.Context, query string, chunks []string) (MetaRAGResult, error)
+
 	// Close releases any resources held by the provider.
 	Close() error
 }
