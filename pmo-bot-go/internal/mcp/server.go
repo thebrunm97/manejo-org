@@ -46,9 +46,10 @@ func (lg *LoopGuard) CheckAndRecord(name string, args map[string]interface{}) bo
 // Server represents an MCP server that manages tools and interacts with Supabase.
 // It is now provider-agnostic.
 type Server struct {
-	supabase *supabase.Client
-	embedder Embedder
-	tools    map[string]Tool
+	supabase    *supabase.Client
+	embedder    Embedder
+	llmProvider llm.LLMProvider
+	tools       map[string]Tool
 }
 
 // ToolCategory defines if a tool is for knowledge (RAG) or farm records (DATABASE)
@@ -67,11 +68,12 @@ type Tool struct {
 }
 
 // NewServer initializes a new agnostic MCP server.
-func NewServer(sb *supabase.Client, emb Embedder) *Server {
+func NewServer(sb *supabase.Client, emb Embedder, llmProvider llm.LLMProvider) *Server {
 	return &Server{
-		supabase: sb,
-		embedder: emb,
-		tools:    make(map[string]Tool),
+		supabase:    sb,
+		embedder:    emb,
+		llmProvider: llmProvider,
+		tools:       make(map[string]Tool),
 	}
 }
 

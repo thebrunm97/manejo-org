@@ -586,3 +586,66 @@ func (c *Client) CallGoogle(ctx context.Context, sysInst string, history []llm.M
 
 	return agnosticResp, nil
 }
+
+// EvaluateEvidenceListwise evaluates a list of retrieved chunks against a query.
+func (c *Client) EvaluateEvidenceListwise(ctx context.Context, query string, chunks []string) (llm.MetaRAGResult, error) {
+	var emptyResult llm.MetaRAGResult
+	if len(chunks) == 0 {
+		return emptyResult, nil
+	}
+
+	// 1. Format input for the evaluator
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf("Pergunta do Usuário: %s\n\n", query))
+	sb.WriteString("Lista de Evidências:\n")
+	for i, chunk := range chunks {
+		sb.WriteString(fmt.Sprintf("--- Evidência %d ---\n%s\n\n", i, chunk))
+	}
+	input := sb.String()
+
+	sysInst := prompt.MetaRAGJudgePrompt()
+
+	// 2. Reflect schema
+	jsonSchemaBytes, err := schema.Reflect[llm.MetaRAGResult]()
+	if err != nil {
+		return emptyResult, fmt.Errorf("failed to reflect MetaRAGResult schema: %w", err)
+	}
+
+	googleSchema, err := schema.ForGoogle(jsonSchemaBytes)
+	if err != nil {
+		return emptyResult, fmt.Errorf("failed to generate Google schema: %w", err)
+	}
+
+	openRouterSchema, err := schema.ForOpenRouter(jsonSchemaBytes, "MetaRAGResult")
+	if err != nil {
+		return emptyResult, fmt.Errorf("failed to generate OpenRouter schema: %w", err)
+	}
+
+	// 3. Operation closure
+	op := func(modelName string) (any, error) {
+		if strings.Contains(modelName, "/") || c.OpenAI != nil {
+			if modelName == c.Config.Model || modelName == c.Config.FallbackModel {
+				return c.CallGoogle(ctx, sysInst, []llm.MensagemAgnostica{{Role: llm.PapelUser, Content: input}}, nil, googleSchema)
+			}
+			return c.CallOpenRouter(ctx, sysInst, []llm.MensagemAgnostica{
+				{Role: llm.PapelUser, Content: input},
+			}, nil, openRouterSchema)
+		}
+		return c.CallGoogle(ctx, sysInst, []llm.MensagemAgnostica{{Role: llm.PapelUser, Content: input}}, nil, googleSchema)
+	}
+
+	// 4. Run with fallback
+	res, _, err := c.withFallback(ctx, op)
+	if err != nil {
+		return emptyResult, fmt.Errorf("evaluation model call failed: %w", err)
+	}
+
+	agnosticResp := res.(llm.RespostaAgnostica)
+	result, err := schema.DecodeAndValidate[llm.MetaRAGResult](agnosticResp.Texto)
+	if err != nil {
+		log.Printf("⚠️ [META-RAG] Validation error: %v. Raw response: %s", err, agnosticResp.Texto)
+		return emptyResult, fmt.Errorf("schema decode/validation error: %w", err)
+	}
+
+	return result, nil
+}
