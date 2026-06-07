@@ -97,3 +97,21 @@ legacy_python/test_output.txt
 design-system/
 legacy_python/
 evolution_data/
+
+# --- Rascunhos de testes locais ---
+test_*.js
+test_execute_sql*.js
+scripts/clear_whatsapp_session.py
+scripts/draw_qr.py
+scripts/migrate_farm_embeddings.py
+scripts/reset_checkpoint.py
+scripts/test_gemini_batch.py
+scripts/test_rag_query.py
+scripts/test_mcp.js
+
+# --- Todos os planos markdown ---
+PLAN-*.md
+PLAN_*.md
+*PLAN.md
+git-atomic-commits.md
+timeout-time-finance-fix.md

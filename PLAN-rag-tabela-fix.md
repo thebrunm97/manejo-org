@@ -38,8 +38,8 @@ O bot consulta a tabela `farm_documents` via RPC `match_farm_documents`, mas os 
 - [x] ~~Executar SQL INSERT~~ → Opção B aplicada: UNION ALL na RPC `match_farm_documents`
 - [x] Validar: RPC retorna 6 chunks do milho (similarity 0.84–1.00) ✅
 - [x] Validar: RPC continua retornando `farm_documents` (Olericultura) ✅
-- [ ] Teste no WhatsApp: perguntar sobre espaçamento/densidade do milho
+- [x] Teste no WhatsApp: perguntar sobre espaçamento/densidade do milho ✅
 
 ## Done When
-- [x] RPC retorna chunks do manual de milho da Embrapa
-- [ ] Bot responde corretamente sobre densidade de plantio (40.000-50.000 plantas/ha)
+- [x] RPC retorna chunks do manual de milho da Embrapa ✅
+- [x] Bot responde corretamente sobre densidade de plantio (40.000-50.000 plantas/ha) ✅
