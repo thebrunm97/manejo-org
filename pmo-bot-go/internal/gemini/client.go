@@ -205,16 +205,19 @@ func (c *Client) GenerateContent(ctx context.Context, req llm.ContentRequest) (l
 		openrouterSchema = req.Schema
 	}
 
-	// Try Google first
-	resp, err := c.CallGoogle(ctx, req.SystemInstruction, req.History, req.Tools, googleSchema)
-	if err != nil {
-		log.Printf("⚠️ [LLMProvider] Google failed: %v — trying OpenRouter...", err)
-		resp, err = c.CallOpenRouter(ctx, req.SystemInstruction, req.History, req.Tools, openrouterSchema)
-		if err != nil {
-			return llm.RespostaAgnostica{}, fmt.Errorf("all providers failed: %w", err)
+	op := func(modelName string) (any, error) {
+		if modelName == c.Config.Model || modelName == c.Config.FallbackModel {
+			return c.CallGoogle(ctx, req.SystemInstruction, req.History, req.Tools, googleSchema)
 		}
+		return c.CallOpenRouter(ctx, req.SystemInstruction, req.History, req.Tools, openrouterSchema)
 	}
-	return resp, nil
+
+	res, _, err := c.withFallback(op)
+	if err != nil {
+		return llm.RespostaAgnostica{}, fmt.Errorf("all providers failed: %w", err)
+	}
+
+	return res.(llm.RespostaAgnostica), nil
 }
 
 // ClassifyIntent performs unified intent classification + NER extraction.
@@ -240,9 +243,9 @@ func (c *Client) ClassifyIntent(ctx context.Context, text string) (llm.UnifiedIn
 		return c.CallGoogle(ctx, sysInst, []llm.MensagemAgnostica{{Role: llm.PapelUser, Content: text}}, nil, googleSchema)
 	}
 
-	res, modelUsed, err := c.withFallback(ctx, op)
+	res, modelUsed, err := c.withFallback(op)
 	if err != nil {
-		return llm.UnifiedIntentResult{Intent: llm.IntentRAG}, modelUsed, err
+		return llm.UnifiedIntentResult{Intents: []llm.Intent{llm.IntentRAG}}, modelUsed, err
 	}
 
 	agnosticResp := res.(llm.RespostaAgnostica)
@@ -250,11 +253,11 @@ func (c *Client) ClassifyIntent(ctx context.Context, text string) (llm.UnifiedIn
 	result, err := schema.DecodeAndValidate[llm.UnifiedIntentResult](agnosticResp.Texto)
 	if err != nil {
 		log.Printf("⚠️ [ROUTER] Erro de Validação/Schema: %v. Raw: %s", err, agnosticResp.Texto)
-		return llm.UnifiedIntentResult{Intent: llm.IntentRAG, Confidence: 0.5, Reasoning: "schema_validation_error"}, modelUsed, nil
+		return llm.UnifiedIntentResult{Intents: []llm.Intent{llm.IntentRAG}, Confidence: 0.5, Reasoning: "schema_validation_error"}, modelUsed, nil
 	}
 
-	if result.Intent == "" {
-		result.Intent = llm.IntentRAG
+	if len(result.Intents) == 0 {
+		result.Intents = []llm.Intent{llm.IntentRAG}
 	}
 
 	firstIntencao := "duvida"
@@ -262,7 +265,7 @@ func (c *Client) ClassifyIntent(ctx context.Context, text string) (llm.UnifiedIn
 		firstIntencao = result.Entities[0].Intencao
 	}
 
-	log.Printf("🧭 [ROUTER] Intent: %s (Primeira Entidade: %s) | Conf: %.2f | Reasoning: %s | Total: %d", result.Intent, firstIntencao, result.Confidence, result.Reasoning, len(result.Entities))
+	log.Printf("🧭 [ROUTER] Intents: %v (Primeira Entidade: %s) | Conf: %.2f | Reasoning: %s | Total: %d", result.Intents, firstIntencao, result.Confidence, result.Reasoning, len(result.Entities))
 
 	return result, modelUsed, nil
 }
@@ -292,7 +295,7 @@ func (c *Client) AskSimple(ctx context.Context, question string, systemInstructi
 		return resp, nil
 	}
 
-	res, modelUsed, err := c.withFallback(ctx, op)
+	res, modelUsed, err := c.withFallback(op)
 	if err != nil {
 		return "", "", err
 	}
@@ -356,37 +359,82 @@ func truncateStr(s string, max int) string {
 	return string(runes[:max]) + "..."
 }
 
-// withFallback wraps a Gemini call with retry and fallback logic.
-func (c *Client) withFallback(ctx context.Context, fn func(model string) (any, error)) (any, string, error) {
-	// 1. Try Primary Model (No internal retries, immediate failure)
-	resp, err := fn(c.Config.Model)
-	if err == nil {
-		return resp, c.Config.Model, nil
+// withFallback wraps a Gemini call with retry+backoff on the primary model before
+// escalating to the paid fallback. This protects against temporary 429/503 overload
+// errors on the free tier without incurring unnecessary OpenRouter costs.
+//
+// Strategy:
+//   - Up to maxRetries attempts on the primary model, with retryDelay sleep between them.
+//   - Retry is only attempted when isOverloadedError(err) is true.
+//   - Non-overload errors (e.g. bad request) skip retries and go straight to fallback.
+//   - Fallback model is tried once after primary retries are exhausted.
+func (c *Client) withFallback(fn func(model string) (any, error)) (any, string, error) {
+	const (
+		maxAttempts = 3 // 1 initial attempt + 2 retries (total 3 attempts)
+		retryDelay  = 2 * time.Second
+	)
+
+	// 1. Try Primary Model with retry on overload errors
+	var primaryErr error
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		resp, err := fn(c.Config.Model)
+		if err == nil {
+			return resp, c.Config.Model, nil
+		}
+
+		primaryErr = err
+
+		if !isOverloadedError(err) {
+			// Non-transient error (e.g. bad request): skip retries, go straight to fallback.
+			log.Printf("⚠️ [GEMINI] Primary model (%s) failed with non-retryable error: %v. Escalating to fallback.", c.Config.Model, err)
+			break
+		}
+
+		if attempt < maxAttempts {
+			log.Printf("♻️ [GEMINI] Primary model (%s) overloaded (attempt %d/%d), retrying in %v...", c.Config.Model, attempt, maxAttempts, retryDelay)
+			time.Sleep(retryDelay)
+		} else {
+			log.Printf("⚠️ [GEMINI] Primary model (%s) exhausted after %d attempts: %v", c.Config.Model, maxAttempts, err)
+		}
 	}
 
-	log.Printf("⚠️ [GEMINI] Primary model (%s) failed: %v", c.Config.Model, err)
-
-	// 2. Try Fallback Model ONLY if primary fails (immediate, no retry)
+	// 2. Escalate to Fallback Model (paid tier) only after primary is exhausted or non-retryable error
 	if c.Config.FallbackModel != "" {
-		log.Printf("🔄 [GEMINI] Trying fallback model: %s", c.Config.FallbackModel)
-		resp, err = fn(c.Config.FallbackModel)
+		log.Printf("🔄 [GEMINI] Escalating to fallback model: %s", c.Config.FallbackModel)
+		resp, err := fn(c.Config.FallbackModel)
 		if err == nil {
 			return resp, c.Config.FallbackModel, nil
 		}
-		log.Printf("⚠️ [GEMINI] Fallback model (%s) failed: %v", c.Config.FallbackModel, err)
+		log.Printf("⚠️ [GEMINI] Fallback model (%s) also failed: %v", c.Config.FallbackModel, err)
+		return nil, "", err
+	} else if c.OpenAI != nil {
+		fallbackModel := c.Config.OpenRouterModel
+		if fallbackModel == "" {
+			fallbackModel = "openrouter"
+		}
+		log.Printf("🔄 [GEMINI] Escalating to OpenRouter fallback model: %s", fallbackModel)
+		resp, err := fn(fallbackModel)
+		if err == nil {
+			return resp, fallbackModel, nil
+		}
+		log.Printf("⚠️ [GEMINI] OpenRouter fallback model (%s) also failed: %v", fallbackModel, err)
+		return nil, "", err
 	}
 
-	return nil, "", err
+	return nil, "", primaryErr
 }
 
-// isOverloadedError checks if the error is related to quota or high demand.
+// isOverloadedError checks if the error is related to quota or high demand (429/503).
+// Used by withFallback to decide whether a retry on the same provider is worthwhile.
 func isOverloadedError(err error) bool {
 	if err == nil {
 		return false
 	}
-	errStr := err.Error()
-	return strings.Contains(errStr, "503") ||
-		strings.Contains(errStr, "429") ||
+	errStr := strings.ToLower(err.Error())
+	return strings.Contains(errStr, "429") ||
+		strings.Contains(errStr, "503") ||
+		strings.Contains(errStr, "resource_exhausted") ||
+		strings.Contains(errStr, "overloaded") ||
 		strings.Contains(errStr, "context deadline exceeded") ||
 		strings.Contains(errStr, "high demand") ||
 		strings.Contains(errStr, "rate limit exceeded") ||
@@ -423,7 +471,7 @@ func (c *Client) GenerateContentWithTools(ctx context.Context, question string, 
 		return []any{resp, session}, nil
 	}
 
-	res, modelUsed, err := c.withFallback(ctx, op)
+	res, modelUsed, err := c.withFallback(op)
 	if err != nil {
 		return nil, nil, "", fmt.Errorf("send message error with fallback: %w", err)
 	}
@@ -635,7 +683,7 @@ func (c *Client) EvaluateEvidenceListwise(ctx context.Context, query string, chu
 	}
 
 	// 4. Run with fallback
-	res, _, err := c.withFallback(ctx, op)
+	res, _, err := c.withFallback(op)
 	if err != nil {
 		return emptyResult, fmt.Errorf("evaluation model call failed: %w", err)
 	}

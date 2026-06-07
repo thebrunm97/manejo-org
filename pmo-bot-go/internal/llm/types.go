@@ -403,7 +403,7 @@ type AcaoEstruturada struct {
 // UnifiedIntentResult combines classification and multi-entity extraction.
 // This is the SSOT (Single Source of Truth) for LLM structured responses.
 type UnifiedIntentResult struct {
-	Intent     Intent  `json:"intent" jsonschema:"required,enum=RAG,enum=DATABASE,enum=CHAT,enum=REGISTRO_FINANCEIRO" validate:"required,oneof=RAG DATABASE CHAT REGISTRO_FINANCEIRO"`
+	Intents    []Intent  `json:"intents" jsonschema:"required,minItems=1,enum=RAG,enum=DATABASE,enum=CHAT,enum=REGISTRO_FINANCEIRO" validate:"required,min=1,dive,oneof=RAG DATABASE CHAT REGISTRO_FINANCEIRO"`
 	Confidence float64 `json:"confidence" jsonschema:"required,minimum=0,maximum=1" validate:"required,gte=0,lte=1"`
 	Reasoning  string  `json:"reasoning" jsonschema:"required,description=Explicação técnica da decisão sobre a classificação e a segmentação das entidades" validate:"required"`
 

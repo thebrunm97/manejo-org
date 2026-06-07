@@ -196,3 +196,26 @@ func minStr(a, b int) int {
 	}
 	return b
 }
+
+func TestBuildConfirmationMessage_CleanFormatting(t *testing.T) {
+	args := map[string]interface{}{
+		"produto": "Esterco Bovino",
+		"quantidade_valor": 500.0,
+		"alocacoes_talhoes": []interface{}{
+			map[string]interface{}{
+				"talhao_id": 7,
+				"talhao_nome": "Talhão 3",
+				"valor_alocado": 50.0,
+			},
+			map[string]interface{}{
+				"talhao_id": 8,
+				"talhao_nome": "Talhão 4",
+				"valor_alocado": 50.0,
+			},
+		},
+	}
+	msg := guardrails.BuildConfirmationMessage("Registro de Compra de Insumo", args)
+	assert.Contains(t, msg, "• Talhão 3 (ID: 7): R$ 50")
+	assert.Contains(t, msg, "• Talhão 4 (ID: 8): R$ 50")
+	assert.NotContains(t, msg, "map[")
+}

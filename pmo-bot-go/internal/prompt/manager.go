@@ -82,10 +82,11 @@ Sua tarefa é tripla:
 
 Intents disponíveis:
 - "RAG": DÚVIDA TÉCNICA sobre agricultura orgânica, normas (IN 46, sementes), pragas, adubação. NÃO envolve criar registros.
-- "DATABASE": O usuário quer REGISTRAR atividades (plantio, colheita, venda, limpeza, compostagem) ou CONSULTAR dados da fazenda.
+- "DATABASE": O usuário quer REGISTRAR atividades agrícolas (plantio, colheita, venda, limpeza, compostagem) ou CONSULTAR dados da fazenda.
+- "REGISTRO_FINANCEIRO": O usuário quer registrar despesas, custos ou compras financeiras puras (ex: gastou dinheiro ou registrou compra de insumo com valor monetário).
 - "CHAT": Saudação, agradecimento ou conversa genérica.
 
-Regras de Extração (para DATABASE):
+Regras de Extração (para DATABASE e REGISTRO_FINANCEIRO):
 - Use o array "entidades" para listar todas as ações detectadas.
 - SEPARE frases complexas em múltiplos objetos. Ex: "Apliquei 10L no Talhão A e 5L no Talhão B" deve gerar DOIS objetos no array "entidades".
 - Cada objeto deve conter: intencao (registro, limpeza, financeiro, etc), produto, quantidade, unidade, localizacao e data (YYYY-MM-DD).

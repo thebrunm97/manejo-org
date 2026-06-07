@@ -10,7 +10,7 @@ import (
 // TestIntentConstants verifies that the three Intent constants are correctly defined
 // and distinct from each other — a compile-time safety net.
 func TestIntentConstants(t *testing.T) {
-	intents := []llm.Intent{llm.IntentRAG, llm.IntentDatabase, llm.IntentChat}
+	intents := []llm.Intent{llm.IntentRAG, llm.IntentDatabase, llm.IntentFinance, llm.IntentChat}
 	seen := make(map[llm.Intent]bool)
 
 	for _, intent := range intents {
@@ -20,8 +20,8 @@ func TestIntentConstants(t *testing.T) {
 		seen[intent] = true
 	}
 
-	if len(seen) != 3 {
-		t.Errorf("Expected 3 distinct intents, got %d", len(seen))
+	if len(seen) != 4 {
+		t.Errorf("Expected 4 distinct intents, got %d", len(seen))
 	}
 }
 
@@ -82,6 +82,7 @@ func TestRouterResultFallback(t *testing.T) {
 	knownIntents := map[llm.Intent]bool{
 		llm.IntentRAG:      true,
 		llm.IntentDatabase: true,
+		llm.IntentFinance:  true,
 		llm.IntentChat:     true,
 	}
 
@@ -91,16 +92,20 @@ func TestRouterResultFallback(t *testing.T) {
 	}
 
 	// Simulate the validation block inside ClassifyIntent
-	result := llm.UnifiedIntentResult{Intent: unknownIntent, Confidence: 0.5}
-	switch result.Intent {
-	case llm.IntentRAG, llm.IntentDatabase, llm.IntentChat:
-		// valid
-	default:
-		result.Intent = llm.IntentRAG // fallback applied
+	result := llm.UnifiedIntentResult{Intents: []llm.Intent{unknownIntent}}
+	if len(result.Intents) > 0 {
+		switch result.Intents[0] {
+		case llm.IntentRAG, llm.IntentDatabase, llm.IntentFinance, llm.IntentChat:
+			// valid
+		default:
+			result.Intents = []llm.Intent{llm.IntentRAG} // fallback applied
+		}
+	} else {
+		result.Intents = []llm.Intent{llm.IntentRAG}
 	}
 
-	if result.Intent != llm.IntentRAG {
-		t.Errorf("Expected fallback to IntentRAG for unknown intent, got %s", result.Intent)
+	if len(result.Intents) == 0 || result.Intents[0] != llm.IntentRAG {
+		t.Errorf("Expected fallback to IntentRAG for unknown intent, got %v", result.Intents)
 	}
 }
 

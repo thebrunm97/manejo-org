@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
@@ -159,7 +158,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 
 	{
 		// Isolated local context with 10s timeout for the Router only
-		routerCtx, routerCancel := context.WithTimeout(ctx, 10*time.Second)
+		routerCtx, routerCancel := context.WithTimeout(ctx, 30*time.Second)
 		unifiedRes, routerModel, err = llmClient.ClassifyIntent(routerCtx, routerText)
 		routerCancel()
 	}
@@ -167,7 +166,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 	if err != nil {
 		log.Printf("⚠️ [FSM] Router Unificado falhou (timeout ou erro): %v. Usando fallback.", err)
 		unifiedRes = llm.UnifiedIntentResult{
-			Intent:   llm.IntentRAG,
+			Intents:  []llm.Intent{llm.IntentRAG},
 			Entities: []llm.AcaoEstruturada{{Intencao: "duvida"}},
 		}
 	}
@@ -175,26 +174,51 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 	// 3. Defensive Override for farm selection patterns (ensures tools are injected even if router stalls)
 	msgLower := strings.ToLower(body)
 	isSelection := strings.Contains(msgLower, "selecionar") || strings.Contains(msgLower, "fazenda") || strings.Contains(msgLower, "trabalhar na")
-	if isSelection && (unifiedRes.Intent == llm.IntentRAG || unifiedRes.Intent == llm.IntentChat || unifiedRes.Confidence < 0.8) {
-		log.Printf("🛡️ [FSM] Defensive Override: Intent '%s' forçado para DATABASE (Padrão de seleção detectado)", unifiedRes.Intent)
-		unifiedRes.Intent = llm.IntentDatabase
+	if isSelection {
+		hasDb := false
+		for _, it := range unifiedRes.Intents {
+			if it == llm.IntentDatabase {
+				hasDb = true
+				break
+			}
+		}
+		if !hasDb || unifiedRes.Confidence < 0.8 {
+			log.Printf("🛡️ [FSM] Defensive Override: Intents forçados para [DATABASE] (Padrão de seleção detectado)")
+			unifiedRes.Intents = []llm.Intent{llm.IntentDatabase}
+		}
 	}
 
-	// 4. Dynamic Tool Filtering
-	filteredTools := mcpServer.GetToolsForIntent(string(unifiedRes.Intent))
-	log.Printf("🧭 [FSM] Intent: %s | Entities: %d | Guard: ON", unifiedRes.Intent, len(unifiedRes.Entities))
+	log.Printf("🧭 [FSM] Intents: %v | Entities: %d | Guard: ON", unifiedRes.Intents, len(unifiedRes.Entities))
 
 	// 3. Fast-Track: Simple Chat Logic
-	if unifiedRes.Intent == llm.IntentChat && len(unifiedRes.Entities) == 0 {
+	if len(unifiedRes.Intents) == 1 && unifiedRes.Intents[0] == llm.IntentChat && len(unifiedRes.Entities) == 0 {
 		log.Printf("⚡ [FSM] Fast-Track: Mensagem de CHAT simples.")
+
+		// If the message looks like a confirmation word (SIM/NÃO) but no HITL
+		// token exists, the producer may be confused or responding to an expired
+		// request. Route to Orchestrator so the LLM can give a helpful reply
+		// instead of the generic greeting.
+		bodyNorm := strings.ToUpper(strings.TrimSpace(body))
+		isApprovalWord := bodyNorm == "SIM" || bodyNorm == "NÃO" || bodyNorm == "NAO"
+		if isApprovalWord {
+			log.Printf("⚡ [FSM] Fast-Track: Palavra de aprovação sem HITL pendente — redirecionando ao Orchestrator para resposta contextual.")
+			filteredTools := mcpServer.GetToolsForIntent("CHAT")
+			resMsg, res := handleDuvidaFallback(ctx, wpClient, ttsClient, phone, llmClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, "CHAT", filteredTools, guard, historyManager, mcpServer)
+			if resMsg != "" {
+				sendFeedback(wpClient, ttsClient, msg.From, resMsg, respondWithAudio)
+			}
+			return res
+		}
+
 		botResponse := "Olá! Sou o assistente do ManejoORG. Como posso ajudar você hoje?"
 		sendFeedback(wpClient, ttsClient, msg.From, botResponse, respondWithAudio)
 		recordLog(sbClient, profile, body, botResponse, string(routerModel), string(routerModel), 0, 0, "chat_fast", nil, startTime, true, nil)
 		return ProcessResult{Success: true, Reason: "chat_fast"}
 	}
 
+
 	// 4. Perceived Latency: Immediate ACK for complex requests or RAG/DOUBTS
-	isComplex := len(unifiedRes.Entities) > 1 || unifiedRes.Intent == llm.IntentRAG
+	isComplex := len(unifiedRes.Entities) > 1 || len(unifiedRes.Intents) > 1 || (len(unifiedRes.Intents) == 1 && unifiedRes.Intents[0] == llm.IntentRAG)
 	// Self-check for single-entity doubts
 	if !isComplex && len(unifiedRes.Entities) == 1 && unifiedRes.Entities[0].Intencao == "duvida" {
 		isComplex = true
@@ -205,84 +229,88 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 		go wpClient.SendMessage(msg.From, "⏳ Um momento... Estou processando seus registros e consultando a base de dados.")
 	}
 
-	// 5. Parallel Processing: Manage Goroutines with Limit & Context Cancellation
+	// 5. Sequential Processing of Intents
 	var finalResponses []string
-	var lastRes ProcessResult
+	var lastRes ProcessResult = ProcessResult{Success: true}
 
-	// 5a. Zero-Entity Guard: CHAT/RAG/DUVIDA messages may return no structured entities.
-	if len(unifiedRes.Entities) == 0 {
-		log.Printf("💬 [FSM] Zero entities detected (Intent: %s). Routing to chat/duvida handler.", unifiedRes.Intent)
-		synthetic := llm.AcaoEstruturada{Intencao: "duvida"}
-		if unifiedRes.Intent == llm.IntentChat {
-			synthetic.Intencao = "saudacao"
+	for idxIntent, intent := range unifiedRes.Intents {
+		log.Printf("📑 [FSM-LOOP] Processando Intenção %d/%d: %s", idxIntent+1, len(unifiedRes.Intents), intent)
+
+		// Bug 3 Fix: Skip IntentChat when this is a mixed-intent message.
+		// The Fast-Track above (line 193) already handles pure-chat messages.
+		// In a multi-intent batch, a "saudação" entity would produce a generic greeting
+		// that pollutes the consolidated response with "Olá! Sou o assistente...".
+		if intent == llm.IntentChat && len(unifiedRes.Intents) > 1 {
+			log.Printf("⏩ [FSM] Pulando IntentChat em mensagem mista (%d intents totais)", len(unifiedRes.Intents))
+			continue
 		}
-		resMsg, res := dispatchEntity(ctx, synthetic, profile, sbClient, wpClient, llmClient, ttsClient, mcpServer, historyManager, phone, body, respondWithAudio, startTime, unifiedRes.Intent, filteredTools, guard, routerModel)
+		// 1. Verificar se há alguma entidade relacionada a esta intenção que precise de entrevista
+		var interviewEntity *llm.AcaoEstruturada
+		var interviewEntityIndex int = -1
+		for idxEntity, entity := range unifiedRes.Entities {
+			if entityMatchesIntent(entity.Intencao, intent) {
+				isMissingQty := (entity.Intencao == "registro" || entity.Intencao == "registro_financeiro") &&
+					parseToFloat(entity.Quantidade) <= 0 &&
+					entity.Atividade != "Compra/Aquisição" &&
+					entity.Intencao != "registro_financeiro" // financeiro puro usa valor_total, não quantidade
+
+				if entity.NecessitaMaisInfo || entity.PerguntaAoUsuario != "" || isMissingQty {
+					interviewEntity = &entity
+					interviewEntityIndex = idxEntity
+					break
+				}
+			}
+		}
+
+		if interviewEntity != nil {
+			log.Printf("⏸️ [FSM] Ação pendente de informações (Entrevista para %s). Suspendendo loop.", interviewEntity.InsumoCultura)
+			
+			// Preparar pergunta da entrevista
+			question := interviewEntity.PerguntaAoUsuario
+			if question == "" {
+				item := interviewEntity.InsumoCultura
+				if item == "" {
+					item = interviewEntity.InsumoAplicado
+				}
+				if item != "" {
+					question = fmt.Sprintf("Qual a quantidade exata de *%s* utilizada?", item)
+				} else {
+					question = "Qual a quantidade exata utilizada?"
+				}
+			}
+
+			// Salvar o estado da FSM e entidades pendentes
+			if historyManager != nil {
+				pending := unifiedRes.Entities[interviewEntityIndex:]
+				historyManager.SetFSMState(phone, StateAguardandoQuantidade, toMap(interviewEntity), pending)
+			}
+
+			// Prepend sucessos anteriores, se houver
+			if len(finalResponses) > 0 {
+				header := "✅ Processados com sucesso:\n" + strings.Join(finalResponses, "\n\n") + "\n\n---\n\n"
+				question = header + question
+			}
+			
+			finalResponses = append(finalResponses, question)
+			lastRes = ProcessResult{Success: false, Reason: "missing_quantity"}
+			break // Interrompe o processamento das intenções seguintes
+		}
+
+		// 2. Descobrir as ferramentas MCP apenas para esta intenção
+		filteredTools := mcpServer.GetToolsForIntent(string(intent))
+
+		// 3. Executar o loop de agente isolado para esta intenção
+		resMsg, res := handleDuvidaFallback(ctx, wpClient, ttsClient, phone, llmClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, string(intent), filteredTools, guard, historyManager, mcpServer)
+		
 		if resMsg != "" {
 			finalResponses = append(finalResponses, resMsg)
 		}
 		lastRes = res
-	} else {
-		// 5b. Best-Effort Parallel Entity Loop.
-		// Uses WaitGroup + semaphore instead of errgroup.WithContext, so a failed entity
-		// does NOT cancel the shared context and kill sibling goroutines that are still running.
-		const workerLimit = 3
-		sem := make(chan struct{}, workerLimit)
-		var wg sync.WaitGroup
 
-		count := len(unifiedRes.Entities)
-		// Pre-allocate slices: each goroutine writes only to its own index,
-		// so no mutex is needed for the writes themselves.
-		tempResponses := make([]string, count)
-		tempResults := make([]ProcessResult, count)
-
-		for i, entity := range unifiedRes.Entities {
-			i, entity := i, entity // Capture loop variables to avoid closure bugs
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				sem <- struct{}{}        // acquire slot (blocks if workerLimit reached)
-				defer func() { <-sem }() // always release slot on exit
-
-				log.Printf("📑 [FSM-WORKER] Processando Ação %d/%d: %s", i+1, count, entity.Intencao)
-				resMsg, res := dispatchEntity(ctx, entity, profile, sbClient, wpClient, llmClient, ttsClient, mcpServer, historyManager, phone, body, respondWithAudio, startTime, unifiedRes.Intent, filteredTools, guard, routerModel)
-
-				// Index-based writes are goroutine-safe: each i is unique.
-				tempResponses[i] = resMsg
-				tempResults[i] = res
-				if !res.Success {
-					log.Printf("⚠️ [FSM-WORKER] Ação %d/%d falhou (motivo: %s). Continuando demais workers.", i+1, count, res.Reason)
-				}
-			}()
-		}
-
-		wg.Wait() // wait for ALL workers to complete, regardless of partial failures
-
-		// 5c. Aggregation: Collect results in order; stop displaying once we hit a failure
-		// that requires user input (e.g., interview state). Successes that ran before the
-		// failure are still surfaced to the user via the header.
-		for i := 0; i < count; i++ {
-			if tempResponses[i] != "" {
-				finalResponses = append(finalResponses, tempResponses[i])
-			}
-
-			lastRes = tempResults[i]
-
-			if !tempResults[i].Success {
-				// If there are subsequent entities in the batch, save them as pending
-				if historyManager != nil && i+1 < count {
-					pending := unifiedRes.Entities[i+1:]
-					currState, currCtx, _ := historyManager.GetFSMState(phone)
-					historyManager.SetFSMState(phone, currState, currCtx, pending)
-				}
-
-				// Prepend confirmed successes so the user knows what was already saved.
-				if len(finalResponses) > 1 {
-					header := "✅ Processados com sucesso:\n" + strings.Join(finalResponses[:len(finalResponses)-1], "\n\n") + "\n\n---\n\n"
-					finalResponses[len(finalResponses)-1] = header + finalResponses[len(finalResponses)-1]
-				}
-				sendFeedback(wpClient, ttsClient, msg.From, finalResponses[len(finalResponses)-1], respondWithAudio)
-				return lastRes
-			}
+		// Se a intenção falhou, interrompe
+		if !res.Success {
+			log.Printf("⚠️ [FSM] Intenção %s falhou. Motivo: %s", intent, res.Reason)
+			break
 		}
 	}
 
@@ -293,11 +321,30 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 		return lastRes
 	}
 
+	if lastRes.Reason == "hitl_pending" {
+		return lastRes
+	}
+
 	// 7. Hard fallback: aggregatedResponse is empty after all processing.
-	// This should never happen in production, but protects against silent failures.
-	log.Printf("⚠️ [FSM] Nenhuma resposta gerada após processamento completo (Intent: %s). Enviando fallback.", unifiedRes.Intent)
+	log.Printf("⚠️ [FSM] Nenhuma resposta gerada após processamento completo. Enviando fallback.")
 	sendFeedback(wpClient, ttsClient, msg.From, "Desculpe, não consegui processar sua mensagem. Pode tentar novamente?", respondWithAudio)
 	return ProcessResult{Success: false, Reason: "empty_aggregated_response"}
+}
+
+// entityMatchesIntent resolves whether a extracted action's intention maps to a high-level intent
+func entityMatchesIntent(entityIntencao string, intent llm.Intent) bool {
+	switch intent {
+	case llm.IntentDatabase:
+		return entityIntencao == "registro" || entityIntencao == "limpeza" || entityIntencao == "propagacao" || entityIntencao == "compostagem"
+	case llm.IntentFinance:
+		return entityIntencao == "registro_financeiro"
+	case llm.IntentRAG:
+		return entityIntencao == "duvida"
+	case llm.IntentChat:
+		return entityIntencao == "saudacao"
+	default:
+		return false
+	}
 }
 
 // dispatchEntity routes a single action to its respective handler and returns the response string

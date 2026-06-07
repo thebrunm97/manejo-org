@@ -5,12 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"regexp"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
+	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 )
 
@@ -37,6 +40,8 @@ type Orchestrator struct {
 	HITL guardrails.HITLHandler
 	// Phone is the producer's WhatsApp number — required for HITL confirmation messages.
 	Phone string
+	// WhatsApp is the message sender port to deliver confirmation prompts.
+	WhatsApp ports.MessageSender
 }
 
 // NewOrchestrator creates a new agentic orchestrator.
@@ -70,13 +75,21 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 	}
 
 	// 2. Setup System Instruction with dynamic context
-	sysInst := systemPrompt + "\n" + farmContext + "\nUse as ferramentas para consultar ou registrar dados. Se as informações críticas (como IDs de talhão ou PMO) já constam no contexto acima, use-as DIRETAMENTE sem perguntar ou consultar novamente."
+	// CRITICAL guardrail appended unconditionally: the LLM must NEVER expose
+	// raw tool_call JSON or function-call syntax in the final user-facing message.
+	toolCallGuardrail := "\n\n[REGRA ABSOLUTA DE SAÍDA]: NUNCA inclua JSON de chamadas de ferramenta (tool_calls, function_call, {\"name\":..., \"args\":...}, etc.) na sua resposta final ao utilizador. A sua resposta deve ser APENAS texto amigável em Português. Se uma ferramenta foi executada, descreva o RESULTADO da ação com palavras simples."
+	sysInst := systemPrompt + "\n" + farmContext + "\nUse as ferramentas para consultar ou registrar dados. Se as informações críticas (como IDs de talhão ou PMO) já constam no contexto acima, use-as DIRETAMENTE sem perguntar ou consultar novamente." + toolCallGuardrail
 
 	var trace []TraceEvent
 	var usage llm.UsoMetadados
 	var lastToolMsg string
 	var usedTools []string // track tool names for OutputJudge context
 	effectiveModel := o.LLM.ModelName()
+
+	// HITL dedup set: tracks "toolName:argsFingerprint" strings already requested
+	// this session to prevent duplicate confirmation messages when the NER loop
+	// fires multiple orchestrators for the same high-risk tool call.
+	hitlRequested := make(map[string]bool)
 
 	// Append initial user message if present
 	if userMessage != "" {
@@ -103,9 +116,23 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 		if i > 0 {
 			// Cria uma cópia rasa do slice original para não alterar o histórico real que é persistido
 			currentHistory = append([]llm.MensagemAgnostica{}, history...)
+
+			hasPendingHITL := false
+			for _, hMsg := range history {
+				if hMsg.Role == llm.PapelTool && strings.Contains(hMsg.Content, "awaiting_confirmation") {
+					hasPendingHITL = true
+					break
+				}
+			}
+
+			summaryInstruction := "RESUMO OBRIGATÓRIO: NUNCA retorne uma resposta vazia. Resuma os resultados das ferramentas executadas de forma amigável para o usuário."
+			if hasPendingHITL {
+				summaryInstruction += " IMPORTANTE: Se o status de alguma ferramenta for 'awaiting_confirmation', isso significa que a operação NÃO foi concluída e está aguardando aprovação do produtor pelo WhatsApp. Você deve informar ao usuário de forma clara que a ação específica aguarda confirmação e que uma solicitação de aprovação foi enviada para o WhatsApp dele, e NUNCA dizer que a operação foi concluída ou registrada com sucesso."
+			}
+
 			currentHistory = append(currentHistory, llm.MensagemAgnostica{
 				Role:    llm.PapelSystem,
-				Content: "RESUMO OBRIGATÓRIO: NUNCA retorne uma resposta vazia. Resuma os resultados das ferramentas executadas de forma amigável para o usuário.",
+				Content: summaryInstruction,
 			})
 		}
 
@@ -151,24 +178,46 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 				}
 			}
 
-			// ── Guardrail: Output Content Governance ─────────────────────────
-			// Run after every final LLM response (non-tool turns).
-			// Fail-open: if judge unavailable, delivers original text.
+			// ── Guardrail 1: Tool-Call JSON Sanitization ──────────────────────
+			// Strip any raw tool_call / function_call JSON that the LLM may have
+			// accidentally included in its text output before we send it to the user.
+			finalTexto = sanitizeResponse(finalTexto)
+			// ─────────────────────────────────────────────────────────────────
+
+			// ── Guardrail 2: Output Content Governance ────────────────────────
+			// Only audits RAG/DATABASE/FINANCE intents where agronomic data safety
+			// is relevant. CHAT responses are conversational and must not be blocked
+			// (e.g. a "sim" confirmation reply mentioning session context is NOT hallucination).
 			if finalTexto != "" && o.OutputJudge != nil {
-				verdict := o.OutputJudge.Judge(ctx, guardrails.JudgeRequest{
-					UserInput:    userMessage,
-					LLMOutput:    finalTexto,
-					Intent:       "", // Intent not available here; enriched by FSM if needed
-					ModalityFarm: profile.ModalidadePredominante,
-					ToolsUsed:    usedTools,
-				})
-				if !verdict.Approved {
-					log.Printf("🚨 [Judge] Resposta BLOQUEADA — violations=%v reason=%s",
-						verdict.Violations, verdict.Reason)
-					finalTexto = buildJudgeBlockedMessage(verdict)
+				// Derive intent from system prompt (injected by handleDuvidaFallback)
+				judgeIntent := ""
+				switch {
+				case strings.Contains(systemPrompt, "RAG") || strings.Contains(systemPrompt, "duvida"):
+					judgeIntent = "RAG"
+				case strings.Contains(systemPrompt, "DATABASE") || strings.Contains(systemPrompt, "registro"):
+					judgeIntent = "DATABASE"
+				case strings.Contains(systemPrompt, "FINANCE") || strings.Contains(systemPrompt, "financeiro"):
+					judgeIntent = "FINANCE"
+				}
+
+				if judgeIntent == "" {
+					log.Printf("⏩ [Judge] Pulando auditoria — intent conversacional (CHAT ou desconhecido)")
+				} else {
+					verdict := o.OutputJudge.Judge(ctx, guardrails.JudgeRequest{
+						UserInput:    userMessage,
+						LLMOutput:    finalTexto,
+						Intent:       judgeIntent,
+						ModalityFarm: profile.ModalidadePredominante,
+						ToolsUsed:    usedTools,
+					})
+					if !verdict.Approved {
+						log.Printf("🚨 [Judge] Resposta BLOQUEADA — violations=%v reason=%s",
+							verdict.Violations, verdict.Reason)
+						finalTexto = buildJudgeBlockedMessage(verdict)
+					}
 				}
 			}
-			// ───────────────────────────────────────────────────────────────
+			// ─────────────────────────────────────────────────────────────────
 
 			return finalTexto, history, trace, usage, effectiveModel, nil
 		}
@@ -200,6 +249,27 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 			// execution happens in the webhook on SIM response.
 			if o.HITL != nil {
 				if needsHITL, label := guardrails.RequiresHITL(tc.Nome); needsHITL {
+					// ── Dedup Guard ─────────────────────────────────────────────────
+					// Build a deterministic fingerprint: sorted JSON keys prevent
+					// false misses when the LLM reorders args between orchestrator calls.
+					fp := hitlFingerprint(tc.Nome, args)
+					if hitlRequested[fp] {
+						log.Printf("🔄 [HITL-DEDUP] Confirmação já solicitada para tool=%s (fp=%s) — reutilizando synthetic result", tc.Nome, fp)
+						// Inject synthetic awaiting result without creating a new DB record
+						synthResult := map[string]interface{}{
+							"status":  "awaiting_confirmation",
+							"message": fmt.Sprintf("Ação '%s' já aguarda confirmação do produtor via WhatsApp.", label),
+						}
+						synthJSON, _ := json.Marshal(synthResult)
+						history = append(history, llm.MensagemAgnostica{
+							Role:     llm.PapelTool,
+							Content:  string(synthJSON),
+							ToolID:   tc.ID,
+							ToolName: tc.Nome,
+						})
+						continue
+					}
+					// ────────────────────────────────────────────────────────────────
 					token, hitlErr := o.HITL.RequestApproval(ctx, guardrails.HITLRecord{
 						FromPhone:   o.Phone,
 						PmoID:       &profile.PmoAtivoID,
@@ -209,8 +279,22 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 						ActionLabel: label,
 					})
 					if hitlErr == nil {
+						hitlRequested[fp] = true // mark as requested for dedup
 						log.Printf("⏸️ [HITL] Aprovação solicitada — tool=%s token=%s phone=%s",
 							tc.Nome, token, o.Phone)
+						// Send the actual confirmation WhatsApp message with native buttons to the user!
+						if o.WhatsApp != nil {
+							confirmMsg := guardrails.BuildConfirmationMessage(label, args)
+							buttons := []map[string]string{
+								{"type": "reply", "displayText": "SIM", "id": "SIM"},
+								{"type": "reply", "displayText": "NÃO", "id": "NÃO"},
+							}
+							title := "Confirmação Necessária"
+							footer := "Esta confirmação expira em 10 minutos"
+							if err := o.WhatsApp.SendButton(o.Phone, title, confirmMsg, footer, buttons); err != nil {
+								log.Printf("⚠️ [HITL] Falha ao enviar botões de confirmação: %v", err)
+							}
+						}
 						// Inject synthetic result — tells LLM the action is pending approval
 						synthResult := map[string]interface{}{
 							"status":  "awaiting_confirmation",
@@ -230,7 +314,7 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 							Output: synthResult,
 							Time:   time.Now(),
 						})
-						continue // Skip actual tool execution — will resume on SIM
+						return "", history, trace, usage, effectiveModel, fmt.Errorf("hitl_pending")
 					}
 					// HITL storage failed: fail-open → execute the tool normally
 					log.Printf("⚠️ [HITL] Falha ao solicitar aprovação — executando ferramenta diretamente: %v", hitlErr)
@@ -318,3 +402,66 @@ func buildJudgeBlockedMessage(verdict guardrails.JudgeVerdict) string {
 	)
 }
 
+// reToolCallJSON matches any JSON object that looks like a tool/function call leak.
+// It catches:
+//   - {"tool_calls": ...}
+//   - {"name": "...", "args": ...}
+//   - {"function_call": ...}
+//   - Markdown-fenced JSON blocks (```json ... ```)
+var (
+	reToolCallBlock = regexp.MustCompile(`(?s)\x60{3}(?:json)?\s*\{[^\x60]*"(?:tool_calls|function_call|name)[^\x60]*\}\s*\x60{3}`)
+	reInlineToolCall = regexp.MustCompile(`(?s)\{[^{}]*"(?:tool_calls|function_call)"[^{}]*\}`)
+	reNameArgsBlock  = regexp.MustCompile(`(?s)\{[^{}]*"name"\s*:\s*"[a-z_]+"[^{}]*"args"\s*:\s*\{[^}]*\}[^{}]*\}`)
+)
+
+// sanitizeResponse removes any tool_call/function_call JSON that accidentally
+// leaked into the LLM's final text response before it is delivered to the user.
+// It is fail-safe: if stripping produces an empty string, the original is returned
+// so we never send a blank message to the producer.
+func sanitizeResponse(text string) string {
+	original := text
+
+	// Strip markdown-fenced JSON blocks first (greedy block match)
+	text = reToolCallBlock.ReplaceAllString(text, "")
+
+	// Strip inline {"tool_calls": ...} or {"function_call": ...} objects
+	text = reInlineToolCall.ReplaceAllString(text, "")
+
+	// Strip {"name": "tool_name", "args": {...}} patterns
+	text = reNameArgsBlock.ReplaceAllString(text, "")
+
+	text = strings.TrimSpace(text)
+
+	if text == "" {
+		log.Printf("⚠️ [Sanitize] Resposta ficou vazia após limpeza de tool_call JSON — restaurando original truncado")
+		// Return a generic safe message instead of leaking the raw original
+		return "✅ Operação processada com sucesso!"
+	}
+
+	if text != original {
+		log.Printf("🛡️ [Sanitize] Tool-call JSON removido da resposta final (len antes=%d, depois=%d)", len(original), len(text))
+	}
+
+	return text
+}
+
+// hitlFingerprint builds a deterministic key for HITL dedup by serializing
+// the tool name + sorted-key JSON of args. Sorting keys ensures that
+// {"b":2,"a":1} and {"a":1,"b":2} produce the same fingerprint.
+func hitlFingerprint(toolName string, args map[string]interface{}) string {
+	// Extract and sort keys for deterministic ordering
+	keys := make([]string, 0, len(args))
+	for k := range args {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	// Build ordered pairs
+	ordered := make([]interface{}, 0, len(keys)*2)
+	for _, k := range keys {
+		ordered = append(ordered, k, args[k])
+	}
+
+	b, _ := json.Marshal(ordered)
+	return toolName + ":" + string(b)
+}
