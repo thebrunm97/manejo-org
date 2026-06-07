@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, MapPin, X } from 'lucide-react';
 import { ComprasDraft, ValidationErrors } from '../../../../hooks/manual-record';
 import ComprasTab from '../Tabs/ComprasTab';
 import ValorTotalInput from './ValorTotalInput';
@@ -9,13 +9,17 @@ interface ComprasFormProps {
     updateForm: (field: string, value: any) => void;
     errors: ValidationErrors;
     isEditMode: boolean;
+    onOpenLocation: () => void;
+    clearError: (field: string) => void;
 }
 
 const ComprasForm: React.FC<ComprasFormProps> = ({
     formData,
     updateForm,
     errors,
-    isEditMode
+    isEditMode,
+    onOpenLocation,
+    clearError
 }) => {
     return (
         <div className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300">
@@ -56,6 +60,46 @@ const ComprasForm: React.FC<ComprasFormProps> = ({
                              `}
                         />
                         {errors.produto && <p className="mt-1 text-xs text-red-600 font-medium">{errors.produto}</p>}
+                    </div>
+                </div>
+
+                {/* Seletor de Locais (Rateio) */}
+                <div>
+                    <label className={`block text-sm font-semibold mb-1.5 ${errors.locais ? 'text-red-600' : 'text-slate-900'}`}>
+                        Talhões / Canteiros (Rateio) {errors.locais && `(${errors.locais})`}
+                    </label>
+                    <div
+                        onClick={() => {
+                            onOpenLocation();
+                            if (errors.locais) clearError('locais');
+                        }}
+                        className={`
+                            flex flex-wrap gap-2 p-4 border border-dashed rounded-xl min-h-[64px] items-center cursor-pointer transition-all
+                            ${errors.locais ? 'border-red-300 bg-red-50' : 'border-slate-300 hover:bg-white hover:border-emerald-500 hover:shadow-md'}
+                        `}
+                    >
+                        {formData.locais.length === 0 && (
+                            <div className="flex items-center text-slate-500 text-sm pl-1">
+                                <MapPin size={20} className={`mr-2 ${errors.locais ? 'text-red-500' : 'text-slate-400'}`} />
+                                <span>Toque para selecionar Talhões ou Canteiros para rateio...</span>
+                            </div>
+                        )}
+                        {formData.locais.map(l => (
+                            <span key={l} className="inline-flex items-center px-4 py-1.5 rounded-full text-sm font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                {l}
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        updateForm('locais', formData.locais.filter(x => x !== l));
+                                    }}
+                                    className="ml-2 inline-flex items-center justify-center h-5 w-5 rounded-full text-emerald-400 hover:bg-emerald-200 hover:text-emerald-700 focus:outline-none"
+                                >
+                                    <span className="sr-only">Remover</span>
+                                    <X size={14} />
+                                </button>
+                            </span>
+                        ))}
                     </div>
                 </div>
             </div>

@@ -21,6 +21,15 @@ export function useTransacoes(propriedadeId: number | undefined) {
                     *,
                     categorias_financeiras (
                         nome
+                    ),
+                    transacao_alocacoes (
+                        id,
+                        talhao_id,
+                        valor_alocado,
+                        percentual_alocado,
+                        talhoes (
+                            nome
+                        )
                     )
                 `)
                 .eq('propriedade_id', propriedadeId)
@@ -39,7 +48,15 @@ export function useTransacoes(propriedadeId: number | undefined) {
                 nota_fiscal: row.nota_fiscal,
                 created_at: row.created_at,
                 // Mapear o join
-                categoria_nome: row.categorias_financeiras?.nome || 'Sem Categoria'
+                categoria_nome: row.categorias_financeiras?.nome || 'Sem Categoria',
+                // Mapear as alocações
+                alocacoes: (row.transacao_alocacoes || []).map((aloc: any) => ({
+                    id: aloc.id,
+                    talhao_id: aloc.talhao_id,
+                    talhao_nome: aloc.talhoes?.nome || 'Global',
+                    valor_alocado: Number(aloc.valor_alocado),
+                    percentual_alocado: Number(aloc.percentual_alocado)
+                }))
             }));
 
             setTransacoes(mapped);

@@ -284,7 +284,9 @@ export const useRecordValidation = () => {
         const newErrors: ValidationErrors = {};
         if (!draft.dataHora) newErrors.data = 'Data é obrigatória';
         if (!draft.produto.trim()) newErrors.produto = 'Produto adquirido é obrigatório';
-        if (!draft.quantidade || parseFloat(draft.quantidade) <= 0) newErrors.quantidade = 'Qtd obrigatória';
+        if (draft.quantidade && (isNaN(parseFloat(draft.quantidade)) || parseFloat(draft.quantidade) <= 0)) {
+            newErrors.quantidade = 'Quantidade deve ser maior que zero';
+        }
         if (!draft.fornecedor.trim()) newErrors.fornecedor = 'Fornecedor obrigatório';
         return newErrors;
     }, []);
@@ -304,9 +306,10 @@ export const useRecordValidation = () => {
             if (!draft.destinoVenda.trim()) newErrors.destinoVenda = 'Destino obrigatório';
         } else {
             // Outro genérico
-            if (!draft.produto.trim() && !draft.observacao.trim()) {
+            if (!draft.produto.trim() && !draft.observacao.trim() && draft.locais.length === 0) {
                 newErrors.observacao = 'Preencha ao menos um campo';
                 newErrors.produto = 'Obrigatório';
+                newErrors.locais = 'Obrigatório';
             }
         }
 

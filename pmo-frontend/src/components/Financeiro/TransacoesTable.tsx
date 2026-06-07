@@ -115,9 +115,39 @@ const TransacoesTable: React.FC<TransacoesTableProps> = ({ transacoes, loading }
                                         {formatDate(t.data_transacao)}
                                     </td>
                                     <td className="p-4 whitespace-nowrap">
-                                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700">
-                                            {t.categoria_nome}
-                                        </span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700">
+                                                {t.categoria_nome}
+                                            </span>
+                                            {t.alocacoes && t.alocacoes.length === 1 && t.alocacoes[0].talhao_nome !== 'Global' && (
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                                    {t.alocacoes[0].talhao_nome}
+                                                </span>
+                                            )}
+                                            {t.alocacoes && t.alocacoes.length > 1 && (
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 cursor-help group relative">
+                                                    Rateado
+                                                    
+                                                    {/* Tooltip premium */}
+                                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-slate-900 text-white text-[11px] rounded-lg p-2.5 shadow-lg z-30 min-w-[180px] border border-slate-700">
+                                                        <div className="font-bold border-b border-slate-700 pb-1 mb-1 text-[9px] text-slate-400 uppercase tracking-wider">
+                                                            Divisão do Rateio
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            {t.alocacoes.map((a) => (
+                                                                <div key={a.id} className="flex justify-between gap-3 text-left">
+                                                                    <span className="text-slate-300 font-medium">{a.talhao_nome}</span>
+                                                                    <span className="font-bold text-white">
+                                                                        {formatCurrency(a.valor_alocado)} ({a.percentual_alocado.toFixed(0)}%)
+                                                                    </span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                        <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-slate-900"></div>
+                                                    </div>
+                                                </span>
+                                            )}
+                                        </div>
                                     </td>
                                     <td className="p-4 text-sm text-slate-600">
                                         {t.fornecedor || <span className="text-slate-400 italic">Não informado</span>}

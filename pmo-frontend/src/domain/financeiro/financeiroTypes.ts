@@ -26,6 +26,14 @@ export interface DRESummary {
 }
 
 // Representa uma transação no Ledger Financeiro (tabela transacoes_financeiras com join em categorias)
+export interface TransacaoAlocacao {
+    id: string;
+    talhao_id?: number;
+    talhao_nome?: string;
+    valor_alocado: number;
+    percentual_alocado: number;
+}
+
 export interface TransacaoFinanceira {
     id: string;
     pmo_id?: number;
@@ -38,4 +46,7 @@ export interface TransacaoFinanceira {
     created_at?: string;
     // Campo que vem do join com categorias_financeiras
     categoria_nome?: string;
+    // Lista de alocações da transação
+    alocacoes?: TransacaoAlocacao[];
 }
+

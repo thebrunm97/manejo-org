@@ -162,6 +162,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
             propriedade_id: currentPropriedade?.id,
             pmo_id: localActivePmoId,
             user_id: user?.id,
+            talhao_canteiro: draft.locais && draft.locais.length > 0 ? draft.locais.join('; ') : undefined
         };
 
         // Inject talhao_id if available (handled as any since it's not in the BaseRegistro type but accepted by API)
@@ -339,6 +340,8 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
                             updateForm={updateDraft}
                             errors={errors}
                             isEditMode={isEditMode}
+                            onOpenLocation={() => setOpenLocation(true)}
+                            clearError={clearError}
                         />
                     )}
 
