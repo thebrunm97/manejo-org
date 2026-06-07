@@ -46,7 +46,8 @@ const FinanceiroPage: React.FC = () => {
         dataTalhoes, 
         summary, 
         loading, 
-        error 
+        error,
+        refetch: refetchStats
     } = useFinanceiroStats(currentPropriedade?.id, selectedYear);
 
     const {
@@ -54,6 +55,11 @@ const FinanceiroPage: React.FC = () => {
         loading: loadingTransacoes,
         refetch: refetchTransacoes
     } = useTransacoes(currentPropriedade?.id);
+
+    // Conexão BI: Garante que os dados dos gráficos e DRE atualizem em sincronia com useTransacoes (Real-time / Auto-refresh)
+    React.useEffect(() => {
+        refetchStats();
+    }, [transacoes, refetchStats]);
 
     const years = [2024, 2025, 2026];
 

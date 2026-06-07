@@ -119,7 +119,15 @@ const TransacoesTable: React.FC<TransacoesTableProps> = ({ transacoes, loading }
                                             <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700">
                                                 {t.categoria_nome}
                                             </span>
-                                            {t.alocacoes && t.alocacoes.length === 1 && t.alocacoes[0].talhao_nome !== 'Global' && (
+                                            {t.talhao_canteiro && (
+                                                <span 
+                                                    title={t.talhao_canteiro.split(';').map(s => s.trim()).filter(Boolean).join(', ')}
+                                                    className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 max-w-[150px] truncate cursor-help"
+                                                >
+                                                    {t.talhao_canteiro.split(';').map(s => s.trim()).filter(Boolean).join(', ')}
+                                                </span>
+                                            )}
+                                            {!t.talhao_canteiro && t.alocacoes && t.alocacoes.length === 1 && t.alocacoes[0].talhao_nome !== 'Global' && (
                                                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
                                                     {t.alocacoes[0].talhao_nome}
                                                 </span>

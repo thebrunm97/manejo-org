@@ -150,7 +150,7 @@ const LocationSelectorDialog: React.FC<LocationSelectorProps> = ({
 
     return (
         /* --- Root Modal Overlay --- */
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[210] flex items-center justify-center p-4 md:pl-64 bg-gray-900/50 backdrop-blur-sm">
 
             {/* --- Modal Container --- */}
             <div className="relative w-full max-w-lg bg-white rounded-lg shadow-2xl flex flex-col max-h-[90vh]">

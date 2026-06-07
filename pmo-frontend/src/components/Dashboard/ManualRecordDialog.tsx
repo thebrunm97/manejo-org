@@ -195,7 +195,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
 
     return (
         /* --- 1. Estrutura Raiz do Modal (Fixed Overflow & Background) --- */
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:pl-64 bg-gray-900/50 backdrop-blur-sm overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
 
             {/* --- 2. Caixa do Modal (White Background is Critical) --- */}
             <div className="relative w-[calc(100vw-2rem)] max-w-2xl md:w-full max-h-[calc(100dvh-3rem)] md:max-h-[calc(100dvh-4rem)] bg-white rounded-[24px] shadow-2xl flex flex-col overflow-hidden">
@@ -417,7 +417,7 @@ const ManualRecordDialog: React.FC<ManualRecordDialogProps> = ({
 
             {/* Justification Modal (Styled with Tailwind) */}
             {openJustification && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm" role="dialog" aria-modal="true">
+                <div className="fixed inset-0 z-[220] flex items-center justify-center p-4 md:pl-64 bg-gray-900/50 backdrop-blur-sm" role="dialog" aria-modal="true">
                     <div className="relative w-full max-w-lg bg-white rounded-lg shadow-2xl flex flex-col p-6 space-y-4">
                         <div className="flex items-start">
                             <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-amber-100 sm:h-10 sm:w-10">

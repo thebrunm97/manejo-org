@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "dev": "npm run dev --prefix pmo-frontend",
+    "start": "npm run build --prefix pmo-frontend && npm run preview --prefix pmo-frontend"
+  },
   "devDependencies": {
     "vite-plugin-pwa": "^1.2.0"
   },
