@@ -73,9 +73,18 @@ func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, tts
 	orchestrator.OutputJudge = ActiveOutputJudge // wire output governance (nil = disabled)
 	orchestrator.HITL = ActiveHITLController     // wire HITL controller (nil = disabled)
 	orchestrator.Phone = phone                   // needed for HITL WhatsApp confirmation
+	orchestrator.WhatsApp = wpClient             // wire message sender for HITL confirmation prompts
 	
 	botResponse, newHistory, trace, usage, modelUsed, err := orchestrator.ExecuteAgenticLoop(ctx, profile, specPrompt, body, tools, agnosticHistory, guard)
 	if err != nil {
+		if err.Error() == "hitl_pending" {
+			log.Printf("⏸️ [FSM] HITL pendente. Salvando histórico e silenciando resposta conversacional.")
+			if historyManager != nil {
+				historyManager.AppendAgnosticHistory(phone, newHistory)
+			}
+			recordLog(sbClient, profile, body, "[HITL PENDING]", llmClient.ModelName(), modelUsed, int(usage.PromptTokens), int(usage.CandidatesTokens), finalIntent, map[string]interface{}{"status": "hitl_pending"}, startTime, true, trace)
+			return "", ProcessResult{Success: false, Reason: "hitl_pending"}
+		}
 		log.Printf("❌ [CRITICAL FSM ERROR] Orchestrator Loop failed: %v", err)
 		return "⚠️ Ocorreu um erro interno ao processar sua dúvida. Por favor, tente novamente.", ProcessResult{Success: false, Reason: "orchestrator_failed"}
 	}

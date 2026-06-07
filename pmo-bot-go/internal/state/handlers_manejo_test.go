@@ -61,6 +61,11 @@ func (m *mockSender) DownloadImage(id string, raw []byte) ([]byte, string, error
 	return nil, "", nil
 }
 func (m *mockSender) SetPresence(to, presence string) error { return nil }
+func (m *mockSender) SendButton(to string, title, description, footer string, buttons []map[string]string) error {
+	m.LastMessage = description
+	m.Sent = append(m.Sent, description)
+	return nil
+}
 
 // ─── Profile builders ─────────────────────────────────────────────────────────
 

@@ -252,6 +252,119 @@ func BuildConfirmationMessage(label string, args map[string]interface{}) string 
 	)
 }
 
+// formatValueCleanly recursively formats values, rendering talhão maps in a user-friendly format.
+func formatValueCleanly(val interface{}, depth int) string {
+	indent := strings.Repeat("  ", depth)
+	switch v := val.(type) {
+	case map[string]interface{}:
+		hasTalhao := false
+		var talhaoNome, talhaoID, valorAlocado interface{}
+		for k, valMap := range v {
+			if k == "talhao_nome" || k == "talhao_id" {
+				hasTalhao = true
+			}
+			if k == "talhao_nome" {
+				talhaoNome = valMap
+			} else if k == "talhao_id" {
+				talhaoID = valMap
+			} else if k == "valor_alocado" {
+				valorAlloc := valMap
+				if str, ok := valorAlloc.(string); ok && str == "" {
+					valorAlocado = nil
+				} else {
+					valorAlocado = valorAlloc
+				}
+			}
+		}
+
+		if hasTalhao {
+			nameStr := "Sem Nome"
+			if talhaoNome != nil {
+				nameStr = fmt.Sprintf("%v", talhaoNome)
+			}
+			idStr := ""
+			if talhaoID != nil {
+				idStr = fmt.Sprintf("%v", talhaoID)
+			}
+			var finalStr string
+			if idStr != "" && idStr != "<nil>" && idStr != "0" {
+				finalStr = fmt.Sprintf("• %s (ID: %s)", nameStr, idStr)
+			} else {
+				finalStr = fmt.Sprintf("• %s", nameStr)
+			}
+			if valorAlocado != nil && fmt.Sprintf("%v", valorAlocado) != "" {
+				finalStr += fmt.Sprintf(": R$ %v", valorAlocado)
+			}
+			return finalStr
+		}
+
+		var parts []string
+		for k, valMap := range v {
+			parts = append(parts, fmt.Sprintf("%s%s: %s", indent, k, formatValueCleanly(valMap, depth+1)))
+		}
+		return "{\n" + strings.Join(parts, "\n") + "\n" + indent + "}"
+
+	case map[interface{}]interface{}:
+		hasTalhao := false
+		var talhaoNome, talhaoID, valorAlocado interface{}
+		for k, valMap := range v {
+			kStr := fmt.Sprintf("%v", k)
+			if kStr == "talhao_nome" || kStr == "talhao_id" {
+				hasTalhao = true
+			}
+			if kStr == "talhao_nome" {
+				talhaoNome = valMap
+			} else if kStr == "talhao_id" {
+				talhaoID = valMap
+			} else if kStr == "valor_alocado" {
+				valorAlloc := valMap
+				if str, ok := valorAlloc.(string); ok && str == "" {
+					valorAlocado = nil
+				} else {
+					valorAlocado = valorAlloc
+				}
+			}
+		}
+
+		if hasTalhao {
+			nameStr := "Sem Nome"
+			if talhaoNome != nil {
+				nameStr = fmt.Sprintf("%v", talhaoNome)
+			}
+			idStr := ""
+			if talhaoID != nil {
+				idStr = fmt.Sprintf("%v", talhaoID)
+			}
+			var finalStr string
+			if idStr != "" && idStr != "<nil>" && idStr != "0" {
+				finalStr = fmt.Sprintf("• %s (ID: %s)", nameStr, idStr)
+			} else {
+				finalStr = fmt.Sprintf("• %s", nameStr)
+			}
+			if valorAlocado != nil && fmt.Sprintf("%v", valorAlocado) != "" {
+				finalStr += fmt.Sprintf(": R$ %v", valorAlocado)
+			}
+			return finalStr
+		}
+
+		var parts []string
+		for k, valMap := range v {
+			parts = append(parts, fmt.Sprintf("%s%v: %s", indent, k, formatValueCleanly(valMap, depth+1)))
+		}
+		return "{\n" + strings.Join(parts, "\n") + "\n" + indent + "}"
+
+	case []interface{}:
+		var parts []string
+		for _, valSlice := range v {
+			parts = append(parts, formatValueCleanly(valSlice, depth))
+		}
+		return "\n" + strings.Join(parts, "\n")
+
+	default:
+		return fmt.Sprintf("%v", v)
+	}
+}
+
 // formatArgsForHuman renders the tool args as a readable bullet list,
 // filtering out system-injected fields (user_id, pmo_id, etc.).
 func formatArgsForHuman(args map[string]interface{}) string {
@@ -267,7 +380,7 @@ func formatArgsForHuman(args map[string]interface{}) string {
 		if v == nil || v == "" {
 			continue
 		}
-		lines = append(lines, fmt.Sprintf("• *%s:* %v", k, v))
+		lines = append(lines, fmt.Sprintf("• *%s:* %s", k, formatValueCleanly(v, 0)))
 	}
 
 	if len(lines) == 0 {

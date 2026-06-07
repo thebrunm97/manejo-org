@@ -130,7 +130,6 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 
 	// 2. Parse the Evolution payload via Adapter
 	rawBody, _ := c.GetRawData()
-	log.Printf("Raw Webhook Body: %s", string(rawBody))
 
 	payload, err := evolution.ParseWebhook(rawBody)
 	if err != nil {
@@ -185,10 +184,21 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 	msgID := payload.ID
 	if msgID != "" {
 		if _, loaded := processedMu.LoadOrStore(msgID, struct{}{}); loaded {
-			log.Printf("🔁 [DEDUP] Mensagem %s já em processamento — ignorando duplicata", msgID)
+			log.Printf("🔁 [DEDUP] Mensagem %s já em processamento (in-memory) — ignorando duplicata", msgID)
 			c.JSON(http.StatusOK, gin.H{"status": "duplicate"})
 			return
 		}
+
+		// Database-backed deduplication
+		isDuplicate, err := h.cfg.SupabaseClient.CheckAndRegisterWebhook(msgID)
+		if err != nil {
+			log.Printf("⚠️ [DEDUP] Erro ao verificar duplicidade no banco: %v. Prosseguindo como tolerância a falhas.", err)
+		} else if isDuplicate {
+			log.Printf("🔁 [DEDUP] Mensagem %s já processada (banco) — ignorando duplicata silenciosamente", msgID)
+			c.JSON(http.StatusOK, gin.H{"status": "duplicate"})
+			return
+		}
+
 		// Cleanup: remove after 5 min
 		go func(id string) {
 			time.Sleep(5 * time.Minute)
@@ -198,12 +208,18 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 
 	// ─── HITL: SIM/NÃO intercept (before harness dispatch) ───────────────────
 	// Check if this is a producer response to a pending HITL approval.
-	// Pure text messages containing SIM/NÃO are matched against hitl_pending
+	// Pure text messages containing SIM/NÃO (or 1/2 from fallback text) are matched against hitl_pending
 	// by phone number. If matched, execute the stored tool and short-circuit.
 	if h.cfg.HITLController != nil && !payload.IsAudio && !payload.IsImage {
 		bodyNorm := strings.ToUpper(strings.TrimSpace(payload.Body))
-		if bodyNorm == "SIM" || bodyNorm == "NAO" || bodyNorm == "NÃO" {
-			if h.handleHITLResponse(payload.From, bodyNorm) {
+		if bodyNorm == "SIM" || bodyNorm == "NAO" || bodyNorm == "NÃO" || bodyNorm == "1" || bodyNorm == "2" {
+			resolvedResponse := bodyNorm
+			if bodyNorm == "1" {
+				resolvedResponse = "SIM"
+			} else if bodyNorm == "2" {
+				resolvedResponse = "NÃO"
+			}
+			if h.handleHITLResponse(payload.From, resolvedResponse) {
 				c.JSON(http.StatusOK, gin.H{"status": "hitl_processed"})
 				return
 			}
@@ -251,6 +267,8 @@ func (h *Handler) handleHealth(c *gin.Context) {
 func (h *Handler) handleHITLResponse(phone, response string) bool {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+
+	phone = utils.SanitizePhone(phone)
 
 	// 1. Look up the most recent waiting HITL approval for this phone
 	rec, err := h.cfg.HITLController.FindPendingByPhone(ctx, phone)
