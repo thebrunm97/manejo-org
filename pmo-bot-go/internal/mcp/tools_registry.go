@@ -322,8 +322,34 @@ func (s *Server) InitializeTools() {
 						"type":        "number",
 						"description": "O valor total em dinheiro gasto na operação/compra (opcional).",
 					},
+					"alocacoes_talhoes": map[string]interface{}{
+						"type":        "array",
+						"description": "Lista de alocações (rateio) do valor da compra entre diferentes talhões da propriedade.",
+						"items": map[string]interface{}{
+							"type": "object",
+							"properties": map[string]interface{}{
+								"talhao_id": map[string]interface{}{
+									"type":        "integer",
+									"description": "ID do talhão (se conhecido).",
+								},
+								"talhao_nome": map[string]interface{}{
+									"type":        "string",
+									"description": "Nome do talhão (ex: 'Talhão 1', 'Canteiro A') para resolução no banco.",
+								},
+								"valor_alocado": map[string]interface{}{
+									"type":        "number",
+									"description": "Valor financeiro (R$) alocado para este talhão.",
+								},
+							},
+							"required": []string{"talhao_nome", "valor_alocado"},
+						},
+					},
+					"categoria_nome": map[string]interface{}{
+						"type":        "string",
+						"description": "Nome da categoria da despesa (ex: 'Insumos', 'Manutenção', 'Logística/Frete'). Opcional.",
+					},
 				},
-				"required": []string{"pmo_id", "propriedade_id", "produto", "quantidade_valor", "quantidade_unidade"},
+				"required": []string{"pmo_id", "propriedade_id", "produto"},
 			},
 		},
 		Category: CategoryDatabase,

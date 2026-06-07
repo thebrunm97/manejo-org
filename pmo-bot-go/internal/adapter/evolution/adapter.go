@@ -46,6 +46,45 @@ func (a *EvolutionAdapter) SendMessage(to, text string) error {
 	return a.doRequest(http.MethodPost, url, payload)
 }
 
+// SendButton sends a button message with reply buttons.
+func (a *EvolutionAdapter) SendButton(to string, title, description, footer string, buttons []map[string]string) error {
+	url := fmt.Sprintf("%s/send/button", a.BaseURL)
+
+	var serializedButtons []map[string]interface{}
+	for _, btn := range buttons {
+		serializedButtons = append(serializedButtons, map[string]interface{}{
+			"type":        btn["type"],
+			"displayText": btn["displayText"],
+			"id":          btn["id"],
+		})
+	}
+
+	payload := map[string]interface{}{
+		"number":       to,
+		"title":        title,
+		"description":  description,
+		"footer":       footer,
+		"buttons":      serializedButtons,
+		"instanceName": a.InstanceName,
+	}
+
+	err := a.doRequest(http.MethodPost, url, payload)
+	if err != nil {
+		log.Printf("⚠️ [Evolution] Falha ao enviar botões interativos: %v. Fazendo fallback para texto puro.", err)
+		var sb strings.Builder
+		if title != "" {
+			sb.WriteString("*" + title + "*\n\n")
+		}
+		sb.WriteString(description + "\n\n")
+		if footer != "" {
+			sb.WriteString("_" + footer + "_\n\n")
+		}
+		sb.WriteString("Responda com:\n*1. SIM*\n*2. NÃO*")
+		return a.SendMessage(to, sb.String())
+	}
+	return nil
+}
+
 // SendVoice sends an audio message (PTT).
 func (a *EvolutionAdapter) SendVoice(to, base64Audio string, isPtt bool) error {
 	url := fmt.Sprintf("%s/send/media", a.BaseURL)
@@ -351,9 +390,42 @@ func ParseWebhook(rawBody []byte) (*ports.IncomingMessage, error) {
 		return nil, fmt.Errorf("failed to unmarshal webhook: %w", err)
 	}
 
-	// Evolution Go uses "Message", Legacy Evolution Node uses "messages.upsert"
-	if payload.Event != "messages.upsert" && payload.Event != "Message" {
+	// Evolution Go uses "Message", Legacy Evolution Node uses "messages.upsert", and buttons response event
+	if payload.Event != "messages.upsert" && payload.Event != "Message" && payload.Event != "ButtonClick" && payload.Event != "BUTTON_CLICK" {
 		return nil, nil // Ignored event
+	}
+
+	if payload.Event == "ButtonClick" || payload.Event == "BUTTON_CLICK" {
+		var btnPayload struct {
+			Data struct {
+				ButtonId   string `json:"buttonId"`
+				ButtonText string `json:"buttonText"`
+				Key        struct {
+					RemoteJid string `json:"remoteJid"`
+					FromMe    bool   `json:"fromMe"`
+					Id        string `json:"id"`
+				} `json:"key"`
+			} `json:"data"`
+		}
+		if err := json.Unmarshal(rawBody, &btnPayload); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal button click webhook: %w", err)
+		}
+
+		body := btnPayload.Data.ButtonText
+		if body == "" {
+			body = btnPayload.Data.ButtonId
+		}
+
+		return &ports.IncomingMessage{
+			ID:        btnPayload.Data.Key.Id,
+			From:      btnPayload.Data.Key.RemoteJid,
+			Body:      body,
+			IsFromMe:  btnPayload.Data.Key.FromMe,
+			Timestamp: time.Now(),
+			Type:      "button_click",
+			IsAudio:   false,
+			RawPayload: rawBody,
+		}, nil
 	}
 
 	// Extract message object

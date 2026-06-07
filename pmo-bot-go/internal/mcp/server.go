@@ -107,7 +107,7 @@ func (s *Server) GetToolsForIntent(intent string) []llm.FerramentaAgnostica {
 				include = true
 			}
 
-		case "DATABASE":
+		case "DATABASE", "REGISTRO_FINANCEIRO":
 			if t.Category == CategoryDatabase || t.Definition.Name == "consultar_dados_fazenda" {
 				include = true
 			}

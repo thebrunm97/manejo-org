@@ -172,6 +172,21 @@ func (c *Client) SendMessage(to, message string) error {
 	return err
 }
 
+func (c *Client) SendButton(to string, title, description, footer string, buttons []map[string]string) error {
+	var sb strings.Builder
+	if title != "" {
+		sb.WriteString("*" + title + "*\n\n")
+	}
+	sb.WriteString(description + "\n\n")
+	if footer != "" {
+		sb.WriteString("_" + footer + "_\n\n")
+	}
+	for _, btn := range buttons {
+		sb.WriteString(fmt.Sprintf("[%s]\n", btn["displayText"]))
+	}
+	return c.SendMessage(to, sb.String())
+}
+
 func (c *Client) SendVoice(to, base64Audio string, isPtt bool) error {
 	reqURL := fmt.Sprintf("%s/api/%s/send-file-base64", c.config.URL, c.config.Session)
 	recipient := to

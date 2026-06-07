@@ -12,6 +12,7 @@ type MessageSender interface {
 	DownloadAudio(messageID string, rawPayload []byte) ([]byte, error)
 	DownloadImage(messageID string, rawPayload []byte) ([]byte, string, error)
 	SetPresence(to string, presence string) error
+	SendButton(to string, title, description, footer string, buttons []map[string]string) error
 }
 
 // IncomingMessage representa uma mensagem recebida de forma agnóstica ao provider.

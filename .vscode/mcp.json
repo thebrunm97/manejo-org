@@ -1,1 +1,18 @@
-{ 	servers: { 		com.supabase/mcp: { 			type: stdio, 			command: npx, 			args: [ 				--project-ref, 				hejewayflbuemnffrhae, 				--read-only, 				false, 				--features, 				database,storage,auth,edge_functions, 				--registry, 				https://registry.npmjs.org, 				@supabase/mcp-server-supabase@0.7.0 			], 			env: { 				SUPABASE_ACCESS_TOKEN: ${env:SUPABASE_ACCESS_TOKEN} 			}, 			gallery: https://api.mcp.github.com, 			version: 0.7.0 		} 	} }
+{
+  "servers": {
+    "supabase-local": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase",
+        "--project-ref",
+        "hejewayflbuemnffrhae",
+        "--features",
+        "development,docs,account,database"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "sbp_d4a95b46e02a2208fc18c98b583013392480799d"
+      }
+    }
+  }
+}
