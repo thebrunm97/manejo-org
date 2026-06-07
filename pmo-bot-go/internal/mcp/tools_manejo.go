@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -9,6 +10,12 @@ import (
 
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 )
+
+type AlocacaoTalhao struct {
+	TalhaoID     *int64   `json:"talhao_id,omitempty"`
+	TalhaoNome   string   `json:"talhao_nome"`
+	ValorAlocado float64  `json:"valor_alocado"`
+}
 
 func (s *Server) handleCalcularAdubacao(args map[string]interface{}) (interface{}, error) {
 	cultura := sanitize(args["cultura"])
@@ -221,8 +228,33 @@ func (s *Server) handleRegistrarCompraInsumo(args map[string]interface{}) (inter
 	pmoID := int64(pmoIDFloat)
 	userID, _ := args["user_id"].(string)
 
-	qtdValor, _ := parseArgToFloat(args["quantidade_valor"])
-	qtdUnidade := sanitize(args["quantidade_unidade"])
+	var qtdValorPtr *float64
+	if val, ok := args["quantidade_valor"]; ok && val != nil {
+		if f, err := parseArgToFloat(val); err == nil && f > 0 {
+			v := f
+			qtdValorPtr = &v
+		}
+	}
+
+	var qtdUnidadeVal interface{}
+	if val, ok := args["quantidade_unidade"]; ok && val != nil {
+		sVal := sanitize(val)
+		if sVal != "" {
+			qtdUnidadeVal = sVal
+		}
+	}
+
+	var alocacoesPtr *[]AlocacaoTalhao
+	if rawAlocs, ok := args["alocacoes_talhoes"]; ok && rawAlocs != nil {
+		var alocList []AlocacaoTalhao
+		rawJSON, err := json.Marshal(rawAlocs)
+		if err == nil {
+			if err := json.Unmarshal(rawJSON, &alocList); err == nil && len(alocList) > 0 {
+				alocacoesPtr = &alocList
+			}
+		}
+	}
+
 	produto := sanitize(args["produto"])
 	fornecedor := sanitize(args["fornecedor"])
 
@@ -241,8 +273,8 @@ func (s *Server) handleRegistrarCompraInsumo(args map[string]interface{}) (inter
 		"propriedade_id_arg":     propID,
 		"user_id_arg":            userID,
 		"produto_arg":            produto,
-		"quantidade_valor_arg":   qtdValor,
-		"quantidade_unidade_arg": qtdUnidade,
+		"quantidade_valor_arg":   qtdValorPtr,
+		"quantidade_unidade_arg": qtdUnidadeVal,
 		"fornecedor_arg":         fornecedor,
 		"data_compra_arg":        dataCompra,
 		"nota_fiscal_arg":        sanitize(args["nota_fiscal"]),
@@ -250,10 +282,12 @@ func (s *Server) handleRegistrarCompraInsumo(args map[string]interface{}) (inter
 		"composicao_arg":         sanitize(args["composicao"]),
 		"procedencia_arg":        sanitize(args["procedencia"]),
 		"valor_total_arg":        valorTotal,
+		"alocacoes_talhoes_arg":  alocacoesPtr,
+		"categoria_nome_arg":     sanitize(args["categoria_nome"]),
 	}
 
-	if produto == "" || qtdValor <= 0 || qtdUnidade == "" {
-		return "ERRO FATAL: O usuário não informou o produto, a quantidade exata ou a unidade. Pergunte a ele os detalhes da compra.", nil
+	if produto == "" {
+		return "ERRO FATAL: O usuário não informou o produto. Pergunte a ele os detalhes da compra.", nil
 	}
 
 	log.Printf("🛒 [MCP-TOOL] Chamando RPC para compra de '%s' para PMO %d", produto, pmoID)

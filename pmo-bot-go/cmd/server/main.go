@@ -184,8 +184,15 @@ func main() {
 		Enqueue(ctx context.Context, msg ports.IncomingMessage) error
 	}
 
+	// ── HITL Controller (independente do Harness) ─────────────────────────
+	// Inicializado incondicionalmente: o intercept de SIM/NÃO no webhook
+	// deve funcionar tanto no modo legado quanto no modo Harness.
+	hitlController := guardrails.NewHITLController(sbURL, sbKey)
+	state.SetHITL(hitlController)
+	log.Println("✅ [HITL] Controller inicializado (SIM/NÃO intercept ativo)")
+	// ────────────────────────────────────────────────────────────────────────
+
 	// Declare guardrail dependencies at outer scope so the webhook handler can access them.
-	var hitlController guardrails.HITLHandler
 
 	if harnessEnabled {
 		log.Println("🚀 [Harness] HARNESS_ENABLED=true — iniciando modo produção com fila PostgreSQL")
@@ -204,8 +211,9 @@ func main() {
 			},
 			violationLogger,
 		)
-		hitlController = guardrails.NewHITLController(sbURL, sbKey)
+		// hitlController already initialized above (unconditionally).
 		state.SetOutputJudge(outputJudge)
+		// Re-wire HITL in state package (already done above, this is a no-op re-assignment).
 		state.SetHITL(hitlController)
 		log.Println("✅ [Guardrails] Pipeline de Entrada + Output Judge + HITL ativados")
 		// ─────────────────────────────────────────────────────────────────────

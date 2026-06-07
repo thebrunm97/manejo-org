@@ -12,10 +12,10 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=$TARGETARCH go build -ldflags="-s -w" -o /pmo-bot-go ./cmd/server
 
 # ---- Runtime Stage ----
-FROM alpine:3.21
+FROM alpine:3.19
 
 # CA certificates for HTTPS calls and tzdata for Brazil Timezone
-RUN apk --no-cache add ca-certificates tzdata
+RUN apk add --no-cache ca-certificates tzdata
 ENV TZ=America/Sao_Paulo
 
 COPY --from=builder /pmo-bot-go /pmo-bot-go
