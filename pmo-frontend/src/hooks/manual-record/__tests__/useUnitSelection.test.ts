@@ -24,7 +24,7 @@ describe('useUnitSelection', () => {
 
             expect(result.current.availableUnits).toEqual(UNIDADES_PLANTIO);
             expect(result.current.availableUnits).toContain(UnitType.UNID);
-            expect(result.current.availableUnits).toContain(UnitType.MACO);
+            expect(result.current.availableUnits).toContain(UnitType.G);
             expect(result.current.availableUnits).toContain(UnitType.KG);
         });
 

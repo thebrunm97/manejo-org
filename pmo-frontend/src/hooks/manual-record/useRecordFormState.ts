@@ -338,11 +338,11 @@ export const useRecordFormState = ({
             const details = recordToEdit.detalhes_tecnicos || {};
 
             const isPlantio = tipoRaw === ActivityType.PLANTIO || tipoRaw === 'Plantio';
-            const isManejo = tipoRaw === ActivityType.MANEJO || tipoRaw === 'Manejo' || tipoRaw === ActivityType.INSUMO;
+            const isCompras = tipoRaw === 'Compra' || ((tipoRaw === ActivityType.INSUMO || tipoRaw === 'Insumo') && (details as any)?.tipo_registro === 'compra');
+            const isManejo = (tipoRaw === ActivityType.MANEJO || tipoRaw === 'Manejo' || tipoRaw === ActivityType.INSUMO || tipoRaw === 'Insumo') && !isCompras;
             const isColheita = tipoRaw === ActivityType.COLHEITA || tipoRaw === 'Colheita';
             const isVenda = tipoRaw === ActivityType.VENDA || tipoRaw === 'Venda';
             const isCompostagem = tipoRaw === ActivityType.COMPOSTAGEM || tipoRaw === 'Compostagem';
-            const isCompras = tipoRaw === ActivityType.INSUMO || tipoRaw === 'Insumo';
 
             // Base fields
             const common: CommonDraft = {
@@ -369,6 +369,16 @@ export const useRecordFormState = ({
                     houveDescartes: !!recordToEdit.houve_descartes,
                     qtdDescartes: recordToEdit.qtd_descartes ? String(recordToEdit.qtd_descartes) : '',
                     unidadeDescartes: (recordToEdit.unidade_descartes as UnitType) || UnitType.UNID
+                });
+            } else if (isCompras) {
+                setActiveTab('compras');
+                setComprasDraft({
+                    ...common,
+                    quantidade: recordToEdit.quantidade_valor ? String(recordToEdit.quantidade_valor) : '',
+                    unidade: (recordToEdit.quantidade_unidade as UnitType) || UnitType.UNID,
+                    fornecedor: recordToEdit.fornecedor || (details as any)?.fornecedor || '',
+                    nfRecibo: recordToEdit.nota_fiscal || (details as any)?.nota_fiscal || '',
+                    valor_total: recordToEdit.valor_total ?? undefined
                 });
             } else if (isManejo) {
                 setActiveTab('manejo');
@@ -432,15 +442,6 @@ export const useRecordFormState = ({
                     ingredientes: d.ingredientes || '',
                     temperatura: d.temperatura ? String(d.temperatura) : '',
                     responsavel: d.responsavel || ''
-                });
-            } else if (isCompras) {
-                setActiveTab('compras');
-                setComprasDraft({
-                    ...common,
-                    quantidade: recordToEdit.quantidade_valor ? String(recordToEdit.quantidade_valor) : '',
-                    unidade: (recordToEdit.quantidade_unidade as UnitType) || UnitType.UNID,
-                    fornecedor: recordToEdit.fornecedor || (details as any)?.fornecedor || '',
-                    nfRecibo: recordToEdit.nota_fiscal || (details as any)?.nota_fiscal || ''
                 });
             } else {
                 setActiveTab('outro');
