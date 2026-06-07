@@ -46,6 +46,8 @@ export interface TransacaoFinanceira {
     created_at?: string;
     // Campo que vem do join com categorias_financeiras
     categoria_nome?: string;
+    // Campo vindo do caderno_campo (rateio em formato string)
+    talhao_canteiro?: string | null;
     // Lista de alocações da transação
     alocacoes?: TransacaoAlocacao[];
 }
