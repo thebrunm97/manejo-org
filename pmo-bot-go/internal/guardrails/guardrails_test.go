@@ -199,17 +199,17 @@ func minStr(a, b int) int {
 
 func TestBuildConfirmationMessage_CleanFormatting(t *testing.T) {
 	args := map[string]interface{}{
-		"produto": "Esterco Bovino",
+		"produto":          "Esterco Bovino",
 		"quantidade_valor": 500.0,
 		"alocacoes_talhoes": []interface{}{
 			map[string]interface{}{
-				"talhao_id": 7,
-				"talhao_nome": "Talhão 3",
+				"talhao_id":     7,
+				"talhao_nome":   "Talhão 3",
 				"valor_alocado": 50.0,
 			},
 			map[string]interface{}{
-				"talhao_id": 8,
-				"talhao_nome": "Talhão 4",
+				"talhao_id":     8,
+				"talhao_nome":   "Talhão 4",
 				"valor_alocado": 50.0,
 			},
 		},

@@ -35,7 +35,7 @@ func handleAssumirCota(ctx context.Context, ext *groq.ExtractionResult, profile 
 
 	// 3. Intelligence: Reverse Scheduling (Gemini)
 	log.Printf("🧠 [FSM-COLETIVO] Consultando Gemini para cronograma reverso: %s -> %s", cultura, demanda.DataEntrega)
-	
+
 	promptPlantio := fmt.Sprintf(`Você é um agrônomo sênior. 
 A cooperativa precisa que o produtor entregue uma safra de %s no dia %s.
 Sabendo o ciclo médio dessa cultura na região Sul/Sudeste do Brasil, em qual data aproximada (dia/mês) ele precisa realizar o plantio?
@@ -60,14 +60,14 @@ Responda de forma extremamente curta e direta, apenas a data ou um pequeno inter
 		"propriedade_id": propID,
 		"usuario_id":     profile.ID,
 		"quantidade":     quantidade,
-		"data_plantio":   time.Now().Format("2006-01-02"), 
+		"data_plantio":   time.Now().Format("2006-01-02"),
 		"observacao_ia":  fmt.Sprintf("Sugerido por IA baseado na entrega em %s: %s", demanda.DataEntrega, dataSugerida),
 	}
-	
+
 	err = sbClient.RegistrarCotaComCronograma(ctx, payload)
 	if err != nil {
 		log.Printf("❌ [FSM-COLETIVO] Erro ao salvar cota: %v", err)
-		
+
 		errStr := err.Error()
 		if strings.Contains(errStr, "ERRO_CAPACIDADE") {
 			warningMsg := fmt.Sprintf("⚠️ Atenção: A quantidade de %vkg ultrapassa o limite físico estimado para o tamanho da sua propriedade. Quer tentar uma quantidade menor?", quantidade)
@@ -78,9 +78,9 @@ Responda de forma extremamente curta e direta, apenas a data ou um pequeno inter
 	}
 
 	// 5. Final Feedback
-	botResponse := fmt.Sprintf("🤝 *Cota Confirmada!*\n\n*Cultura:* %s\n*Quantidade:* %v %s\n*Prazo de Entrega:* %s\n\n💡 **Dica do Agrônomo:** Para entregar no prazo, o ideal é você iniciar o plantio por volta de *%s*. Já anotei aqui para te lembrar!", 
+	botResponse := fmt.Sprintf("🤝 *Cota Confirmada!*\n\n*Cultura:* %s\n*Quantidade:* %v %s\n*Prazo de Entrega:* %s\n\n💡 **Dica do Agrônomo:** Para entregar no prazo, o ideal é você iniciar o plantio por volta de *%s*. Já anotei aqui para te lembrar!",
 		demanda.Cultura, quantidade, demanda.Unidade, demanda.DataEntrega, dataSugerida)
-	
+
 	recordLog(sbClient, profile, originalBody, botResponse, modelConfigured, modelUsed, 0, 0, "assumir_cota", toMap(ext), startTime, true, nil)
 
 	return botResponse, ProcessResult{Success: true, Reason: "quota_assumed"}

@@ -59,7 +59,7 @@ func TestFSM_ScenarioA_FinanceiroPuro(t *testing.T) {
 		Fornecedor: "Oficina do João",
 	}
 
-	msg, res := handleRegistroFinanceiro(context.Background(), ext, profile, sbClient, sender, nil, phone, false)
+	msg, res := handleRegistroFinanceiro(context.Background(), ext, profile, sbClient, sender, nil, phone, false, nil)
 
 	if !res.Success {
 		t.Fatalf("Expected financial registration to succeed, got false with reason: %s", res.Reason)
@@ -68,7 +68,7 @@ func TestFSM_ScenarioA_FinanceiroPuro(t *testing.T) {
 	if !strings.Contains(msg, "500.50") {
 		t.Errorf("Expected response message to contain the value 500.50, got: %s", msg)
 	}
-	
+
 	if !strings.Contains(msg, "Oficina do João") {
 		t.Errorf("Expected response message to contain the supplier, got: %s", msg)
 	}

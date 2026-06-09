@@ -20,10 +20,10 @@ import (
 
 // ViolationDetail describes a single policy infraction detected by a filter.
 type ViolationDetail struct {
-	Rule       string  `json:"rule"`        // e.g. "pii_cpf", "injection_ignore"
-	Severity   string  `json:"severity"`    // "low", "medium", "high", "critical"
-	Match      string  `json:"match"`       // triggering text (safely truncated)
-	Confidence float64 `json:"confidence"`  // 0.0–1.0
+	Rule       string  `json:"rule"`       // e.g. "pii_cpf", "injection_ignore"
+	Severity   string  `json:"severity"`   // "low", "medium", "high", "critical"
+	Match      string  `json:"match"`      // triggering text (safely truncated)
+	Confidence float64 `json:"confidence"` // 0.0–1.0
 }
 
 // FilterVerdict is the result returned by a single filter run.

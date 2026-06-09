@@ -2,8 +2,8 @@ package guardrails
 
 import (
 	"context"
-	"strings"
 	"regexp"
+	"strings"
 )
 
 // PIIScrubber is Layer-1 of the input pipeline.
