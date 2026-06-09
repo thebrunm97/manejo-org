@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Flagsmith/flagsmith-go-client/v3"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
@@ -14,7 +15,6 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
-	"github.com/Flagsmith/flagsmith-go-client/v3"
 )
 
 // ProcessResult gives insight into what happened (useful for tests/metrics)
@@ -35,13 +35,19 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 	}()
 
 	startTime := time.Now()
+	if msg.RawPayloadID != "" {
+		ctx = context.WithValue(ctx, "raw_payload_id", msg.RawPayloadID)
+	}
+	if msg.RawPayloadID != "" {
+		ctx = context.WithValue(ctx, "raw_payload_id", msg.RawPayloadID)
+	}
 	var respondWithAudio = false
 
 	// 0. Ultra-Low Latency Greeting Guard (Immediate response for text greetings)
 	if !msg.IsAudio && !msg.IsImage && msg.Body != "" {
 		cleanBody := strings.ToUpper(strings.TrimSpace(msg.Body))
 		greetings := map[string]bool{
-			"OI": true, "OLA": true, "OLÁ": true, "BOM DIA": true, 
+			"OI": true, "OLA": true, "OLÁ": true, "BOM DIA": true,
 			"BOA TARDE": true, "BOA NOITE": true, "EAI": true, "EAÍ": true,
 			"HELLO": true, "HI": true,
 		}
@@ -216,14 +222,13 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 		return ProcessResult{Success: true, Reason: "chat_fast"}
 	}
 
-
 	// 4. Perceived Latency: Immediate ACK for complex requests or RAG/DOUBTS
 	isComplex := len(unifiedRes.Entities) > 1 || len(unifiedRes.Intents) > 1 || (len(unifiedRes.Intents) == 1 && unifiedRes.Intents[0] == llm.IntentRAG)
 	// Self-check for single-entity doubts
 	if !isComplex && len(unifiedRes.Entities) == 1 && unifiedRes.Entities[0].Intencao == "duvida" {
 		isComplex = true
 	}
-	
+
 	if isComplex {
 		log.Printf("⏳ [FSM] Enviando ACK imediato para solicitação complexa")
 		go wpClient.SendMessage(msg.From, "⏳ Um momento... Estou processando seus registros e consultando a base de dados.")
@@ -264,7 +269,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 
 		if interviewEntity != nil {
 			log.Printf("⏸️ [FSM] Ação pendente de informações (Entrevista para %s). Suspendendo loop.", interviewEntity.InsumoCultura)
-			
+
 			// Preparar pergunta da entrevista
 			question := interviewEntity.PerguntaAoUsuario
 			if question == "" {
@@ -290,7 +295,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 				header := "✅ Processados com sucesso:\n" + strings.Join(finalResponses, "\n\n") + "\n\n---\n\n"
 				question = header + question
 			}
-			
+
 			finalResponses = append(finalResponses, question)
 			lastRes = ProcessResult{Success: false, Reason: "missing_quantity"}
 			break // Interrompe o processamento das intenções seguintes
@@ -301,7 +306,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 
 		// 3. Executar o loop de agente isolado para esta intenção
 		resMsg, res := handleDuvidaFallback(ctx, wpClient, ttsClient, phone, llmClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, string(intent), filteredTools, guard, historyManager, mcpServer)
-		
+
 		if resMsg != "" {
 			finalResponses = append(finalResponses, resMsg)
 		}
@@ -393,7 +398,9 @@ func dispatchEntity(ctx context.Context, entity llm.AcaoEstruturada, profile *su
 			} else {
 				botResponse = "Qual a quantidade exata utilizada?"
 			}
-			if historyManager != nil { historyManager.SetFSMState(phone, StateAguardandoQuantidade, toMap(extracted), nil) }
+			if historyManager != nil {
+				historyManager.SetFSMState(phone, StateAguardandoQuantidade, toMap(extracted), nil)
+			}
 			return botResponse, ProcessResult{Success: false, Reason: "missing_quantity"}
 		}
 		return finalizeRegistration(ctx, extracted, profile, sbClient, wpClient, ttsClient, phone, body, respondWithAudio, startTime, historyManager, phone, routerModel)
@@ -402,7 +409,7 @@ func dispatchEntity(ctx context.Context, entity llm.AcaoEstruturada, profile *su
 		return handleLimpeza(ctx, extracted, profile, sbClient, wpClient, ttsClient, phone, body, respondWithAudio, startTime, routerModel, routerModel, 0, 0)
 
 	case "registro_financeiro":
-		return handleRegistroFinanceiro(ctx, extracted, profile, sbClient, wpClient, ttsClient, phone, respondWithAudio)
+		return handleRegistroFinanceiro(ctx, extracted, profile, sbClient, wpClient, ttsClient, phone, respondWithAudio, historyManager)
 
 	case "assumir_cota":
 		// Note: handleAssumirCota might need similar refactor if used in loops, but for now we focus on records
@@ -420,9 +427,9 @@ func dispatchEntity(ctx context.Context, entity llm.AcaoEstruturada, profile *su
 		if routedIntent == llm.IntentChat {
 			return "Olá! Sou o assistente do ManejoORG. Como posso ajudar com seu registro ou dúvida hoje?", ProcessResult{Success: true, Reason: "greeting_fallback"}
 		}
-		
+
 		if routedIntent == llm.IntentRAG || routedIntent == llm.IntentDatabase {
-				return handleDuvidaFallback(ctx, wpClient, ttsClient, phone, llmClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, string(routedIntent), filteredTools, guard, historyManager, mcpServer)
+			return handleDuvidaFallback(ctx, wpClient, ttsClient, phone, llmClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, string(routedIntent), filteredTools, guard, historyManager, mcpServer)
 		}
 		return "", ProcessResult{Success: true, Reason: "ignored"}
 	}

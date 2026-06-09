@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/Flagsmith/flagsmith-go-client/v3"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/thebrunm97/pmo-bot-go/internal/adapter/evolution"
@@ -24,7 +25,6 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
 	"github.com/thebrunm97/pmo-bot-go/internal/weather"
 	"github.com/thebrunm97/pmo-bot-go/internal/webhook"
-	"github.com/Flagsmith/flagsmith-go-client/v3"
 )
 
 func main() {
@@ -190,6 +190,11 @@ func main() {
 	hitlController := guardrails.NewHITLController(sbURL, sbKey)
 	state.SetHITL(hitlController)
 	log.Println("✅ [HITL] Controller inicializado (SIM/NÃO intercept ativo)")
+
+	// Inicialização do Avaliador Global Determinístico (Guardrails de Negócio)
+	businessEvaluator := guardrails.NewDeterministicEvaluator(sbClient)
+	state.SetBusinessEvaluator(businessEvaluator)
+	log.Println("✅ [Guardrail] Business Evaluator determinístico inicializado")
 	// ────────────────────────────────────────────────────────────────────────
 
 	// Declare guardrail dependencies at outer scope so the webhook handler can access them.
@@ -262,8 +267,8 @@ func main() {
 		MCPServer:       mcpServer,
 		HistoryManager:  historyManager,
 		FlagsmithClient: flagsmithClient,
-		HarnessQueue:    harnessQueue,    // nil quando HARNESS_ENABLED=false (modo legado)
-		HITLController:  hitlController,  // nil quando HARNESS_ENABLED=false
+		HarnessQueue:    harnessQueue,   // nil quando HARNESS_ENABLED=false (modo legado)
+		HITLController:  hitlController, // nil quando HARNESS_ENABLED=false
 	})
 	handler.RegisterRoutes(r)
 
@@ -271,11 +276,21 @@ func main() {
 	// Also checks if webhook is still registered after reconnections.
 	// evolution-go loses webhook config on disconnect/reconnect cycles.
 	go func() {
+		// Run immediate heartbeat at startup
+		isConnected := sendHeartbeat(cfg.EvoInstance, wpClient, sbClient)
+		if isConnected && cfg.WebhookURL != "" {
+			if err := wpClient.ConfigureWebhooks(cfg.WebhookURL); err != nil {
+				log.Printf("⚠️ [Heartbeat] Falha ao reconfigurar webhook: %v", err)
+			} else {
+				log.Printf("🔁 [Heartbeat] Webhook reconfigurado: %s", cfg.WebhookURL)
+			}
+		}
+
 		ticker := time.NewTicker(60 * time.Second)
 		defer ticker.Stop()
 
 		for range ticker.C {
-			isConnected := sendHeartbeat(cfg.EvoInstance, wpClient, sbClient)
+			isConnected = sendHeartbeat(cfg.EvoInstance, wpClient, sbClient)
 			if isConnected && cfg.WebhookURL != "" {
 				if err := wpClient.ConfigureWebhooks(cfg.WebhookURL); err != nil {
 					log.Printf("⚠️ [Heartbeat] Falha ao reconfigurar webhook: %v", err)

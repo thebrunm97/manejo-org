@@ -15,7 +15,7 @@ import (
 // handleLimpeza implements SEBRAE Form 04 logic for rural infrastructure cleaning
 func handleLimpeza(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, from string, body string, respondWithAudio bool, startTime time.Time, modelConfigured string, modelEffective string, pTokens int, cTokens int) (string, ProcessResult) {
 	log.Printf("🧼 [FSM] Processando Intenção de Limpeza (Form 04)")
-	
+
 	pmoID := profile.PmoAtivoID
 	dataLimpeza := ext.Data
 	if dataLimpeza == "" {
@@ -33,11 +33,11 @@ func handleLimpeza(ctx context.Context, ext *groq.ExtractionResult, profile *sup
 	}
 
 	resp, err := sbClient.RegistrarOperacaoCampoRPC(ctx, map[string]interface{}{
-		"pmo_id_arg":          pmoID,
-		"propriedade_id_arg":  profile.PropriedadeAtivaID,
-		"user_id_arg":         profile.ID,
-		"tipo_arg":            "Limpeza",
-		"payload_arg":         payload,
+		"pmo_id_arg":         pmoID,
+		"propriedade_id_arg": profile.PropriedadeAtivaID,
+		"user_id_arg":        profile.ID,
+		"tipo_arg":           "Limpeza",
+		"payload_arg":        payload,
 	}, dataLimpeza)
 
 	if err != nil {
@@ -54,10 +54,10 @@ func handleLimpeza(ctx context.Context, ext *groq.ExtractionResult, profile *sup
 		return "❌ Falha de Persistência: O registro de limpeza foi confirmado, mas não retornou um ID (Bloqueio de RLS?). Verifique se você tem permissão.", ProcessResult{Success: false, Reason: "silent_failure_id_null"}
 	}
 
-	botResponse := fmt.Sprintf("✅ *Limpeza Registrada!*\n\n*Área/Item:* %s\n*Data:* %s\n*Produto:* %s\n*Responsável:* %s\n*ID:* %v", 
+	botResponse := fmt.Sprintf("✅ *Limpeza Registrada!*\n\n*Área/Item:* %s\n*Data:* %s\n*Produto:* %s\n*Responsável:* %s\n*ID:* %v",
 		ext.ItemArea, dataLimpeza, ext.ProdutoUtilizado, ext.Responsavel, id)
-	
+
 	recordLog(sbClient, profile, body, botResponse, modelConfigured, modelEffective, pTokens, cTokens, "limpeza", toMap(ext), startTime, true, nil)
-	
+
 	return botResponse, ProcessResult{Success: true, Reason: "limpeza_saved", TransactionID: id}
 }

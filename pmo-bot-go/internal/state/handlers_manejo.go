@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
+	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
@@ -17,45 +18,47 @@ import (
 // handleAguardandoQuantidade processes the second turn of an active interview for quantity
 func handleAguardandoQuantidade(ctx context.Context, body string, from string, phone string, profile *supabase.Profile, respondWithAudio bool, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, historyManager *history.Manager, extraction map[string]interface{}, startTime time.Time, modelConfigured string) (string, ProcessResult) {
 	log.Printf("📥 [FSM-TURN2] Recebida quantidade: %s", body)
-	
+
 	var ext groq.ExtractionResult
 	ext.Intencao = "registro"
 	ext.Atividade, _ = extraction["atividade"].(string)
 	ext.InsumoCultura, _ = extraction["insumo_cultura"].(string)
 	ext.Unidade, _ = extraction["unidade"].(string)
 	ext.Localizacao.Talhao, _ = extraction["localizacao"].(map[string]interface{})["talhao"].(string)
-	
+
 	ext.Quantidade = body // Turn 2 input
-	
+
 	return finalizeRegistration(ctx, &ext, profile, sbClient, wpClient, ttsClient, from, body, respondWithAudio, startTime, historyManager, phone, modelConfigured)
 }
 
 // handleAguardandoCompra processes the second turn for purchase details (fornecedor)
 func handleAguardandoCompra(ctx context.Context, body string, from string, phone string, profile *supabase.Profile, respondWithAudio bool, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, historyManager *history.Manager, extraction map[string]interface{}, startTime time.Time, modelConfigured string) (string, ProcessResult) {
 	log.Printf("📥 [FSM-TURN2] Recebido fornecedor: %s", body)
-	
+
 	var ext groq.ExtractionResult
 	ext.Intencao = "registro"
 	ext.Atividade = "Compra/Aquisição"
 	ext.InsumoCultura, _ = extraction["insumo_cultura"].(string)
 	ext.Quantidade = extraction["quantidade"]
 	ext.Unidade, _ = extraction["unidade"].(string)
-	
+
 	ext.Fornecedor = body // Turn 2 input
-	
+
 	return finalizeRegistration(ctx, &ext, profile, sbClient, wpClient, ttsClient, from, body, respondWithAudio, startTime, historyManager, phone, modelConfigured)
 }
 
 // finalizeRegistration is the common sink for all Manejo and Purchase recordings
 func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, from string, originalBody string, respondWithAudio bool, startTime time.Time, historyManager *history.Manager, phone string, modelConfigured string) (string, ProcessResult) {
 	pmoID := profile.PmoAtivoID
-	
+
 	// 1. Compliance Check (Spatial-Aware) - Reused from fsm.go
 	if ext.AlertaOrganico || isProibidoEscancarado(ext.InsumoAplicado) || isProibidoEscancarado(ext.InsumoCultura) {
 		// Strict Compliance Logic
 		produtoAlvo := ext.InsumoAplicado
-		if produtoAlvo == "" { produtoAlvo = ext.InsumoCultura }
-		
+		if produtoAlvo == "" {
+			produtoAlvo = ext.InsumoCultura
+		}
+
 		talhoesExtraidos := ext.Localizacao.TalhoesAplicados
 		if len(talhoesExtraidos) == 0 && ext.Localizacao.Talhao != "" {
 			talhoesExtraidos = []string{ext.Localizacao.Talhao}
@@ -88,9 +91,37 @@ func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profi
 	}
 
 	// 2. Database Recording (RPC)
-	if ext.Data == "" { ext.Data = time.Now().Format("2006-01-02") }
+	if ext.Data == "" {
+		ext.Data = time.Now().Format("2006-01-02")
+	}
 
 	if ext.Atividade == "Compra/Aquisição" {
+		// --- Guardrail Determinístico (BusinessEvaluator) ---
+		if ActiveBusinessEvaluator != nil {
+			evalCtx := guardrails.EvaluationContext{
+				PmoID:         pmoID,
+				PropriedadeID: profile.PropriedadeAtivaID,
+				UserID:        profile.ID,
+			}
+
+			evalErr := ActiveBusinessEvaluator.EvaluateTransaction(ctx, evalCtx, guardrails.TransactionPayload{
+				ValorTotal: parseToFloat(ext.ValorTotal),
+				Produto:    ext.InsumoCultura,
+			})
+
+			if evalErr != nil {
+				log.Printf("🚨 [Guardrail-FSM] Compra REPROVADA: %v", evalErr)
+				if rawPayloadID, ok := ctx.Value("raw_payload_id").(string); ok && rawPayloadID != "" {
+					_ = sbClient.UpdateRawPayloadStatus(ctx, rawPayloadID, "FAILED", evalErr.Error())
+				}
+				if historyManager != nil {
+					historyManager.ClearFSMState(phone)
+				}
+				recordLog(sbClient, profile, originalBody, evalErr.Error(), modelConfigured, "fsm-v4", 0, 0, "guardrail_failed", toMap(ext), startTime, false, nil)
+				return evalErr.Error(), ProcessResult{Success: false, Reason: "guardrail_blocked"}
+			}
+		}
+
 		rpcArgs := map[string]interface{}{
 			"pmo_id_arg":             pmoID,
 			"user_id_arg":            profile.ID,
@@ -106,19 +137,50 @@ func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profi
 		if err != nil {
 			return "❌ Falha técnica ao registrar compra no banco.", ProcessResult{Success: false, Reason: "rpc_http_error"}
 		}
-		
+
 		id := resp["id"]
 		if id == nil {
 			return "❌ Falha de Persistência: A compra foi processada, mas não retornou um ID. Verifique suas permissões.", ProcessResult{Success: false, Reason: "silent_failure_id_null"}
 		}
 
 		// Cleanup State and Feedback
-		if historyManager != nil { historyManager.ClearFSMState(phone) }
-		
+		if historyManager != nil {
+			historyManager.ClearFSMState(phone)
+		}
+
 		botResponse := fmt.Sprintf("✅ *Compra Registrada com Sucesso!*\n*Item:* %s\n*Qtd:* %v %s\n*Fornecedor:* %s\n*ID:* %v", ext.InsumoCultura, ext.Quantidade, ext.Unidade, ext.Fornecedor, id)
 		recordLog(sbClient, profile, originalBody, botResponse, modelConfigured, "fsm-v4", 0, 0, "registro", toMap(ext), startTime, true, nil)
-		
+
 		return botResponse, ProcessResult{Success: true, Reason: "record_saved"}
+	}
+
+	// --- Guardrail Determinístico (BusinessEvaluator) ---
+	if ActiveBusinessEvaluator != nil {
+		evalCtx := guardrails.EvaluationContext{
+			PmoID:         pmoID,
+			PropriedadeID: profile.PropriedadeAtivaID,
+			UserID:        profile.ID,
+		}
+
+		evalErr := ActiveBusinessEvaluator.EvaluateManejo(ctx, evalCtx, guardrails.ManejoPayload{
+			Quantidade:    parseToFloat(ext.Quantidade),
+			Unidade:       ext.Unidade,
+			Produto:       ext.InsumoCultura,
+			TalhaoNome:    ext.Localizacao.Talhao,
+			TipoAtividade: ext.Atividade,
+		})
+
+		if evalErr != nil {
+			log.Printf("🚨 [Guardrail-FSM] Manejo REPROVADO: %v", evalErr)
+			if rawPayloadID, ok := ctx.Value("raw_payload_id").(string); ok && rawPayloadID != "" {
+				_ = sbClient.UpdateRawPayloadStatus(ctx, rawPayloadID, "FAILED", evalErr.Error())
+			}
+			if historyManager != nil {
+				historyManager.ClearFSMState(phone)
+			}
+			recordLog(sbClient, profile, originalBody, evalErr.Error(), modelConfigured, "fsm-v4", 0, 0, "guardrail_failed", toMap(ext), startTime, false, nil)
+			return evalErr.Error(), ProcessResult{Success: false, Reason: "guardrail_blocked"}
+		}
 	}
 
 	payload := map[string]interface{}{
@@ -135,11 +197,11 @@ func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profi
 		"valor_total":         parseToFloat(ext.ValorTotal),
 	}
 	resp, err := sbClient.RegistrarOperacaoCampoRPC(ctx, map[string]interface{}{
-		"pmo_id_arg":          pmoID,
-		"propriedade_id_arg":  profile.PropriedadeAtivaID,
-		"user_id_arg":         profile.ID,
-		"tipo_arg":            ext.Atividade,
-		"payload_arg":         payload,
+		"pmo_id_arg":         pmoID,
+		"propriedade_id_arg": profile.PropriedadeAtivaID,
+		"user_id_arg":        profile.ID,
+		"tipo_arg":           ext.Atividade,
+		"payload_arg":        payload,
 	}, ext.Data)
 
 	if err != nil {
@@ -158,10 +220,12 @@ func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profi
 	}
 
 	// Cleanup State and Feedback
-	if historyManager != nil { historyManager.ClearFSMState(phone) }
-	
+	if historyManager != nil {
+		historyManager.ClearFSMState(phone)
+	}
+
 	botResponse := fmt.Sprintf("✅ *Registro com Sucesso!*\n*Atividade:* %s\n*Item:* %s\n*Qtd:* %v %s\n*Lote:* %v\n*ID:* %v", ext.Atividade, ext.InsumoCultura, ext.Quantidade, ext.Unidade, lote, id)
 	recordLog(sbClient, profile, originalBody, botResponse, modelConfigured, "fsm-v4", 0, 0, "registro", toMap(ext), startTime, true, nil)
-	
+
 	return botResponse, ProcessResult{Success: true, Reason: "record_saved"}
 }

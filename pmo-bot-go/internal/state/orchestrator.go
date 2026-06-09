@@ -29,9 +29,9 @@ type TraceEvent struct {
 
 // Orchestrator manages the lifecycle of an agentic session with context injection and traceability.
 type Orchestrator struct {
-	LLM         llm.LLMProvider
-	SB          *supabase.Client
-	MCP         *mcp.Server
+	LLM llm.LLMProvider
+	SB  *supabase.Client
+	MCP *mcp.Server
 	// OutputJudge validates the LLM's final response before delivery.
 	// Set to nil to disable output governance (e.g. in tests).
 	OutputJudge guardrails.OutputJudge
@@ -42,6 +42,8 @@ type Orchestrator struct {
 	Phone string
 	// WhatsApp is the message sender port to deliver confirmation prompts.
 	WhatsApp ports.MessageSender
+	// BusinessEvaluator validates business rules and limits deterministically before tool execution.
+	BusinessEvaluator guardrails.BusinessEvaluator
 }
 
 // NewOrchestrator creates a new agentic orchestrator.
@@ -233,7 +235,7 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 				Time:     time.Now(),
 			})
 
-		// Context Injection
+			// Context Injection
 			args := tc.Args
 			if args == nil {
 				args = make(map[string]interface{})
@@ -241,6 +243,9 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 			args["user_id"] = profile.ID
 			args["pmo_id"] = profile.PmoAtivoID
 			args["propriedade_id"] = profile.PropriedadeAtivaID
+			if rawPayloadID, ok := ctx.Value("raw_payload_id").(string); ok && rawPayloadID != "" {
+				args["raw_payload_id"] = rawPayloadID
+			}
 
 			// ── HITL: Intercept High-Risk Tools ──────────────────────────────
 			// Before ANY mutation, check if this tool requires producer approval.
@@ -322,6 +327,167 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 			}
 			// ─────────────────────────────────────────────────────────────────
 
+			// ── Validação do Guardrail Determinístico (BusinessEvaluator) ──
+			if o.BusinessEvaluator != nil {
+				evalCtx := guardrails.EvaluationContext{
+					PmoID:         profile.PmoAtivoID,
+					PropriedadeID: profile.PropriedadeAtivaID,
+					UserID:        profile.ID,
+				}
+
+				var evalErr error
+
+				switch tc.Nome {
+				case "registrar_compra_insumo":
+					valTotal := parseToFloat(args["valor_total"])
+					produto := ""
+					if p, ok := args["produto"].(string); ok {
+						produto = strings.TrimSpace(p)
+					}
+
+					var talhoes []string
+					if rawAlocs, ok := args["alocacoes_talhoes"].([]interface{}); ok {
+						for _, rawAloc := range rawAlocs {
+							if alocMap, ok := rawAloc.(map[string]interface{}); ok {
+								if tNome, ok := alocMap["talhao_nome"].(string); ok && tNome != "" {
+									talhoes = append(talhoes, tNome)
+								}
+							}
+						}
+					}
+
+					evalErr = o.BusinessEvaluator.EvaluateTransaction(ctx, evalCtx, guardrails.TransactionPayload{
+						ValorTotal: valTotal,
+						Produto:    produto,
+						Talhoes:    talhoes,
+					})
+
+				case "registrar_venda":
+					valTotal := parseToFloat(args["valor_total"])
+					if valTotal <= 0 {
+						qtd := parseToFloat(args["quantidade"])
+						valUnit := parseToFloat(args["valor_unitario"])
+						valTotal = qtd * valUnit
+					}
+					produto := ""
+					if p, ok := args["produto"].(string); ok {
+						produto = strings.TrimSpace(p)
+					}
+					evalErr = o.BusinessEvaluator.EvaluateTransaction(ctx, evalCtx, guardrails.TransactionPayload{
+						ValorTotal: valTotal,
+						Produto:    produto,
+					})
+
+				case "registrar_limpeza":
+					qtd := parseToFloat(args["dosagem"])
+					produto := ""
+					if p, ok := args["produto_utilizado"].(string); ok {
+						produto = strings.TrimSpace(p)
+					}
+					talhao := ""
+					if t, ok := args["item_area"].(string); ok {
+						talhao = strings.TrimSpace(t)
+					}
+					evalErr = o.BusinessEvaluator.EvaluateManejo(ctx, evalCtx, guardrails.ManejoPayload{
+						Quantidade:    qtd,
+						Unidade:       "dosagem",
+						Produto:       produto,
+						TalhaoNome:    talhao,
+						TipoAtividade: "Limpeza",
+					})
+
+				case "registrar_propagacao_vegetal":
+					tipoStr := ""
+					if t, ok := args["tipo"].(string); ok {
+						tipoStr = strings.TrimSpace(t)
+					}
+
+					if strings.EqualFold(tipoStr, "Compra/Aquisição") {
+						valTotal := parseToFloat(args["valor_total"])
+						produto := ""
+						if p, ok := args["especies"].(string); ok {
+							produto = strings.TrimSpace(p)
+						}
+						evalErr = o.BusinessEvaluator.EvaluateTransaction(ctx, evalCtx, guardrails.TransactionPayload{
+							ValorTotal: valTotal,
+							Produto:    produto,
+						})
+					} else {
+						qtd := parseToFloat(args["quantidade"])
+						produto := ""
+						if p, ok := args["especies"].(string); ok {
+							produto = strings.TrimSpace(p)
+						}
+						evalErr = o.BusinessEvaluator.EvaluateManejo(ctx, evalCtx, guardrails.ManejoPayload{
+							Quantidade:    qtd,
+							Unidade:       "unidades",
+							Produto:       produto,
+							TalhaoNome:    "Área de Propagação",
+							TipoAtividade: "Propagação Vegetal",
+						})
+					}
+
+				case "registrar_compostagem":
+					acaoStr := ""
+					if a, ok := args["acao"].(string); ok {
+						acaoStr = strings.TrimSpace(a)
+					}
+					pilha := ""
+					if p, ok := args["identificador_pilha"].(string); ok {
+						pilha = strings.TrimSpace(p)
+					}
+					mat := ""
+					if m, ok := args["materiais"].(string); ok {
+						mat = strings.TrimSpace(m)
+					}
+					evalErr = o.BusinessEvaluator.EvaluateManejo(ctx, evalCtx, guardrails.ManejoPayload{
+						Quantidade:    0,
+						Unidade:       "pilha",
+						Produto:       mat,
+						TalhaoNome:    pilha,
+						TipoAtividade: "Compostagem (" + acaoStr + ")",
+					})
+
+				case "registrar_colheita":
+					qtd := parseToFloat(args["quantidade"])
+					unid := ""
+					if u, ok := args["unidade"].(string); ok {
+						unid = strings.TrimSpace(u)
+					}
+					prod := ""
+					if p, ok := args["cultura"].(string); ok {
+						prod = strings.TrimSpace(p)
+					}
+					talhao := ""
+					if t, ok := args["talhao"].(string); ok {
+						talhao = strings.TrimSpace(t)
+					}
+					evalErr = o.BusinessEvaluator.EvaluateManejo(ctx, evalCtx, guardrails.ManejoPayload{
+						Quantidade:    qtd,
+						Unidade:       unid,
+						Produto:       prod,
+						TalhaoNome:    talhao,
+						TipoAtividade: "Colheita",
+					})
+				}
+
+				if evalErr != nil {
+					log.Printf("🚨 [Guardrail-Business] Payload REPROVADO para a ferramenta %s: %v", tc.Nome, evalErr)
+
+					if rawPayloadID, ok := ctx.Value("raw_payload_id").(string); ok && rawPayloadID != "" {
+						_ = o.SB.UpdateRawPayloadStatus(ctx, rawPayloadID, "FAILED", evalErr.Error())
+					}
+
+					history = append(history, llm.MensagemAgnostica{
+						Role:    llm.PapelAssistant,
+						Content: "Bloqueio do Guardrail: " + evalErr.Error(),
+					})
+
+					return evalErr.Error(), history, trace, usage, effectiveModel, evalErr
+				}
+			}
+			// ─────────────────────────────────────────────────────────────────
+
 			// Execute Tool via MCP (Agnóstico)
 			result, err := o.MCP.CallToolWithGuard(guard, tc.Nome, args)
 
@@ -352,9 +518,9 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 			// tc.ID foi garantido como não-vazio acima, portanto ToolCallID e ToolID
 			// estarão sempre consistentes com a mensagem do Assistant — conformidade OpenAI.
 			history = append(history, llm.MensagemAgnostica{
-				Role:    llm.PapelTool,
-				Content: string(outputJSON),
-				ToolID:  tc.ID, // Referencia o ID gerado/recebido da chamada original
+				Role:     llm.PapelTool,
+				Content:  string(outputJSON),
+				ToolID:   tc.ID,   // Referencia o ID gerado/recebido da chamada original
 				ToolName: tc.Nome, // Nome da ferramenta (exigido por alguns provedores)
 			})
 
@@ -409,7 +575,7 @@ func buildJudgeBlockedMessage(verdict guardrails.JudgeVerdict) string {
 //   - {"function_call": ...}
 //   - Markdown-fenced JSON blocks (```json ... ```)
 var (
-	reToolCallBlock = regexp.MustCompile(`(?s)\x60{3}(?:json)?\s*\{[^\x60]*"(?:tool_calls|function_call|name)[^\x60]*\}\s*\x60{3}`)
+	reToolCallBlock  = regexp.MustCompile(`(?s)\x60{3}(?:json)?\s*\{[^\x60]*"(?:tool_calls|function_call|name)[^\x60]*\}\s*\x60{3}`)
 	reInlineToolCall = regexp.MustCompile(`(?s)\{[^{}]*"(?:tool_calls|function_call)"[^{}]*\}`)
 	reNameArgsBlock  = regexp.MustCompile(`(?s)\{[^{}]*"name"\s*:\s*"[a-z_]+"[^{}]*"args"\s*:\s*\{[^}]*\}[^{}]*\}`)
 )

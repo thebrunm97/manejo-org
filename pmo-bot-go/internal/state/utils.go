@@ -151,7 +151,7 @@ func toMap(v interface{}) map[string]interface{} {
 
 // Blacklist de Termos Químicos (Apenas para Step 7 - Bloqueio Preventivo)
 var blacklistCritica = []string{
-	"GLIFOSATO", "ROUNDUP", "UREIA", "NPK", "QUIMICO", "VENENO", "AGROTOXICO", 
+	"GLIFOSATO", "ROUNDUP", "UREIA", "NPK", "QUIMICO", "VENENO", "AGROTOXICO",
 	"PARAQUAT", "MALATHION", "FIPRONIL", "IMIDACLOPRID", "DIMETOATO",
 }
 

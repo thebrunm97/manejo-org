@@ -15,12 +15,12 @@ import (
 // HighRiskTools lists MCP tool names that require producer confirmation before execution.
 // Any tool that performs irreversible mutations on the database should be listed here.
 var HighRiskTools = map[string]string{
-	"registrar_operacao_campo":  "Registro de Operação de Campo",
-	"registrar_compra_insumo":   "Registro de Compra de Insumo",
-	"registrar_atividade_pmo":   "Registro de Atividade no PMO",
-	"registrar_transacao":       "Registro de Transação Financeira",
-	"registrar_plantio":         "Registro de Plantio",
-	"deletar_caderno_campo":     "Exclusão de Registro de Campo",
+	"registrar_operacao_campo": "Registro de Operação de Campo",
+	"registrar_compra_insumo":  "Registro de Compra de Insumo",
+	"registrar_atividade_pmo":  "Registro de Atividade no PMO",
+	"registrar_transacao":      "Registro de Transação Financeira",
+	"registrar_plantio":        "Registro de Plantio",
+	"deletar_caderno_campo":    "Exclusão de Registro de Campo",
 }
 
 // HITLRecord represents a pending approval stored in hitl_pending.

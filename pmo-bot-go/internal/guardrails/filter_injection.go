@@ -30,9 +30,9 @@ type InjectionDetector struct {
 
 // injectionPattern represents a single heuristic rule with its weight.
 type injectionPattern struct {
-	pattern  string  // substring to search (case-insensitive)
-	weight   float64 // confidence contribution (0.0–1.0)
-	rule     string  // policy rule code for audit log
+	pattern string  // substring to search (case-insensitive)
+	weight  float64 // confidence contribution (0.0–1.0)
+	rule    string  // policy rule code for audit log
 }
 
 // injectionPatterns covers the most common attack vectors against Ag-tech LLMs.

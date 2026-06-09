@@ -6,16 +6,19 @@ package state
 import (
 	"context"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
+	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
+	"github.com/thebrunm97/pmo-bot-go/internal/history"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
 )
 
-func handleRegistroFinanceiro(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, from string, respondWithAudio bool) (string, ProcessResult) {
+func handleRegistroFinanceiro(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, from string, respondWithAudio bool, historyManager *history.Manager) (string, ProcessResult) {
 	// 1. Extração e Normalização do Valor Total
 	valorTotal, err := parseNumeric(ext.ValorTotal)
 	if err != nil || valorTotal <= 0 {
@@ -59,7 +62,7 @@ func handleRegistroFinanceiro(ctx context.Context, ext *groq.ExtractionResult, p
 
 			if targetID > 0 {
 				alocacoes = append(alocacoes, map[string]interface{}{
-					"talhao_id":      targetID,
+					"talhao_id":     targetID,
 					"valor_alocado": aloc.Valor,
 				})
 			}
@@ -81,6 +84,32 @@ func handleRegistroFinanceiro(ctx context.Context, ext *groq.ExtractionResult, p
 		"fornecedor_cliente": ext.Fornecedor,
 		"user_id":            profile.ID,
 		"alocacoes":          alocacoes,
+	}
+
+	// --- Guardrail Determinístico (BusinessEvaluator) ---
+	if ActiveBusinessEvaluator != nil {
+		evalCtx := guardrails.EvaluationContext{
+			PmoID:         profile.PmoAtivoID,
+			PropriedadeID: profile.PropriedadeAtivaID,
+			UserID:        profile.ID,
+		}
+
+		evalErr := ActiveBusinessEvaluator.EvaluateTransaction(ctx, evalCtx, guardrails.TransactionPayload{
+			ValorTotal: valorTotal,
+			Produto:    ext.InsumoCultura,
+			Talhoes:    talhoesResolvidos,
+		})
+
+		if evalErr != nil {
+			log.Printf("🚨 [Guardrail-FSM] Transação Financeira REPROVADA: %v", evalErr)
+			if rawPayloadID, ok := ctx.Value("raw_payload_id").(string); ok && rawPayloadID != "" {
+				_ = sbClient.UpdateRawPayloadStatus(ctx, rawPayloadID, "FAILED", evalErr.Error())
+			}
+			if historyManager != nil {
+				historyManager.ClearFSMState(from)
+			}
+			return evalErr.Error(), ProcessResult{Success: false, Reason: "guardrail_blocked"}
+		}
 	}
 
 	// 5. Chamada RPC Atômica

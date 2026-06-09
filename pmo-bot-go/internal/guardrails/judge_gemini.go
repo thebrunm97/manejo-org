@@ -152,9 +152,9 @@ func (j *GeminiFlashJudge) Judge(ctx context.Context, req JudgeRequest) JudgeVer
 	// Log every non-trivial judgment to the observability layer
 	if !verdict.Approved || verdict.RiskScore > 0.1 {
 		j.logger.LogViolation(ctx, GuardrailEvent{
-			ID:        generateID(),
-			Timestamp: time.Now().UTC(),
-			Layer:     "output",
+			ID:         generateID(),
+			Timestamp:  time.Now().UTC(),
+			Layer:      "output",
 			FilterName: "gemini_judge",
 			Verdict: FilterVerdict{
 				Blocked:    !verdict.Approved,

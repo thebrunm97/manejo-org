@@ -25,6 +25,9 @@ var ActiveOutputJudge guardrails.OutputJudge
 // Set once at startup via SetHITL; nil disables HITL (development/test mode).
 var ActiveHITLController guardrails.HITLHandler
 
+// ActiveBusinessEvaluator is the package-level business guardrails evaluator.
+var ActiveBusinessEvaluator guardrails.BusinessEvaluator
+
 // SetOutputJudge configures the package-level output judge.
 // Must be called before the first ProcessMessage invocation.
 func SetOutputJudge(judge guardrails.OutputJudge) {
@@ -35,6 +38,11 @@ func SetOutputJudge(judge guardrails.OutputJudge) {
 // Must be called before the first ProcessMessage invocation.
 func SetHITL(h guardrails.HITLHandler) {
 	ActiveHITLController = h
+}
+
+// SetBusinessEvaluator configures the package-level business evaluator.
+func SetBusinessEvaluator(eval guardrails.BusinessEvaluator) {
+	ActiveBusinessEvaluator = eval
 }
 
 // handleDuvidaFallback is the specialist multi-agent entry point.
@@ -67,14 +75,15 @@ func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, tts
 	}
 
 	var totalPromptTokens, totalCompletionTokens int
-	
+
 	// 3. Execute Agentic Loop via Orchestrator (Agnostic)
 	orchestrator := NewOrchestrator(llmClient, sbClient, mcpServer)
-	orchestrator.OutputJudge = ActiveOutputJudge // wire output governance (nil = disabled)
-	orchestrator.HITL = ActiveHITLController     // wire HITL controller (nil = disabled)
-	orchestrator.Phone = phone                   // needed for HITL WhatsApp confirmation
-	orchestrator.WhatsApp = wpClient             // wire message sender for HITL confirmation prompts
-	
+	orchestrator.OutputJudge = ActiveOutputJudge             // wire output governance (nil = disabled)
+	orchestrator.HITL = ActiveHITLController                 // wire HITL controller (nil = disabled)
+	orchestrator.Phone = phone                               // needed for HITL WhatsApp confirmation
+	orchestrator.WhatsApp = wpClient                         // wire message sender for HITL confirmation prompts
+	orchestrator.BusinessEvaluator = ActiveBusinessEvaluator // wire business rules/limits
+
 	botResponse, newHistory, trace, usage, modelUsed, err := orchestrator.ExecuteAgenticLoop(ctx, profile, specPrompt, body, tools, agnosticHistory, guard)
 	if err != nil {
 		if err.Error() == "hitl_pending" {
@@ -85,6 +94,17 @@ func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, tts
 			recordLog(sbClient, profile, body, "[HITL PENDING]", llmClient.ModelName(), modelUsed, int(usage.PromptTokens), int(usage.CandidatesTokens), finalIntent, map[string]interface{}{"status": "hitl_pending"}, startTime, true, trace)
 			return "", ProcessResult{Success: false, Reason: "hitl_pending"}
 		}
+
+		// Tratar erro do Guardrail Determinístico (mensagem iniciando com "Atenção:")
+		if strings.HasPrefix(err.Error(), "Atenção:") {
+			log.Printf("🚨 [Guardrail] Abortando fluxo agêntico devido a restrições de negócio: %v", err)
+			if historyManager != nil {
+				historyManager.ClearFSMState(phone)
+			}
+			recordLog(sbClient, profile, body, err.Error(), llmClient.ModelName(), modelUsed, int(usage.PromptTokens), int(usage.CandidatesTokens), finalIntent, map[string]interface{}{"status": "guardrail_failed", "error": err.Error()}, startTime, false, trace)
+			return err.Error(), ProcessResult{Success: false, Reason: "guardrail_blocked"}
+		}
+
 		log.Printf("❌ [CRITICAL FSM ERROR] Orchestrator Loop failed: %v", err)
 		return "⚠️ Ocorreu um erro interno ao processar sua dúvida. Por favor, tente novamente.", ProcessResult{Success: false, Reason: "orchestrator_failed"}
 	}
@@ -121,7 +141,7 @@ func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, tts
 		"trace":  trace, // Include trace in training log for better debugging
 	}
 	recordLog(sbClient, profile, body, botResponse, llmClient.ModelName(), modelUsed, totalPromptTokens, totalCompletionTokens, finalIntent, extraction, startTime, true, trace)
-	
+
 	if historyManager != nil {
 		historyManager.AppendAgnosticHistory(phone, newHistory)
 	}

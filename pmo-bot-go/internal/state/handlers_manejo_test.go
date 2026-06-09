@@ -54,9 +54,9 @@ func (m *mockSender) SendMessage(to, message string) error {
 	m.Sent = append(m.Sent, message)
 	return nil
 }
-func (m *mockSender) SendVoice(to, audio string, isPtt bool) error            { return nil }
-func (m *mockSender) SendReply(to, msg, replyTo string) error                 { return nil }
-func (m *mockSender) DownloadAudio(id string, raw []byte) ([]byte, error)     { return nil, nil }
+func (m *mockSender) SendVoice(to, audio string, isPtt bool) error        { return nil }
+func (m *mockSender) SendReply(to, msg, replyTo string) error             { return nil }
+func (m *mockSender) DownloadAudio(id string, raw []byte) ([]byte, error) { return nil, nil }
 func (m *mockSender) DownloadImage(id string, raw []byte) ([]byte, string, error) {
 	return nil, "", nil
 }
@@ -134,8 +134,8 @@ func TestFSMComplianceMatrix(t *testing.T) {
 		// Produtor 100% ORGÂNICO aplica GLIFOSATO.
 		// Compliance DEVE bloquear antes de tocar qualquer RPC.
 		{
-			id:   "A",
-			desc: "100% Orgânico + Glifosato → BLOQUEIO de compliance",
+			id:      "A",
+			desc:    "100% Orgânico + Glifosato → BLOQUEIO de compliance",
 			profile: orgProfile(),
 			ext: groq.ExtractionResult{
 				Intencao:       "registro",
@@ -154,8 +154,8 @@ func TestFSMComplianceMatrix(t *testing.T) {
 		// ─── Caso B / E2E-04 ─────────────────────────────────────────────────
 		// Talhão específico está em TRANSIÇÃO. NPK deve ser barrado.
 		{
-			id:   "B",
-			desc: "Talhão TRANSIÇÃO + NPK → BLOQUEIO de compliance",
+			id:      "B",
+			desc:    "Talhão TRANSIÇÃO + NPK → BLOQUEIO de compliance",
 			profile: transitionTalhaoProfile(),
 			ext: groq.ExtractionResult{
 				Intencao:       "registro",
@@ -180,8 +180,8 @@ func TestFSMComplianceMatrix(t *testing.T) {
 		// Compliance DEVE passar. Como sbClient=nil, falha na RPC (esperado).
 		// Critério de êxito: Reason é "rpc_http_error", NÃO "organic_compliance_block".
 		{
-			id:   "C",
-			desc: "100% Convencional + Roundup → PASS-THROUGH (compliance OK, falha de RPC esperada)",
+			id:      "C",
+			desc:    "100% Convencional + Roundup → PASS-THROUGH (compliance OK, falha de RPC esperada)",
 			profile: conventionalProfile(),
 			ext: groq.ExtractionResult{
 				Intencao:       "registro",
@@ -197,7 +197,7 @@ func TestFSMComplianceMatrix(t *testing.T) {
 				},
 			},
 			wantBlocked: true,
-			useStubSB:   true,  // compliance passes → needs a real (stub) client to hit the RPC
+			useStubSB:   true, // compliance passes → needs a real (stub) client to hit the RPC
 			wantReason:  "rpc_http_error",
 			wantMsgSnip: "Falha técnica",
 		},
@@ -206,8 +206,8 @@ func TestFSMComplianceMatrix(t *testing.T) {
 		// Produção PARALELA (mista). Produtor diz "passei veneno" sem especificar talhão.
 		// FSM deve SUSPENDER e solicitar desambiguação.
 		{
-			id:   "D",
-			desc: "Produção Paralela + Veneno sem talhão → SUSPENSÃO (pede desambiguação)",
+			id:      "D",
+			desc:    "Produção Paralela + Veneno sem talhão → SUSPENSÃO (pede desambiguação)",
 			profile: parallelProfile(),
 			ext: groq.ExtractionResult{
 				Intencao:       "registro",
@@ -229,26 +229,26 @@ func TestFSMComplianceMatrix(t *testing.T) {
 		t.Run(tc.id+": "+tc.desc, func(t *testing.T) {
 			sender := &mockSender{}
 
-				var sbClient *supabase.Client
-				if tc.useStubSB {
-					sbClient = newFailingSupabaseClient(t)
-				}
+			var sbClient *supabase.Client
+			if tc.useStubSB {
+				sbClient = newFailingSupabaseClient(t)
+			}
 
-				msg, result := finalizeRegistration(
-					ctx,
-					&tc.ext,
-					tc.profile,
-					sbClient,
-					sender,
-					nil,  // ttsClient=nil
-					"5511999999999",
-					"original message body",
-					false,
-					time.Now(),
-					nil,  // historyManager=nil
-					"5511999999999",
-					"test-model",
-				)
+			msg, result := finalizeRegistration(
+				ctx,
+				&tc.ext,
+				tc.profile,
+				sbClient,
+				sender,
+				nil, // ttsClient=nil
+				"5511999999999",
+				"original message body",
+				false,
+				time.Now(),
+				nil, // historyManager=nil
+				"5511999999999",
+				"test-model",
+			)
 
 			// Assert: Reason
 			if result.Reason != tc.wantReason {
@@ -282,7 +282,7 @@ func TestIsProibidoEscancarado(t *testing.T) {
 		expected bool
 	}{
 		{"Glifosato", true},
-		{"glifosato", true},         // case-insensitive
+		{"glifosato", true}, // case-insensitive
 		{"ROUNDUP", true},
 		{"Ureia", true},
 		{"npk", true},
