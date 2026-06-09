@@ -33,28 +33,47 @@ interface DashboardStats {
 }
 
 // KPI Card Component
-const KpiCard = ({ title, value, icon, colorClass, subvalue }: any) => (
-    <div className="bg-white rounded-3xl p-6 border border-agro-ouro/10 shadow-sm flex flex-col justify-between h-full group hover:border-agro-ouro/30 transition-all duration-300 animate-in fade-in slide-in-from-bottom-4 active">
-        <div className="flex justify-between items-start mb-4">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 group-hover:text-agro-floresta transition-colors font-sans">
-                {title}
-            </span>
-            <div className={cn("p-2.5 rounded-2xl transition-transform group-hover:scale-110 duration-500 shadow-sm", colorClass)}>
-                {React.cloneElement(icon, { size: 20 })}
-            </div>
-        </div>
-        <div>
-            <div className="text-4xl font-black text-agro-floresta tracking-tight font-sans tabular-nums">
-                {value}
-            </div>
-            {subvalue && (
-                <div className="text-[10px] font-black text-agro-floresta/40 mt-2 uppercase tracking-widest font-sans">
-                    {subvalue}
+const KpiCard = ({ title, value, icon, colorClass, subvalue }: any) => {
+    const digitsCount = typeof value === 'string' || typeof value === 'number'
+        ? String(value).replace(/[^0-9.,]/g, '').length
+        : 0;
+
+    let fontSizeClass = 'text-4xl';
+    if (digitsCount >= 9) {
+        fontSizeClass = 'text-xl';
+    } else if (digitsCount >= 6) {
+        fontSizeClass = 'text-2xl';
+    }
+
+    return (
+        <div className="bg-white rounded-3xl p-6 border border-agro-ouro/10 shadow-sm flex flex-col justify-between h-full group hover:border-agro-ouro/30 transition-all duration-300 animate-in fade-in slide-in-from-bottom-4 active w-full">
+            <div className="flex justify-between items-start mb-4">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 group-hover:text-agro-floresta transition-colors font-sans truncate">
+                    {title}
+                </span>
+                <div className={cn("p-2.5 rounded-2xl transition-transform group-hover:scale-110 duration-500 shadow-sm flex-shrink-0", colorClass)}>
+                    {React.cloneElement(icon, { size: 20 })}
                 </div>
-            )}
+            </div>
+            <div className="overflow-hidden w-full truncate">
+                <div 
+                    className={cn(
+                        "font-black text-agro-floresta tracking-tight font-sans tabular-nums truncate w-full",
+                        fontSizeClass
+                    )}
+                    title={String(value)}
+                >
+                    {value}
+                </div>
+                {subvalue && (
+                    <div className="text-[10px] font-black text-agro-floresta/40 mt-2 uppercase tracking-widest font-sans truncate w-full" title={String(subvalue)}>
+                        {subvalue}
+                    </div>
+                )}
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 // Mobile Log Card Component
 const MobileLogCard = ({ log, onOpen }: { log: any, onOpen: (l: any) => void }) => (

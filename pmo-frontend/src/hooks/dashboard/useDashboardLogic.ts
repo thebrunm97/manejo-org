@@ -127,7 +127,7 @@ export function useDashboardLogic() {
       const { data: botStatus } = await supabase
         .from('bot_status')
         .select('*')
-        .eq('session_name', import.meta.env.VITE_BOT_SESSION_NAME || 'agro_vivo')
+        .eq('session_name', import.meta.env.VITE_BOT_SESSION_NAME || 'manejo-org')
         .maybeSingle();
 
       
@@ -146,7 +146,7 @@ export function useDashboardLogic() {
           event: '*',
           schema: 'public',
           table: 'bot_status',
-          filter: `session_name=eq.${import.meta.env.VITE_BOT_SESSION_NAME || 'agro_vivo'}`,
+          filter: `session_name=eq.${import.meta.env.VITE_BOT_SESSION_NAME || 'manejo-org'}`,
         },
 
         (payload) => {

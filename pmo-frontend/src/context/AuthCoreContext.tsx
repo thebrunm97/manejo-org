@@ -53,11 +53,21 @@ export function AuthCoreProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const loginWithGoogle = useCallback(async () => {
-        await supabase.auth.signInWithOAuth({ provider: 'google' });
+        await supabase.auth.signInWithOAuth({ 
+            provider: 'google',
+            options: {
+                redirectTo: `${window.location.origin}/dashboard`
+            }
+        });
     }, []);
 
     const loginWithFacebook = useCallback(async () => {
-        await supabase.auth.signInWithOAuth({ provider: 'facebook' });
+        await supabase.auth.signInWithOAuth({ 
+            provider: 'facebook',
+            options: {
+                redirectTo: `${window.location.origin}/dashboard`
+            }
+        });
     }, []);
 
     const signOut = useCallback(async () => {
