@@ -24,7 +24,7 @@ export async function fetchBotStatus(): Promise<BotStatus | null> {
     const { data, error } = await supabase
         .from('bot_status')
         .select('session_name, status, last_heartbeat, phone_connected, details')
-        .eq('session_name', import.meta.env.VITE_BOT_SESSION_NAME || 'agro_vivo')
+        .eq('session_name', import.meta.env.VITE_BOT_SESSION_NAME || 'manejo-org')
         .maybeSingle();
 
 
@@ -38,12 +38,12 @@ export async function fetchBotStatus(): Promise<BotStatus | null> {
 
 /**
  * Determine the effective visual status considering heartbeat staleness.
- * If the last heartbeat is older than `staleThresholdMs` (default 3 min),
+ * If the last heartbeat is older than `staleThresholdMs` (default 5 min),
  * the bot is considered OFFLINE regardless of the stored status.
  */
 export function getEffectiveStatus(
     botStatus: BotStatus | null,
-    staleThresholdMs = 3 * 60 * 1000
+    staleThresholdMs = 5 * 60 * 1000
 ): { status: BotStatusValue; isStale: boolean } {
     if (!botStatus) {
         return { status: 'UNKNOWN', isStale: true };

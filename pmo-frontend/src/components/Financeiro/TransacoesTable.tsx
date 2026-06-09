@@ -54,7 +54,7 @@ const TransacoesTable: React.FC<TransacoesTableProps> = ({ transacoes, loading }
                         </div>
                         <input
                             type="text"
-                            placeholder="Buscar fornecedor..."
+                            placeholder="Buscar fornecedor (ex: AgroVale)…"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
@@ -92,7 +92,7 @@ const TransacoesTable: React.FC<TransacoesTableProps> = ({ transacoes, loading }
                                 <td colSpan={4} className="p-8 text-center">
                                     <div className="flex flex-col items-center justify-center gap-2">
                                         <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
-                                        <span className="text-sm font-medium text-slate-500">Carregando transações...</span>
+                                        <span className="text-sm font-medium text-slate-500">Carregando transações…</span>
                                     </div>
                                 </td>
                             </tr>
@@ -109,49 +109,55 @@ const TransacoesTable: React.FC<TransacoesTableProps> = ({ transacoes, loading }
                                 </td>
                             </tr>
                         ) : (
-                            filteredTransacoes.map((t) => (
+                            filteredTransacoes.map((t, index) => (
                                 <tr key={t.id} className="hover:bg-slate-50 transition-colors group">
                                     <td className="p-4 pl-6 whitespace-nowrap text-sm text-slate-600 font-medium">
                                         {formatDate(t.data_transacao)}
                                     </td>
                                     <td className="p-4 whitespace-nowrap">
                                         <div className="flex items-center gap-2">
-                                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700">
+                                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 font-sans">
                                                 {t.categoria_nome}
                                             </span>
                                             {t.talhao_canteiro && (
                                                 <span 
                                                     title={t.talhao_canteiro.split(';').map(s => s.trim()).filter(Boolean).join(', ')}
-                                                    className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 max-w-[150px] truncate cursor-help"
+                                                    className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 max-w-[150px] truncate cursor-help font-sans"
                                                 >
                                                     {t.talhao_canteiro.split(';').map(s => s.trim()).filter(Boolean).join(', ')}
                                                 </span>
                                             )}
                                             {!t.talhao_canteiro && t.alocacoes && t.alocacoes.length === 1 && t.alocacoes[0].talhao_nome !== 'Global' && (
-                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 font-sans">
                                                     {t.alocacoes[0].talhao_nome}
                                                 </span>
                                             )}
                                             {t.alocacoes && t.alocacoes.length > 1 && (
-                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 cursor-help group relative">
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 cursor-help group relative font-sans">
                                                     Rateado
                                                     
-                                                    {/* Tooltip premium */}
-                                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-slate-900 text-white text-[11px] rounded-lg p-2.5 shadow-lg z-30 min-w-[180px] border border-slate-700">
-                                                        <div className="font-bold border-b border-slate-700 pb-1 mb-1 text-[9px] text-slate-400 uppercase tracking-wider">
+                                                    {/* Tooltip premium com posicionamento inteligente */}
+                                                    <div className={`absolute left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-900 text-white text-[11px] rounded-lg p-2.5 shadow-lg z-30 min-w-[180px] border border-slate-700 ${
+                                                        index === 0 ? 'top-full mt-2' : 'bottom-full mb-2'
+                                                    }`}>
+                                                        <div className="font-bold border-b border-slate-700 pb-1 mb-1 text-[9px] text-slate-400 uppercase tracking-wider font-sans">
                                                             Divisão do Rateio
                                                         </div>
-                                                        <div className="space-y-1">
+                                                        <div className="space-y-1 font-sans">
                                                             {t.alocacoes.map((a) => (
                                                                 <div key={a.id} className="flex justify-between gap-3 text-left">
                                                                     <span className="text-slate-300 font-medium">{a.talhao_nome}</span>
-                                                                    <span className="font-bold text-white">
+                                                                    <span className="font-bold text-white tabular-nums">
                                                                         {formatCurrency(a.valor_alocado)} ({a.percentual_alocado.toFixed(0)}%)
                                                                     </span>
                                                                 </div>
                                                             ))}
                                                         </div>
-                                                        <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-slate-900"></div>
+                                                        <div className={`absolute left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent ${
+                                                            index === 0 
+                                                                ? 'bottom-full -mb-1 border-b-4 border-b-slate-900' 
+                                                                : 'top-full -mt-1 border-t-4 border-t-slate-900'
+                                                        }`} />
                                                     </div>
                                                 </span>
                                             )}
