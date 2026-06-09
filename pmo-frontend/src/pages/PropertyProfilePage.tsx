@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Home, MapPin, FileText, Calendar, Layers, Save, ArrowLeft, Info, Landmark, Shield, CheckCircle2, ChevronRight, Users, Building2, Trash2, CloudDownload, Loader2 as Spinner } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../supabaseClient';
 import { fetchPropriedade, updatePropriedade, getPropriedadeMetrics, deletePropriedade } from '../services/propriedadeService';
 import { fetchPropriedadeOrganizacoes } from '../services/organizacaoService';
 import { OrganizacaoMembro } from '../domain/organizacao/orgTypes';
@@ -35,7 +36,7 @@ const PropertyProfileSkeleton = () => (
 import { ModalidadeProducao } from '../domain/pmo/pmoTypes';
 
 const PropertyProfilePage: React.FC = () => {
-    const { currentPropriedade, refreshProfile } = useAuth();
+    const { currentPropriedade, refreshProfile, role, pmoAtivoId, user } = useAuth();
     const { navigateTo } = useAppNavigation();
 
     const [loading, setLoading] = useState(true);
@@ -43,9 +44,15 @@ const PropertyProfilePage: React.FC = () => {
     const [deleting, setDeleting] = useState(false);
     const [backingUp, setBackingUp] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-    const [activeTab, setActiveTab] = useState<'geral' | 'documentacao' | 'localizacao' | 'organizacoes' | 'danger'>('geral');
+    const [activeTab, setActiveTab] = useState<'geral' | 'documentacao' | 'localizacao' | 'organizacoes' | 'danger' | 'seguranca'>('geral');
     const [metrics, setMetrics] = useState<{ area_total_ha: number; total_talhoes: number } | null>(null);
     const [orgs, setOrgs] = useState<OrganizacaoMembro[]>([]);
+
+    const [limiteTransacao, setLimiteTransacao] = useState<number>(50000);
+    const [limiteManejo, setLimiteManejo] = useState<number>(5000);
+    const [loadingLimites, setLoadingLimites] = useState(false);
+
+    const isAuthorized = role === 'admin' || (currentPropriedade && user && currentPropriedade.user_id === user.id);
 
     const [formData, setFormData] = useState({
         nome: '',
@@ -90,6 +97,31 @@ const PropertyProfilePage: React.FC = () => {
                 if (orgsResult.success) {
                     setOrgs(orgsResult.data || []);
                 }
+
+                if (pmoAtivoId) {
+                    setLoadingLimites(true);
+                    const { data: limitesData, error: limitesError } = await supabase
+                        .from('limites_seguranca')
+                        .select('limite_transacao, limite_manejo')
+                        .eq('propriedade_id', currentPropriedade.id)
+                        .eq('pmo_id', parseInt(pmoAtivoId))
+                        .maybeSingle();
+
+                    if (limitesError) {
+                        console.error('Erro ao buscar limites de segurança:', limitesError);
+                    } else if (limitesData) {
+                        setLimiteTransacao(Number(limitesData.limite_transacao));
+                        setLimiteManejo(Number(limitesData.limite_manejo));
+                    } else {
+                        // Fallback padrão se não houver registro no banco
+                        setLimiteTransacao(50000);
+                        setLimiteManejo(5000);
+                    }
+                    setLoadingLimites(false);
+                } else {
+                    setLimiteTransacao(50000);
+                    setLimiteManejo(5000);
+                }
             } catch (error) {
                 console.error('Erro ao carregar dados da propriedade:', error);
                 toast.error('Erro ao carregar dados da propriedade');
@@ -99,7 +131,7 @@ const PropertyProfilePage: React.FC = () => {
         };
 
         loadData();
-    }, [currentPropriedade?.id]);
+    }, [currentPropriedade?.id, pmoAtivoId]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -116,6 +148,38 @@ const PropertyProfilePage: React.FC = () => {
 
         setSaving(true);
         try {
+            if (activeTab === 'seguranca') {
+                if (!isAuthorized) {
+                    toast.error('Apenas administradores ou o dono da propriedade podem alterar as configurações de segurança.');
+                    setSaving(false);
+                    return;
+                }
+
+                if (!pmoAtivoId) {
+                    toast.error('Nenhum PMO ativo encontrado.');
+                    setSaving(false);
+                    return;
+                }
+
+                const { error: upsertError } = await supabase
+                    .from('limites_seguranca')
+                    .upsert({
+                        propriedade_id: currentPropriedade.id,
+                        pmo_id: parseInt(pmoAtivoId),
+                        limite_transacao: limiteTransacao,
+                        limite_manejo: limiteManejo,
+                    }, { onConflict: 'propriedade_id,pmo_id' });
+
+                if (upsertError) {
+                    console.error('Erro ao salvar limites de segurança:', upsertError);
+                    toast.error('Erro ao salvar os limites de segurança.');
+                } else {
+                    toast.success('Limites de segurança atualizados com sucesso!');
+                }
+                setSaving(false);
+                return;
+            }
+
             const result = await updatePropriedade(currentPropriedade.id, {
                 nome: formData.nome,
                 car: formData.car,
@@ -331,6 +395,16 @@ const PropertyProfilePage: React.FC = () => {
                             )}
                         >
                             ORGANIZAÇÕES
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('seguranca')}
+                            className={cn(
+                                "px-6 py-2.5 rounded-xl text-xs font-black tracking-widest transition-all",
+                                activeTab === 'seguranca' ? "bg-white text-emerald-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                            )}
+                        >
+                            LIMITES DO ASSISTENTE
                         </button>
                         <button
                             type="button"
@@ -607,6 +681,92 @@ const PropertyProfilePage: React.FC = () => {
                                 </div>
                             )}
 
+                            {activeTab === 'seguranca' && (
+                                <div className="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                    <div className="border-b border-slate-100 pb-4">
+                                        <h3 className="text-lg font-black text-slate-800 tracking-tight flex items-center gap-2">
+                                            <Shield size={20} className="text-emerald-600" />
+                                            Segurança e IA
+                                        </h3>
+                                        <p className="text-slate-500 text-xs italic mt-1 font-medium">
+                                            Defina os limites de segurança operacionais para as interações do assistente virtual da sua propriedade.
+                                        </p>
+                                    </div>
+
+                                    {!isAuthorized && (
+                                        <div className="bg-amber-50 rounded-3xl p-6 border border-amber-100 flex items-start gap-4 shadow-sm italic">
+                                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-amber-500 shrink-0 shadow-sm">
+                                                <Shield size={20} />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <p className="text-xs text-amber-800 font-bold leading-tight">
+                                                    Acesso Restrito
+                                                </p>
+                                                <p className="text-[11px] text-amber-700/80 font-medium leading-relaxed">
+                                                    Você não tem permissão para editar os limites de segurança desta propriedade. Apenas administradores ou o proprietário têm autorização de escrita.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div className="space-y-3">
+                                            <label htmlFor="limite_transacao" className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                                Limite de Transação (R$)
+                                            </label>
+                                            <input
+                                                type="number"
+                                                id="limite_transacao"
+                                                name="limite_transacao"
+                                                value={limiteTransacao}
+                                                onChange={(e) => setLimiteTransacao(parseFloat(e.target.value) || 0)}
+                                                disabled={!isAuthorized || loadingLimites}
+                                                required
+                                                placeholder="Ex: 50000"
+                                                className="w-full px-6 py-4.5 rounded-2xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all bg-slate-50/30 text-lg font-bold text-slate-800 disabled:opacity-60 disabled:cursor-not-allowed"
+                                            />
+                                            <p className="text-slate-400 text-[10px] italic font-medium leading-relaxed">
+                                                Valor máximo determinístico permitido por transação financeira. Exceder este limite disparará um aviso de segurança. (Padrão: R$ 50.000,00).
+                                            </p>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <label htmlFor="limite_manejo" className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                                Limite de Manejo (kg ou L)
+                                            </label>
+                                            <input
+                                                type="number"
+                                                id="limite_manejo"
+                                                name="limite_manejo"
+                                                value={limiteManejo}
+                                                onChange={(e) => setLimiteManejo(parseFloat(e.target.value) || 0)}
+                                                disabled={!isAuthorized || loadingLimites}
+                                                required
+                                                placeholder="Ex: 5000"
+                                                className="w-full px-6 py-4.5 rounded-2xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all bg-slate-50/30 text-lg font-bold text-slate-800 disabled:opacity-60 disabled:cursor-not-allowed"
+                                            />
+                                            <p className="text-slate-400 text-[10px] italic font-medium leading-relaxed">
+                                                Quantidade máxima determinística permitida por registro de insumo/manejo. Exceder este limite disparará um aviso de segurança. (Padrão: 5.000 kg/L).
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-emerald-50 rounded-3xl p-6 border border-emerald-100 flex items-start gap-4 shadow-sm italic">
+                                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-emerald-500 shrink-0 shadow-sm">
+                                            <Info size={20} />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-xs text-emerald-800 font-bold leading-tight">
+                                                Funcionamento dos Guardrails
+                                            </p>
+                                            <p className="text-[11px] text-emerald-700/80 font-medium leading-relaxed">
+                                                Esses valores parametrizam o Avaliador Global em Go. Se nenhuma configuração customizada for definida aqui, os limites padrão de R$ 50.000,00 e 5.000 kg/L serão aplicados automaticamente.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             {activeTab === 'danger' && (
                                 <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
                                     {/* Premium Backup Section */}
@@ -712,11 +872,11 @@ const PropertyProfilePage: React.FC = () => {
                             </div>
                             <button
                                 type="submit"
-                                disabled={saving}
+                                disabled={saving || (activeTab === 'seguranca' && !isAuthorized)}
                                 className={cn(
                                     "w-full md:w-auto flex items-center justify-center gap-3 px-12 py-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-[1.5rem] font-black tracking-tight transition-all hover:shadow-2xl hover:shadow-emerald-500/40 disabled:opacity-50 active:scale-[0.98] group",
                                     saving && "animate-pulse",
-                                    activeTab === 'danger' && "opacity-20 pointer-events-none" // Disable save if in danger zone
+                                    (activeTab === 'danger' || (activeTab === 'seguranca' && !isAuthorized)) && "opacity-20 pointer-events-none" // Disable save if in danger zone or unauthorized
                                 )}
                             >
                                 {saving ? (
@@ -724,7 +884,7 @@ const PropertyProfilePage: React.FC = () => {
                                 ) : (
                                     <>
                                         <Save size={20} className="group-hover:scale-110 transition-transform" />
-                                        Salvar Dados Mestre
+                                        {activeTab === 'seguranca' ? 'Salvar Limites' : 'Salvar Dados Mestre'}
                                     </>
                                 )}
                             </button>
