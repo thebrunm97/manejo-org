@@ -230,7 +230,7 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
               {displayName}
             </div>
             <div className="text-[10px] text-agro-creme/50 font-black uppercase tracking-widest">
-              Plano Premium
+              {profile?.plan_tier ? `Plano ${profile.plan_tier.toLowerCase() === 'premium' ? 'Pro' : profile.plan_tier.charAt(0).toUpperCase() + profile.plan_tier.slice(1).toLowerCase()}` : 'Plano Pro'}
             </div>
           </div>
         </div>

@@ -179,7 +179,7 @@ const KnowledgeMonitoringPage: React.FC = () => {
     };
 
     // Quota Stats
-    const isPro = profile?.plan_tier === 'pro';
+    const isPro = profile?.plan_tier === 'pro' || profile?.plan_tier === 'premium';
     const limit = 3;
     const usagePercent = isPro ? 0 : (docCount ? Math.min((docCount / limit) * 100, 100) : 0);
 
@@ -221,7 +221,7 @@ const KnowledgeMonitoringPage: React.FC = () => {
                             </div>
                         )}
                         <p className="text-[10px] text-slate-400 mt-1 uppercase font-medium">
-                            Plano: <span className={isPro ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}>{isPro ? 'Premium 💎' : 'Free 🌱'}</span>
+                            Plano: <span className={isPro ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}>{isPro ? 'Pro 💎' : 'Free 🌱'}</span>
                         </p>
                     </div>
                 </div>
