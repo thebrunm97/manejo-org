@@ -45,7 +45,7 @@ export function getEffectiveStatus(
     botStatus: BotStatus | null,
     staleThresholdMs = 5 * 60 * 1000
 ): { status: BotStatusValue; isStale: boolean } {
-    if (!botStatus) {
+    if (!botStatus || !botStatus.last_heartbeat) {
         return { status: 'UNKNOWN', isStale: true };
     }
 
@@ -83,7 +83,7 @@ export async function fetchRecentBotActivities(): Promise<BotActivity[]> {
         return [];
     }
 
-    return data as BotActivity[];
+    return (data || []) as BotActivity[];
 }
 
 /**

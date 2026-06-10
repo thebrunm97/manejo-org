@@ -135,8 +135,8 @@ const WhatsappAssistantCard: React.FC<WhatsappAssistantCardProps> = ({
             </div>
             
             <div className="flex flex-col gap-2.5">
-              {activities.length > 0 ? (
-                activities.map((act) => {
+              {(activities || []).length > 0 ? (
+                (activities || []).map((act) => {
                   const actConfig = getActivityConfig(act.tipo);
                   return (
                     <div key={act.id} className="flex items-start gap-3 group/item">
@@ -145,7 +145,7 @@ const WhatsappAssistantCard: React.FC<WhatsappAssistantCardProps> = ({
                       </div>
                       <div className="flex-1 min-w-0 border-l border-slate-100 pl-3">
                         <p className="text-[11px] font-black text-slate-900 truncate capitalize">
-                          {act.descricao.toLowerCase()}
+                          {(act.descricao || '').toLowerCase()}
                         </p>
                         <p className="text-[10px] font-bold text-slate-600">
                           {actConfig.label} • {formatRelativeTime(act.created_at)}
