@@ -29,8 +29,11 @@ func (m *mockLLMProvider) Embedder() llm.Embedder {
 }
 
 type mockEmbedder struct{}
+
 func (m *mockEmbedder) GenerateEmbedding(text string) ([]float32, error) { return []float32{0.1}, nil }
-func (m *mockEmbedder) GenerateQueryEmbedding(query string) ([]float32, error) { return []float32{0.1}, nil }
+func (m *mockEmbedder) GenerateQueryEmbedding(query string) ([]float32, error) {
+	return []float32{0.1}, nil
+}
 
 func TestMetaRAGFiltering(t *testing.T) {
 	// 1. Setup mock Supabase server

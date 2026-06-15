@@ -97,7 +97,7 @@ func (s *Server) handleConsultarBaseConhecimento(args map[string]interface{}) (i
 
 	log.Printf("[META-RAG] Evaluating %d evidence chunks against query: %q", len(chunks), pergunta)
 	evalCtx, evalCancel := context.WithTimeout(context.Background(), 20*time.Second)
-	
+
 	var evalResult llm.MetaRAGResult
 	var evalErr error
 	if s.llmProvider != nil {

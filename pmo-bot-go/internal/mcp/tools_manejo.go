@@ -12,9 +12,9 @@ import (
 )
 
 type AlocacaoTalhao struct {
-	TalhaoID     *int64   `json:"talhao_id,omitempty"`
-	TalhaoNome   string   `json:"talhao_nome"`
-	ValorAlocado float64  `json:"valor_alocado"`
+	TalhaoID     *int64  `json:"talhao_id,omitempty"`
+	TalhaoNome   string  `json:"talhao_nome"`
+	ValorAlocado float64 `json:"valor_alocado"`
 }
 
 func (s *Server) handleCalcularAdubacao(args map[string]interface{}) (interface{}, error) {
@@ -87,6 +87,9 @@ func (s *Server) handleRegistrarLimpeza(args map[string]interface{}) (interface{
 		"observacao":        sanitize(args["observacao"]),
 		"data":              time.Now().Format("2006-01-02"),
 	}
+	if rawPayloadID, ok := args["raw_payload_id"].(string); ok && rawPayloadID != "" {
+		payload["raw_payload_id"] = rawPayloadID
+	}
 
 	var pmoIDValue interface{}
 	if pmoID > 0 {
@@ -135,6 +138,9 @@ func (s *Server) handleRegistrarPropagacaoVegetal(args map[string]interface{}) (
 		"sistema_organico": args["sistema_organico"],
 		"data":             sanitize(args["data_compra"]),
 		"valor_total":      valorTotal,
+	}
+	if rawPayloadID, ok := args["raw_payload_id"].(string); ok && rawPayloadID != "" {
+		payload["raw_payload_id"] = rawPayloadID
 	}
 
 	if payload["especies"] == "" || payload["tipo"] == "" || payload["quantidade"] == "" {
@@ -185,6 +191,9 @@ func (s *Server) handleRegistrarCompostagem(args map[string]interface{}) (interf
 		"temperatura":         args["temperatura"],
 		"observacao":          sanitize(args["observacao"]),
 		"data":                time.Now().Format("2006-01-02"),
+	}
+	if rawPayloadID, ok := args["raw_payload_id"].(string); ok && rawPayloadID != "" {
+		payload["raw_payload_id"] = rawPayloadID
 	}
 
 	if payload["acao"] == "" || payload["identificador_pilha"] == "" {
@@ -284,6 +293,9 @@ func (s *Server) handleRegistrarCompraInsumo(args map[string]interface{}) (inter
 		"valor_total_arg":        valorTotal,
 		"alocacoes_talhoes_arg":  alocacoesPtr,
 		"categoria_nome_arg":     sanitize(args["categoria_nome"]),
+	}
+	if rawPayloadID, ok := args["raw_payload_id"].(string); ok && rawPayloadID != "" {
+		rpcArgs["raw_payload_id_arg"] = rawPayloadID
 	}
 
 	if produto == "" {

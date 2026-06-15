@@ -81,10 +81,10 @@ Sua tarefa é tripla:
 3. FORNECER raciocínio técnico sobre a classificação e a segmentação das entidades.
 
 Intents disponíveis:
-- "RAG": DÚVIDA TÉCNICA sobre agricultura orgânica, normas (IN 46, sementes), pragas, adubação. NÃO envolve criar registros.
+- "RAG": DÚVIDA TÉCNICA sobre agricultura orgânica, normas (IN 46), pragas, adubação, ou CLIMA/PREVISÃO DO TEMPO. NÃO envolve criar registros.
 - "DATABASE": O usuário quer REGISTRAR atividades agrícolas (plantio, colheita, venda, limpeza, compostagem) ou CONSULTAR dados da fazenda.
 - "REGISTRO_FINANCEIRO": O usuário quer registrar despesas, custos ou compras financeiras puras (ex: gastou dinheiro ou registrou compra de insumo com valor monetário).
-- "CHAT": Saudação, agradecimento ou conversa genérica.
+- "CHAT": Saudação, agradecimento ou conversa genérica. (Perguntas sobre clima NÃO são CHAT, são RAG).
 
 Regras de Extração (para DATABASE e REGISTRO_FINANCEIRO):
 - Use o array "entidades" para listar todas as ações detectadas.

@@ -29,21 +29,25 @@ func (s *Server) handleRegistrarColheita(args map[string]interface{}) (interface
 
 	valorTotal, _ := parseArgToFloat(args["valor_total"])
 
+	payloadArg := map[string]interface{}{
+		"data":                data,
+		"produto":             cultura,
+		"quantidade_valor":    qtd,
+		"quantidade_unidade":  unidade,
+		"talhao_nome":         talhao,
+		"destino_inicial":     sanitize(args["destino_inicial"]),
+		"observacao_original": fmt.Sprintf("Colheita de %s registrada via MCP Tool.", cultura),
+		"valor_total":         valorTotal,
+	}
+	if rawPayloadID, ok := args["raw_payload_id"].(string); ok && rawPayloadID != "" {
+		payloadArg["raw_payload_id"] = rawPayloadID
+	}
 	resp, err := s.supabase.RegistrarOperacaoCampoRPC(context.Background(), map[string]interface{}{
 		"pmo_id_arg":         pmoID,
 		"propriedade_id_arg": propID,
 		"user_id_arg":        userID,
 		"tipo_arg":           "Colheita",
-		"payload_arg": map[string]interface{}{
-			"data":                data,
-			"produto":             cultura,
-			"quantidade_valor":    qtd,
-			"quantidade_unidade":  unidade,
-			"talhao_nome":         talhao,
-			"destino_inicial":     sanitize(args["destino_inicial"]),
-			"observacao_original": fmt.Sprintf("Colheita de %s registrada via MCP Tool.", cultura),
-			"valor_total":         valorTotal,
-		},
+		"payload_arg":        payloadArg,
 	}, data)
 	if err != nil {
 		return fmt.Sprintf("Erro ao registrar colheita via RPC: %v", err), nil
@@ -85,22 +89,26 @@ func (s *Server) handleRegistrarVenda(args map[string]interface{}) (interface{},
 		valorTotal = valorUnit * qtd
 	}
 
+	payloadArg := map[string]interface{}{
+		"data":                data,
+		"produto":             produto,
+		"quantidade_valor":    qtd,
+		"quantidade_unidade":  unidade,
+		"fornecedor":          cliente,
+		"destinacao":          sanitize(args["destinacao"]),
+		"valor_unitario":      valorUnit,
+		"observacao_original": fmt.Sprintf("Venda de %s para %s registrada via MCP Tool.", produto, cliente),
+		"valor_total":         valorTotal,
+	}
+	if rawPayloadID, ok := args["raw_payload_id"].(string); ok && rawPayloadID != "" {
+		payloadArg["raw_payload_id"] = rawPayloadID
+	}
 	resp, err := s.supabase.RegistrarOperacaoCampoRPC(context.Background(), map[string]interface{}{
 		"pmo_id_arg":         pmoID,
 		"propriedade_id_arg": propID,
 		"user_id_arg":        userID,
 		"tipo_arg":           "Venda",
-		"payload_arg": map[string]interface{}{
-			"data":                data,
-			"produto":             produto,
-			"quantidade_valor":    qtd,
-			"quantidade_unidade":  unidade,
-			"fornecedor":          cliente,
-			"destinacao":          sanitize(args["destinacao"]),
-			"valor_unitario":      valorUnit,
-			"observacao_original": fmt.Sprintf("Venda de %s para %s registrada via MCP Tool.", produto, cliente),
-			"valor_total":         valorTotal,
-		},
+		"payload_arg":        payloadArg,
 	}, data)
 	if err != nil {
 		return fmt.Sprintf("Erro ao registrar venda via RPC: %v", err), nil
