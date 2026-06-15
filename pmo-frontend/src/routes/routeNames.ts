@@ -24,6 +24,7 @@ export const SCREENS = {
     COOP_DASHBOARD: 'COOP_DASHBOARD',
     COOP_DEMANDAS: 'COOP_DEMANDAS',
     MURAL: 'MURAL',
+    LIVE_CHAT_MONITOR: 'LIVE_CHAT_MONITOR',
 } as const;
 
 
@@ -46,6 +47,7 @@ export type RootStackParamList = {
     [SCREENS.PROFILE]: undefined;
     [SCREENS.PROPERTY_PROFILE]: undefined;
     [SCREENS.KNOWLEDGE_MONITORING]: undefined;
+    [SCREENS.LIVE_CHAT_MONITOR]: undefined;
     [SCREENS.TRACEABILITY]: { codigoLote: string };
     [SCREENS.PUBLIC_TRACEABILITY]: { id: string };
     [SCREENS.COOP_ORGANIZACOES]: undefined;

@@ -116,12 +116,12 @@ const HeroVisualStack: React.FC = () => {
     }, []);
 
     return (
-        <div ref={containerRef} className="relative w-full max-w-2xl mx-auto h-[420px] lg:h-[500px] flex items-center justify-center">
+        <div ref={containerRef} className="relative flex flex-col lg:block items-center gap-10 lg:gap-0 w-full max-w-2xl mx-auto h-auto lg:h-[500px]">
             {/* Esfera decorativa de luz ao fundo */}
             <div className="absolute inset-0 bg-agro-ouro/10 rounded-full blur-[100px] -z-10 animate-pulse"></div>
 
             {/* MOCKUP 1: Dashboard da Aplicação (Background, inclinado em -2 graus) */}
-            <div className="absolute left-0 top-6 w-[82%] lg:w-[85%] bg-white rounded-2xl border border-agro-floresta/10 shadow-2xl overflow-hidden transition-all duration-700 hover:scale-[1.01] -rotate-2 origin-bottom-left z-10">
+            <div className="relative lg:absolute lg:left-0 lg:top-6 w-[95%] sm:w-[85%] lg:w-[85%] bg-white rounded-2xl border border-agro-floresta/10 shadow-2xl overflow-hidden transition-all duration-700 hover:scale-[1.01] lg:-rotate-2 origin-bottom-left z-10 order-2">
                 {/* Janela estilo macOS */}
                 <div className="bg-agro-floresta/5 px-4 py-3 border-b border-agro-floresta/10 flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f56]"></div>
@@ -179,7 +179,7 @@ const HeroVisualStack: React.FC = () => {
             </div>
 
             {/* MOCKUP 2: Interface de Chat do WhatsApp (Foreground, Rotacionado em 1 grau) */}
-            <div className="absolute right-2 lg:right-4 bottom-4 w-[250px] lg:w-[270px] bg-[#efeae2] rounded-[32px] border-[6px] border-slate-900 shadow-2xl overflow-hidden z-20 transition-all duration-700 hover:scale-[1.02] rotate-1">
+            <div className="relative lg:absolute lg:right-2 xl:lg:right-4 lg:bottom-4 w-[260px] lg:w-[270px] bg-[#efeae2] rounded-[32px] border-[6px] border-slate-900 shadow-2xl overflow-hidden z-20 transition-all duration-700 hover:scale-[1.02] lg:rotate-1 order-1">
                 {/* Notch do Alto-falante/Câmera */}
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-3.5 bg-slate-900 rounded-b-xl z-30"></div>
                 
