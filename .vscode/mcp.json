@@ -11,7 +11,7 @@
         "development,docs,account,database"
       ],
       "env": {
-        "SUPABASE_ACCESS_TOKEN": "sbp_d4a95b46e02a2208fc18c98b583013392480799d"
+        "SUPABASE_ACCESS_TOKEN": "sbp_7931894c6914cd810a92536eefd28a995c0b4522"
       }
     }
   }
