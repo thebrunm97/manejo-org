@@ -30,7 +30,7 @@ func (c *Client) CheckAndDeductQuota(profileID string, pmoAtivoID int64, isAudio
 	// Se a RPC 'deduzir_creditos' não existir, faremos em duas etapas (Read -> Update).
 
 	// Passo 1: Buscar perfil atual para verificar o saldo e limite
-	reqURL := fmt.Sprintf("%s/rest/v1/profiles?id=eq.%s&select=plan_tier,daily_request_count,last_usage_date", c.config.URL, profileID)
+	reqURL := fmt.Sprintf("%s/rest/v1/profiles?id=eq.%s&select=plan_tier,daily_request_count,last_usage_date,bonus_credits,bonus_expires_at", c.config.URL, profileID)
 
 	body, err := c.doRequest(http.MethodGet, reqURL, nil)
 	if err != nil {
@@ -38,9 +38,11 @@ func (c *Client) CheckAndDeductQuota(profileID string, pmoAtivoID int64, isAudio
 	}
 
 	var records []struct {
-		PlanTier          string `json:"plan_tier"`
-		DailyRequestCount int    `json:"daily_request_count"`
-		LastUsageDate     string `json:"last_usage_date"` // expected "YYYY-MM-DD" or similar
+		PlanTier          string     `json:"plan_tier"`
+		DailyRequestCount int        `json:"daily_request_count"`
+		LastUsageDate     string     `json:"last_usage_date"` // expected "YYYY-MM-DD" or similar
+		BonusCredits      int        `json:"bonus_credits"`
+		BonusExpiresAt    *time.Time `json:"bonus_expires_at"`
 	}
 
 	if err := json.Unmarshal(body, &records); err != nil {
@@ -70,6 +72,8 @@ func (c *Client) CheckAndDeductQuota(profileID string, pmoAtivoID int64, isAudio
 	isPremium := p.PlanTier == "premium" || p.PlanTier == "pro"
 	if isPremium {
 		limit = 99999
+	} else if p.BonusExpiresAt != nil && time.Now().Before(*p.BonusExpiresAt) {
+		limit += p.BonusCredits
 	}
 
 	saldoRestante := limit - dailyCount
@@ -114,7 +118,7 @@ func (c *Client) CheckAndDeductQuota(profileID string, pmoAtivoID int64, isAudio
 
 // CheckSaldo retorna os dados de limite do usuário
 func (c *Client) CheckSaldo(profileID string) (int, int, error) {
-	reqURL := fmt.Sprintf("%s/rest/v1/profiles?id=eq.%s&select=plan_tier,daily_request_count,last_usage_date", c.config.URL, profileID)
+	reqURL := fmt.Sprintf("%s/rest/v1/profiles?id=eq.%s&select=plan_tier,daily_request_count,last_usage_date,bonus_credits,bonus_expires_at", c.config.URL, profileID)
 
 	body, err := c.doRequest(http.MethodGet, reqURL, nil)
 	if err != nil {
@@ -122,9 +126,11 @@ func (c *Client) CheckSaldo(profileID string) (int, int, error) {
 	}
 
 	var records []struct {
-		PlanTier          string `json:"plan_tier"`
-		DailyRequestCount int    `json:"daily_request_count"`
-		LastUsageDate     string `json:"last_usage_date"` // expected "YYYY-MM-DD" or similar
+		PlanTier          string     `json:"plan_tier"`
+		DailyRequestCount int        `json:"daily_request_count"`
+		LastUsageDate     string     `json:"last_usage_date"` // expected "YYYY-MM-DD" or similar
+		BonusCredits      int        `json:"bonus_credits"`
+		BonusExpiresAt    *time.Time `json:"bonus_expires_at"`
 	}
 
 	if err := json.Unmarshal(body, &records); err != nil {
@@ -154,6 +160,8 @@ func (c *Client) CheckSaldo(profileID string) (int, int, error) {
 	isPremium := p.PlanTier == "premium" || p.PlanTier == "pro"
 	if isPremium {
 		limit = 99999
+	} else if p.BonusExpiresAt != nil && time.Now().Before(*p.BonusExpiresAt) {
+		limit += p.BonusCredits
 	}
 
 	return dailyCount, limit, nil

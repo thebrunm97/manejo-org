@@ -37,9 +37,9 @@ type Config struct {
 
 // Client wraps communication with Gemini using the official SDK
 type Client struct {
-	Config               Config
-	Client               *genai.Client
-	OpenAI               *openai.Client
+	Config              Config
+	Client              *genai.Client
+	OpenAI              *openai.Client
 	OpenRouterTransport *openRouterTransport
 }
 
@@ -91,7 +91,7 @@ func NewClient(cfg Config) (*Client, error) {
 	if cfg.OpenRouterAPIKey != "" {
 		oaCfg := openai.DefaultConfig(cfg.OpenRouterAPIKey)
 		oaCfg.BaseURL = "https://openrouter.ai/api/v1"
-		
+
 		// Custom Transport para garantir headers corretos na OpenRouter
 		transport := &openRouterTransport{
 			apiKey: cfg.OpenRouterAPIKey,
@@ -100,7 +100,7 @@ func NewClient(cfg Config) (*Client, error) {
 			Transport: transport,
 			Timeout:   60 * time.Second,
 		}
-		
+
 		c.OpenAI = openai.NewClientWithConfig(oaCfg)
 		c.OpenRouterTransport = transport
 		log.Printf("📡 [OpenRouter] Cliente OpenRouter inicializado (%s).", cfg.OpenRouterModel)
@@ -138,7 +138,7 @@ func (t *openRouterTransport) RoundTrip(req *http.Request) (*http.Response, erro
 				t.mu.RLock()
 				fmtReq := t.responseFormat
 				t.mu.RUnlock()
-				
+
 				if fmtReq != nil {
 					bodyMap["response_format"] = fmtReq
 				}
@@ -499,7 +499,7 @@ func (c *Client) CallOpenRouter(ctx context.Context, sysInst string, history []l
 		c.OpenRouterTransport.mu.Lock()
 		c.OpenRouterTransport.responseFormat = agnosticSchema
 		c.OpenRouterTransport.mu.Unlock()
-		
+
 		defer func() {
 			c.OpenRouterTransport.mu.Lock()
 			c.OpenRouterTransport.responseFormat = nil
