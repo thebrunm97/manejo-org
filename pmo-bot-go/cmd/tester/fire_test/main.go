@@ -36,7 +36,7 @@ o que me diz sobre cada opção de insumo?`
 	fmt.Printf("🤖 Groq Result:\n")
 	fmt.Printf("   - Intencao: %q (Expected: \"duvida\")\n", result.Intencao)
 	fmt.Printf("   - Alerta Organico: %v\n", result.AlertaOrganico)
-	
+
 	if result.Intencao == "duvida" {
 		fmt.Println("✅ SUCCESS: Intent correctly classified as 'duvida'!")
 	} else {
