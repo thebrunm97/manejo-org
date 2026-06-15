@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Flagsmith/flagsmith-go-client/v3"
@@ -22,6 +23,14 @@ type ProcessResult struct {
 	Success       bool
 	Reason        string
 	TransactionID interface{}
+}
+
+var sessionMu sync.Map // map[phone]*sync.Mutex — one lock per session
+
+// getSessionMutex returns a dedicated mutex for each phone/session.
+func getSessionMutex(phone string) *sync.Mutex {
+	mu, _ := sessionMu.LoadOrStore(phone, &sync.Mutex{})
+	return mu.(*sync.Mutex)
 }
 
 // ProcessMessage orchestrates the flow:
@@ -43,6 +52,22 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 	}
 	var respondWithAudio = false
 
+	// Resolve phone early to log greetings correctly
+	var phone string
+	if sbClient != nil {
+		phone, _ = sbClient.ResolvePhone(msg.From)
+	}
+
+	// 0. Mutex Locking for Concurrency Safety (State-Level Lock)
+	// We lock based on the resolved phone, or fallback to msg.From.
+	lockKey := msg.From
+	if phone != "" {
+		lockKey = phone
+	}
+	mu := getSessionMutex(lockKey)
+	mu.Lock()
+	defer mu.Unlock()
+
 	// 0. Ultra-Low Latency Greeting Guard (Immediate response for text greetings)
 	if !msg.IsAudio && !msg.IsImage && msg.Body != "" {
 		cleanBody := strings.ToUpper(strings.TrimSpace(msg.Body))
@@ -56,12 +81,27 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 		if greetings[base] {
 			log.Printf("⚡ [FSM] Ultra-Fast Greeting Guard: intercepted '%s'", cleanBody)
 			wpClient.SendMessage(msg.From, "Olá! Sou o assistente do ManejoORG. Como posso ajudar com seu registro ou dúvida hoje?")
+			if sbClient != nil && phone != "" {
+				go func() {
+					dbCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+					defer cancel()
+					_ = sbClient.InsertMessage(dbCtx, supabase.MessageInsert{
+						Phone:   phone,
+						Content: msg.Body,
+						Role:    "user",
+					})
+					_ = sbClient.InsertMessage(dbCtx, supabase.MessageInsert{
+						Phone:   phone,
+						Content: "Olá! Sou o assistente do ManejoORG. Como posso ajudar com seu registro ou dúvida hoje?",
+						Role:    "assistant",
+					})
+				}()
+			}
 			return ProcessResult{Success: true, Reason: "greeting_guard_ultra"}
 		}
 	}
 
 	// 1. Context Resolution & Authentication
-	phone, _ := sbClient.ResolvePhone(msg.From)
 	profile, _ := sbClient.GetProfileByPhone(phone)
 
 	body := msg.Body
@@ -75,7 +115,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 		audioBytes, err := wpClient.DownloadAudio(msg.ID, msg.RawPayload)
 		if err != nil {
 			log.Printf("[AUDIO-DEBUG] Falha ao baixar áudio: %v", err)
-			sendFeedback(wpClient, ttsClient, msg.From, "Desculpe, não consegui ouvir o seu áudio. Pode repetir ou digitar?", false)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.From, "Desculpe, não consegui ouvir o seu áudio. Pode repetir ou digitar?", false)
 			return ProcessResult{Success: false, Reason: "audio_download_failed"}
 		}
 
@@ -83,14 +123,14 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 		transcription, err := groqClient.Transcribe(ctx, groq.AudioTranscriptionRequest{FileData: audioBytes, FileName: "audio.ogg"})
 		if err != nil {
 			log.Printf("[AUDIO-DEBUG] Falha na transcrição Groq/Whisper: %v", err)
-			sendFeedback(wpClient, ttsClient, msg.From, "Desculpe, não consegui ouvir o seu áudio. Pode repetir ou digitar?", false)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.From, "Desculpe, não consegui ouvir o seu áudio. Pode repetir ou digitar?", false)
 			return ProcessResult{Success: false, Reason: "audio_transcription_failed"}
 		}
 
 		cleanText := strings.TrimSpace(transcription.Text)
 		if cleanText == "" {
 			log.Printf("[AUDIO-DEBUG] Transcrição vazia recebida do Whisper")
-			sendFeedback(wpClient, ttsClient, msg.From, "Desculpe, não consegui ouvir o seu áudio. Pode repetir ou digitar?", false)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.From, "Desculpe, não consegui ouvir o seu áudio. Pode repetir ou digitar?", false)
 			return ProcessResult{Success: false, Reason: "empty_audio_content"}
 		}
 
@@ -117,16 +157,27 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 		routerText = body
 	}
 
+	// Persist incoming user message to database
+	if sbClient != nil && phone != "" && body != "" {
+		dbCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		_ = sbClient.InsertMessage(dbCtx, supabase.MessageInsert{
+			Phone:   phone,
+			Content: body,
+			Role:    "user",
+		})
+		cancel()
+	}
+
 	// 3. Unauthenticated Flow
 	if profile == nil {
 		if strings.HasPrefix(strings.ToUpper(body), "CONECTAR ") {
 			code := strings.TrimSpace(body[9:])
 			if err := sbClient.LinkDeviceToWeb(phone, code); err == nil {
-				wpClient.SendMessage(msg.From, "✅ Aparelho vinculado com sucesso!")
+				sendFeedback(sbClient, wpClient, ttsClient, msg.From, "✅ Aparelho vinculado com sucesso!", respondWithAudio)
 				return ProcessResult{Success: true, Reason: "device_linked"}
 			}
 		}
-		sendFeedback(wpClient, ttsClient, msg.From, "❌ WhatsApp não vinculado. Vincule via portal web.", respondWithAudio)
+		sendFeedback(sbClient, wpClient, ttsClient, msg.From, "❌ WhatsApp não vinculado. Vincule via portal web.", respondWithAudio)
 		return ProcessResult{Success: false, Reason: "profile_not_found"}
 	}
 
@@ -139,17 +190,17 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 	}
 
 	// 5. Direct Commands (Quota, Status)
-	upperBody := strings.ToUpper(strings.TrimSpace(body))
-	if upperBody == "/SALDO" {
+	if isSaldoQuery(body) {
 		u, l, _ := sbClient.CheckSaldo(profile.ID)
-		sendFeedback(wpClient, ttsClient, msg.From, fmt.Sprintf("🪙 Créditos: %d/%d", u, l), respondWithAudio)
+		sendFeedback(sbClient, wpClient, ttsClient, msg.From, fmt.Sprintf("🪙 Créditos: %d/%d", u, l), respondWithAudio)
 		return ProcessResult{Success: true, Reason: "status_checked"}
 	}
+
 
 	// 6. Intent Extraction (NER)
 	authQuota, _, _ := sbClient.CheckAndDeductQuota(profile.ID, profile.PmoAtivoID, respondWithAudio)
 	if !authQuota {
-		sendFeedback(wpClient, ttsClient, msg.From, "🪙 Limite esgotado.", false)
+		sendFeedback(sbClient, wpClient, ttsClient, msg.From, "🪙 Limite esgotado.", false)
 		return ProcessResult{Success: false, Reason: "quota_exceeded"}
 	}
 
@@ -211,13 +262,13 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 			filteredTools := mcpServer.GetToolsForIntent("CHAT")
 			resMsg, res := handleDuvidaFallback(ctx, wpClient, ttsClient, phone, llmClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, "CHAT", filteredTools, guard, historyManager, mcpServer)
 			if resMsg != "" {
-				sendFeedback(wpClient, ttsClient, msg.From, resMsg, respondWithAudio)
+				sendFeedback(sbClient, wpClient, ttsClient, msg.From, resMsg, respondWithAudio)
 			}
 			return res
 		}
 
 		botResponse := "Olá! Sou o assistente do ManejoORG. Como posso ajudar você hoje?"
-		sendFeedback(wpClient, ttsClient, msg.From, botResponse, respondWithAudio)
+		sendFeedback(sbClient, wpClient, ttsClient, msg.From, botResponse, respondWithAudio)
 		recordLog(sbClient, profile, body, botResponse, string(routerModel), string(routerModel), 0, 0, "chat_fast", nil, startTime, true, nil)
 		return ProcessResult{Success: true, Reason: "chat_fast"}
 	}
@@ -322,7 +373,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 	// 6. Consolidated Success Feedback
 	if len(finalResponses) > 0 {
 		aggregatedResponse := strings.Join(finalResponses, "\n\n---\n\n")
-		sendFeedback(wpClient, ttsClient, msg.From, aggregatedResponse, respondWithAudio)
+		sendFeedback(sbClient, wpClient, ttsClient, msg.From, aggregatedResponse, respondWithAudio)
 		return lastRes
 	}
 
@@ -332,7 +383,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 
 	// 7. Hard fallback: aggregatedResponse is empty after all processing.
 	log.Printf("⚠️ [FSM] Nenhuma resposta gerada após processamento completo. Enviando fallback.")
-	sendFeedback(wpClient, ttsClient, msg.From, "Desculpe, não consegui processar sua mensagem. Pode tentar novamente?", respondWithAudio)
+	sendFeedback(sbClient, wpClient, ttsClient, msg.From, "Desculpe, não consegui processar sua mensagem. Pode tentar novamente?", respondWithAudio)
 	return ProcessResult{Success: false, Reason: "empty_aggregated_response"}
 }
 
@@ -509,7 +560,7 @@ func handleActiveState(state string, ctxState map[string]interface{}, body strin
 				res = nextRes
 				botResponse = strings.Join(responses, "\n\n---\n\n")
 				if botResponse != "" {
-					sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio)
+					sendFeedback(sbClient, wpClient, ttsClient, from, botResponse, respondWithAudio)
 				}
 				return res
 			}
@@ -519,7 +570,55 @@ func handleActiveState(state string, ctxState map[string]interface{}, body strin
 	}
 
 	if botResponse != "" {
-		sendFeedback(wpClient, ttsClient, from, botResponse, respondWithAudio)
+		sendFeedback(sbClient, wpClient, ttsClient, from, botResponse, respondWithAudio)
 	}
 	return res
 }
+
+// isSaldoQuery checks if the message is a conversational inquiry about AI credits/limit.
+func isSaldoQuery(body string) bool {
+	upper := strings.ToUpper(strings.TrimSpace(body))
+	clean := strings.TrimRight(upper, "?!.")
+
+	// Exact commands or common variations
+	if clean == "/SALDO" || clean == "SALDO" || clean == "SALDOS" ||
+		clean == "CREDITO" || clean == "CREDITOS" || clean == "CRÉDITO" || clean == "CRÉDITOS" ||
+		clean == "LIMITE" || clean == "LIMITES" {
+		return true
+	}
+
+	// Conversational matching (short sentences only to avoid false positives)
+	if len(clean) < 40 {
+		hasQueryWord := strings.Contains(clean, "QUANTOS") ||
+			strings.Contains(clean, "QUAL") ||
+			strings.Contains(clean, "QUANTO") ||
+			strings.Contains(clean, "MEU") ||
+			strings.Contains(clean, "MEUS") ||
+			strings.Contains(clean, "TENHO") ||
+			strings.Contains(clean, "VER") ||
+			strings.Contains(clean, "CONSULTAR")
+
+		hasSaldoWord := strings.Contains(clean, "SALDO") ||
+			strings.Contains(clean, "CREDITO") ||
+			strings.Contains(clean, "CRÉDITO") ||
+			strings.Contains(clean, "LIMITE")
+
+		if hasQueryWord && hasSaldoWord {
+			// Avoid false positives from recording payment terms like "comprei no credito"
+			isPayment := strings.Contains(clean, "COMPREI") ||
+				strings.Contains(clean, "PAGUEI") ||
+				strings.Contains(clean, "VENDI") ||
+				strings.Contains(clean, "PAGAMENTO") ||
+				strings.Contains(clean, "COMPRA") ||
+				strings.Contains(clean, "VENDA") ||
+				strings.Contains(clean, "PRAZO")
+
+			if !isPayment {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+

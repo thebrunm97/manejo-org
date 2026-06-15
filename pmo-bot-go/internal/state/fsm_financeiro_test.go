@@ -122,3 +122,35 @@ func TestFSM_ScenarioB_ManejoComCusto(t *testing.T) {
 		t.Errorf("Expected response to confirm operation details, got: %s", msg)
 	}
 }
+
+func Test_IsSaldoQuery(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{"/saldo", true},
+		{"saldo", true},
+		{"creditos", true},
+		{"créditos", true},
+		{"quantos creditos eu tenho?", true},
+		{"quantos créditos eu tenho?", true},
+		{"qual meu saldo?", true},
+		{"qual o meu limite?", true},
+		{"meu limite", true},
+		// False cases:
+		{"comprei calcário no crédito", false},
+		{"adubei o talhão 1 e paguei com cartão de crédito", false},
+		{"venda a prazo no crédito", false},
+		{"hoje comprei adubo", false},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.input, func(t *testing.T) {
+			res := isSaldoQuery(tc.input)
+			if res != tc.expected {
+				t.Errorf("isSaldoQuery(%q) = %v, expected %v", tc.input, res, tc.expected)
+			}
+		})
+	}
+}
+

@@ -108,7 +108,7 @@ func (w *MediaWorker) tick(ctx context.Context, workerID string) (bool, error) {
 	if processErr != nil {
 		log.Printf("❌ [MediaWorker-%s] Falha no job %s: %v", workerID, job.ID, processErr)
 		_ = w.cfg.Queue.MarkFailed(ctx, job.ID, processErr.Error(), job.AttemptCount)
-		return true, nil // Processou (mesmo que com falha), conta como jobFound para o backoff? 
+		return true, nil // Processou (mesmo que com falha), conta como jobFound para o backoff?
 		// Na verdade, se falhou, talvez queiramos processar o próximo logo. Sim, true.
 	}
 
