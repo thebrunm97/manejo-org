@@ -61,7 +61,7 @@ export function getEffectiveStatus(
 }
 
 /**
- * Activity recorded by the bot in caderno_campo or logs_processamento.
+ * Activity recorded by the bot in messages table representing recent conversation.
  */
 export interface BotActivity {
     id: string;
@@ -71,19 +71,43 @@ export interface BotActivity {
 }
 
 /**
- * Fetch the 3 most recent activities processed by the bot.
- * Uses the 'get_recent_bot_activities' RPC.
+ * Fetch the 3 most recent messages/activities from the messages table for this phone.
  */
-export async function fetchRecentBotActivities(): Promise<BotActivity[]> {
+export async function fetchRecentBotActivities(telefone?: string): Promise<BotActivity[]> {
+    if (!telefone) return [];
+
+    // Extract raw number before '@' and remove non-digits
+    let cleanPhone = telefone.split('@')[0].replace(/\D/g, '');
+    if (!cleanPhone) return [];
+
+    // Brazilian 9th digit normalization rule (converts 12-digit numbers starting with 55 to 13-digit ones)
+    if (cleanPhone.startsWith('55') && cleanPhone.length === 12) {
+        const ddd = cleanPhone.substring(2, 4);
+        const number = cleanPhone.substring(4);
+        cleanPhone = `55${ddd}9${number}`;
+    }
+
     const { data, error } = await supabase
-        .rpc('get_recent_bot_activities');
+        .from('messages')
+        .select('id, timestamp, role, content, source')
+        .eq('phone', cleanPhone)
+        .order('timestamp', { ascending: false })
+        .limit(3);
 
     if (error) {
         console.error('[botStatusService] Error fetching recent activities:', error);
         return [];
     }
 
-    return (data || []) as BotActivity[];
+    return (data || []).map((msg: any) => {
+        const desc = msg.content || msg.source || 'Áudio ou mídia recebida';
+        return {
+            id: msg.id,
+            created_at: msg.timestamp || new Date().toISOString(),
+            tipo: msg.role === 'assistant' ? 'assistant' : 'user',
+            descricao: desc,
+        };
+    });
 }
 
 /**

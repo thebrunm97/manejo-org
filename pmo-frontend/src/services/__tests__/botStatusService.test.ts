@@ -68,10 +68,10 @@ describe('botStatusService', () => {
             expect(result.isStale).toBe(false);
         });
 
-        it('should return DISCONNECTED if stale (over 3 mins)', () => {
+        it('should return DISCONNECTED if stale (over 5 mins)', () => {
             const botStatus = {
                 status: 'CONNECTED',
-                last_heartbeat: '2026-03-08T23:55:00Z' // 5 mins ago
+                last_heartbeat: '2026-03-08T23:54:00Z' // 6 mins ago
             } as any;
 
             const result = getEffectiveStatus(botStatus);
