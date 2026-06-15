@@ -11,9 +11,11 @@ erDiagram
     PROPRIEDADES ||--o| PMOS : "1:N"
     PROPRIEDADES ||--o| TALHOES : "1:N"
     PROPRIEDADES ||--o| CADERNO_CAMPO : "1:N"
+    PROPRIEDADES ||--o| TRANSACOES_FINANCEIRAS : "1:N"
     
     PMOS ||--o| TALHOES : "1:N"
     PMOS ||--o| CADERNO_CAMPO : "1:N"
+    PMOS ||--o| TRANSACOES_FINANCEIRAS : "1:N"
     PMOS ||--o| PMO_CULTURAS : "1:N"
     PMOS ||--o| PMO_MANEJO : "1:N"
     
@@ -21,6 +23,9 @@ erDiagram
     TALHOES ||--o| CADERNO_CAMPO : "1:N"
     
     CADERNO_CAMPO }o--o{ CANTEIROS : "N:M (via junction)"
+
+    RAW_PAYLOADS ||--o| CADERNO_CAMPO : "raw_payload_id (1:N)"
+    RAW_PAYLOADS ||--o| TRANSACOES_FINANCEIRAS : "raw_payload_id (1:1)"
 
     PROPRIEDADES {
         bigint id
@@ -50,6 +55,31 @@ erDiagram
         text cliente
         text lote
         modalidade_producao_enum modalidade_aplicada
+        uuid raw_payload_id
+    }
+
+    TRANSACOES_FINANCEIRAS {
+        uuid id
+        bigint propriedade_id
+        bigint pmo_id
+        uuid categoria_id
+        text tipo
+        numeric valor_total
+        date data_competencia
+        text fornecedor_cliente
+        text nota_fiscal
+        text status_pagamento
+        uuid raw_payload_id
+    }
+
+    RAW_PAYLOADS {
+        uuid id
+        text message_id
+        jsonb payload_data
+        text source
+        text processing_status
+        text processing_error
+        timestamp created_at
     }
 
     PMO_CULTURAS {

@@ -115,3 +115,5 @@ PLAN_*.md
 *PLAN.md
 git-atomic-commits.md
 timeout-time-finance-fix.md
+
+.vercel
