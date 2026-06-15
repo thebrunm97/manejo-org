@@ -26,12 +26,12 @@ const WhatsappAssistantCard: React.FC<WhatsappAssistantCardProps> = ({
   const isConnected = !!telefone;
 
   const loadActivities = React.useCallback(async () => {
-    if (!isConnected) return;
+    if (!isConnected || !telefone) return;
     setIsFeedLoading(true);
-    const data = await fetchRecentBotActivities();
+    const data = await fetchRecentBotActivities(telefone);
     setActivities(data);
     setIsFeedLoading(false);
-  }, [isConnected]);
+  }, [isConnected, telefone]);
 
   React.useEffect(() => {
     loadActivities();
@@ -71,13 +71,19 @@ const WhatsappAssistantCard: React.FC<WhatsappAssistantCardProps> = ({
 
   const getActivityConfig = (tipo: string) => {
     const t = tipo.toUpperCase();
+    if (t === 'ASSISTANT' || t === 'ASSISTANTE' || t === 'BOT') {
+      return { icon: <MessageCircle size={12} />, label: 'Assistente', color: 'text-emerald-500' };
+    }
+    if (t === 'USER' || t === 'USUARIO' || t === 'PRODUTOR' || t === 'VOCE' || t === 'VOCÊ') {
+      return { icon: <MessageCircle size={12} />, label: 'Você', color: 'text-slate-400' };
+    }
     if (t === 'PLANTIO') return { icon: <PlusCircle size={12} />, label: 'Plantio', color: 'text-emerald-500' };
     if (t === 'COLHEITA') return { icon: <Wheat size={12} />, label: 'Colheita', color: 'text-amber-600' };
     if (t === 'MANEJO') return { icon: <Leaf size={12} />, label: 'Manejo', color: 'text-green-600' };
     if (t === 'VENDA') return { icon: <DollarSign size={12} />, label: 'Venda', color: 'text-blue-600' };
     if (t === 'COMPRA') return { icon: <ShoppingCart size={12} />, label: 'Compra', color: 'text-purple-600' };
     if (t === 'DUVIDA') return { icon: <MessageCircle size={12} />, label: 'Dúvida', color: 'text-slate-600' };
-    return { icon: <PlusCircle size={12} />, label: tipo, color: 'text-slate-400' };
+    return { icon: <MessageCircle size={12} />, label: tipo, color: 'text-slate-400' };
   };
 
   const config = getStatusConfig();
@@ -92,9 +98,9 @@ const WhatsappAssistantCard: React.FC<WhatsappAssistantCardProps> = ({
   }
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm flex flex-col h-full justify-between transition-all duration-300 hover:shadow-xl group">
-      {/* Upper Section - Centered when card stretches */}
-      <div className="flex-1 flex flex-col justify-center">
+    <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm flex flex-col h-full transition-all duration-300 hover:shadow-xl group">
+      {/* Cabeçalho */}
+      <div className="flex flex-col gap-4">
         <div className="flex justify-between items-start">
           <div className={cn(
             "p-3 rounded-2xl transition-colors duration-300",
@@ -117,7 +123,7 @@ const WhatsappAssistantCard: React.FC<WhatsappAssistantCardProps> = ({
           </div>
         </div>
 
-        <div className="mt-5">
+        <div>
           <h4 className="text-xl font-black text-slate-950 leading-tight">
             Assistente de I.A.
           </h4>
@@ -125,47 +131,47 @@ const WhatsappAssistantCard: React.FC<WhatsappAssistantCardProps> = ({
             {formatarTelefone(telefone) || "Vincule seu WhatsApp"}
           </p>
         </div>
-
-        {/* Mini-Feed de Atividades */}
-        {isConnected && (
-          <div className="mt-6 flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Atividade Recente</span>
-              {isFeedLoading && <Loader2 size={10} className="animate-spin text-slate-300" />}
-            </div>
-            
-            <div className="flex flex-col gap-2.5">
-              {(activities || []).length > 0 ? (
-                (activities || []).map((act) => {
-                  const actConfig = getActivityConfig(act.tipo);
-                  return (
-                    <div key={act.id} className="flex items-start gap-3 group/item">
-                      <div className={cn("mt-1 p-1 rounded-md bg-slate-50 transition-colors group-hover/item:bg-white", actConfig.color)}>
-                        {actConfig.icon}
-                      </div>
-                      <div className="flex-1 min-w-0 border-l border-slate-100 pl-3">
-                        <p className="text-[11px] font-black text-slate-900 truncate capitalize">
-                          {(act.descricao || '').toLowerCase()}
-                        </p>
-                        <p className="text-[10px] font-bold text-slate-600">
-                          {actConfig.label} • {formatRelativeTime(act.created_at)}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <p className="text-[11px] font-semibold text-slate-400 italic py-1">
-                  Aguardando sua primeira interação via WhatsApp.
-                </p>
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
+      {/* Mini-Feed de Atividades */}
+      {isConnected && (
+        <div className="mt-6 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Atividade Recente</span>
+            {isFeedLoading && <Loader2 size={10} className="animate-spin text-slate-300" />}
+          </div>
+          
+          <div className="flex flex-col gap-2.5">
+            {(activities || []).length > 0 ? (
+              (activities || []).map((act) => {
+                const actConfig = getActivityConfig(act.tipo);
+                return (
+                  <div key={act.id} className="flex items-start gap-3 group/item">
+                    <div className={cn("mt-1 p-1 rounded-md bg-slate-50 transition-colors group-hover/item:bg-white", actConfig.color)}>
+                      {actConfig.icon}
+                    </div>
+                    <div className="flex-1 min-w-0 border-l border-slate-100 pl-3">
+                      <p className="text-[11px] font-semibold text-slate-900 truncate">
+                        {act.descricao}
+                      </p>
+                      <p className="text-[10px] font-bold text-slate-600">
+                        {actConfig.label} • {formatRelativeTime(act.created_at)}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="text-[11px] font-semibold text-slate-400 italic py-1">
+                Aguardando sua primeira interação via WhatsApp.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Action Section */}
-      <div className="mt-8">
+      <div className="mt-auto pt-6">
         {!isConnected ? (
           <button
             onClick={onConnect}
