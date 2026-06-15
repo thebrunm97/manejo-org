@@ -1,0 +1,31 @@
+# Git and IDE
+.git
+.gitignore
+.vscode
+.idea
+
+# Binaries and executables
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+pmo-bot-go
+bin/
+main
+server
+chat_tester
+knowledge_loader
+tester
+
+# Temporary files and directories
+tmp/
+tmp_*
+logs.txt
+trace.log
+
+# Environment variables
+.env
+.env.example
+.env.prod
