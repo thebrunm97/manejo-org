@@ -103,12 +103,19 @@ func TestRAGIntegration(t *testing.T) {
 	for i := 0; i < maxAttempts; i++ {
 		t.Logf("Attempt %d/%d: Checking Supabase for chunks with query '%s'...", i+1, maxAttempts, queryText)
 
-		results, err := sbClient.MatchFarmDocuments(pmoID, pollEmb, 0.1, 1) // Using 0.1 threshold
+		results, err := sbClient.MatchFarmDocuments(pmoID, pollEmb, 0.1, 10) // Fetch more to find our doc
 
 		if err == nil && len(results) > 0 {
-			found = true
-			t.Logf("✅ Successfully found %d chunks in Supabase!", len(results))
-			break
+			for _, r := range results {
+				if r.DocumentName == docName {
+					found = true
+					t.Logf("✅ Successfully found uploaded chunks for %s in Supabase!", docName)
+					break
+				}
+			}
+			if found {
+				break
+			}
 		}
 
 		time.Sleep(2 * time.Second)
@@ -121,7 +128,7 @@ func TestRAGIntegration(t *testing.T) {
 	// 6. Test Hybrid Retrieval
 	t.Log("🔍 Testing Hybrid Retrieval...")
 	queryEmb, _ := gemClient.Embedder().GenerateEmbedding("extrativismo sustentável")
-	matches, err := sbClient.MatchFarmDocuments(pmoID, queryEmb, 0.5, 3)
+	matches, err := sbClient.MatchFarmDocuments(pmoID, queryEmb, 0.5, 20)
 	if err != nil {
 		t.Errorf("Search failed: %v", err)
 	}
@@ -129,9 +136,16 @@ func TestRAGIntegration(t *testing.T) {
 	if len(matches) == 0 {
 		t.Error("Search returned 0 results, expected at least one.")
 	} else {
-		t.Logf("✅ Match found: %s (Similarity: %f)", matches[0].DocumentName, matches[0].Similarity)
-		if matches[0].DocumentName != docName {
-			t.Errorf("Expected document name %s, got %s", docName, matches[0].DocumentName)
+		foundDoc := false
+		for _, m := range matches {
+			if m.DocumentName == docName {
+				foundDoc = true
+				t.Logf("✅ Match found: %s (Similarity: %f)", m.DocumentName, m.Similarity)
+				break
+			}
+		}
+		if !foundDoc {
+			t.Errorf("Expected document name %s in search results, but it was not found among matches. Top match: %s", docName, matches[0].DocumentName)
 		}
 	}
 

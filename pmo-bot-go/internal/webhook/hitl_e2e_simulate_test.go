@@ -57,6 +57,7 @@ func (m *MockHITLController) Reject(ctx context.Context, id string) error {
 type MockWhatsApp struct {
 	LastSentMessage string
 }
+
 func (m *MockWhatsApp) SendMessage(to, body string) error {
 	fmt.Printf("📱 [WhatsApp] Enviando para %s:\n%s\n", to, body)
 	m.LastSentMessage = body
@@ -65,25 +66,25 @@ func (m *MockWhatsApp) SendMessage(to, body string) error {
 
 func TestE2EHITLFlow(t *testing.T) {
 	fmt.Println("=== INICIANDO E2E SMOKE TEST: Fluxo HITL ===")
-	
+
 	// 1. Setup
 	phone := "5511999999999"
 	mockHITL := &MockHITLController{Pending: make(map[string]guardrails.HITLRecord)}
 	mockWP := &MockWhatsApp{}
-	
+
 	// Simular Orchestrator pausando a tool
 	fmt.Println("\n[Passo 1] Orchestrator tenta invocar 'registrar_operacao_campo'")
 	needsHITL, label := guardrails.RequiresHITL("registrar_operacao_campo")
 	if !needsHITL {
 		t.Fatal("Esperava que registrar_operacao_campo exigisse HITL")
 	}
-	
+
 	toolArgs := map[string]interface{}{
 		"talhao_nome": "Lote A",
-		"insumo": "Composto Orgânico",
-		"data_arg": "2026-04-26",
+		"insumo":      "Composto Orgânico",
+		"data_arg":    "2026-04-26",
 	}
-	
+
 	// Orchestrator chama o RequestApproval e pausa
 	_, err := mockHITL.RequestApproval(context.Background(), guardrails.HITLRecord{
 		FromPhone:   phone,
@@ -99,10 +100,10 @@ func TestE2EHITLFlow(t *testing.T) {
 
 	// 2. Webhook recebe a string "SIM"
 	fmt.Println("\n[Passo 2] Usuário responde 'SIM' via WhatsApp")
-	
+
 	// Simula a lógica interna do Webhook (handleHITLResponse)
 	fmt.Println("\n[Passo 3] Webhook interceta 'SIM' e retoma a Execução da Tool")
-	
+
 	ctx := context.Background()
 	rec, _ := mockHITL.FindPendingByPhone(ctx, phone)
 	if rec == nil {
@@ -117,13 +118,13 @@ func TestE2EHITLFlow(t *testing.T) {
 	// Simulando a execução da ferramenta via MCP
 	fmt.Printf("⚙️ [MCP Server Simulado] Invocando tool: %s com args: %v\n", resolvedTool, resolvedArgs)
 	resMap := map[string]interface{}{"message": "Operação Agronômica Registrada com Sucesso"}
-	
+
 	fmt.Printf("✅ [Resultado Webhook] Tool retornou: %v\n", resMap["message"])
 	mockWP.SendMessage(phone, "✅ *Operação confirmada e registrada com sucesso!*\n\n🌱 Seu caderno de campo foi atualizado.")
-	
+
 	if mockHITL.Pending["simulated-token-1234"].Status != "approved" {
 		t.Errorf("Status não foi atualizado para 'approved'")
 	}
-	
+
 	fmt.Println("\n=== E2E SMOKE TEST CONCLUÍDO COM SUCESSO ===")
 }

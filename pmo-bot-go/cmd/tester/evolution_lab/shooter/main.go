@@ -57,7 +57,7 @@ func checkInstance(target, baseURL, apiKey, instanceName string) {
 		// For Go, we use /instance/status which uses apikey header
 		url = fmt.Sprintf("%s/instance/status", baseURL)
 	}
-	
+
 	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Set("apikey", apiKey)
 
@@ -79,7 +79,7 @@ func checkInstance(target, baseURL, apiKey, instanceName string) {
 
 func createInstance(target, baseURL string) {
 	url := fmt.Sprintf("%s/instance/create", baseURL)
-	
+
 	payload := map[string]interface{}{
 		"token":  apiKey,
 		"qrcode": true,
@@ -111,7 +111,7 @@ func createInstance(target, baseURL string) {
 		} else {
 			fmt.Println("[✓] Instance created successfully.")
 		}
-		
+
 		if target == "go" {
 			connectInstanceGo(baseURL)
 		} else {
@@ -175,7 +175,7 @@ func sendText(baseURL, apiKey, instanceName, phone string) {
 			url = fmt.Sprintf("%s/send/text", baseURL)
 		}
 	}
-	
+
 	payload := map[string]interface{}{
 		"number": phone,
 		"text":   "Teste de Texto ManejoORG (O Grande Coliseu)",
@@ -209,7 +209,7 @@ func sendAudio(baseURL, apiKey, instanceName, phone string) {
 
 	payload := map[string]interface{}{
 		"number":   phone,
-		"audio":    dataURI, 
+		"audio":    dataURI,
 		"delay":    1000,
 		"encoding": true,
 	}
@@ -217,7 +217,7 @@ func sendAudio(baseURL, apiKey, instanceName, phone string) {
 	if isGo {
 		payload = map[string]interface{}{
 			"number":    phone,
-			"media":     dataURI, 
+			"media":     dataURI,
 			"mediatype": "audio",
 			"delay":     1000,
 		}

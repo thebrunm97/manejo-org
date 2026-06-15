@@ -107,7 +107,7 @@ func (a *EvolutionAdapter) SetPresence(to string, presence string) error {
 		"delay":        15000,
 		"instanceName": a.InstanceName,
 	}
-	
+
 	err := a.doRequest(http.MethodPost, url, payload)
 	if err != nil {
 		log.Printf("⚠️ [Evolution] Falha ao definir presença (%s) para %s: %v", presence, to, err)
@@ -248,7 +248,7 @@ func (a *EvolutionAdapter) GetConnectionState() (string, error) {
 	// For Evolution Go, the correct endpoint is /instance/status
 	// The apikey identifies which instance to check.
 	url := fmt.Sprintf("%s/instance/status", a.BaseURL)
-	
+
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
@@ -256,8 +256,8 @@ func (a *EvolutionAdapter) GetConnectionState() (string, error) {
 
 	req.Header.Set("apikey", a.APIKey)
 
-	// Use a short timeout for the connection state check
-	client := &http.Client{Timeout: 5 * time.Second}
+	// Use a longer timeout for the connection state check
+	client := &http.Client{Timeout: 15 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("request failed: %w", err)
@@ -305,7 +305,7 @@ func (a *EvolutionAdapter) ConfigureWebhooks(webhookURL string) error {
 	// Evolution API's /webhook/set usually overrides the existing configuration for the instance.
 	// To be extra safe as requested, we use the set endpoint which guarantees the state.
 	url := fmt.Sprintf("%s/webhook/set/%s", a.BaseURL, a.InstanceName)
-	
+
 	err := a.doRequest(http.MethodPost, url, payload)
 	if err != nil {
 		return fmt.Errorf("failed to set webhook: %w", err)
@@ -417,20 +417,20 @@ func ParseWebhook(rawBody []byte) (*ports.IncomingMessage, error) {
 		}
 
 		return &ports.IncomingMessage{
-			ID:        btnPayload.Data.Key.Id,
-			From:      btnPayload.Data.Key.RemoteJid,
-			Body:      body,
-			IsFromMe:  btnPayload.Data.Key.FromMe,
-			Timestamp: time.Now(),
-			Type:      "button_click",
-			IsAudio:   false,
+			ID:         btnPayload.Data.Key.Id,
+			From:       btnPayload.Data.Key.RemoteJid,
+			Body:       body,
+			IsFromMe:   btnPayload.Data.Key.FromMe,
+			Timestamp:  time.Now(),
+			Type:       "button_click",
+			IsAudio:    false,
 			RawPayload: rawBody,
 		}, nil
 	}
 
 	// Extract message object
 	var internalMsg struct {
-		Conversation        string      `json:"conversation"`
+		Conversation        string `json:"conversation"`
 		ExtendedTextMessage struct {
 			Text string `json:"text"`
 		} `json:"extendedTextMessage"`
@@ -469,7 +469,7 @@ func ParseWebhook(rawBody []byte) (*ports.IncomingMessage, error) {
 	// Detect Message Type
 	msgType := strings.ToLower(payload.Data.Info.Type)
 	isAudio := msgType == "audiomessage" || msgType == "ptvmessage" || internalMsg.AudioMessage != nil || internalMsg.PtvMessage != nil
-	
+
 	if isAudio {
 		log.Printf("🎙️ [Evolution] Detectada mensagem de áudio (Tipo: %s)", msgType)
 		if msgType == "" {
@@ -478,10 +478,10 @@ func ParseWebhook(rawBody []byte) (*ports.IncomingMessage, error) {
 	}
 
 	return &ports.IncomingMessage{
-		ID:        payload.Data.Info.ID,
-		From:      from,
-		Body:      body,
-		IsFromMe:  payload.Data.Info.IsFromMe,
+		ID:         payload.Data.Info.ID,
+		From:       from,
+		Body:       body,
+		IsFromMe:   payload.Data.Info.IsFromMe,
 		Timestamp:  ts,
 		Type:       msgType,
 		IsAudio:    isAudio,
