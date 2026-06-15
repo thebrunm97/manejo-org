@@ -22,7 +22,7 @@ import (
 
 // DeliveryConfig configura o comportamento de entrega e retry.
 type DeliveryConfig struct {
-	MaxAttempts int           // Default: 3
+	MaxAttempts int             // Default: 3
 	Backoff     []time.Duration // Default: [1s, 3s, 5s]
 }
 

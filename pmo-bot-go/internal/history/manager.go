@@ -130,9 +130,9 @@ func (m *Manager) AppendAgnosticHistory(phone string, fullHistory []llm.Mensagem
 				// This usually implies we compress ALL previous turns, but keep the VERY LAST turn fully expanded?
 				// Wait, if it's already finalized, why not compress the LAST one too for the NEXT time?
 				// Because the user might want to see the trace of what JUST happened? But FSM state resets.
-				// I will only prune if there is another User message *after* this turn, OR just prune all 
+				// I will only prune if there is another User message *after* this turn, OR just prune all
 				// completely resolved tools, EXCEPT the last completed turn.
-				
+
 				// Let's check if this is the LAST user turn in the array
 				isLastTurn := true
 				for j := i + 1; j < len(fullHistory); j++ {
@@ -147,7 +147,7 @@ func (m *Manager) AppendAgnosticHistory(phone string, fullHistory []llm.Mensagem
 					userQuery := fullHistory[turnStartIndex].Content
 					finalResponse := msg.Content
 					summary := fmt.Sprintf("[MEMÓRIA DO SISTEMA] Em um turno anterior, o usuário disse: %q. O sistema executou as ferramentas correspondentes com sucesso. Resposta gerada: %q", userQuery, finalResponse)
-					
+
 					prunedHistory = append(prunedHistory, llm.MensagemAgnostica{
 						Role:    llm.PapelAssistant, // Using role model as requested/approved
 						Content: summary,
@@ -156,7 +156,7 @@ func (m *Manager) AppendAgnosticHistory(phone string, fullHistory []llm.Mensagem
 					// It is the last turn, DO NOT prune! Append everything normally.
 					prunedHistory = append(prunedHistory, fullHistory[turnStartIndex:i+1]...)
 				}
-				
+
 				turnStartIndex = -1 // Reset turn tracker
 				turnHasTools = false
 			} else if turnStartIndex != -1 {
@@ -291,4 +291,3 @@ func (m *Manager) Cleanup() {
 		}
 	}
 }
-

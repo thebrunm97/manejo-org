@@ -20,9 +20,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/mock"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
+	"github.com/thebrunm97/pmo-bot-go/internal/testutil"
 )
 
 // ─── Stub Supabase (returns RPC error without network) ────────────────────────
@@ -335,3 +337,74 @@ func TestOrganicoBlockWithExplicitTalhao(t *testing.T) {
 		t.Errorf("Regression: expected organic_compliance_block, got %q", result.Reason)
 	}
 }
+
+// ─── DI & Mocking Test ───────────────────────────────────────────────────────
+
+func TestFinalizeRegistration_MockSuccess(t *testing.T) {
+	// 1. Setup do Mock
+	mockDB := new(testutil.MockDatabaseRepository)
+
+	ctx := context.Background()
+	profile := conventionalProfile() // Reuses profile from table tests
+
+	ext := &groq.ExtractionResult{
+		Intencao:       "registro",
+		Atividade:      "Plantio",
+		InsumoCultura:  "Alface",
+		Quantidade:     "100",
+		Unidade:        "mudas",
+		Data:           "2026-06-13",
+		AlertaOrganico: false,
+		Localizacao: llm.Localizacao{
+			Talhao: "Talhão Sul",
+		},
+	}
+
+	// 2. Definindo as Expectativas do Mock
+	// Esperamos que o RegistrarOperacaoCampoRPC seja chamado com os dados corretos
+	mockDB.On("RegistrarOperacaoCampoRPC", ctx, mock.AnythingOfType("map[string]interface {}"), "2026-06-13").
+		Return(map[string]interface{}{
+			"id":     "rec_123",
+			"lote":   "L-456",
+			"status": "success",
+		}, nil)
+
+	// Esperamos que os logs sejam salvos
+	mockDB.On("InsertLogProcessamento", mock.AnythingOfType("supabase.LogProcessamentoInsert")).Return(nil)
+	mockDB.On("InsertLogConsumo", mock.AnythingOfType("supabase.LogConsumoInsert")).Return(nil)
+	mockDB.On("InsertLogTreinamento", mock.AnythingOfType("supabase.LogTreinamentoInsert")).Return(nil)
+
+	sender := &mockSender{}
+	
+	// 3. Execução
+	respStr, res := finalizeRegistration(
+		ctx,
+		ext,
+		profile,
+		mockDB,
+		sender, // wpClient
+		nil,    // ttsClient
+		"5511999999999",
+		"Plantei 100 mudas de alface no Talhão Sul",
+		false, // respondWithAudio
+		time.Now(),
+		nil, // historyManager
+		"5511999999999",
+		"mock-model",
+	)
+
+	// 4. Verificações
+	if !res.Success {
+		t.Errorf("O registro deveria ter sucesso, Reason: %s", res.Reason)
+	}
+	if res.Reason != "record_saved" {
+		t.Errorf("Reason esperado 'record_saved', recebido: %s", res.Reason)
+	}
+	if !strings.Contains(respStr, "Registro com Sucesso") {
+		t.Errorf("Resposta não contém sucesso: %s", respStr)
+	}
+
+	// Verifica se todas as expectativas do mock foram atendidas (Opcional, pois testify já faz assert mas não falha se faltar sem assertExpectations)
+	mockDB.AssertExpectations(t)
+}
+

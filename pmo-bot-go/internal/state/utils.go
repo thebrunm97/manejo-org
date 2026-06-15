@@ -21,16 +21,38 @@ const (
 )
 
 // sendFeedback encapsulates the logic of responding to the user via WhatsApp and/or TTS
-func sendFeedback(wpClient ports.MessageSender, ttsClient *tts.Orchestrator, from string, message string, respondWithAudio bool) error {
+func sendFeedback(sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, from string, message string, respondWithAudio bool) error {
+	var err error
 	if respondWithAudio && ttsClient != nil {
 		log.Printf("🔊 [FSM] Gerando áudio para resposta...")
-		audioURL, err := ttsClient.GenerateSpeech(context.Background(), message)
-		if err == nil {
-			return wpClient.SendVoice(from, audioURL, false)
+		audioURL, errSpeech := ttsClient.GenerateSpeech(context.Background(), message)
+		if errSpeech == nil {
+			err = wpClient.SendVoice(from, audioURL, false)
+		} else {
+			log.Printf("⚠️ [FSM] Falha no TTS, enviando texto como fallback: %v", errSpeech)
+			err = wpClient.SendMessage(from, message)
 		}
-		log.Printf("⚠️ [FSM] Falha no TTS, enviando texto como fallback: %v", err)
+	} else {
+		err = wpClient.SendMessage(from, message)
 	}
-	return wpClient.SendMessage(from, message)
+
+	// Persist outgoing assistant message in a non-blocking goroutine
+	if sbClient != nil && message != "" {
+		go func() {
+			phone, _ := sbClient.ResolvePhone(from)
+			if phone != "" {
+				dbCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				defer cancel()
+				_ = sbClient.InsertMessage(dbCtx, supabase.MessageInsert{
+					Phone:   phone,
+					Content: message,
+					Role:    "assistant",
+				})
+			}
+		}()
+	}
+
+	return err
 }
 
 // CalculateAICost returns the estimated cost in USD based on model and token usage
@@ -65,7 +87,7 @@ func CalculateAICost(model string, pTokens, cTokens int) float64 {
 }
 
 // recordLog is a helper to centralize all logging to Supabase (Telemetry + Process Log)
-func recordLog(sbClient *supabase.Client, profile *supabase.Profile, msgIn string, msgOut string, modelConfigured string, modelEffective string, pTokens int, cTokens int, intent string, extraction map[string]interface{}, startTime time.Time, success bool, raciocinio interface{}) {
+func recordLog(sbClient ports.LogPersister, profile *supabase.Profile, msgIn string, msgOut string, modelConfigured string, modelEffective string, pTokens int, cTokens int, intent string, extraction map[string]interface{}, startTime time.Time, success bool, raciocinio interface{}) {
 	if sbClient == nil || profile == nil {
 		return
 	}

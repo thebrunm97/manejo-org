@@ -158,6 +158,10 @@ func (w *AIWorker) processAIJob(ctx context.Context, job *Job, start time.Time) 
 	aiCtx, cancel := context.WithTimeout(ctx, 90*time.Second)
 	defer cancel()
 
+	if msg.RawPayloadID != "" {
+		aiCtx = context.WithValue(aiCtx, "raw_payload_id", msg.RawPayloadID)
+	}
+
 	// Delega para o ProcessMessage existente (reuso total do fluxo atual)
 	// O FSM existente já trata: autenticação, quota, router, orchestrator, TTS
 	result := state.ProcessMessage(
@@ -183,11 +187,23 @@ func (w *AIWorker) processAIJob(ctx context.Context, job *Job, start time.Time) 
 			log.Printf("⚠️  [AIWorker] Falha ao marcar job %s como done: %v", job.ID, err)
 		}
 		log.Printf("✅ [AIWorker] Job %s concluído (ou em HITL) em %dms (razão: %s)", job.ID, latencyMs, result.Reason)
+
+		if msg.RawPayloadID != "" {
+			if err := w.cfg.Supabase.UpdateRawPayloadStatus(aiCtx, msg.RawPayloadID, "PROCESSED", ""); err != nil {
+				log.Printf("⚠️  [AIWorker] Falha ao atualizar status do raw_payload %s para PROCESSED: %v", msg.RawPayloadID, err)
+			}
+		}
 	} else {
 		reason := result.Reason
 		if err := w.cfg.Queue.MarkFailed(aiCtx, job.ID, reason, job.AttemptCount); err != nil {
 			log.Printf("⚠️  [AIWorker] Falha ao marcar job %s como failed: %v", job.ID, err)
 		}
 		log.Printf("❌ [AIWorker] Job %s falhou em %dms (razão: %s)", job.ID, latencyMs, reason)
+
+		if msg.RawPayloadID != "" {
+			if err := w.cfg.Supabase.UpdateRawPayloadStatus(aiCtx, msg.RawPayloadID, "FAILED", reason); err != nil {
+				log.Printf("⚠️  [AIWorker] Falha ao atualizar status do raw_payload %s para FAILED: %v", msg.RawPayloadID, err)
+			}
+		}
 	}
 }

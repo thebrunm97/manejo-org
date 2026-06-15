@@ -43,7 +43,7 @@ type HarnessConfig struct {
 
 // Harness coordena o pool de workers e o ciclo de vida do sistema.
 type Harness struct {
-	cfg         HarnessConfig
+	cfg          HarnessConfig
 	mediaWorkers []*MediaWorker
 	aiWorkers    []*AIWorker
 }

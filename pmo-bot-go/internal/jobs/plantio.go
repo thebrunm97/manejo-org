@@ -59,7 +59,7 @@ func runPlantioCheck(sbClient *supabase.Client, wpClient ports.MessageSender) {
 			continue
 		}
 
-		message := fmt.Sprintf("🌱 Olá! O seu Assistente Agrônomo passando para lembrar: Chegou a época ideal para iniciar o plantio dos seus *%.0fkg de %s* da cota da Cooperativa! Bom trabalho! 🚜", 
+		message := fmt.Sprintf("🌱 Olá! O seu Assistente Agrônomo passando para lembrar: Chegou a época ideal para iniciar o plantio dos seus *%.0fkg de %s* da cota da Cooperativa! Bom trabalho! 🚜",
 			quantidade, cultura)
 
 		err := wpClient.SendMessage(telefone, message)
