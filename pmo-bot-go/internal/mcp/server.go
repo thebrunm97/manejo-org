@@ -108,7 +108,7 @@ func (s *Server) GetToolsForIntent(intent string) []llm.FerramentaAgnostica {
 			}
 
 		case "DATABASE", "REGISTRO_FINANCEIRO":
-			if t.Category == CategoryDatabase || t.Definition.Name == "consultar_dados_fazenda" {
+			if t.Category == CategoryDatabase || t.Definition.Name == "consultar_dados_fazenda" || t.Definition.Name == "consultar_previsao_tempo" {
 				include = true
 			}
 
@@ -211,4 +211,3 @@ func (s *Server) CallTool(name string, args map[string]interface{}) (interface{}
 
 	return tool.Handler(args)
 }
-

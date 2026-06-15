@@ -496,4 +496,31 @@ func (s *Server) InitializeTools() {
 		Category: CategoryDatabase,
 		Handler:  s.handleConsultarBalancoFinanceiro,
 	})
+
+	s.RegisterTool(Tool{
+		Definition: llm.FerramentaAgnostica{
+			Name:        "consultar_previsao_tempo",
+			Description: "Consulta a previsão do tempo para uma localidade específica (cidade ou latitude/longitude). Retorna as condições atuais e a previsão para os próximos dias, incluindo temperatura, chance de chuva e bônus agrícolas (como evapotranspiração).",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"propriedade_id": map[string]interface{}{
+						"type":        "integer",
+						"description": "ID da propriedade ativa do usuário (fazenda). OBRIGATÓRIO: Extraia do cabeçalho de contexto injetado pelo sistema.",
+					},
+					"cidade_informada": map[string]interface{}{
+						"type":        "string",
+						"description": "Nome da cidade ou coordenadas informada na mesma frase. Apenas se o usuário pedir explicitamente para uma cidade, senão omita.",
+					},
+					"data_alvo": map[string]interface{}{
+						"type":        "string",
+						"description": "A data ou período desejado (ex: 'hoje', 'amanhã', 'próximos 3 dias'). Opcional.",
+					},
+				},
+				"required": []string{"propriedade_id"},
+			},
+		},
+		Category: CategoryRAG, // RAG is used for knowledge/read-only info
+		Handler:  s.handleConsultarPrevisaoTempo,
+	})
 }
