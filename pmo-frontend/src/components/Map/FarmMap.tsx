@@ -1,5 +1,5 @@
-import React, { useMemo, useEffect, useState } from 'react';
-import Map, { Source, Layer, Marker, useMap, NavigationControl, MapProvider } from 'react-map-gl/maplibre';
+import React, { useMemo, useEffect, useState, useCallback } from 'react';
+import Map, { Source, Layer, Marker, useMap, NavigationControl, MapProvider, MapLayerMouseEvent } from 'react-map-gl/maplibre';
 import centerOfMass from '@turf/center-of-mass';
 import { polygon } from '@turf/helpers';
 import MapboxDraw from '@mapbox/mapbox-gl-draw';
@@ -22,7 +22,7 @@ interface FarmMapProps {
     onDrawCreate?: (e: any) => void;
     onDrawUpdate?: (e: any) => void;
     onDrawDelete?: (e: any) => void;
-    onTalhaoClick?: (talhao: Talhao) => void;
+    onTalhaoClick?: (talhao: Talhao | null) => void;
     isDrawerOpen?: boolean;
     isDrawingMode?: boolean;
     finishDrawingTrigger?: number;
@@ -115,158 +115,24 @@ const MapController: React.FC<{ talhoes: Talhao[], focusTarget?: Talhao | null, 
 };
 
 /**
- * COMPONENTE: MapInteractionHandler (PLAN G)
- * Gerencia listeners de pointer events e resize internos, com acesso total ao hook useMap().
+ * COMPONENTE: DrawModeController
+ * Gerencia guidance line, modo de desenho e interações de draw DENTRO do contexto do Map.
+ * Este componente fica como filho de <Map> para ter acesso ao useMap().
  */
-const MapInteractionHandler: React.FC<{
-    containerRef: React.RefObject<HTMLDivElement | null>,
-    isMobile: boolean,
-    isDrawingMode: boolean,
-    talhoes: Talhao[],
-    onTalhaoClick?: (t: Talhao) => void,
-    isDrawerOpen?: boolean
-}> = ({ containerRef, isMobile, isDrawingMode, talhoes, onTalhaoClick, isDrawerOpen }) => {
+const DrawModeController: React.FC<{
+    isDrawingMode: boolean;
+    drawInstance: MapboxDraw | null;
+    finishDrawingTrigger: number;
+    trashDrawingTrigger: number;
+    setCursor: (c: string | undefined) => void;
+}> = ({ isDrawingMode, drawInstance, finishDrawingTrigger, trashDrawingTrigger, setCursor }) => {
     const { current: mapInstance } = useMap();
-
-    useEffect(() => {
-        if (!mapInstance) return;
-
-        console.log("🛠️ [MapInteractionHandler] Unified Bridge active for Map instance.");
-
-        // Coordinate-drift protection on mount/resize
-        const performResize = () => {
-            requestAnimationFrame(() => {
-                mapInstance.resize();
-                requestAnimationFrame(() => mapInstance.resize());
-            });
-        };
-        performResize();
-
-        // Window-Level Pointer Spy
-        const onWindowPointerDown = (e: PointerEvent) => {
-            if (e.pointerType === 'touch') {
-                console.log('🕵️ [WINDOW] Global RAW Touch detected');
-            }
-        };
-        window.addEventListener('pointerdown', onWindowPointerDown, { capture: true, passive: true });
-
-        // Container-Level Interaction Logic
-        const container = containerRef.current;
-        const canvas = mapInstance.getCanvas();
-        if (!container || !canvas) return;
-
-        let lastPointerId: number | null = null;
-        let pointerStartPoint: { x: number, y: number } | null = null;
-        let pointerStartTime = 0;
-
-        const handleInteraction = (point: { x: number, y: number }, type: string) => {
-            if (isDrawingMode) return;
-            
-            console.log(`🔥 [FarmMap] Unified ${type} (${isMobile ? 'Touch' : 'Mouse'}) at:`, point);
-            
-            const tolerance = isMobile ? 24 : 12;
-            const bbox: [maplibregl.PointLike, maplibregl.PointLike] = [
-                [point.x - tolerance, point.y - tolerance],
-                [point.x + tolerance, point.y + tolerance]
-            ];
-            
-            const features = mapInstance.queryRenderedFeatures(bbox, {
-                layers: ['talhoes-fill']
-            });
-            
-            if (features && features.length > 0 && onTalhaoClick) {
-                const feature = features[0];
-                const talhaoId = feature.properties?.id;
-                console.log('✅ [FarmMap] Plot Detected:', talhaoId);
-                const talhao = talhoes.find(t => String(t.id) === String(talhaoId));
-                if (talhao) {
-                    onTalhaoClick(talhao);
-                }
-            } else {
-                console.log('❌ [FarmMap] No plot detected at:', point);
-            }
-        };
-
-        const onPointerDown = (e: PointerEvent) => {
-            if (!e.isPrimary) return;
-            const rect = canvas.getBoundingClientRect();
-            pointerStartPoint = {
-                x: e.clientX - rect.left,
-                y: e.clientY - rect.top
-            };
-            pointerStartTime = Date.now();
-            lastPointerId = e.pointerId;
-            console.log('👉 [FarmMap] Container PointerDown registered');
-        };
-
-        const onPointerMove = (e: PointerEvent) => {
-            if (e.pointerId !== lastPointerId || !pointerStartPoint) return;
-            const rect = canvas.getBoundingClientRect();
-            const currentX = e.clientX - rect.left;
-            const currentY = e.clientY - rect.top;
-            const dx = currentX - pointerStartPoint.x;
-            const dy = currentY - pointerStartPoint.y;
-            if (Math.sqrt(dx * dx + dy * dy) > 10) {
-                pointerStartPoint = null;
-            }
-        };
-
-        const onPointerUp = (e: PointerEvent) => {
-            if (e.pointerId !== lastPointerId || !pointerStartPoint) return;
-            const duration = Date.now() - pointerStartTime;
-            if (duration < 500) {
-                handleInteraction(pointerStartPoint, 'tap');
-            }
-            pointerStartPoint = null;
-            lastPointerId = null;
-        };
-
-        container.addEventListener('pointerdown', onPointerDown, { capture: true });
-        container.addEventListener('pointermove', onPointerMove, { capture: true });
-        container.addEventListener('pointerup', onPointerUp, { capture: true });
-        container.addEventListener('pointercancel', () => { pointerStartPoint = null; }, { capture: true });
-
-        const onWindowResize = () => performResize();
-        window.addEventListener('resize', onWindowResize);
-        window.addEventListener('load', onWindowResize);
-
-        return () => {
-            window.removeEventListener('pointerdown', onWindowPointerDown, { capture: true });
-            container.removeEventListener('pointerdown', onPointerDown, { capture: true });
-            container.removeEventListener('pointermove', onPointerMove, { capture: true });
-            container.removeEventListener('pointerup', onPointerUp, { capture: true });
-            window.removeEventListener('resize', onWindowResize);
-            window.removeEventListener('load', onWindowResize);
-        };
-    }, [isDrawerOpen, isDrawingMode, mapInstance, talhoes, onTalhaoClick, isMobile, containerRef]);
-
-    return null;
-}
-
-const FarmMap: React.FC<FarmMapProps> = ({
-    talhoes = [],
-    focusTarget,
-    selectedTalhaoId,
-    onTalhaoClick,
-    onDrawCreate,
-    onDrawUpdate,
-    onDrawDelete,
-    isDrawerOpen,
-    isDrawingMode = false,
-    finishDrawingTrigger = 0,
-    trashDrawingTrigger = 0
-}) => {
-    const isMobile = useIsMobile();
-    const { current: mapInstance } = useMap();
-    const [cursor, setCursor] = useState<string | undefined>(undefined);
-    const [drawInstance, setDrawInstance] = useState<MapboxDraw | null>(null);
-    const containerRef = React.useRef<HTMLDivElement>(null);
 
     // Efeito para Gerenciar a Linha Guia (60fps) e Bloqueio de Pan
     useEffect(() => {
         if (!mapInstance) return;
 
-        const map = mapInstance.getMap(); // Get the underlying MapLibre instance
+        const map = mapInstance.getMap();
         
         const updateGuidanceLine = (e: any) => {
             if (!drawInstance) return;
@@ -373,9 +239,8 @@ const FarmMap: React.FC<FarmMapProps> = ({
             }
         } catch (err) {
             console.error("⚠️ Mapbox Draw mode change failed:", err);
-            // Non-fatal, prevent global crash
         }
-    }, [isDrawingMode, drawInstance]);
+    }, [isDrawingMode, drawInstance, setCursor]);
 
     // Efeito para desfazer último ponto (trash)
     useEffect(() => {
@@ -390,6 +255,62 @@ const FarmMap: React.FC<FarmMapProps> = ({
             drawInstance.changeMode('simple_select');
         }
     }, [finishDrawingTrigger, drawInstance, isDrawingMode]);
+
+    // Resize protection on mount
+    useEffect(() => {
+        if (!mapInstance) return;
+
+        const performResize = () => {
+            requestAnimationFrame(() => {
+                mapInstance.resize();
+                requestAnimationFrame(() => mapInstance.resize());
+            });
+        };
+        performResize();
+
+        const onWindowResize = () => performResize();
+        window.addEventListener('resize', onWindowResize);
+        window.addEventListener('load', onWindowResize);
+
+        return () => {
+            window.removeEventListener('resize', onWindowResize);
+            window.removeEventListener('load', onWindowResize);
+        };
+    }, [mapInstance]);
+
+    return null;
+};
+
+const FarmMap: React.FC<FarmMapProps> = (props) => {
+    return (
+        <div className="relative w-full h-full z-0" style={{ touchAction: 'none', userSelect: 'none' }}>
+            <MapProvider>
+                <FarmMapInner {...props} />
+            </MapProvider>
+        </div>
+    );
+};
+
+/**
+ * COMPONENTE INTERNO: FarmMapInner
+ * Renderizado DENTRO do MapProvider para que useMap() funcione corretamente.
+ */
+const FarmMapInner: React.FC<FarmMapProps> = ({
+    talhoes = [],
+    focusTarget,
+    selectedTalhaoId,
+    onTalhaoClick,
+    onDrawCreate,
+    onDrawUpdate,
+    onDrawDelete,
+    isDrawerOpen,
+    isDrawingMode = false,
+    finishDrawingTrigger = 0,
+    trashDrawingTrigger = 0
+}) => {
+    const isMobile = useIsMobile();
+    const [cursor, setCursor] = useState<string | undefined>(undefined);
+    const [drawInstance, setDrawInstance] = useState<MapboxDraw | null>(null);
 
     // 1. Converter talhões para GeoJSON FeatureCollection (WebGL Native)
     const geojsonData = useMemo<GeoJSONData>(() => {
@@ -465,163 +386,232 @@ const FarmMap: React.FC<FarmMapProps> = ({
         }
     };
 
+    // Handler de clique nativo do MapLibre — funciona tanto para mouse quanto touch,
+    // já converte pixel→coordenada internamente, e não é afetado por overlays HTML.
+    const handleMapClick = useCallback((e: MapLayerMouseEvent) => {
+        // Passo 1: Guard Clause - Bloqueio de Clique por Modo de Desenho
+        // Se estivermos em modo de desenho, ignoramos cliques de seleção
+        if (isDrawingMode || !onTalhaoClick) return;
+
+        // queryRenderedFeatures na posição do clique com tolerância para touch
+        const tolerance = isMobile ? 12 : 5;
+        const bbox: [[number, number], [number, number]] = [
+            [e.point.x - tolerance, e.point.y - tolerance],
+            [e.point.x + tolerance, e.point.y + tolerance]
+        ];
+
+        const features = e.target.queryRenderedFeatures(bbox, {
+            layers: ['talhoes-fill']
+        });
+
+        if (features && features.length > 0) {
+            const feature = features[0];
+            const talhaoId = feature.properties?.id;
+            const talhao = talhoes.find(t => String(t.id) === String(talhaoId));
+            if (talhao) {
+                // Stop propagation — impede que o clique "vaze" para o mapa,
+                // mas não bloqueia o comportamento de pan/zoom nativo do mapa.
+                e.originalEvent.stopPropagation();
+                onTalhaoClick(talhao);
+            } else {
+                onTalhaoClick(null);
+            }
+        } else {
+            // Passo 2: Hit-Test de Precisão - Clicou num espaço vazio
+            onTalhaoClick(null);
+        }
+    }, [isDrawingMode, onTalhaoClick, talhoes, isMobile]);
+
+    // Cursor pointer ao passar sobre polígono (feedback visual de interatividade)
+    const handleMouseEnter = useCallback((_e: MapLayerMouseEvent) => {
+        if (!isDrawingMode) {
+            setCursor('pointer');
+        }
+    }, [isDrawingMode]);
+
+    const handleMouseLeave = useCallback((_e: MapLayerMouseEvent) => {
+        if (!isDrawingMode) {
+            setCursor(undefined);
+        }
+    }, [isDrawingMode]);
+
+    // Passo 3: Restauração de Cursor Segura
+    // Garante o reset robusto do cursor no canvas caso o mouse leave falhe
+    const { current: mapInstance } = useMap();
+    useEffect(() => {
+        if (!mapInstance) return;
+        const canvas = mapInstance.getCanvas();
+        if (!canvas) return;
+
+        if (isDrawingMode) {
+            setCursor('crosshair');
+            canvas.style.cursor = 'crosshair';
+        } else if (isDrawerOpen) {
+            // Quando abrimos o drawer, devemos limpar o cursor
+            setCursor(undefined);
+            canvas.style.cursor = '';
+        } else {
+            // Fallback seguro para estado normal
+            canvas.style.cursor = cursor || '';
+        }
+    }, [isDrawingMode, isDrawerOpen, mapInstance, cursor]);
+
     return (
-        <div ref={containerRef as any} className="relative w-full h-full z-0" style={{ touchAction: 'none', userSelect: 'none' }}>
-            <MapProvider>
-                <Map
-                    cursor={cursor}
-                    initialViewState={{
-                        longitude: -48.2772,
-                        latitude: -18.9186,
-                        zoom: 15
+        <Map
+            cursor={cursor}
+            initialViewState={{
+                longitude: -48.2772,
+                latitude: -18.9186,
+                zoom: 15
+            }}
+            style={{ width: '100%', height: '100%' }}
+            mapStyle={ESRI_SATELLITE_STYLE as any}
+            dragPan={!isDrawingMode}
+            touchZoomRotate={!isDrawingMode}
+            scrollZoom={!isDrawingMode}
+            boxZoom={!isDrawingMode}
+            dragRotate={!isDrawingMode}
+            doubleClickZoom={!isDrawingMode}
+            onClick={handleMapClick}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            interactiveLayerIds={['talhoes-fill']}
+        >
+            {/* Draw Mode Controller — dentro do contexto do Map, acessa useMap() */}
+            <DrawModeController
+                isDrawingMode={isDrawingMode}
+                drawInstance={drawInstance}
+                finishDrawingTrigger={finishDrawingTrigger}
+                trashDrawingTrigger={trashDrawingTrigger}
+                setCursor={setCursor}
+            />
+
+            {/* Conditional rendering of Draw Control */}
+            {isDrawingMode && (
+                <MapDrawControl
+                    position="top-left"
+                    displayControlsDefault={false}
+                    controls={{
+                        polygon: false,
+                        trash: false
                     }}
-                    style={{ width: '100%', height: '100%' }}
-                    mapStyle={ESRI_SATELLITE_STYLE as any}
-                    dragPan={!isDrawingMode}
-                    touchZoomRotate={!isDrawingMode}
-                    scrollZoom={!isDrawingMode}
-                    boxZoom={!isDrawingMode}
-                    dragRotate={!isDrawingMode}
-                    doubleClickZoom={!isDrawingMode}
+                    defaultMode="draw_polygon"
+                    getDrawInstance={setDrawInstance}
+                    onCreate={onDrawCreate}
+                    onUpdate={onDrawUpdate}
+                    onDelete={onDrawDelete}
+                    onModeChange={handleModeChange}
+                />
+            )}
+
+            <Source id="talhoes-source" type="geojson" data={geojsonData}>
+                <Layer
+                    id="talhoes-fill"
+                    type="fill"
+                    paint={{
+                        'fill-color': [
+                            'coalesce', 
+                            ['get', 'fillColor'], 
+                            ['get', 'color'], 
+                            '#3bb444'
+                        ],
+                        'fill-opacity': [
+                            'case',
+                            selectedTalhaoId ? ['==', ['get', 'id'], selectedTalhaoId] : false,
+                            0.45,
+                            0.18
+                        ]
+                    }}
+                />
+                <Layer
+                    id="talhoes-line"
+                    type="line"
+                    paint={{
+                        'line-color': [
+                            'coalesce', 
+                            ['get', 'borderColor'], 
+                            ['get', 'color'], 
+                            '#228b22'
+                        ],
+                        'line-width': [
+                            'case',
+                            selectedTalhaoId ? ['==', ['get', 'id'], selectedTalhaoId] : false,
+                            4,
+                            2
+                        ],
+                        'line-opacity': 1
+                    }}
+                />
+            </Source>
+
+            {/* RUBBER BAND & DRAG GUIDANCE (Emerald Green 60fps) */}
+            <Source id="dashed-line-source" type="geojson" data={{ type: 'FeatureCollection', features: [] }}>
+                <Layer
+                    id="dashed-line-layer"
+                    type="line"
+                    filter={['==', '$type', 'LineString']}
+                    paint={{
+                        'line-color': '#10b981',
+                        'line-width': 4,
+                        'line-dasharray': [2, 2],
+                        'line-opacity': 0.8
+                    }}
+                />
+                <Layer
+                    id="dashed-line-point-layer"
+                    type="circle"
+                    filter={['==', '$type', 'Point']}
+                    paint={{
+                        'circle-radius': 6,
+                        'circle-color': '#FFFFFF',
+                        'circle-stroke-color': '#10b981',
+                        'circle-stroke-width': 3,
+                        'circle-opacity': 1
+                    }}
+                />
+            </Source>
+
+            {centroids
+                .filter(c => c && selectedTalhaoId && String(c.id) === String(selectedTalhaoId))
+                .map(c => c && (
+                <Marker 
+                    key={c.id} 
+                    longitude={c.lng} 
+                    latitude={c.lat}
+                    anchor="center"
+                    style={{ pointerEvents: 'none' }}
                 >
-                    {/* PLAN G: Interaction Handler correctly placed inside context */}
-                    <MapInteractionHandler 
-                        containerRef={containerRef as React.RefObject<HTMLDivElement>}
-                        isMobile={isMobile}
-                        isDrawingMode={isDrawingMode}
-                        talhoes={talhoes}
-                        onTalhaoClick={onTalhaoClick}
-                        isDrawerOpen={isDrawerOpen}
-                    />
+                    <div 
+                        className="map-marker-pill pointer-events-none select-none animate-in fade-in zoom-in-95 duration-300" 
+                        style={{ 
+                            background: 'white', 
+                            border: '1px solid #e4e4e7', 
+                            borderRadius: '12px', 
+                            padding: '6px 12px', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '8px', 
+                            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15)',
+                            width: 'max-content'
+                        }}
+                    >
+                        <div style={{ 
+                            width: '8px', 
+                            height: '8px', 
+                            background: c.talhao.fillColor || c.talhao.cor || getCropColor(c.talhao.cultura), 
+                            borderRadius: '50%' 
+                        }} />
+                        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1.2' }}>
+                            <span style={{ fontWeight: 800, fontSize: 11, color: '#18181b', whiteSpace: 'nowrap' }}>{c.talhao.nome}</span>
+                            <span style={{ fontWeight: 600, fontSize: 10, color: '#71717a', whiteSpace: 'nowrap' }}>{c.talhao.cultura || 'Área Livre'}</span>
+                        </div>
+                    </div>
+                </Marker>
+            ))}
 
-                    {/* PLAN F Victory: Conditional rendering of Draw Control */}
-                    {isDrawingMode && (
-                        <MapDrawControl
-                            position="top-left"
-                            displayControlsDefault={false}
-                            controls={{
-                                polygon: false,
-                                trash: false
-                            }}
-                            defaultMode="draw_polygon"
-                            getDrawInstance={setDrawInstance}
-                            onCreate={onDrawCreate}
-                            onUpdate={onDrawUpdate}
-                            onDelete={onDrawDelete}
-                            onModeChange={handleModeChange}
-                        />
-                    )}
-
-                    <Source id="talhoes-source" type="geojson" data={geojsonData}>
-                        <Layer
-                            id="talhoes-fill"
-                            type="fill"
-                            paint={{
-                                'fill-color': [
-                                    'coalesce', 
-                                    ['get', 'fillColor'], 
-                                    ['get', 'color'], 
-                                    '#3bb444'
-                                ],
-                                'fill-opacity': [
-                                    'case',
-                                    selectedTalhaoId ? ['==', ['get', 'id'], selectedTalhaoId] : false,
-                                    0.45,
-                                    0.18
-                                ]
-                            }}
-                        />
-                        <Layer
-                            id="talhoes-line"
-                            type="line"
-                            paint={{
-                                'line-color': [
-                                    'coalesce', 
-                                    ['get', 'borderColor'], 
-                                    ['get', 'color'], 
-                                    '#228b22'
-                                ],
-                                'line-width': [
-                                    'case',
-                                    selectedTalhaoId ? ['==', ['get', 'id'], selectedTalhaoId] : false,
-                                    4,
-                                    2
-                                ],
-                                'line-opacity': 1
-                            }}
-                        />
-                    </Source>
-
-                    {/* RUBBER BAND & DRAG GUIDANCE (Emerald Green 60fps) */}
-                    <Source id="dashed-line-source" type="geojson" data={{ type: 'FeatureCollection', features: [] }}>
-                        <Layer
-                            id="dashed-line-layer"
-                            type="line"
-                            filter={['==', '$type', 'LineString']}
-                            paint={{
-                                'line-color': '#10b981',
-                                'line-width': 4,
-                                'line-dasharray': [2, 2],
-                                'line-opacity': 0.8
-                            }}
-                        />
-                        <Layer
-                            id="dashed-line-point-layer"
-                            type="circle"
-                            filter={['==', '$type', 'Point']}
-                            paint={{
-                                'circle-radius': 6,
-                                'circle-color': '#FFFFFF',
-                                'circle-stroke-color': '#10b981',
-                                'circle-stroke-width': 3,
-                                'circle-opacity': 1
-                            }}
-                        />
-                    </Source>
-
-                    {centroids
-                        .filter(c => c && selectedTalhaoId && String(c.id) === String(selectedTalhaoId))
-                        .map(c => c && (
-                        <Marker 
-                            key={c.id} 
-                            longitude={c.lng} 
-                            latitude={c.lat}
-                            anchor="center"
-                            style={{ pointerEvents: 'none' }}
-                        >
-                            <div 
-                                className="map-marker-pill pointer-events-none select-none animate-in fade-in zoom-in-95 duration-300" 
-                                style={{ 
-                                    background: 'white', 
-                                    border: '1px solid #e4e4e7', 
-                                    borderRadius: '12px', 
-                                    padding: '6px 12px', 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    gap: '8px', 
-                                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15)',
-                                    width: 'max-content'
-                                }}
-                            >
-                                <div style={{ 
-                                    width: '8px', 
-                                    height: '8px', 
-                                    background: c.talhao.fillColor || c.talhao.cor || getCropColor(c.talhao.cultura), 
-                                    borderRadius: '50%' 
-                                }} />
-                                <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1.2' }}>
-                                    <span style={{ fontWeight: 800, fontSize: 11, color: '#18181b', whiteSpace: 'nowrap' }}>{c.talhao.nome}</span>
-                                    <span style={{ fontWeight: 600, fontSize: 10, color: '#71717a', whiteSpace: 'nowrap' }}>{c.talhao.cultura || 'Área Livre'}</span>
-                                </div>
-                            </div>
-                        </Marker>
-                    ))}
-
-                    <MapController talhoes={talhoes} focusTarget={focusTarget} isDrawerOpen={isDrawerOpen} />
-                    <NavigationControl position="bottom-left" />
-                </Map>
-            </MapProvider>
-        </div>
+            <MapController talhoes={talhoes} focusTarget={focusTarget} isDrawerOpen={isDrawerOpen} />
+            <NavigationControl position="bottom-left" />
+        </Map>
     );
 };
 
