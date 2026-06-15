@@ -132,6 +132,12 @@ type LogConsumoInsert struct {
 	Meta             map[string]interface{} `json:"meta,omitempty"`
 }
 
+type MessageInsert struct {
+	Phone   string `json:"phone"`
+	Content string `json:"content"`
+	Role    string `json:"role"`
+}
+
 type IngestionJob struct {
 	ID              string `json:"id,omitempty"`
 	PmoID           int64  `json:"pmo_id,omitempty"`
@@ -785,6 +791,17 @@ func (c *Client) InsertLogConsumo(logData LogConsumoInsert) error {
 		return err
 	}
 	_, err = c.doRequest(http.MethodPost, reqURL, payload)
+	return err
+}
+
+// InsertMessage saves a message interaction to the messages table.
+func (c *Client) InsertMessage(ctx context.Context, msg MessageInsert) error {
+	reqURL := fmt.Sprintf("%s/rest/v1/messages", c.config.URL)
+	payload, err := json.Marshal(msg)
+	if err != nil {
+		return err
+	}
+	_, err = c.doRequestWithContext(ctx, http.MethodPost, reqURL, payload)
 	return err
 }
 
@@ -1444,6 +1461,42 @@ func (c *Client) doRequest(method, url string, payload []byte, ignoreMinimal ...
 		if len(ignoreMinimal) == 0 || !ignoreMinimal[0] {
 			req.Header.Set("Prefer", "return=minimal")
 		}
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("supabase API error (%d): %s", resp.StatusCode, string(body))
+	}
+
+	return body, nil
+}
+
+func (c *Client) doRequestWithContext(ctx context.Context, method, url string, payload []byte) ([]byte, error) {
+	var bodyReader io.Reader
+	if payload != nil {
+		bodyReader = bytes.NewReader(payload)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, method, url, bodyReader)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("apikey", c.config.Key)
+	req.Header.Set("Authorization", "Bearer "+c.config.Key)
+	if payload != nil {
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Prefer", "return=minimal")
 	}
 
 	resp, err := c.httpClient.Do(req)

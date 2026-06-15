@@ -350,10 +350,10 @@ func marshalArgs(args map[string]interface{}) string {
 type Intent string
 
 const (
-	IntentRAG               Intent = "RAG"
-	IntentDatabase          Intent = "DATABASE"
-	IntentFinance           Intent = "REGISTRO_FINANCEIRO"
-	IntentChat              Intent = "CHAT"
+	IntentRAG      Intent = "RAG"
+	IntentDatabase Intent = "DATABASE"
+	IntentFinance  Intent = "REGISTRO_FINANCEIRO"
+	IntentChat     Intent = "CHAT"
 )
 
 // Alocacao represents a distribution of values to specific areas (talhões).
@@ -403,9 +403,9 @@ type AcaoEstruturada struct {
 // UnifiedIntentResult combines classification and multi-entity extraction.
 // This is the SSOT (Single Source of Truth) for LLM structured responses.
 type UnifiedIntentResult struct {
-	Intents    []Intent  `json:"intents" jsonschema:"required,minItems=1,enum=RAG,enum=DATABASE,enum=CHAT,enum=REGISTRO_FINANCEIRO" validate:"required,min=1,dive,oneof=RAG DATABASE CHAT REGISTRO_FINANCEIRO"`
-	Confidence float64 `json:"confidence" jsonschema:"required,minimum=0,maximum=1" validate:"required,gte=0,lte=1"`
-	Reasoning  string  `json:"reasoning" jsonschema:"required,description=Explicação técnica da decisão sobre a classificação e a segmentação das entidades" validate:"required"`
+	Intents    []Intent `json:"intents" jsonschema:"required,minItems=1,enum=RAG,enum=DATABASE,enum=CHAT,enum=REGISTRO_FINANCEIRO" validate:"required,min=1,dive,oneof=RAG DATABASE CHAT REGISTRO_FINANCEIRO"`
+	Confidence float64  `json:"confidence" jsonschema:"required,minimum=0,maximum=1" validate:"required,gte=0,lte=1"`
+	Reasoning  string   `json:"reasoning" jsonschema:"required,description=Explicação técnica da decisão sobre a classificação e a segmentação das entidades" validate:"required"`
 
 	// Multi-Entity Extraction
 	Entities []AcaoEstruturada `json:"entidades" jsonschema:"minItems=1,description=Lista de ações ou entidades independentes detectadas na mensagem. Cada entrada deve representar uma operação completa."`

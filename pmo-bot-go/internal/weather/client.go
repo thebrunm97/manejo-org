@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -64,13 +65,13 @@ type OpenMeteoResponse struct {
 		WeatherCode      int     `json:"weather_code"`
 	} `json:"current"`
 	Daily struct {
-		Time                       []string  `json:"time"`
-		Temperature2mMax           []float64 `json:"temperature_2m_max"`
-		Temperature2mMin           []float64 `json:"temperature_2m_min"`
-		PrecipitationProbability   []int     `json:"precipitation_probability_max"`
-		WeatherCode                []int     `json:"weather_code"`
-		Et0FaoEvapotranspiration   []float64 `json:"et0_fao_evapotranspiration"`
-		UvIndexMax                 []float64 `json:"uv_index_max"`
+		Time                     []string  `json:"time"`
+		Temperature2mMax         []float64 `json:"temperature_2m_max"`
+		Temperature2mMin         []float64 `json:"temperature_2m_min"`
+		PrecipitationProbability []int     `json:"precipitation_probability_max"`
+		WeatherCode              []int     `json:"weather_code"`
+		Et0FaoEvapotranspiration []float64 `json:"et0_fao_evapotranspiration"`
+		UvIndexMax               []float64 `json:"uv_index_max"`
 	} `json:"daily"`
 }
 
@@ -99,12 +100,27 @@ func fetchWeatherWithRetry(ctx context.Context, location string) (*WeatherData, 
 	const maxRetries = 3
 	const baseDelay = 2 * time.Second
 
+	var lat, lng string
 	parts := strings.Split(location, ",")
-	if len(parts) < 2 {
-		return nil, fmt.Errorf("localização inválida para Open-Meteo: %s", location)
+
+	isCoord := false
+	if len(parts) == 2 {
+		_, errLat := strconv.ParseFloat(strings.TrimSpace(parts[0]), 64)
+		_, errLng := strconv.ParseFloat(strings.TrimSpace(parts[1]), 64)
+		if errLat == nil && errLng == nil {
+			isCoord = true
+			lat = strings.TrimSpace(parts[0])
+			lng = strings.TrimSpace(parts[1])
+		}
 	}
-	lat := strings.TrimSpace(parts[0])
-	lng := strings.TrimSpace(parts[1])
+
+	if !isCoord {
+		var err error
+		lat, lng, err = geocodeOpenMeteo(ctx, location)
+		if err != nil {
+			return nil, fmt.Errorf("falha no geocoding para '%s': %w", location, err)
+		}
+	}
 
 	var lastErr error
 	for attempt := 1; attempt <= maxRetries; attempt++ {
@@ -125,6 +141,44 @@ func fetchWeatherWithRetry(ctx context.Context, location string) (*WeatherData, 
 		}
 	}
 	return nil, lastErr
+}
+
+func geocodeOpenMeteo(ctx context.Context, query string) (string, string, error) {
+	parts := strings.Split(query, ",")
+	cityName := strings.TrimSpace(parts[0])
+
+	apiURL := fmt.Sprintf("https://geocoding-api.open-meteo.com/v1/search?name=%s&count=1&language=pt", url.QueryEscape(cityName))
+	req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
+	if err != nil {
+		return "", "", err
+	}
+	
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", "", err
+	}
+	defer resp.Body.Close()
+	
+	if resp.StatusCode >= 400 {
+		return "", "", fmt.Errorf("geocoding status %d", resp.StatusCode)
+	}
+	
+	var res struct {
+		Results []struct {
+			Latitude  float64 `json:"latitude"`
+			Longitude float64 `json:"longitude"`
+		} `json:"results"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		return "", "", err
+	}
+	
+	if len(res.Results) == 0 {
+		return "", "", fmt.Errorf("cidade não encontrada no geocoding")
+	}
+	
+	return fmt.Sprintf("%f", res.Results[0].Latitude), fmt.Sprintf("%f", res.Results[0].Longitude), nil
 }
 
 func doFetchOpenMeteo(ctx context.Context, lat, lng string) (*WeatherData, error) {
