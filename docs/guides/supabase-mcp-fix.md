@@ -36,7 +36,7 @@ $json = @'
         "development,docs,account,database"
       ],
       "env": {
-        "SUPABASE_ACCESS_TOKEN": "sbp_7931894c6914cd810a92536eefd28a995c0b4522"
+        "SUPABASE_ACCESS_TOKEN": "<SEU_TOKEN_AQUI>"
       }
     }
   }
@@ -62,7 +62,7 @@ Se o VS Code também perder a referência, verifique se o arquivo `.vscode/mcp.j
         "development,docs,account,database"
       ],
       "env": {
-        "SUPABASE_ACCESS_TOKEN": "sbp_7931894c6914cd810a92536eefd28a995c0b4522"
+        "SUPABASE_ACCESS_TOKEN": "<SEU_TOKEN_AQUI>"
       }
     }
   }
@@ -79,4 +79,4 @@ Se o VS Code também perder a referência, verifique se o arquivo `.vscode/mcp.j
 ---
 
 > [!WARNING]
-> **Sobre o Token de Acesso:** O token utilizado (`sbp_7931894c...`) foi gerado a partir do seu dashboard. Se ele for revogado na console do Supabase, você precisará gerar um novo token e atualizar a variável `SUPABASE_ACCESS_TOKEN` no comando do **Passo 1**.
+> **Sobre o Token de Acesso:** O token utilizado deve ser gerado a partir do seu dashboard. Se ele for revogado na console do Supabase, você precisará gerar um novo token e atualizar a variável `SUPABASE_ACCESS_TOKEN` no comando do **Passo 1**.
