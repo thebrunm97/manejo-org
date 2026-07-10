@@ -88,13 +88,14 @@ O motor principal de orquestração localizado em `pmo-bot-go/`.
 - **Arquitetura:** Orquestrador principal (`fsm.go`) com Handlers modulares (Manejo, Financeiro, Limpeza).
 - **Entry point:** `cmd/server/main.go`
 - **Framework:** Gin (HTTP)
-- **LoopGuard:** Middleware de proteção contra recursão infinita em tool calls.
+- **Segurança (Guardrails):** Middlewares de LoopGuard e defesas "Deterministic Guardrails" (Fail-safes da FSM) para proteção máxima contra alucinações de LLM e loops infinitos.
 - **Infra:** Multi-stage Docker build resultando em imagens de apenas ~20MB.
 
 ### 5.2 Frontend PWA
 Interface de gestão moderna localizada em `pmo-frontend/`.
 - **Stack:** React 18+ com Vite.
-- **Mapas:** Integração nativa com **MapLibre GL JS + Esri World Imagery** para desenho de talhões (WebGL).
+- **Mapas (Zero Re-renders):** Integração com **MapLibre GL JS** manipulando `feature-state` diretamente na GPU para performance extrema (evitando re-renders no React). Conta com Guard Clauses no `MapController` para proteção contra coordenadas corrompidas (NaN).
+- **UI/UX:** Componentes estilizados com micro-alinhamentos perfeitos na linha de base (`flex items-baseline`) para precisão tipográfica em Dashboards e Perfis.
 - **Offline-first:** Sincronização via `useSyncEngine` com persistência em IndexedDB.
 - **Resiliência:** Backoff exponencial na fila de sincronização para garantir integridade dos dados.
 
@@ -125,9 +126,10 @@ Transparência total do campo à mesa.
 - **QR Code Dinâmico:** Geração de etiquetas de rastreabilidade para produtos finais.
 - **Página Pública:** Interface mobile-first onde o consumidor consulta a origem, manejo e certificações do lote em tempo real.
 
-### 5.8 Inteligência Artificial (Orquestração)
+### 5.8 Inteligência Artificial (Orquestração & Tooling)
 O "cérebro" do ManejoORG.
 - **Engenheiro Agrônomo Digital:** O PMO-Bot agora integra RAG (Retrieval-Augmented Generation) com Function Calling para realizar recomendações técnicas e cálculos complexos de adubação (NPK).
+- **MCP (Model Context Protocol):** Interação segura de Agentes com o banco de dados via MCP, utilizando transporte `stdio` isolado (ex: `supabase-local`) e injetando tokens localmente para prevenir sobrescritas de sincronização na nuvem.
 - **Especialista Cooperativo:** Agente dedicado a mediar negociações no Mural de Demandas e facilitar a logística coletiva.
 
 ---
