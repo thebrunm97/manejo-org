@@ -19,6 +19,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
+	"github.com/thebrunm97/pmo-bot-go/internal/prompt"
 	"github.com/thebrunm97/pmo-bot-go/internal/queue"
 	"github.com/thebrunm97/pmo-bot-go/internal/state"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
@@ -40,15 +41,10 @@ func main() {
 	// --- Centralized Configuration ---
 	cfg := config.LoadConfig()
 
-	// --- Groq client ---
+	// --- Groq client (always needed for audio transcription / Whisper) ---
 	groqKey := os.Getenv("GROQ_API_KEY")
 	if groqKey == "" {
 		log.Fatal("❌ GROQ_API_KEY não definida")
-	}
-
-	geminiKey := os.Getenv("GEMINI_API_KEY")
-	if geminiKey == "" {
-		log.Fatal("❌ GEMINI_API_KEY não definida")
 	}
 
 	port := os.Getenv("PORT")
@@ -67,37 +63,69 @@ func main() {
 	}
 	log.Println("✅ Cliente Groq inicializado")
 
-	// --- Initialize Gemini client ---
-	geminiModel := os.Getenv("GEMINI_MODEL")
-	if geminiModel == "" {
-		geminiModel = "gemini-2.0-flash"
-	}
-	geminiVersion := os.Getenv("GEMINI_API_VERSION")
-	if geminiVersion == "" {
-		geminiVersion = "v1"
-	}
-	geminiFallback := os.Getenv("GEMINI_FALLBACK_MODEL")
-	if geminiFallback == "" {
-		geminiFallback = "gemini-1.5-flash"
+	// --- LLM Provider Factory (Plug & Play) ---
+	// ACTIVE_LLM_PROVIDER controls which adapter is active:
+	//   "gemini"      (default) — Google GenAI SDK + OpenRouter fallback
+	//   "openrouter"             — OpenRouter via go-openai (any model)
+	//   "groq"                   — Groq via go-openai
+	//   "openai"                 — OpenAI via go-openai
+	//
+	// All downstream code receives the llm.LLMProvider interface — it never
+	// knows (or cares) which concrete adapter is running.
+	activekind, factoryCfg := llm.NewProviderFromEnv()
+
+	// Build prompt config once here: main.go is the ONLY package that can
+	// legally import both internal/llm and internal/prompt without a cycle.
+	promptCfg := llm.PromptConfig{
+		RouterPrompt:       prompt.RouterSystemPrompt(),
+		VisionPrompt:       prompt.VisionPrompt(),
+		MetaRAGJudgePrompt: prompt.MetaRAGJudgePrompt(),
 	}
 
-	geminiClient, err := gemini.NewClient(gemini.Config{
-		APIKey:           geminiKey,
-		OpenRouterAPIKey: cfg.OpenRouterKey,
-		Model:            geminiModel,
-		OpenRouterModel:  cfg.OpenRouterModel,
-		FallbackModel:    geminiFallback,
-		APIVersion:       geminiVersion,
-	})
-	if err != nil {
-		log.Fatalf("❌ Falha ao criar cliente Gemini: %v", err)
-	}
-	log.Printf("✅ Cliente Gemini inicializado (modelo: %s, versão: %s)", geminiModel, geminiVersion)
+	var llmProvider llm.LLMProvider
 
-	// --- LLM Provider (Agnostic Interface) ---
-	// The gemini.Client satisfies llm.LLMProvider. All downstream code receives
-	// the interface, not the concrete type. To swap providers, change this line.
-	var llmProvider llm.LLMProvider = geminiClient
+	if activekind == llm.ProviderGemini {
+		// ── Gemini path (default) ──────────────────────────────────────────────
+		geminiKey := os.Getenv("GEMINI_API_KEY")
+		if geminiKey == "" {
+			log.Fatal("❌ GEMINI_API_KEY não definida (required when ACTIVE_LLM_PROVIDER=gemini)")
+		}
+		geminiModel := factoryCfg.GeminiModel
+		if geminiModel == "" {
+			geminiModel = "gemini-2.0-flash"
+		}
+		geminiVersion := os.Getenv("GEMINI_API_VERSION")
+		if geminiVersion == "" {
+			geminiVersion = "v1"
+		}
+		geminiFallback := factoryCfg.GeminiFallback
+		if geminiFallback == "" {
+			geminiFallback = "gemini-1.5-flash"
+		}
+		geminiClient, gemErr := gemini.NewClient(gemini.Config{
+			APIKey:           geminiKey,
+			OpenRouterAPIKey: cfg.OpenRouterKey,
+			Model:            geminiModel,
+			OpenRouterModel:  cfg.OpenRouterModel,
+			FallbackModel:    geminiFallback,
+			APIVersion:       geminiVersion,
+		})
+		if gemErr != nil {
+			log.Fatalf("❌ Falha ao criar cliente Gemini: %v", gemErr)
+		}
+		log.Printf("✅ LLM Provider: Gemini (modelo: %s, versão: %s)", geminiModel, geminiVersion)
+		llmProvider = geminiClient
+	} else {
+		// ── OpenAI-compatible path (openrouter / groq / openai) ────────────────
+		factoryCfg2 := factoryCfg
+		factoryCfg2.GroqAPIKey = groqKey // reuse the already-validated Groq key
+		oadapter, oaErr := llm.NewOpenAICompatibleProvider(factoryCfg2, promptCfg)
+		if oaErr != nil {
+			log.Fatalf("❌ Falha ao criar LLM provider (%s): %v", activekind, oaErr)
+		}
+		log.Printf("✅ LLM Provider: %s (modelo: %s)", activekind, oadapter.ModelName())
+		llmProvider = oadapter
+	}
 
 	// --- Initialize Supabase client ---
 	sbURL := os.Getenv("SUPABASE_URL")
