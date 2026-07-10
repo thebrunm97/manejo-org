@@ -6,7 +6,9 @@ package prompt
 
 import (
 	_ "embed"
+	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -27,6 +29,31 @@ var systemPromptAgronomistVision string
 
 //go:embed prompts/meta_rag_judge.txt
 var systemPromptMetaRAGJudge string
+
+// geminiPromptsJSON holds the contents of prompts/gemini.json, embedded
+// at compile time so the binary is fully self-contained (no runtime file reads).
+//
+// SOURCE OF TRUTH for editing: configs/prompts/gemini.json (project root).
+// The file at prompts/gemini.json is a compile-time copy kept in sync.
+//
+//go:embed prompts/gemini.json
+var geminiPromptsJSON []byte
+
+// geminiPromptsConfig is the Go representation of gemini.json.
+// It is populated once at package init and is safe for concurrent reads.
+type geminiPromptsConfig struct {
+	RouterPrompt string `json:"router_prompt"`
+}
+
+// geminiCfg holds the parsed prompt configuration. A zero-value is safe:
+// RouterSystemPrompt() falls back to a minimal inline template on parse error.
+var geminiCfg geminiPromptsConfig
+
+func init() {
+	if err := json.Unmarshal(geminiPromptsJSON, &geminiCfg); err != nil {
+		log.Printf("[prompt] WARNING: failed to parse gemini.json — using inline fallback: %v", err)
+	}
+}
 
 // VisionPrompt returns the system instruction for agronomic image analysis.
 func VisionPrompt() string {
@@ -73,24 +100,15 @@ func ForIntent(intent llm.Intent, modality string, temProducaoParalela bool) str
 }
 
 // RouterSystemPrompt returns the system instruction for intent classification.
+// The template body is loaded from configs/prompts/gemini.json (key: "router_prompt")
+// so it can be audited and tuned without recompiling the binary — only the
+// {{CURRENT_DATE}} placeholder is injected at call time.
 func RouterSystemPrompt() string {
-	return fmt.Sprintf(`Você é um especialista em processamento de linguagem natural para agricultura orgânica.
-Sua tarefa é tripla:
-1. CLASSIFICAR a intenção do usuário (Intent).
-2. EXTRAIR múltiplas informações estruturadas (NER) se a mensagem contiver registros de atividade.
-3. FORNECER raciocínio técnico sobre a classificação e a segmentação das entidades.
-
-Intents disponíveis:
-- "RAG": DÚVIDA TÉCNICA sobre agricultura orgânica, normas (IN 46), pragas, adubação, ou CLIMA/PREVISÃO DO TEMPO. NÃO envolve criar registros.
-- "DATABASE": O usuário quer REGISTRAR atividades agrícolas (plantio, colheita, venda, limpeza, compostagem) ou CONSULTAR dados da fazenda.
-- "REGISTRO_FINANCEIRO": O usuário quer registrar despesas, custos ou compras financeiras puras (ex: gastou dinheiro ou registrou compra de insumo com valor monetário).
-- "CHAT": Saudação, agradecimento ou conversa genérica. (Perguntas sobre clima NÃO são CHAT, são RAG).
-
-Regras de Extração (para DATABASE e REGISTRO_FINANCEIRO):
-- Use o array "entidades" para listar todas as ações detectadas.
-- SEPARE frases complexas em múltiplos objetos. Ex: "Apliquei 10L no Talhão A e 5L no Talhão B" deve gerar DOIS objetos no array "entidades".
-- Cada objeto deve conter: intencao (registro, limpeza, financeiro, etc), produto, quantidade, unidade, localizacao e data (YYYY-MM-DD).
-- Se faltar informação crítica para uma ação (ex: sem quantidade), marque 'necessita_mais_info: true' e formule uma 'pergunta_ao_usuario' específica para essa ação.
-
-Data atual do sistema: %s`, time.Now().Format("2006-01-02"))
+	template := geminiCfg.RouterPrompt
+	if template == "" {
+		// Inline fallback — only reached if gemini.json failed to parse at init.
+		template = "Você é um classificador de intenções agrícolas. Data atual do sistema: {{CURRENT_DATE}}"
+		log.Printf("[prompt] WARNING: RouterSystemPrompt using inline fallback — check gemini.json")
+	}
+	return strings.ReplaceAll(template, "{{CURRENT_DATE}}", time.Now().Format("2006-01-02"))
 }
