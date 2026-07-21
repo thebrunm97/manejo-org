@@ -6,6 +6,29 @@ import { useNavigate } from 'react-router-dom';
 import { HarvestSummary } from '../../services/dashboardService';
 import { formatDateBR } from '../../utils/formatters';
 
+const formatUnit = (unit: string | undefined): string => {
+  if (!unit) return '';
+  const u = unit.trim().toUpperCase();
+  switch (u) {
+    case 'UNIDADE':
+    case 'UNIDADES':
+      return 'UNID';
+    case 'QUILOGRAMA':
+    case 'QUILOGRAMAS':
+    case 'QUILO':
+    case 'QUILOS':
+      return 'KG';
+    case 'LITRO':
+    case 'LITROS':
+      return 'L';
+    case 'TONELADA':
+    case 'TONELADAS':
+      return 'TON';
+    default:
+      return u;
+  }
+};
+
 // --- Activity type → visual config ---
 const getActivityConfig = (tipo: string | undefined) => {
   switch ((tipo || '').toLowerCase()) {
@@ -48,7 +71,7 @@ const HarvestDashboard: React.FC<HarvestDashboardProps> = ({ harvestStats, recen
           Object.entries(harvestStats).map(([key, dados]) => (
             <div
               key={key}
-              className="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between items-start group"
+              className="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col items-start group min-h-48"
             >
               <div
                 className="w-12 h-12 rounded-2xl mb-4 flex items-center justify-center transition-transform group-hover:scale-110"
@@ -56,14 +79,16 @@ const HarvestDashboard: React.FC<HarvestDashboardProps> = ({ harvestStats, recen
               >
                 <Scale className="w-6 h-6" />
               </div>
-              <div className="w-full">
-                <p className="text-3xl font-black text-slate-900 tracking-tight leading-none mb-1">
-                  {dados.total.toLocaleString('pt-BR')}
-                  <span className="text-sm font-black text-slate-600 ml-1">
-                    {dados.unidade}
+              <div className="w-full min-w-0">
+                <div className="flex items-baseline gap-1.5 mb-1 flex-nowrap min-w-0">
+                  <span className="text-3xl font-black text-slate-900 tracking-tight leading-none shrink-0">
+                    {dados.total.toLocaleString('pt-BR')}
                   </span>
-                </p>
-                <p className="text-sm font-bold text-slate-700 capitalize whitespace-nowrap overflow-hidden text-ellipsis">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wide leading-none truncate min-w-0">
+                    {formatUnit(dados.unidade)}
+                  </span>
+                </div>
+                <p className="text-sm font-bold text-slate-700 capitalize line-clamp-2 break-words">
                   {dados.produto.toLowerCase()}
                 </p>
               </div>
@@ -81,7 +106,7 @@ const HarvestDashboard: React.FC<HarvestDashboardProps> = ({ harvestStats, recen
             </h6>
             <button
               type="button"
-              className="text-sm font-bold text-emerald-600 hover:text-emerald-700 px-2 py-1 rounded transition-colors"
+              className="text-sm font-bold text-emerald-600 hover:text-emerald-700 px-2 py-1 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
               onClick={() => navigate('/caderno')}
             >
               Ver tudo
@@ -92,10 +117,11 @@ const HarvestDashboard: React.FC<HarvestDashboardProps> = ({ harvestStats, recen
             {(recentActivity || []).slice(0, 5).map((row) => {
               const cfg = getActivityConfig(row.tipo_atividade || row.tipo);
               return (
-                <div
+                <button
                   key={row.id}
+                  type="button"
                   onClick={() => onEditRecord?.(row)}
-                  className="p-3 lg:p-4 rounded-2xl border border-transparent hover:border-slate-100 flex items-center gap-4 transition-all hover:bg-slate-50 hover:shadow-sm cursor-pointer group"
+                  className="p-3 lg:p-4 rounded-2xl border border-transparent hover:border-slate-100 flex items-center gap-4 transition-all hover:bg-slate-50 hover:shadow-sm cursor-pointer group w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
                 >
                   <div
                     className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105"
@@ -120,7 +146,7 @@ const HarvestDashboard: React.FC<HarvestDashboardProps> = ({ harvestStats, recen
                       {formatDateBR(row.data_registro, { day: '2-digit', month: 'short' }).replace('.', '')}
                     </span>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>

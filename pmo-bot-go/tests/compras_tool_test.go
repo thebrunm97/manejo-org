@@ -27,8 +27,8 @@ func TestComprasArguments(t *testing.T) {
 	if args["fornecedor"] != "Agro B" {
 		t.Errorf("expected fornecedor = Agro B")
 	}
-    
-    if args["quantidade_valor"].(float64) != 10 {
+
+	if args["quantidade_valor"].(float64) != 10 {
 		t.Errorf("expected quantidade_valor = 10")
 	}
 }

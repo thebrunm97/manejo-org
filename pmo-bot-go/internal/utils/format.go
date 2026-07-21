@@ -6,7 +6,7 @@ import "strings"
 func SanitizeForWhatsApp(text string) string {
 	// Convert bold ** or __ to *
 	text = strings.ReplaceAll(text, "**", "*")
-	// Remove headers ### 
+	// Remove headers ###
 	text = strings.ReplaceAll(text, "### ", "")
 	text = strings.ReplaceAll(text, "## ", "")
 	return text

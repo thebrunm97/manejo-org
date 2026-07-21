@@ -2,8 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { Leaf, MapPin, User, Calendar, ShieldCheck, Box } from 'lucide-react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 interface TraceabilityData {
     produto: string;
@@ -67,9 +65,9 @@ const PublicTraceabilityPage: React.FC = () => {
         );
     }
 
-    // Format date beautifully
+    // Format date beautifully using native Intl
     const formattedDate = data.data_operacao 
-        ? format(new Date(data.data_operacao), "dd 'de' MMMM, yyyy", { locale: ptBR })
+        ? new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(data.data_operacao))
         : 'Data não informada';
 
     return (

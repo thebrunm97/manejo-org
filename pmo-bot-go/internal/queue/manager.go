@@ -100,11 +100,11 @@ func (m *Manager) Enqueue(ctx context.Context, msg ports.IncomingMessage) error 
 	}
 
 	record := map[string]interface{}{
-		"msg_id":       msg.ID,
-		"from_phone":   msg.From,
-		"raw_payload":  json.RawMessage(rawPayload),
+		"msg_id":        msg.ID,
+		"from_phone":    msg.From,
+		"raw_payload":   json.RawMessage(rawPayload),
 		"respond_audio": msg.IsAudio,
-		"status":       "pending",
+		"status":        "pending",
 	}
 
 	payload, err := json.Marshal(record)

@@ -1,0 +1,13 @@
+# List of strictly prohibited inputs for Organic Management
+
+proibidos:
+  - "Glifosato"
+  - "Paraquat"
+  - "2,4-D"
+  - "Clorpirifós"
+  - "Ureia sintética"
+  - "NPK químico (ex: 10-10-10, 4-14-8 formulações químicas)"
+  
+substitutos_sugeridos:
+  - NPK químico: "Composto orgânico, Bokashi, Pó de rocha"
+  - Glifosato: "Manejo mecânico, roçada, cobertura morta"

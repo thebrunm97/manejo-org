@@ -20,6 +20,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/llm/schema"
 	"github.com/thebrunm97/pmo-bot-go/internal/prompt"
+	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 )
 
 // Compile-time check: *Client must satisfy llm.LLMProvider.
@@ -37,9 +38,9 @@ type Config struct {
 
 // Client wraps communication with Gemini using the official SDK
 type Client struct {
-	Config               Config
-	Client               *genai.Client
-	OpenAI               *openai.Client
+	Config              Config
+	Client              *genai.Client
+	OpenAI              *openai.Client
 	OpenRouterTransport *openRouterTransport
 }
 
@@ -91,7 +92,7 @@ func NewClient(cfg Config) (*Client, error) {
 	if cfg.OpenRouterAPIKey != "" {
 		oaCfg := openai.DefaultConfig(cfg.OpenRouterAPIKey)
 		oaCfg.BaseURL = "https://openrouter.ai/api/v1"
-		
+
 		// Custom Transport para garantir headers corretos na OpenRouter
 		transport := &openRouterTransport{
 			apiKey: cfg.OpenRouterAPIKey,
@@ -100,7 +101,7 @@ func NewClient(cfg Config) (*Client, error) {
 			Transport: transport,
 			Timeout:   60 * time.Second,
 		}
-		
+
 		c.OpenAI = openai.NewClientWithConfig(oaCfg)
 		c.OpenRouterTransport = transport
 		log.Printf("📡 [OpenRouter] Cliente OpenRouter inicializado (%s).", cfg.OpenRouterModel)
@@ -138,7 +139,7 @@ func (t *openRouterTransport) RoundTrip(req *http.Request) (*http.Response, erro
 				t.mu.RLock()
 				fmtReq := t.responseFormat
 				t.mu.RUnlock()
-				
+
 				if fmtReq != nil {
 					bodyMap["response_format"] = fmtReq
 				}
@@ -490,6 +491,7 @@ func (c *Client) DescribeAgronomicImage(ctx context.Context, imageBytes []byte, 
 // It converts agnostic history and tools to the OpenAI format before calling and returns an agnostic response.
 // Se agnosticSchema for fornecido, ele será injetado como response_format no payload.
 func (c *Client) CallOpenRouter(ctx context.Context, sysInst string, history []llm.MensagemAgnostica, agnosticTools []llm.FerramentaAgnostica, agnosticSchema map[string]interface{}) (llm.RespostaAgnostica, error) {
+	defer utils.TraceLatency("OpenRouter API", time.Now())
 	if c.OpenAI == nil {
 		return llm.RespostaAgnostica{}, fmt.Errorf("OpenRouter client not initialized (check API Key)")
 	}
@@ -499,7 +501,7 @@ func (c *Client) CallOpenRouter(ctx context.Context, sysInst string, history []l
 		c.OpenRouterTransport.mu.Lock()
 		c.OpenRouterTransport.responseFormat = agnosticSchema
 		c.OpenRouterTransport.mu.Unlock()
-		
+
 		defer func() {
 			c.OpenRouterTransport.mu.Lock()
 			c.OpenRouterTransport.responseFormat = nil
@@ -567,6 +569,7 @@ func (c *Client) CallOpenRouter(ctx context.Context, sysInst string, history []l
 // CallGoogle executes a completion request via Google GenAI SDK.
 // It converts agnostic history and tools to the Google format and returns an agnostic response.
 func (c *Client) CallGoogle(ctx context.Context, sysInst string, history []llm.MensagemAgnostica, agnosticTools []llm.FerramentaAgnostica, agnosticSchema *genai.Schema) (llm.RespostaAgnostica, error) {
+	defer utils.TraceLatency("Google Gemini API", time.Now())
 	modelName := c.Config.Model
 	var tools []*genai.Tool
 	for _, f := range agnosticTools {

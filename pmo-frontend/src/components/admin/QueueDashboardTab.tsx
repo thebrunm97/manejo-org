@@ -10,7 +10,6 @@ import {
   AlertCircle, 
   Timer,
   Loader2,
-  Phone,
   Search,
   Activity
 } from 'lucide-react';

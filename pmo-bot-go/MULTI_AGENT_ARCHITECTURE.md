@@ -459,5 +459,28 @@ if err == nil && historyManager != nil {
 
 ---
 
+## Fase 5: Cognitive Depth & Proactivity (Hermes-inspired)
+
+### 5.1 — Memória Persistente (Three-Tier Memory)
+
+Inspirado no Hermes Agent, implementaremos uma memória de longo prazo vetorial no Supabase (`@mcp:supabase-local:`) para manter um perfil contínuo da fazenda e das necessidades do produtor. Isso evitará que o usuário tenha que repetir contexto entre diferentes sessões do WhatsApp.
+
+**Tabela `user_memory_profiles`:**
+- Armazenará fatos processados a partir das conversas (ex: "Transição orgânica iniciada em 2025", "Solo com deficiência de boro").
+- Campo `embedding` para busca semântica via `pgvector`.
+- O bot fará um RAG neste perfil antes de consultar a base de cartilhas.
+
+### 5.2 — Automação Proativa (Cron Worker)
+
+O PMO Bot deixará de ser apenas reativo. Usando um scheduler em Go (`robfig/cron/v3`), o sistema acordará diariamente para processar pendências.
+
+**Fluxo Proativo:**
+1. O *Cron Worker* roda às 06:00 (configurável).
+2. Consulta no Supabase: Tratos culturais atrasados, alertas climáticos ou necessidade de renovação do PMO.
+3. Monta o payload de notificação com a LLM.
+4. Dispara a mensagem ativamente via Evolution API para o WhatsApp do produtor.
+
+---
+
 *Documento gerado pelo Arquiteto de Software Backend Sênior — ManejoORG Multi-Agent Migration.*
-*Aguardando aprovação para início da implementação.*
+*Aguardando aprovação para início da implementação das Fases 1 a 5.*

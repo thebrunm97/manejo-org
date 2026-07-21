@@ -1,0 +1,33 @@
+groups:
+  - name: pmo_bot_alerts
+    rules:
+      # 1. Saturação da Fila
+      - alert: WorkerPoolQueueSaturated
+        expr: worker_pool_queue_size > 800
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Worker pool queue saturated (instance {{ $labels.instance }})"
+          description: "A fila em memória do webhook ultrapassou 800 mensagens por mais de 2 minutos. Risco elevado de perda de eventos se chegar ao limite."
+
+      # 2. Taxa de Erros no Webhook (Simulando 5xx via logs internos)
+      # Mapeamos 'parse_error', 'queue_full', e 'unauthorized' como falhas relevantes.
+      - alert: HighWebhookErrorRate
+        expr: rate(webhook_requests_total{status=~"parse_error|queue_full|unauthorized"}[5m]) > 2
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Webhook Error Rate (instance {{ $labels.instance }})"
+          description: "A taxa de falhas na receção de webhooks está anormalmente alta nos últimos 5 minutos."
+
+      # 3. Picos de Latência no RAG
+      - alert: RAGLatencySpike
+        expr: histogram_quantile(0.95, sum by (le, phase) (rate(rag_latency_ms_bucket[5m]))) > 5000
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "RAG Latency Spike detected (Phase: {{ $labels.phase }})"
+          description: "O percentil 95 (p95) da latência do pipeline RAG na fase '{{ $labels.phase }}' está acima de 5000ms."

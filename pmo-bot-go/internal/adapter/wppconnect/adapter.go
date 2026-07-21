@@ -289,12 +289,20 @@ func (c *Client) downloadMedia(messageId string) ([]byte, string, error) {
 	b64String := ""
 	mimetype := ""
 	if m, ok := rawData.(map[string]interface{}); ok {
-		if b, exists := m["base64"]; exists { b64String = b.(string) } else if b, exists := m["raw"]; exists { b64String = b.(string) }
-		if mt, exists := m["mimetype"]; exists { mimetype = mt.(string) }
+		if b, exists := m["base64"]; exists {
+			b64String = b.(string)
+		} else if b, exists := m["raw"]; exists {
+			b64String = b.(string)
+		}
+		if mt, exists := m["mimetype"]; exists {
+			mimetype = mt.(string)
+		}
 	} else if s, ok := rawData.(string); ok {
 		b64String = s
 	}
-	if b64String == "" { return nil, "", fmt.Errorf("could not extract base64 from response") }
+	if b64String == "" {
+		return nil, "", fmt.Errorf("could not extract base64 from response")
+	}
 	if strings.Contains(b64String, "base64,") {
 		parts := strings.SplitN(b64String, "base64,", 2)
 		if len(parts) == 2 {
@@ -302,7 +310,9 @@ func (c *Client) downloadMedia(messageId string) ([]byte, string, error) {
 				header := parts[0]
 				start := strings.Index(header, "data:") + 5
 				end := strings.Index(header, ";")
-				if start > 4 && end > start { mimetype = header[start:end] }
+				if start > 4 && end > start {
+					mimetype = header[start:end]
+				}
 			}
 			b64String = parts[1]
 		}
@@ -318,17 +328,29 @@ func (c *Client) doRequest(method, url string, payload []byte) ([]byte, error) {
 		}
 	}
 	var bodyReader io.Reader
-	if payload != nil { bodyReader = bytes.NewReader(payload) }
+	if payload != nil {
+		bodyReader = bytes.NewReader(payload)
+	}
 	req, err := http.NewRequest(method, url, bodyReader)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 	req.Header.Set("Authorization", "Bearer "+c.config.Token)
-	if payload != nil { req.Header.Set("Content-Type", "application/json") }
+	if payload != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
 	resp, err := c.httpClient.Do(req)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
-	if err != nil { return nil, err }
-	if resp.StatusCode >= 400 { return nil, fmt.Errorf("wppconnect server error (%d): %s", resp.StatusCode, string(body)) }
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("wppconnect server error (%d): %s", resp.StatusCode, string(body))
+	}
 	return body, nil
 }
 
@@ -367,47 +389,64 @@ func ParseWebhook(rawBody []byte) (ports.IncomingMessage, error) {
 }
 
 type WPPMessage struct {
-	Event     string         `json:"event"`
-	From      string         `json:"from"`
-	FromMe    bool           `json:"fromMe"`
-	ID        interface{}    `json:"id"`
-	Type      string         `json:"type"`
-	Body      string         `json:"body"`
-	ChatID    interface{}    `json:"chatId"`
-	Timestamp *float64       `json:"timestamp"`
-	MimeType  *string        `json:"mimetype,omitempty"`
+	Event     string      `json:"event"`
+	From      string      `json:"from"`
+	FromMe    bool        `json:"fromMe"`
+	ID        interface{} `json:"id"`
+	Type      string      `json:"type"`
+	Body      string      `json:"body"`
+	ChatID    interface{} `json:"chatId"`
+	Timestamp *float64    `json:"timestamp"`
+	MimeType  *string     `json:"mimetype,omitempty"`
 }
 
 func (m *WPPMessage) MessageID() string {
 	switch v := m.ID.(type) {
-	case string: return v
+	case string:
+		return v
 	case map[string]interface{}:
-		if s, ok := v["_serialized"].(string); ok { return s }
-		if s, ok := v["id"].(string); ok { return s }
+		if s, ok := v["_serialized"].(string); ok {
+			return s
+		}
+		if s, ok := v["id"].(string); ok {
+			return s
+		}
 	}
 	return ""
 }
 
 func (m *WPPMessage) IsAudio() bool {
-	if m.Type == "ptt" || m.Type == "audio" { return true }
-	if m.MimeType != nil { return strings.Contains(strings.ToLower(*m.MimeType), "audio") }
+	if m.Type == "ptt" || m.Type == "audio" {
+		return true
+	}
+	if m.MimeType != nil {
+		return strings.Contains(strings.ToLower(*m.MimeType), "audio")
+	}
 	return false
 }
 
 func (m *WPPMessage) IsImage() bool {
-	if m.Type == "image" { return true }
-	if m.MimeType != nil { return strings.Contains(strings.ToLower(*m.MimeType), "image") }
+	if m.Type == "image" {
+		return true
+	}
+	if m.MimeType != nil {
+		return strings.Contains(strings.ToLower(*m.MimeType), "image")
+	}
 	return false
 }
 
 func (m *WPPMessage) IsBroadcast() bool {
 	from := m.From
-	if len(from) >= 16 && from[len(from)-10:] == "@broadcast" { return true }
+	if len(from) >= 16 && from[len(from)-10:] == "@broadcast" {
+		return true
+	}
 	return from == "status@broadcast"
 }
 
 func (m *WPPMessage) ShouldProcess() bool {
 	event := strings.ToLower(m.Event)
-	if m.FromMe { return false }
+	if m.FromMe {
+		return false
+	}
 	return event == "onmessage" || event == "on-message"
 }

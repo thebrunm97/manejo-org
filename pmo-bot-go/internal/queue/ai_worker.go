@@ -28,6 +28,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/state"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
+	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 )
 
 // AIWorkerConfig contém as dependências do AI Worker.
@@ -119,6 +120,7 @@ func (w *AIWorker) tick(ctx context.Context, workerID string) (bool, error) {
 // processAIJob executa o fluxo completo de IA para um job.
 // Reutiliza o state.ProcessMessage existente, passando o bodyText já extraído.
 func (w *AIWorker) processAIJob(ctx context.Context, job *Job, start time.Time) {
+	defer utils.TraceLatency("Queue: processAIJob", start)
 	// Reconstrói o IncomingMessage com o texto já processado
 	// O BodyText substitui o Body original (que pode ser vazio para áudios)
 	msg := job.RawPayload
@@ -131,7 +133,9 @@ func (w *AIWorker) processAIJob(ctx context.Context, job *Job, start time.Time) 
 	// Adds < 2ms overhead on typical messages.  Attacks are blocked here,
 	// BEFORE any quota is consumed or the LLM is contacted.
 	if w.cfg.GuardrailPipeline != nil {
+		startInputGuardrail := time.Now()
 		cleanInput, gr := w.cfg.GuardrailPipeline.Execute(ctx, msg.Body, job.FromPhone, job.ID)
+		log.Printf("⏱️ [TRACING] Sub-passo: Input Guardrail: %v", time.Since(startInputGuardrail))
 		if gr.Blocked {
 			log.Printf("🛡️ [AIWorker] Input BLOQUEADO pelo Guardrail [%s] job=%s reason=%s",
 				job.FromPhone, job.ID, gr.BlockReason)
@@ -158,6 +162,14 @@ func (w *AIWorker) processAIJob(ctx context.Context, job *Job, start time.Time) 
 	aiCtx, cancel := context.WithTimeout(ctx, 90*time.Second)
 	defer cancel()
 
+	if msg.RawPayloadID != "" {
+		aiCtx = context.WithValue(aiCtx, "raw_payload_id", msg.RawPayloadID)
+	}
+
+	go w.cfg.WhatsApp.SetPresence(msg.From, "composing")
+	defer w.cfg.WhatsApp.SetPresence(msg.From, "available")
+
+	startProcessMessage := time.Now()
 	// Delega para o ProcessMessage existente (reuso total do fluxo atual)
 	// O FSM existente já trata: autenticação, quota, router, orchestrator, TTS
 	result := state.ProcessMessage(
@@ -172,6 +184,7 @@ func (w *AIWorker) processAIJob(ctx context.Context, job *Job, start time.Time) 
 		w.cfg.History,
 		nil, // flagsmithClient: não necessário no worker (usado apenas pela sessão HTTP)
 	)
+	log.Printf("⏱️ [TRACING] Sub-passo: ProcessMessage: %v", time.Since(startProcessMessage))
 
 	latencyMs := time.Since(start).Milliseconds()
 
@@ -183,11 +196,23 @@ func (w *AIWorker) processAIJob(ctx context.Context, job *Job, start time.Time) 
 			log.Printf("⚠️  [AIWorker] Falha ao marcar job %s como done: %v", job.ID, err)
 		}
 		log.Printf("✅ [AIWorker] Job %s concluído (ou em HITL) em %dms (razão: %s)", job.ID, latencyMs, result.Reason)
+
+		if msg.RawPayloadID != "" {
+			if err := w.cfg.Supabase.UpdateRawPayloadStatus(aiCtx, msg.RawPayloadID, "PROCESSED", ""); err != nil {
+				log.Printf("⚠️  [AIWorker] Falha ao atualizar status do raw_payload %s para PROCESSED: %v", msg.RawPayloadID, err)
+			}
+		}
 	} else {
 		reason := result.Reason
 		if err := w.cfg.Queue.MarkFailed(aiCtx, job.ID, reason, job.AttemptCount); err != nil {
 			log.Printf("⚠️  [AIWorker] Falha ao marcar job %s como failed: %v", job.ID, err)
 		}
 		log.Printf("❌ [AIWorker] Job %s falhou em %dms (razão: %s)", job.ID, latencyMs, reason)
+
+		if msg.RawPayloadID != "" {
+			if err := w.cfg.Supabase.UpdateRawPayloadStatus(aiCtx, msg.RawPayloadID, "FAILED", reason); err != nil {
+				log.Printf("⚠️  [AIWorker] Falha ao atualizar status do raw_payload %s para FAILED: %v", msg.RawPayloadID, err)
+			}
+		}
 	}
 }

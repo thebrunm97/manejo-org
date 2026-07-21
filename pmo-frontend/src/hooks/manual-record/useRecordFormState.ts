@@ -364,8 +364,8 @@ export const useRecordFormState = ({
                 setPlantioDraft({
                     ...common,
                     metodoPropagacao: d.metodo_propagacao || 'Muda',
-                    qtdPlantio: d.qtd_utilizada ? String(d.qtd_utilizada) : '',
-                    unidadePlantio: (d.unidade_medida as UnitType) || UnitType.UNID,
+                    qtdPlantio: d.qtd_utilizada ? String(d.qtd_utilizada) : (recordToEdit.quantidade_valor ? String(recordToEdit.quantidade_valor) : ''),
+                    unidadePlantio: (d.unidade_medida as UnitType) || (recordToEdit.quantidade_unidade as UnitType) || UnitType.UNID,
                     houveDescartes: !!recordToEdit.houve_descartes,
                     qtdDescartes: recordToEdit.qtd_descartes ? String(recordToEdit.qtd_descartes) : '',
                     unidadeDescartes: (recordToEdit.unidade_descartes as UnitType) || UnitType.UNID
@@ -397,8 +397,8 @@ export const useRecordFormState = ({
                     subtipoManejo: inferred,
                     tipoManejo: d.tipo_manejo || 'Adubação',
                     insumo: d.nome_insumo || d.insumo || legacy.insumo || '',
-                    dosagem: d.dosagem ? String(d.dosagem) : '',
-                    unidadeDosagem: (d.unidade_dosagem as UnitType) || UnitType.L_HA,
+                    dosagem: d.dosagem ? String(d.dosagem) : (recordToEdit.quantidade_valor ? String(recordToEdit.quantidade_valor) : ''),
+                    unidadeDosagem: (d.unidade_dosagem as UnitType) || (recordToEdit.quantidade_unidade as UnitType) || UnitType.L_HA,
                     responsavel: d.responsavel || '',
                     equipamento: d.equipamento || '',
                     itemHigienizado: d.item_higienizado || legacy.item_limpo || '',
@@ -414,8 +414,8 @@ export const useRecordFormState = ({
                     lote: d.lote || '',
                     destino: d.destino || 'Mercado Interno',
                     classificacao: d.classificacao || 'Primeira',
-                    qtdColheita: d.qtd ? String(d.qtd) : '',
-                    unidadeColheita: (d.unidade as UnitType) || UnitType.KG,
+                    qtdColheita: d.qtd ? String(d.qtd) : (recordToEdit.quantidade_valor ? String(recordToEdit.quantidade_valor) : ''),
+                    unidadeColheita: (d.unidade as UnitType) || (recordToEdit.quantidade_unidade as UnitType) || UnitType.KG,
                     houveDescartes: !!recordToEdit.houve_descartes,
                     qtdDescartes: recordToEdit.qtd_descartes ? String(recordToEdit.qtd_descartes) : '',
                     unidadeDescartes: (recordToEdit.unidade_descartes as UnitType) || UnitType.KG

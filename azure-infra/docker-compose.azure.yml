@@ -1,0 +1,109 @@
+version: '3.8'
+
+# ==============================================================================
+# ManejoORG Azure App Service Docker Compose
+# ==============================================================================
+# IMPORTANT: Azure App Service for Containers only exposes a single public port.
+# By default, traffic entering port 80/443 on the Web App is routed to the first
+# container that exposes a port (in our case, pmo-bot-go on 8080).
+#
+# architecture decisions:
+# 1. pmo-bot-go (8080) is the ONLY publicly accessible container.
+# 2. pmo-bot-go acts as a reverse proxy/gateway to evolution-go (8082),
+#    handling incoming webhooks and dispatching commands internally.
+# 3. evolution-go (8082) and redis (6379) are kept private within the bridge network.
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # Principal Bot Orchestrator (Go)
+  # ----------------------------------------------------------------------------
+  pmo-bot-go:
+    image: ${ACR_NAME}.azurecr.io/pmo-bot-go:${IMAGE_TAG}
+    restart: always
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    ports:
+      - "8080:8080" # Exposed to Azure App Service routing
+    environment:
+      - PORT=8080
+      - GIN_MODE=release
+      - WPPCONNECT_TOKEN=${WPPCONNECT_TOKEN}
+      - WPPCONNECT_URL=${WPPCONNECT_URL}
+      - WPP_SESSION=${WPP_SESSION}
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL=${GEMINI_MODEL}
+      - GEMINI_API_VERSION=${GEMINI_API_VERSION}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - WEBHOOK_URL=http://localhost:8080/webhook/evolution?token=${WEBHOOK_TOKEN}
+      - WEBHOOK_TOKEN=${WEBHOOK_TOKEN}
+      - GEMINI_STORE_ID=${GEMINI_STORE_ID}
+      - WEATHER_API_KEY=${WEATHER_API_KEY}
+      - FLAGSMITH_ENV_KEY=${FLAGSMITH_ENV_KEY}
+      - FLAGSMITH_BASE_URL=${FLAGSMITH_BASE_URL}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL}
+      - HARNESS_ENABLED=${HARNESS_ENABLED}
+      # Internally connect to evolution-go on port 8082 via Docker bridge
+      - EVOLUTION_BASE_URL=http://evolution-go:8082
+      - EVOLUTION_INSTANCE_NAME=${EVOLUTION_INSTANCE_NAME}
+      - EVOLUTION_API_KEY=${EVOLUTION_API_KEY}
+    networks:
+      - pmo_prod_net
+    depends_on:
+      - evolution-go
+      - redis
+
+  # ----------------------------------------------------------------------------
+  # WhatsApp Engine (Evolution API Go)
+  # ----------------------------------------------------------------------------
+  evolution-go:
+    image: ${ACR_NAME}.azurecr.io/evolution-go:${IMAGE_TAG}
+    restart: always
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    environment:
+      # Explicitly override database paths to the persistent directory
+      - DATABASE_CONNECTION_URI=file:/data/sqlite.db?_foreign_keys=on
+      - POSTGRES_AUTH_DB=file:/data/auth.db?_pragma=foreign_keys(1)&_busy_timeout=5000&cache=shared&mode=rwc&_journal_mode=WAL
+      - POSTGRES_USERS_DB=file:/data/users.db?_foreign_keys=on
+      - SERVER_PORT=8082
+      - GLOBAL_API_KEY=${EVOLUTION_API_KEY}
+      - DATABASE_SAVE_MESSAGES=${DATABASE_SAVE_MESSAGES}
+      - DATABASE_AUTO_MIGRATE=${DATABASE_AUTO_MIGRATE}
+      - CLIENT_NAME=${CLIENT_NAME}
+      - CONNECT_ON_STARTUP=${CONNECT_ON_STARTUP}
+      - WA_VERSION=${WA_VERSION}
+    volumes:
+      # Maps to the 'evolution-storage' Azure File Share mount configured in Bicep
+      - evolution-storage:/data
+    networks:
+      - pmo_prod_net
+    depends_on:
+      - redis
+
+  # ----------------------------------------------------------------------------
+  # Cache Service (Redis)
+  # ----------------------------------------------------------------------------
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - pmo_prod_net
+
+networks:
+  pmo_prod_net:
+    driver: bridge
+
+volumes:
+  # Persistent volume mapping to Azure Files (configured via azureStorageAccounts on App Service)
+  evolution-storage:
+    external: true
+  # Local volatile container volume for caching
+  redis_data:

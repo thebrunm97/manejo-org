@@ -1,5 +1,5 @@
 $EVOLUTION_BASE_URL = "http://localhost:8082"
-$INSTANCE_NAME = "ManejoOrgInstance"
+$INSTANCE_NAME = "manejo-org"
 $API_KEY = "ManejoOrgToken"
 $WEBHOOK_URL = "http://pmo-bot-go:8080/webhook/evolution?token=ManejoOrgToken"
 

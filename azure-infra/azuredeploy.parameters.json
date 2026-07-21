@@ -1,0 +1,116 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    // -------------------------------------------------------------------------
+    // Azure Infrastructure Config
+    // -------------------------------------------------------------------------
+    "location": {
+      "value": "eastus"
+    },
+    "appServicePlanName": {
+      "value": "asp-pmo-prod"
+    },
+    "appServicePlanSku": {
+      "value": "P1v3"
+    },
+    "webAppName": {
+      "value": "app-pmo-prod"
+    },
+    "storageAccountName": {
+      "value": "stpmoevolutionprod"
+    },
+    "fileShareName": {
+      "value": "evolution-data"
+    },
+    "acrName": {
+      "value": "myacrregistry"
+    },
+    "acrResourceGroup": {
+      "value": "rg-containers"
+    },
+    "imageTag": {
+      "value": "latest"
+    },
+
+    // -------------------------------------------------------------------------
+    // App Config (Non-sensitive)
+    // -------------------------------------------------------------------------
+    "wppSession": {
+      "value": "agro_vivo"
+    },
+    "geminiModel": {
+      "value": "gemini-3.1-flash-lite-preview"
+    },
+    "geminiApiVersion": {
+      "value": "v1beta"
+    },
+    "geminiStoreId": {
+      "value": "fileSearchStores/manejoorg-knowledge-base-87eu5nps93a8"
+    },
+    "flagsmithBaseUrl": {
+      "value": "https://edge.api.flagsmith.com/api/v1/"
+    },
+    "openrouterModel": {
+      "value": "google/gemini-2.0-flash-001"
+    },
+    "harnessEnabled": {
+      "value": "true"
+    },
+    "evolutionInstanceName": {
+      "value": "manejo-org"
+    },
+    "databaseSaveMessages": {
+      "value": "false"
+    },
+    "databaseAutoMigrate": {
+      "value": "true"
+    },
+    "clientName": {
+      "value": "evolution"
+    },
+    "connectOnStartup": {
+      "value": "true"
+    },
+    "waVersion": {
+      "value": "web.whatsapp.comBaileys v5.8.0"
+    },
+
+    // -------------------------------------------------------------------------
+    // SECURE PARAMETERS (Placeholders - MUST be overridden in Key Vault / CI/CD)
+    // -------------------------------------------------------------------------
+    "wppconnectToken": {
+      "value": "SECURE_WPPCONNECT_TOKEN_PLACEHOLDER"
+    },
+    "wppconnectUrl": {
+      "value": "http://YOUR_WPPCONNECT_SERVER_IP:PORT"
+    },
+    "groqApiKey": {
+      "value": "SECURE_GROQ_API_KEY_PLACEHOLDER"
+    },
+    "geminiApiKey": {
+      "value": "SECURE_GEMINI_API_KEY_PLACEHOLDER"
+    },
+    "supabaseUrl": {
+      "value": "https://YOUR_SUPABASE_PROJECT.supabase.co"
+    },
+    "supabaseKey": {
+      "value": "SECURE_SUPABASE_SERVICE_ROLE_KEY_PLACEHOLDER"
+    },
+    "webhookToken": {
+      "value": "SECURE_WEBHOOK_TOKEN_PLACEHOLDER"
+    },
+    "weatherApiKey": {
+      "value": "SECURE_WEATHER_API_KEY_PLACEHOLDER"
+    },
+    "flagsmithEnvKey": {
+      "value": "SECURE_FLAGSMITH_ENV_KEY_PLACEHOLDER"
+    },
+    "openrouterApiKey": {
+      "value": "SECURE_OPENROUTER_API_KEY_PLACEHOLDER"
+    },
+    "evolutionApiKey": {
+      "value": "SECURE_EVOLUTION_API_KEY_PLACEHOLDER"
+    }
+  }
+}
