@@ -79,8 +79,9 @@ func (s *Server) handleConsultarBaseConhecimento(args map[string]interface{}) (i
 		return nil, fmt.Errorf("erro ao gerar embedding: %w", err)
 	}
 
-	// 2. Vector search in Supabase (threshold 0.55, top-K 6 to account for category filter)
-	matches, err := s.supabase.MatchFarmDocuments(pmoID, embedding, 0.55, 6)
+	// 2. Vector search in Supabase with Contextual Windowing (threshold 0.55, top-K 3, window 1)
+	// Reduzido para 3 como mitigação de tokens para prevenir "Lost in the Middle"
+	matches, err := s.supabase.MatchFarmDocumentsContext(pmoID, embedding, 0.55, 3, 1)
 	if err != nil {
 		return nil, fmt.Errorf("erro na busca vetorial: %w", err)
 	}
@@ -89,9 +90,25 @@ func (s *Server) handleConsultarBaseConhecimento(args map[string]interface{}) (i
 		return "Nenhuma informacao especifica encontrada na base de conhecimento para esta pergunta.", nil
 	}
 
+	// Group contiguous/same-document chunks together before evaluation
+	var groupedMatches []supabase.DocumentMatchContext
+	if len(matches) > 0 {
+		currentGroup := matches[0]
+		for i := 1; i < len(matches); i++ {
+			if matches[i].SourceDocumentID == currentGroup.SourceDocumentID {
+				// Append content with a newline
+				currentGroup.Content += "\n\n" + matches[i].Content
+			} else {
+				groupedMatches = append(groupedMatches, currentGroup)
+				currentGroup = matches[i]
+			}
+		}
+		groupedMatches = append(groupedMatches, currentGroup)
+	}
+
 	// 2.5 META-RAG: Evaluate evidence chunks using CMM Judge
 	var chunks []string
-	for _, m := range matches {
+	for _, m := range groupedMatches {
 		chunks = append(chunks, m.Content)
 	}
 
@@ -108,7 +125,7 @@ func (s *Server) handleConsultarBaseConhecimento(args map[string]interface{}) (i
 	evalCancel()
 
 	// Filter matches based on CMM Judge scores
-	var filteredMatches []supabase.DocumentMatch
+	var filteredMatches []supabase.DocumentMatchContext
 
 	if evalErr != nil {
 		log.Printf("⚠️ [META-RAG] Juiz Agronômico falhou ou indisponível: %v. Aplicando FAIL-OPEN (repasse normal).", evalErr)
@@ -119,7 +136,7 @@ func (s *Server) handleConsultarBaseConhecimento(args map[string]interface{}) (i
 			evalMap[ev.ChunkIndex] = ev
 		}
 
-		for i, m := range matches {
+		for i, m := range groupedMatches {
 			ev, ok := evalMap[i]
 			if !ok {
 				// Default to strong relevance if missed by the LLM
@@ -180,9 +197,9 @@ func (s *Server) handleConsultarBaseConhecimento(args map[string]interface{}) (i
 		}
 
 		if m.IsGlobal {
-			sb.WriteString(fmt.Sprintf("De acordo com o material tecnico '%s':\n%s\n\n", sourceLabel, m.Content))
+			sb.WriteString(fmt.Sprintf("--- Documento: %s ---\nDe acordo com o material tecnico '%s':\n%s\n\n", m.SourceDocumentID, sourceLabel, m.Content))
 		} else {
-			sb.WriteString(fmt.Sprintf("Baseado no seu documento interno '%s':\n%s\n\n", sourceLabel, m.Content))
+			sb.WriteString(fmt.Sprintf("--- Documento: %s ---\nBaseado no seu documento interno '%s':\n%s\n\n", m.SourceDocumentID, sourceLabel, m.Content))
 		}
 	}
 
@@ -192,4 +209,20 @@ func (s *Server) handleConsultarBaseConhecimento(args map[string]interface{}) (i
 	}
 
 	return result, nil
+}
+
+func (s *Server) handleConsultarLeiOrganica(args map[string]interface{}) (interface{}, error) {
+	query, ok := args["query"].(string)
+	if !ok || strings.TrimSpace(query) == "" {
+		return nil, fmt.Errorf("argument 'query' is required and must be a non-empty string")
+	}
+
+	// Injeta pmo_id: 0 para busca global (Lei Orgânica) e mapeia 'query' para 'pergunta'
+	mappedArgs := map[string]interface{}{
+		"pmo_id":   0,
+		"pergunta": query,
+		"categoria_fonte": "institucional",
+	}
+
+	return s.handleConsultarBaseConhecimento(mappedArgs)
 }
