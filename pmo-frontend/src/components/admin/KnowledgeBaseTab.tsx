@@ -3,7 +3,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { FileText, Loader2, BookOpen, Hash, Calendar, Search, Sparkles } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
-import { cn } from '../../utils/cn';
 
 interface KnowledgeDocument {
     id: string;

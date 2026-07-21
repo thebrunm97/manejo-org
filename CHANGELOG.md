@@ -2,6 +2,28 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [0.18.0] - 2026-07-21 - "O Novo Cérebro do PMO Bot: Multi-Agentes, Zero-Trust e Gestão Financeira 🌐"
+
+Esta é uma das maiores atualizações já lançadas. Desde abril, focamos em reestruturar a arquitetura interna do PMO Bot para garantir mais resiliência, flexibilidade de provedores de IA e segurança absoluta nos dados (Zero-Trust). Além disso, o módulo financeiro recebeu sua expansão definitiva.
+
+### ✨ Funcionalidades (Features)
+* **LLM Agnóstico (Multi-Provedor):** Lançamento das Fases 1 e 2 do adaptador de LLM. O bot deixou de ser dependente exclusivo de um provedor e agora conta com uma *Factory* de provedores, incluindo suporte nativo a adaptadores compatíveis com OpenAI.
+* **CFO Digital e Financeiro Fase 2:** Implementada a ferramenta standalone "CFO" baseada em IA para consultas interativas de saldo e relatórios. O painel financeiro agora possui tabela de transações em tempo real e sincronização de formulários de compras.
+* **Fila de Mensagens Persistente & HITL:** Novo sistema de *Persistent Message Queue* integrado ao *Human-in-the-Loop* (HITL) workflow. Se a IA tiver dúvida crítica, a mensagem vai para uma fila de aprovação humana visível no novo *Queue Observability Dashboard*.
+* **Monitoramento em Tempo Real:** Novo *Live Chat Monitor* e Painel de Limites de Segurança (Security Limits Dashboard) para controle de uso e quotas no frontend.
+* **Avaliador RAG:** Adicionado o avaliador meta-rag *listwise* baseado no framework CMM, aumentando a precisão nas buscas no conhecimento agronômico.
+
+### 🛡 Segurança e Confiabilidade (Zero-Trust Guardrails)
+* **Deterministic Guardrails & LoopGuard:** A máquina de estados (FSM) agora conta com *fail-safes* globais para proteção contra loops infinitos e alucinações das ferramentas da IA.
+* **Auditoria Determinística:** O banco de dados (Supabase) recebeu schemas específicos de auditoria com restrições severas de *Row Level Security* (RLS).
+* **Tratamento de Falhas Parciais:** O bot agora suporta entidades pendentes (`PendingEntities`). Se uma operação em lote falhar no meio, ele salva o que conseguiu e pergunta sobre os dados restantes, sem perder o histórico (utilizando semáforos e `WaitGroup`).
+
+### 🛠 Refatorações e Performance (Chores/Refactors)
+* **Orquestração e Roteamento:** Extração do *RouterSystemPrompt* para JSON e refatoração completa das ferramentas MCP. O Roteador agora decide e delega para sub-agentes sem inflar o contexto global.
+* **Frontend Resiliente:** Melhorias profundas na proteção de cliques em polígonos no mapa (UX guardrails) para evitar travamentos com dados espaciais corrompidos.
+* **Banco de Dados:** Otimização de chaves estrangeiras no SQLite e *ON CONFLICT* seguras nas inserções para evitar duplicidades de eventos recebidos pela Evolution API.
+* **Testes Extensivos:** Cobertura de testes e2e de multimodalidade (Compliance Multimodality Suite) abrangendo cenários críticos e *Zero-Trust*.
+
 ## [0.17.0] - 2026-04-14 - "Integridade de Dados e Feedback IA 🛡️"
 
 ### 🛠 Correções de Bugs (Bug Fixes)

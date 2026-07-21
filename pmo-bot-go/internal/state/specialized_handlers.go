@@ -2,6 +2,7 @@ package state
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -47,7 +48,7 @@ func SetBusinessEvaluator(eval guardrails.BusinessEvaluator) {
 
 // handleDuvidaFallback is the specialist multi-agent entry point.
 // It uses modular prompts, filtered tools, loop protection, and short-term memory injection.
-func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, from string, llmClient llm.LLMProvider, body string, respondWithAudio bool, sbClient *supabase.Client, profile *supabase.Profile, startTime time.Time, promptTokens int, completionTokens int, finalIntent string, tools []llm.FerramentaAgnostica, guard *mcp.LoopGuard, historyManager *history.Manager, mcpServer *mcp.Server) (string, ProcessResult) {
+func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, _ *tts.Orchestrator, from string, llmClient llm.LLMProvider, body string, _ bool, sbClient *supabase.Client, profile *supabase.Profile, startTime time.Time, _ int, _ int, finalIntent string, tools []llm.FerramentaAgnostica, guard *mcp.LoopGuard, historyManager *history.Manager, mcpServer *mcp.Server, agentDomain string) (string, ProcessResult) {
 	log.Printf("🤖 [FSM] Iniciando Fluxo Especialista (Intent: %s)", finalIntent)
 
 	// 1. Prepare Specialized Context
@@ -78,18 +79,41 @@ func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, tts
 
 	// 3. Execute Agentic Loop via Orchestrator (Agnostic)
 	orchestrator := NewOrchestrator(llmClient, sbClient, mcpServer)
-	orchestrator.OutputJudge = ActiveOutputJudge             // wire output governance (nil = disabled)
+	if finalIntent == "RAG" || finalIntent == "DATABASE" || finalIntent == "FINANCE" {
+		orchestrator.OutputJudge = ActiveOutputJudge             // wire output governance (nil = disabled)
+	} else {
+		orchestrator.OutputJudge = nil // Disable for CHAT
+	}
 	orchestrator.HITL = ActiveHITLController                 // wire HITL controller (nil = disabled)
 	orchestrator.Phone = phone                               // needed for HITL WhatsApp confirmation
 	orchestrator.WhatsApp = wpClient                         // wire message sender for HITL confirmation prompts
 	orchestrator.BusinessEvaluator = ActiveBusinessEvaluator // wire business rules/limits
 
-	botResponse, newHistory, trace, usage, modelUsed, err := orchestrator.ExecuteAgenticLoop(ctx, profile, specPrompt, body, tools, agnosticHistory, guard)
+	// 2.5 Buscar Memória Persistente (Recall)
+	var userMemories string
+	if profile != nil && profile.PmoAtivoID > 0 {
+		// Gera embedding da dúvida
+		queryEmb, err := sbClient.GetEmbedding(body, "CONSULTA")
+		if err == nil {
+			// Busca top 3 memorias
+			matches, errMatch := sbClient.MatchUserMemory(ctx, fmt.Sprintf("%d", profile.PmoAtivoID), queryEmb)
+			if errMatch == nil && len(matches) > 0 {
+				var b strings.Builder
+				for _, m := range matches {
+					b.WriteString(fmt.Sprintf("- Categoria [%s]: %s\n", m.Category, m.Fact))
+				}
+				userMemories = b.String()
+			}
+		}
+	}
+
+	botResponse, newHistory, trace, usage, modelUsed, err := orchestrator.ExecuteAgenticLoop(ctx, profile, specPrompt, body, tools, agnosticHistory, guard, agentDomain, userMemories)
 	if err != nil {
 		if err.Error() == "hitl_pending" {
 			log.Printf("⏸️ [FSM] HITL pendente. Salvando histórico e silenciando resposta conversacional.")
 			if historyManager != nil {
 				historyManager.AppendAgnosticHistory(phone, newHistory)
+				historyManager.TriggerAsyncCompression(phone, llmClient, 1500) // 1500 tokens threshold
 			}
 			recordLog(sbClient, profile, body, "[HITL PENDING]", llmClient.ModelName(), modelUsed, int(usage.PromptTokens), int(usage.CandidatesTokens), finalIntent, map[string]interface{}{"status": "hitl_pending"}, startTime, true, trace)
 			return "", ProcessResult{Success: false, Reason: "hitl_pending"}
@@ -144,6 +168,7 @@ func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, tts
 
 	if historyManager != nil {
 		historyManager.AppendAgnosticHistory(phone, newHistory)
+		historyManager.TriggerAsyncCompression(phone, llmClient, 1500) // 1500 tokens threshold
 	}
 
 	return botResponse, ProcessResult{Success: true, Reason: "agent_responded"}

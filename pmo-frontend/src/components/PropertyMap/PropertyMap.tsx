@@ -362,7 +362,15 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
                                     onDrawCreate={handleDrawCreate}
                                     onDrawUpdate={handleDrawUpdate}
                                     onDrawDelete={handleDrawDelete}
-                                    onTalhaoClick={(t) => !isDrawingMode && viewMode === 'mapa' && onOpenDrawer(t)}
+                                    onTalhaoClick={(t) => {
+                                        if (isDrawingMode || viewMode !== 'mapa') return;
+                                        if (t) {
+                                            onOpenDrawer(t);
+                                        }
+                                    }}
+                                    onBackgroundClick={() => {
+                                        if (setSelectedTalhao) setSelectedTalhao(null);
+                                    }}
                                     isDrawerOpen={isDrawerOpen}
                                 />
                         </div>

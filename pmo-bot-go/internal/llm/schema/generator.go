@@ -59,7 +59,7 @@ func ForGoogle(jsonBytes []byte) (*genai.Schema, error) {
 	if s.Type == "" {
 		s.Type = genai.TypeObject
 	}
-	
+
 	// Gemini specific tweaks can be added here (e.g., removing unsupported keywords).
 	// For now, we trust the direct unmarshal.
 	return &s, nil

@@ -22,15 +22,16 @@ interface Talhao {
     area_ha?: number;
     fill_color?: string;
     border_color?: string;
-    ph_solo?: string;
-    v_percent?: string;
-    materia_organica?: string;
-    fosforo?: string;
-    potassio?: string;
-    teor_argila?: string;
-    silte?: string;
-    areia?: string;
+    ph_solo?: string | number;
+    v_percent?: string | number;
+    materia_organica?: string | number;
+    fosforo?: string | number;
+    potassio?: string | number;
+    teor_argila?: string | number;
+    silte?: string | number;
+    areia?: string | number;
     canteiros?: Canteiro[];
+    tipo?: string;
 }
 
 interface TalhaoDetailsDrawerProps {
@@ -70,14 +71,14 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
     useEffect(() => {
         if (talhao) {
             setFormData({
-                ph_solo: talhao.ph_solo || '', v_percent: talhao.v_percent || '', materia_organica: talhao.materia_organica || '',
-                fosforo: talhao.fosforo || '', potassio: talhao.potassio || '', teor_argila: talhao.teor_argila || '',
-                silte: talhao.silte || '', areia: talhao.areia || ''
+                ph_solo: String(talhao.ph_solo ?? ''), v_percent: String(talhao.v_percent ?? ''), materia_organica: String(talhao.materia_organica ?? ''),
+                fosforo: String(talhao.fosforo ?? ''), potassio: String(talhao.potassio ?? ''), teor_argila: String(talhao.teor_argila ?? ''),
+                silte: String(talhao.silte ?? ''), areia: String(talhao.areia ?? '')
             });
             setTalhaoEditData({
                 nome: talhao.nome || '', cultura: talhao.cultura || '',
-                fillColor: talhao.fillColor || talhao.fill_color || '#10B981',
-                borderColor: talhao.borderColor || talhao.border_color || '#059669'
+                fillColor: talhao.fill_color || '#10B981',
+                borderColor: talhao.border_color || '#059669'
             });
         }
     }, [talhao]);
@@ -111,7 +112,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
     };
 
     const handleSave = async () => {
-        if (!onUpdateTalhao) return;
+        if (!onUpdateTalhao || !talhao) return;
         setSaving(true);
         try {
             const d = {
@@ -136,7 +137,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
     };
 
     const handleSaveTalhaoHeader = async () => {
-        if (!onUpdateTalhao) return;
+        if (!onUpdateTalhao || !talhao) return;
         setSaving(true);
         try {
             await onUpdateTalhao(talhao.id, {
@@ -176,7 +177,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
     };
 
     const handleBatchSave = async () => {
-        if (!onCreateCanteiros) return;
+        if (!onCreateCanteiros || !talhao) return;
         setSaving(true);
         try {
             const structs: any[] = [];

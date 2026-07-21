@@ -138,7 +138,7 @@ func processImage(provider llm.LLMProvider, sb *supabase.Client, path, name stri
 		log.Printf("❌ Erro ao inserir no Supabase: %v", err)
 	}
 	log.Printf("✅ Imagem %s processada com sucesso.", name)
-	
+
 	// Respeitar rate limits
 	time.Sleep(2 * time.Second)
 }

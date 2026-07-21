@@ -2,15 +2,25 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"log/slog"
+	"net/http"
 	"os"
+	"os/signal"
+	"strings"
+	"syscall"
 	"time"
 
 	"github.com/Flagsmith/flagsmith-go-client/v3"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/thebrunm97/pmo-bot-go/internal/adapter/evolution"
+	"github.com/thebrunm97/pmo-bot-go/internal/adapter/agriculture"
+	"github.com/thebrunm97/pmo-bot-go/internal/adapter/embedcache"
 	"github.com/thebrunm97/pmo-bot-go/internal/config"
+	"github.com/thebrunm97/pmo-bot-go/internal/middleware"
 	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
 	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
@@ -18,7 +28,10 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/jobs"
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
+	"github.com/thebrunm97/pmo-bot-go/internal/okf"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
+	"github.com/thebrunm97/pmo-bot-go/internal/prompt"
+	"github.com/thebrunm97/pmo-bot-go/internal/proactivity"
 	"github.com/thebrunm97/pmo-bot-go/internal/queue"
 	"github.com/thebrunm97/pmo-bot-go/internal/state"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
@@ -37,18 +50,25 @@ func main() {
 	}
 	log.Printf("⏰ Horário de Brasília configurado: %v", time.Now().Format(time.RFC1123))
 
+	// --- Configurar slog global (JSON) ---
+	slogHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	})
+	slog.SetDefault(slog.New(slogHandler))
+	slog.Info("Observabilidade estruturada (slog) iniciada")
+
 	// --- Centralized Configuration ---
 	cfg := config.LoadConfig()
 
-	// --- Groq client ---
+	// --- Initialize OKF (Open Knowledge Format) Static Base ---
+	if err := okf.InitGlobalLoader("knowledge"); err != nil {
+		log.Fatalf("❌ Falha ao inicializar OKF: %v", err)
+	}
+
+	// --- Groq client (always needed for audio transcription / Whisper) ---
 	groqKey := os.Getenv("GROQ_API_KEY")
 	if groqKey == "" {
 		log.Fatal("❌ GROQ_API_KEY não definida")
-	}
-
-	geminiKey := os.Getenv("GEMINI_API_KEY")
-	if geminiKey == "" {
-		log.Fatal("❌ GEMINI_API_KEY não definida")
 	}
 
 	port := os.Getenv("PORT")
@@ -67,37 +87,69 @@ func main() {
 	}
 	log.Println("✅ Cliente Groq inicializado")
 
-	// --- Initialize Gemini client ---
-	geminiModel := os.Getenv("GEMINI_MODEL")
-	if geminiModel == "" {
-		geminiModel = "gemini-2.0-flash"
-	}
-	geminiVersion := os.Getenv("GEMINI_API_VERSION")
-	if geminiVersion == "" {
-		geminiVersion = "v1"
-	}
-	geminiFallback := os.Getenv("GEMINI_FALLBACK_MODEL")
-	if geminiFallback == "" {
-		geminiFallback = "gemini-1.5-flash"
+	// --- LLM Provider Factory (Plug & Play) ---
+	// ACTIVE_LLM_PROVIDER controls which adapter is active:
+	//   "gemini"      (default) — Google GenAI SDK + OpenRouter fallback
+	//   "openrouter"             — OpenRouter via go-openai (any model)
+	//   "groq"                   — Groq via go-openai
+	//   "openai"                 — OpenAI via go-openai
+	//
+	// All downstream code receives the llm.LLMProvider interface — it never
+	// knows (or cares) which concrete adapter is running.
+	activekind, factoryCfg := llm.NewProviderFromEnv()
+
+	// Build prompt config once here: main.go is the ONLY package that can
+	// legally import both internal/llm and internal/prompt without a cycle.
+	promptCfg := llm.PromptConfig{
+		RouterPrompt:       prompt.RouterSystemPrompt(),
+		VisionPrompt:       prompt.VisionPrompt(),
+		MetaRAGJudgePrompt: prompt.MetaRAGJudgePrompt(),
 	}
 
-	geminiClient, err := gemini.NewClient(gemini.Config{
-		APIKey:           geminiKey,
-		OpenRouterAPIKey: cfg.OpenRouterKey,
-		Model:            geminiModel,
-		OpenRouterModel:  cfg.OpenRouterModel,
-		FallbackModel:    geminiFallback,
-		APIVersion:       geminiVersion,
-	})
-	if err != nil {
-		log.Fatalf("❌ Falha ao criar cliente Gemini: %v", err)
-	}
-	log.Printf("✅ Cliente Gemini inicializado (modelo: %s, versão: %s)", geminiModel, geminiVersion)
+	var llmProvider llm.LLMProvider
 
-	// --- LLM Provider (Agnostic Interface) ---
-	// The gemini.Client satisfies llm.LLMProvider. All downstream code receives
-	// the interface, not the concrete type. To swap providers, change this line.
-	var llmProvider llm.LLMProvider = geminiClient
+	if activekind == llm.ProviderGemini {
+		// ── Gemini path (default) ──────────────────────────────────────────────
+		geminiKey := os.Getenv("GEMINI_API_KEY")
+		if geminiKey == "" {
+			log.Fatal("❌ GEMINI_API_KEY não definida (required when ACTIVE_LLM_PROVIDER=gemini)")
+		}
+		geminiModel := factoryCfg.GeminiModel
+		if geminiModel == "" {
+			geminiModel = "gemini-2.0-flash"
+		}
+		geminiVersion := os.Getenv("GEMINI_API_VERSION")
+		if geminiVersion == "" {
+			geminiVersion = "v1"
+		}
+		geminiFallback := factoryCfg.GeminiFallback
+		if geminiFallback == "" {
+			geminiFallback = "gemini-1.5-flash"
+		}
+		geminiClient, gemErr := gemini.NewClient(gemini.Config{
+			APIKey:           geminiKey,
+			OpenRouterAPIKey: cfg.OpenRouterKey,
+			Model:            geminiModel,
+			OpenRouterModel:  cfg.OpenRouterModel,
+			FallbackModel:    geminiFallback,
+			APIVersion:       geminiVersion,
+		})
+		if gemErr != nil {
+			log.Fatalf("❌ Falha ao criar cliente Gemini: %v", gemErr)
+		}
+		log.Printf("✅ LLM Provider: Gemini (modelo: %s, versão: %s)", geminiModel, geminiVersion)
+		llmProvider = geminiClient
+	} else {
+		// ── OpenAI-compatible path (openrouter / groq / openai) ────────────────
+		factoryCfg2 := factoryCfg
+		factoryCfg2.GroqAPIKey = groqKey // reuse the already-validated Groq key
+		oadapter, oaErr := llm.NewOpenAICompatibleProvider(factoryCfg2, promptCfg)
+		if oaErr != nil {
+			log.Fatalf("❌ Falha ao criar LLM provider (%s): %v", activekind, oaErr)
+		}
+		log.Printf("✅ LLM Provider: %s (modelo: %s)", activekind, oadapter.ModelName())
+		llmProvider = oadapter
+	}
 
 	// --- Initialize Supabase client ---
 	sbURL := os.Getenv("SUPABASE_URL")
@@ -156,7 +208,9 @@ func main() {
 	}
 
 	// --- Initialize MCP Server ---
-	mcpServer := mcp.NewServer(sbClient, llmProvider.Embedder(), llmProvider)
+	agriRepo := agriculture.NewSupabaseAgriculturalRepository(sbClient)
+	cachedEmbedder := embedcache.NewCachedEmbedder(llmProvider.Embedder(), 15*time.Minute)
+	mcpServer := mcp.NewServer(sbClient, agriRepo, cachedEmbedder, llmProvider)
 	mcpServer.InitializeTools()
 	log.Println("✅ Servidor MCP (Internal) inicializado com Tool RAG")
 
@@ -166,8 +220,30 @@ func main() {
 	}
 
 	r := gin.New()
+	r.Use(middleware.RequestID())
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
+
+	// --- Prometheus Metrics Endpoint ---
+	promToken := os.Getenv("PROMETHEUS_AUTH_TOKEN")
+	if promToken != "" {
+		r.GET("/metrics", gin.BasicAuth(gin.Accounts{"admin": promToken}), gin.WrapH(promhttp.Handler()))
+	} else {
+		r.GET("/metrics", gin.WrapH(promhttp.Handler()))
+	}
+
+	// --- Admin Endpoints ---
+	r.POST("/admin/reload-knowledge", func(c *gin.Context) {
+		if okf.GlobalLoader != nil {
+			if err := okf.GlobalLoader.Load(); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{"status": "OKF reloaded successfully"})
+		} else {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "OKF Loader not initialized"})
+		}
+	})
 
 	// --- Initialize TTS Orchestrator ---
 	ttsClient := tts.NewOrchestrator()
@@ -313,16 +389,75 @@ func main() {
 	// --- Planting Reminders Job ---
 	go jobs.StartPlantioReminderJob(sbClient, wpClient)
 
+	// --- Motor Proativo (PMO Autônomo) ---
+	proactiveEngine := proactivity.NewProactiveEngine(sbClient, wpClient, llmProvider)
+	proactiveEngine.Start()
+
 	// --- Start ---
-	log.Printf("🚀 PMO-Bot-Go listening on 0.0.0.0:%s", port)
-	if err := r.Run("0.0.0.0:" + port); err != nil {
-		log.Fatalf("❌ Server failed: %v", err)
+	srv := &http.Server{
+		Addr:    "0.0.0.0:" + port,
+		Handler: r,
+	}
+
+	go func() {
+		log.Printf("🚀 PMO-Bot-Go listening on 0.0.0.0:%s", port)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("❌ Server failed: %v", err)
+		}
+	}()
+
+	// Aguardar sinal de interrupção (SIGINT/SIGTERM)
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("⚠️ Recebido sinal de parada. Iniciando desligamento gracioso...")
+
+	// Timeout de 60 segundos para processar requisições ativas e workers
+	ctxShutdown, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctxShutdown); err != nil {
+		log.Printf("❌ Servidor forçado a encerrar: %v", err)
+	}
+
+	if err := handler.Shutdown(ctxShutdown); err != nil {
+		log.Printf("❌ Falha no desligamento do Handler/WorkerPool: %v", err)
+	}
+
+	log.Println("✅ Servidor desligado com sucesso.")
+}
+
+// checkClockSync makes a lightweight HTTP request to check if the local server clock
+// has drifted from internet time. Clock drift > 2s causes WhatsApp/Evolution to reject signatures (401).
+func checkClockSync() {
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Head("https://google.com")
+	if err != nil {
+		log.Printf("⚠️ ClockSync: Falha ao checar NTP/Google: %v", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	dateStr := resp.Header.Get("Date")
+	if dateStr != "" {
+		t, err := time.Parse(time.RFC1123, dateStr)
+		if err == nil {
+			drift := time.Since(t)
+			if drift < 0 {
+				drift = -drift
+			}
+			if drift > 2*time.Second {
+				log.Printf("CRITICAL: Clock Drift detected! Drift is %v. This will cause WhatsApp API 401 Signature Failures.", drift)
+			}
+		}
 	}
 }
 
 // sendHeartbeat checks WhatsApp connection state and updates the bot status in Supabase.
 // Returns true if the instance is currently connected.
 func sendHeartbeat(instance string, wp ports.MessageSender, sb *supabase.Client) bool {
+	checkClockSync()
+
 	if wp == nil {
 		log.Println("❌ Heartbeat: Adapter NOT Initialized")
 		_ = sb.UpsertBotStatus(instance, "DISCONNECTED", nil)
@@ -339,6 +474,19 @@ func sendHeartbeat(instance string, wp ports.MessageSender, sb *supabase.Client)
 			log.Printf("⚠️ Heartbeat: Failed to get connection state: %v", err)
 			status = "ERROR"
 			details = map[string]interface{}{"error": err.Error()}
+			
+			// Detect 401 Unauthorized from Evolution API
+			if strings.Contains(err.Error(), "status 401") {
+				log.Printf("CRITICAL: Evolution API retornado 401. Sessão ou token inválido.")
+				go func() {
+					if err := os.MkdirAll("logs", 0755); err == nil {
+						if f, err := os.OpenFile("logs/auth_errors.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); err == nil {
+							f.WriteString(fmt.Sprintf("[%s] 401 Evolution API Auth Error (instance/status)\n", time.Now().Format(time.RFC3339)))
+							f.Close()
+						}
+					}
+				}()
+			}
 		} else {
 			details = map[string]interface{}{"instance": adapter.InstanceName, "evolution_state": evoState}
 			if evoState == "open" {

@@ -87,13 +87,13 @@ func TestMapToGenaiSchema(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := llm.MapToGenaiSchema(tt.input, tt.isRoot)
-			
+
 			// Optional: print marshalled to verify panic safety
 			_, err := json.Marshal(result)
 			if err != nil {
 				t.Fatalf("failed to marshal resulting schema: %v", err)
 			}
-			
+
 			tt.validate(t, result)
 		})
 	}

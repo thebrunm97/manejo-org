@@ -16,6 +16,7 @@ import {
   CircleDollarSign,
   Building,
   HandHelping,
+  MessageSquare,
 } from 'lucide-react';
 import { useAppNavigation } from '../hooks/navigation/useAppNavigation';
 import { SCREENS, RouteName } from '../routes/routeNames';
@@ -78,6 +79,7 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
   if (isAdmin || isLoadingRole) {
     menuItems.push({ name: 'Administração', icon: <LayoutDashboard size={22} />, path: SCREENS.ADMIN });
     menuItems.push({ name: 'Ingestão (RAG)', icon: <Database size={22} />, path: SCREENS.KNOWLEDGE_MONITORING });
+    menuItems.push({ name: 'Monitor ao Vivo', icon: <MessageSquare size={22} />, path: SCREENS.LIVE_CHAT_MONITOR });
   }
 
   const handleLogout = async () => {
@@ -100,6 +102,7 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
       case SCREENS.CHANGELOG: return '/changelog';
       case SCREENS.ADMIN: return '/admin';
       case SCREENS.KNOWLEDGE_MONITORING: return '/admin/conhecimento';
+      case SCREENS.LIVE_CHAT_MONITOR: return '/admin/chat';
       case SCREENS.PROFILE: return '/perfil';
       case SCREENS.PROPERTY_PROFILE: return '/propriedade';
       case SCREENS.FINANCEIRO: return '/financeiro';

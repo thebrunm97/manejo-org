@@ -4,113 +4,104 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
-	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 )
 
 func main() {
+	// 1. Carrega variáveis de ambiente
 	godotenv.Load(".env")
+	godotenv.Load("../.env")
+	godotenv.Load("../../.env")
 
-	gemKey := os.Getenv("GEMINI_API_KEY")
-	sbURL := os.Getenv("SUPABASE_URL")
-	sbKey := os.Getenv("SUPABASE_KEY")
-
-	gemClient, err := gemini.NewClient(gemini.Config{APIKey: gemKey})
-	if err != nil {
-		log.Fatalf("Failed to init Gemini: %v", err)
-	}
-
-	sbClient, err := supabase.NewClient(supabase.Config{URL: sbURL, Key: sbKey})
-	if err != nil {
-		log.Fatalf("Failed to init Supabase: %v", err)
-	}
-
-	farmA := int64(999991)
-	farmB := int64(999992)
-	globalID := int64(0) // 0 maps to NULL in our implementation
-
-	fmt.Println("🧪 Starting HYBRID RAG Verification Test...")
-
-	// 1. Ingest Global Knowledge
-	contentGlobal := "DICA GLOBAL: O manejo orgânico exige certificação anual."
-	embGlobal, err := gemClient.Embedder().GenerateEmbedding(contentGlobal)
-	if err != nil {
-		log.Fatalf("Failed to gen embedding Global: %v", err)
-	}
-	err = sbClient.InsertFarmDocument(globalID, "guia_geral.pdf", contentGlobal, embGlobal)
-	if err != nil {
-		log.Fatalf("Failed to insert Global doc: %v", err)
-	}
-	fmt.Println("✅ Documento GLOBAL inserido.")
-
-	// 2. Ingest for Farm A
-	contentA := "PRIVADO A: O segredo da Fazenda A é plantar sob a lua cheia."
-	embA, err := gemClient.Embedder().GenerateEmbedding(contentA)
-	if err != nil {
-		log.Fatalf("Failed to gen embedding A: %v", err)
-	}
-	err = sbClient.InsertFarmDocument(farmA, "segredo_a.pdf", contentA, embA)
-	if err != nil {
-		log.Fatalf("Failed to insert doc A: %v", err)
-	}
-	fmt.Println("✅ Documento da Fazenda A inserido.")
-
-	// 3. Search as Farm A
-	fmt.Println("\n🔍 Buscando como Fazenda A: 'Como funciona o manejo e qual o segredo?'")
-	queryEmb, err := gemClient.Embedder().GenerateEmbedding("Como funciona o manejo e qual o segredo?")
-	if err != nil {
-		log.Fatalf("Failed to gen query embedding: %v", err)
-	}
-	resultsA, err := sbClient.MatchFarmDocuments(farmA, queryEmb, 0.3, 5)
-	if err != nil {
-		log.Fatalf("Failed to match docs A: %v", err)
-	}
-
-	foundGlobal := false
-	foundPrivate := false
-	foundB := false
-	for _, res := range resultsA {
-		typeStr := "PRIVADO"
-		if res.IsGlobal {
-			typeStr = "GLOBAL"
-			foundGlobal = true
-		} else if res.DocumentName == "segredo_a.pdf" {
-			foundPrivate = true
-		} else if res.DocumentName == "segredo_b.pdf" {
-			foundB = true
-		}
-		fmt.Printf("   - [%.2f] [%s] %s: %s\n", res.Similarity, typeStr, res.DocumentName, res.Content)
-	}
-
-	if foundGlobal && foundPrivate {
-		fmt.Println("🛡️  SUCESSO: Fazenda A acessou conhecimento GLOBAL e PRIVADO.")
-	} else {
-		fmt.Printf("❌ ERRO: Faltou algo. Global: %v, Private: %v\n", foundGlobal, foundPrivate)
-	}
-
-	if foundB {
-		fmt.Println("❌ ERRO: Vazamento! Fazenda A viu documentos da Fazenda B.")
-	}
-
-	// 4. Search as Farm B
-	fmt.Println("\n🔍 Buscando como Fazenda B: 'Qual o segredo?'")
-	resultsB, err := sbClient.MatchFarmDocuments(farmB, queryEmb, 0.3, 5)
-	if err != nil {
-		log.Fatalf("Failed to match docs B: %v", err)
-	}
-
-	foundAInB := false
-	for _, res := range resultsB {
-		if res.DocumentName == "segredo_a.pdf" {
-			foundAInB = true
+	supabaseURL := os.Getenv("SUPABASE_URL")
+	supabaseKey := os.Getenv("SUPABASE_KEY")
+	if supabaseKey == "" {
+		supabaseKey = os.Getenv("SUPABASE_SERVICE_KEY")
+		if supabaseKey == "" {
+			supabaseKey = os.Getenv("SUPABASE_ACCESS_TOKEN")
 		}
 	}
 
-	if foundAInB {
-		fmt.Println("❌ ERRO: Vazamento! Fazenda B viu documentos da Fazenda A.")
-	} else {
-		fmt.Println("🛡️  SUCESSO: Fazenda B não acessou dados privados da Fazenda A.")
+	if supabaseURL == "" || supabaseKey == "" {
+		log.Fatal("❌ [Tester] Erro: SUPABASE_URL ou SUPABASE_KEY não definidos no .env")
 	}
+
+	sbClient, err := supabase.NewClient(supabase.Config{
+		URL: supabaseURL,
+		Key: supabaseKey,
+	})
+	if err != nil {
+		log.Fatalf("❌ [Tester] Erro ao criar cliente Supabase: %v", err)
+	}
+
+	// 2. Definir a Pergunta
+	pergunta := "Quais são as regras e exceções para o uso de esterco não compostado?"
+	if len(os.Args) > 1 {
+		pergunta = strings.Join(os.Args[1:], " ")
+	}
+
+	fmt.Printf("\n🤖 [TESTE RAG END-TO-END]\n")
+	fmt.Printf("❓ Pergunta: \"%s\"\n\n", pergunta)
+
+	// Passo A: Gerar Vetor
+	fmt.Println("⏳ [1] Gerando vetor da pergunta (Ollama)...")
+	embedding, err := sbClient.GetEmbedding(pergunta, "BASE_CONHECIMENTO")
+	if err != nil {
+		log.Fatalf("❌ Falha ao gerar embedding: %v", err)
+	}
+
+	// Passo B: Recuperação RPC
+	fmt.Println("🔍 [2] Buscando no Supabase (RPC match_documents_with_context)...")
+	// Usamos pmoID = 0 (global) ou nil se possível. Count = 2, Window = 1.
+	matches, err := sbClient.MatchFarmDocumentsContext(0, embedding, 0.4, 2, 1)
+	if err != nil {
+		log.Fatalf("❌ Falha na busca RPC: %v", err)
+	}
+
+	if len(matches) == 0 {
+		fmt.Println("⚠️ Nenhum resultado encontrado com os parâmetros informados.")
+		return
+	}
+
+	fmt.Println("\n📊 [Auditoria Visual] Chunks retornados pelo RPC:")
+	for _, m := range matches {
+		fmt.Printf("   -> Doc: %s | ChunkIndex: %d | Similaridade Âncora: %.4f\n", m.SourceDocumentID, m.ChunkIndex, m.Similarity)
+	}
+	fmt.Println()
+
+	// Passo C: Montagem do Contexto
+	fmt.Println("🧩 [3] Montando contexto a partir dos vizinhos recuperados...")
+	var groupedMatches []supabase.DocumentMatchContext
+	currentGroup := matches[0]
+
+	for i := 1; i < len(matches); i++ {
+		if matches[i].SourceDocumentID == currentGroup.SourceDocumentID {
+			currentGroup.Content += "\n\n" + matches[i].Content
+		} else {
+			groupedMatches = append(groupedMatches, currentGroup)
+			currentGroup = matches[i]
+		}
+	}
+	groupedMatches = append(groupedMatches, currentGroup)
+
+	// Visualização de Auditoria
+	var sb strings.Builder
+	for idx, group := range groupedMatches {
+		fmt.Printf("📌 BLOCO %d: Documento '%s' (IsGlobal: %t)\n", idx+1, group.SourceDocumentID, group.IsGlobal)
+		
+		// Opcional: imprimir quais indices vieram. Como já agregamos, apenas avisamos.
+		sb.WriteString(fmt.Sprintf("\n--- Documento: %s ---\n", group.SourceDocumentID))
+		sb.WriteString(group.Content)
+		sb.WriteString("\n")
+	}
+
+	// Passo D: Imprimir o Contexto Final Enriquecido
+	fmt.Println("\n=======================================================")
+	fmt.Println("📜 CONTEXTO ENRIQUECIDO (PRONTO PARA ENVIO AO LLM):")
+	fmt.Println("=======================================================")
+	fmt.Println(sb.String())
+	fmt.Println("=======================================================")
 }

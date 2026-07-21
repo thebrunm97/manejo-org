@@ -16,6 +16,7 @@ const ROUTE_PATHS: Partial<Record<keyof RootStackParamList, string>> = {
     [SCREENS.PROPERTY_PROFILE]: '/propriedade',
     [SCREENS.HUB]: '/hub',
     [SCREENS.KNOWLEDGE_MONITORING]: '/admin/conhecimento',
+    [SCREENS.LIVE_CHAT_MONITOR]: '/admin/chat',
     [SCREENS.TRACEABILITY]: '/trace/:codigoLote',
     [SCREENS.COOP_ORGANIZACOES]: '/coop/organizacoes',
     [SCREENS.COOP_ORGANIZACAO_DETAILS]: '/coop/organizacao/:slug',

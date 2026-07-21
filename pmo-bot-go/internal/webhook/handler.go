@@ -3,8 +3,10 @@ package webhook
 import (
 	"context"
 	"crypto/hmac"
+	"errors"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 	"sync"
@@ -15,20 +17,21 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/Flagsmith/flagsmith-go-client/v3"
 	"github.com/gin-gonic/gin"
 	"github.com/thebrunm97/pmo-bot-go/internal/adapter/evolution"
-	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
 	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
+	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/state"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
+	"github.com/thebrunm97/pmo-bot-go/internal/telemetry"
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
 	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 	"golang.org/x/time/rate"
-	"github.com/Flagsmith/flagsmith-go-client/v3"
 )
 
 // ---------------------------------------------------------------------------
@@ -56,6 +59,8 @@ type Config struct {
 	HarnessQueue interface {
 		Enqueue(ctx context.Context, msg ports.IncomingMessage) error
 	}
+	WorkerCount int
+	QueueSize   int
 }
 
 // ---------------------------------------------------------------------------
@@ -64,8 +69,9 @@ type Config struct {
 
 // Handler is the webhook HTTP handler.
 type Handler struct {
-	cfg     Config
-	limiter *rate.Limiter
+	cfg        Config
+	limiter    *rate.Limiter
+	legacyPool *MemoryWorkerPool
 }
 
 // NewHandler creates a new webhook handler with the given config and Groq client.
@@ -73,10 +79,30 @@ func NewHandler(cfg Config) *Handler {
 	if cfg.MaxMessageAge == 0 {
 		cfg.MaxMessageAge = 600
 	}
-	return &Handler{
+	h := &Handler{
 		cfg:     cfg,
 		limiter: rate.NewLimiter(rate.Every(4*time.Second), 1), // 1 req a cada 4s = 15 RPM
 	}
+
+	// Initialize the legacy memory worker pool
+	h.legacyPool = NewMemoryWorkerPool(cfg.WorkerCount, cfg.QueueSize, h)
+	h.legacyPool.Start()
+
+	// Ticker único para limpeza do dedup in-memory (previne memory leaks)
+	go func() {
+		ticker := time.NewTicker(5 * time.Minute)
+		for range ticker.C {
+			now := time.Now()
+			processedMu.Range(func(key, val interface{}) bool {
+				if ts, ok := val.(time.Time); ok && now.Sub(ts) > 5*time.Minute {
+					processedMu.Delete(key)
+				}
+				return true
+			})
+		}
+	}()
+
+	return h
 }
 
 // ---------------------------------------------------------------------------
@@ -84,20 +110,13 @@ func NewHandler(cfg Config) *Handler {
 // ---------------------------------------------------------------------------
 
 var (
-	sessionMu   sync.Map // map[phone]*sync.Mutex — one lock per session
-	processedMu sync.Map // map[msgID]struct{} — dedup by message ID
+	processedMu sync.Map // map[msgID]time.Time — dedup by message ID
 )
-
-// getSessionMutex returns a dedicated mutex for each phone/session.
-func getSessionMutex(phone string) *sync.Mutex {
-	mu, _ := sessionMu.LoadOrStore(phone, &sync.Mutex{})
-	return mu.(*sync.Mutex)
-}
 
 // RegisterRoutes registers the webhook routes on the Gin engine.
 func (h *Handler) RegisterRoutes(r *gin.Engine) {
 	r.POST("/webhook", h.handleWebhook)
-	r.POST("/webhook/evolution", h.handleWebhook)   // Primary route for Evolution API
+	r.POST("/webhook/evolution", h.handleWebhook)    // Primary route for Evolution API
 	r.POST("/api/:session/webhook", h.handleWebhook) // Fallback for session-prefixed webhooks
 	r.POST("/knowledge/upload", h.handleKnowledgeUpload)
 	r.GET("/health", h.handleHealth)
@@ -123,7 +142,8 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 	}
 
 	if !h.verifyToken(token) {
-		log.Printf("🔒 Token inválido (%s) — acesso negado", token)
+		telemetry.WebhookRequestsTotal.WithLabelValues("unauthorized", "evolution").Inc()
+		slog.Warn("Token inválido — acesso negado", slog.String("token", token))
 		c.JSON(http.StatusOK, gin.H{"status": "token_invalid", "error": "Access Denied"})
 		return
 	}
@@ -133,7 +153,8 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 
 	payload, err := evolution.ParseWebhook(rawBody)
 	if err != nil {
-		log.Printf("❌ Falha no Parse do Webhook: %v", err)
+		telemetry.WebhookRequestsTotal.WithLabelValues("parse_error", "evolution").Inc()
+		slog.Error("Falha no Parse do Webhook", "error", err)
 		c.JSON(http.StatusOK, gin.H{"status": "parse_error", "error": err.Error()})
 		return
 	}
@@ -183,27 +204,26 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 	// 8. Session-Level Mutex & Message Deduplication
 	msgID := payload.ID
 	if msgID != "" {
-		if _, loaded := processedMu.LoadOrStore(msgID, struct{}{}); loaded {
+		if _, loaded := processedMu.LoadOrStore(msgID, time.Now()); loaded {
 			log.Printf("🔁 [DEDUP] Mensagem %s já em processamento (in-memory) — ignorando duplicata", msgID)
 			c.JSON(http.StatusOK, gin.H{"status": "duplicate"})
 			return
 		}
 
-		// Database-backed deduplication
-		isDuplicate, err := h.cfg.SupabaseClient.CheckAndRegisterWebhook(msgID)
+		// Database-backed deduplication & raw payload insertion (O Cartório / Imutável)
+		rawPayloadID, err := h.cfg.SupabaseClient.InsertRawPayload(c.Request.Context(), msgID, rawBody, "whatsapp_evolution")
 		if err != nil {
-			log.Printf("⚠️ [DEDUP] Erro ao verificar duplicidade no banco: %v. Prosseguindo como tolerância a falhas.", err)
-		} else if isDuplicate {
-			log.Printf("🔁 [DEDUP] Mensagem %s já processada (banco) — ignorando duplicata silenciosamente", msgID)
-			c.JSON(http.StatusOK, gin.H{"status": "duplicate"})
-			return
+			if errors.Is(err, supabase.ErrDuplicateMessage) {
+				log.Printf("🔁 [DEDUP] Mensagem %s já processada (raw_payloads unique constraint) — ignorando duplicata silenciosamente", msgID)
+				c.JSON(http.StatusOK, gin.H{"status": "duplicate"})
+				return
+			}
+			log.Printf("⚠️ [DEDUP] Falha ao persistir payload bruto: %v. Prosseguindo como tolerância a falhas.", err)
+		} else {
+			payload.RawPayloadID = rawPayloadID
+			log.Printf("📥 [WEBHOOK] Payload bruto registrado com ID: %s", rawPayloadID)
 		}
 
-		// Cleanup: remove after 5 min
-		go func(id string) {
-			time.Sleep(5 * time.Minute)
-			processedMu.Delete(id)
-		}(msgID)
 	}
 
 	// ─── HITL: SIM/NÃO intercept (before harness dispatch) ───────────────────
@@ -239,21 +259,49 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 
 		if err := h.cfg.HarnessQueue.Enqueue(enqueueCtx, *payload); err != nil {
 			log.Printf("❌ [WEBHOOK] Falha ao enfileirar mensagem %s: %v — falling back to legacy", payload.ID, err)
-			// Fallback automático para goroutine legada se o Enqueue falhar
-			go h.processLegacy(*payload)
+			// Fallback automático para worker pool legada se o Enqueue falhar
+			if errPool := h.legacyPool.Enqueue(*payload); errPool != nil {
+				if errors.Is(errPool, ErrQueueFull) {
+					log.Printf("⚠️ [WEBHOOK] Fila do Worker Pool cheia! Retornando 429 para a mensagem %s", payload.ID)
+					c.JSON(http.StatusTooManyRequests, gin.H{"status": "queue_full"})
+					return
+				}
+			}
 		} else {
 			log.Printf("📬 [WEBHOOK] Mensagem %s enfileirada no Harness (from=%s)", payload.ID, payload.From)
 		}
 	} else {
-		// Modo legado: goroutine direta (sem persistência de fila)
-		go h.processLegacy(*payload)
+		// Modo legado: worker pool em memória
+		if errPool := h.legacyPool.Enqueue(*payload); errPool != nil {
+			if errors.Is(errPool, ErrQueueFull) {
+				log.Printf("⚠️ [WEBHOOK] Fila do Worker Pool cheia! Retornando 429 para a mensagem %s", payload.ID)
+				c.JSON(http.StatusTooManyRequests, gin.H{"status": "queue_full"})
+				return
+			}
+		} else {
+			log.Printf("📬 [WEBHOOK] Mensagem %s enfileirada no MemoryWorkerPool", payload.ID)
+		}
 	}
 
 	// 9. Always Respond 200 OK
+	telemetry.WebhookRequestsTotal.WithLabelValues("success", "evolution").Inc()
+	slog.Info("Webhook 200 OK", 
+		slog.String("msg_id", payload.ID), 
+		slog.String("from", payload.From),
+	)
 	c.JSON(http.StatusOK, gin.H{
 		"status": "processed",
 		"from":   payload.From,
 	})
+}
+
+// Shutdown initiates a graceful shutdown of the handler components.
+func (h *Handler) Shutdown(ctx context.Context) error {
+	log.Println("⚠️ [Handler] Iniciando shutdown do Handler...")
+	if h.legacyPool != nil {
+		return h.legacyPool.Shutdown(ctx)
+	}
+	return nil
 }
 
 // handleHealth is a simple liveness probe.
@@ -336,6 +384,7 @@ func (h *Handler) handleHITLResponse(phone, response string) bool {
 // Usado quando HARNESS_ENABLED=false ou como fallback automático se o Enqueue falhar.
 // O comportamento é idêntico ao que existia antes do Harness.
 func (h *Handler) processLegacy(msg ports.IncomingMessage) {
+	log.Printf("[ASYNC] Iniciando Agentic Loop em background...")
 	go h.cfg.WhatsAppClient.SetPresence(msg.From, "composing")
 	defer h.cfg.WhatsAppClient.SetPresence(msg.From, "available")
 
@@ -343,22 +392,33 @@ func (h *Handler) processLegacy(msg ports.IncomingMessage) {
 		if r := recover(); r != nil {
 			log.Printf("🔥 [CRITICAL] Panic no processamento legado: %v", r)
 			h.cfg.WhatsAppClient.SendMessage(msg.From, "⚠️ Ocorreu um erro crítico inesperado. Minha equipe foi avisada.")
+			if msg.RawPayloadID != "" {
+				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+				defer cancel()
+				_ = h.cfg.SupabaseClient.UpdateRawPayloadStatus(ctx, msg.RawPayloadID, "FAILED", fmt.Sprintf("panic: %v", r))
+			}
 		}
 	}()
-
-	mu := getSessionMutex(msg.From)
-	mu.Lock()
-	defer mu.Unlock()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
+	if msg.RawPayloadID != "" {
+		ctx = context.WithValue(ctx, "raw_payload_id", msg.RawPayloadID)
+	}
+
 	result := state.ProcessMessage(ctx, msg, h.cfg.SupabaseClient, h.cfg.GroqClient, h.cfg.WhatsAppClient, h.cfg.LLMClient, h.cfg.TtsClient, h.cfg.MCPServer, h.cfg.HistoryManager, h.cfg.FlagsmithClient)
-	if !result.Success {
+	if msg.RawPayloadID != "" {
+		if !result.Success {
+			log.Printf("⚠️ [LEGACY] Processing completed with issues: %s", result.Reason)
+			_ = h.cfg.SupabaseClient.UpdateRawPayloadStatus(ctx, msg.RawPayloadID, "FAILED", result.Reason)
+		} else {
+			_ = h.cfg.SupabaseClient.UpdateRawPayloadStatus(ctx, msg.RawPayloadID, "PROCESSED", "")
+		}
+	} else if !result.Success {
 		log.Printf("⚠️ [LEGACY] Processing completed with issues: %s", result.Reason)
 	}
 }
-
 
 // handleKnowledgeUpload handles the knowledge base update via PDF upload
 func (h *Handler) handleKnowledgeUpload(c *gin.Context) {

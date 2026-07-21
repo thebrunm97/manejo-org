@@ -4,5 +4,11 @@
     "scss.lint.unknownAtRules": "ignore",
     "less.lint.unknownAtRules": "ignore",
     "http.systemCertificatesNode": true,
-    "python.terminal.useEnvFile": true
+    "python.terminal.useEnvFile": true,
+    "python.languageServer": "Pylance",
+    "python.defaultInterpreterPath": "${workspaceFolder}\\.venv_p312\\Scripts\\python.exe",
+    "python.venvPath": "${workspaceFolder}",
+    "python.venvFolders": [
+        ".venv_p312"
+    ]
 }

@@ -314,7 +314,7 @@ const PlanosManejoList: React.FC = () => {
             Sua propriedade atual está configurada na modalidade <strong>Convencional</strong>.
           </p>
           <button
-            onClick={() => navigate("/propriedade/perfil")}
+            onClick={() => navigate("/propriedade")}
             className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 font-semibold shadow-sm transition-all hover:shadow-md"
           >
             <Settings size={20} className="text-slate-400" />

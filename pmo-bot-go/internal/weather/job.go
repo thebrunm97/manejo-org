@@ -50,15 +50,15 @@ func runWeatherJobSafe(ctx context.Context, sbClient *supabase.Client, apiKey st
 
 func purgeOldWeatherData(ctx context.Context, sbClient *supabase.Client) {
 	cutoffDate := time.Now().AddDate(0, 0, -7).Format("2006-01-02")
-	
+
 	log.Printf("🗑️ [WeatherJob] Purgando registros anteriores a %s...", cutoffDate)
-	
+
 	err := sbClient.DeleteOlderThan("pmo_clima", "created_at", cutoffDate)
 	if err != nil {
 		log.Printf("⚠️ [WeatherJob] Falha no purge (não crítico): %v", err)
 		return
 	}
-	
+
 	log.Printf("✅ [WeatherJob] Purge concluído")
 }
 
