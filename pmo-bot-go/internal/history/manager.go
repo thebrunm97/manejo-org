@@ -1,7 +1,10 @@
 package history
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"log"
 	"sync"
 	"time"
 
@@ -209,6 +212,119 @@ func (m *Manager) InjectSystemNote(phone string, note string) {
 	if len(conv.Messages) > m.maxMessages {
 		conv.Messages = conv.Messages[len(conv.Messages)-m.maxMessages:]
 	}
+}
+
+// estimateTokens returns a rough estimate of tokens using Characters/4 heuristic
+func estimateTokens(messages []llm.MensagemAgnostica) int {
+	totalChars := 0
+	for _, m := range messages {
+		totalChars += len(m.Content)
+		for _, tc := range m.ToolCalls {
+			totalChars += len(tc.Nome)
+			if b, err := json.Marshal(tc.Args); err == nil {
+				totalChars += len(b)
+			}
+		}
+	}
+	return totalChars / 4
+}
+
+// TriggerAsyncCompression starts a background worker that measures context length and summarizes it via LLM if needed
+func (m *Manager) TriggerAsyncCompression(phone string, llmClient llm.LLMProvider, thresholdTokens int) {
+	m.mu.RLock()
+	conv, ok := m.conversations[phone]
+	if !ok || len(conv.Messages) == 0 {
+		m.mu.RUnlock()
+		return
+	}
+	
+	// Fast-fail check
+	approxTokens := estimateTokens(conv.Messages)
+	m.mu.RUnlock()
+
+	if approxTokens < thresholdTokens {
+		return // Still within bounds
+	}
+
+	// Above threshold! Fire the background worker
+	go func() {
+		log.Printf("🧹 [MemoryManager] %s ultrapassou %d tokens (~%d). Iniciando compressão assíncrona...", phone, thresholdTokens, approxTokens)
+
+		m.mu.RLock()
+		conv, ok := m.conversations[phone]
+		if !ok || len(conv.Messages) < 4 {
+			m.mu.RUnlock()
+			return
+		}
+
+		// Keep the 3 most recent messages (e.g. User -> Tool -> Response) intact
+		preserveCount := 3
+		if len(conv.Messages) <= preserveCount {
+			m.mu.RUnlock()
+			return
+		}
+
+		splitIndex := len(conv.Messages) - preserveCount
+		oldMessages := make([]llm.MensagemAgnostica, splitIndex)
+		copy(oldMessages, conv.Messages[:splitIndex])
+		m.mu.RUnlock()
+
+		// Build prompt for the LLM
+		prompt := "Você é um assistente encarregado de resumir um histórico de conversa. Extraia e resuma os principais pontos discutidos, decisões tomadas e o contexto atual da conversa. Seja extremamente conciso, omitindo amenidades e focando em fatos e operações."
+		
+		req := llm.ContentRequest{
+			SystemInstruction: prompt,
+			History:           oldMessages,
+		}
+		
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		resp, err := llmClient.GenerateContent(ctx, req)
+		if err != nil {
+			log.Printf("⚠️ [MemoryManager] Falha ao sumarizar histórico de %s: %v", phone, err)
+			return
+		}
+
+		summary := fmt.Sprintf("[SUMÁRIO DE CONVERSA ANTERIOR] %s", resp.Texto)
+		
+		// Now we acquire a full write lock to merge
+		m.mu.Lock()
+		defer m.mu.Unlock()
+
+		conv, ok = m.conversations[phone]
+		if !ok {
+			return
+		}
+
+		// We need to carefully merge. In the meantime, the user could have sent MORE messages.
+		// So `conv.Messages` might be longer than it was.
+		// We replace exactly the old prefix that we summarized with our new summary.
+		// To do this safely without breaking references, we can check if the prefix still matches.
+		// Actually, simpler: we just preserve the last N messages where N is what accumulated since we unlocked,
+		// plus the preserved messages.
+		
+		var newMessages []llm.MensagemAgnostica
+		newMessages = append(newMessages, llm.MensagemAgnostica{
+			Role:    llm.PapelAssistant,
+			Content: summary,
+		})
+
+		// How many messages were added while we were unlocking and waiting for LLM?
+		// We knew the length was originally splitIndex + preserveCount.
+		// If current length is > splitIndex, we append everything from splitIndex onwards.
+		if len(conv.Messages) > splitIndex {
+			newMessages = append(newMessages, conv.Messages[splitIndex:]...)
+		} else {
+			// Something weird happened, conv was shortened. Just use current.
+			newMessages = append(newMessages, conv.Messages...)
+		}
+
+		conv.Messages = newMessages
+		conv.LastUpdate = time.Now()
+
+		log.Printf("✅ [MemoryManager] %s compressão finalizada. Novo tamanho do histórico: %d mensagens.", phone, len(conv.Messages))
+	}()
 }
 
 func (m *Manager) startCleanup() {
