@@ -58,6 +58,7 @@ func (m *mockSender) SendMessage(to, message string) error {
 }
 func (m *mockSender) SendVoice(to, audio string, isPtt bool) error        { return nil }
 func (m *mockSender) SendReply(to, msg, replyTo string) error             { return nil }
+func (m *mockSender) SendPresence(ctx context.Context, to string, state string) error { return nil }
 func (m *mockSender) DownloadAudio(id string, raw []byte) ([]byte, error) { return nil, nil }
 func (m *mockSender) DownloadImage(id string, raw []byte) ([]byte, string, error) {
 	return nil, "", nil
@@ -404,7 +405,10 @@ func TestFinalizeRegistration_MockSuccess(t *testing.T) {
 		t.Errorf("Resposta não contém sucesso: %s", respStr)
 	}
 
-	// Verifica se todas as expectativas do mock foram atendidas (Opcional, pois testify já faz assert mas não falha se faltar sem assertExpectations)
+	// Dá um tempo para a goroutine do recordLog executar
+	time.Sleep(50 * time.Millisecond)
+
+	// Verifica se todas as expectativas do mock foram atendidas
 	mockDB.AssertExpectations(t)
 }
 

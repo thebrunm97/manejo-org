@@ -17,6 +17,7 @@ const (
 	StateInitial              = ""
 	StateAguardandoQuantidade = "aguardando_quantidade"
 	StateAguardandoCompra     = "aguardando_compra"
+	StateAguardandoFazenda    = "aguardando_fazenda"
 	StateAguardandoRateio     = "aguardando_rateio"
 )
 
@@ -91,63 +92,68 @@ func recordLog(sbClient ports.LogPersister, profile *supabase.Profile, msgIn str
 	if sbClient == nil || profile == nil {
 		return
 	}
-
-	duration := time.Since(startTime).Milliseconds()
-	custo := CalculateAICost(modelEffective, pTokens, cTokens)
-
-	// 1. Log de Processamento (Audit)
-	var pmoIDPtr *int64
-	if profile.PmoAtivoID > 0 {
-		val := profile.PmoAtivoID
-		pmoIDPtr = &val
+	if c, ok := sbClient.(*supabase.Client); ok && c == nil {
+		return
 	}
 
-	_ = sbClient.InsertLogProcessamento(supabase.LogProcessamentoInsert{
-		PmoID:             pmoIDPtr,
-		MensagemUsuario:   msgIn,
-		RespostaBot:       msgOut,
-		ModeloConfigurado: modelConfigured,
-		ModeloEfetivo:     modelEffective,
-		TokensPrompt:      pTokens,
-		TokensCompletion:  cTokens,
-		Intencao:          intent,
-		CustoDolar:        custo,
-		RaciocinioAgente:  raciocinio,
-	})
+	go func() {
+		duration := time.Since(startTime).Milliseconds()
+		custo := CalculateAICost(modelEffective, pTokens, cTokens)
 
-	// 2. Log de Consumo (Billing/Quota)
-	_ = sbClient.InsertLogConsumo(supabase.LogConsumoInsert{
-		UserID:           profile.ID,
-		TokensPrompt:     pTokens,
-		TokensCompletion: cTokens,
-		TotalTokens:      pTokens + cTokens,
-		ModeloIA:         modelEffective,
-		Acao:             intent,
-		CustoEstimado:    custo,
-		Status:           "success",
-		DuracaoMs:        duration,
-	})
-
-	// 3. Log de Treinamento (Feedback Loop) - Garante que mesmo sem extração estruturada, o log exista
-	if success {
-		finalExtraction := extraction
-		if finalExtraction == nil {
-			// Synth extraction for RAG/Doubts
-			finalExtraction = map[string]interface{}{
-				"intent": intent,
-				"query":  msgIn,
-			}
+		// 1. Log de Processamento (Audit)
+		var pmoIDPtr *int64
+		if profile.PmoAtivoID > 0 {
+			val := profile.PmoAtivoID
+			pmoIDPtr = &val
 		}
 
-		_ = sbClient.InsertLogTreinamento(supabase.LogTreinamentoInsert{
-			PmoID:         pmoIDPtr,
-			UserID:        profile.ID,
-			TextoUsuario:  msgIn,
-			JsonExtraido:  finalExtraction,
-			TipoAtividade: intent,
-			ModeloIA:      modelEffective,
+		_ = sbClient.InsertLogProcessamento(supabase.LogProcessamentoInsert{
+			PmoID:             pmoIDPtr,
+			MensagemUsuario:   msgIn,
+			RespostaBot:       msgOut,
+			ModeloConfigurado: modelConfigured,
+			ModeloEfetivo:     modelEffective,
+			TokensPrompt:      pTokens,
+			TokensCompletion:  cTokens,
+			Intencao:          intent,
+			CustoDolar:        custo,
+			RaciocinioAgente:  raciocinio,
 		})
-	}
+
+		// 2. Log de Consumo (Billing/Quota)
+		_ = sbClient.InsertLogConsumo(supabase.LogConsumoInsert{
+			UserID:           profile.ID,
+			TokensPrompt:     pTokens,
+			TokensCompletion: cTokens,
+			TotalTokens:      pTokens + cTokens,
+			ModeloIA:         modelEffective,
+			Acao:             intent,
+			CustoEstimado:    custo,
+			Status:           "success",
+			DuracaoMs:        duration,
+		})
+
+		// 3. Log de Treinamento (Feedback Loop) - Garante que mesmo sem extração estruturada, o log exista
+		if success {
+			finalExtraction := extraction
+			if finalExtraction == nil {
+				// Synth extraction for RAG/Doubts
+				finalExtraction = map[string]interface{}{
+					"intent": intent,
+					"query":  msgIn,
+				}
+			}
+
+			_ = sbClient.InsertLogTreinamento(supabase.LogTreinamentoInsert{
+				PmoID:         pmoIDPtr,
+				UserID:        profile.ID,
+				TextoUsuario:  msgIn,
+				JsonExtraido:  finalExtraction,
+				TipoAtividade: intent,
+				ModeloIA:      modelEffective,
+			})
+		}
+	}()
 }
 
 // parseToFloat captures both float64 and string from LLM interface{} output

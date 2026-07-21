@@ -18,7 +18,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
 )
 
-func handleRegistroFinanceiro(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, from string, respondWithAudio bool, historyManager *history.Manager) (string, ProcessResult) {
+func handleRegistroFinanceiro(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, _ ports.MessageSender, _ *tts.Orchestrator, from string, _ bool, historyManager *history.Manager) (string, ProcessResult) {
 	// 1. Extração e Normalização do Valor Total
 	valorTotal, err := parseNumeric(ext.ValorTotal)
 	if err != nil || valorTotal <= 0 {
