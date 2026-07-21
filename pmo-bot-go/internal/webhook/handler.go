@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 	"sync"
@@ -27,6 +28,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/state"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
+	"github.com/thebrunm97/pmo-bot-go/internal/telemetry"
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
 	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 	"golang.org/x/time/rate"
@@ -57,6 +59,8 @@ type Config struct {
 	HarnessQueue interface {
 		Enqueue(ctx context.Context, msg ports.IncomingMessage) error
 	}
+	WorkerCount int
+	QueueSize   int
 }
 
 // ---------------------------------------------------------------------------
@@ -65,8 +69,9 @@ type Config struct {
 
 // Handler is the webhook HTTP handler.
 type Handler struct {
-	cfg     Config
-	limiter *rate.Limiter
+	cfg        Config
+	limiter    *rate.Limiter
+	legacyPool *MemoryWorkerPool
 }
 
 // NewHandler creates a new webhook handler with the given config and Groq client.
@@ -78,6 +83,10 @@ func NewHandler(cfg Config) *Handler {
 		cfg:     cfg,
 		limiter: rate.NewLimiter(rate.Every(4*time.Second), 1), // 1 req a cada 4s = 15 RPM
 	}
+
+	// Initialize the legacy memory worker pool
+	h.legacyPool = NewMemoryWorkerPool(cfg.WorkerCount, cfg.QueueSize, h)
+	h.legacyPool.Start()
 
 	// Ticker único para limpeza do dedup in-memory (previne memory leaks)
 	go func() {
@@ -133,7 +142,8 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 	}
 
 	if !h.verifyToken(token) {
-		log.Printf("🔒 Token inválido (%s) — acesso negado", token)
+		telemetry.WebhookRequestsTotal.WithLabelValues("unauthorized", "evolution").Inc()
+		slog.Warn("Token inválido — acesso negado", slog.String("token", token))
 		c.JSON(http.StatusOK, gin.H{"status": "token_invalid", "error": "Access Denied"})
 		return
 	}
@@ -143,7 +153,8 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 
 	payload, err := evolution.ParseWebhook(rawBody)
 	if err != nil {
-		log.Printf("❌ Falha no Parse do Webhook: %v", err)
+		telemetry.WebhookRequestsTotal.WithLabelValues("parse_error", "evolution").Inc()
+		slog.Error("Falha no Parse do Webhook", "error", err)
 		c.JSON(http.StatusOK, gin.H{"status": "parse_error", "error": err.Error()})
 		return
 	}
@@ -248,21 +259,49 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 
 		if err := h.cfg.HarnessQueue.Enqueue(enqueueCtx, *payload); err != nil {
 			log.Printf("❌ [WEBHOOK] Falha ao enfileirar mensagem %s: %v — falling back to legacy", payload.ID, err)
-			// Fallback automático para goroutine legada se o Enqueue falhar
-			go h.processLegacy(*payload)
+			// Fallback automático para worker pool legada se o Enqueue falhar
+			if errPool := h.legacyPool.Enqueue(*payload); errPool != nil {
+				if errors.Is(errPool, ErrQueueFull) {
+					log.Printf("⚠️ [WEBHOOK] Fila do Worker Pool cheia! Retornando 429 para a mensagem %s", payload.ID)
+					c.JSON(http.StatusTooManyRequests, gin.H{"status": "queue_full"})
+					return
+				}
+			}
 		} else {
 			log.Printf("📬 [WEBHOOK] Mensagem %s enfileirada no Harness (from=%s)", payload.ID, payload.From)
 		}
 	} else {
-		// Modo legado: goroutine direta (sem persistência de fila)
-		go h.processLegacy(*payload)
+		// Modo legado: worker pool em memória
+		if errPool := h.legacyPool.Enqueue(*payload); errPool != nil {
+			if errors.Is(errPool, ErrQueueFull) {
+				log.Printf("⚠️ [WEBHOOK] Fila do Worker Pool cheia! Retornando 429 para a mensagem %s", payload.ID)
+				c.JSON(http.StatusTooManyRequests, gin.H{"status": "queue_full"})
+				return
+			}
+		} else {
+			log.Printf("📬 [WEBHOOK] Mensagem %s enfileirada no MemoryWorkerPool", payload.ID)
+		}
 	}
 
 	// 9. Always Respond 200 OK
+	telemetry.WebhookRequestsTotal.WithLabelValues("success", "evolution").Inc()
+	slog.Info("Webhook 200 OK", 
+		slog.String("msg_id", payload.ID), 
+		slog.String("from", payload.From),
+	)
 	c.JSON(http.StatusOK, gin.H{
 		"status": "processed",
 		"from":   payload.From,
 	})
+}
+
+// Shutdown initiates a graceful shutdown of the handler components.
+func (h *Handler) Shutdown(ctx context.Context) error {
+	log.Println("⚠️ [Handler] Iniciando shutdown do Handler...")
+	if h.legacyPool != nil {
+		return h.legacyPool.Shutdown(ctx)
+	}
+	return nil
 }
 
 // handleHealth is a simple liveness probe.
@@ -345,6 +384,7 @@ func (h *Handler) handleHITLResponse(phone, response string) bool {
 // Usado quando HARNESS_ENABLED=false ou como fallback automático se o Enqueue falhar.
 // O comportamento é idêntico ao que existia antes do Harness.
 func (h *Handler) processLegacy(msg ports.IncomingMessage) {
+	log.Printf("[ASYNC] Iniciando Agentic Loop em background...")
 	go h.cfg.WhatsAppClient.SetPresence(msg.From, "composing")
 	defer h.cfg.WhatsAppClient.SetPresence(msg.From, "available")
 

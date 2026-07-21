@@ -1,6 +1,7 @@
 package ports
 
 import (
+	"context"
 	"time"
 )
 
@@ -12,6 +13,7 @@ type MessageSender interface {
 	DownloadAudio(messageID string, rawPayload []byte) ([]byte, error)
 	DownloadImage(messageID string, rawPayload []byte) ([]byte, string, error)
 	SetPresence(to string, presence string) error
+	SendPresence(ctx context.Context, to string, state string) error
 	SendButton(to string, title, description, footer string, buttons []map[string]string) error
 }
 
