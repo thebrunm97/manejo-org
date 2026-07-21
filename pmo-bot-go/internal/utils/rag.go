@@ -2,12 +2,14 @@ package utils
 
 import (
 	"bytes"
+	"time"
 
 	"github.com/ledongthuc/pdf"
 )
 
 // ExtractTextFromPDF uses ledongthuc/pdf to get all text from document.
 func ExtractTextFromPDF(path string) (string, error) {
+	defer TraceLatency("ExtractTextFromPDF", time.Now())
 	f, r, err := pdf.Open(path)
 	if f != nil {
 		defer f.Close()

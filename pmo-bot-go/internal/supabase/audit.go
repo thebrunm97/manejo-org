@@ -8,6 +8,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
+
+	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 )
 
 // ErrDuplicateMessage is returned when a message_id already exists in the raw_payloads table
@@ -79,6 +82,7 @@ func (c *Client) InsertRawPayload(ctx context.Context, messageID string, rawPayl
 
 // UpdateRawPayloadStatus updates the processing status and optional error message of a raw payload.
 func (c *Client) UpdateRawPayloadStatus(ctx context.Context, rawPayloadID string, status string, errMsg string) error {
+	defer utils.TraceLatency("Supabase: UpdateRawPayloadStatus", time.Now())
 	if rawPayloadID == "" {
 		return errors.New("rawPayloadID cannot be empty")
 	}

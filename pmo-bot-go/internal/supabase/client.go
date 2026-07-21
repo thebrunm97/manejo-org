@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -165,19 +166,137 @@ type CanteiroInsert struct {
 }
 
 type FarmDocument struct {
-	PmoID        *int64    `json:"pmo_id"` // Pointer to allow NULL (Global)
-	DocumentName string    `json:"document_name"`
-	Content      string    `json:"content"`
-	Embedding    []float32 `json:"embedding"`
+	PmoID            *int64    `json:"pmo_id"` // Pointer to allow NULL (Global)
+	DocumentName     string    `json:"document_name"`
+	Content          string    `json:"content"`
+	Embedding        []float32 `json:"embedding"`               // Antigo (Gemini 3072d)
+	Embedding1024    []float32 `json:"embedding_1024"`          // Novo (BGE-M3 1024d)
+	ChunkHash        string    `json:"chunk_hash"`
+	ChunkIndex       int       `json:"chunk_index"`
+	SourceDocumentID string    `json:"source_document_id"`
+}
+
+type OpenRouterRequest struct {
+	Model string   `json:"model"`
+	Input []string `json:"input"`
+}
+
+type OpenRouterResponse struct {
+	Data []struct {
+		Embedding []float32 `json:"embedding"`
+	} `json:"data"`
+}
+
+type OllamaRequest struct {
+	Model  string `json:"model"`
+	Prompt string `json:"prompt"`
+}
+
+type OllamaResponse struct {
+	Embedding []float32 `json:"embedding"`
+}
+
+// GetEmbedding gera o embedding dependendo do contexto.
+// - BASE_CONHECIMENTO: Usa Ollama local (bge-m3)
+// - PRODUCAO: Usa OpenRouter (baai/bge-m3)
+func (c *Client) GetEmbedding(text string, contextType string) ([]float32, error) {
+	if contextType == "BASE_CONHECIMENTO" {
+		reqBody := OllamaRequest{
+			Model:  "bge-m3",
+			Prompt: text,
+		}
+		payload, err := json.Marshal(reqBody)
+		if err != nil {
+			return nil, err
+		}
+
+		req, err := http.NewRequest(http.MethodPost, "http://localhost:11434/api/embeddings", bytes.NewReader(payload))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/json")
+
+		// Timeout estendido para lidar com o cold-start do Ollama
+		client := &http.Client{Timeout: 120 * time.Second}
+		resp, err := client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != 200 {
+			bodyBytes, _ := io.ReadAll(resp.Body)
+			return nil, fmt.Errorf("erro ollama: status %d - %s", resp.StatusCode, string(bodyBytes))
+		}
+
+		var res OllamaResponse
+		if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+			return nil, err
+		}
+		return res.Embedding, nil
+
+	} else if contextType == "PRODUCAO" {
+		reqBody := OpenRouterRequest{
+			Model: "baai/bge-m3",
+			Input: []string{text},
+		}
+		payload, err := json.Marshal(reqBody)
+		if err != nil {
+			return nil, err
+		}
+
+		req, err := http.NewRequest(http.MethodPost, "https://openrouter.ai/api/v1/embeddings", bytes.NewReader(payload))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Authorization", "Bearer "+os.Getenv("OPENROUTER_API_KEY"))
+		req.Header.Set("Content-Type", "application/json")
+
+		client := &http.Client{Timeout: 30 * time.Second}
+		resp, err := client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != 200 {
+			bodyBytes, _ := io.ReadAll(resp.Body)
+			return nil, fmt.Errorf("erro openrouter: status %d - %s", resp.StatusCode, string(bodyBytes))
+		}
+
+		var res OpenRouterResponse
+		if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+			return nil, err
+		}
+		if len(res.Data) == 0 {
+			return nil, fmt.Errorf("openrouter retornou 0 embeddings")
+		}
+		return res.Data[0].Embedding, nil
+	}
+
+	return nil, fmt.Errorf("contextType inválido: %s", contextType)
 }
 
 type DocumentMatch struct {
 	ID           int64                  `json:"id"`
+	PmoID        int64                  `json:"pmo_id"`
 	DocumentName string                 `json:"document_name"`
 	Content      string                 `json:"content"`
 	Similarity   float32                `json:"similarity"`
 	IsGlobal     bool                   `json:"is_global"`
 	Metadata     map[string]interface{} `json:"metadata"`
+}
+
+type DocumentMatchContext struct {
+	ID               int64                  `json:"id"`
+	PmoID            int64                  `json:"pmo_id"`
+	DocumentName     string                 `json:"document_name"`
+	Content          string                 `json:"content"`
+	Similarity       float32                `json:"similarity"`
+	IsGlobal         bool                   `json:"is_global"`
+	Metadata         map[string]interface{} `json:"metadata"`
+	ChunkIndex       int                    `json:"chunk_index"`
+	SourceDocumentID string                 `json:"source_document_id"`
 }
 
 type PmoInsumoInsert struct {
@@ -739,6 +858,41 @@ func (c *Client) InsertFarmDocument(pmoID int64, docName, content string, embedd
 	return err
 }
 
+// UpsertFarmDocumentChunks faz o upsert de múltiplos chunks, utilizando a funcionalidade de UPSERT do Supabase
+// (com o cabeçalho Prefer: resolution=merge-duplicates e query parameter on_conflict=chunk_hash).
+func (c *Client) UpsertFarmDocumentChunks(chunks []FarmDocument) error {
+	if len(chunks) == 0 {
+		return nil
+	}
+	
+	reqURL := fmt.Sprintf("%s/rest/v1/farm_documents?on_conflict=chunk_hash", c.config.URL)
+	payload, err := json.Marshal(chunks)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewReader(payload))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("apikey", c.config.Key)
+	req.Header.Set("Authorization", "Bearer "+c.config.Key)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Prefer", "resolution=merge-duplicates") // Aciona o UPSERT no Supabase REST
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 300 {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("upsert error: status %d - %s", resp.StatusCode, string(bodyBytes))
+	}
+	return nil
+}
+
 // MatchFarmDocuments calls the match_farm_documents RPC to find similar chunks for a specific farm
 func (c *Client) MatchFarmDocuments(pmoID int64, embedding []float32, threshold float32, count int) ([]DocumentMatch, error) {
 	reqURL := fmt.Sprintf("%s/rest/v1/rpc/match_farm_documents", c.config.URL)
@@ -757,16 +911,13 @@ func (c *Client) MatchFarmDocuments(pmoID int64, embedding []float32, threshold 
 
 	body, err := c.doRequest(http.MethodPost, reqURL, payload)
 	if err != nil {
-		// doRequest already returns a formatted error with status code and body if >= 400
 		return nil, err
 	}
 
-	// DEBUG: Log the raw response to identify the unmarshal issue
 	log.Printf("📡 [Supabase RPC] Raw Result (match_farm_documents): %s", string(body))
 
 	var results []DocumentMatch
 	if err := json.Unmarshal(body, &results); err != nil {
-		// If it's not a list, maybe it's a single object (PostgREST error or wrapper?)
 		var apiError struct {
 			Code    string `json:"code"`
 			Message string `json:"message"`
@@ -778,6 +929,46 @@ func (c *Client) MatchFarmDocuments(pmoID int64, embedding []float32, threshold 
 		}
 
 		return nil, fmt.Errorf("failed to parse match results as []DocumentMatch: %w. Body: %s", err, string(body))
+	}
+
+	return results, nil
+}
+
+// MatchFarmDocumentsContext calls the match_documents_with_context_1024 RPC to find similar chunks + neighbors
+func (c *Client) MatchFarmDocumentsContext(pmoID int64, embedding []float32, threshold float32, count int, windowSize int) ([]DocumentMatchContext, error) {
+	// Point to the new 1024-dimensional RPC for BGE-m3
+	reqURL := fmt.Sprintf("%s/rest/v1/rpc/match_documents_with_context_1024", c.config.URL)
+
+	params := map[string]interface{}{
+		"query_embedding": embedding,
+		"match_pmo_id":    pmoID,
+		"match_threshold": threshold,
+		"match_count":     count,
+		"window_size":     windowSize,
+	}
+
+	payload, err := json.Marshal(params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal match context params: %w", err)
+	}
+
+	body, err := c.doRequest(http.MethodPost, reqURL, payload)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Printf("📡 [Supabase RPC] Raw Result (match_documents_with_context): %s", string(body))
+
+	var results []DocumentMatchContext
+	if err := json.Unmarshal(body, &results); err != nil {
+		var apiError struct {
+			Code    string `json:"code"`
+			Message string `json:"message"`
+		}
+		if errJSON := json.Unmarshal(body, &apiError); errJSON == nil && apiError.Message != "" {
+			return nil, fmt.Errorf("supabase RPC error: %s (code: %s)", apiError.Message, apiError.Code)
+		}
+		return nil, fmt.Errorf("failed to decode match context results: %w\nBody: %s", err, string(body))
 	}
 
 	return results, nil
@@ -1827,4 +2018,26 @@ func (c *Client) GetLimitesSeguranca(ctx context.Context, propriedadeID, pmoID i
 	}
 
 	return results[0].LimiteTransacao, results[0].LimiteManejo, nil
+}
+
+type Propriedade struct {
+	ID            int64  `json:"id"`
+	Nome          string `json:"nome_identificador"` // Maps from PMO nome_identificador
+	PropriedadeID int64  `json:"propriedade_id"`
+}
+
+// GetPropriedadesDoUsuario returns the PMOs (represented as properties) for a user.
+func (c *Client) GetPropriedadesDoUsuario(userID string) ([]Propriedade, error) {
+	reqURL := fmt.Sprintf("%s/rest/v1/pmos?user_id=eq.%s&select=id,nome_identificador,propriedade_id", c.config.URL, userID)
+	res, err := c.doRequest(http.MethodGet, reqURL, nil, false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch propriedades/pmos: %w", err)
+	}
+
+	var propriedades []Propriedade
+	if err := json.Unmarshal(res, &propriedades); err != nil {
+		return nil, fmt.Errorf("failed to parse propriedades: %w", err)
+	}
+
+	return propriedades, nil
 }
