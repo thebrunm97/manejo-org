@@ -1,7 +1,9 @@
 {
   "scripts": {
     "dev": "npm run dev --prefix pmo-frontend",
-    "start": "npm run build --prefix pmo-frontend && npm run preview --prefix pmo-frontend"
+    "start": "npm run build --prefix pmo-frontend && npm run preview --prefix pmo-frontend",
+    "start:full": "powershell -ExecutionPolicy Bypass -File scripts/start-full.ps1",
+    "test:smoke": "powershell -ExecutionPolicy Bypass -File scripts/smoke-test.ps1"
   },
   "devDependencies": {
     "vite-plugin-pwa": "^1.2.0"
