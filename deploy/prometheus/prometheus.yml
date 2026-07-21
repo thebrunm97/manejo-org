@@ -1,0 +1,20 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "alert.rules.yml"
+
+scrape_configs:
+  - job_name: "pmo-bot-go"
+    metrics_path: "/metrics"
+    # Adicionar o bearer token caso a variável PROMETHEUS_AUTH_TOKEN esteja ativa no backend
+    # bearer_token: "seu_token_aqui"
+    # ou basic_auth se implementado via basic auth no Gin
+    # basic_auth:
+    #   username: "admin"
+    #   password: "seu_token_aqui"
+    static_configs:
+      # host.docker.internal permite ao Prometheus (em Docker) aceder ao localhost da máquina host
+      # Caso o backend também esteja no docker-compose, usar apenas o nome do serviço (ex: pmo-bot-go:8080)
+      - targets: ["host.docker.internal:8080"]
