@@ -146,6 +146,12 @@ func fetchWeatherWithRetry(ctx context.Context, location string) (*WeatherData, 
 func geocodeOpenMeteo(ctx context.Context, query string) (string, string, error) {
 	parts := strings.Split(query, ",")
 	cityName := strings.TrimSpace(parts[0])
+	
+	// Open-Meteo geocoding works best with just the city name. 
+	// If the user sends \"Cidade - Estado\", we strip the state part.
+	if dashIndex := strings.Index(cityName, "-"); dashIndex != -1 {
+		cityName = strings.TrimSpace(cityName[:dashIndex])
+	}
 
 	apiURL := fmt.Sprintf("https://geocoding-api.open-meteo.com/v1/search?name=%s&count=1&language=pt", url.QueryEscape(cityName))
 	req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
