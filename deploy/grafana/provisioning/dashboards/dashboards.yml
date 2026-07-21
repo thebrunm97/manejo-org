@@ -1,0 +1,12 @@
+apiVersion: 1
+
+providers:
+  - name: 'PMO Dashboards'
+    orgId: 1
+    folder: ''
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      # Caminho onde os ficheiros JSON de dashboards serão mapeados no container
+      path: /var/lib/grafana/dashboards
