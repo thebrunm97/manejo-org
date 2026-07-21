@@ -64,6 +64,12 @@ type OpenAIAdapterConfig struct {
 	HTTPReferer string
 	AppTitle    string
 
+	// FastRouter parameters (optional). If provided, ClassifyIntent will use these
+	// credentials instead of the main APIKey/Model (e.g. for Groq fast routing).
+	RouterAPIKey  string
+	RouterModel   string
+	RouterBaseURL string
+
 	// Prompts contains the system prompt strings used by this adapter.
 	// If empty strings are provided, the adapter uses built-in fallbacks.
 	Prompts PromptConfig
@@ -73,9 +79,10 @@ type OpenAIAdapterConfig struct {
 // It is intentionally thin: all business logic (prompt management, schema conversion)
 // lives in the domain packages; this adapter only handles HTTP translation.
 type OpenAIAdapter struct {
-	client  *openai.Client
-	cfg     OpenAIAdapterConfig
-	prompts PromptConfig
+	client       *openai.Client
+	routerClient *openai.Client // Optional dedicated client for ClassifyIntent
+	cfg          OpenAIAdapterConfig
+	prompts      PromptConfig
 }
 
 // NewOpenAIAdapter constructs an OpenAIAdapter ready to use.
@@ -119,11 +126,22 @@ func NewOpenAIAdapter(cfg OpenAIAdapterConfig) (*OpenAIAdapter, error) {
 
 	log.Printf("📡 [OpenAIAdapter] Inicializado: model=%s baseURL=%s", cfg.Model, cfg.BaseURL)
 
-	return &OpenAIAdapter{
+	adapter := &OpenAIAdapter{
 		client:  openai.NewClientWithConfig(clientCfg),
 		cfg:     cfg,
 		prompts: prompts,
-	}, nil
+	}
+
+	if cfg.RouterAPIKey != "" && cfg.RouterModel != "" {
+		routerCfg := openai.DefaultConfig(cfg.RouterAPIKey)
+		if cfg.RouterBaseURL != "" {
+			routerCfg.BaseURL = cfg.RouterBaseURL
+		}
+		adapter.routerClient = openai.NewClientWithConfig(routerCfg)
+		log.Printf("🚀 [OpenAIAdapter] Fast Router ativado: model=%s baseURL=%s", cfg.RouterModel, cfg.RouterBaseURL)
+	}
+
+	return adapter, nil
 }
 
 // openAIHeaderTransport adds provider-required headers (OpenRouter: HTTP-Referer, X-Title).
@@ -210,8 +228,16 @@ func (a *OpenAIAdapter) ClassifyIntent(ctx context.Context, text string) (Unifie
 
 	log.Printf("🧭 [OpenAIAdapter] ClassifyIntent(%s): '%s'", a.cfg.Model, adapterTruncate(text, 60))
 
-	resp, err := a.client.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
-		Model: a.cfg.Model,
+	activeClient := a.client
+	activeModel := a.cfg.Model
+	if a.routerClient != nil {
+		activeClient = a.routerClient
+		activeModel = a.cfg.RouterModel
+		log.Printf("⚡ [FastRouter] Delegando ClassifyIntent para %s", activeModel)
+	}
+
+	resp, err := activeClient.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
+		Model: activeModel,
 		Messages: []openai.ChatCompletionMessage{
 			{Role: openai.ChatMessageRoleSystem, Content: a.prompts.RouterPrompt},
 			{Role: openai.ChatMessageRoleUser, Content: text},
@@ -222,11 +248,11 @@ func (a *OpenAIAdapter) ClassifyIntent(ctx context.Context, text string) (Unifie
 	})
 	if err != nil {
 		fallback.Reasoning = "provider_error"
-		return fallback, a.cfg.Model, fmt.Errorf("openai_adapter: ClassifyIntent: %w", err)
+		return fallback, activeModel, fmt.Errorf("openai_adapter: ClassifyIntent: %w", err)
 	}
 	if len(resp.Choices) == 0 {
 		fallback.Reasoning = "empty_response"
-		return fallback, a.cfg.Model, nil
+		return fallback, activeModel, nil
 	}
 
 	raw := resp.Choices[0].Message.Content
@@ -234,13 +260,13 @@ func (a *OpenAIAdapter) ClassifyIntent(ctx context.Context, text string) (Unifie
 	if decErr != nil {
 		log.Printf("⚠️ [OpenAIAdapter] ClassifyIntent decode error: %v. Raw: %s", decErr, raw)
 		fallback.Reasoning = "schema_validation_error"
-		return fallback, a.cfg.Model, nil
+		return fallback, activeModel, nil
 	}
 	if len(result.Intents) == 0 {
 		result.Intents = []Intent{IntentRAG}
 	}
 
-	return result, a.cfg.Model, nil
+	return result, activeModel, nil
 }
 
 // AskSimple sends a single question without tools (utility/legacy path).
@@ -328,8 +354,16 @@ func (a *OpenAIAdapter) EvaluateEvidenceListwise(ctx context.Context, query stri
 		sb.WriteString(fmt.Sprintf("--- Evidência %d ---\n%s\n\n", i, chunk))
 	}
 
-	resp, err := a.client.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
-		Model: a.cfg.Model,
+	activeClient := a.client
+	activeModel := a.cfg.Model
+	if a.routerClient != nil {
+		activeClient = a.routerClient
+		activeModel = a.cfg.RouterModel
+		log.Printf("⚡ [FastRouter] Delegando EvaluateEvidenceListwise para %s", activeModel)
+	}
+
+	resp, err := activeClient.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
+		Model: activeModel,
 		Messages: []openai.ChatCompletionMessage{
 			{Role: openai.ChatMessageRoleSystem, Content: a.prompts.MetaRAGJudgePrompt},
 			{Role: openai.ChatMessageRoleUser, Content: sb.String()},

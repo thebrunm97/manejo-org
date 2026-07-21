@@ -128,14 +128,24 @@ func NewOpenAICompatibleProvider(cfg FactoryConfig, prompts PromptConfig) (LLMPr
 		if model == "" {
 			model = "google/gemini-2.0-flash-001" // sensible default on OpenRouter
 		}
-		return NewOpenAIAdapter(OpenAIAdapterConfig{
+		
+		adapterCfg := OpenAIAdapterConfig{
 			APIKey:      apiKey,
 			Model:       model,
 			BaseURL:     "https://openrouter.ai/api/v1",
 			HTTPReferer: "https://manejo.org",
 			AppTitle:    "ManejoOrg PMO Bot",
 			Prompts:     prompts,
-		})
+		}
+
+		// FastRouter Optimization: Use Groq for intent routing if available
+		if cfg.GroqAPIKey != "" {
+			adapterCfg.RouterAPIKey = cfg.GroqAPIKey
+			adapterCfg.RouterBaseURL = "https://api.groq.com/openai/v1"
+			adapterCfg.RouterModel = "llama-3.3-70b-versatile"
+		}
+
+		return NewOpenAIAdapter(adapterCfg)
 
 	case ProviderGroq:
 		apiKey := cfg.GroqAPIKey
