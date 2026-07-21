@@ -19,7 +19,8 @@ func (s *Server) handleRegistrarColheita(args map[string]interface{}) (interface
 		data = time.Now().Format("2006-01-02")
 	}
 
-	qtd, _ := parseArgToFloat(args["quantidade"])
+	qtd, errQtd := parseArgToFloat(args["quantidade"])
+	log.Printf("🛠️ [DEBUG] parseArgToFloat(quantidade) -> qtd: %f, err: %v, original: %v, type: %T", qtd, errQtd, args["quantidade"], args["quantidade"])
 	unidade := sanitize(args["unidade"])
 	talhao := sanitize(args["talhao"])
 	cultura := sanitize(args["cultura"])

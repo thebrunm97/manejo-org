@@ -1,6 +1,10 @@
 package mcp
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
+
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 )
 
@@ -28,12 +32,67 @@ var CalcularAdubacaoDef = llm.FerramentaAgnostica{
 	},
 }
 
+// RegistrarPlantioDef defines the schema for the RegistrarPlantio mutation tool.
+var RegistrarPlantioDef = llm.FerramentaAgnostica{
+	Name:        "RegistrarPlantio",
+	Description: "Registra a operação de plantio ou propagação no caderno de campo.",
+	Parameters: map[string]interface{}{
+		"type": "object",
+		"properties": map[string]interface{}{
+			"especies": map[string]interface{}{
+				"type":        "string",
+				"description": "A cultura ou espécie plantada (ex: Alface, Tomate).",
+			},
+			"quantidade_valor": map[string]interface{}{
+				"type":        "number",
+				"description": "Valor numérico da quantidade plantada.",
+			},
+			"quantidade_unidade": map[string]interface{}{
+				"type":        "string",
+				"description": "Unidade de medida da quantidade (ex: mudas, kg, sementes).",
+			},
+			"talhao_nome": map[string]interface{}{
+				"type":        "string",
+				"description": "Nome do talhão onde foi feito o plantio.",
+			},
+			"data": map[string]interface{}{
+				"type":        "string",
+				"description": "Data do plantio no formato YYYY-MM-DD (Opcional, preenche com hoje se vazio).",
+			},
+			"origem": map[string]interface{}{
+				"type":        "string",
+				"description": "Origem das mudas ou sementes (Opcional).",
+			},
+		},
+		"required": []string{"especies", "quantidade_valor", "quantidade_unidade", "talhao_nome"},
+	},
+}
+
+
 // InitializeTools registers the initial set of tools to the MCP server.
 func (s *Server) InitializeTools() {
+	s.RegisterTool(Tool{
+		Definition: RegistrarLoteOperacoesDef,
+		Category:   CategoryDatabase,
+		Handler:    s.handleRegistrarLote,
+	})
+
 	s.RegisterTool(Tool{
 		Definition: CalcularAdubacaoDef,
 		Category:   CategoryDatabase,
 		Handler:    s.handleCalcularAdubacao,
+	})
+
+	s.RegisterTool(Tool{
+		Definition: RegistrarPlantioDef,
+		Category:   CategoryDatabase,
+		Handler:    s.handleRegistrarPlantio,
+	})
+
+	s.RegisterTool(Tool{
+		Definition: SalvarMemoriaProdutorDef,
+		Category:   CategoryDatabase,
+		Handler:    s.handleSalvarMemoria,
 	})
 
 	s.RegisterTool(Tool{
@@ -62,6 +121,25 @@ func (s *Server) InitializeTools() {
 		},
 		Category: CategoryRAG,
 		Handler:  s.handleConsultarBaseConhecimento,
+	})
+
+	s.RegisterTool(Tool{
+		Definition: llm.FerramentaAgnostica{
+			Name:        "ConsultarLeiOrganica_RAG",
+			Description: "Consulta os manuais técnicos e a Lei Orgânica 10.831 na base de conhecimento (RAG) do sistema. OBRIGATÓRIO para responder sobre legislações e regras gerais orgânicas.",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"query": map[string]interface{}{
+						"type":        "string",
+						"description": "A pergunta ou termo de busca para pesquisar sobre a lei orgânica.",
+					},
+				},
+				"required": []string{"query"},
+			},
+		},
+		Category: CategoryRAG,
+		Handler:  s.handleConsultarLeiOrganica,
 	})
 
 	s.RegisterTool(Tool{
@@ -116,6 +194,10 @@ func (s *Server) InitializeTools() {
 			},
 		},
 		Category: CategoryDatabase,
+		Options: &ToolOptions{
+			Schema:               &CriarInfraestruturaSchema{},
+			RequiresConfirmation: true,
+		},
 		Handler:  s.handleCriarInfraestruturaFazenda,
 	})
 
@@ -154,6 +236,10 @@ func (s *Server) InitializeTools() {
 			},
 		},
 		Category: CategoryDatabase,
+		Options: &ToolOptions{
+			Schema:               &AdicionarInsumoSchema{},
+			RequiresConfirmation: true,
+		},
 		Handler:  s.handleAdicionarInsumoPMO,
 	})
 
@@ -200,6 +286,10 @@ func (s *Server) InitializeTools() {
 			},
 		},
 		Category: CategoryDatabase,
+		Options: &ToolOptions{
+			Schema:               &RegistrarPropagacaoSchema{},
+			RequiresConfirmation: true,
+		},
 		Handler:  s.handleRegistrarPropagacaoVegetal,
 	})
 
@@ -222,6 +312,10 @@ func (s *Server) InitializeTools() {
 			},
 		},
 		Category: CategoryDatabase,
+		Options: &ToolOptions{
+			Schema:               &RegistrarLimpezaSchema{},
+			RequiresConfirmation: true,
+		},
 		Handler:  s.handleRegistrarLimpeza,
 	})
 
@@ -242,6 +336,10 @@ func (s *Server) InitializeTools() {
 			},
 		},
 		Category: CategoryDatabase,
+		Options: &ToolOptions{
+			Schema:               &CriarTalhaoSchema{},
+			RequiresConfirmation: true,
+		},
 		Handler:  s.handleCriarNovoTalhao,
 	})
 
@@ -260,6 +358,10 @@ func (s *Server) InitializeTools() {
 			},
 		},
 		Category: CategoryDatabase,
+		Options: &ToolOptions{
+			Schema:               &CriarCanteirosSchema{},
+			RequiresConfirmation: true,
+		},
 		Handler:  s.handleCriarNovosCanteiros,
 	})
 
@@ -282,6 +384,10 @@ func (s *Server) InitializeTools() {
 			},
 		},
 		Category: CategoryDatabase,
+		Options: &ToolOptions{
+			Schema:               &RegistrarCompostagemSchema{},
+			RequiresConfirmation: true,
+		},
 		Handler:  s.handleRegistrarCompostagem,
 	})
 
@@ -293,7 +399,7 @@ func (s *Server) InitializeTools() {
 				"type": "object",
 				"properties": map[string]interface{}{
 					"pmo_id":         map[string]interface{}{"type": "integer"},
-					"propriedade_id": map[string]interface{}{"type": "string", "description": "ID da propriedade (fazenda) ativa."},
+					"propriedade_id": map[string]interface{}{"type": "integer", "description": "ID da propriedade (fazenda) ativa. OBRIGATÓRIO: Extraia do cabeçalho de contexto injetado pelo sistema."},
 					"produto": map[string]interface{}{
 						"type":        "string",
 						"description": "Nome do produto/insumo adquirido (Ex: Esterco, Enxada, Semente de Alface, Adubo orgânico).",
@@ -349,10 +455,14 @@ func (s *Server) InitializeTools() {
 						"description": "Nome da categoria da despesa (ex: 'Insumos', 'Manutenção', 'Logística/Frete'). Opcional.",
 					},
 				},
-				"required": []string{"pmo_id", "propriedade_id", "produto"},
+				"required": []string{"pmo_id", "propriedade_id", "produto", "quantidade_valor", "quantidade_unidade"},
 			},
 		},
 		Category: CategoryDatabase,
+		Options: &ToolOptions{
+			Schema:               &RegistrarCompraSchema{},
+			RequiresConfirmation: true,
+		},
 		Handler:  s.handleRegistrarCompraInsumo,
 	})
 
@@ -380,6 +490,10 @@ func (s *Server) InitializeTools() {
 			},
 		},
 		Category: CategoryDatabase,
+		Options: &ToolOptions{
+			Schema:               &RegistrarColheitaSchema{},
+			RequiresConfirmation: true,
+		},
 		Handler:  s.handleRegistrarColheita,
 	})
 
@@ -414,6 +528,10 @@ func (s *Server) InitializeTools() {
 			},
 		},
 		Category: CategoryDatabase,
+		Options: &ToolOptions{
+			Schema:               &RegistrarVendaSchema{},
+			RequiresConfirmation: true,
+		},
 		Handler:  s.handleRegistrarVenda,
 	})
 
@@ -431,6 +549,10 @@ func (s *Server) InitializeTools() {
 			},
 		},
 		Category: CategoryDatabase,
+		Options: &ToolOptions{
+			Schema:               &SelecionarFazendaSchema{},
+			RequiresConfirmation: false,
+		},
 		Handler:  s.handleSelecionarFazenda,
 	})
 
@@ -448,6 +570,10 @@ func (s *Server) InitializeTools() {
 			},
 		},
 		Category: CategoryDatabase,
+		Options: &ToolOptions{
+			Schema:               &SelecionarPMOSchema{},
+			RequiresConfirmation: false,
+		},
 		Handler:  s.handleSelecionarPMO,
 	})
 
@@ -524,3 +650,54 @@ func (s *Server) InitializeTools() {
 		Handler:  s.handleConsultarPrevisaoTempo,
 	})
 }
+
+var RegistrarLoteOperacoesDef = llm.FerramentaAgnostica{
+	Name:        "RegistrarLoteOperacoes",
+	Description: "Registra múltiplas operações agrícolas em lote (colheita, plantio, venda, manejo, limpeza, compostagem, compra). Use esta ferramenta quando o usuário relatar mais de uma operação simultaneamente para otimizar o tempo e reduzir chamadas.",
+	Parameters: map[string]interface{}{
+		"type": "object",
+		"properties": map[string]interface{}{
+			"operacoes": map[string]interface{}{
+				"type": "array",
+				"description": "Lista de operações a serem registradas.",
+				"items": map[string]interface{}{
+					"type": "object",
+					"properties": map[string]interface{}{
+						"tipo": map[string]interface{}{
+							"type": "string",
+							"enum": []string{"Limpeza", "Propagacao", "Compostagem", "Compra", "Colheita", "Venda"},
+						},
+						"limpeza": map[string]interface{}{"type": "object", "description": "Dados da limpeza, se tipo=Limpeza"},
+						"propagacao": map[string]interface{}{"type": "object"},
+						"compostagem": map[string]interface{}{"type": "object"},
+						"compra": map[string]interface{}{"type": "object"},
+						"colheita": map[string]interface{}{"type": "object"},
+						"venda": map[string]interface{}{"type": "object"},
+					},
+					"required": []string{"tipo"},
+				},
+			},
+		},
+		"required": []string{"operacoes"},
+	},
+}
+
+func (s *Server) handleRegistrarLote(args map[string]interface{}) (interface{}, error) {
+	pmoIDFloat, _ := args["pmo_id"].(float64)
+	pmoID := int(pmoIDFloat)
+	userID, _ := args["user_id"].(string)
+
+	var payload RegistrarLoteOperacoesSchema
+	payloadBytes, _ := json.Marshal(args)
+	if err := json.Unmarshal(payloadBytes, &payload); err != nil {
+		return nil, fmt.Errorf("formato inválido para lote: %w", err)
+	}
+
+	result, err := s.agriRepo.RegistrarLoteOperacoes(context.Background(), pmoID, userID, payload.Operacoes)
+	if err != nil {
+		return nil, fmt.Errorf("erro no processamento do lote: %w", err)
+	}
+
+	return result, nil
+}
+

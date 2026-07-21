@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
+	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 )
 
@@ -47,6 +48,7 @@ func (lg *LoopGuard) CheckAndRecord(name string, args map[string]interface{}) bo
 // It is now provider-agnostic.
 type Server struct {
 	supabase    *supabase.Client
+	agriRepo    ports.AgriculturalRepository[OperacaoLoteItem]
 	embedder    Embedder
 	llmProvider llm.LLMProvider
 	tools       map[string]Tool
@@ -64,13 +66,15 @@ const (
 type Tool struct {
 	Definition llm.FerramentaAgnostica
 	Category   ToolCategory
+	Options    *ToolOptions                                           // Opcional: Define regras de validação e confirmação
 	Handler    func(args map[string]interface{}) (interface{}, error) `json:"-"`
 }
 
 // NewServer initializes a new agnostic MCP server.
-func NewServer(sb *supabase.Client, emb Embedder, llmProvider llm.LLMProvider) *Server {
+func NewServer(sb *supabase.Client, agriRepo ports.AgriculturalRepository[OperacaoLoteItem], emb Embedder, llmProvider llm.LLMProvider) *Server {
 	return &Server{
 		supabase:    sb,
+		agriRepo:    agriRepo,
 		embedder:    emb,
 		llmProvider: llmProvider,
 		tools:       make(map[string]Tool),
@@ -79,6 +83,27 @@ func NewServer(sb *supabase.Client, emb Embedder, llmProvider llm.LLMProvider) *
 
 // RegisterTool adds a tool to the server.
 func (s *Server) RegisterTool(tool Tool) {
+	// Se a ferramenta tiver opções de middleware definidas, envolve o handler
+	if tool.Options != nil {
+		tool.Handler = wrapWithMiddleware(*tool.Options, tool.Handler)
+
+		// Injeta propriedades no schema JSON da ferramenta dinamicamente
+		if tool.Definition.Parameters != nil {
+			if props, ok := tool.Definition.Parameters["properties"].(map[string]interface{}); ok {
+				props["dry_run"] = map[string]interface{}{
+					"type":        "boolean",
+					"description": "Se verdadeiro, valida os dados sem executar a ação real. Use isto sempre que não tiver a certeza ou quiser testar a validade dos dados antes de pedir confirmação.",
+				}
+				if tool.Options.RequiresConfirmation {
+					props["confirmed"] = map[string]interface{}{
+						"type":        "boolean",
+						"description": "Deve ser true APENAS SE o usuário confirmou explicitamente a execução desta ação. Caso contrário, omita este campo e a ferramenta pedirá a confirmação.",
+					}
+				}
+			}
+		}
+	}
+
 	s.tools[tool.Definition.Name] = tool
 	log.Printf("🛠️ [MCP] Ferramenta registrada: %s", tool.Definition.Name)
 }
@@ -113,7 +138,11 @@ func (s *Server) GetToolsForIntent(intent string) []llm.FerramentaAgnostica {
 			}
 
 		case "CHAT":
-			include = false
+			// Allow Database tools in CHAT so that simple confirmations like "Sim" 
+			// (which route to CHAT) can still trigger the pending tool call.
+			if t.Category == CategoryDatabase {
+				include = true
+			}
 		}
 
 		if include {

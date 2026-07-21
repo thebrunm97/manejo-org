@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
+	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 )
 
@@ -39,31 +40,34 @@ func TestMetaRAGFiltering(t *testing.T) {
 	// 1. Setup mock Supabase server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Mock match_farm_documents RPC response
-		if strings.Contains(r.URL.Path, "match_farm_documents") {
-			matches := []supabase.DocumentMatch{
+		if strings.Contains(r.URL.Path, "match_documents_with_context") {
+			matches := []supabase.DocumentMatchContext{
 				{
-					ID:           1,
-					DocumentName: "doc1.pdf",
-					Content:      "Conteúdo da evidência forte.",
-					Similarity:   0.8,
-					IsGlobal:     true,
-					Metadata:     map[string]interface{}{"categoria_fonte": "geral"},
+					ID:               1,
+					SourceDocumentID: "uuid-doc1",
+					DocumentName:     "doc1.pdf",
+					Content:          "Conteúdo da evidência forte.",
+					Similarity:       0.8,
+					IsGlobal:         true,
+					Metadata:         map[string]interface{}{"categoria_fonte": "geral"},
 				},
 				{
-					ID:           2,
-					DocumentName: "doc2.pdf",
-					Content:      "Conteúdo da evidência fraca/extrapolada.",
-					Similarity:   0.7,
-					IsGlobal:     true,
-					Metadata:     map[string]interface{}{"categoria_fonte": "geral"},
+					ID:               2,
+					SourceDocumentID: "uuid-doc2",
+					DocumentName:     "doc2.pdf",
+					Content:          "Conteúdo da evidência fraca/extrapolada.",
+					Similarity:       0.7,
+					IsGlobal:         true,
+					Metadata:         map[string]interface{}{"categoria_fonte": "geral"},
 				},
 				{
-					ID:           3,
-					DocumentName: "doc3.pdf",
-					Content:      "Conteúdo irrelevante ou lixo.",
-					Similarity:   0.6,
-					IsGlobal:     false,
-					Metadata:     map[string]interface{}{"categoria_fonte": "geral"},
+					ID:               3,
+					SourceDocumentID: "uuid-doc3",
+					DocumentName:     "doc3.pdf",
+					Content:          "Conteúdo irrelevante ou lixo.",
+					Similarity:       0.6,
+					IsGlobal:         false,
+					Metadata:         map[string]interface{}{"categoria_fonte": "geral"},
 				},
 			}
 			json.NewEncoder(w).Encode(matches)
@@ -89,7 +93,8 @@ func TestMetaRAGFiltering(t *testing.T) {
 		},
 	}
 
-	server := NewServer(sbClient, &mockEmbedder{}, mockLLM)
+	agriRepo := ports.NewMockAgriculturalRepository[OperacaoLoteItem]()
+	server := NewServer(sbClient, agriRepo, &mockEmbedder{}, mockLLM)
 
 	// 3. Call handleConsultarBaseConhecimento
 	args := map[string]interface{}{
@@ -134,15 +139,16 @@ func TestMetaRAGFiltering(t *testing.T) {
 func TestMetaRAGFailOpen(t *testing.T) {
 	// 1. Setup mock Supabase server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.Contains(r.URL.Path, "match_farm_documents") {
-			matches := []supabase.DocumentMatch{
+		if strings.Contains(r.URL.Path, "match_documents_with_context") {
+			matches := []supabase.DocumentMatchContext{
 				{
-					ID:           1,
-					DocumentName: "doc1.pdf",
-					Content:      "Conteúdo original.",
-					Similarity:   0.8,
-					IsGlobal:     true,
-					Metadata:     map[string]interface{}{"categoria_fonte": "geral"},
+					ID:               1,
+					SourceDocumentID: "uuid-doc1",
+					DocumentName:     "doc1.pdf",
+					Content:          "Conteúdo original.",
+					Similarity:       0.8,
+					IsGlobal:         true,
+					Metadata:         map[string]interface{}{"categoria_fonte": "geral"},
 				},
 			}
 			json.NewEncoder(w).Encode(matches)
@@ -162,7 +168,8 @@ func TestMetaRAGFailOpen(t *testing.T) {
 		evalErr: fmt.Errorf("gemini API rate limit exceeded"),
 	}
 
-	server := NewServer(sbClient, &mockEmbedder{}, mockLLM)
+	agriRepo := ports.NewMockAgriculturalRepository[OperacaoLoteItem]()
+	server := NewServer(sbClient, agriRepo, &mockEmbedder{}, mockLLM)
 
 	args := map[string]interface{}{
 		"pmo_id":   float64(6),
