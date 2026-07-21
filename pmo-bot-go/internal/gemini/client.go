@@ -20,6 +20,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/llm/schema"
 	"github.com/thebrunm97/pmo-bot-go/internal/prompt"
+	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 )
 
 // Compile-time check: *Client must satisfy llm.LLMProvider.
@@ -490,6 +491,7 @@ func (c *Client) DescribeAgronomicImage(ctx context.Context, imageBytes []byte, 
 // It converts agnostic history and tools to the OpenAI format before calling and returns an agnostic response.
 // Se agnosticSchema for fornecido, ele será injetado como response_format no payload.
 func (c *Client) CallOpenRouter(ctx context.Context, sysInst string, history []llm.MensagemAgnostica, agnosticTools []llm.FerramentaAgnostica, agnosticSchema map[string]interface{}) (llm.RespostaAgnostica, error) {
+	defer utils.TraceLatency("OpenRouter API", time.Now())
 	if c.OpenAI == nil {
 		return llm.RespostaAgnostica{}, fmt.Errorf("OpenRouter client not initialized (check API Key)")
 	}
@@ -567,6 +569,7 @@ func (c *Client) CallOpenRouter(ctx context.Context, sysInst string, history []l
 // CallGoogle executes a completion request via Google GenAI SDK.
 // It converts agnostic history and tools to the Google format and returns an agnostic response.
 func (c *Client) CallGoogle(ctx context.Context, sysInst string, history []llm.MensagemAgnostica, agnosticTools []llm.FerramentaAgnostica, agnosticSchema *genai.Schema) (llm.RespostaAgnostica, error) {
+	defer utils.TraceLatency("Google Gemini API", time.Now())
 	modelName := c.Config.Model
 	var tools []*genai.Tool
 	for _, f := range agnosticTools {
