@@ -11,6 +11,30 @@ export interface ChangelogEntry {
 
 export const changelogData: ChangelogEntry[] = [
     {
+        version: "0.18.0",
+        date: "2026-07-21",
+        title: "O Novo Cérebro do PMO Bot: Multi-Agentes, Zero-Trust e Gestão Financeira 🌐",
+        description: "Esta é uma das maiores atualizações já lançadas. Reestruturamos a arquitetura interna do PMO Bot para garantir mais resiliência, flexibilidade de IAs (Multi-Provedor) e segurança absoluta (Zero-Trust).",
+        sections: [
+            {
+                type: "New",
+                items: [
+                    "IA Agnóstica (Multi-Provedor): Agora o bot suporta diferentes inteligências além do Gemini, garantindo flexibilidade e menos travamentos se um provedor cair.",
+                    "CFO Digital Inteligente: Nova ferramenta para relatórios financeiros, integrada a um painel com tabela de transações em tempo real.",
+                    "Fila de Atendimento Humano (HITL): Se a IA ficar com dúvida em alguma etapa complexa, ela passa o bastão organizadamente para uma fila de aprovação humana no painel."
+                ]
+            },
+            {
+                type: "Improvements",
+                items: [
+                    "Motor Anti-Alucinação (LoopGuard): A inteligência artificial agora possui uma trava de segurança global que a impede de repetir processos eternamente ou registrar dados errados.",
+                    "Salvação de Dados Parciais: Se o seu sinal de internet cair no meio do registro de vários insumos, o bot salva o que chegou e te pergunta sobre o resto depois, sem perder tudo.",
+                    "Roteamento Multi-Agente: Criamos 'sub-agentes' especializados (Agrônomo, Operador, etc.). O bot aciona o melhor especialista pra sua mensagem, deixando as respostas 3x mais rápidas."
+                ]
+            }
+        ]
+    },
+    {
         version: "0.17.0",
         date: "2026-04-14",
         title: "Mais Segurança nos Seus Dados e Respostas da IA Mais Inteligentes 🛡️",
