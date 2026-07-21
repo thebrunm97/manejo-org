@@ -2,6 +2,7 @@ package evolution
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -111,6 +112,23 @@ func (a *EvolutionAdapter) SetPresence(to string, presence string) error {
 	err := a.doRequest(http.MethodPost, url, payload)
 	if err != nil {
 		log.Printf("⚠️ [Evolution] Falha ao definir presença (%s) para %s: %v", presence, to, err)
+	}
+	return err
+}
+
+// SendPresence sends a presence update (composing, paused, etc.) to a chat, with context support.
+func (a *EvolutionAdapter) SendPresence(ctx context.Context, to string, state string) error {
+	url := fmt.Sprintf("%s/message/presence", a.BaseURL)
+	payload := map[string]interface{}{
+		"number":       to,
+		"state":        state,
+		"delay":        15000,
+		"instanceName": a.InstanceName,
+	}
+
+	err := a.doRequest(http.MethodPost, url, payload)
+	if err != nil {
+		log.Printf("⚠️ [Evolution] Falha ao definir presença (%s) para %s: %v", state, to, err)
 	}
 	return err
 }
