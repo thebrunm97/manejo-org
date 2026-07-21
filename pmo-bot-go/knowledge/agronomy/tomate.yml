@@ -1,0 +1,9 @@
+cultura: "Tomate"
+nome_cientifico: "Solanum lycopersicum"
+família: "Solanaceae"
+ciclo_dias: 110
+espacamento_cm: 
+  entre_linhas: 100
+  entre_plantas: 50
+exigencia_hidrica: "Alta (gotejamento recomendado)"
+exigencia_nutricional: "Alta (potássio e cálcio)"
