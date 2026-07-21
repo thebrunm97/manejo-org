@@ -7,8 +7,6 @@
 /evolution-go-source
 /.venv
 /.venv_p312
-/.git
-/.github
 /azure-infra
 /.agent
 /evolution_data
