@@ -6,6 +6,31 @@ O formato baseia-se no [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0
 
 ## [Unreleased]
 
+### 🚀 Épico Concluído: Arquitetura Híbrida Multi-Agente (OKF + Triador Llama-3)
+
+**Resumo Executivo**
+Foi implementada com sucesso a evolução da arquitetura do PMO Bot Go, transacionando de um modelo monolítico de mega-prompt para uma Arquitetura Híbrida Multi-Agente guiada por domínios. 
+
+O valor de negócio gerado inclui:
+- **Redução de Poluição de Tokens:** Ao fragmentar as regras do Open Knowledge Format (OKF) por área (Agronomia, Finanças, Suporte, Geral), evitamos injetar instruções irrelevantes nos prompts, o que melhora o desempenho dos agentes e o seu poder de raciocínio focado.
+- **Mitigação de Custos e Latência:** A triagem na camada FSM, orquestrada por um modelo ultrarrápido (Groq Llama-3), filtra a intenção no turno inicial da conversa, ativando as `tools` e a memória apropriada *antes* de evocar o LLM de peso-pesado (Orquestrador).
+- **Isolamento de Regras (Governance):** A separação das regras possibilita uma evolução independente por domínio de negócio, onde especialistas podem contribuir via arquivos de texto `.md` sem risco colateral para outros fluxos operacionais.
+
+**Alterações Estruturais**
+- **Taxonomia de Conhecimento Segmentada (`knowledge/`):** A diretoria principal de conhecimento foi reestruturada para suportar as subpastas baseadas em domínios lógicos (`agronomy`, `finance`, `support`, `general`). O ficheiro `loader.go` agora gere múltiplos contextos paralelamente e fornece métodos dinâmicos como `GetContextForDomain()`.
+- **Atualização Condicional de Ferramentas (MCP):** O `PromptManager` e o `Orchestrator` agora recebem dinamicamente a propriedade `agentDomain`. Consequentemente, o isolamento garante que instruções conflituantes de fallback (ex: RAG) só são evocadas nos domínios precisos (como agronomia).
+- **Triador Groq na FSM:** Integração do motor de Classificação JSON (`Triador`) na *goroutine* de extração da Máquina de Estados (`fsm.go`), com fallbacks de resiliência e validação estrita.
+
+**Como Testar (Para Developers)**
+Com o servidor ativo (porta `8080`), utilize os comandos `cURL` abaixo para simular as intenções conversacionais. Nos *logs* do servidor, verifique qual domínio (`agronomy` / `finance`) foi classificado pelo Triador e as ferramentas carregadas.
+
+*Exemplo 1: Simulação Agronômica*
+`curl -X POST http://localhost:8080/webhook/evolution?token=ManejoOrgToken -H "Content-Type: application/json" -d '{"event": "messages.upsert", "data": {"key": {"remoteJid": "5511999999999@s.whatsapp.net"}, "message": {"conversation": "Como combater a lagarta no milho?"}}}'`
+
+*Exemplo 2: Simulação Financeira*
+`curl -X POST http://localhost:8080/webhook/evolution?token=ManejoOrgToken -H "Content-Type: application/json" -d '{"event": "messages.upsert", "data": {"key": {"remoteJid": "5511999999999@s.whatsapp.net"}, "message": {"conversation": "Vendi 50 sacas de soja"}}}'`
+
+
 ### 🚀 Added
 - **Compras (Formulário 06)**: Novo módulo E2E para registro de Compras de Insumos. Integração frontend na aba `ComprasTab` com submissão off-line ready. Nova ferramenta MCP `registrar_compra_insumo` inclusa no backend para captura via WhatsApp.
 - **Inteligência de Limpeza**: Atualização de regras de extração no `system_prompt.md` (item de área, produto, dosagem) garantindo liberação imediata da entidade para registros do Formulário 04.
