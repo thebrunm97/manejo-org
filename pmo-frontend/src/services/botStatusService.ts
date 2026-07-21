@@ -89,7 +89,7 @@ export async function fetchRecentBotActivities(telefone?: string): Promise<BotAc
 
     const { data, error } = await supabase
         .from('messages')
-        .select('id, timestamp, role, content, source')
+        .select('id, timestamp, created_at, role, content, source')
         .eq('phone', cleanPhone)
         .order('timestamp', { ascending: false })
         .limit(3);
@@ -101,9 +101,16 @@ export async function fetchRecentBotActivities(telefone?: string): Promise<BotAc
 
     return (data || []).map((msg: any) => {
         const desc = msg.content || msg.source || 'Áudio ou mídia recebida';
+        
+        let timeStr = msg.timestamp || msg.created_at || new Date().toISOString();
+        // Fix for Postgres timestamps lacking timezone info (interpreting UTC as local)
+        if (typeof timeStr === 'string' && timeStr.includes('T') && !timeStr.endsWith('Z') && !timeStr.match(/[+-]\d{2}:\d{2}$/)) {
+            timeStr += 'Z';
+        }
+
         return {
             id: msg.id,
-            created_at: msg.timestamp || new Date().toISOString(),
+            created_at: timeStr,
             tipo: msg.role === 'assistant' ? 'assistant' : 'user',
             descricao: desc,
         };
@@ -114,7 +121,17 @@ export async function fetchRecentBotActivities(telefone?: string): Promise<BotAc
  * Format a timestamp into a human-readable relative string (PT-BR).
  */
 export function formatRelativeTime(isoString: string): string {
-    const diff = Date.now() - new Date(isoString).getTime();
+    const timeMs = new Date(isoString).getTime();
+    if (isNaN(timeMs)) return 'agora';
+
+    let diff = Date.now() - timeMs;
+    
+    // If diff is negative (in the future) by a large margin, it's likely a timezone mismatch we couldn't catch.
+    // If it's just slightly negative (e.g. clock drift), we set it to 0.
+    if (diff < 0) {
+        diff = 0;
+    }
+
     const seconds = Math.floor(diff / 1000);
 
     if (seconds < 60) return 'agora mesmo';
