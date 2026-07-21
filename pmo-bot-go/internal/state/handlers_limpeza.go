@@ -13,7 +13,7 @@ import (
 )
 
 // handleLimpeza implements SEBRAE Form 04 logic for rural infrastructure cleaning
-func handleLimpeza(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, from string, body string, respondWithAudio bool, startTime time.Time, modelConfigured string, modelEffective string, pTokens int, cTokens int) (string, ProcessResult) {
+func handleLimpeza(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, _ ports.MessageSender, _ *tts.Orchestrator, _ string, body string, _ bool, startTime time.Time, modelConfigured string, modelEffective string, pTokens int, cTokens int) (string, ProcessResult) {
 	log.Printf("🧼 [FSM] Processando Intenção de Limpeza (Form 04)")
 
 	pmoID := profile.PmoAtivoID

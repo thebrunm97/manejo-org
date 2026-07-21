@@ -45,7 +45,7 @@ func handleAguardandoCompra(ctx context.Context, body string, from string, phone
 	return finalizeRegistration(ctx, &ext, profile, sbClient, wpClient, ttsClient, from, body, respondWithAudio, startTime, historyManager, phone, modelConfigured)
 }
 
-func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient ports.DatabaseRepository, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, from string, originalBody string, respondWithAudio bool, startTime time.Time, historyManager *history.Manager, phone string, modelConfigured string) (string, ProcessResult) {
+func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient ports.DatabaseRepository, _ ports.MessageSender, _ *tts.Orchestrator, _ string, originalBody string, _ bool, startTime time.Time, historyManager *history.Manager, phone string, modelConfigured string) (string, ProcessResult) {
 	pmoID := profile.PmoAtivoID
 
 	// 1. Compliance Check (Spatial-Aware) - Reused from fsm.go
