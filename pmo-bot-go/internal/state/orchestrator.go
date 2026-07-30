@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
 
@@ -49,16 +48,19 @@ type Orchestrator struct {
 // NewOrchestrator creates a new agentic orchestrator.
 func NewOrchestrator(provider llm.LLMProvider, sb *supabase.Client, mcpServer *mcp.Server) *Orchestrator {
 	return &Orchestrator{
-		LLM: provider,
-		SB:  sb,
-		MCP: mcpServer,
+		LLM:               provider,
+		SB:                sb,
+		MCP:               mcpServer,
+		OutputJudge:       ActiveOutputJudge,
+		HITL:              ActiveHITLController,
+		BusinessEvaluator: ActiveBusinessEvaluator,
 	}
 }
 
 // ExecuteAgenticLoop runs the agentic loop with manual tool calling and automatic fallback between providers.
-func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase.Profile, systemPrompt string, userMessage string, tools []llm.FerramentaAgnostica, history []llm.MensagemAgnostica, guard *mcp.LoopGuard, agentDomain string, userMemories string) (string, []llm.MensagemAgnostica, []TraceEvent, llm.UsoMetadados, string, error) {
+func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase.Profile, systemPrompt string, userMessage string, tools []llm.FerramentaAgnostica, history []llm.MensagemAgnostica, guard *mcp.LoopGuard, agentDomain string, userMemories string, routerResult RouterResult) (string, []llm.MensagemAgnostica, []TraceEvent, llm.UsoMetadados, string, error) {
 	promptManager := NewPromptManager()
-	sysInst := promptManager.BuildSystemInstruction(profile, systemPrompt, agentDomain, userMemories)
+	sysInst := promptManager.BuildSystemInstruction(profile, systemPrompt, agentDomain, userMemories, routerResult)
 
 	var trace []TraceEvent
 	var usage llm.UsoMetadados
@@ -84,12 +86,12 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 		if err != nil {
 			return "", history, trace, usage, effectiveModel, err
 		}
-		
+
 		usage.PromptTokens += resp.Usage.PromptTokens
 		usage.CandidatesTokens += resp.Usage.CandidatesTokens
 		usage.TotalTokens += resp.Usage.TotalTokens
 		effectiveModel = resp.Model
-		
+
 		history = append(history, llm.MensagemAgnostica{
 			Role:    llm.PapelAssistant,
 			Content: resp.Texto,
@@ -101,22 +103,20 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 		defer o.WhatsApp.SendPresence(context.Background(), o.Phone, "paused")
 	}
 
-	pipeline := NewInterceptorChain(
-		&MCPExecutionHandler{MCPServer: o.MCP, Guard: guard},
-		&ContextInjectorMiddleware{Profile: profile},
-		&HITLMiddleware{
-			Controller:    o.HITL,
-			Phone:         o.Phone,
-			WhatsApp:      o.WhatsApp,
-			Profile:       profile,
-			HitlRequested: hitlRequested,
-		},
-		&BusinessGuardrailMiddleware{
-			Evaluator: o.BusinessEvaluator,
-			Profile:   profile,
-			SB:        o.SB,
-		},
-	)
+	mcpHandler := &MCPExecutionHandler{MCPServer: o.MCP, Guard: guard}
+	ctxInjector := &ContextInjectorMiddleware{Profile: profile}
+	hitlMw := &HITLMiddleware{
+		Controller:    o.HITL,
+		Phone:         o.Phone,
+		WhatsApp:      o.WhatsApp,
+		Profile:       profile,
+		HitlRequested: hitlRequested,
+	}
+	bizMw := &BusinessGuardrailMiddleware{
+		Evaluator: o.BusinessEvaluator,
+		Profile:   profile,
+		SB:        o.SB,
+	}
 
 	for i := 0; i < 3; i++ {
 		if o.WhatsApp != nil {
@@ -229,7 +229,19 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 				History:     &history,
 			}
 
-			toolResp, errChain := pipeline.Execute(ctx, req)
+			// 1. Injetar Contexto
+			ctxInjector.Process(ctx, &req)
+
+			// 2. HITL
+			toolResp, errChain := hitlMw.Process(ctx, &req)
+			if !toolResp.IsSynthetic {
+				// 3. Business Guardrail
+				toolResp, errChain = bizMw.Process(ctx, &req)
+				if !toolResp.IsSynthetic {
+					// 4. Executar Ferramenta
+					toolResp, errChain = mcpHandler.Execute(ctx, &req)
+				}
+			}
 
 			if toolResp.IsSynthetic {
 				if errChain != nil && errChain.Error() == "hitl_pending" {
@@ -356,22 +368,50 @@ func sanitizeResponse(text string) string {
 }
 
 // hitlFingerprint builds a deterministic key for HITL dedup by serializing
-// the tool name + sorted-key JSON of args. Sorting keys ensures that
-// {"b":2,"a":1} and {"a":1,"b":2} produce the same fingerprint.
+// the tool name + args. Go's json.Marshal automatically sorts map keys,
+// ensuring that {"b":2,"a":1} and {"a":1,"b":2} produce the same fingerprint.
 func hitlFingerprint(toolName string, args map[string]interface{}) string {
-	// Extract and sort keys for deterministic ordering
-	keys := make([]string, 0, len(args))
-	for k := range args {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
-	// Build ordered pairs
-	ordered := make([]interface{}, 0, len(keys)*2)
-	for _, k := range keys {
-		ordered = append(ordered, k, args[k])
-	}
-
-	b, _ := json.Marshal(ordered)
+	b, _ := json.Marshal(args)
 	return toolName + ":" + string(b)
+}
+
+// FilterToolsByRouterResult is a defensive filter that subsets tools based on the RouterResult.
+// It applies graceful degradation (fallback) if the router result is invalid.
+func FilterToolsByRouterResult(result RouterResult, tools []mcp.Tool) []mcp.Tool {
+	if err := result.Validate(); err != nil {
+		log.Printf("⚠️ [Orchestrator] RouterResult inválido: %v. Aplicando fallback seguro.", err)
+		return getFallbackTools(tools)
+	}
+
+	var filtered []mcp.Tool
+	for _, tool := range tools {
+		switch tool.Category {
+		case mcp.CategoryRAG:
+			if result.PrimaryIntent == IntentAgronomy || (result.SecondaryIntent != nil && *result.SecondaryIntent == IntentAgronomy) {
+				filtered = append(filtered, tool)
+			}
+		case mcp.CategoryDBRead:
+			if result.PrimaryIntent == IntentDatabase || (result.SecondaryIntent != nil && *result.SecondaryIntent == IntentDatabase) || result.IsMixed {
+				filtered = append(filtered, tool)
+			}
+		case mcp.CategoryDBWrite:
+			if result.NeedsWrite && result.WriteScope != WriteScopeNone {
+				filtered = append(filtered, tool)
+			}
+		case mcp.CategoryChat:
+			// Ferramentas de chat/clarificação são sempre seguras
+			filtered = append(filtered, tool)
+		}
+	}
+	return filtered
+}
+
+func getFallbackTools(tools []mcp.Tool) []mcp.Tool {
+	var fallback []mcp.Tool
+	for _, tool := range tools {
+		if tool.Category == mcp.CategoryChat || tool.Category == mcp.CategoryRAG {
+			fallback = append(fallback, tool)
+		}
+	}
+	return fallback
 }

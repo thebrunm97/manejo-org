@@ -48,7 +48,7 @@ func SetBusinessEvaluator(eval guardrails.BusinessEvaluator) {
 
 // handleDuvidaFallback is the specialist multi-agent entry point.
 // It uses modular prompts, filtered tools, loop protection, and short-term memory injection.
-func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, _ *tts.Orchestrator, from string, llmClient llm.LLMProvider, body string, _ bool, sbClient *supabase.Client, profile *supabase.Profile, startTime time.Time, _ int, _ int, finalIntent string, tools []llm.FerramentaAgnostica, guard *mcp.LoopGuard, historyManager *history.Manager, mcpServer *mcp.Server, agentDomain string) (string, ProcessResult) {
+func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, _ *tts.Orchestrator, from string, llmClient llm.LLMProvider, body string, _ bool, sbClient *supabase.Client, profile *supabase.Profile, startTime time.Time, _ int, _ int, finalIntent string, tools []llm.FerramentaAgnostica, guard *mcp.LoopGuard, historyManager *history.Manager, mcpServer *mcp.Server, agentDomain string, routerResult RouterResult) (string, ProcessResult) {
 	log.Printf("🤖 [FSM] Iniciando Fluxo Especialista (Intent: %s)", finalIntent)
 
 	// 1. Prepare Specialized Context
@@ -79,15 +79,11 @@ func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, _ *
 
 	// 3. Execute Agentic Loop via Orchestrator (Agnostic)
 	orchestrator := NewOrchestrator(llmClient, sbClient, mcpServer)
-	if finalIntent == "RAG" || finalIntent == "DATABASE" || finalIntent == "FINANCE" {
-		orchestrator.OutputJudge = ActiveOutputJudge             // wire output governance (nil = disabled)
-	} else {
+	if finalIntent != "RAG" && finalIntent != "DATABASE" && finalIntent != "FINANCE" {
 		orchestrator.OutputJudge = nil // Disable for CHAT
 	}
-	orchestrator.HITL = ActiveHITLController                 // wire HITL controller (nil = disabled)
-	orchestrator.Phone = phone                               // needed for HITL WhatsApp confirmation
-	orchestrator.WhatsApp = wpClient                         // wire message sender for HITL confirmation prompts
-	orchestrator.BusinessEvaluator = ActiveBusinessEvaluator // wire business rules/limits
+	orchestrator.Phone = phone       // needed for HITL WhatsApp confirmation
+	orchestrator.WhatsApp = wpClient // wire message sender for HITL confirmation prompts
 
 	// 2.5 Buscar Memória Persistente (Recall)
 	var userMemories string
@@ -107,7 +103,7 @@ func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, _ *
 		}
 	}
 
-	botResponse, newHistory, trace, usage, modelUsed, err := orchestrator.ExecuteAgenticLoop(ctx, profile, specPrompt, body, tools, agnosticHistory, guard, agentDomain, userMemories)
+	botResponse, newHistory, trace, usage, modelUsed, err := orchestrator.ExecuteAgenticLoop(ctx, profile, specPrompt, body, tools, agnosticHistory, guard, agentDomain, userMemories, routerResult)
 	if err != nil {
 		if err.Error() == "hitl_pending" {
 			log.Printf("⏸️ [FSM] HITL pendente. Salvando histórico e silenciando resposta conversacional.")

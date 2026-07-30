@@ -2,6 +2,7 @@ package state
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"log"
 	"strconv"
@@ -26,9 +27,14 @@ func sendFeedback(sbClient *supabase.Client, wpClient ports.MessageSender, ttsCl
 	var err error
 	if respondWithAudio && ttsClient != nil {
 		log.Printf("🔊 [FSM] Gerando áudio para resposta...")
-		audioURL, errSpeech := ttsClient.GenerateSpeech(context.Background(), message)
+		audioBytes, errSpeech := ttsClient.GenerateSpeech(context.Background(), message)
 		if errSpeech == nil {
-			err = wpClient.SendVoice(from, audioURL, false)
+			b64 := base64.StdEncoding.EncodeToString(audioBytes)
+			err = wpClient.SendVoice(from, b64, false)
+			if err != nil {
+				log.Printf("⚠️ [FSM] Falha ao enviar áudio (SendVoice), tentando fallback para texto: %v", err)
+				err = wpClient.SendMessage(from, message)
+			}
 		} else {
 			log.Printf("⚠️ [FSM] Falha no TTS, enviando texto como fallback: %v", errSpeech)
 			err = wpClient.SendMessage(from, message)

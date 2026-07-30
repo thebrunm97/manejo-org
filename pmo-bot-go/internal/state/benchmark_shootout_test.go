@@ -98,10 +98,10 @@ func TestAgenticShootout(t *testing.T) {
 				ModalidadePredominante: "ORGÂNICO",
 			}
 			specPrompt := prompt.ForIntent(llm.IntentRAG, profile.ModalidadePredominante, false)
-			
+
 			// Filtrar ferramentas do MCP
 			tools := mcpServer.GetToolsForIntent(string(llm.IntentRAG))
-			
+
 			// Execução do orquestrador
 			botResponse, _, _, usage, _, err := orchestrator.ExecuteAgenticLoop(
 				ctx,
@@ -113,6 +113,7 @@ func TestAgenticShootout(t *testing.T) {
 				guard,
 				"general",
 				"",
+				state.RouterResult{},
 			)
 
 			// Em caso de err
@@ -121,16 +122,16 @@ func TestAgenticShootout(t *testing.T) {
 				t.Errorf("Orchestrator falhou no modelo %s: %v", modelName, err)
 				return
 			}
-			
+
 			// Se sucesso, contamos turnos (aproximando pelo total de tokens vs turnos)
 			// Mas nós não temos o count de "turnos" retornado. Vamos apenas imprimir o usage
-			
+
 			// Para o terminal:
 			resStr := "Sucesso"
 			if len(botResponse) < 10 {
 				resStr = "Resposta Vazia"
 			}
-			
+
 			fmt.Printf("%-30s | %-12s | %-10d | %-20s\n", modelName, "OK", usage.TotalTokens, resStr)
 		})
 	}

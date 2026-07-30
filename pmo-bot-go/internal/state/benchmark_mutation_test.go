@@ -19,7 +19,6 @@ import (
 func TestAgenticMutationShootout(t *testing.T) {
 	t.Skip("Pulando shootout em execuções de teste de unidade (evita falhas por instabilidade de LLM)")
 
-
 	apiKey := os.Getenv("OPENROUTER_API_KEY")
 	if apiKey == "" {
 		apiKey = "sk-or-v1-dummy"
@@ -101,7 +100,7 @@ func TestAgenticMutationShootout(t *testing.T) {
 			toolCalled := false
 			mcpServer.RegisterTool(mcp.Tool{
 				Definition: defRegistrarCompra,
-				Category:   mcp.CategoryDatabase,
+				Category:   mcp.CategoryDBWrite,
 				Handler: func(args map[string]interface{}) (interface{}, error) {
 					toolCalled = true
 					// Validar se o LLM extraiu o produto e o valor corretamente
@@ -147,6 +146,7 @@ func TestAgenticMutationShootout(t *testing.T) {
 				guard,
 				"general",
 				"",
+				state.RouterResult{},
 			)
 
 			lat := time.Since(start).Round(time.Millisecond)
