@@ -290,14 +290,38 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 			routerCtx, routerCancel := context.WithTimeout(gCtx, time.Duration(fastRouterTimeoutMS)*time.Millisecond)
 			defer routerCancel()
 			log.Printf("🚀 [FSM] Usando Fast Router para classificação (Timeout: %dms)", fastRouterTimeoutMS)
+			startFast := time.Now()
 			fastRouterRes, fastRouterErr = EvaluateWithLLM(routerCtx, llmClient, routerText)
+			fastLatency := time.Since(startFast).Milliseconds()
 
 			if routerCfg.EnableFastRouterShadow {
 				log.Printf("👻 [FSM] Shadow Mode: FastRouter result = %+v, err = %v", fastRouterRes, fastRouterErr)
 				// RUN LEGACY
+				startLegacy := time.Now()
 				legacyCtx, legacyCancel := context.WithTimeout(gCtx, 30*time.Second)
 				defer legacyCancel()
 				unifiedRes, routerModel, routerErr = llmClient.ClassifyIntent(legacyCtx, routerText)
+				legacyLatency := time.Since(startLegacy).Milliseconds()
+				
+				log.Printf("telemetry event=shadow_router_evaluated conversation_id=%s fast_latency_ms=%d legacy_latency_ms=%d", phone, fastLatency, legacyLatency)
+				
+				fastIntent := "unknown"
+				if fastRouterErr == nil {
+					fastIntent = string(fastRouterRes.PrimaryIntent)
+				}
+				
+				legacyIntent := "unknown"
+				if routerErr == nil && len(unifiedRes.Intents) > 0 {
+					legacyIntent = string(unifiedRes.Intents[0])
+				}
+				
+				diverged := (fastIntent != legacyIntent)
+				if diverged {
+					log.Printf("telemetry event=shadow_router_diverged conversation_id=%s fast_intent=%s legacy_intent=%s", phone, fastIntent, legacyIntent)
+				}
+				
+				log.Printf("telemetry event=router_decision_made router=legacy decision=%s shadow_enabled=true diverged=%t conversation_id=%s", legacyIntent, diverged, phone)
+
 				if routerErr != nil {
 					log.Printf("⚠️ [FSM] Router Unificado falhou (timeout ou erro): %v. Usando fallback.", routerErr)
 					unifiedRes = llm.UnifiedIntentResult{
@@ -308,6 +332,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 			} else {
 				if fastRouterErr != nil {
 					log.Printf("⚠️ [FSM] Fast Router falhou: %v. Usando fallback seguro (Sem escrita).", fastRouterErr)
+					log.Printf("telemetry event=router_decision_made router=fast decision=RAG_FALLBACK shadow_enabled=false diverged=false conversation_id=%s", phone)
 					unifiedRes = llm.UnifiedIntentResult{
 						Intents:  []llm.Intent{llm.IntentRAG},
 						Entities: []llm.AcaoEstruturada{{Intencao: "duvida"}},
@@ -317,6 +342,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 					unifiedRes = llm.UnifiedIntentResult{
 						Intents: []llm.Intent{llm.Intent(fastRouterRes.PrimaryIntent)},
 					}
+					log.Printf("telemetry event=router_decision_made router=fast decision=%s shadow_enabled=false diverged=false conversation_id=%s", string(fastRouterRes.PrimaryIntent), phone)
 					if fastRouterRes.SecondaryIntent != nil && *fastRouterRes.SecondaryIntent != "" {
 						unifiedRes.Intents = append(unifiedRes.Intents, llm.Intent(*fastRouterRes.SecondaryIntent))
 					}
@@ -324,9 +350,19 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 			}
 		} else {
 			// Legacy Mode
+			startLegacy := time.Now()
 			legacyCtx, legacyCancel := context.WithTimeout(gCtx, 30*time.Second)
 			defer legacyCancel()
 			unifiedRes, routerModel, routerErr = llmClient.ClassifyIntent(legacyCtx, routerText)
+			
+			legacyIntent := "unknown"
+			if routerErr == nil && len(unifiedRes.Intents) > 0 {
+				legacyIntent = string(unifiedRes.Intents[0])
+			} else if routerErr != nil {
+				legacyIntent = "RAG_FALLBACK"
+			}
+			log.Printf("telemetry event=router_decision_made router=legacy decision=%s shadow_enabled=false diverged=false conversation_id=%s latency_ms=%d", legacyIntent, phone, time.Since(startLegacy).Milliseconds())
+
 			if routerErr != nil {
 				log.Printf("⚠️ [FSM] Router Unificado falhou (timeout ou erro): %v. Usando fallback.", routerErr)
 				unifiedRes = llm.UnifiedIntentResult{

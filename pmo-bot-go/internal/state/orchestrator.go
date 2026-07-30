@@ -239,7 +239,28 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 				toolResp, errChain = bizMw.Process(ctx, &req)
 				if !toolResp.IsSynthetic {
 					// 4. Executar Ferramenta
+					startTool := time.Now()
+					var opCount int
+					
+					if tc.Nome == "RegistrarLoteOperacoes" {
+						if parsedMap, ok := req.ParsedArgs.(map[string]interface{}); ok {
+							if ops, ok := parsedMap["operacoes"].([]interface{}); ok {
+								opCount = len(ops)
+							}
+						}
+						log.Printf("telemetry event=batch_tool_invoked conversation_id=%s tool_name=%s op_count=%d", profile.Telefone, tc.Nome, opCount)
+					}
+
 					toolResp, errChain = mcpHandler.Execute(ctx, &req)
+
+					if tc.Nome == "RegistrarLoteOperacoes" {
+						latency := time.Since(startTool).Milliseconds()
+						if errChain != nil {
+							log.Printf("telemetry event=batch_tool_failed conversation_id=%s tool_name=%s op_count=%d latency_ms=%d", profile.Telefone, tc.Nome, opCount, latency)
+						} else {
+							log.Printf("telemetry event=batch_tool_completed conversation_id=%s tool_name=%s op_count=%d success=true latency_ms=%d", profile.Telefone, tc.Nome, opCount, latency)
+						}
+					}
 				}
 			}
 
