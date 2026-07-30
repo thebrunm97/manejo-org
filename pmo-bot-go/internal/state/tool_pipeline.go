@@ -36,45 +36,7 @@ type ToolResponse struct {
 
 // ToolHandler processes a tool request.
 type ToolHandler interface {
-	Handle(ctx context.Context, req ToolRequest) (ToolResponse, error)
-}
-
-type ToolHandlerFunc func(ctx context.Context, req ToolRequest) (ToolResponse, error)
-
-func (f ToolHandlerFunc) Handle(ctx context.Context, req ToolRequest) (ToolResponse, error) {
-	return f(ctx, req)
-}
-
-// ToolInterceptor intercepts the execution of a tool request.
-type ToolInterceptor interface {
-	Intercept(ctx context.Context, req ToolRequest, next ToolHandler) (ToolResponse, error)
-}
-
-// InterceptorChain drives the execution of interceptors.
-type InterceptorChain struct {
-	interceptors []ToolInterceptor
-	finalHandler ToolHandler
-}
-
-// NewInterceptorChain creates a new execution pipeline.
-func NewInterceptorChain(final ToolHandler, interceptors ...ToolInterceptor) *InterceptorChain {
-	return &InterceptorChain{
-		interceptors: interceptors,
-		finalHandler: final,
-	}
-}
-
-// Execute triggers the pipeline.
-func (c *InterceptorChain) Execute(ctx context.Context, req ToolRequest) (ToolResponse, error) {
-	var next ToolHandler = c.finalHandler
-	for i := len(c.interceptors) - 1; i >= 0; i-- {
-		interceptor := c.interceptors[i]
-		currentNext := next
-		next = ToolHandlerFunc(func(ctx context.Context, r ToolRequest) (ToolResponse, error) {
-			return interceptor.Intercept(ctx, r, currentNext)
-		})
-	}
-	return next.Handle(ctx, req)
+	Execute(ctx context.Context, req *ToolRequest) (ToolResponse, error)
 }
 
 // ---------------------------------------------------------------------------
@@ -85,7 +47,7 @@ type ContextInjectorMiddleware struct {
 	Profile *supabase.Profile
 }
 
-func (m *ContextInjectorMiddleware) Intercept(ctx context.Context, req ToolRequest, next ToolHandler) (ToolResponse, error) {
+func (m *ContextInjectorMiddleware) Process(ctx context.Context, req *ToolRequest) {
 	if req.RawArgs == nil {
 		req.RawArgs = make(map[string]interface{})
 	}
@@ -108,8 +70,6 @@ func (m *ContextInjectorMiddleware) Intercept(ctx context.Context, req ToolReque
 			req.RawArgs["query"] = "regras gerais lei organica agricultura"
 		}
 	}
-
-	return next.Handle(ctx, req)
 }
 
 // ---------------------------------------------------------------------------
@@ -124,9 +84,9 @@ type HITLMiddleware struct {
 	HitlRequested map[string]bool
 }
 
-func (m *HITLMiddleware) Intercept(ctx context.Context, req ToolRequest, next ToolHandler) (ToolResponse, error) {
+func (m *HITLMiddleware) Process(ctx context.Context, req *ToolRequest) (ToolResponse, error) {
 	if m.Controller == nil {
-		return next.Handle(ctx, req)
+		return ToolResponse{}, nil
 	}
 
 	if needsHITL, label := guardrails.RequiresHITL(req.ToolName); needsHITL {
@@ -192,7 +152,7 @@ func (m *HITLMiddleware) Intercept(ctx context.Context, req ToolRequest, next To
 		log.Printf("⚠️ [HITL] Falha ao solicitar aprovação — executando ferramenta diretamente: %v", hitlErr)
 	}
 
-	return next.Handle(ctx, req)
+	return ToolResponse{}, nil
 }
 
 // ---------------------------------------------------------------------------
@@ -205,9 +165,9 @@ type BusinessGuardrailMiddleware struct {
 	SB        *supabase.Client
 }
 
-func (m *BusinessGuardrailMiddleware) Intercept(ctx context.Context, req ToolRequest, next ToolHandler) (ToolResponse, error) {
+func (m *BusinessGuardrailMiddleware) Process(ctx context.Context, req *ToolRequest) (ToolResponse, error) {
 	if m.Evaluator == nil || req.ParsedArgs == nil {
-		return next.Handle(ctx, req)
+		return ToolResponse{}, nil
 	}
 
 	startEvaluator := time.Now()
@@ -249,7 +209,7 @@ func (m *BusinessGuardrailMiddleware) Intercept(ctx context.Context, req ToolReq
 		return ToolResponse{ErrorMessage: evalErr.Error(), IsSynthetic: true}, evalErr
 	}
 
-	return next.Handle(ctx, req)
+	return ToolResponse{}, nil
 }
 
 // ---------------------------------------------------------------------------
@@ -261,7 +221,7 @@ type MCPExecutionHandler struct {
 	Guard     *mcp.LoopGuard
 }
 
-func (h *MCPExecutionHandler) Handle(ctx context.Context, req ToolRequest) (ToolResponse, error) {
+func (h *MCPExecutionHandler) Execute(ctx context.Context, req *ToolRequest) (ToolResponse, error) {
 	result, err := h.MCPServer.CallToolWithGuard(h.Guard, req.ToolName, req.RawArgs)
 	if err != nil {
 		log.Printf("⚠️ [ToolPipeline] Erro na ferramenta %s: %v", req.ToolName, err)

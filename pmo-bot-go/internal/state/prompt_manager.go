@@ -18,7 +18,7 @@ func NewPromptManager() *PromptManager {
 }
 
 // BuildSystemInstruction composes the final system prompt with farm context and output guardrails.
-func (m *PromptManager) BuildSystemInstruction(profile *supabase.Profile, basePrompt string, agentDomain string, userMemories string) string {
+func (m *PromptManager) BuildSystemInstruction(profile *supabase.Profile, basePrompt string, agentDomain string, userMemories string, routerResult RouterResult) string {
 	farmContext := ""
 	if profile != nil && profile.ID != "" {
 		farmContext = fmt.Sprintf("\n[CONTEXTO DO USUÁRIO]:\n- user_id: %s\n", profile.ID)
@@ -37,10 +37,30 @@ func (m *PromptManager) BuildSystemInstruction(profile *supabase.Profile, basePr
 		}
 	}
 
-	toolCallGuardrail := "\n\n[REGRA ABSOLUTA DE SAÍDA]: NUNCA inclua JSON de chamadas de ferramenta (tool_calls, function_call, {\"name\":..., \"args\":...}, etc.) na sua resposta final ao utilizador. A sua resposta deve ser APENAS texto amigável em Português. Se uma ferramenta foi executada, descreva o RESULTADO da ação com palavras simples."
-	
-	baseContent := basePrompt + "\n" + farmContext + "\nUse as ferramentas para consultar ou registrar dados. Se as informações críticas (como IDs de talhão ou PMO) já constam no contexto acima, use-as DIRETAMENTE sem perguntar ou consultar novamente." + toolCallGuardrail
-	
+	toolCallGuardrail := "\n\n[REGRA ABSOLUTA DE SAÍDA]: NUNCA inclua JSON de chamadas de ferramenta (tool_calls, function_call, {\"name\":..., \"args\":...}, etc.) na sua resposta final ao usuário. A sua resposta deve ser APENAS texto amigável em Português. Se uma ferramenta foi executada, descreva o RESULTADO da ação com palavras simples."
+
+	// Core Prompt Mínimo + Injeção Dinâmica Baseada no Roteador
+	corePrompt := "Você é o assistente IA do ManejoORG. Responda de forma concisa e amigável."
+	if basePrompt != "" {
+		corePrompt = basePrompt // Permite override se já houver um basePrompt forte
+	}
+
+	intentContext := ""
+	switch routerResult.PrimaryIntent {
+	case IntentAgronomy:
+		intentContext = "\n[FOCO AGRONÔMICO]: O usuário tem dúvidas técnicas. Baseie-se em práticas de manejo orgânico, evite recomendações sintéticas e forneça instruções claras e aplicáveis ao campo."
+	case IntentDatabase:
+		intentContext = "\n[FOCO DE DADOS]: O usuário quer ler ou escrever dados (ex: plantio, colheita, insumos). Extraia os parâmetros exatos (talhão, cultura, datas). SEMPRE peça confirmação antes de salvar algo, a menos que ele já tenha dado todos os dados."
+	case IntentChat, IntentClarification:
+		intentContext = "\n[FOCO CONVERSACIONAL]: Seja empático, objetivo e peça mais detalhes se a intenção do usuário não for clara."
+	}
+
+	if routerResult.IsMixed && routerResult.SecondaryIntent != nil && *routerResult.SecondaryIntent != "" {
+		intentContext += fmt.Sprintf("\n[ATENÇÃO HÍBRIDA]: O usuário também expressou intenção secundária (%s). Adapte a resposta para integrar as duas necessidades (ex: tirar a dúvida E preparar o registro).", *routerResult.SecondaryIntent)
+	}
+
+	baseContent := corePrompt + intentContext + "\n" + farmContext + "\nUse as ferramentas para consultar ou registrar dados. Se as informações críticas (como IDs de talhão ou PMO) já constam no contexto acima, use-as DIRETAMENTE sem perguntar ou consultar novamente." + toolCallGuardrail
+
 	sysInst := "<IDENTIDADE_E_REGRAS_LLM>\n" + baseContent + "\n</IDENTIDADE_E_REGRAS_LLM>\n\n"
 
 	if userMemories != "" {

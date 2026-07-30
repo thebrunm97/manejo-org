@@ -27,6 +27,12 @@ type ProcessResult struct {
 	TransactionID interface{}
 }
 
+type RouterConfig struct {
+	EnableFastRouter       bool
+	EnableFastRouterShadow bool
+	FastRouterTimeoutMS    int
+}
+
 var sessionMu sync.Map // map[phone]*sync.Mutex — one lock per session
 
 // getSessionMutex returns a dedicated mutex for each phone/session.
@@ -37,7 +43,7 @@ func getSessionMutex(phone string) *sync.Mutex {
 
 // ProcessMessage orchestrates the flow:
 // LID -> Phone -> Profile -> Media Handling -> State Logic -> Extraction -> Intent Routing
-func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *supabase.Client, groqClient *groq.Client, wpClient ports.MessageSender, llmClient llm.LLMProvider, ttsClient *tts.Orchestrator, mcpServer *mcp.Server, historyManager *history.Manager, flgClient *flagsmith.Client) (res ProcessResult) {
+func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *supabase.Client, groqClient *groq.Client, wpClient ports.MessageSender, llmClient llm.LLMProvider, ttsClient *tts.Orchestrator, mcpServer *mcp.Server, historyManager *history.Manager, flgClient *flagsmith.Client, routerCfg RouterConfig) (res ProcessResult) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("🔥 [FSM-PANIC] Erro interno catastrófico: %v", r)
@@ -52,7 +58,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 	if msg.RawPayloadID != "" {
 		ctx = context.WithValue(ctx, "raw_payload_id", msg.RawPayloadID)
 	}
-	var respondWithAudio = false
+	var respondWithAudio = ports.ResolveResponseMode(msg)
 
 	// Resolve phone early to log greetings correctly
 	var phone string
@@ -259,6 +265,8 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 	var unifiedRes llm.UnifiedIntentResult
 	var routerModel string
 	var agentDomain string = "general"
+	var fastRouterRes RouterResult
+	var fastRouterErr error
 
 	g, gCtx := errgroup.WithContext(ctx)
 
@@ -273,14 +281,58 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 
 	g.Go(func() error {
 		var routerErr error
-		routerCtx, routerCancel := context.WithTimeout(gCtx, 30*time.Second)
-		defer routerCancel()
-		unifiedRes, routerModel, routerErr = llmClient.ClassifyIntent(routerCtx, routerText)
-		if routerErr != nil {
-			log.Printf("⚠️ [FSM] Router Unificado falhou (timeout ou erro): %v. Usando fallback.", routerErr)
-			unifiedRes = llm.UnifiedIntentResult{
-				Intents:  []llm.Intent{llm.IntentRAG},
-				Entities: []llm.AcaoEstruturada{{Intencao: "duvida"}},
+		fastRouterTimeoutMS := 3000
+		if routerCfg.FastRouterTimeoutMS > 0 {
+			fastRouterTimeoutMS = routerCfg.FastRouterTimeoutMS
+		}
+
+		if routerCfg.EnableFastRouter {
+			routerCtx, routerCancel := context.WithTimeout(gCtx, time.Duration(fastRouterTimeoutMS)*time.Millisecond)
+			defer routerCancel()
+			log.Printf("🚀 [FSM] Usando Fast Router para classificação (Timeout: %dms)", fastRouterTimeoutMS)
+			fastRouterRes, fastRouterErr = EvaluateWithLLM(routerCtx, llmClient, routerText)
+
+			if routerCfg.EnableFastRouterShadow {
+				log.Printf("👻 [FSM] Shadow Mode: FastRouter result = %+v, err = %v", fastRouterRes, fastRouterErr)
+				// RUN LEGACY
+				legacyCtx, legacyCancel := context.WithTimeout(gCtx, 30*time.Second)
+				defer legacyCancel()
+				unifiedRes, routerModel, routerErr = llmClient.ClassifyIntent(legacyCtx, routerText)
+				if routerErr != nil {
+					log.Printf("⚠️ [FSM] Router Unificado falhou (timeout ou erro): %v. Usando fallback.", routerErr)
+					unifiedRes = llm.UnifiedIntentResult{
+						Intents:  []llm.Intent{llm.IntentRAG},
+						Entities: []llm.AcaoEstruturada{{Intencao: "duvida"}},
+					}
+				}
+			} else {
+				if fastRouterErr != nil {
+					log.Printf("⚠️ [FSM] Fast Router falhou: %v. Usando fallback seguro (Sem escrita).", fastRouterErr)
+					unifiedRes = llm.UnifiedIntentResult{
+						Intents:  []llm.Intent{llm.IntentRAG},
+						Entities: []llm.AcaoEstruturada{{Intencao: "duvida"}},
+					}
+				} else {
+					routerModel = llmClient.ModelName()
+					unifiedRes = llm.UnifiedIntentResult{
+						Intents: []llm.Intent{llm.Intent(fastRouterRes.PrimaryIntent)},
+					}
+					if fastRouterRes.SecondaryIntent != nil && *fastRouterRes.SecondaryIntent != "" {
+						unifiedRes.Intents = append(unifiedRes.Intents, llm.Intent(*fastRouterRes.SecondaryIntent))
+					}
+				}
+			}
+		} else {
+			// Legacy Mode
+			legacyCtx, legacyCancel := context.WithTimeout(gCtx, 30*time.Second)
+			defer legacyCancel()
+			unifiedRes, routerModel, routerErr = llmClient.ClassifyIntent(legacyCtx, routerText)
+			if routerErr != nil {
+				log.Printf("⚠️ [FSM] Router Unificado falhou (timeout ou erro): %v. Usando fallback.", routerErr)
+				unifiedRes = llm.UnifiedIntentResult{
+					Intents:  []llm.Intent{llm.IntentRAG},
+					Entities: []llm.AcaoEstruturada{{Intencao: "duvida"}},
+				}
 			}
 		}
 		return nil
@@ -295,7 +347,7 @@ O seu único objetivo é ler a mensagem do produtor e classificar a qual DOMÍNI
 
 DOMÍNIOS PERMITIDOS:
 - "agronomy": Dúvidas sobre plantio, pragas, adubação, colheita, clima, ou RAG agronômico.
-- "finance": Registos de compras, vendas, lucros, despesas, ou relatórios financeiros.
+- "finance": Registros de compras, vendas, lucros, despesas, ou relatórios financeiros.
 - "support": Dúvidas sobre como usar a plataforma, problemas técnicos ou reset de senha.
 - "general": Saudações casuais, conversas fora de contexto ou intenções indefinidas.
 
@@ -379,7 +431,7 @@ Você DEVE retornar EXCLUSIVAMENTE um objeto JSON válido, sem markdown, sem jus
 		if isApprovalWord {
 			log.Printf("⚡ [FSM] Fast-Track: Palavra de aprovação sem HITL pendente — redirecionando ao Orchestrator para resposta contextual.")
 			filteredTools := mcpServer.GetToolsForIntent("CHAT")
-			resMsg, res := handleDuvidaFallback(ctx, wpClient, ttsClient, phone, llmClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, "CHAT", filteredTools, guard, historyManager, mcpServer, agentDomain)
+			resMsg, res := handleDuvidaFallback(ctx, wpClient, ttsClient, phone, llmClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, "CHAT", filteredTools, guard, historyManager, mcpServer, agentDomain, fastRouterRes)
 			if resMsg != "" {
 				sendFeedback(sbClient, wpClient, ttsClient, msg.From, resMsg, respondWithAudio)
 			}
@@ -474,10 +526,20 @@ Você DEVE retornar EXCLUSIVAMENTE um objeto JSON válido, sem markdown, sem jus
 		}
 
 		// 2. Descobrir as ferramentas MCP apenas para esta intenção
-		filteredTools := mcpServer.GetToolsForIntent(string(intent))
+		var filteredTools []llm.FerramentaAgnostica
+		if routerCfg.EnableFastRouter && fastRouterErr == nil && fastRouterRes.Confidence > 0 && !routerCfg.EnableFastRouterShadow {
+			log.Printf("🛡️ [FSM] Aplicando FilterToolsByRouterResult (FastRouter) para intenção: %s", intent)
+			allTools := mcpServer.GetAllMCPTools()
+			allowed := FilterToolsByRouterResult(fastRouterRes, allTools)
+			for _, t := range allowed {
+				filteredTools = append(filteredTools, t.Definition)
+			}
+		} else {
+			filteredTools = mcpServer.GetToolsForIntent(string(intent))
+		}
 
 		// 3. Executar o loop de agente isolado para esta intenção
-		resMsg, res := handleDuvidaFallback(ctx, wpClient, ttsClient, phone, llmClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, string(intent), filteredTools, guard, historyManager, mcpServer, agentDomain)
+		resMsg, res := handleDuvidaFallback(ctx, wpClient, ttsClient, phone, llmClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, string(intent), filteredTools, guard, historyManager, mcpServer, agentDomain, fastRouterRes)
 
 		if resMsg != "" {
 			finalResponses = append(finalResponses, resMsg)
@@ -525,7 +587,7 @@ func entityMatchesIntent(entityIntencao string, intent llm.Intent) bool {
 }
 
 // dispatchEntity routes a single action to its respective handler and returns the response string
-func dispatchEntity(ctx context.Context, entity llm.AcaoEstruturada, profile *supabase.Profile, sbClient *supabase.Client, wpClient ports.MessageSender, llmClient llm.LLMProvider, ttsClient *tts.Orchestrator, mcpServer *mcp.Server, historyManager *history.Manager, phone string, body string, respondWithAudio bool, startTime time.Time, routedIntent llm.Intent, filteredTools []llm.FerramentaAgnostica, guard *mcp.LoopGuard, routerModel string, agentDomain string) (string, ProcessResult) {
+func dispatchEntity(ctx context.Context, entity llm.AcaoEstruturada, profile *supabase.Profile, sbClient *supabase.Client, wpClient ports.MessageSender, llmClient llm.LLMProvider, ttsClient *tts.Orchestrator, mcpServer *mcp.Server, historyManager *history.Manager, phone string, body string, respondWithAudio bool, startTime time.Time, routedIntent llm.Intent, filteredTools []llm.FerramentaAgnostica, guard *mcp.LoopGuard, routerModel string, agentDomain string, fastRouterRes RouterResult) (string, ProcessResult) {
 	// Map AcaoEstruturada to groq.ExtractionResult for handler compatibility
 	extracted := &groq.ExtractionResult{
 		Intencao:          entity.Intencao,
@@ -588,7 +650,7 @@ func dispatchEntity(ctx context.Context, entity llm.AcaoEstruturada, profile *su
 		return handleAssumirCota(ctx, extracted, profile, sbClient, wpClient, llmClient, ttsClient, phone, body, respondWithAudio, startTime, routerModel, routerModel)
 
 	case "duvida":
-		return handleDuvidaFallback(ctx, wpClient, ttsClient, phone, llmClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, string(routedIntent), filteredTools, guard, historyManager, mcpServer, agentDomain)
+		return handleDuvidaFallback(ctx, wpClient, ttsClient, phone, llmClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, string(routedIntent), filteredTools, guard, historyManager, mcpServer, agentDomain, fastRouterRes)
 
 	case "saudacao":
 		return "Olá! Sou o assistente do ManejoORG. Como posso ajudar com seu registro ou dúvida hoje?", ProcessResult{Success: true, Reason: "greeting"}
@@ -601,7 +663,7 @@ func dispatchEntity(ctx context.Context, entity llm.AcaoEstruturada, profile *su
 		}
 
 		if routedIntent == llm.IntentRAG || routedIntent == llm.IntentDatabase {
-			return handleDuvidaFallback(ctx, wpClient, ttsClient, phone, llmClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, string(routedIntent), filteredTools, guard, historyManager, mcpServer, agentDomain)
+			return handleDuvidaFallback(ctx, wpClient, ttsClient, phone, llmClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, string(routedIntent), filteredTools, guard, historyManager, mcpServer, agentDomain, fastRouterRes)
 		}
 		return "", ProcessResult{Success: true, Reason: "ignored"}
 	}
@@ -640,7 +702,7 @@ func handleActiveState(state string, ctxState map[string]interface{}, body strin
 			pending = pending[1:]
 
 			log.Printf("🔄 [FSM-PENDING] Consumindo ação pendente do batch: %s", next.Intencao)
-			resMsg, nextRes := dispatchEntity(ctx, next, profile, sbClient, wpClient, llmClient, ttsClient, mcpServer, historyManager, phone, "", respondWithAudio, startTime, llm.IntentDatabase, nil, nil, modelConfigured, "general")
+			resMsg, nextRes := dispatchEntity(ctx, next, profile, sbClient, wpClient, llmClient, ttsClient, mcpServer, historyManager, phone, "", respondWithAudio, startTime, llm.IntentDatabase, nil, nil, modelConfigured, "general", RouterResult{})
 
 			if nextRes.Success {
 				if resMsg != "" {
@@ -744,4 +806,3 @@ func isSaldoQuery(body string) bool {
 
 	return false
 }
-

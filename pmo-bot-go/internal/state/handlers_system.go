@@ -30,7 +30,7 @@ func handleAguardandoFazenda(_ context.Context, body string, _ string, phone str
 	selectedOption := optionsIface[index-1].(map[string]interface{})
 	selectedID := int64(selectedOption["id"].(float64)) // JSON decodes numbers as float64
 	selectedNome := selectedOption["nome"].(string)
-	
+
 	// We might also have propriedade_id
 	var propID int64
 	if p, ok := selectedOption["propriedade_id"].(float64); ok {
@@ -42,7 +42,7 @@ func handleAguardandoFazenda(_ context.Context, body string, _ string, phone str
 	if err != nil {
 		return "❌ Ocorreu um erro ao trocar de fazenda. Tente novamente mais tarde.", ProcessResult{Success: false, Reason: "update_failed"}
 	}
-	
+
 	if propID > 0 {
 		_ = sbClient.UpdateActivePropriedade(profile.ID, propID, &selectedID)
 	}
