@@ -375,6 +375,17 @@ func (m *Manager) SetFSMState(phone string, state string, ctx map[string]interfa
 		}
 		m.conversations[phone] = conv
 	}
+	
+	oldState := conv.FSMState
+	if oldState != state {
+		log.Printf("telemetry event=fsm_state_changed from=%s to=%s reason=state_update conversation_id=%s turn_id=N/A", oldState, state, phone)
+	}
+	
+	// fsm_pending_enter: se estivermos entrando em um estado de "aguardando" (pending) e não for o mesmo de antes
+	if state != "" && state != oldState && (len(pending) > 0 || state == "StateAguardandoQuantidade" || state == "StateAguardandoFazenda") {
+		log.Printf("telemetry event=fsm_pending_enter from=%s to=%s reason=state_update conversation_id=%s turn_id=N/A", oldState, state, phone)
+	}
+
 	conv.FSMState = state
 	conv.FSMContext = ctx
 	conv.PendingEntities = pending
@@ -388,6 +399,14 @@ func (m *Manager) ClearFSMState(phone string) {
 
 	conv, ok := m.conversations[phone]
 	if ok {
+		oldState := conv.FSMState
+		if oldState != "" {
+			log.Printf("telemetry event=fsm_state_changed from=%s to= reason=clear conversation_id=%s turn_id=N/A", oldState, phone)
+			
+			// fsm_pending_exit: Se o state não for vazio, consideramos que o pending foi resolvido (exit)
+			log.Printf("telemetry event=fsm_pending_exit from=%s to= reason=clear conversation_id=%s turn_id=N/A", oldState, phone)
+		}
+
 		conv.FSMState = ""
 		conv.FSMContext = nil
 		conv.PendingEntities = nil
@@ -403,6 +422,9 @@ func (m *Manager) Cleanup() {
 	now := time.Now()
 	for phone, conv := range m.conversations {
 		if now.Sub(conv.LastUpdate) > m.ttl {
+			if conv.FSMState != "" {
+				log.Printf("telemetry event=fsm_pending_timeout from=%s to= reason=timeout conversation_id=%s turn_id=N/A duration_ms=%d", conv.FSMState, phone, m.ttl.Milliseconds())
+			}
 			delete(m.conversations, phone)
 		}
 	}
