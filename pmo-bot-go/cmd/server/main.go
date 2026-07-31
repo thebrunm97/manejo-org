@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/Flagsmith/flagsmith-go-client/v3"
+	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -61,6 +62,21 @@ func main() {
 		time.Local = loc
 	}
 	log.Printf("⏰ Horário de Brasília configurado: %v", time.Now().Format(time.RFC1123))
+
+	// --- Sentry Observability ---
+	if dsn := os.Getenv("SENTRY_DSN"); dsn != "" {
+		err := sentry.Init(sentry.ClientOptions{
+			Dsn:              dsn,
+			EnableTracing:    true,
+			TracesSampleRate: 1.0,
+		})
+		if err != nil {
+			log.Fatalf("Sentry initialization failed: %v", err)
+		}
+		// Garante que os eventos em buffer sejam enviados antes do programa fechar
+		defer sentry.Flush(2 * time.Second)
+		log.Println("✅ Sentry tracking enabled!")
+	}
 
 	// --- Configurar slog global (JSON) ---
 	slogHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
