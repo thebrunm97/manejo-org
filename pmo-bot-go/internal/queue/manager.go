@@ -32,15 +32,17 @@ import (
 
 // Job representa um item na fila de processamento.
 type Job struct {
-	ID           string
-	MsgID        string
-	FromPhone    string
-	RawPayload   ports.IncomingMessage
-	BodyText     string // Vazio até a Camada 3 (Media Worker) preencher
-	RespondAudio bool   // True se a mensagem original era áudio
-	Status       string
-	AttemptCount int
-	MaxAttempts  int
+	ID                      string
+	MsgID                   string
+	FromPhone               string
+	RawPayload              ports.IncomingMessage
+	BodyText                string // Vazio até a Camada 3 (Media Worker) preencher
+	RespondAudio            bool   // Legacy field kept for compatibility with older jobs
+	RespondWithAudio        bool   // Explicit response mode; source of truth for output
+	HasExplicitResponseMode bool   // True when the job contains an explicit response mode override
+	Status                  string
+	AttemptCount            int
+	MaxAttempts             int
 }
 
 // JobMeta contém metadados de conclusão para audit trail.
@@ -99,11 +101,14 @@ func (m *Manager) Enqueue(ctx context.Context, msg ports.IncomingMessage) error 
 		return fmt.Errorf("queue.Enqueue: falha ao serializar payload: %w", err)
 	}
 
+	responseMode := ports.ResolveResponseMode(msg)
+	fallbackUsed := !msg.HasExplicitResponseMode && !msg.RespondWithAudio && msg.IsAudio
+	LogResponseModeDecision(msg.ID, msg, responseMode, fallbackUsed)
 	record := map[string]interface{}{
 		"msg_id":        msg.ID,
 		"from_phone":    msg.From,
 		"raw_payload":   json.RawMessage(rawPayload),
-		"respond_audio": msg.IsAudio,
+		"respond_audio": responseMode,
 		"status":        "pending",
 	}
 
@@ -222,16 +227,23 @@ func (m *Manager) claimByStatus(ctx context.Context, workerID, fromStatus string
 		bodyText = *row.BodyText
 	}
 
+	respondWithAudio := row.RespondAudio
+	if msg.HasExplicitResponseMode {
+		respondWithAudio = msg.RespondWithAudio
+	}
+
 	return &Job{
-		ID:           row.ID,
-		MsgID:        row.MsgID,
-		FromPhone:    row.FromPhone,
-		RawPayload:   msg,
-		BodyText:     bodyText,
-		RespondAudio: row.RespondAudio,
-		Status:       row.Status,
-		AttemptCount: row.AttemptCount,
-		MaxAttempts:  row.MaxAttempts,
+		ID:                      row.ID,
+		MsgID:                   row.MsgID,
+		FromPhone:               row.FromPhone,
+		RawPayload:              msg,
+		BodyText:                bodyText,
+		RespondAudio:            row.RespondAudio,
+		RespondWithAudio:        respondWithAudio,
+		HasExplicitResponseMode: msg.HasExplicitResponseMode,
+		Status:                  row.Status,
+		AttemptCount:            row.AttemptCount,
+		MaxAttempts:             row.MaxAttempts,
 	}, nil
 }
 

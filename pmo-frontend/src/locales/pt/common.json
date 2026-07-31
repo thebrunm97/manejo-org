@@ -1,0 +1,14 @@
+{
+  "nav": {
+    "dashboard": "Painel de Controle",
+    "properties": "Propriedades",
+    "reports": "Relatórios",
+    "settings": "Configurações",
+    "logout": "Sair"
+  },
+  "language": {
+    "pt": "Português",
+    "en": "English",
+    "es": "Español"
+  }
+}

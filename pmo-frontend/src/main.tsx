@@ -3,6 +3,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import './i18n'; // Configuração do i18next
 import './index.css';
 import { BrowserRouter } from 'react-router-dom';
 import * as Sentry from "@sentry/react";

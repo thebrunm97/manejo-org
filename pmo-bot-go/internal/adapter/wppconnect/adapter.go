@@ -175,11 +175,16 @@ func (c *Client) SendMessage(to, message string) error {
 func (c *Client) SendButton(to string, title, description, footer string, buttons []map[string]string) error {
 	var sb strings.Builder
 	if title != "" {
-		sb.WriteString("*" + title + "*\n\n")
+		sb.WriteString("*")
+		sb.WriteString(title)
+		sb.WriteString("*\n\n")
 	}
-	sb.WriteString(description + "\n\n")
+	sb.WriteString(description)
+	sb.WriteString("\n\n")
 	if footer != "" {
-		sb.WriteString("_" + footer + "_\n\n")
+		sb.WriteString("_")
+		sb.WriteString(footer)
+		sb.WriteString("_\n\n")
 	}
 	for _, btn := range buttons {
 		sb.WriteString(fmt.Sprintf("[%s]\n", btn["displayText"]))
@@ -377,14 +382,16 @@ func ParseWebhook(rawBody []byte) (ports.IncomingMessage, error) {
 	}
 
 	return ports.IncomingMessage{
-		ID:        payload.MessageID(),
-		From:      payload.From,
-		Body:      payload.Body,
-		Type:      payload.Type,
-		IsAudio:   payload.IsAudio(),
-		IsImage:   payload.IsImage(),
-		IsFromMe:  payload.FromMe,
-		Timestamp: timestamp,
+		ID:                      payload.MessageID(),
+		From:                    payload.From,
+		Body:                    payload.Body,
+		Type:                    payload.Type,
+		IsAudio:                 payload.IsAudio(),
+		RespondWithAudio:        payload.IsAudio(),
+		HasExplicitResponseMode: true,
+		IsImage:                 payload.IsImage(),
+		IsFromMe:                payload.FromMe,
+		Timestamp:               timestamp,
 	}, nil
 }
 

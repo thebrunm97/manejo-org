@@ -1,0 +1,71 @@
+## MINISTÉRIO DA AGRICULTURA, PECUÁRIA E ABASTECIMENTO
+
+## GABINETE DO MINISTRO
+
+## INSTRUÇÃO NORMATIVA Nº 18, DE 20 DE JUNHO DE 2014
+
+O MINISTRO DE ESTADO DA AGRICULTURA, PECUÁ- RIA E ABASTECIMENTO, no uso da atribuição que lhe confere o art. 87, parágrafo único, inciso II, da Constituição, tendo em vista o disposto na Lei nº 10.831, de 23 de dezembro de 2003, no Decreto no 6.323, de 27 de dezembro de 2007, e o que consta do Processo no 21000.000408/2009-06, resolve:
+
+Art. 1º Instituir o selo único oficial do Sistema Brasileiro de Avaliação da Conformidade Orgânica, e estabelecer os requisitos para a sua utilização, na forma desta Instrução Normativa e de seus Anexos I a IV.
+
+Parágrafo único. O selo do Sistema Brasileiro de Avaliação da Conformidade Orgânica somente poderá ser utilizado nos produtos orgânicos certificados, oriundos de unidades de produção controladas por organismos de avaliação da conformidade credenciados no Ministério da Agricultura, Pecuária e Abastecimento.
+
+Art. 2º O selo será utilizado conforme modelos constantes nos Anexos I, II e III da presente Instrução Normativa, nas versões:
+
+I - colorida: preto (100% K) e verde (100% C + 100% Y), conforme o Anexo I;
+
+II - preto e cinza: preto (100% K) e cinza (30% K), conforme o Anexo II; e
+
+III - preto ou branco: preto (100% K), conforme o Anexo III, sendo que no caso da versão em cor branca, o fundo deve ser obrigatoriamente transparente.
+
+- § 1º Nos modelos constantes nos Anexos I, II e III, um fio de contorno deve delimitar irregularmente a figura, acompanhando seu desenho, com o fundo que preenche o seu interior em cor branca ou transparente.
+
+§ 2º O uso do fundo transparente somente é permitido quando a cor do rótulo, da embalagem, ou do produto contrastar com a cor dos caracteres do selo permitindo sua identificação.
+
+Art. 3º Para garantir a integridade do selo deve-se obedecer aos seguintes requisitos:
+
+I - a tipografia usada na construção do selo é a Helvetica Neue Bold;
+
+II - para preservar a legibilidade do selo não é permitido reduzir sua aplicação a medidas inferiores a 2,5 cm;
+
+III - fica estabelecida a área delimitada em volta do selo como área de respiro, onde não podem ser aplicados quaisquer desenhos, fotos ou textos;
+
+IV - para definir as proporções entre os elementos que constituem o selo e a área de respiro fica estabelecido o módulo de referência X, na forma do Anexo IV, desta Instrução Normativa, sendo que o X equivale à altura da letra "I" da palavra ORGÂ- NICO;
+
+V - o fundo da área de respiro deve ser transparente, permitindo que a cor do rótulo prevaleça;
+
+VI - a identificação do sistema de avaliação da conformidade orgânica (sistema participativo ou certificação por auditoria) é aplicada na área de respiro e pode ser nas cores preta ou branca, de forma a permitir melhor visualização; e
+
+VII - o selo deve ser aplicado na rotulagem do produto, buscando não poluir nem encobrir nenhuma informação, sendo vedadas sua associação à marca comercial e sua aplicação na forma de etiqueta.
+
+Parágrafo único. Nos casos em que o selo em sua medida mínima não caiba no rótulo da embalagem primária do produto, este deverá ser aplicado com medida não inferior a 1,0 cm, sendo obrigatória a comercialização destes produtos no varejo em embalagem secundária que contenha o selo com medida mínima de 2,5 cm.
+
+Art. 4º As artes do selo a serem utilizadas serão repassadas pelo Ministério da Agricultura, Pecuária e Abastecimento aos Organismos de Avaliação da Conformidade Orgânica credenciados, para disponibilização gratuita aos produtores cujos produtos tenham obtido certificação.
+
+Art. 5º Esta Instrução Normativa entra em vigor na data de sua publicação.
+
+Art. 6º Fica revogada a Instrução Normativa nº 50, de 5 de novembro de 2009.
+
+NERI GELLER
+
+ANEXO I
+
+<!-- image -->
+
+<!-- image -->
+
+<!-- image -->
+
+<!-- image -->
+
+ANEXO III
+
+<!-- image -->
+
+ANEXO IV
+
+D.O.U., 23/06/2014 - Seção 1
+
+<!-- image -->
+
+<!-- image -->

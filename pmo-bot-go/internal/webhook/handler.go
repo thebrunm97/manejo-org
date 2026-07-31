@@ -59,6 +59,11 @@ type Config struct {
 	HarnessQueue interface {
 		Enqueue(ctx context.Context, msg ports.IncomingMessage) error
 	}
+
+	EnableFastRouter       bool
+	EnableFastRouterShadow bool
+	FastRouterTimeoutMS    int
+
 	WorkerCount int
 	QueueSize   int
 }
@@ -355,10 +360,19 @@ func (h *Handler) handleHITLResponse(phone, response string) bool {
 	toolCtx, toolCancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer toolCancel()
 
-	guard := mcp.NewLoopGuard(3) // single-tool execution, 3 max to be safe
-	result, toolErr := h.cfg.MCPServer.CallToolWithGuard(guard, toolName, toolArgs)
+	pmoID := int64(0)
+	if rec.PmoID != nil {
+		pmoID = *rec.PmoID
+	}
+	profile := &supabase.Profile{
+		ID:         rec.UserID,
+		PmoAtivoID: pmoID,
+	}
 
-	_ = toolCtx // context flows through CallToolWithGuard internally
+	guard := mcp.NewLoopGuard(3) // single-tool execution, 3 max to be safe
+	result, toolErr := h.cfg.MCPServer.CallToolWithGuard(toolCtx, guard, toolName, toolArgs, profile)
+
+	_ = result
 
 	if toolErr != nil {
 		log.Printf("❌ [HITL] Execução da ferramenta %s falhou: %v", toolName, toolErr)
@@ -407,7 +421,13 @@ func (h *Handler) processLegacy(msg ports.IncomingMessage) {
 		ctx = context.WithValue(ctx, "raw_payload_id", msg.RawPayloadID)
 	}
 
-	result := state.ProcessMessage(ctx, msg, h.cfg.SupabaseClient, h.cfg.GroqClient, h.cfg.WhatsAppClient, h.cfg.LLMClient, h.cfg.TtsClient, h.cfg.MCPServer, h.cfg.HistoryManager, h.cfg.FlagsmithClient)
+	routerCfg := state.RouterConfig{
+		EnableFastRouter:       h.cfg.EnableFastRouter,
+		EnableFastRouterShadow: h.cfg.EnableFastRouterShadow,
+		FastRouterTimeoutMS:    h.cfg.FastRouterTimeoutMS,
+	}
+
+	result := state.ProcessMessage(ctx, msg, h.cfg.SupabaseClient, h.cfg.GroqClient, h.cfg.WhatsAppClient, h.cfg.LLMClient, h.cfg.TtsClient, h.cfg.MCPServer, h.cfg.HistoryManager, h.cfg.FlagsmithClient, routerCfg)
 	if msg.RawPayloadID != "" {
 		if !result.Success {
 			log.Printf("⚠️ [LEGACY] Processing completed with issues: %s", result.Reason)

@@ -196,8 +196,7 @@ const GeneralLogTable: React.FC<GeneralLogTableProps> = ({ pmoId }) => {
             };
 
             const currentDetails = selectedItem.detalhes_tecnicos || {};
-            // @ts-ignore
-            const historico = currentDetails.historico_alteracoes || [];
+            const historico = (currentDetails as Record<string, any>).historico_alteracoes || [];
             const newDetails = {
                 ...currentDetails,
                 historico_alteracoes: [...historico, logEntry]
@@ -211,8 +210,6 @@ const GeneralLogTable: React.FC<GeneralLogTableProps> = ({ pmoId }) => {
                     observacao_original: `[CANCELADO] ${selectedItem.observacao_original}`,
                     detalhes_tecnicos: newDetails
                 };
-                // Only process DELETE here. EDIT is handled by ManualRecordDialog.
-                if (actionType !== 'DELETE') return;
 
                 const { data, error } = await supabase
                     .from('caderno_campo')

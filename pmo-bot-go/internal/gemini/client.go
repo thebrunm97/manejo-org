@@ -700,3 +700,10 @@ func (c *Client) EvaluateEvidenceListwise(ctx context.Context, query string, chu
 
 	return result, nil
 }
+
+// ChatRaw sends a raw chat completion request to the provider.
+func (c *Client) ChatRaw(ctx context.Context, req llm.ChatRequest) (llm.ChatResponse, error) {
+	// For Gemini, we might route to OpenRouter or implement directly.
+	// We'll stub this out for now since the Judge explicitly uses OpenAIAdapter.
+	return llm.ChatResponse{}, fmt.Errorf("ChatRaw not implemented for Gemini adapter yet")
+}

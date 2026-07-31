@@ -1,6 +1,6 @@
 // src/components/Sidebar.tsx
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   Sprout,
@@ -23,6 +23,8 @@ import { SCREENS, RouteName } from '../routes/routeNames';
 import { useAuth } from '../context/AuthContext';
 import { cn } from '../utils/cn';
 import PropertySelectorModal from './Common/PropertySelectorModal';
+import { useTranslation } from 'react-i18next';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface SidebarProps {
   mobileOpen?: boolean;
@@ -35,6 +37,17 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
   const { navigateTo, goToLogin, currentPath } = useAppNavigation();
   const { profile, isAdmin, isLoadingRole, currentPropriedade, allPropriedades } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
+  const { t } = useTranslation('common');
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && mobileOpen && onClose) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mobileOpen, onClose]);
 
   const getDisplayName = () => {
     if (profile?.nome) {
@@ -57,7 +70,7 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
   const appInitials = appName.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase();
 
   const allMenuItems: { name: string; icon: any; path: RouteName; pmoOnly?: boolean; mapOnly?: boolean }[] = [
-    { name: 'Visão Geral', icon: <LayoutDashboard size={22} />, path: SCREENS.HOME },
+    { name: t('nav.dashboard'), icon: <LayoutDashboard size={22} />, path: SCREENS.HOME },
     { name: 'Planos de Manejo', icon: <ClipboardList size={22} />, path: SCREENS.PMO_LIST, pmoOnly: true },
     { name: 'Caderno de Campo', icon: <MenuIcon size={22} />, path: SCREENS.NOTEBOOK },
     { name: 'Financeiro / DRE', icon: <CircleDollarSign size={22} />, path: SCREENS.FINANCEIRO },
@@ -152,7 +165,7 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
             <div className="flex-1 min-w-0 text-left">
               <p className="text-xs font-black text-agro-creme truncate leading-tight uppercase tracking-wide">{currentPropriedade.nome}</p>
               <p className="text-[10px] text-agro-creme/80 font-bold leading-tight capitalize">
-                {currentPropriedade.modalidade_predominante.toLowerCase()}
+                {(currentPropriedade?.modalidade_predominante?.toLowerCase() ?? 'orgânico')}
               </p>
             </div>
             {allPropriedades.length > 1 && (
@@ -215,8 +228,12 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
           className="w-full flex items-center px-4 py-2.5 text-sm font-bold text-agro-creme/60 rounded-xl hover:text-rose-400 hover:bg-rose-500/10 transition-colors group"
         >
           <LogOut size={20} className="mr-3 text-agro-creme/50 group-hover:text-rose-400" />
-          Sair
+          {t('nav.logout')}
         </button>
+
+        <div className="mt-4 px-2">
+            <LanguageSwitcher />
+        </div>
 
         <div className="mt-4 p-3 bg-white/5 rounded-2xl flex items-center gap-3 border border-white/5">
           <div className="w-8 h-8 rounded-full bg-agro-ouro/20 border border-agro-ouro/30 flex items-center justify-center text-agro-ouro font-black text-xs shrink-0 overflow-hidden">

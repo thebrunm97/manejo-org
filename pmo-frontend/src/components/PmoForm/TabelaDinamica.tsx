@@ -352,7 +352,7 @@ export default function TabelaDinamica<T extends TableRowBase>({
         const val = renderValue(item, titleCol);
         const str = String(val).trim();
         if (!str || str === '-' || str === '') {
-            return itemName ? `Novo ${itemName}` : 'Novo Registo';
+            return itemName ? `Novo ${itemName}` : 'Novo Registro';
         }
         return str;
     };

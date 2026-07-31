@@ -123,6 +123,8 @@ func (w *MediaWorker) tick(ctx context.Context, workerID string) (bool, error) {
 	return true, nil
 }
 
+var ErrUnsupportedMediaType = fmt.Errorf("unsupported media type")
+
 // processMedia extrai texto da mensagem. Retorna (bodyText, respondWithAudio, error).
 // Para mensagens de texto puro, retorna o body diretamente sem I/O extra.
 func (w *MediaWorker) processMedia(ctx context.Context, job *Job) (string, bool, error) {
@@ -131,9 +133,9 @@ func (w *MediaWorker) processMedia(ctx context.Context, job *Job) (string, bool,
 	// --- Mensagem de texto puro (caminho feliz, sem I/O de mídia) ---
 	if !msg.IsAudio && !msg.IsImage {
 		if strings.TrimSpace(msg.Body) == "" {
-			return "", false, fmt.Errorf("text message with empty body")
+			return "", false, ErrUnsupportedMediaType
 		}
-		return msg.Body, false, nil
+		return msg.Body, ports.ResolveResponseMode(msg), nil
 	}
 
 	// --- Processamento de Áudio ---
@@ -146,7 +148,7 @@ func (w *MediaWorker) processMedia(ctx context.Context, job *Job) (string, bool,
 		return w.processImage(ctx, msg)
 	}
 
-	return "", false, fmt.Errorf("unsupported message type")
+	return "", false, ErrUnsupportedMediaType
 }
 
 // processAudio baixa o áudio e transcreve via Groq Whisper.
@@ -175,7 +177,7 @@ func (w *MediaWorker) processAudio(ctx context.Context, msg ports.IncomingMessag
 		return "", true, fmt.Errorf("audio_transcription_empty")
 	}
 
-	return cleanText, true, nil
+	return cleanText, ports.ResolveResponseMode(msg), nil
 }
 
 // processImage baixa a imagem e gera descrição agronômica via Gemini.
@@ -199,7 +201,7 @@ func (w *MediaWorker) processImage(ctx context.Context, msg ports.IncomingMessag
 
 	// Se há legenda além da descrição, combina os dois
 	if msg.Body != "" {
-		return description + "\n\nLegenda do usuário: " + msg.Body, false, nil
+		return description + "\n\nLegenda do usuário: " + msg.Body, ports.ResolveResponseMode(msg), nil
 	}
-	return description, false, nil
+	return description, ports.ResolveResponseMode(msg), nil
 }

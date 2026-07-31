@@ -24,7 +24,6 @@ const MapaPropriedade = lazy(() => import('./pages/MapaPropriedade'));
 const MinhasCulturas = lazy(() => import('./pages/MinhasCulturas'));
 const DesignLab = lazy(() => import('./pages/DesignLab'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
-const KnowledgeMonitoringPage = lazy(() => import('./pages/admin/KnowledgeMonitoringPage'));
 const LiveChatMonitor = lazy(() => import('./pages/admin/LiveChatMonitor'));
 const PropertyProfilePage = lazy(() => import('./pages/PropertyProfilePage'));
 const ChangelogPage = lazy(() => import('./pages/ChangelogPage'));
@@ -271,7 +270,6 @@ const App: React.FC = () => {
                 {/* Rotas Admin (Protected by Role) */}
                 <Route element={<AdminRoute />}>
                     <Route path="/admin" element={<AdminDashboard />} />
-                    <Route path="/admin/conhecimento" element={<KnowledgeMonitoringPage />} />
                     <Route path="/admin/chat" element={<LiveChatMonitor />} />
                 </Route>
 

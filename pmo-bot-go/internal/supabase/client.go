@@ -3,6 +3,8 @@ package supabase
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -146,7 +148,7 @@ type IngestionJob struct {
 	Status          string `json:"status"`
 	TotalChunks     int    `json:"total_chunks"`
 	ProcessedChunks int    `json:"processed_chunks"`
-	ErrorLog        string `json:"error_log,omitempty"`
+	ErrorMessage    string `json:"error_message,omitempty"`
 }
 
 type TalhaoInsert struct {
@@ -166,19 +168,26 @@ type CanteiroInsert struct {
 }
 
 type FarmDocument struct {
-	PmoID            *int64    `json:"pmo_id"` // Pointer to allow NULL (Global)
+	PmoID            *int64    `json:"pmo_id"`             // Pointer to allow NULL (Global)
 	DocumentName     string    `json:"document_name"`
-	Content          string    `json:"content"`
-	Embedding        []float32 `json:"embedding"`               // Antigo (Gemini 3072d)
-	Embedding1024    []float32 `json:"embedding_1024"`          // Novo (BGE-M3 1024d)
+	Content          string    `json:"content"`            // Texto limpo (sem prefixo de heading)
+	HeadingPath      string    `json:"heading_path,omitempty"` // Contexto estrutural separado (seção > subseção)
+	Embedding        []float32 `json:"embedding"`          // Antigo (Gemini 3072d)
+	Embedding1024    []float32 `json:"embedding_1024"`     // Novo (BGE-M3 1024d)
 	ChunkHash        string    `json:"chunk_hash"`
 	ChunkIndex       int       `json:"chunk_index"`
 	SourceDocumentID string    `json:"source_document_id"`
 }
 
+type OpenRouterProvider struct {
+	Order          []string `json:"order,omitempty"`
+	AllowFallbacks bool     `json:"allow_fallbacks"`
+}
+
 type OpenRouterRequest struct {
-	Model string   `json:"model"`
-	Input []string `json:"input"`
+	Model    string              `json:"model"`
+	Input    []string            `json:"input"`
+	Provider *OpenRouterProvider `json:"provider,omitempty"`
 }
 
 type OpenRouterResponse struct {
@@ -196,73 +205,68 @@ type OllamaResponse struct {
 	Embedding []float32 `json:"embedding"`
 }
 
-// GetEmbedding gera o embedding dependendo do contexto.
-// - BASE_CONHECIMENTO: Usa Ollama local (bge-m3)
-// - PRODUCAO: Usa OpenRouter (baai/bge-m3)
+// GetEmbedding gera o embedding.
+// Independentemente do contextType, o contrato de fixação exige o uso EXCLUSIVO
+// do provedor OpenRouter com allow_fallbacks: false, para garantir 
+// que ingestão e consulta tenham o mesmo espaço vetorial exato (bge-m3).
 func (c *Client) GetEmbedding(text string, contextType string) ([]float32, error) {
-	if contextType == "BASE_CONHECIMENTO" {
-		reqBody := OllamaRequest{
-			Model:  "bge-m3",
-			Prompt: text,
-		}
-		payload, err := json.Marshal(reqBody)
-		if err != nil {
-			return nil, err
-		}
+	pinnedProvider := os.Getenv("EMBEDDING_PINNED_PROVIDER")
+	if pinnedProvider == "" {
+		pinnedProvider = "DeepInfra" // fallback seguro
+	}
 
-		req, err := http.NewRequest(http.MethodPost, "http://localhost:11434/api/embeddings", bytes.NewReader(payload))
-		if err != nil {
-			return nil, err
-		}
-		req.Header.Set("Content-Type", "application/json")
+	reqBody := OpenRouterRequest{
+		Model: "baai/bge-m3",
+		Input: []string{text},
+		Provider: &OpenRouterProvider{
+			Order:          []string{pinnedProvider},
+			AllowFallbacks: false,
+		},
+	}
+	payload, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, err
+	}
 
-		// Timeout estendido para lidar com o cold-start do Ollama
-		client := &http.Client{Timeout: 120 * time.Second}
-		resp, err := client.Do(req)
-		if err != nil {
-			return nil, err
-		}
-		defer resp.Body.Close()
+	openRouterKey := os.Getenv("OPENROUTER_API_KEY")
+	if openRouterKey == "" {
+		return nil, fmt.Errorf("erro: OPENROUTER_API_KEY nao definida no ambiente")
+	}
 
-		if resp.StatusCode != 200 {
-			bodyBytes, _ := io.ReadAll(resp.Body)
-			return nil, fmt.Errorf("erro ollama: status %d - %s", resp.StatusCode, string(bodyBytes))
-		}
+	client := &http.Client{Timeout: 30 * time.Second}
+	var lastErr error
 
-		var res OllamaResponse
-		if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
-			return nil, err
-		}
-		return res.Embedding, nil
-
-	} else if contextType == "PRODUCAO" {
-		reqBody := OpenRouterRequest{
-			Model: "baai/bge-m3",
-			Input: []string{text},
-		}
-		payload, err := json.Marshal(reqBody)
-		if err != nil {
-			return nil, err
-		}
-
+	// Retry com Exponential Backoff (máx 3 tentativas)
+	for attempt := 0; attempt < 3; attempt++ {
 		req, err := http.NewRequest(http.MethodPost, "https://openrouter.ai/api/v1/embeddings", bytes.NewReader(payload))
 		if err != nil {
 			return nil, err
 		}
-		req.Header.Set("Authorization", "Bearer "+os.Getenv("OPENROUTER_API_KEY"))
+		
+		req.Header.Set("Authorization", "Bearer "+openRouterKey)
 		req.Header.Set("Content-Type", "application/json")
 
-		client := &http.Client{Timeout: 30 * time.Second}
 		resp, err := client.Do(req)
 		if err != nil {
-			return nil, err
+			lastErr = err
+			time.Sleep(time.Duration(1<<attempt) * time.Second) // 1s, 2s, 4s
+			continue
 		}
-		defer resp.Body.Close()
 
 		if resp.StatusCode != 200 {
 			bodyBytes, _ := io.ReadAll(resp.Body)
-			return nil, fmt.Errorf("erro openrouter: status %d - %s", resp.StatusCode, string(bodyBytes))
+			resp.Body.Close()
+			lastErr = fmt.Errorf("erro openrouter: status %d - %s", resp.StatusCode, string(bodyBytes))
+			
+			// Retry apenas se for rate limit (429) ou erro de servidor (5xx)
+			if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500 {
+				time.Sleep(time.Duration(1<<attempt) * time.Second)
+				continue
+			}
+			return nil, lastErr // Erros como 400 ou 401 não devem sofrer retry
 		}
+
+		defer resp.Body.Close()
 
 		var res OpenRouterResponse
 		if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
@@ -274,7 +278,7 @@ func (c *Client) GetEmbedding(text string, contextType string) ([]float32, error
 		return res.Data[0].Embedding, nil
 	}
 
-	return nil, fmt.Errorf("contextType inválido: %s", contextType)
+	return nil, fmt.Errorf("falha ao gerar embedding após 3 tentativas: %v", lastErr)
 }
 
 type DocumentMatch struct {
@@ -842,11 +846,15 @@ func (c *Client) InsertFarmDocument(pmoID int64, docName, content string, embedd
 		pmoPtr = &pmoID
 	}
 
+	hashBytes := sha256.Sum256([]byte(content + docName))
+	chunkHash := hex.EncodeToString(hashBytes[:])
+
 	doc := FarmDocument{
 		PmoID:        pmoPtr,
 		DocumentName: docName,
 		Content:      content,
 		Embedding:    embedding,
+		ChunkHash:    chunkHash,
 	}
 
 	payload, err := json.Marshal(doc)
@@ -998,7 +1006,7 @@ func (c *Client) InsertMessage(ctx context.Context, msg MessageInsert) error {
 
 // CreateIngestionJob initializes a new job in the database.
 func (c *Client) CreateIngestionJob(job IngestionJob) (string, error) {
-	reqURL := fmt.Sprintf("%s/rest/v1/ingestion_jobs", c.config.URL)
+	reqURL := fmt.Sprintf("%s/rest/v1/farm_ingestion_jobs", c.config.URL)
 	payload, err := json.Marshal(job)
 	if err != nil {
 		return "", err
@@ -1035,7 +1043,7 @@ func (c *Client) CreateIngestionJob(job IngestionJob) (string, error) {
 
 // UpdateJobProgress updates the progress of an existing job.
 func (c *Client) UpdateJobProgress(jobID string, processed int, total int) error {
-	reqURL := fmt.Sprintf("%s/rest/v1/ingestion_jobs?id=eq.%s", c.config.URL, jobID)
+	reqURL := fmt.Sprintf("%s/rest/v1/farm_ingestion_jobs?id=eq.%s", c.config.URL, jobID)
 	payload, err := json.Marshal(map[string]interface{}{
 		"processed_chunks": processed,
 		"total_chunks":     total,
@@ -1051,12 +1059,12 @@ func (c *Client) UpdateJobProgress(jobID string, processed int, total int) error
 
 // FinishJob marks the job as completed or failed.
 func (c *Client) FinishJob(jobID string, status string, errorLog string) error {
-	reqURL := fmt.Sprintf("%s/rest/v1/ingestion_jobs?id=eq.%s", c.config.URL, jobID)
+	reqURL := fmt.Sprintf("%s/rest/v1/farm_ingestion_jobs?id=eq.%s", c.config.URL, jobID)
 	update := map[string]interface{}{
 		"status": status,
 	}
 	if errorLog != "" {
-		update["error_log"] = errorLog
+		update["error_message"] = errorLog
 	}
 	if status == "completed" {
 		// Ensure processed == total on completion

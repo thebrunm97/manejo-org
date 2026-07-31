@@ -44,7 +44,7 @@ func TestIngestionObservability(t *testing.T) {
 
 	// 2. Prepare Upload
 	testFile := "../docs/knowledge_base/INC_17_28052009_EXTRATIVISMOSUSTENTVEL.pdf"
-	pmoID := int64(888888) // Different ID for this test
+	pmoID := int64(333) // Existing PMO ID in local database to satisfy FK constraint
 
 	file, err := os.Open(testFile)
 	if err != nil {
@@ -105,7 +105,7 @@ func TestIngestionObservability(t *testing.T) {
 		// In a real scenario, we'd GET /api/jobs/:id
 	}
 
-	t.Log("⚠️ Manual check recommended for final 'completed' status in ingestion_jobs table.")
+	t.Log("⚠️ Manual check recommended for final 'completed' status in farm_ingestion_jobs table.")
 
 	// Cleanup test data
 	// (Will be done via SQL tool afterwards)

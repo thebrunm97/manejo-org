@@ -29,4 +29,19 @@ var (
 		},
 		[]string{"phase"},
 	)
+
+	ResponseModeResolutionTotal = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "response_mode_resolution_total",
+			Help: "Count of response mode resolutions for audio/TTS pipeline",
+		},
+		[]string{"source", "resolved_mode", "fallback"},
+	)
+
+	ResponseModeLegacyFallbackTotal = promauto.NewCounter(
+		prometheus.CounterOpts{
+			Name: "response_mode_legacy_fallback_total",
+			Help: "Count of times the legacy audio fallback was used",
+		},
+	)
 )

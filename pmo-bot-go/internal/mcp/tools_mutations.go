@@ -1,6 +1,7 @@
 package mcp
 
 import (
+	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"context"
 	"fmt"
 	"log"
@@ -8,28 +9,20 @@ import (
 )
 
 // handleRegistrarPlantio processes the execution of the RegistrarPlantio tool.
-func (s *Server) handleRegistrarPlantio(args map[string]interface{}) (interface{}, error) {
-	// 1. Extração de argumentos vitais (Sessão Ativa Injetada)
-	pmoIDFloat, ok := args["_internal_pmo_id"].(float64)
-	if !ok {
-		// Tentar ler como inteiro longo (dependendo do JSON unmarshal)
-		pmoIDInt, okInt := args["_internal_pmo_id"].(int64)
-		if !okInt {
-			pmoIDInt2, okInt2 := args["_internal_pmo_id"].(int)
-			if !okInt2 {
-				return nil, fmt.Errorf("_internal_pmo_id ausente ou inválido no contexto da sessão")
-			}
-			pmoIDFloat = float64(pmoIDInt2)
-		} else {
-			pmoIDFloat = float64(pmoIDInt)
-		}
+func (s *Server) handleRegistrarPlantio(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
+	// SECURE SESSION INJECTION
+	if profile == nil {
+		return nil, fmt.Errorf("unauthorized: missing profile")
 	}
-	pmoID := int64(pmoIDFloat)
+	pmoID := profile.PmoAtivoID
+	userID := profile.ID
+	propID := profile.PropriedadeAtivaID
+	_ = pmoID
+	_ = userID
+	_ = propID
 
-	userID, ok := args["_internal_user_id"].(string)
-	if !ok || userID == "" {
-		return nil, fmt.Errorf("_internal_user_id ausente no contexto da sessão")
-	}
+	// 1. Uso de argumentos vitais (Sessão Ativa Injetada já feita no topo)
+	// (pmoID e userID são pegos direto do profile)
 
 	log.Printf("🛡️ [SECURITY] Mutações executadas com Sessão Ativa (PMO: %d, User: %s).", pmoID, userID)
 
@@ -74,7 +67,7 @@ func (s *Server) handleRegistrarPlantio(args map[string]interface{}) (interface{
 
 	log.Printf("🌱 [MCP] Invocando RPC rpc_registrar_operacao_campo para Plantio. PMO: %d", pmoID)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
 	result, err := s.supabase.RegistrarOperacaoCampoRPC(ctx, rpcArgs, "")

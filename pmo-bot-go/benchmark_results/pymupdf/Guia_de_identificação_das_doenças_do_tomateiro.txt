@@ -1,0 +1,1456 @@
+:lE~CA
+
+
+Embrapa Hortaliças. Documentos,
+24
+Exemplares desta publicação podem ser solicitados à:
+Embrapa Hortaliças
+Caixa Postal, 218
+70359-970 Brasilia-DF
+Telefone: (OXX61) 385.9110 Fax: (OXX61) 556-5744
+e-rnail: sac@cnph.embrapa.br
+http://www.cnph.embrapa.br
+Planejamento gráfico: Marcelo Mancuso da Cunha
+Tiragem: 2000 exemplares
+Lopes, Carlos Alberto
+Guia de identificação das doenças do tomateiro. Brasília: Embrapa
+Hortaliças / São Paulo: Zeneca, 2000.
+30p. ilust. (Embrapa Hortaliças. Documentos,
+24)
+l.Tomate
+- Doença - Fungo. 2. Tomate - Doença - Bactéria. 3.
+Tomate - Doença - Vírus. 4. Tomate - Doença - Nematóide.
+I. Titulo.
+11.Série.
+ISSN: 1415-2312
+CDD 635.64293
+Este
+guia, resultado
+da colaboração
+entre
+a
+Embrapa
+e a Zeneca,
+tem a finalidade de auxiliar
+produtores
+e extensionistas
+na identificação
+das
+principais
+doenças
+do tomateiro.
+O diagnóstico
+correto de uma doença é fundamental
+para que se
+possa adotar medidas corretas de controle. Écomum
+ocorrerem
+sintomas
+atípicos,
+ocasionados
+por
+condições
+climáticas
+diversas,
+variedades
+com
+diferentes
+níveis de resistência,
+distintos
+graus de
+virulência do patógeno,
+associação de mais de um
+patógeno
+na mesma planta e diferentes
+épocas de
+infecção
+dos tecidos
+vegetais.
+Por este motivo,
+sempre
+que
+possível,
+o diagnóstico
+deve
+ser
+confirmado
+em laboratório
+especializado.
+A MENÇÃO
+DE NOME
+DE PRODUTO
+COMERCIAL
+NESTA PUBLICAÇÃO
+NÃO IMPLICA
+EM SEU ENDOSSO
+PELA EMBRAPA.
+
+
+SUMÁRIO
+REQUEIMA
+- Pbytopbtbora infestans
+1
+PINTA-PRETA
+- Alternaria
+solani
+:
+3
+SEPTORIOSE
+- Septoria !Jcopersici
+!
+5
+MANCHA-DE-ESTENFÍLIO
+- Stempf?y/ium solam e S. !Jcopersici
+7
+OÍDIO - Oidiopsis sicu/a e Erysiphe sp
+;
+9
+PODRIDÃO-DE-ESCLEROTÍNIA
+- Sclerotinia sclerotiorum
+11
+RIZOCTONIOSE
+- Rhizoctonia
+solani
+13
+VIRA-CABEÇA - Várias espécies de tospovírus
+15
+MOSAICO-DOURADO
+- Geminivírus
+17
+MURCHA-BACTERIANA
+- Ralstonia so/anacearum
+19
+CANCRO-BACTERIANO
+- C/avibacter michiganensis subs. michiganensis
+21
+PINTA-BACTERIANA
+- Pseudomonas !Jringae pv. tomato
+23
+MANCHA-BACTERIANA
+- Xanthomonas
+campestris pv. vesicatoria
+25
+TALO-OCO
+OU PODRIDÃO
+- MOLE - Erwinia
+spp
+27
+GALHAS OU NEMATÓIDE
+- Meloidogyne spp
+29
+
+
+Sintomas.
+Lesões grandes, marrom-escuras,
+encharcadas, aparecendo primeiro
+nas folhas
+mais novas
+(Fig. 1),
+evoluindo para uma "queima"
+ou
+"mela" geral da planta.
+No início
+do ataque da doença,
+é comum
+observar-se um escurecimento
+do
+caule no topo da planta (Fig. 2),
+que se torna quebradiço.
+Frutos
+afetados apodrecem,
+ficam amar-
+ronzados,
+porém
+permanecem
+com a consistência
+firme (Fig. 3).
+Desenvolvimento
+da doença.
+Destrói
+a folhagem
+rapidamente
+sob alta umidade
+(acima de 90%)
+e temperatura
+em torno
+de 18 -
+20°C. Embora a doença raramente
+ocorra em alta temperatura
+(acima
+de
+30 0C),
+o patógeno
+pode
+sobreviver
+nesta
+condição
+e
+provocar
+epidemia
+quando
+a
+temperatura se tornar mais amena,
+o que explica surtos inesperados
+da doença no verão.
+Controle.
+Por ser uma doença de alto poder
+destrutivo,
+o controle
+deve ser
+feito com a aplicação preventiva
+de fungicidas registrados
+para a
+cultura,
+quando
+a condição
+climática for favorável à doença.
+Áreas sujeitas a nevoeiros cons-
+tantes devem ser evitadas para o
+plantio de tomate. Não existem
+cultivares resistentes.
+
+
+-
+.
+-
+-
+-
+-
+.r,
+r-
+3
+Sintomas.
+Lesões
+escuras,
+com
+as bordas
+bem
+definidas,
+freqüentemente
+com
+anéis
+concêntricos,
+mais
+evidentes
+nas folhas mais velhas
+(Fig. 1), afetando também o caule
+(Fig.
+2).
+A
+doença
+provoca
+desfolha
+pela
+seca
+das
+folhas
+baixeiras. Nos
+frutos,
+causa um
+apodrecimento
+escuro,
+de con-
+sistência
+firme,
+na região
+do
+pedúnculo
+(Fig. 3).
+Desenvolvimento
+da doença -,
+Ocorre com maior intensidade no
+verão,
+pois
+é favorecida
+por
+temperaturas
+altas' (27 - 30°C)
+e
+períodos
+chuvosos,
+irrigações
+freqüentes
+ou nevoeiros,
+que
+mantêm
+a
+folha
+molhada,
+condição
+essencial
+para
+a
+germinação do fungo. Plantas com
+deficiência de nitrogênio
+são mais
+sensíveis.
+Controle.
+A partir do início da frutificação,
+as plantas ficam mais sensíveis ao
+ataque
+da doença
+e devem
+ser
+pulverizadas
+preventivamente
+com
+fungicidas registrados para
+a cultura,
+principalmente
+em
+verões
+chuvosos.
+Devem
+ser
+evitadas áreas muito úmidas ou
+próximas
+a cultivos mais velhos
+de tomate. Não existem cultivares
+resis ten teso
+
+
+~ ~-
+- -
+--
+_.
+.. ---
+-
+~
+--
+-~-- -
+----
+-
+--
+---
+-
+~,
+5
+Sintomas.
+Aparecem inicialmente nas folhas
+mais velhas e consistem
+de man-
+chas
+arredondadas,
+marrom-
+escuras, com o centro cinza-claro,
+onde pontuações
+negras podem
+ser visíveis. O coalescimento
+das
+lesões
+provoca
+seca das folhas
+(Fig. 1). Lesões podem
+aparecer
+também
+no caule
+(Fig. 2), pe-
+dúnculo e cálice (Fig. 3), mas rara-
+mente nos frutos.
+Desenvolvimento
+'da doença.
+É favorecida
+por
+temperaturas
+altas
+(acima
+de 25°C)
+e alta
+umidade.
+Ocorre
+com
+maior
+intensidade
+em cultivos de verão
+chuvoso
+ou sujeitos a irrigações
+freqüentes.
+Plantas
+no início de
+produção
+são mais sensíveis ao
+ataque desta doença.
+Controle.
+Sob
+condições
+favoráveis
+à
+doença, recomenda-se
+o uso de
+pulverizações
+preventivas
+com
+fungicidas
+registrados
+para
+a
+cultura. Devem ser evitadas áreas
+de plantio
+próximas
+a cultivos
+velhos de tomate ou sujeitas a alta
+umidade.
+As irrigações
+não
+devem ser muito freqüentes. Não
+existem
+cultivares
+resistentes
+a
+esta doença.
+
+
+Sintomas.
+Consistem
+de lesões cinzentas
+a
+marrom-escuras,
+irregulares
+e
+pequenas (2 - 4 mm de diâmetro),
+espalhadas
+no limbo
+das folhas
+mais novas da planta (Fig. 1) ou
+mesmo
+ainda na fase de mudas.
+O centro
+de lesões velhas pode
+secar e cair (Fig. 2); sob condições
+favoráveis à doença, estas lesões
+coalescem e "queimam"
+as folhas.
+Não afeta os frutos.
+Desenvolvimento
+da doença.
+Temperaturas
+entre
+24 e 27 "C
+favorecem
+a doença,
+mas
+a
+presença de água livre proveniente
+de chuva, irrigação ou nevoeiro é
+necessária para a germinação
+dos
+esporos que caem sobre as folhas
+do tomateiro,
+dando
+início
+ao
+processo
+infeccioso.
+Mudas
+infectadas comumente
+são a causa
+do inicio de epidemias em plantios
+comerciars.
+Controle.
+O
+mais
+efetivo
+é o uso
+de
+cultivares resistentes, disponíveis
+principalmente
+para
+o pro-
+cessamento
+industrial.
+Para
+cultivares suscetíveis, o controle
+químico
+com fungicidas
+regis-
+trados
+é
+bastante
+eficiente
+quando
+aplicado
+preventiva-
+mente.
+Campos
+não devem ser
+plantados
+em proximidade
+a
+tomateiros
+ou outras solanáceas.
+
+
+Sintomas.
+São
+observados
+somente
+nas
+folhas, a partir das mais velhas.
+a
+parte superior da folha, aparecem
+inicialmen
+te lesões
+cloróticas,
+cujos
+centros
+podem
+necrosar
+(Fig. 1). O tecido afetado pode ou
+não
+ficar
+coberto
+por
+um pó
+branco
+(Fig. 2), dependendo
+da
+espécie do fungo. Folhas atacadas
+podem
+secar,
+mas
+não
+se
+desprendem
+da planta.
+Condições
+de desenvolvimento.
+Ocorre
+em qualquer
+condição
+favorável ao desenvolvimento
+do
+tomateiro, embora perdas maiores
+aconteçam
+sob
+temperatura
+e
+umidade
+relativa
+altas.
+Sob
+proteção de plástico, normalmente
+irrigada por gotejamento, a doença
+é mais severa, pois as estruturas do
+fungo não são removidas pela água
+de chuva
+ou de irrigação
+por
+aspersão.
+Controle.
+A
+aplicação
+preventiva
+de
+fungicidas (registrados) tem sido
+a
+forma
+mais
+eficiente
+de
+controle.
+Devem
+ser evitados
+plantios
+próximos
+a campos
+de
+tomate
+ou de pimentão
+infecta-
+dos pela doença. Restos culturais
+devem
+ser
+eliminados.
+Não
+existem cultivares resistentes.
+
+
+11
+Sintomas.
+Apodrecimento
+que
+aparece
+normalmente
+na base do caule
+(Fig. 1), seguido
+de murcha
+e
+morte da planta (Fig. 2). O caule
+atacado,
+ao secar,
+fica esbran-
+quiçado,
+contendo
+es tru turas
+pretas do fungo (escleródios) em
+seu interior (Fig. 3). O ataque pode
+ocorrer
+na parte
+superior
+das
+plantas,
+afetando
+também
+os
+frutos.
+Condições
+de desenvolvimento.
+Temperaturas
+amenas, em torno
+de 18-20 °C, e alta umidade
+do
+solo,
+favorecem
+a doença.
+A
+doença se manifesta normalmente
+quando
+as plantas
+cobrem
+o
+terreno,
+no caso de tomate para
+processamento
+industrial, propor-
+cionando
+um
+microambiente
+úmido entre as plantas e o solo.
+Controle.
+Devem
+ser
+evitadas
+áreas
+infestadas e, em caso de ocorrer
+a doença, deve-se fazer rotação
+de culturas com gramíneas
+por,
+pelo
+menos,
+cinco
+anos.
+O
+manejo
+da água de irrigação
+é
+importante
+para
+se evitar
+alta
+umidade
+na base
+da planta,
+principalmente
+em
+solos
+argilosos. O controle
+químico é
+eficiente para evitar que a doença
+se espalhe na parte aérea.
+
+
+!l~
+-
+-
+- ---
+-- ---
+- ---
+-
+- -~
+--
+- -
+-
+--
+--
+-
+-
+-
+~
+1j"
+Sintomas.
+Cancros amarronzados
+na base de
+plantas jovens (Fig. 1), que podem
+causar o seu tombamento.
+Frutos
+em contato
+com
+o solo,
+mais
+comumnete
+em tomateiro
+para
+processamento
+industrial,
+desen-
+volvem um apodrecimento
+firme,
+de cor marrom, que fica recoberto
+com partículas
+de solo e micélio
+esbranquiçado
+do fungo (Fig. 2).
+Condições
+de desenvolvimento.
+Esta doença
+é mais afetada pela
+umidade
+do
+que
+pela
+ternpe-
+ratura.Irrigação excessiva ou chuva
+no
+final
+do
+ciclo
+da
+cultura
+provocam
+alta
+umidade
+do
+ambiente
+debaixo
+das plantas,
+facilitando a infecção dos frutos e
+outros órgãos em contato
+com o
+solo. Esta situação é muito mais
+comum
+em tomate
+para
+pro-
+cessamento industrial.
+Controle.
+Devem
+ser
+evitados
+solos
+argilosos, que retêm umidade por
+mais tempo que os arenosos, e a
+irrigação
+deve ser reduzida
+no
+final do ciclo. A colheita não deve
+coincidir com período
+chuvoso.
+Em áreas propensas à ocorrência
+da doença,
+deve-se
+preferir
+cultivares
+que permitam
+maior
+arejamento
+na base da planta.
+
+
+Sintomas.
+Plantas
+ficam menores,
+com as
+folhas arroxeadas (Fig. 1) e com o
+broto superior deformado, virado
+para o lado, às vezes com pontos
+necróticos (Fig.2). Os frutos ficam
+deformados
+e manchados
+de
+marrom,
+onde
+é comum
+apa-
+recerem anéis mais claros (Fig. 3).
+Os sintomas
+são mais severos
+quando
+a planta é atacada mais
+nova,
+podendo
+comprometer
+totalmente a produção.
+Condições
+de desenvolvimento.
+Clima seco e quente, que favorece
+a multiplicação e a movimentação
+das
+espécies
+de tripes
+trans-
+missoras
+do vírus,
+resulta
+em
+ataques mais severos da doença. A
+predominância
+de uma ou mais
+espécie
+do vírus
+depende
+da
+população
+do vetor presente
+na
+região.
+.
+Controle.
+Deve ser feito visando proteger
+as mudas, através da combinação
+de barreiras físicas (telados) e a
+aplicação
+de inseticidas
+para o
+controle
+de tripes
+em plantas
+jovens
+no
+campo.
+Deve
+ser
+evitado
+o plantio
+de tomate
+próximo
+a culturas hospedeiras
+de tripes,
+como
+alho, cebola,
+ervilha e cultivos mais velhos de
+tomate.
+Existem
+cultivares
+resistentes,
+principalmente
+para
+processamento
+industrial.
+
+
+Sintomas.
+Existe
+grande
+variação
+de
+sintomas, dependendo
+da espécie
+do vírus envolvida,
+da idade em
+que a planta
+foi infectada
+e da
+cultivar.
+O mais comum
+é um
+amarelecimento intenso nas folhas
+mais novas (Fig. 1), seguida ou não
+de deformação
+das folhas,
+que
+ficam pequenas
+e em forma
+de
+colher
+(Fig.
+2). A planta
+fica
+subdesenvolvida.
+Condições
+de desenvolvimento.
+Climas mais secos
+favorecem
+a
+movimentação
+da mosca-branca,
+vetor desta virose, e resultam em
+danos
+maiores
+à cultura.
+A
+proximidade
+do tomatal a plantas
+hospedeiras
+do
+vetor,
+como
+cucurbitáceas e várias ornamentais,
+aumenta
+o risco
+de epidemias.
+Poucos insetos na lavoura podem
+causar altas infestações
+da virose.
+Controle.
+Baseia-se no controle do inseto-
+vetor principalmente
+na primeira
+fase do ciclo da cultura. As mudas
+devem ser produzidas em telados
+e mantidas
+pulverizadas
+com
+inse,ticidas
+antes
+e depois
+de
+serem transplantadas
+no campo.
+Cultivares resistentes
+a algumas
+espécies
+do vírus
+deverão
+ser
+brevemente
+disponibilizadas.
+
+
+Sintomas.
+Murcha
+inicialmente
+da parte
+superior das plantas, normalmente
+a partir do inicio de frutificação, a
+princípio
+só
+nas
+horas
+mais
+quentes
+do
+dia.
+Aparece
+em
+reboleiras.
+Com
+a evolução
+da
+doença,
+a planta
+murcha
+total-
+mente e morre (Fig. 1). A região
+dos vasos
+na base do caule da
+planta doente fica marrom (Fig. 2)
+e exsuda o pus bacteriano no teste
+do copo (Fig.3).
+Condições
+de desenvolvimento.
+Esta doença somente causa perdas
+em cultivos sob alta umidade e alta
+temperatura.
+Plantas em terrenos
+baixos
+e encharcados
+são
+as
+primeiras
+a serem
+atacadas.
+A
+doença
+se espalha pela água que
+escorre
+de uma cova infestada
+para outras. A bactéria sobrevive
+por muitos anos no solo associada
+à rizosfera de várias plantas.
+Controle.
+Deve ser preventivo, escolhendo
+a área
+de
+cultivo
+e fazendo
+rotação de culturas de preferência
+com gramíneas. O solo deve ser
+bem drenado
+e a irrigação
+não
+pode ser excessiva. Não existem
+cultivares
+com
+alto
+grau
+de
+resistência e o controle
+químico
+não é economicamente
+viável.
+
+
+Sintomas.
+Murcha
+e seca das folhas
+mais
+velhas da planta, acompanhadas de
+queda
+de frutos
+(Fig.l),
+como
+resultado
+da infecção
+vascular
+(Fig. 2). Os sintomas
+são mais
+típicos nos frutos, onde aparecem
+lesões
+esbranquiçadas
+com
+o
+centro escuro, conhecidas
+como
+"olho-de-perdiz"(Fig.
+3). Peque-
+nas lesões
+marrom-claras
+apa-
+recem nos pedúnculos
+dos frutos.
+Condições de desenvolvimento.
+A bactéria causadora da doença é
+transmitida
+pela
+semente
+e
+provoca
+epidemia
+sob
+amplo
+intervalo
+de temperatura,
+desde
+que haja alta umidade
+no solo e
+nas
+folhas.
+A doença
+é muito
+contagiosa
+e se espalha
+rapida-
+mente por respingos de água e por
+manuseio das plantas na desbrota
+e no amarrio, sendo, por isso mais
+importante
+em tomateiro
+para
+mesa.
+Controle.
+Deve ser preventivo, plantando-
+se sementes
+ou mudas
+de boa
+qualidade sanitária
+em terrenos
+não contaminados.
+Fungicidas à
+base
+de cobre
+e antibióticos
+aplicados
+preventivamente
+exercem certa proteção
+contra a
+doença e são recomendados
+em
+esquema
+de pulverização
+do
+tomateiro. Deve ser feita rotação
+de culturas
+e esterilização
+das
+estacas
+usadas
+em
+cultivos
+anteriores.
+
+
+Sintomas.
+Manchas
+necróticas,
+concen-
+trando-se
+nas bordas
+das folhas
+(Fig. 1), que evoluem
+para
+uma
+"queima"
+da folhagem
+de baixo
+para cima. Caule, pedolo
+e pedún-
+culo também
+ficam
+manchados.
+No
+fruto,
+as lesões
+são inicial-
+mente
+esbranquiçadas,
+evoluindo
+para
+uma
+cor marrom
+(Fig. 2),
+podendo
+atingir
+até
+5 mm
+de
+diâmetro.
+Condições
+de desenvolvimento.
+Temperatura
+e umidade
+altas
+favorecem
+a doença.
+A bactéria
+é
+transmitida
+pela
+semente
+e a
+doença se espalha através de gotas
+de chuva ou de água de irrigação,
+mais rapidamente
+na presença
+de
+ventos.
+Excesso
+de umidade
+no
+solo mantém
+um ambiente
+úmido
+na base da planta,
+favorecendo
+a
+doença.
+Controle.
+O controle
+químico,
+com cobre
+ou
+antibióticos,
+só apresenta
+alguma eficiência quando o clima
+não é muito
+favorável
+à doença.
+Preventivamente,
+deve-se
+usar
+semente de boa qualidade, evitar-
+se o excesso de água de irrigação
+e realizar o plantio em área isolada
+de campos
+mais velhos atacados
+pela doença.
+
+
+-
+-
+-
+..
+-
+-=
+I":H~1\,~],~I.:\-;~'i~:'~~~
+~;i~;~1{;;:,
+j
+'1:''-::~:~T~;~;]:d;)n;(;r~;1/";'y~;f',~;';] e,':p~7.:'iifJ1~~;,1() (í~
+~. "',t.:}.;_~ ..
+.< ·7\..:;t/~'f:;~"
+·4-'''-·\~~''I;~~~~t·1
+';Çj'; :p~.:?"~.'...lJ?;.~.~~
+F~
+•
+~~!~~I-~~~:Ã,
+f'íl;..••.'.:-1f'~ 1,~,·~~;.•~~~Z>;í/j.'
+Sintomas,
+Lesões
+necróticas
+nas
+folhas
+(Fig,
+1),
+semelhantes
+às
+da
+mancha-bacteriana,
+porém
+mais
+freqüentemente
+associadas a um
+halo amarelado.
+No caule e no
+pedúnculo,
+as lesões
+(Fig.
+2)
+também
+podem
+ser confundidas
+com as da mancha-bacteriana, mas
+nos
+frutos
+as
+manchas
+são
+menores,
+mais
+escuras
+e mars
+brilhantes (Fig, 3).
+Condições
+de desenvolvimento.
+Transmitida
+pela
+sementes,
+a
+bactéria
+encontra
+ambiente
+favorável
+em ambiente
+úmido
+associado a temperaturas
+amenas
+(em torno de 18-20 "C). A doença
+se espalha rapidamente
+no campo
+em gotículas de água de chuva ou
+de irrigação.
+Controle.
+Os hibridos
+de tomateiro
+mais
+plantados
+para processamento
+industrial no Brasil possuem alto
+grau de resistência a esta doença.
+Outras
+medidas
+de controle
+envolvem
+o uso de sementes
+e
+mudas
+de
+boa
+qualidade,
+o
+manejo
+adequado
+da água de
+irrigação
+e o isolamento
+do
+campo de outros plantios afeta-
+dos pela doença.
+
+
+Sintomas.
+Apodrecimento
+do caule iniciando
+por ferimento
+por onde a bactéria
+penetra
+(Fig. 1). A parte
+interna
+do caule
+é destruída
+(Fig. 2) e,
+como
+conseqüência,
+a planta
+murcha
+e morre.
+Os
+frutos
+danificados
+por
+traça
+e broca
+apodrecem
+rapidamente
+(Fig. 3),
+ficam escurecidos
+e moles,
+porém
+permanecem
+aderidos
+à planta.
+Condições
+de desenvolvimento.
+Períodos
+muito quentes, ambiente
+mal ventilado
+e com alta umidade
+do ar favorecem
+o aparecimento
+e
+o desenvolvimento
+rápido
+da
+doença.
+Plantas
+com
+ferimentos
+mecânicos
+ou provocados
+por
+insetos tornam-se
+mais vulneráveis
+ao ataque da bactéria.
+Controle.
+Deve ser preventivo, com escolha
+de local e época de plantios
+não
+favoráveis
+à doença.
+Insetos
+que
+danificam
+os frutos
+devem
+ser
+controlados.
+As
+plantas
+não
+devem ser manuseadas
+enquanto
+molhadas
+e a desbrota
+deve ser
+feita
+enquanto
+os brotos
+são
+pequenos.
+Eventuais
+ferimentos
+devem
+ser protegidos
+através de
+pulverizações
+com
+fungicidas
+cúpricos.
+
+
+Sintomas.
+As plantas doentes, normalmente
+ocorrendo
+em reboleiras,
+ficam
+subdesenvolvidas,
+amareladas
+e
+podem
+murchar
+(Fig. 1), pois as
+raízes
+são
+danificadas
+pelo
+nematóide
+e não absorvem
+água
+e nutrientes de forma normal. Ao
+se arrancar estas plantas, as raízes
+apresentam-se
+engrossadas
+(com
+galhas) (Fig. 2), podendo
+apodre-
+cer sob ataque intenso da doença.
+Condições
+de desenvolvimento.
+Temperatura
+alta
+favorece
+a
+multiplicação
+do
+nematóide
+provocando,
+como conseqüência,
+maior
+severidade
+da doença.
+Maiores
+perdas
+também
+são
+observadas
+em solos
+arenosos,
+com teor médio de umidade, em
+áreas cultivadas seqüencialmente
+com
+espécies
+hospedeiras
+do
+nematóide.
+Controle.
+Deve ser preventivo, iniciando-se
+pela escolha da área, que deve ser
+nova
+ou
+que
+tenha
+sofrido
+rotação de culturas com espécies
+não suscetíveis.
+Existem
+culti-
+vares com alto nível de resistência
+à doença.
+A matéria
+orgânica
+incorporada
+ao solo favorece o
+controle
+biológico.
+O controle
+químico
+pode ser utilizado
+em
+áreas muito infestadas.
+
+
+..."
+MINISTÉRIO
+DA
+AGRICULTURA
+E DO
+ABASTECIMENTO
+Empresa
+Brasileira
+de Pesquisa
+Agropecuária
+Centro
+Nacional
+de Pesquisa
+de Hortaliça~
+Ministério
+da Agricultura
+e do Abastecimento
+ZENECA 'Agrícola
+AJUDi\f\:DO o AGIHCUlTOft
+A AUMENTAR o MUNDO
+.
+I
+GOVERNO
+FEDERAL
+Trabalhando
+em todo o BrasilI
+
+

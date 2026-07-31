@@ -10,7 +10,7 @@ type CriarInfraestruturaSchema struct {
 }
 
 type AdicionarInsumoSchema struct {
-	PmoID           int    `json:"pmo_id" validate:"required"`
+	PmoID           int    `json:"-"`
 	ProdutoManejo   string `json:"produto_manejo" validate:"required"`
 	CulturaDestino  string `json:"cultura_destino"`
 	EpocaFrequencia string `json:"epoca_frequencia"`
@@ -21,8 +21,8 @@ type AdicionarInsumoSchema struct {
 }
 
 type RegistrarPropagacaoSchema struct {
-	PmoID           int    `json:"pmo_id" validate:"required"`
-	PropriedadeID   string `json:"propriedade_id"` // Sometimes string in schema
+	PmoID           int    `json:"-"`
+	PropriedadeID   string `json:"-"` // Sometimes string in schema
 	Tipo            string `json:"tipo" validate:"required,oneof=Compra/Aquisição Plantio Semeadura Transplante"`
 	Especies        string `json:"especies"`
 	Origem          string `json:"origem"`
@@ -31,7 +31,7 @@ type RegistrarPropagacaoSchema struct {
 }
 
 type RegistrarLimpezaSchema struct {
-	PmoID     int    `json:"pmo_id" validate:"required"`
+	PmoID     int    `json:"-"`
 	AreaLimpa string `json:"area_limpa" validate:"required"`
 	Metodo    string `json:"metodo"`
 	Insumos   string `json:"insumos"`
@@ -49,7 +49,7 @@ type CriarCanteirosSchema struct {
 }
 
 type RegistrarCompostagemSchema struct {
-	PmoID        int    `json:"pmo_id" validate:"required"`
+	PmoID        int    `json:"-"`
 	Ingredientes string `json:"ingredientes" validate:"required"`
 	Origem       string `json:"origem"`
 	Volume       string `json:"volume" validate:"required"`
@@ -57,7 +57,7 @@ type RegistrarCompostagemSchema struct {
 }
 
 type RegistrarCompraSchema struct {
-	PmoID      int    `json:"pmo_id" validate:"required"`
+	PmoID      int    `json:"-"`
 	Item       string `json:"item" validate:"required"`
 	Fornecedor string `json:"fornecedor"`
 	Quantidade string `json:"quantidade" validate:"required"`
@@ -65,8 +65,17 @@ type RegistrarCompraSchema struct {
 	DataCompra string `json:"data_compra"`
 }
 
+type RegistrarDespesaSchema struct {
+	Descricao     string  `json:"descricao" validate:"required"`
+	ValorTotal    float64 `json:"valor_total" validate:"required"`
+	CategoriaNome string  `json:"categoria_nome" validate:"required"`
+	Data          string  `json:"data"`        // YYYY-MM-DD
+	TalhaoNome    string  `json:"talhao_nome"` // Opcional
+}
+
+
 type RegistrarColheitaSchema struct {
-	PmoID      int    `json:"pmo_id" validate:"required"`
+	PmoID      int    `json:"-"`
 	Cultura    string `json:"cultura" validate:"required"`
 	Quantidade string `json:"quantidade" validate:"required"`
 	Unidade    string `json:"unidade" validate:"required"`
@@ -77,7 +86,7 @@ type RegistrarColheitaSchema struct {
 }
 
 type RegistrarVendaSchema struct {
-	PmoID      int    `json:"pmo_id" validate:"required"`
+	PmoID      int    `json:"-"`
 	Produto    string `json:"produto" validate:"required"`
 	Comprador  string `json:"comprador" validate:"required"`
 	Quantidade string `json:"quantidade" validate:"required"`
@@ -86,11 +95,11 @@ type RegistrarVendaSchema struct {
 }
 
 type SelecionarFazendaSchema struct {
-	PropriedadeID int `json:"propriedade_id" validate:"required"`
+	PropriedadeID int `json:"-"`
 }
 
 type SelecionarPMOSchema struct {
-	PmoID    int    `json:"pmo_id" validate:"required"`
+	PmoID    int    `json:"-"`
 	AnoSafra string `json:"ano_safra"`
 }
 

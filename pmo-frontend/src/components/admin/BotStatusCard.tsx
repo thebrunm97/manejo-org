@@ -67,7 +67,7 @@ const BotStatusCard: React.FC<BotStatusCardProps> = ({ botStatus, onStatusUpdate
     const [refreshing, setRefreshing] = useState(false);
 
     const { status: effectiveStatus, isStale } = getEffectiveStatus(botStatus);
-    const config = STATUS_CONFIG[effectiveStatus];
+    const config = STATUS_CONFIG[effectiveStatus] || STATUS_CONFIG.UNKNOWN;
 
     const handleRefresh = useCallback(async () => {
         setRefreshing(true);
@@ -83,12 +83,12 @@ const BotStatusCard: React.FC<BotStatusCardProps> = ({ botStatus, onStatusUpdate
         <div
             className={cn(
                 'bg-white rounded-[2.5rem] p-8 border border-agro-ouro/10 shadow-sm transition-all duration-700 animate-in fade-in slide-in-from-bottom-4 group relative overflow-hidden',
-                config.borderColor
+                config?.borderColor
             )}
         >
             {/* Background Accent */}
-            <div className={cn("absolute top-0 right-0 w-32 h-32 opacity-[0.03] transition-opacity group-hover:opacity-[0.08]", config.textColor)}>
-                {React.cloneElement(config.icon as React.ReactElement<any>, { size: 128 })}
+            <div className={cn("absolute top-0 right-0 w-32 h-32 opacity-[0.03] transition-opacity group-hover:opacity-[0.08]", config?.textColor)}>
+                {config?.icon && React.cloneElement(config.icon as React.ReactElement<any>, { size: 128 })}
             </div>
 
             {/* Header Row */}
@@ -117,34 +117,34 @@ const BotStatusCard: React.FC<BotStatusCardProps> = ({ botStatus, onStatusUpdate
                 <div
                     className={cn(
                         'inline-flex items-center gap-3 px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] shadow-sm border transition-shadow hover:shadow-md backdrop-blur-sm',
-                        config.bgColor,
-                        config.textColor,
-                        config.borderColor
+                        config?.bgColor,
+                        config?.textColor,
+                        config?.borderColor
                     )}
                 >
                     <div className="relative flex items-center justify-center">
                         <span
                             className={cn(
                                 'w-2.5 h-2.5 rounded-full',
-                                config.dotColor,
+                                config?.dotColor,
                             )}
                         />
                         {effectiveStatus === 'CONNECTED' && (
                             <span
                                 className={cn(
                                     'absolute w-2.5 h-2.5 rounded-full animate-ping opacity-75',
-                                    config.dotColor,
+                                    config?.dotColor,
                                 )}
                             />
                         )}
                     </div>
-                    {config.label}
+                    {config?.label}
                 </div>
                 
                 <div className="h-px w-12 bg-agro-ouro/10 hidden sm:block" />
                 
-                <div className={cn("flex items-center gap-3 transition-colors", config.textColor)}>
-                    {React.cloneElement(config.icon as React.ReactElement<any>, { size: 24, className: "opacity-80" })}
+                <div className={cn("flex items-center gap-3 transition-colors", config?.textColor)}>
+                    {config?.icon && React.cloneElement(config.icon as React.ReactElement<any>, { size: 24, className: "opacity-80" })}
                     <div className="flex flex-col">
                         <span className="text-[9px] font-black uppercase tracking-widest opacity-40">Protocolo</span>
                         <span className="text-xs font-black uppercase tracking-widest">Evolution v2</span>

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -16,22 +17,23 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/thebrunm97/pmo-bot-go/internal/adapter/evolution"
 	"github.com/thebrunm97/pmo-bot-go/internal/adapter/agriculture"
 	"github.com/thebrunm97/pmo-bot-go/internal/adapter/embedcache"
+	"github.com/thebrunm97/pmo-bot-go/internal/adapter/evolution"
 	"github.com/thebrunm97/pmo-bot-go/internal/config"
-	"github.com/thebrunm97/pmo-bot-go/internal/middleware"
 	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
 	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
 	"github.com/thebrunm97/pmo-bot-go/internal/jobs"
+	"github.com/thebrunm97/pmo-bot-go/internal/knowledge"
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
+	"github.com/thebrunm97/pmo-bot-go/internal/middleware"
 	"github.com/thebrunm97/pmo-bot-go/internal/okf"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
-	"github.com/thebrunm97/pmo-bot-go/internal/prompt"
 	"github.com/thebrunm97/pmo-bot-go/internal/proactivity"
+	"github.com/thebrunm97/pmo-bot-go/internal/prompt"
 	"github.com/thebrunm97/pmo-bot-go/internal/queue"
 	"github.com/thebrunm97/pmo-bot-go/internal/state"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
@@ -39,6 +41,16 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/weather"
 	"github.com/thebrunm97/pmo-bot-go/internal/webhook"
 )
+
+// parseEnvInt helper
+func parseEnvInt(key string, defaultVal int) int {
+	if valStr := os.Getenv(key); valStr != "" {
+		if val, err := strconv.Atoi(valStr); err == nil {
+			return val
+		}
+	}
+	return defaultVal
+}
 
 func main() {
 	godotenv.Load(".env")
@@ -221,6 +233,7 @@ func main() {
 
 	r := gin.New()
 	r.Use(middleware.RequestID())
+	r.Use(middleware.CORS())
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
 
@@ -245,9 +258,16 @@ func main() {
 		}
 	})
 
+	// --- Knowledge Ops Panel API ---
+	knowledgeHandler := knowledge.NewHandler(sbClient, cfg.OpenRouterKey, groqKey)
+	adminGroup := r.Group("/api/v1/admin")
+	knowledgeHandler.RegisterRoutes(adminGroup)
+	log.Println("✅ [KnowledgeOps] Rotas /api/v1/admin/knowledge/* registradas")
+
 	// --- Initialize TTS Orchestrator ---
-	ttsClient := tts.NewOrchestrator()
-	log.Println("✅ TTS Orchestrator inicializado")
+	// Use Google Translate TTS (free, no API key required)
+	ttsClient := tts.NewGoogleOrchestrator()
+	log.Println("✅ TTS Orchestrator inicializado (Google Translate TTS)")
 
 	// --- Harness de Produção (Feature Flag: HARNESS_ENABLED) ---
 	// HARNESS_ENABLED=true  → PostgreSQL queue + 3 Media Workers + 2 AI Workers
@@ -323,6 +343,11 @@ func main() {
 				MCP:               mcpServer,
 				History:           historyManager,
 				GuardrailPipeline: guardrailPipeline,
+				RouterConfig: state.RouterConfig{
+					EnableFastRouter:       os.Getenv("ENABLE_FAST_ROUTER") == "true",
+					EnableFastRouterShadow: os.Getenv("ENABLE_FAST_ROUTER_SHADOW") == "true",
+					FastRouterTimeoutMS:    parseEnvInt("FAST_ROUTER_TIMEOUT_MS", 3000),
+				},
 			},
 		})
 		go h.Start(harnessCtx)
@@ -333,18 +358,21 @@ func main() {
 
 	// --- Register webhook routes ---
 	handler := webhook.NewHandler(webhook.Config{
-		Token:           cfg.WebhookToken,
-		MaxMessageAge:   600,
-		GroqClient:      groqClient,
-		SupabaseClient:  sbClient,
-		WhatsAppClient:  wpClient,
-		LLMClient:       llmProvider,
-		TtsClient:       ttsClient,
-		MCPServer:       mcpServer,
-		HistoryManager:  historyManager,
-		FlagsmithClient: flagsmithClient,
-		HarnessQueue:    harnessQueue,   // nil quando HARNESS_ENABLED=false (modo legado)
-		HITLController:  hitlController, // nil quando HARNESS_ENABLED=false
+		Token:                  cfg.WebhookToken,
+		MaxMessageAge:          600,
+		GroqClient:             groqClient,
+		SupabaseClient:         sbClient,
+		WhatsAppClient:         wpClient,
+		LLMClient:              llmProvider,
+		TtsClient:              ttsClient,
+		MCPServer:              mcpServer,
+		HistoryManager:         historyManager,
+		FlagsmithClient:        flagsmithClient,
+		HarnessQueue:           harnessQueue,   // nil quando HARNESS_ENABLED=false (modo legado)
+		HITLController:         hitlController, // nil quando HARNESS_ENABLED=false
+		EnableFastRouter:       os.Getenv("ENABLE_FAST_ROUTER") == "true",
+		EnableFastRouterShadow: os.Getenv("ENABLE_FAST_ROUTER_SHADOW") == "true",
+		FastRouterTimeoutMS:    parseEnvInt("FAST_ROUTER_TIMEOUT_MS", 3000),
 	})
 	handler.RegisterRoutes(r)
 
@@ -388,6 +416,15 @@ func main() {
 
 	// --- Planting Reminders Job ---
 	go jobs.StartPlantioReminderJob(sbClient, wpClient)
+
+	// --- Knowledge Worker Pool (async ingestion pipeline) ---
+	// Concurrency is configurable via KNOWLEDGE_WORKER_CONCURRENCY (default: 2).
+	knowledgeWorkerConcurrency := parseEnvInt("KNOWLEDGE_WORKER_CONCURRENCY", 2)
+	knowledgeWorker := knowledge.NewWorkerPool(sbClient, knowledgeWorkerConcurrency)
+	knowledgeWorkerCtx, knowledgeWorkerCancel := context.WithCancel(context.Background())
+	_ = knowledgeWorkerCancel // cancelled implicitly when main exits
+	go knowledgeWorker.Start(knowledgeWorkerCtx)
+	log.Printf("✅ [KnowledgeWorker] Worker pool iniciado (%d workers)", knowledgeWorkerConcurrency)
 
 	// --- Motor Proativo (PMO Autônomo) ---
 	proactiveEngine := proactivity.NewProactiveEngine(sbClient, wpClient, llmProvider)
@@ -474,7 +511,7 @@ func sendHeartbeat(instance string, wp ports.MessageSender, sb *supabase.Client)
 			log.Printf("⚠️ Heartbeat: Failed to get connection state: %v", err)
 			status = "ERROR"
 			details = map[string]interface{}{"error": err.Error()}
-			
+
 			// Detect 401 Unauthorized from Evolution API
 			if strings.Contains(err.Error(), "status 401") {
 				log.Printf("CRITICAL: Evolution API retornado 401. Sessão ou token inválido.")

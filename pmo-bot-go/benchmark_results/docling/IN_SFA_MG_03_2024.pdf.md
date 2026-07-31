@@ -1,0 +1,127 @@
+## Ministério da Agricultura e Pecuária
+
+## SECRETARIA  EXECUTIVA
+
+## SUPERINTENDÊNCIA DE AGRICULTURA E PECUÁRIA DO ESTADO DE MINAS GERAIS
+
+## INSTRUÇÃO NORMATIVA SFA-MG Nº 3, DE 26 DE NOVEMBRO DE 2024
+
+Dispõe sobre o procedimento de aplicação de sanções contratuais no âmbito da Superintendência de Agricultura e Pecuária no Estado de Minas Gerais.
+
+- O SUPERINTENDENTE DE AGRICULTURA NO ESTADO DE MINAS GERAIS, no uso das atribuições que lhe são conferidas pelo artigo 292, caput, da Portaria nº 561, de 11/04/2018, publicada  no Diário  Oficial da  União nº  71,  de 13/04/2018,  Seção 1,  página 7  (Regimento Interno da Secretaria Executiva - SE/MAPA), resolve:
+
+## CAPÍTULO I
+
+## DISPOSIÇÕES GERAIS
+
+- Art.  1º A  aplicação  de  sanções contratuais  no  âmbito  da Superintendência  de Agricultura e Pecuária no Estado de Minas Gerais observará os procedimentos elencados nesta Instrução Normativa.
+- Art. 2º Diante uma suposta ocorrência de falhas, fraude ou outro tipo de infração à licitação ou ao contrato, que poderá ser identificada diretamente pelo pregoeiro, agente de contratação, fiscal ou gestor do contrato, pelo recebimento de uma denúncia, reclamação de usuários  dos  serviços ou  outro  meio,  é indispensável  que  haja  a abertura  de  processo administrativo específico para apurar as ocorrências.
+
+## CAPÍTULO II
+
+## PROCEDIMENTOS
+
+- Art. 3º O procedimento de apuração e aplicação de sanção seguirá as seguintes fases e etapas:
+
+## FASE PRELIMINAR
+
+- I  Abertura  de  processo  relacionado ao  processo  de contratação,  devendo-se inserir os seguintes documentos no processo:
+- a) Edital ou Aviso de Contratação Direta;
+- b) Termo de Referência;
+- c) Contrato ou instrumento equivalente;
+- d) Portaria ou Ofício de designação dos fiscais e gestores;
+- e) Eventuais documentos que indiquem ou evidenciem a ocorrência da infração.
+- II - O Fiscal do Contrato emitirá o Registro de Infração, contendo a descrição clara dos fatos, as cláusulas legais ou contratuais infringidas e a sanção aplicável, e o encaminhará para o Gestor do Contrato.
+- III - O Gestor do Contrato emitirá o Ofício de Notificação e o encaminhará para a empresa, juntamente com o Registro de Infração e demais documentos, se houver, abrindo-se o prazo para apresentação de contraditório e ampla defesa.
+
+## FASE DA DEFESA PRÉVIA
+
+- IV  -  Apresentada  a  defesa,  ou  esgotado o  prazo  para  tal  sem  manifestação  da empresa,  o  Gestor  do Contrato  emitirá  relatório  ou  nota  técnica, no  qual  deverão  ser consignadas todas as ocorrências, sugerindo a  aplicação ou não da sanção correlata  e adequada, bem como a rescisão do contrato, se for o caso, e o encaminhará ao Coordenador de Administração.
+
+## FASE DE APLICAÇÃO DA SANÇÃO
+
+- V - O Coordenador de Administração, após a análise dos documentos constantes nos autos, exarará sua decisão pela aplicação ou não da sanção, por intermédio de despacho fundamentado. Não sendo  provida a defesa, aplicará a sanção  em primeira instância  e notificará a empresa, concedendo-lhe prazo para recurso.
+- § 1º Quando a  sanção a ser aplicada for multa e/ou  impedimento de licitar e contratar,  o Coordenador  de  Administração  facultará à  empresa  apresentar suas  alegações finais antes da decisão.
+- §  2º Quando  a sanção  a ser  aplicada for  unicamente a  sanção de  advertência, haverá a supressão da fase de alegações finais, desde que sejam atendidas as condições da Orientação Normativa CJU-MG nº 71, de 14 de novembro de 2018.
+
+## FASE RECURSAL
+
+- VI - Interposto recurso, caso não seja provido pelo Coordenador de Administração, o  mesmo deverá fazer a subida dos autos, submetendo o recurso ao Superintendente para decisão em segunda instância.
+- VII  -  O  Superintendente,  em decisão  fundamentada,  manifestar-se-á  sobre  a manutenção ou não da sanção, que pode ser total ou parcial. Caso não seja provido o recurso, aplicará a sanção em segunda instância e devolverá o processo à Coordenação de Administração para que se notifique a empresa da decisão e se registre a penalidade no SICAF.
+- Art.  4º  Após  o exaurimento  das  possibilidades  de  recurso,  que ocorrerá  após  a manutenção da penalidade em decisão de segunda instância ou pela preclusão temporal por não haver, no prazo regulamentar, recurso da decisão em primeira instância, será aplicada a sanção e será feito o registro no SICAF.
+- § 2º O Ofício de Notificação conterá a finalidade da notificação, a descrição clara dos fatos,  as cláusulas legais  ou contratuais infringidas,  a sanção correspondente,  o rito procedimental do  processo administrativo sancionador  ao qual o  licitante/contratado  será submetido, os meios para apresentação da defesa e recurso, as informações sobre acesso aos autos, dentre  outros, de  forma a  conferir a  plenitude do  contraditório, a  ampla defesa  e a transparência do ato administrativo.
+- § 3º O Gestor do Contrato poderá avocar a iniciativa pela emissão do Registro de Infração quando, nos processos  que envolvam  a prorrogação, alteração, reequilíbrio, pagamento, extinção dos contratos, entre outros, estiverem presentes os pressupostos para instauração de processo sancionatório.
+- § 4º Caso  a infração seja cometida durante o  procedimento licitatório, as atribuições do  Fiscal do Contrato e  do Gestor de Contrato  acima descritas caberão, respectivamente, ao pregoeiro ou agente de contratação e ao chefe da Divisão de Aquisições e Logística.
+- §  5º  Nos  contratos  regidos  pela  Lei 14.133/2021,  se  a  infração  for  passível  de sanção de impedimento de licitar e contratar ou declaração de inidoneidade para licitar ou contratar, o processo de responsabilização será conduzido por comissão composta de 2 (dois) ou mais servidores estáveis.
+
+ISSN  1677-7042
+
+## CAPÍTULO III
+
+## DISPOSIÇÕES FINAIS
+
+- Art. 5º Caso necessário, poderão ser realizadas diligências para a complementação de informações ou provas complementares necessárias à instrução.
+- Art. 6º Caso sejam encontradas inconsistências na instrução do procedimento ou irregularidades formais, a exemplo de inobservância de prazos pela Administração, os autos devem ser devolvidos ao setor de origem para regularização.
+- Art. 7º Após a análise da defesa e documentos que a instruem, se for constatado que  o  comportamento  do  licitante/contratado  não  corresponde  a  uma  infração,  ou  que  os argumentos trazidos podem ser aceitos por possuírem justificativa capaz de afastar a sanção prevista, os  autos do procedimento podem  ser arquivados, por intermédio  de despacho fundamentado, após a anuência do chefe imediato e da autoridade competente para aplicar a sanção.
+- § 1º O despacho fundamentado deve conter, de forma expressa, os motivos que levaram à conclusão de que o fato não corresponde a uma infração, ou que os argumentos do licitante/contratado podem ser aceitos por possuírem justificativa capaz de afastar a sanção prevista.
+- § 2º A anuência da autoridade superior traduz-se numa forma de controle dos atos de fiscalização.
+- Art.  8º  No caso  em  que  a  decisão do  recurso  puder  alterar  a decisão  anterior  e agravar a sanção, a autoridade deve notificar o particular para formular alegações antes da decisão.
+- Art.  9º O  recurso/pedido de  reconsideração terá  efeito suspensivo  da decisão recorrida até que gere decisão final.
+- Art.  10.  Caberá  à  Coordenação  de  Administração  dirimir  dúvidas  decorrentes  da aplicação desta Instrução Normativa, bem como expedir informações e definir procedimentos complementares.
+- Parágrafo único. Na instrução do processo, a fim de se observar a padronização da atuação administrativa, deverão ser utilizados os modelos de documentos disponibilizados pela Coordenação de Administração.
+- Art. 11. Os instrumentos convocatórios e contratos deverão fazer menção a esta Instrução Normativa e seu procedimento de aplicação de sanções contratuais.
+- Art. 12. Fica revogada a Instrução Normativa SFA-MG nº 2, de 29 de maio de 2024. Art. 13. Esta Instrução Normativa entra em vigor na data de sua publicação.
+
+EVERTON AUGUSTO PAIVA FERREIRA
+
+## SUPERINTENDÊNCIA DE AGRICULTURA E PECUÁRIA DO ESTADO DO PARANÁ
+
+## PORTARIAS DE 25 DE NOVEMBRO DE 2024
+
+A SUPERINTENDENTE FEDERAL DE AGRICULTURA E PECUÁRIA NO PARANÁ, no uso das atribuições que lhe confere o Art. 262 do Regimento Interno da Secretaria Executiva do Ministério da Agricultura e Pecuária, aprovado pela Portaria nº 561, de 11 de abril de 2018; os Art. 41 e 50 do Anexo I do Decreto nº 11332, de 1º de janeiro de 2023; e tendo em vista o disposto no Decreto nº 5741, de 30 de março de 2006 e na Instrução Normativa nº 22, de 20 de junho de 2013, resolve:
+
+- Nº 1.592 - Art. 1º Habilitar o Médico Veterinário EDUARDO FELIX SCHAMBERLAIN, inscrito no  CRMV-PR sob  nº 22258,  para fins  de  emissão de  Guia de  Trânsito Animal  - GTA  para suínos, equinos,  asininos e muares nos  municípios autorizados do Estado  do Paraná, observando as normas e dispositivos legais em vigor (Processo nº 21034.012243/2024-59). Art. 2º Fica revogada a Portaria nº 1440, de 26 de agosto de 2024.
+
+Art. 3º Esta Portaria entra em vigor na data da sua publicação.
+
+Nº  1.593 -  Art. 1º  Cancelar, a  pedido do  profissional, a  habilitação concedida  ao Médico Veterinário JEAN CARLOS HORN TAVARES, inscrito no CRMV-PR sob nº 14341, para fins de emissão de Guia de Trânsito Animal - GTA, de acordo com o item VII do Art. 9º da Instrução Normativa nº 22, de 20 de junho de 2013 (Processo nº 21034.012213/2024-42).
+
+- § 1º A data de aplicação ou prazo inicial da sanção a ser informada no SICAF é o dia da decisão em segunda instância, ou o dia útil subsequente ao último dia para apresentação do recurso  da  decisão em  primeira  instância,  no caso  de  trânsito  em julgado  por  preclusão temporal.
+
+Art. 2º Fica revogada a Portaria nº 2979, de 27 de agosto de 2018.
+
+Art. 3º Esta Portaria entra em vigor na data da sua publicação.
+
+JULIANA AZEVEDO CASTRO BIANCHINI
+
+## SECRETARIA  DE  DEFESA  AGROPECUÁRIA
+
+## PORTARIA SDA/MAPA Nº 1.201, DE 22 DE NOVEMBRO DE 2024
+
+O  SECRETÁRIO  DE  DEFESA  AGROPECUÁRIA,  DO  MINISTÉRIO  DA  AGRICULTURA  E  PECUÁRIA,  no  uso  das  atribuições  que  lhe  foram  conferidas  pelos  Artigos  22  e  49,  do  Anexo  I, do Decreto nº 11.332, de 1º de janeiro de 2023, e tendo em vista o disposto na Lei nº 10.831, de 23 de dezembro de 2003, no Decreto nº 6.323, de 27 de dezembro de 2007, na Lei nº 10.711,  de  5  de  agosto  de  2003,  no  Decreto  nº  10.586,  de  18  de  dezembro  de  2020,  Lei  Ordinária  nº  14515  de  29  de  dezembro  de  2022,  no  art.  143  da  Portaria  nº  52,  de  15  de  março de  2021,  e  o  que  consta  do  Processo  nº  21000.022033/2023-85,  resolve:
+
+Art.  1º  Fica  alterado  o  Anexo  VIII  da  Portaria  nº  52,  de  15  de  março  de  2021,  passando  a  vigorar  com  as  seguintes  alterações:
+
+## "ANEXO VIII
+
+OUTROS INGREDIENTES AUTORIZADOS NAS FORMULAÇÕES COMERCIAIS DE PRODUTOS FITOSSANITÁRIOS COM USO APROVADO PARA A AGRICULTURA ORGÂNICA
+
+| . .SUBSTÂNCIA                 | .OUTROS NOMES                                                                                                           | .CAS*       | .INS**   | .FUNÇÃO                                    | .DESCRIÇÃO, REQUISITOS DE COMPOSIÇÃO E CONDIÇÕES DE USO                                                                |
+|-------------------------------|-------------------------------------------------------------------------------------------------------------------------|-------------|----------|--------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
+| . .Acetato de amônio          | .Sal de amônio do ácido acético; etanoato de amônio; ammonium acetate, acetic acid; ammonium ethanoate, azanium acetate | .631-61-8   | .264     | .Conservante / regulador de acidez         | .Concentração máxima de 2,5% (dois vírgula cinco por cento) no produto formulado.                                      |
+| . .Ácido acético              | .Ácido acético glacial; acetic acid; acetic acid, glacial                                                               | .64-19-7    | .260     | .-                                         | .Concentração máxima de 8% (oito por cento) no produto formulado.                                                      |
+| . .Ácido ascórbico            | .Vitamina C; L-ácido ascórbico; ascorbic acid; L-ascorbic acid                                                          | .50-81-7    | .300     | .-                                         | .-                                                                                                                     |
+| . .Ácido cítrico              | .Ácido cítrico anidro; citric acid; citric acid anydrous                                                                | .77- 92-9   | .330     | .-                                         | .-                                                                                                                     |
+| . .Ácido cítrico monoidratado | .Citric acid monohydrate                                                                                                | .5949 -29-1 | .-       | .-                                         | .-                                                                                                                     |
+| . .Ácido fosfórico            | .Ácido ortofosfórico; phosphoric acid; orthophosphoric acid                                                             | .7664-38-2  | .388     | .Regulador de acidez/ acidulante           | .Concentração máxima de 1,5% (um vírgula cinco por cento) no produto formulado.                                        |
+| . .Ácido fumárico             | .Fumaric acid; (E)-butenedioic acid                                                                                     | .110-17-8   | .297     | .-                                         | .-                                                                                                                     |
+| . .Ácido láctico              | .Lactic acid; propanoic acid, 2-hydroxy                                                                                 | .50-21-5    | .270     | .-                                         | .-                                                                                                                     |
+| . .Ácido sórbico              | .Sorbic acid; 2,4-Hexadienoic acid; 11044-1; (2E,4E)-hexa- 2,4dienoic acid; 2E,4EHexadienoic acid                       | .110-44-1   | .200     | .Conservante                               | .Concentração máxima de 1% (um por cento) no produto formulado.                                                        |
+| . .Ácido sulfúrico            | .Sulfuric acid, oil of vitriol, óleo de vitríolo, sulfato de hidrogênio                                                 | .7664-93-9  | .513     | .Conservante estabilizante regulador de pH | / / .Somente nas formulações de produtos microbiológicos e na concentração máxima de 0,1% (zero vírgula um por cento). |
+| . .Açúcar                     | .Sacarose; açúcar refinado; açúcar de cana; açúcar de beterraba; - D- glucopyranosyl-- - Dfructofuranoside              | .57-50-1    | .-       | .Nutriente (substrato                      | .Desde que isentos de componentes não autorizados neste Regulamento Técnico.                                           |
+
+<!-- image -->
+
+<!-- image -->
+
+nutritivo)

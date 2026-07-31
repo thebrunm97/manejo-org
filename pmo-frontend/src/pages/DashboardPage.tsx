@@ -55,7 +55,8 @@ const WeatherWidget: React.FC<{
   const humidity = current.humidity;
   const conditionIconUrl = current.conditionIcon;
   
-  const hojeLocal = new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const hojeLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const RAIN_CHANCE_THRESHOLD = 5;
 
   const isWeatherStale = !forecast || !forecast.some((f: any) => f.date === hojeLocal);

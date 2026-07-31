@@ -74,11 +74,16 @@ func (a *EvolutionAdapter) SendButton(to string, title, description, footer stri
 		log.Printf("⚠️ [Evolution] Falha ao enviar botões interativos: %v. Fazendo fallback para texto puro.", err)
 		var sb strings.Builder
 		if title != "" {
-			sb.WriteString("*" + title + "*\n\n")
+			sb.WriteString("*")
+			sb.WriteString(title)
+			sb.WriteString("*\n\n")
 		}
-		sb.WriteString(description + "\n\n")
+		sb.WriteString(description)
+		sb.WriteString("\n\n")
 		if footer != "" {
-			sb.WriteString("_" + footer + "_\n\n")
+			sb.WriteString("_")
+			sb.WriteString(footer)
+			sb.WriteString("_\n\n")
 		}
 		sb.WriteString("Responda com:\n*1. SIM*\n*2. NÃO*")
 		return a.SendMessage(to, sb.String())
@@ -86,17 +91,47 @@ func (a *EvolutionAdapter) SendButton(to string, title, description, footer stri
 	return nil
 }
 
-// SendVoice sends an audio message (PTT).
+// SendVoice sends a PTT (push-to-talk) audio message via Evolution API.
 func (a *EvolutionAdapter) SendVoice(to, base64Audio string, isPtt bool) error {
 	url := fmt.Sprintf("%s/send/media", a.BaseURL)
+
 	payload := map[string]interface{}{
 		"number":       to,
-		"media":        base64Audio,
+		"media":        "data:audio/ogg;base64," + base64Audio,
 		"mediatype":    "audio",
 		"ptt":          isPtt,
 		"instanceName": a.InstanceName,
 	}
-	return a.doRequest(http.MethodPost, url, payload)
+
+	bodyBytes, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal SendVoice payload: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(bodyBytes))
+	if err != nil {
+		return fmt.Errorf("failed to create SendVoice request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("apikey", a.APIKey)
+
+	resp, err := a.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("evolution SendVoice request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read SendVoice response body (status %d): %w", resp.StatusCode, err)
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("evolution API error (status %d): %s", resp.StatusCode, string(respBody))
+	}
+
+	log.Printf("✅ [Evolution] Voice message sent to %s (ptt=%v)", to, isPtt)
+	return nil
 }
 
 // SetPresence sends a presence update (composing, recording, etc.) to a chat.
@@ -496,13 +531,15 @@ func ParseWebhook(rawBody []byte) (*ports.IncomingMessage, error) {
 	}
 
 	return &ports.IncomingMessage{
-		ID:         payload.Data.Info.ID,
-		From:       from,
-		Body:       body,
-		IsFromMe:   payload.Data.Info.IsFromMe,
-		Timestamp:  ts,
-		Type:       msgType,
-		IsAudio:    isAudio,
-		RawPayload: payload.Data.Message,
+		ID:                      payload.Data.Info.ID,
+		From:                    from,
+		Body:                    body,
+		IsFromMe:                payload.Data.Info.IsFromMe,
+		Timestamp:               ts,
+		Type:                    msgType,
+		IsAudio:                 isAudio,
+		RespondWithAudio:        isAudio,
+		HasExplicitResponseMode: true,
+		RawPayload:              payload.Data.Message,
 	}, nil
 }

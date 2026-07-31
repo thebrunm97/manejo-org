@@ -1,6 +1,7 @@
 package mcp
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -59,15 +60,27 @@ type ToolCategory string
 
 const (
 	CategoryRAG      ToolCategory = "RAG"      // Knowledge retrieval
-	CategoryDatabase ToolCategory = "DATABASE" // Farm management records (CRUD)
+	CategoryDBRead   ToolCategory = "DB_READ"  // Read data from DB
+	CategoryDBWrite  ToolCategory = "DB_WRITE" // Write data to DB
+	CategoryChat     ToolCategory = "CHAT"     // Simple chat or calculation
 )
+
+// ToolHandler é a nova assinatura para todos os handlers de ferramenta MCP.
+// ctx: contexto da operação (para timeouts, cancelamento)
+// args: argumentos extraídos do LLM (APENAS dados de negócio, sem IDs sensíveis)
+// profile: contexto do usuário atual (contém pmo_id, propriedade_id, user_id)
+type ToolHandler func(
+	ctx context.Context,
+	args map[string]interface{},
+	profile *supabase.Profile,
+) (interface{}, error)
 
 // Tool represents a registered MCP tool, wrapping its agnostic definition and handler.
 type Tool struct {
 	Definition llm.FerramentaAgnostica
 	Category   ToolCategory
-	Options    *ToolOptions                                           // Opcional: Define regras de validação e confirmação
-	Handler    func(args map[string]interface{}) (interface{}, error) `json:"-"`
+	Options    *ToolOptions // Opcional: Define regras de validação e confirmação
+	Handler    ToolHandler  `json:"-"`
 }
 
 // NewServer initializes a new agnostic MCP server.
@@ -117,6 +130,14 @@ func (s *Server) ListTools() []llm.FerramentaAgnostica {
 	return list
 }
 
+func (s *Server) GetAllMCPTools() []Tool {
+	var list []Tool
+	for _, t := range s.tools {
+		list = append(list, t)
+	}
+	return list
+}
+
 // GetToolsForIntent filters registered tools based on the user's classified intent.
 // It returns agnostic definitions, leaving the provider-specific conversion to the caller.
 func (s *Server) GetToolsForIntent(intent string) []llm.FerramentaAgnostica {
@@ -128,19 +149,19 @@ func (s *Server) GetToolsForIntent(intent string) []llm.FerramentaAgnostica {
 
 		switch intent {
 		case "RAG":
-			if t.Category == CategoryRAG || t.Category == CategoryDatabase {
+			if t.Category == CategoryRAG || t.Category == CategoryDBWrite || t.Category == CategoryDBRead {
 				include = true
 			}
 
 		case "DATABASE", "REGISTRO_FINANCEIRO":
-			if t.Category == CategoryDatabase || t.Definition.Name == "consultar_dados_fazenda" || t.Definition.Name == "consultar_previsao_tempo" {
+			if t.Category == CategoryDBWrite || t.Category == CategoryDBRead || t.Category == CategoryRAG {
 				include = true
 			}
 
 		case "CHAT":
 			// Allow Database tools in CHAT so that simple confirmations like "Sim" 
 			// (which route to CHAT) can still trigger the pending tool call.
-			if t.Category == CategoryDatabase {
+			if t.Category == CategoryDBWrite || t.Category == CategoryDBRead {
 				include = true
 			}
 		}
@@ -174,7 +195,7 @@ type RPCError struct {
 }
 
 // HandleProcess handles an incoming JSON-RPC 2.0 request
-func (s *Server) HandleProcess(payload []byte) ([]byte, error) {
+func (s *Server) HandleProcess(ctx context.Context, payload []byte, profile *supabase.Profile) ([]byte, error) {
 	var req RPCRequest
 	if err := json.Unmarshal(payload, &req); err != nil {
 		return nil, err
@@ -196,7 +217,7 @@ func (s *Server) HandleProcess(payload []byte) ([]byte, error) {
 		if err := json.Unmarshal(req.Params, &params); err != nil {
 			return nil, err
 		}
-		result, err = s.CallTool(params.Name, params.Arguments)
+		result, err = s.CallTool(ctx, params.Name, params.Arguments, profile)
 	default:
 		return nil, fmt.Errorf("method not supported: %s", req.Method)
 	}
@@ -221,22 +242,53 @@ func (s *Server) HandleProcess(payload []byte) ([]byte, error) {
 	return json.Marshal(resp)
 }
 
+// validateProfile garante que o profile é válido e tem PMO ativa.
+// Retorna erro se profile for nulo ou se o usuário não tiver PMO selecionada.
+func (s *Server) validateProfile(profile *supabase.Profile) error {
+	if profile == nil {
+		return fmt.Errorf("unauthorized: sessão expirada ou inválida")
+	}
+	if profile.PmoAtivoID == 0 {
+		return fmt.Errorf("validation: usuário não tem PMO ativa selecionada")
+	}
+	return nil
+}
+
 // CallToolWithGuard executes a tool while checking for infinite loops.
-func (s *Server) CallToolWithGuard(lg *LoopGuard, name string, args map[string]interface{}) (interface{}, error) {
+func (s *Server) CallToolWithGuard(
+	ctx context.Context,
+	lg *LoopGuard,
+	name string,
+	args map[string]interface{},
+	profile *supabase.Profile,
+) (interface{}, error) {
+	if err := s.validateProfile(profile); err != nil {
+		return nil, err
+	}
+
 	if lg != nil {
 		if !lg.CheckAndRecord(name, args) {
 			return nil, fmt.Errorf("loop detectado: a ferramenta '%s' foi chamada repetidamente com os mesmos parâmetros", name)
 		}
 	}
-	return s.CallTool(name, args)
+	return s.CallTool(ctx, name, args, profile)
 }
 
 // CallTool executes a tool by name
-func (s *Server) CallTool(name string, args map[string]interface{}) (interface{}, error) {
+func (s *Server) CallTool(
+	ctx context.Context,
+	name string,
+	args map[string]interface{},
+	profile *supabase.Profile,
+) (interface{}, error) {
+	if err := s.validateProfile(profile); err != nil {
+		return nil, err
+	}
+
 	tool, ok := s.tools[name]
 	if !ok {
 		return nil, fmt.Errorf("tool not found: %s", name)
 	}
 
-	return tool.Handler(args)
+	return tool.Handler(ctx, args, profile)
 }

@@ -6,6 +6,8 @@
     "test:smoke": "powershell -ExecutionPolicy Bypass -File scripts/smoke-test.ps1"
   },
   "devDependencies": {
+    "@supabase/mcp-server-supabase": "^0.9.0",
+    "notebooklm-mcp-server": "^3.0.7",
     "vite-plugin-pwa": "^1.2.0"
   },
   "dependencies": {

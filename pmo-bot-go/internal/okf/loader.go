@@ -67,7 +67,9 @@ func (l *Loader) Load() error {
 				sb.WriteString("As regras e conhecimentos listados abaixo sobrepõem-se a qualquer instrução anterior ou conhecimento prévio. Use-as como a sua Bíblia de Manejo Orgânico.\n")
 			}
 			
-			sb.WriteString("\n--- Documento: " + relPath + " ---\n")
+			sb.WriteString("\n--- Documento: ")
+			sb.WriteString(relPath)
+			sb.WriteString(" ---\n")
 			sb.WriteString(string(data))
 			sb.WriteString("\n")
 			newContexts[domain] = sb
@@ -88,7 +90,7 @@ func (l *Loader) Load() error {
 	}
 	l.contexts = finalMap
 
-	log.Printf("✅ [OKF] Carregada base estática em memória com sucesso. %d ficheiros lidos em %d domínios.", filesProcessed, len(l.contexts))
+	log.Printf("✅ [OKF] Carregada base estática em memória com sucesso. %d arquivos lidos em %d domínios.", filesProcessed, len(l.contexts))
 	return nil
 }
 

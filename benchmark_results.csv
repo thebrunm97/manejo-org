@@ -1,0 +1,6 @@
+Modelo,Latência(ms),Prompt Tokens,Completion Tokens,Total Tokens,Tool Call,Custo/1k Tok (USD),Tentativas,Status
+meta-llama/llama-3.1-8b-instruct,763,331,41,372,Sim,0.000060,1,Sucesso
+openai/gpt-4o-mini,1109,123,29,152,Sim,0.000600,1,Sucesso
+anthropic/claude-3-haiku,854,463,99,562,Sim,0.001250,1,Sucesso
+google/gemini-2.5-flash,1531,100,22,122,Sim,0.000300,1,Sucesso
+google/gemma-4-26b-a4b-it:free,1105,0,0,0,Não,0.000000,3,Falhou: falhou após 3 tentativas: rate limit (429)

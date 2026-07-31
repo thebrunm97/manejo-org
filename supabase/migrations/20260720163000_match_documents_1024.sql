@@ -30,12 +30,12 @@ BEGIN
       d.document_name,
       d.content,
       1 - (d.embedding_1024 <=> query_embedding) AS similarity,
-      CASE WHEN d.pmo_id = 0 THEN true ELSE false END AS is_global,
-      d.metadata,
+      CASE WHEN d.pmo_id = 0 OR d.pmo_id IS NULL THEN true ELSE false END AS is_global,
+      '{}'::jsonb AS metadata,
       d.chunk_index,
-      d.source_document_id
+      d.source_document_id::text
     FROM farm_documents d
-    WHERE (d.pmo_id = match_pmo_id OR d.pmo_id = 0)
+    WHERE (d.pmo_id = match_pmo_id OR d.pmo_id = 0 OR d.pmo_id IS NULL)
       AND d.embedding_1024 IS NOT NULL
       AND 1 - (d.embedding_1024 <=> query_embedding) > match_threshold
     ORDER BY d.embedding_1024 <=> query_embedding

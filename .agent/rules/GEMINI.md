@@ -221,16 +221,22 @@ When user's prompt is NOT in English:
 
 | Mode     | Agent             | Behavior                                     |
 | -------- | ----------------- | -------------------------------------------- |
-| **plan** | `project-planner` | 4-phase methodology. NO CODE before Phase 4. |
+| **plan** | `project-planner` | RPI Framework (4-Phase). NO CODE before Phase 3. |
 | **ask**  | -                 | Focus on understanding. Ask questions.       |
 | **edit** | `orchestrator`    | Execute. Check `{task-slug}.md` first.       |
 
-**Plan Mode (4-Phase):**
+**RPI Framework (4-Phase):**
 
-1. ANALYSIS → Research, questions
-2. PLANNING → `{task-slug}.md`, task breakdown
-3. SOLUTIONING → Architecture, design (NO CODE!)
-4. IMPLEMENTATION → Code + tests
+O projeto adota o Spec-Driven Development através do fluxo RPI (Fases Rígidas). A inteligência artificial opera como uma máquina de estados: não queime etapas misturando descoberta, decisão e mutação de código.
+
+1. **RESEARCH:** Diagnóstico, restrições e leitura de contexto (NO CODE)
+2. **PLAN:** Spec-Driven (TDD first), `estado_tarefa.md` e plano atômico (NO CODE)
+3. **IMPLEMENT (Execute):** Loop autônomo baseado no plano e TDD (CODE + TESTS)
+4. **VERIFY:** Validação final contra o objetivo original (EVIDENCE)
+
+> 🔴 **Flow:** RESEARCH → USER APPROVAL → PLAN (TDD) → USER APPROVAL → IMPLEMENT (Autônomo) → VERIFY
+> 🔴 **Autoridade de Mutação:** O agente propõe mudanças, o workflow aplica (reduz escrita impulsiva fora de fase).
+> 🔴 **Validação de Transição:** Ninguém entra em Implement sem Plan aprovado; ninguém sai sem evidência objetiva.
 
 > 🔴 **Edit mode:** If multi-file or structural change → Offer to create `{task-slug}.md`. For single-file fixes → Proceed directly.
 
@@ -271,3 +277,7 @@ When user's prompt is NOT in English:
 - **Test**: `playwright_runner.py`, `test_runner.py`
 
 ---
+
+### External Skills
+> **MANDATORY:** Este projeto utiliza as skills de Matt Pocock (guardadas na pasta .agent/skills/). Quando o utilizador disser '@grill-me' ou referir o nome de outra skill (como @wayfinder, @implement, @to-tickets, @grill-with-docs), deves parar o que estas a fazer, ler o ficheiro correspondente e aplicar rigorosamente as suas instrucoes.
+

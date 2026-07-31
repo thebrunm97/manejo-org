@@ -28,8 +28,10 @@ import { useCoopDashboard } from '../../hooks/coop/useCoopDashboard';
 import { useAppNavigation } from '../../hooks/navigation/useAppNavigation';
 import { getOrganizacaoBySlug } from '../../services/organizacaoService';
 import { cn } from '../../utils/cn';
+import { useTranslation } from 'react-i18next';
 
 const CoopDashboardPage: React.FC = () => {
+    const { t } = useTranslation('dashboard');
     const { slug } = useParams<{ slug: string }>();
     const [orgId, setOrgId] = React.useState<number | null>(null);
     const { stats, loading: statsLoading, error, isGestor } = useCoopDashboard(orgId);
@@ -66,10 +68,10 @@ const CoopDashboardPage: React.FC = () => {
                 <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
                     <AlertCircle className="w-8 h-8 text-red-500" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-800 mb-2">Acesso Restrito</h3>
-                <p className="text-slate-500 mb-6">{isGestor === false ? 'Apenas gestores desta organização podem visualizar a Torre de Controlo.' : (error || 'Não foi possível carregar os dados.')}</p>
+                <h3 className="text-xl font-bold text-slate-800 mb-2">{t('overview.restrictedAccess')}</h3>
+                <p className="text-slate-500 mb-6">{isGestor === false ? t('overview.restrictedMessage') : (error || t('overview.errorLoading'))}</p>
                 <button onClick={goBack} className="text-emerald-600 font-bold hover:underline border border-emerald-600 px-6 py-2 rounded-xl">
-                    Voltar
+                    {t('overview.goBack')}
                 </button>
             </div>
         );
@@ -105,7 +107,7 @@ const CoopDashboardPage: React.FC = () => {
                     <div>
                         <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
                              <TrendingUp className="w-6 h-6 text-emerald-500" />
-                             Painel de Controle B2B
+                             {t('overview.title')}
                         </h1>
                         <p className="text-slate-500 text-sm">Gestão consolidada e inteligência de produção.</p>
                     </div>

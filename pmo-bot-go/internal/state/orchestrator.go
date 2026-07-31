@@ -103,8 +103,7 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 		defer o.WhatsApp.SendPresence(context.Background(), o.Phone, "paused")
 	}
 
-	mcpHandler := &MCPExecutionHandler{MCPServer: o.MCP, Guard: guard}
-	ctxInjector := &ContextInjectorMiddleware{Profile: profile}
+	mcpHandler := &MCPExecutionHandler{MCPServer: o.MCP, Guard: guard, Profile: profile}
 	hitlMw := &HITLMiddleware{
 		Controller:    o.HITL,
 		Phone:         o.Phone,
@@ -229,8 +228,8 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 				History:     &history,
 			}
 
-			// 1. Injetar Contexto
-			ctxInjector.Process(ctx, &req)
+			// 1. Contexto - não injetamos mais IDs em req.RawArgs
+			// (Eles agora vão tipados via Profile no momento da execução)
 
 			// 2. HITL
 			toolResp, errChain := hitlMw.Process(ctx, &req)

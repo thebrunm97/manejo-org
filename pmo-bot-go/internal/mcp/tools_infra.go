@@ -1,11 +1,20 @@
 package mcp
 
 import (
-	"fmt"
 	"log"
+	"context"
+	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
+	"fmt"
 )
 
-func (s *Server) handleCriarNovoTalhao(args map[string]interface{}) (interface{}, error) {
+func (s *Server) handleCriarNovoTalhao(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
+	if profile == nil { return nil, fmt.Errorf("unauthorized: missing profile") }
+	pmoID := profile.PmoAtivoID
+	userID := profile.ID
+	propID := profile.PropriedadeAtivaID
+	_ = pmoID
+	_ = userID
+	_ = propID
 	nome, ok := args["nome_talhao"].(string)
 	if !ok {
 		return nil, fmt.Errorf("nome_talhao é obrigatório")
@@ -19,19 +28,14 @@ func (s *Server) handleCriarNovoTalhao(args map[string]interface{}) (interface{}
 	cultura, _ := args["cultura"].(string)
 
 	// Estes valores são injetados pelo FSM por segurança
-	pmoIDFloat, err := parseArgToFloat(args["pmo_id"])
-	if err != nil {
-		return nil, fmt.Errorf("pmo_id is required: %w", err)
-	}
 	var pmoIDPtr *int64
-	if pmoIDFloat > 0 {
-		val := int64(pmoIDFloat)
+	if pmoID > 0 {
+		val := int64(pmoID)
 		pmoIDPtr = &val
 	}
 
-	propriedadeIDFloat, _ := parseArgToFloat(args["propriedade_id"])
-	userID, _ := args["user_id"].(string)
-
+	propriedadeIDFloat := float64(propID)
+	
 	log.Printf("🏗️ [MCP-TOOL] Criando novo talhão '%s' para PMO %v na Propriedade %d", nome, pmoIDPtr, int64(propriedadeIDFloat))
 
 	id, err := s.supabase.CriarTalhao(nome, areaHectares, cultura, pmoIDPtr, int64(propriedadeIDFloat), userID)
@@ -42,7 +46,14 @@ func (s *Server) handleCriarNovoTalhao(args map[string]interface{}) (interface{}
 	return fmt.Sprintf("Talhão '%s' criado com sucesso com ID %d. Você já pode visualizar e desenhar o polígono no painel web.", nome, id), nil
 }
 
-func (s *Server) handleCriarNovosCanteiros(args map[string]interface{}) (interface{}, error) {
+func (s *Server) handleCriarNovosCanteiros(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
+	if profile == nil { return nil, fmt.Errorf("unauthorized: missing profile") }
+	pmoID := profile.PmoAtivoID
+	userID := profile.ID
+	propID := profile.PropriedadeAtivaID
+	_ = pmoID
+	_ = userID
+	_ = propID
 	talhaoIDFloat, err := parseArgToFloat(args["talhao_id"])
 	if err != nil {
 		return nil, fmt.Errorf("talhao_id é obrigatório e deve ser numérico: %w", err)
@@ -68,7 +79,14 @@ func (s *Server) handleCriarNovosCanteiros(args map[string]interface{}) (interfa
 	return fmt.Sprintf("%d canteiros criados com sucesso para o talhão ID %d.", int(quantidadeFloat), int64(talhaoIDFloat)), nil
 }
 
-func (s *Server) handleCriarInfraestruturaFazenda(args map[string]interface{}) (interface{}, error) {
+func (s *Server) handleCriarInfraestruturaFazenda(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
+	if profile == nil { return nil, fmt.Errorf("unauthorized: missing profile") }
+	pmoID := profile.PmoAtivoID
+	userID := profile.ID
+	propID := profile.PropriedadeAtivaID
+	_ = pmoID
+	_ = userID
+	_ = propID
 	nome, ok := args["nome_talhao"].(string)
 	if !ok {
 		return nil, fmt.Errorf("nome_talhao é obrigatório")
@@ -83,18 +101,13 @@ func (s *Server) handleCriarInfraestruturaFazenda(args map[string]interface{}) (
 	cultura, _ := args["cultura"].(string)
 
 	// Injeção de segurança do FSM
-	pmoIDFloat, err := parseArgToFloat(args["pmo_id"])
-	if err != nil {
-		return nil, fmt.Errorf("pmo_id is required: %w", err)
-	}
 	var pmoIDPtr *int64
-	if pmoIDFloat > 0 {
-		val := int64(pmoIDFloat)
+	if pmoID > 0 {
+		val := int64(pmoID)
 		pmoIDPtr = &val
 	}
-	propriedadeIDFloat, _ := parseArgToFloat(args["propriedade_id"])
-	userID, _ := args["user_id"].(string)
-
+	propriedadeIDFloat := float64(propID)
+	
 	log.Printf("🏗️ [MCP-TOOL] Criando infraestrutura unificada para PMO %v na Propriedade %d: %s", pmoIDPtr, int64(propriedadeIDFloat), nome)
 
 	res, err := s.supabase.CriarInfraestruturaCompleta(nome, areaHectares, cultura, pmoIDPtr, int64(propriedadeIDFloat), userID, int(qtdCanteirosFloat))
@@ -105,16 +118,18 @@ func (s *Server) handleCriarInfraestruturaFazenda(args map[string]interface{}) (
 	return res, nil
 }
 
-func (s *Server) handleSelecionarFazenda(args map[string]interface{}) (interface{}, error) {
+func (s *Server) handleSelecionarFazenda(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
+	if profile == nil { return nil, fmt.Errorf("unauthorized: missing profile") }
+	pmoID := profile.PmoAtivoID
+	userID := profile.ID
+	propID := profile.PropriedadeAtivaID
+	_ = pmoID
+	_ = userID
+	_ = propID
 	log.Printf("🚜 [MCP-TOOL] handleSelecionarFazenda Args: %+v", args)
 
-	propIDFloat, err := parseArgToFloat(args["propriedade_id"])
-	if err != nil {
-		return nil, fmt.Errorf("propriedade_id é obrigatório e deve ser numérico")
-	}
-	propID := int64(propIDFloat)
-	userID, _ := args["user_id"].(string)
-	nome, _ := args["nome_propriedade"].(string)
+	
+		nome, _ := args["nome_propriedade"].(string)
 
 	// Regra de Negócio: Verificar se a fazenda é CONVENCIONAL
 	fazenda, err := s.supabase.FetchPropriedade(propID)
@@ -144,18 +159,20 @@ func (s *Server) handleSelecionarFazenda(args map[string]interface{}) (interface
 	return fmt.Sprintf("Fazenda '%s'%s selecionada com sucesso. Agora todas as suas atividades serão registradas nesta propriedade.", nome, feedbackExtra), nil
 }
 
-func (s *Server) handleSelecionarPMO(args map[string]interface{}) (interface{}, error) {
+func (s *Server) handleSelecionarPMO(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
+	if profile == nil { return nil, fmt.Errorf("unauthorized: missing profile") }
+	pmoID := profile.PmoAtivoID
+	userID := profile.ID
+	propID := profile.PropriedadeAtivaID
+	_ = pmoID
+	_ = userID
+	_ = propID
 	log.Printf("📅 [MCP-TOOL] handleSelecionarPMO Args: %+v", args)
 
-	pmoIDFloat, err := parseArgToFloat(args["pmo_id"])
-	if err != nil {
-		return nil, fmt.Errorf("pmo_id é obrigatório e deve ser numérico")
-	}
-	pmoID := int64(pmoIDFloat)
-	userID, _ := args["user_id"].(string)
-	ano, _ := args["ano_safra"].(string)
+	
+		ano, _ := args["ano_safra"].(string)
 
-	err = s.supabase.UpdateActivePMO(userID, pmoID)
+	err := s.supabase.UpdateActivePMO(userID, pmoID)
 	if err != nil {
 		return fmt.Sprintf("Erro ao trocar de PMO: %v", err), nil
 	}

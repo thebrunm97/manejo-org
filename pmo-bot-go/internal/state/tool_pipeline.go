@@ -40,39 +40,6 @@ type ToolHandler interface {
 }
 
 // ---------------------------------------------------------------------------
-// 1. ContextInjectorMiddleware
-// ---------------------------------------------------------------------------
-
-type ContextInjectorMiddleware struct {
-	Profile *supabase.Profile
-}
-
-func (m *ContextInjectorMiddleware) Process(ctx context.Context, req *ToolRequest) {
-	if req.RawArgs == nil {
-		req.RawArgs = make(map[string]interface{})
-	}
-
-	req.RawArgs["user_id"] = m.Profile.ID
-	req.RawArgs["pmo_id"] = m.Profile.PmoAtivoID
-	req.RawArgs["propriedade_id"] = m.Profile.PropriedadeAtivaID
-
-	// Segurança
-	req.RawArgs["_internal_user_id"] = m.Profile.ID
-	req.RawArgs["_internal_pmo_id"] = m.Profile.PmoAtivoID
-
-	if rawPayloadID, ok := ctx.Value("raw_payload_id").(string); ok && rawPayloadID != "" {
-		req.RawArgs["raw_payload_id"] = rawPayloadID
-	}
-
-	if req.ToolName == "ConsultarLeiOrganica_RAG" {
-		if q, ok := req.RawArgs["query"].(string); !ok || strings.TrimSpace(q) == "" {
-			log.Printf("⚠️ [ToolPipeline] Argumento 'query' faltando/malformado no ToolCall. Injetando fallback.")
-			req.RawArgs["query"] = "regras gerais lei organica agricultura"
-		}
-	}
-}
-
-// ---------------------------------------------------------------------------
 // 2. HITLMiddleware
 // ---------------------------------------------------------------------------
 
@@ -219,10 +186,30 @@ func (m *BusinessGuardrailMiddleware) Process(ctx context.Context, req *ToolRequ
 type MCPExecutionHandler struct {
 	MCPServer *mcp.Server
 	Guard     *mcp.LoopGuard
+	Profile   *supabase.Profile
 }
 
 func (h *MCPExecutionHandler) Execute(ctx context.Context, req *ToolRequest) (ToolResponse, error) {
-	result, err := h.MCPServer.CallToolWithGuard(h.Guard, req.ToolName, req.RawArgs)
+	// Trata tool-specific raw payload info se necessário (antes era no middleware)
+	if rawPayloadID, ok := ctx.Value("raw_payload_id").(string); ok && rawPayloadID != "" {
+		if req.RawArgs == nil {
+			req.RawArgs = make(map[string]interface{})
+		}
+		req.RawArgs["raw_payload_id"] = rawPayloadID
+	}
+
+	// Fallback específico de query (antes era no middleware)
+	if req.ToolName == "ConsultarLeiOrganica_RAG" {
+		if req.RawArgs == nil {
+			req.RawArgs = make(map[string]interface{})
+		}
+		if q, ok := req.RawArgs["query"].(string); !ok || strings.TrimSpace(q) == "" {
+			log.Printf("⚠️ [ToolPipeline] Argumento 'query' faltando/malformado no ToolCall. Injetando fallback.")
+			req.RawArgs["query"] = "regras gerais lei organica agricultura"
+		}
+	}
+
+	result, err := h.MCPServer.CallToolWithGuard(ctx, h.Guard, req.ToolName, req.RawArgs, h.Profile)
 	if err != nil {
 		log.Printf("⚠️ [ToolPipeline] Erro na ferramenta %s: %v", req.ToolName, err)
 		return ToolResponse{Result: map[string]interface{}{"error": err.Error()}}, nil

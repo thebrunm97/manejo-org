@@ -434,10 +434,19 @@ type UsoMetadados struct {
 
 // RespostaAgnostica is a provider-neutral representation of an LLM response.
 type RespostaAgnostica struct {
-	Texto            string                       `json:"texto"`
-	ToolCalls        []ChamadaFerramentaAgnostica `json:"tool_calls,omitempty"`
-	ThoughtSignature string                       `json:"thought_signature,omitempty"`
-	Usage            UsoMetadados                 `json:"usage"`
-	Model            string                       `json:"model"`
-	Provider         string                       `json:"provider"` // "google" ou "openrouter"
+	Texto              string                       `json:"texto"`
+	ToolCalls          []ChamadaFerramentaAgnostica `json:"tool_calls,omitempty"`
+	ThoughtSignature   string                       `json:"thought_signature,omitempty"`
+	Usage              UsoMetadados                 `json:"usage"`
+	Model              string                       `json:"model"`
+	Provider           string                       `json:"provider"` // "google" ou "openrouter"
+	ProviderResponseID string                       `json:"provider_response_id,omitempty"`
+}
+
+// OpenRouterGenerationStats represents telemetry and billing data from OpenRouter.
+type OpenRouterGenerationStats struct {
+	ID               string  `json:"id"`
+	TotalCost        float64 `json:"total_cost"`
+	CacheReadTokens  int     `json:"native_tokens_prompt_cache_hit,omitempty"`
+	CacheWriteTokens int     `json:"native_tokens_prompt_cache_write,omitempty"`
 }

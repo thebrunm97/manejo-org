@@ -78,6 +78,12 @@ const MuralDemandas: React.FC = () => {
         e.preventDefault();
         if (!selectedDemanda || !currentPropriedade || !profile) return;
         
+        const parsedVolume = parseFloat(volumeOferta);
+        if (isNaN(parsedVolume) || parsedVolume <= 0) {
+            toast.error('Informe um volume válido maior que zero.');
+            return;
+        }
+
         setOfertando(true);
         try {
             const { error } = await supabase
@@ -86,7 +92,7 @@ const MuralDemandas: React.FC = () => {
                     demanda_id: selectedDemanda.id,
                     propriedade_id: currentPropriedade.id,
                     user_id: profile.id,
-                    volume_ofertado: parseFloat(volumeOferta),
+                    volume_ofertado: parsedVolume,
                     status_intencao: 'pendente'
                 }]);
 
@@ -177,7 +183,11 @@ const MuralDemandas: React.FC = () => {
                             <h3 className="text-lg font-bold text-slate-900 mb-1 leading-tight group-hover:text-emerald-600 transition-colors">
                                 {demanda.titulo}
                             </h3>
-                            <p className="text-xs text-slate-400 mb-6 font-medium">Prazo: {new Date(demanda.data_entrega).toLocaleDateString('pt-BR')}</p>
+                            <p className="text-xs text-slate-400 mb-6 font-medium">
+                                Prazo: {demanda.data_entrega && !isNaN(new Date(demanda.data_entrega).getTime())
+                                    ? new Date(demanda.data_entrega).toLocaleDateString('pt-BR')
+                                    : 'A combinar'}
+                            </p>
 
                             <div className="mt-auto space-y-4">
                                 <div className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl">

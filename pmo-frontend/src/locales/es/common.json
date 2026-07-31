@@ -1,0 +1,14 @@
+{
+  "nav": {
+    "dashboard": "Panel de Control",
+    "properties": "Propiedades",
+    "reports": "Informes",
+    "settings": "Configuración",
+    "logout": "Cerrar Sesión"
+  },
+  "language": {
+    "pt": "Português",
+    "en": "English",
+    "es": "Español"
+  }
+}

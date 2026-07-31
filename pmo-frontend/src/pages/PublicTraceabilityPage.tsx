@@ -31,7 +31,11 @@ const PublicTraceabilityPage: React.FC = () => {
                 if (rpcError) throw rpcError;
                 if (!result) throw new Error('Registro não encontrado.');
 
-                setData(result as TraceabilityData);
+                const traceData = result as TraceabilityData;
+                setData(traceData);
+                if (traceData?.produto) {
+                    document.title = `${traceData.produto} - Rastreabilidade`;
+                }
             } catch (err: any) {
                 console.error(err);
                 setError('Não foi possível carregar as informações deste produto. O código pode ser inválido.');

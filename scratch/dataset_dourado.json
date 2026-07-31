@@ -1,0 +1,202 @@
+[
+  {
+    "pergunta": "Quanto tempo os mamíferos recém-nascidos devem ser amamentados pela mãe ou por fêmea substituta no mínimo?",
+    "chunk_esperado_id": "art_037"
+  },
+  {
+    "pergunta": "Qual é o período mínimo de aleitamento para bovinos, bubalinos e equídeos?",
+    "chunk_esperado_id": "art_037"
+  },
+  {
+    "pergunta": "Qual é o período mínimo de aleitamento para suínos?",
+    "chunk_esperado_id": "art_037"
+  },
+  {
+    "pergunta": "Posso usar nitrogênio sintético na alimentação dos animais em sistemas orgânicos?",
+    "chunk_esperado_id": "art_035"
+  },
+  {
+    "pergunta": "É permitido o uso de compostos nitrogenados não proteicos na ração de animais orgânicos?",
+    "chunk_esperado_id": "art_035"
+  },
+  {
+    "pergunta": "Qual a área mínima de galpão para suínos adultos de até 50 kg de peso vivo?",
+    "chunk_esperado_id": "art_044"
+  },
+  {
+    "pergunta": "Qual a área mínima de galpão por suíno adulto de até 110 kg de peso vivo?",
+    "chunk_esperado_id": "art_044"
+  },
+  {
+    "pergunta": "Qual a densidade máxima permitida de galinhas poedeiras por metro quadrado em galpão?",
+    "chunk_esperado_id": "art_044"
+  },
+  {
+    "pergunta": "Qual a área externa mínima por suíno de 26 a 50 kg em sistema extensivo?",
+    "chunk_esperado_id": "art_043"
+  },
+  {
+    "pergunta": "Qual a área mínima por galinha em sistema extensivo para aves de postura?",
+    "chunk_esperado_id": "art_043"
+  },
+  {
+    "pergunta": "Por quantas horas por dia os animais abrigados em instalações devem ter acesso à área externa?",
+    "chunk_esperado_id": "art_039"
+  },
+  {
+    "pergunta": "É permitida a retenção permanente de animais em gaiolas ou correntes em sistemas orgânicos?",
+    "chunk_esperado_id": "art_039"
+  },
+  {
+    "pergunta": "Qual o percentual mínimo de forragens na dieta de herbívoros em sistema orgânico?",
+    "chunk_esperado_id": "art_034"
+  },
+  {
+    "pergunta": "Qual o percentual máximo de alimentos não orgânicos permitido para animais ruminantes em condições de escassez?",
+    "chunk_esperado_id": "art_034"
+  },
+  {
+    "pergunta": "Qual o percentual máximo de alimentos não orgânicos para animais não ruminantes em condições especiais?",
+    "chunk_esperado_id": "art_034"
+  },
+  {
+    "pergunta": "Qual é o período de conversão mínimo para aves de postura em sistema orgânico?",
+    "chunk_esperado_id": "art_020"
+  },
+  {
+    "pergunta": "Qual o período de conversão para bovinos e bubalinos leiteiros em sistema orgânico?",
+    "chunk_esperado_id": "art_020"
+  },
+  {
+    "pergunta": "Qual o período mínimo de conversão para suínos de corte?",
+    "chunk_esperado_id": "art_020"
+  },
+  {
+    "pergunta": "Qual o período de conversão de coelhos de corte para o sistema orgânico?",
+    "chunk_esperado_id": "art_020"
+  },
+  {
+    "pergunta": "Qual a duração mínima de manejo orgânico para culturas anuais antes de serem consideradas orgânicas?",
+    "chunk_esperado_id": "art_019"
+  },
+  {
+    "pergunta": "Qual o período mínimo de conversão para culturas perenes em sistema orgânico?",
+    "chunk_esperado_id": "art_019"
+  },
+  {
+    "pergunta": "Por quanto tempo os documentos e registros de procedimentos da unidade orgânica devem ser mantidos?",
+    "chunk_esperado_id": "art_011"
+  },
+  {
+    "pergunta": "O que deve constar nos documentos e registros mínimos de uma unidade de produção orgânica?",
+    "chunk_esperado_id": "art_011"
+  },
+  {
+    "pergunta": "É obrigatório o cumprimento de pelo menos quantos meses com acompanhamento do OAC ou OCS no período de conversão?",
+    "chunk_esperado_id": "art_017"
+  },
+  {
+    "pergunta": "A cerca elétrica é permitida em sistemas orgânicos de produção animal?",
+    "chunk_esperado_id": "art_046"
+  },
+  {
+    "pergunta": "É proibida a alimentação forçada dos animais em sistemas orgânicos?",
+    "chunk_esperado_id": "art_048"
+  },
+  {
+    "pergunta": "A transferência de embrião e fertilização in vitro são permitidas em sistemas orgânicos?",
+    "chunk_esperado_id": "art_050"
+  },
+  {
+    "pergunta": "A muda forçada é permitida em aves de postura orgânicas?",
+    "chunk_esperado_id": "art_052"
+  },
+  {
+    "pergunta": "Qual é a idade máxima para ingresso de aves de corte não orgânicas em um sistema orgânico?",
+    "chunk_esperado_id": "art_029"
+  },
+  {
+    "pergunta": "Qual é a idade máxima para ingresso de aves de postura não orgânicas no sistema orgânico?",
+    "chunk_esperado_id": "art_029"
+  },
+  {
+    "pergunta": "Como devem ser as instalações de armazenagem de dejetos para prevenir contaminação?",
+    "chunk_esperado_id": "art_006"
+  },
+  {
+    "pergunta": "Qual substância deve ser usada preferencialmente para tratar madeira em instalações orgânicas?",
+    "chunk_esperado_id": "art_007"
+  },
+  {
+    "pergunta": "O que deve ser feito com o produto obtido em área de exclusão ou bordadura de produção orgânica contaminada?",
+    "chunk_esperado_id": "art_010"
+  },
+  {
+    "pergunta": "Por quanto tempo pode ser mantida a produção paralela de animais com a mesma finalidade produtiva em áreas distintas?",
+    "chunk_esperado_id": "art_021"
+  },
+  {
+    "pergunta": "Os equipamentos de pulverização usados em área não orgânica podem ser usados na área orgânica?",
+    "chunk_esperado_id": "art_022"
+  },
+  {
+    "pergunta": "Qual a área mínima de abrigo por ovelha ou cabra reprodutora em sistema orgânico?",
+    "chunk_esperado_id": "art_044"
+  },
+  {
+    "pergunta": "Qual a área mínima de galpão para bovinos de leite em sistema orgânico?",
+    "chunk_esperado_id": "art_044"
+  },
+  {
+    "pergunta": "Qual o período mínimo de escuro diário que deve ser garantido para animais com iluminação artificial?",
+    "chunk_esperado_id": "art_053"
+  },
+  {
+    "pergunta": "A inseminação artificial é permitida em animais do sistema orgânico?",
+    "chunk_esperado_id": "art_049"
+  },
+  {
+    "pergunta": "É permitido o uso de anel de borracha para castração de animais orgânicos?",
+    "chunk_esperado_id": "art_051"
+  },
+  {
+    "pergunta": "O que é definido como biofertilizante pela Portaria MAPA N52/2021?",
+    "chunk_esperado_id": "art_002"
+  },
+  {
+    "pergunta": "O que é imunocastração segundo a Portaria MAPA N52/2021?",
+    "chunk_esperado_id": "art_002"
+  },
+  {
+    "pergunta": "Quais são os princípios de bem-estar animal que devem ser respeitados segundo o Art. 32?",
+    "chunk_esperado_id": "art_032"
+  },
+  {
+    "pergunta": "Qual o prazo para estabelecimento de vegetação arbórea em pastagens sem sombreamento em sistema orgânico?",
+    "chunk_esperado_id": "art_041"
+  },
+  {
+    "pergunta": "Qual a densidade de ruminantes em área externa em sistemas orgânicos por peso vivo?",
+    "chunk_esperado_id": "art_043"
+  },
+  {
+    "pergunta": "Animais geneticamente modificados podem ser utilizados em sistemas orgânicos de produção?",
+    "chunk_esperado_id": "art_026"
+  },
+  {
+    "pergunta": "Qual a percentagem mínima de forragens na dieta de animais em lactação durante os primeiros 3 meses?",
+    "chunk_esperado_id": "art_034"
+  },
+  {
+    "pergunta": "Como deve ocorrer a castração de animais quando necessária em sistema orgânico?",
+    "chunk_esperado_id": "art_051"
+  },
+  {
+    "pergunta": "O que é compostagem segundo a definição da Portaria MAPA N52/2021?",
+    "chunk_esperado_id": "art_002"
+  },
+  {
+    "pergunta": "O plano de manejo orgânico deve ser mantido disponível para consulta por quanto tempo?",
+    "chunk_esperado_id": "art_011"
+  }
+]

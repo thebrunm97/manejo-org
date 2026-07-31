@@ -1,0 +1,101 @@
+[
+  {
+    "model": "openai/gpt-4o-mini",
+    "latency_ms": 1286,
+    "prompt_tokens": 123,
+    "completion_tokens": 29,
+    "total_tokens": 152,
+    "tool_call_success": true,
+    "cost_per_1k_tokens_usd": 0.0006,
+    "attempts": 1,
+    "status": "Sucesso"
+  },
+  {
+    "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+    "latency_ms": 1036,
+    "prompt_tokens": 421,
+    "completion_tokens": 159,
+    "total_tokens": 580,
+    "tool_call_success": true,
+    "cost_per_1k_tokens_usd": 0,
+    "attempts": 1,
+    "status": "Sucesso"
+  },
+  {
+    "model": "google/gemini-3-flash-preview",
+    "latency_ms": 2239,
+    "prompt_tokens": 115,
+    "completion_tokens": 37,
+    "total_tokens": 152,
+    "tool_call_success": true,
+    "cost_per_1k_tokens_usd": 0,
+    "attempts": 1,
+    "status": "Sucesso"
+  },
+  {
+    "model": "z-ai/glm-5.2",
+    "latency_ms": 1946,
+    "prompt_tokens": 265,
+    "completion_tokens": 63,
+    "total_tokens": 328,
+    "tool_call_success": true,
+    "cost_per_1k_tokens_usd": 0,
+    "attempts": 1,
+    "status": "Sucesso"
+  },
+  {
+    "model": "tencent/hy3:free",
+    "latency_ms": 2074,
+    "prompt_tokens": 311,
+    "completion_tokens": 50,
+    "total_tokens": 361,
+    "tool_call_success": true,
+    "cost_per_1k_tokens_usd": 0,
+    "attempts": 1,
+    "status": "Sucesso"
+  },
+  {
+    "model": "deepseek/deepseek-v4-flash",
+    "latency_ms": 2115,
+    "prompt_tokens": 392,
+    "completion_tokens": 125,
+    "total_tokens": 517,
+    "tool_call_success": true,
+    "cost_per_1k_tokens_usd": 0,
+    "attempts": 1,
+    "status": "Sucesso"
+  },
+  {
+    "model": "xiaomi/mimo-v2.5",
+    "latency_ms": 2843,
+    "prompt_tokens": 625,
+    "completion_tokens": 93,
+    "total_tokens": 718,
+    "tool_call_success": true,
+    "cost_per_1k_tokens_usd": 0,
+    "attempts": 1,
+    "status": "Sucesso"
+  },
+  {
+    "model": "stepfun/step-3.7-flash",
+    "latency_ms": 2635,
+    "prompt_tokens": 342,
+    "completion_tokens": 142,
+    "total_tokens": 484,
+    "tool_call_success": true,
+    "cost_per_1k_tokens_usd": 0,
+    "attempts": 1,
+    "status": "Sucesso"
+  },
+  {
+    "model": "deepseek/deepseek-v4-pro",
+    "latency_ms": 3003,
+    "prompt_tokens": 396,
+    "completion_tokens": 171,
+    "total_tokens": 567,
+    "tool_call_success": true,
+    "cost_per_1k_tokens_usd": 0,
+    "attempts": 1,
+    "status": "Sucesso"
+  }
+]

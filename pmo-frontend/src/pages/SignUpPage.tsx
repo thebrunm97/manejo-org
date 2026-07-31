@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useAppNavigation } from '../hooks/navigation/useAppNavigation';
+import { toast } from 'react-toastify';
 
 const SignUpPage: React.FC = () => {
     const [gender, setGender] = useState('');
@@ -26,6 +27,10 @@ const SignUpPage: React.FC = () => {
 
     const handleSignUp = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        if (password.length < 6) {
+            setError('A senha deve ter no mínimo 6 caracteres.');
+            return;
+        }
         setLoading(true);
         setError('');
 
@@ -38,7 +43,7 @@ const SignUpPage: React.FC = () => {
 
         try {
             await signUp(email, password, profileData);
-            alert('Cadastro realizado! Um link de confirmação foi enviado para o seu e-mail.');
+            toast.success('Cadastro realizado! Um link de confirmação foi enviado para o seu e-mail.');
             goToLogin();
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Falha ao realizar o cadastro.';
@@ -102,6 +107,7 @@ const SignUpPage: React.FC = () => {
                                 required
                                 type="date"
                                 id="birthDate"
+                                max={new Date().toISOString().split('T')[0]}
                                 placeholder="Data de Nascimento"
                                 value={birthDate}
                                 onChange={(e: ChangeEvent<HTMLInputElement>) => setBirthDate(e.target.value)}
@@ -114,6 +120,7 @@ const SignUpPage: React.FC = () => {
                             <select
                                 required
                                 id="gender"
+                                aria-label="Gênero"
                                 value={gender}
                                 onChange={(e: ChangeEvent<HTMLSelectElement>) => setGender(e.target.value)}
                                 className="block w-full pl-4 pr-10 py-3 bg-slate-900/80 border border-white/10 rounded-xl text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all text-sm appearance-none cursor-pointer"
@@ -138,6 +145,7 @@ const SignUpPage: React.FC = () => {
                             <select
                                 required
                                 id="profession"
+                                aria-label="Profissão ou Área de Atuação"
                                 value={profession}
                                 onChange={(e: ChangeEvent<HTMLSelectElement>) => setProfession(e.target.value)}
                                 className="block w-full pl-11 pr-10 py-3 bg-slate-900/80 border border-white/10 rounded-xl text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all text-sm appearance-none cursor-pointer"

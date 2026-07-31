@@ -14,7 +14,6 @@ export const SCREENS = {
     CHANGELOG: 'CHANGELOG',
     PROFILE: 'PROFILE',
     PROPERTY_PROFILE: 'PROPERTY_PROFILE',
-    KNOWLEDGE_MONITORING: 'KNOWLEDGE_MONITORING',
     TRACEABILITY: 'TRACEABILITY',
     PUBLIC_TRACEABILITY: 'PUBLIC_TRACEABILITY',
     COOP_ORGANIZACOES: 'COOP_ORGANIZACOES',
@@ -25,6 +24,7 @@ export const SCREENS = {
     COOP_DEMANDAS: 'COOP_DEMANDAS',
     MURAL: 'MURAL',
     LIVE_CHAT_MONITOR: 'LIVE_CHAT_MONITOR',
+    KNOWLEDGE_MONITORING: 'KNOWLEDGE_MONITORING',
 } as const;
 
 
@@ -46,7 +46,6 @@ export type RootStackParamList = {
     [SCREENS.CHANGELOG]: undefined;
     [SCREENS.PROFILE]: undefined;
     [SCREENS.PROPERTY_PROFILE]: undefined;
-    [SCREENS.KNOWLEDGE_MONITORING]: undefined;
     [SCREENS.LIVE_CHAT_MONITOR]: undefined;
     [SCREENS.TRACEABILITY]: { codigoLote: string };
     [SCREENS.PUBLIC_TRACEABILITY]: { id: string };
@@ -57,6 +56,7 @@ export type RootStackParamList = {
     [SCREENS.COOP_DASHBOARD]: { slug: string };
     [SCREENS.COOP_DEMANDAS]: { slug: string };
     [SCREENS.MURAL]: undefined;
+    [SCREENS.KNOWLEDGE_MONITORING]: undefined;
 };
 
 

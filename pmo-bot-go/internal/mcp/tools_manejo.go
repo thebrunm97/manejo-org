@@ -17,7 +17,18 @@ type AlocacaoTalhao struct {
 	ValorAlocado float64 `json:"valor_alocado"`
 }
 
-func (s *Server) handleCalcularAdubacao(args map[string]interface{}) (interface{}, error) {
+func (s *Server) handleCalcularAdubacao(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
+	// SECURE SESSION INJECTION
+	if profile == nil {
+		return nil, fmt.Errorf("unauthorized: missing profile")
+	}
+	pmoID := profile.PmoAtivoID
+	userID := profile.ID
+	propID := profile.PropriedadeAtivaID
+	_ = pmoID
+	_ = userID
+	_ = propID
+
 	cultura := sanitize(args["cultura"])
 	meta, _ := parseArgToFloat(args["meta_produtividade"])
 	aduboNome := sanitize(args["adubo_base_nome"])
@@ -27,7 +38,7 @@ func (s *Server) handleCalcularAdubacao(args map[string]interface{}) (interface{
 	}
 
 	log.Printf("🧪 [MCP-TOOL] Calculando recomendação agronomica para %s (Meta: %v t/ha) com %s", cultura, meta, aduboNome)
-	res, err := s.supabase.CalcularBalancoNutricional(context.Background(), cultura, meta, aduboNome)
+	res, err := s.supabase.CalcularBalancoNutricional(ctx, cultura, meta, aduboNome)
 	if err != nil {
 		return nil, fmt.Errorf("erro no motor agronômico: %w", err)
 	}
@@ -35,13 +46,23 @@ func (s *Server) handleCalcularAdubacao(args map[string]interface{}) (interface{
 	return res, nil
 }
 
-func (s *Server) handleAdicionarInsumoPMO(args map[string]interface{}) (interface{}, error) {
+func (s *Server) handleAdicionarInsumoPMO(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
+	// SECURE SESSION INJECTION — pmo_id from profile ONLY, never from args
+	if profile == nil {
+		return nil, fmt.Errorf("unauthorized: missing profile")
+	}
+	pmoID := profile.PmoAtivoID
+	if pmoID == 0 {
+		return nil, fmt.Errorf("validation: usuário não tem PMO ativa selecionada")
+	}
+
 	log.Printf("🚨 [DEBUG TOOL] handleAdicionarInsumoPMO Args recebidos do LLM: %+v", args)
 
-	pmoIDFloat, _ := parseArgToFloat(args["pmo_id"])
+	// SECURITY: pmo_id always from profile, args value is ignored
+	pmoIDVal := pmoID
 	var pmoIDPtr *int64
-	if pmoIDFloat > 0 {
-		val := int64(pmoIDFloat)
+	if pmoIDVal > 0 {
+		val := int64(pmoIDVal)
 		pmoIDPtr = &val
 	}
 
@@ -71,13 +92,19 @@ func (s *Server) handleAdicionarInsumoPMO(args map[string]interface{}) (interfac
 	return fmt.Sprintf("Insumo '%s' registrado com sucesso na Seção 8 do seu plano.", record.ProdutoManejo), nil
 }
 
-func (s *Server) handleRegistrarLimpeza(args map[string]interface{}) (interface{}, error) {
+func (s *Server) handleRegistrarLimpeza(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
+	// SECURE SESSION INJECTION
+	if profile == nil {
+		return nil, fmt.Errorf("unauthorized: missing profile")
+	}
+	pmoID := profile.PmoAtivoID
+	userID := profile.ID
+	propID := profile.PropriedadeAtivaID
+	_ = pmoID
+	_ = userID
+	_ = propID
+
 	log.Printf("🧽 [MCP-TOOL] handleRegistrarLimpeza Args: %+v", args)
-
-	pmoIDFloat, _ := parseArgToFloat(args["pmo_id"])
-	pmoID := int64(pmoIDFloat)
-	userID, _ := args["user_id"].(string)
-
 	payload := map[string]interface{}{
 		"item_area":         sanitize(args["item_area"]),
 		"tipo_limpeza":      sanitize(args["tipo_limpeza"]),
@@ -97,12 +124,8 @@ func (s *Server) handleRegistrarLimpeza(args map[string]interface{}) (interface{
 	} else {
 		pmoIDValue = nil
 	}
-
-	propIDFloat, _ := parseArgToFloat(args["propriedade_id"])
-	propID := int64(propIDFloat)
-
 	dataArg := payload["data"].(string)
-	res, err := s.supabase.RegistrarOperacaoCampoRPC(context.Background(), map[string]interface{}{
+	res, err := s.supabase.RegistrarOperacaoCampoRPC(ctx, map[string]interface{}{
 		"pmo_id_arg":         pmoIDValue,
 		"propriedade_id_arg": propID,
 		"user_id_arg":        userID,
@@ -121,13 +144,19 @@ func (s *Server) handleRegistrarLimpeza(args map[string]interface{}) (interface{
 	return fmt.Sprintf("Limpeza de '%s' registrada com sucesso.", payload["item_area"]), nil
 }
 
-func (s *Server) handleRegistrarPropagacaoVegetal(args map[string]interface{}) (interface{}, error) {
+func (s *Server) handleRegistrarPropagacaoVegetal(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
+	// SECURE SESSION INJECTION
+	if profile == nil {
+		return nil, fmt.Errorf("unauthorized: missing profile")
+	}
+	pmoID := profile.PmoAtivoID
+	userID := profile.ID
+	propID := profile.PropriedadeAtivaID
+	_ = pmoID
+	_ = userID
+	_ = propID
+
 	log.Printf("🌱 [MCP-TOOL] handleRegistrarPropagacaoVegetal Args: %+v", args)
-
-	pmoIDFloat, _ := parseArgToFloat(args["pmo_id"])
-	pmoID := int64(pmoIDFloat)
-	userID, _ := args["user_id"].(string)
-
 	valorTotal, _ := parseArgToFloat(args["valor_total"])
 
 	payload := map[string]interface{}{
@@ -153,12 +182,8 @@ func (s *Server) handleRegistrarPropagacaoVegetal(args map[string]interface{}) (
 	} else {
 		pmoIDValue = nil
 	}
-
-	propIDFloat, _ := parseArgToFloat(args["propriedade_id"])
-	propID := int64(propIDFloat)
-
 	dataArg := time.Now().Format("2006-01-02")
-	res, err := s.supabase.RegistrarOperacaoCampoRPC(context.Background(), map[string]interface{}{
+	res, err := s.supabase.RegistrarOperacaoCampoRPC(ctx, map[string]interface{}{
 		"pmo_id_arg":         pmoIDValue,
 		"propriedade_id_arg": propID,
 		"user_id_arg":        userID,
@@ -177,13 +202,19 @@ func (s *Server) handleRegistrarPropagacaoVegetal(args map[string]interface{}) (
 	return fmt.Sprintf("Material de propagação '%s' (%s) registrado com sucesso.", payload["especies"], payload["tipo"]), nil
 }
 
-func (s *Server) handleRegistrarCompostagem(args map[string]interface{}) (interface{}, error) {
+func (s *Server) handleRegistrarCompostagem(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
+	// SECURE SESSION INJECTION
+	if profile == nil {
+		return nil, fmt.Errorf("unauthorized: missing profile")
+	}
+	pmoID := profile.PmoAtivoID
+	userID := profile.ID
+	propID := profile.PropriedadeAtivaID
+	_ = pmoID
+	_ = userID
+	_ = propID
+
 	log.Printf("🍂 [MCP-TOOL] handleRegistrarCompostagem Args: %+v", args)
-
-	pmoIDFloat, _ := parseArgToFloat(args["pmo_id"])
-	pmoID := int64(pmoIDFloat)
-	userID, _ := args["user_id"].(string)
-
 	payload := map[string]interface{}{
 		"acao":                sanitize(args["acao"]),
 		"identificador_pilha": sanitize(args["identificador_pilha"]),
@@ -206,12 +237,8 @@ func (s *Server) handleRegistrarCompostagem(args map[string]interface{}) (interf
 	} else {
 		pmoIDValue = nil
 	}
-
-	propIDFloat, _ := parseArgToFloat(args["propriedade_id"])
-	propID := int64(propIDFloat)
-
 	dataArg := payload["data"].(string)
-	res, err := s.supabase.RegistrarOperacaoCampoRPC(context.Background(), map[string]interface{}{
+	res, err := s.supabase.RegistrarOperacaoCampoRPC(ctx, map[string]interface{}{
 		"pmo_id_arg":         pmoIDValue,
 		"propriedade_id_arg": propID,
 		"user_id_arg":        userID,
@@ -230,13 +257,19 @@ func (s *Server) handleRegistrarCompostagem(args map[string]interface{}) (interf
 	return res["message"], nil
 }
 
-func (s *Server) handleRegistrarCompraInsumo(args map[string]interface{}) (interface{}, error) {
+func (s *Server) handleRegistrarCompraInsumo(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
+	// SECURE SESSION INJECTION
+	if profile == nil {
+		return nil, fmt.Errorf("unauthorized: missing profile")
+	}
+	pmoID := profile.PmoAtivoID
+	userID := profile.ID
+	propID := profile.PropriedadeAtivaID
+	_ = pmoID
+	_ = userID
+	_ = propID
+
 	log.Printf("🛒 [MCP-TOOL] handleRegistrarCompraInsumo Args: %+v", args)
-
-	pmoIDFloat, _ := parseArgToFloat(args["pmo_id"])
-	pmoID := int64(pmoIDFloat)
-	userID, _ := args["user_id"].(string)
-
 	var qtdValorPtr *float64
 	if val, ok := args["quantidade_valor"]; ok && val != nil {
 		if f, err := parseArgToFloat(val); err == nil && f > 0 {
@@ -271,10 +304,6 @@ func (s *Server) handleRegistrarCompraInsumo(args map[string]interface{}) (inter
 	if dataCompra == "" {
 		dataCompra = time.Now().Format("2006-01-02")
 	}
-
-	propIDFloat, _ := parseArgToFloat(args["propriedade_id"])
-	propID := int64(propIDFloat)
-
 	valorTotal, _ := parseArgToFloat(args["valor_total"])
 
 	rpcArgs := map[string]interface{}{
@@ -304,7 +333,7 @@ func (s *Server) handleRegistrarCompraInsumo(args map[string]interface{}) (inter
 
 	log.Printf("🛒 [MCP-TOOL] Chamando RPC para compra de '%s' para PMO %d", produto, pmoID)
 
-	resp, err := s.supabase.RegistrarCompraInsumoRPC(context.Background(), rpcArgs)
+	resp, err := s.supabase.RegistrarCompraInsumoRPC(ctx, rpcArgs)
 	if err != nil {
 		return fmt.Errorf("erro ao registrar compra via RPC: %w", err), nil
 	}
