@@ -12,6 +12,7 @@ package queue
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"time"
@@ -108,31 +109,17 @@ func sendAsAudio(ctx context.Context, wp ports.MessageSender, ttsClient *tts.Orc
 	ttsCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 
-	// GenerateSpeech returns "data:audio/mpeg;base64,..." — strip the prefix for SendVoice
-	audioDataURI, err := ttsClient.GenerateSpeech(ttsCtx, text)
+	// GenerateSpeech returns raw MP3 bytes
+	audioBytes, err := ttsClient.GenerateSpeech(ttsCtx, text)
 	if err != nil {
 		return fmt.Errorf("tts_synthesis_failed: %w", err)
 	}
 
-	// Extract raw base64 after the data URI prefix
-	audioBase64 := audioDataURI
-	if idx := lastIndexOf(audioDataURI, ","); idx >= 0 {
-		audioBase64 = audioDataURI[idx+1:]
-	}
+	audioBase64 := base64.StdEncoding.EncodeToString(audioBytes)
 
+	// Força `ptt: true` para garantir que o cliente leia como voice note (microfone azul)
 	if err := wp.SendVoice(to, audioBase64, true); err != nil {
 		return fmt.Errorf("send_voice_failed: %w", err)
 	}
 	return nil
-}
-
-// lastIndexOf returns the last occurrence index of substr in s, or -1.
-func lastIndexOf(s, substr string) int {
-	idx := -1
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			idx = i
-		}
-	}
-	return idx
 }

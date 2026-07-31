@@ -1,0 +1,15 @@
+{
+    "event": "messages.upsert",
+    "instance": "pmo-instance-dev",
+    "data": {
+      "key": {
+        "remoteJid": "5534999999999@s.whatsapp.net",
+        "fromMe": false,
+        "id": "MSG_TESTE_HIBRIDO_001"
+      },
+      "pushName": "Produtor Teste",
+      "message": {
+        "conversation": "Olá! Qual é o compasso de plantio recomendado para o tomate na nossa fazenda e o que diz o último relatório da safra sobre as pragas?"
+      }
+    }
+  }

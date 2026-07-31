@@ -41,6 +41,9 @@ services:
       DATABASE_CONNECTION_URI: file:/data/sqlite.db?_foreign_keys=on
       POSTGRES_AUTH_DB: file:/data/auth.db?_pragma=foreign_keys(1)&_busy_timeout=5000&cache=shared&mode=rwc&_journal_mode=WAL
       POSTGRES_USERS_DB: file:/data/users.db?_foreign_keys=on
+      WHATSAPP_VERSION_MAJOR: "2"
+      WHATSAPP_VERSION_MINOR: "3000"
+      WHATSAPP_VERSION_PATCH: "1044142122"
     ports:
       - "8082:8082"
     volumes:

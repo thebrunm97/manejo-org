@@ -107,7 +107,7 @@ func TestE2EHITLFlow(t *testing.T) {
 	ctx := context.Background()
 	rec, _ := mockHITL.FindPendingByPhone(ctx, phone)
 	if rec == nil {
-		t.Fatal("Nenhum registo HITL encontrado para o telefone")
+		t.Fatal("Nenhum registro HITL encontrado para o telefone")
 	}
 
 	resolvedTool, resolvedArgs, approveErr := mockHITL.Approve(ctx, rec.ID)

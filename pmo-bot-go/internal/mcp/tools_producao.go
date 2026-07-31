@@ -1,19 +1,26 @@
 package mcp
 
 import (
+	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"context"
 	"fmt"
 	"log"
 	"time"
 )
 
-func (s *Server) handleRegistrarColheita(args map[string]interface{}) (interface{}, error) {
+func (s *Server) handleRegistrarColheita(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
+	// SECURE SESSION INJECTION
+	if profile == nil {
+		return nil, fmt.Errorf("unauthorized: missing profile")
+	}
+	pmoID := profile.PmoAtivoID
+	userID := profile.ID
+	propID := profile.PropriedadeAtivaID
+	_ = pmoID
+	_ = userID
+	_ = propID
+
 	log.Printf("🧺 [MCP-TOOL] handleRegistrarColheita Args: %+v", args)
-
-	pmoIDFloat, _ := parseArgToFloat(args["pmo_id"])
-	pmoID := int64(pmoIDFloat)
-	userID, _ := args["user_id"].(string)
-
 	data := sanitize(args["data"])
 	if data == "" {
 		data = time.Now().Format("2006-01-02")
@@ -24,10 +31,9 @@ func (s *Server) handleRegistrarColheita(args map[string]interface{}) (interface
 	unidade := sanitize(args["unidade"])
 	talhao := sanitize(args["talhao"])
 	cultura := sanitize(args["cultura"])
-
-	propIDFloat, _ := parseArgToFloat(args["propriedade_id"])
-	propID := int64(propIDFloat)
-
+	if cultura == "" {
+		return nil, fmt.Errorf("o campo 'cultura' é obrigatório")
+	}
 	valorTotal, _ := parseArgToFloat(args["valor_total"])
 
 	payloadArg := map[string]interface{}{
@@ -43,7 +49,7 @@ func (s *Server) handleRegistrarColheita(args map[string]interface{}) (interface
 	if rawPayloadID, ok := args["raw_payload_id"].(string); ok && rawPayloadID != "" {
 		payloadArg["raw_payload_id"] = rawPayloadID
 	}
-	resp, err := s.supabase.RegistrarOperacaoCampoRPC(context.Background(), map[string]interface{}{
+	resp, err := s.supabase.RegistrarOperacaoCampoRPC(ctx, map[string]interface{}{
 		"pmo_id_arg":         pmoID,
 		"propriedade_id_arg": propID,
 		"user_id_arg":        userID,
@@ -64,13 +70,19 @@ func (s *Server) handleRegistrarColheita(args map[string]interface{}) (interface
 	return fmt.Sprintf("Colheita de %v %s de %s registrada com sucesso (Lote: %v).", qtd, unidade, cultura, lote), nil
 }
 
-func (s *Server) handleRegistrarVenda(args map[string]interface{}) (interface{}, error) {
+func (s *Server) handleRegistrarVenda(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
+	// SECURE SESSION INJECTION
+	if profile == nil {
+		return nil, fmt.Errorf("unauthorized: missing profile")
+	}
+	pmoID := profile.PmoAtivoID
+	userID := profile.ID
+	propID := profile.PropriedadeAtivaID
+	_ = pmoID
+	_ = userID
+	_ = propID
+
 	log.Printf("💰 [MCP-TOOL] handleRegistrarVenda Args: %+v", args)
-
-	pmoIDFloat, _ := parseArgToFloat(args["pmo_id"])
-	pmoID := int64(pmoIDFloat)
-	userID, _ := args["user_id"].(string)
-
 	data := sanitize(args["data"])
 	if data == "" {
 		data = time.Now().Format("2006-01-02")
@@ -81,10 +93,6 @@ func (s *Server) handleRegistrarVenda(args map[string]interface{}) (interface{},
 	valorUnit, _ := parseArgToFloat(args["valor_unitario"])
 	produto := sanitize(args["produto"])
 	cliente := sanitize(args["cliente"])
-
-	propIDFloat, _ := parseArgToFloat(args["propriedade_id"])
-	propID := int64(propIDFloat)
-
 	valorTotal, _ := parseArgToFloat(args["valor_total"])
 	if valorTotal <= 0 && valorUnit > 0 && qtd > 0 {
 		valorTotal = valorUnit * qtd
@@ -104,7 +112,7 @@ func (s *Server) handleRegistrarVenda(args map[string]interface{}) (interface{},
 	if rawPayloadID, ok := args["raw_payload_id"].(string); ok && rawPayloadID != "" {
 		payloadArg["raw_payload_id"] = rawPayloadID
 	}
-	resp, err := s.supabase.RegistrarOperacaoCampoRPC(context.Background(), map[string]interface{}{
+	resp, err := s.supabase.RegistrarOperacaoCampoRPC(ctx, map[string]interface{}{
 		"pmo_id_arg":         pmoID,
 		"propriedade_id_arg": propID,
 		"user_id_arg":        userID,
@@ -124,12 +132,19 @@ func (s *Server) handleRegistrarVenda(args map[string]interface{}) (interface{},
 	return fmt.Sprintf("Venda de %s (%v %s) para '%s' salva com sucesso.", produto, qtd, unidade, cliente), nil
 }
 
-func (s *Server) handleConsultarDemandasCooperativa(args map[string]interface{}) (interface{}, error) {
+func (s *Server) handleConsultarDemandasCooperativa(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
+	// SECURE SESSION INJECTION
+	if profile == nil {
+		return nil, fmt.Errorf("unauthorized: missing profile")
+	}
+	pmoID := profile.PmoAtivoID
+	userID := profile.ID
+	propID := profile.PropriedadeAtivaID
+	_ = pmoID
+	_ = userID
+	_ = propID
+
 	log.Printf("📋 [MCP-TOOL] handleConsultarDemandasCooperativa Args: %+v", args)
-
-	propIDFloat, _ := parseArgToFloat(args["propriedade_id"])
-	propID := int64(propIDFloat)
-
 	if propID == 0 {
 		return "Erro: propriedade_id não informado. Não consigo consultar as demandas sem saber a qual fazenda você pertence.", nil
 	}

@@ -1,0 +1,17 @@
+{
+  "overview": {
+    "title": "Organization Overview",
+    "restrictedAccess": "Restricted Access",
+    "restrictedMessage": "Only managers of this organization can view the Control Tower.",
+    "errorLoading": "Could not load data.",
+    "goBack": "Go Back",
+    "coopProfile": "Co-op Profile"
+  },
+  "stats": {
+    "totalMembers": "Total Members",
+    "certifiedProperties": "Certified Properties",
+    "totalArea": "Total Certified Area",
+    "status": "Certification Status",
+    "pending": "Pending"
+  }
+}

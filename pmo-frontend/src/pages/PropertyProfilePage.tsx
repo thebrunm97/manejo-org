@@ -98,13 +98,14 @@ const PropertyProfilePage: React.FC = () => {
                     setOrgs(orgsResult.data || []);
                 }
 
-                if (pmoAtivoId) {
+                const parsedPmoId = pmoAtivoId ? parseInt(pmoAtivoId, 10) : NaN;
+                if (!isNaN(parsedPmoId)) {
                     setLoadingLimites(true);
                     const { data: limitesData, error: limitesError } = await supabase
                         .from('limites_seguranca')
                         .select('limite_transacao, limite_manejo')
                         .eq('propriedade_id', currentPropriedade.id)
-                        .eq('pmo_id', parseInt(pmoAtivoId))
+                        .eq('pmo_id', parsedPmoId)
                         .maybeSingle();
 
                     if (limitesError) {
@@ -155,8 +156,9 @@ const PropertyProfilePage: React.FC = () => {
                     return;
                 }
 
-                if (!pmoAtivoId) {
-                    toast.error('Nenhum PMO ativo encontrado.');
+                const parsedPmoId = pmoAtivoId ? parseInt(pmoAtivoId, 10) : NaN;
+                if (isNaN(parsedPmoId)) {
+                    toast.error('ID do PMO ativo inválido.');
                     setSaving(false);
                     return;
                 }
@@ -165,7 +167,7 @@ const PropertyProfilePage: React.FC = () => {
                     .from('limites_seguranca')
                     .upsert({
                         propriedade_id: currentPropriedade.id,
-                        pmo_id: parseInt(pmoAtivoId),
+                        pmo_id: parsedPmoId,
                         limite_transacao: limiteTransacao,
                         limite_manejo: limiteManejo,
                     }, { onConflict: 'propriedade_id,pmo_id' });
@@ -781,7 +783,7 @@ const PropertyProfilePage: React.FC = () => {
                                             </div>
                                             <h3 className="text-xl font-black text-white tracking-tight mb-2 uppercase italic">Exportação de Segurança</h3>
                                             <p className="text-slate-400 text-sm font-medium mb-8 max-w-sm">
-                                                Antes de excluir, descarregue todo o histórico de talhões, financeiro e diário de campo num ficheiro JSON padrão.
+                                                Antes de excluir, descarregue todo o histórico de talhões, financeiro e diário de campo num arquivo JSON padrão.
                                             </p>
                                             
                                             <button 

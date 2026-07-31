@@ -54,7 +54,7 @@ func TestRAGIntegration(t *testing.T) {
 
 	// 3. Prepare Test PDF (using existing small one)
 	testFile := "../docs/knowledge_base/INC_17_28052009_EXTRATIVISMOSUSTENTVEL.pdf"
-	pmoID := int64(999999) // Isolated test ID
+	pmoID := int64(320) // Existing PMO ID in local database to satisfy FK constraint
 	docName := "integration_test_doc.pdf"
 
 	file, err := os.Open(testFile)
@@ -152,5 +152,5 @@ func TestRAGIntegration(t *testing.T) {
 	// 7. Cleanup (Optional but recommended)
 	// We'll leave it for now to let the user see the data,
 	// or we could add a DELETE RPC in Supabase.
-	t.Log("⚠️ Remember to cleanup PMO_ID 999999 in Supabase later.")
+	t.Log("⚠️ Remember to cleanup PMO_ID 320 in Supabase later.")
 }

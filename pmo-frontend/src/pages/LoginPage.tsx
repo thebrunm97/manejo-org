@@ -12,6 +12,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useAppNavigation } from '../hooks/navigation/useAppNavigation';
+import { useTranslation } from 'react-i18next';
+import { LanguageSwitcher } from '../components/LanguageSwitcher';
+import { toast } from 'react-toastify';
 
 const LoginPage: React.FC = () => {
     const [email, setEmail] = useState('');
@@ -21,6 +24,7 @@ const LoginPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const { login, loginWithGoogle, loginWithFacebook } = useAuth();
     const { goHome, goToSignUp, goToLab } = useAppNavigation();
+    const { t } = useTranslation('auth');
 
     const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -30,7 +34,7 @@ const LoginPage: React.FC = () => {
             await login(email, password);
             goHome();
         } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : 'Falha ao fazer login. Verifique suas credenciais.';
+            const message = err instanceof Error ? err.message : t('login.error');
             setError(message);
             setLoading(false);
         }
@@ -69,7 +73,7 @@ const LoginPage: React.FC = () => {
                     <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-green-500/20 mb-4 tracking-tighter">
                         MO
                     </div>
-                    <h1 className="text-2xl font-bold text-white tracking-tight">Bem-vindo de volta</h1>
+                    <h1 className="text-2xl font-bold text-white tracking-tight">{t('login.title')}</h1>
                     <p className="text-slate-400 mt-1.5 text-sm">Acesse sua gestão agrícola inteligente</p>
                 </div>
 
@@ -80,8 +84,7 @@ const LoginPage: React.FC = () => {
                         <div className="relative group">
                             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 group-focus-within:text-green-500 transition-colors">
                                 <Mail size={20} />
-                            </div>
-                            <input
+                            </div>                            <input
                                 required
                                 type="email"
                                 id="email"
@@ -104,7 +107,7 @@ const LoginPage: React.FC = () => {
                                 required
                                 type={showPassword ? "text" : "password"}
                                 id="password"
-                                placeholder="Sua Senha"
+                                placeholder={t('login.passwordLabel')}
                                 autoComplete="current-password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
@@ -112,6 +115,8 @@ const LoginPage: React.FC = () => {
                             />
                             <button
                                 type="button"
+                                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                                title={showPassword ? "Ocultar senha" : "Mostrar senha"}
                                 onClick={() => setShowPassword(!showPassword)}
                                 className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
                             >
@@ -132,7 +137,11 @@ const LoginPage: React.FC = () => {
                             </div>
                             <span className="text-sm text-slate-400 group-hover:text-slate-300 transition-colors">Lembrar-me</span>
                         </label>
-                        <button type="button" className="text-sm font-medium text-green-400 hover:text-green-300 transition-colors decoration-green-400/30 underline-offset-4">
+                        <button 
+                            type="button" 
+                            onClick={() => toast.info('Caso tenha esquecido sua senha, contate o suporte da sua cooperativa.')}
+                            className="text-sm font-medium text-green-400 hover:text-green-300 transition-colors decoration-green-400/30 underline-offset-4"
+                        >
                             Esqueceu a senha?
                         </button>
                     </div>
@@ -149,7 +158,7 @@ const LoginPage: React.FC = () => {
                         disabled={loading}
                         className="w-full flex items-center justify-center h-12 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg shadow-green-600/30 hover:shadow-green-600/50 transition-all duration-300"
                     >
-                        {loading ? <Loader2 className="animate-spin" size={20} /> : 'Entrar'}
+                        {loading ? <Loader2 className="animate-spin" size={20} /> : t('login.submit')}
                     </button>
 
                     <div className="flex items-center gap-4 my-8">
@@ -192,6 +201,11 @@ const LoginPage: React.FC = () => {
                         </p>
                     </div>
                 </form>
+            </div>
+
+            {/* Language Switcher Footer */}
+            <div className="absolute top-6 right-6 z-10">
+                <LanguageSwitcher />
             </div>
 
             {/* Footer */}

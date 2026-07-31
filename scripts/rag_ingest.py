@@ -1,3 +1,50 @@
+"""
+rag_ingest.py — Ingestão de PDFs na base de conhecimento RAG (knowledge_chunks)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DECISÃO ARQUITETURAL — EXTRATOR DE PDF: PyMuPDF (`fitz`)
+Ver: docs/architecture/adr/007-pdf-extraction-pymupdf.md
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Por que PyMuPDF e não Docling (extrator anterior)?
+────────────────────────────────────────────────────
+O Docling (ADR-006) foi descartado em 2026-07-24 após confirmação de regressão
+de encoding em PDFs da Embrapa com mapeamento CID de fontes:
+
+  Docling:  "evapotranspirao"  /  "irriga??o"  /  "hortali?as"
+  PyMuPDF:  "evapotranspiração"  /  "irrigação"  /  "hortaliças"   ✅
+
+Causa técnica: o Docling não resolve o mapa glifo→caractere em fontes CID
+(padrão em publicações Embrapa/MAPA geradas com InDesign/LaTeX). O PyMuPDF
+usa a tabela ToUnicode do PDF, que nesses documentos contém os codepoints
+corretos (Latin-1), e os converte internamente para str Python (UTF-8).
+
+Evidência reproduzível:
+  >>> import fitz
+  >>> page = fitz.open("cartilha_embrapa.pdf")[3]
+  >>> for ch in page.get_text()[:50]:
+  ...     if ord(ch) > 127: print(f"chr({ord(ch):#x}) = {ch!r}")
+  chr(0xe7) = 'ç'   # ç — correto
+  chr(0xe3) = 'ã'   # ã — correto
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Pipeline:
+  1. Extrai texto dos PDFs com PyMuPDF (UTF-8 correto, preserva acentos)
+  2. Limpa e divide em chunks semânticos (LangChain RecursiveCharacterTextSplitter)
+  3. Extrai metadados via Gemini AI (título, autor, ano, instituição)
+  4. Faz upsert em knowledge_documents (rastreabilidade)
+  5. Insere chunks em knowledge_chunks (consultado pelo RPC match_farm_documents)
+  6. Gera embeddings Gemini 3072d e mantém checkpoint por hash de arquivo
+
+Uso:
+  python scripts/rag_ingest.py          # processa apenas arquivos novos/modificados
+  python scripts/rag_ingest.py --force  # reindexa tudo (re-vetorização completa)
+
+Dependências:
+  pip install pymupdf google-genai supabase langchain-text-splitters python-dotenv
+"""
+
 import sys
 import os
 import re
@@ -5,445 +52,349 @@ import json
 import time
 import hashlib
 import logging
-import shutil
+import argparse
 import requests
 from typing import List, Dict, Any, Tuple
 from pathlib import Path
-from pypdf import PdfReader, PdfWriter
 
-# External Libraries (Install via: pip install docling google-genai supabase langchain-text-splitters python-dotenv)
+# Root of the project = parent of the 'scripts/' directory
+SCRIPT_DIR   = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parent
+
+# External Libraries
+# Install: pip install pymupdf google-genai supabase langchain-text-splitters python-dotenv
 try:
-    import torch
-    from docling.document_converter import DocumentConverter, PdfFormatOption
-    from docling.datamodel.base_models import InputFormat
-    from docling.datamodel.pipeline_options import PdfPipelineOptions
-    from docling.datamodel.accelerator_options import AcceleratorOptions, AcceleratorDevice
+    import fitz  # PyMuPDF — UTF-8 safe, handles Portuguese accents correctly
     from google import genai
     from google.genai import types
     from supabase import create_client, Client
-    from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
     from dotenv import load_dotenv, find_dotenv
 except ImportError as e:
-    print(f"Missing dependency: {e}. Please run: pip install docling google-genai supabase langchain-text-splitters python-dotenv")
+    print(
+        f"Missing dependency: {e}. "
+        "Run: pip install pymupdf google-genai supabase langchain-text-splitters python-dotenv"
+    )
     sys.exit(1)
 
-# --- CONFIGURATION ---
-# Load environment variables (.env.prod has priority, fallback to .env)
-env_file = find_dotenv(".env.prod")
-if not env_file:
-    env_file = find_dotenv(".env")
+# ── Configuration ──────────────────────────────────────────────────────────────
 
+# Load .env.prod / .env from the project root (works regardless of CWD)
+env_file = find_dotenv(str(PROJECT_ROOT / ".env.prod"))
+if not env_file:
+    env_file = find_dotenv(str(PROJECT_ROOT / ".env"))
+if not env_file:
+    env_file = find_dotenv(".env.prod") or find_dotenv(".env")
 if env_file:
-    print(f"[ENV] Carregando variaveis de ambiente de: {env_file}")
+    print(f"[ENV] {env_file}")
     load_dotenv(env_file)
 else:
-    print("[WARNING] Nenhum arquivo .env ou .env.prod encontrado. Usando variaveis de ambiente do sistema.")
+    print("[WARNING] Nenhum .env / .env.prod encontrado.")
 
-# API Keys & URLs
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_KEY")
+SUPABASE_URL   = os.getenv("SUPABASE_URL")
+SUPABASE_KEY   = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_KEY")
 
-# Diagnostic & Exit if missing
-missing_vars = []
-if not GEMINI_API_KEY:
-    missing_vars.append("GEMINI_API_KEY")
-if not SUPABASE_URL:
-    missing_vars.append("SUPABASE_URL")
-if not SUPABASE_KEY:
-    missing_vars.append("SUPABASE_SERVICE_ROLE_KEY (ou SUPABASE_KEY)")
+missing = [v for v, k in [("GEMINI_API_KEY", GEMINI_API_KEY), ("SUPABASE_URL", SUPABASE_URL),
+                           ("SUPABASE_SERVICE_ROLE_KEY", SUPABASE_KEY)] if not k]
+if missing:
+    sys.exit(f"[ERROR] Variáveis de ambiente ausentes: {', '.join(missing)}")
 
-if missing_vars:
-    print("\n[ERROR] Erro de Configuracao: As seguintes variaveis de ambiente estao ausentes:")
-    for var in missing_vars:
-        print(f"   - {var}")
-    sys.exit("\nPor favor, declare estas variaveis no arquivo .env ou .env.prod correspondente.")
+EMBEDDING_MODEL       = "gemini-embedding-001"
+EMBEDDING_DIMENSIONS  = 3072
+BATCH_SIZE            = 50
+SLEEP_BETWEEN_BATCHES = 10  # seconds — safety against 100 RPM limit
 
-# Model & Limits
-EMBEDDING_MODEL = "gemini-embedding-001"
-EMBEDDING_DIMENSIONS = 3072  # Matryoshka dimension supported by gemini-embedding-2
-BATCH_SIZE = 50  # Number of chunks per embedding request (Google limit ~100)
-RPD_LIMIT = 1500  # Requests Per Day budget
-TPM_LIMIT = 1000000  # Tokens Per Minute limit (approx)
-SLEEP_BETWEEN_BATCHES = 10 # Seconds. Hardcoded for better safety against 100 RPM limit.
+# Paths are relative to the project root — NOT to CWD
+INPUT_DIR       = PROJECT_ROOT / "knowledge_repo"
+CHECKPOINT_FILE = PROJECT_ROOT / "ingest_checkpoint.json"
 
-# Paths
-INPUT_DIR = Path("./knowledge_repo")  # Put your PDFs here
-CHECKPOINT_FILE = Path("ingest_checkpoint.json")
-
-# Logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-# --- INITIALIZATION ---
-client = genai.Client(api_key=GEMINI_API_KEY)
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+# ── Client initialisation ──────────────────────────────────────────────────────
+gemini: genai.Client = genai.Client(api_key=GEMINI_API_KEY)
+sb: Client           = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# CUDA Diagnostic
-cuda_available = torch.cuda.is_available()
-print(f"CUDA Diagnostic: {'YES' if cuda_available else 'NO'}")
-if cuda_available:
-    print(f"GPU Device: {torch.cuda.get_device_name(0)}")
 
-# Initialize Docling converter using GPU acceleration when CUDA is available
-pipeline_options = PdfPipelineOptions()
-pipeline_options.do_ocr = True
-pipeline_options.do_table_structure = True
-if cuda_available:
-    pipeline_options.accelerator_options.device = AcceleratorDevice.CUDA
-    pipeline_options.accelerator_options.num_threads = 8
+# ── PDF extraction (PyMuPDF) ───────────────────────────────────────────────────
 
-converter = DocumentConverter(
-    format_options={
-        InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)
-    }
-)
+def extract_pdf_text(filepath: Path) -> str:
+    """Extract all text from a PDF, preserving UTF-8 accents (ã, ç, ê, ô…)."""
+    doc = fitz.open(str(filepath))
+    pages: List[str] = [page.get_text() for page in doc if page.get_text().strip()]
+    doc.close()
+    return "\n\n".join(pages)
 
-def fatiar_pdf(caminho_arquivo: Path, paginas_por_fatia: int = 15) -> List[Path]:
-    """Slices a large PDF into smaller ones to avoid memory issues with Docling."""
-    print(f"Fatiando PDF: {caminho_arquivo.name}...")
-    temp_dir = Path("./temp_slices")
-    if temp_dir.exists():
-        shutil.rmtree(temp_dir)
-    temp_dir.mkdir(parents=True, exist_ok=True)
-    
-    reader = PdfReader(caminho_arquivo)
-    total_paginas = len(reader.pages)
-    fatias = []
-    
-    for i in range(0, total_paginas, paginas_por_fatia):
-        writer = PdfWriter()
-        fim = min(i + paginas_por_fatia, total_paginas)
-        
-        for pagina_num in range(i, fim):
-            writer.add_page(reader.pages[pagina_num])
-            
-        fatia_path = temp_dir / f"chunk_{len(fatias) + 1}.pdf"
-        with open(fatia_path, "wb") as f:
-            writer.write(f)
-        fatias.append(fatia_path)
-        
-    print(f"PDF fatiado em {len(fatias)} partes.")
-    return fatias
 
-def extrair_metadados_com_ia(texto_inicial):
-    print("Extraindo metadados da capa com Inteligencia Artificial...")
-    
-    prompt = f"""
-    Analise o texto abaixo, que é a capa/início de um manual técnico agronômico.
-    Extraia as seguintes informações e retorne ESTRITAMENTE em formato JSON:
-    - "titulo": Título completo do documento.
-    - "autor": Nome do autor principal, autores, ou organizadores (ex: "Flávia M. V. T. Clemente").
-    - "ano": Ano de publicação (apenas o número, ex: "2015"). Se não achar, use "Desconhecido".
-    - "instituicao": Instituição responsável (ex: "Embrapa Hortaliças", "MAPA").
+# ── Text cleaning ──────────────────────────────────────────────────────────────
 
-    Texto do Documento:
-    {texto_inicial[:3000]}
-    """
-
-    # 1. Tentar via Google SDK (Free Tier)
-    try:
-        resposta = client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json"
-            )
-        )
-        return json.loads(resposta.text)
-    except Exception as e:
-        logger.warning(f"⚠️ Google API falhou ou quota excedida: {e}. Tentando Fallback via OpenRouter...")
-        
-        # 2. Fallback via OpenRouter
-        try:
-            openrouter_key = os.getenv("OPENROUTER_API_KEY")
-            if not openrouter_key:
-                raise Exception("OPENROUTER_API_KEY não encontrada no ambiente.")
-                
-            response = requests.post(
-                url="https://openrouter.ai/api/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {openrouter_key}",
-                    "Content-Type": "application/json",
-                },
-                data=json.dumps({
-                    "model": "google/gemini-2.0-flash-001",
-                    "messages": [
-                        {"role": "user", "content": prompt}
-                    ],
-                    "response_format": {"type": "json_object"}
-                })
-            )
-            
-            if response.status_code == 200:
-                content = response.json()['choices'][0]['message']['content']
-                return json.loads(content)
-            else:
-                raise Exception(f"OpenRouter Error {response.status_code}: {response.text}")
-                
-        except Exception as o_err:
-            logger.error(f"❌ Fallback via OpenRouter também falhou: {o_err}")
-            return {"titulo": "Desconhecido", "autor": "Desconhecido", "ano": "Desconhecido", "instituicao": "Desconhecido"}
-
-def get_file_hash(filepath: Path) -> str:
-    """Calculate SHA256 of a file."""
-    sha256_hash = hashlib.sha256()
-    with open(filepath, "rb") as f:
-        for byte_block in iter(lambda: f.read(4096), b""):
-            sha256_hash.update(byte_block)
-    return sha256_hash.hexdigest()
-
-def load_checkpoint() -> Dict[str, Any]:
-    if CHECKPOINT_FILE.exists():
-        with open(CHECKPOINT_FILE, "r") as f:
-            return json.load(f)
-    return {}
-
-def save_checkpoint(checkpoint: Dict[str, Any]):
-    with open(CHECKPOINT_FILE, "w") as f:
-        json.dump(checkpoint, f, indent=2)
-
-def clean_markdown(text: str) -> str:
-    """Strip TOC noise, repeated page artifacts, and short orphan fragments from Docling Markdown."""
-    lines = text.split('\n')
-    cleaned = []
-
+def clean_text(text: str) -> str:
+    """Remove TOC noise, bare page numbers, and excessive blank lines."""
+    lines = text.split("\n")
+    cleaned: List[str] = []
     for line in lines:
-        # Drop table-of-contents entries (4+ dots = sumário/índice)
-        if re.search(r'\.{4,}', line):
-            continue
-        # Drop bare page numbers and single-word artifacts (< 20 chars, not a heading)
         stripped = line.strip()
-        if 0 < len(stripped) < 20 and not stripped.startswith('#'):
+        if re.search(r"\.{4,}", stripped):          # TOC entry (.......)
+            continue
+        if 0 < len(stripped) < 20 and not stripped.startswith("#"):  # orphan/page num
             continue
         cleaned.append(line)
-
-    # Collapse triple+ blank lines into a single blank line
-    result = re.sub(r'\n{3,}', '\n\n', '\n'.join(cleaned))
-    return result.strip()
+    return re.sub(r"\n{3,}", "\n\n", "\n".join(cleaned)).strip()
 
 
-def split_text(markdown_text: str) -> List[str]:
-    """Split markdown into semantic chunks."""
-    headers_to_split_on = [
-        ("#", "Header 1"),
-        ("##", "Header 2"),
-        ("###", "Header 3"),
-    ]
-    
-    header_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
-    sections = header_splitter.split_text(markdown_text)
-    
-    recursive_splitter = RecursiveCharacterTextSplitter(
+# ── Chunking ───────────────────────────────────────────────────────────────────
+
+def split_text(text: str) -> List[str]:
+    splitter = RecursiveCharacterTextSplitter(
         chunk_size=1500,
-        chunk_overlap=150
+        chunk_overlap=150,
+        separators=["\n\n", "\n", ". ", " ", ""],
     )
-    
-    final_chunks = []
-    for section in sections:
-        # Merge metadata into content to preserve context
-        header_context = " > ".join([v for k, v in section.metadata.items()])
-        content = f"{header_context}\n\n{section.page_content}" if header_context else section.page_content
-        
-        chunks = recursive_splitter.split_text(content)
-        final_chunks.extend(chunks)
-        
-    return final_chunks
+    return splitter.split_text(text)
 
-def get_batch_embeddings(texts: List[str], document_name: str = "") -> List[List[float]]:
-    """Fetch embeddings in batch with the asymmetric 'title | text' prefix for document chunks."""
-    # Apply asymmetric prefix: title from doc name, text from chunk
-    # This pairs with the query-side prefix 'task: question answering | query: ...'
-    base_name = Path(document_name).stem.replace("_", " ") if document_name else ""
-    prefixed = [
-        f"title: {base_name} | text: {chunk}" if base_name else f"text: {chunk}"
-        for chunk in texts
-    ]
 
-    quota_delay_seconds = 65
-    max_quota_retries = 3
-    quota_retries = 0
-    
-    # Total combined attempts (general errors + quota errors)
+# ── AI Metadata extraction ─────────────────────────────────────────────────────
+
+def extrair_metadados(texto: str) -> Dict[str, str]:
+    prompt = f"""Analise o texto abaixo (capa/início de um manual agronômico).
+Retorne ESTRITAMENTE em JSON com as chaves: titulo, autor, ano, instituicao.
+Texto:\n{texto[:3000]}"""
+
+    try:
+        r = gemini.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt,
+            config=types.GenerateContentConfig(response_mime_type="application/json"),
+        )
+        return json.loads(r.text)
+    except Exception as e:
+        logger.warning(f"⚠️ Gemini falhou para metadados: {e}. Tentando OpenRouter...")
+
+    try:
+        or_key = os.getenv("OPENROUTER_API_KEY")
+        if not or_key:
+            raise ValueError("OPENROUTER_API_KEY não encontrada.")
+        resp = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={"Authorization": f"Bearer {or_key}", "Content-Type": "application/json"},
+            data=json.dumps({
+                "model": "google/gemini-2.0-flash-001",
+                "messages": [{"role": "user", "content": prompt}],
+                "response_format": {"type": "json_object"},
+            }),
+            timeout=30,
+        )
+        if resp.status_code == 200:
+            return json.loads(resp.json()["choices"][0]["message"]["content"])
+    except Exception as oe:
+        logger.error(f"❌ OpenRouter falhou: {oe}")
+
+    return {"titulo": "Desconhecido", "autor": "Desconhecido", "ano": "Desconhecido", "instituicao": "Desconhecido"}
+
+
+# ── Embedding ──────────────────────────────────────────────────────────────────
+
+def get_embeddings(texts: List[str], doc_name: str = "") -> List[List[float]]:
+    """Embed a batch of text chunks using the asymmetric title|text prefix."""
+    base = Path(doc_name).stem.replace("_", " ") if doc_name else ""
+    prefixed = [f"title: {base} | text: {t}" if base else f"text: {t}" for t in texts]
+
+    quota_retries, max_quota = 0, 3
+
     for attempt in range(10):
         try:
-            result = client.models.embed_content(
+            result = gemini.models.embed_content(
                 model=EMBEDDING_MODEL,
                 contents=prefixed,
                 config=types.EmbedContentConfig(
                     task_type="RETRIEVAL_DOCUMENT",
                     output_dimensionality=EMBEDDING_DIMENSIONS,
-                )
+                ),
             )
             return [emb.values for emb in result.embeddings]
         except Exception as e:
-            error_msg = str(e).lower()
-            
-            # Specific check for Rate Limit / Quota
-            if "429" in error_msg or "resource_exhausted" in error_msg or "quota" in error_msg:
+            err = str(e).lower()
+            if "429" in err or "resource_exhausted" in err or "quota" in err:
                 quota_retries += 1
-                if quota_retries > max_quota_retries:
-                    logger.error(f"❌ Lote abortado: Limite de cota excedido {max_quota_retries} vezes consecutivas.")
-                    raise Exception(f"Erro 429 persistente após {max_quota_retries} tentativas de 65s.")
-                
-                logger.warning(f"⚠️ Rate Limit (429) detectado. Pausando {quota_delay_seconds}s para reset de cota... ({quota_retries}/{max_quota_retries})")
-                time.sleep(quota_delay_seconds)
-                continue # Re-executa o loop para tentar o mesmo lote
-            
-            # Handling for other transient errors
-            wait_time = (2 ** attempt) + 5
-            logger.warning(f"⚠️ Erro na API de Embedding: {e}. Tentando novamente em {wait_time}s...")
-            time.sleep(wait_time)
-            
-    raise Exception("Falha crítica ao obter embeddings após múltiplas tentativas.")
+                if quota_retries > max_quota:
+                    raise RuntimeError(f"Rate limit persistente após {max_quota} tentativas.")
+                logger.warning(f"⚠️ Rate Limit. Pausa 65s... ({quota_retries}/{max_quota})")
+                time.sleep(65)
+                continue
+            wait = (2 ** attempt) + 5
+            logger.warning(f"⚠️ Erro embedding (tentativa {attempt+1}/10): {e}. Retry em {wait}s")
+            time.sleep(wait)
 
-def pad_embedding(embedding: List[float], target_dim: int = 3072) -> List[float]:
-    """Pad the embedding with zeros to match a higher-dimensional VECTOR column (e.g. 3072)."""
-    if len(embedding) < target_dim:
-        return embedding + [0.0] * (target_dim - len(embedding))
-    return embedding[:target_dim]
+    raise RuntimeError("Falha crítica: embeddings não obtidos.")
 
 
-def process_pdf(filepath: Path, categoria_fonte: str = "geral"):
-    logger.info(f"Processing: {filepath.name}")
-    
-    # 1. Extraction (with Auto-Splitter)
-    md_text_completo = ""
-    target_temp_dir = Path("./temp_slices")
-    
-    try:
-        fatias = fatiar_pdf(filepath)
-        for idx, fatia_path in enumerate(fatias):
-            logger.info(f"Converting slice {idx+1}/{len(fatias)}...")
-            doc = converter.convert(fatia_path)
-            md_text_completo += doc.document.export_to_markdown() + "\n\n"
-            
-        # Cleanup slices immediately after conversion
-        if target_temp_dir.exists():
-            shutil.rmtree(target_temp_dir)
-            
-    except Exception as e:
-        logger.error(f"Docling conversion failed for {filepath.name}: {e}")
-        if target_temp_dir.exists():
-            shutil.rmtree(target_temp_dir)
-        return
-    
-    # 2. Clean + Chunking & Metadata Extraction
-    md_text_limpo = clean_markdown(md_text_completo)
-    chunks = split_text(md_text_limpo)
-    logger.info(f"Generated {len(chunks)} chunks for {filepath.name} [categoria: {categoria_fonte}]")
-    
-    # AI Metadata Extraction from combined text
-    meta_ia = extrair_metadados_com_ia(md_text_completo[:3000])
-    
-    # 3. Supabase: Insert Mother Document
-    # We use upsert on filename (unique)
-    doc_payload = {
-        "filename": filepath.name,
-        "total_chunks": len(chunks),
-        "title": meta_ia.get("titulo") or filepath.stem.replace("_", " ").title(),
-        "author": meta_ia.get("autor", "Desconhecido"),
-        "year": str(meta_ia.get("ano", "Desconhecido")),
-        "institution": meta_ia.get("instituicao", "Desconhecido"),
-        "updated_at": "now()"
+def pad(embedding: List[float], dim: int = 3072) -> List[float]:
+    if len(embedding) < dim:
+        return embedding + [0.0] * (dim - len(embedding))
+    return embedding[:dim]
+
+
+def chunk_hash(doc_name: str, chunk_index: int, content: str) -> str:
+    h = hashlib.sha256(f"{doc_name}|{chunk_index}|{content}".encode("utf-8"))
+    return h.hexdigest()
+
+
+# ── Checkpoint helpers ─────────────────────────────────────────────────────────
+
+def get_file_hash(path: Path) -> str:
+    sha = hashlib.sha256()
+    with open(path, "rb") as f:
+        for block in iter(lambda: f.read(4096), b""):
+            sha.update(block)
+    return sha.hexdigest()
+
+
+def load_checkpoint() -> Dict[str, Any]:
+    if CHECKPOINT_FILE.exists():
+        with open(CHECKPOINT_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+
+def save_checkpoint(ck: Dict[str, Any]) -> None:
+    with open(CHECKPOINT_FILE, "w", encoding="utf-8") as f:
+        json.dump(ck, f, indent=2, ensure_ascii=False)
+
+
+# ── Core processing ────────────────────────────────────────────────────────────
+
+def upsert_document_record(filepath: Path, chunks_count: int, meta: Dict[str, str]) -> str:
+    """Insert/update the knowledge_documents record and return its ID."""
+    payload = {
+        "filename":     filepath.name,
+        "total_chunks": chunks_count,
+        "title":        meta.get("titulo") or filepath.stem.replace("_", " ").title(),
+        "author":       meta.get("autor", "Desconhecido"),
+        "year":         str(meta.get("ano", "Desconhecido")),
+        "institution":  meta.get("instituicao", "Desconhecido"),
+        "updated_at":   "now()",
     }
-    supabase.table("knowledge_documents").upsert(doc_payload, on_conflict="filename").execute()
-    
-    # 4. Batch Embedding & Insertion
+    result = sb.table("knowledge_documents").upsert(payload, on_conflict="filename").execute()
+    if result.data:
+        return result.data[0].get("id", "")
+    return ""
+
+
+def process_pdf(filepath: Path, categoria: str = "geral") -> None:
+    logger.info(f"📄 Processando: {filepath.name}  [{categoria}]")
+
+    # 1. Extract text with PyMuPDF (UTF-8 safe)
+    try:
+        raw = extract_pdf_text(filepath)
+    except Exception as e:
+        logger.error(f"  Falha na extração: {e}")
+        return
+
+    # 2. Clean + chunk
+    clean = clean_text(raw)
+    chunks = split_text(clean)
+    logger.info(f"  {len(chunks)} chunks gerados.")
+
+    if not chunks:
+        logger.warning(f"  Nenhum chunk. Pulando.")
+        return
+
+    # 3. AI metadata
+    meta = extrair_metadados(raw[:3000])
+
+    # 4. Upsert knowledge_documents record
+    source_doc_id = upsert_document_record(filepath, len(chunks), meta)
+
+    # 5. Batch embed + insert into knowledge_chunks (queried by match_farm_documents UNION ALL)
     total_batches = (len(chunks) + BATCH_SIZE - 1) // BATCH_SIZE
-    
+
     for i in range(0, len(chunks), BATCH_SIZE):
         batch_texts = chunks[i : i + BATCH_SIZE]
-        batch_idx = (i // BATCH_SIZE) + 1
-        
-        logger.info(f"Embedding batch {batch_idx}/{total_batches} for {filepath.name}...")
-        embeddings = get_batch_embeddings(batch_texts, filepath.name)
-        
-        chunk_records = []
+        batch_idx   = (i // BATCH_SIZE) + 1
+
+        logger.info(f"  Embedding lote {batch_idx}/{total_batches}...")
+        embeddings = get_embeddings(batch_texts, filepath.name)
+
+        records = []
         for j, (text, emb) in enumerate(zip(batch_texts, embeddings)):
-            chunk_records.append({
-                "document_name": filepath.name,
-                "chunk_index": i + j,
-                "content": text,
-                "embedding": pad_embedding(emb),
+            idx = i + j
+            records.append({
+                "document_name":    filepath.name,
+                "chunk_index":      idx,
+                "content":          text,
+                "embedding":        pad(emb),
                 "metadata": {
-                    "source": filepath.name,
-                    "batch": batch_idx,
-                    "categoria_fonte": categoria_fonte,  # ← Meta-RAG label injected here
-                }
+                    "source":          filepath.name,
+                    "batch":           batch_idx,
+                    "categoria_fonte": categoria,
+                },
             })
-            
-        # Bulk insert into Supabase
-        supabase.table("knowledge_chunks").insert(chunk_records).execute()
-        
-        # Respect Rate Limits
+
+        # Insert into knowledge_chunks — queried by match_farm_documents RPC via UNION ALL
+        sb.table("knowledge_chunks").insert(records).execute()
         time.sleep(SLEEP_BETWEEN_BATCHES)
 
-def discover_pdfs(base_dir: Path) -> List[Tuple[Path, str]]:
-    """Walk knowledge_repo/ subdirectories.
+    logger.info(f"  ✅ {filepath.name} concluído ({len(chunks)} chunks em knowledge_chunks).")
 
-    Returns a list of (pdf_path, categoria_fonte) tuples.
-    PDFs in the root folder are labeled 'geral'.
-    PDFs inside a subfolder inherit the subfolder name as the category.
-    """
+
+# ── PDF discovery ──────────────────────────────────────────────────────────────
+
+def discover_pdfs(base: Path) -> List[Tuple[Path, str]]:
     results: List[Tuple[Path, str]] = []
-
-    # Categorized subfolders (institucional/, academico/, movimentos_sociais/, ...)
-    for subdir in sorted(base_dir.iterdir()):
-        if subdir.is_dir() and not subdir.name.startswith('.'):
-            categoria = subdir.name
-            for pdf in sorted(subdir.glob("*.pdf")):
-                results.append((pdf, categoria))
-
-    # Root-level PDFs → uncategorized fallback
-    for pdf in sorted(base_dir.glob("*.pdf")):
+    for d in sorted(base.iterdir()):
+        if d.is_dir() and not d.name.startswith("."):
+            for pdf in sorted(d.glob("*.pdf")):
+                results.append((pdf, d.name))
+    for pdf in sorted(base.glob("*.pdf")):
         results.append((pdf, "geral"))
-
     return results
 
 
-def main():
+# ── Entry point ────────────────────────────────────────────────────────────────
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Ingestão de PDFs para RAG (farm_documents)")
+    parser.add_argument("--force", action="store_true", help="Ignorar checkpoint e reindexa tudo")
+    args = parser.parse_args()
+
     if not INPUT_DIR.exists():
         INPUT_DIR.mkdir(parents=True)
-        logger.info(
-            f"Created {INPUT_DIR}. Add PDFs inside subfolders:\n"
-            f"  {INPUT_DIR}/institucional/  → cartilhas EMBRAPA, MAPA\n"
-            f"  {INPUT_DIR}/academico/      → artigos, dissertações\n"
-            f"  {INPUT_DIR}/movimentos_sociais/ → MST, La Via Campesina"
-        )
+        logger.info(f"Diretório {INPUT_DIR} criado. Adicione PDFs nas subpastas:")
+        logger.info(f"  {INPUT_DIR}/institucional/      → cartilhas EMBRAPA, MAPA")
+        logger.info(f"  {INPUT_DIR}/academico/          → artigos, dissertações")
+        logger.info(f"  {INPUT_DIR}/movimentos_sociais/ → MST, La Via Campesina")
         return
 
-    checkpoint = load_checkpoint()
-    pdf_files = discover_pdfs(INPUT_DIR)
+    checkpoint = {} if args.force else load_checkpoint()
+    pdfs       = discover_pdfs(INPUT_DIR)
 
-    if not pdf_files:
-        logger.info("No PDF files found in knowledge_repo/ or its subfolders.")
+    if not pdfs:
+        logger.info("Nenhum PDF encontrado.")
         return
 
-    logger.info(f"Found {len(pdf_files)} PDF(s) to process.")
+    logger.info(f"{len(pdfs)} PDF(s) encontrado(s).  --force={args.force}")
 
-    for pdf_path, categoria_fonte in pdf_files:
-        file_hash = get_file_hash(pdf_path)
+    for pdf_path, categoria in pdfs:
+        fhash = get_file_hash(pdf_path)
 
-        if pdf_path.name in checkpoint and checkpoint[pdf_path.name]["hash"] == file_hash:
-            logger.info(f"Skipping {pdf_path.name} (unchanged, categoria={categoria_fonte})")
-            continue
+        if not args.force and pdf_path.name in checkpoint:
+            if checkpoint[pdf_path.name].get("hash") == fhash:
+                logger.info(f"  Pulando {pdf_path.name} (sem alterações).")
+                continue
 
         try:
-            process_pdf(pdf_path, categoria_fonte)
-
+            process_pdf(pdf_path, categoria)
             checkpoint[pdf_path.name] = {
-                "hash": file_hash,
-                "processed_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-                "categoria_fonte": categoria_fonte,
+                "hash":          fhash,
+                "processed_at":  time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "categoria":     categoria,
             }
             save_checkpoint(checkpoint)
-
         except Exception as e:
-            logger.error(f"Fatal error processing {pdf_path.name}: {e}")
-            continue
+            logger.error(f"Erro fatal em {pdf_path.name}: {e}")
 
-    logger.info("Ingestion process completed.")
+    logger.info("🎉 Ingestão concluída.")
 
 
 if __name__ == "__main__":

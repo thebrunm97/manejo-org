@@ -1,0 +1,1695 @@
+Manejo Integrado de Pragas do
+Tomate para Mesa
+ISSN 1415-2312
+Setembro, 2022
+DOCUMENTOS
+192
+
+
+Empresa Brasileira de Pesquisa Agropecuária
+Embrapa Hortaliças
+Ministério da Agricultura, Pecuária e Abastecimento
+Embrapa Hortaliças
+Brasília, DF
+2022
+Manejo Integrado de Pragas do
+Tomate para Mesa
+Miguel Michereff Filho
+Juracy Caldeira Lins Junior
+Alice Maria Quezado-Duval
+Alice Kazuko Inoue Nagata
+Mirtes Freitas Lima
+DOCUMENTOS 192
+ISSN 1415-2312
+Setembro, 2022
+
+
+Manejo integrado de pragas do tomate para mesa / Miguel Michereff Filho ... [et 	
+       al.].- Brasília, DF: Embrapa Hortaliças, 2022. 57 p.: il. color. (Documentos /        	
+       Embrapa Hortaliças, ISSN 1415-2312 ; 192).
+1. Praga de planta. 2. Controle integrado. 3. Solanum lycopersicum. 
+I.Michereff Filho, Miguel. II. Embrapa Hortaliças. III. Série.
+CDD 635.642
+Todos os direitos reservados
+A reprodução não autorizada desta publicação, no todo ou em parte, constitui 
+violação dos direitos autorais (Lei nº 9.610)
+Dados internacionais de Catalogação na Publicação (CIP)
+Embrapa Hortaliças
+© Embrapa, 2022
+Exemplares desta publicação
+podem ser adquiridos na
+Embrapa Hortaliças
+Rodovia BR-060, trecho Brasília-Anápolis, km 9
+Caixa Postal 218
+Brasília-DF
+CEP 70.275-970
+Fone: (61) 3385.9000
+Fax: (61) 3556.5744
+www.embrapa.br/fale-conosco/sac
+www.embrapa.br
+Comitê Local de Publicações
+da Embrapa Hortaliças
+Presidente
+Henrique Martins Gianvecchio Carvalho
+Editora técnica
+Flávia Maria Vieira Teixeira
+Secretária
+Clidineia Inez do Nascimento
+Antonia Veras de Souza (CRB-1/2023)
+Membros
+Geovani Bernardo Amaro
+Lucimeire Pilon
+Raphael Augusto de Castro e Melo
+Carlos Alberto Lopes
+Marçal Henrique Amici Jorge
+Alexandre Augusto de Morais
+Giovani Olegário da Silva
+Francisco Herbeth Costa dos Santos
+Caroline Jácome Costa
+Iriani Rodrigues Maldonade
+Francisco Vilela Resende
+Italo Morais Rocha Guedes
+Normalização bibliográfica
+Antonia Veras de Souza
+Projeto gráfico da coleção
+Carlos Eduardo Felice Barbeiro
+Editoração eletrônica
+André L. Garcia
+Glauter Lima dos Santos
+Imagem da capa
+Ítalo Lüdke
+1ª impressão (2022): 
+tiragem 10 exemplares
+
+
+Autores
+Miguel Michereff Filho
+Engenheiro-agrônomo, doutor em Entomologia, pesquisador da Embrapa 
+Hortaliças, Brasília, DF.
+Juracy Caldeira Lins Junior
+Engenheiro-agrônomo, doutor em Entomologia, pesquisador da Empresa 
+de Pesquisa Agropecuária e Extensão Rural de Santa Catarina (Epagri) - 
+Estação Experimental de Caçador, Caçador, SC.
+Alice Maria Quezado-Duval
+Engenheira-agrônoma, doutora em Fitopatologia, pesquisadora da Embrapa 
+Hortaliças, Brasília, DF.
+Alice Kazuko Inoue Nagata
+Engenheira-agrônoma, doutora em Fitopatologia - Virologia, pesquisadora 
+da Embrapa Hortaliças, Brasília, DF.
+Mirtes Freitas Lima
+Engenheira-agrônoma, doutora em Fitopatologia - Virologia, pesquisadora 
+da Embrapa Hortaliças, Brasília, DF.
+
+
+Apresentação
+	
+A cultura do tomateiro possui grande importância socioeconômica no 
+Brasil, sendo explorada ao longo de todo o ano, em sistemas de produção 
+diversificados, cuja produção de frutos pode ser destinada ao consumo in 
+natura (mercado de mesa) ou ao processamento industrial. O tomateiro é 
+cultivado de forma intensiva em campo aberto ou em estufas, conduzido 
+com tutoramento ou não (rasteiro), envolvendo tanto o modelo de produção 
+tradicional (convencional) como o orgânico.
+	
+Esta publicação é parte integrante dos documentos orientadores das 
+Normas Técnicas Específicas para a Produção Integrada de Tomate Tutorado 
+no Brasil, trabalho realizado pela Embrapa Hortaliças e pela Empresa de 
+Pesquisa Agropecuária e Extensão Rural de Santa Catarina (Epagri), em 
+parceria com o Ministério da Agricultura, Pecuária e Abastecimento.
+	
+Com este material bibliográfico busca-se auxiliar os agricultores, 
+profissionais da assistência técnica e extensão rural, consultores e estudantes 
+da área de Ciências Agrárias, no reconhecimento, monitoramento e manejo 
+correto de insetos e ácaros praga comumente encontrados nos cultivos de 
+tomateiro. Estão disponibilizadas imagens e informações básicas sobre 
+ciclo de vida, características corporais e os sintomas e danos ocasionados 
+ao tomateiro em decorrência da infestação de cada praga. Também são 
+apresentados os principais sintomas das viroses que estão associadas aos 
+insetos que transmitem fitovírus durante sua alimentação no tomateiro. Por 
+fim, são indicadas as principais medidas de controle que podem ser utilizadas 
+para minimizar os danos na cultura.
+	
+Acreditamos que esta publicação será uma ferramenta indispensável 
+para a implementação do manejo integrado de pragas (MIP) na cultura do 
+tomateiro, contribuindo assim para a produção de frutos de alta qualidade e 
+livres de contaminação, quer seja de origem química ou biológica.
+Warley Marcos Nascimento
+Chefe Geral da Embrapa Hortaliças
+
+
+Agradecimentos
+Aos funcionários da Embrapa Hortaliças, Moises Lopes Fernandes e José 
+Luiz Pereira, pela dedicação na tomada das fotografias de pragas e suas 
+injúrias na cultura do tomateiro.
+
+
+Sumário
+MANEJO INTEGRADO DE PRAGAS (MIP).................................................. 8
+PRAGAS DO TOMATEIRO.......................................................................... 17
+        Pragas chaves..................................................................................... 18
+             Vetores de vírus.............................................................................. 18
+             Broqueadores de frutos................................................................... 25
+        Pragas secundárias............................................................................. 28
+CONTROLE DE PRAGAS........................................................................... 37
+        Controle de vetores e viroses associadas........................................... 37
+        Controle de broqueadores de frutos.................................................... 40
+        Controle de outras pragas (secundárias)............................................. 43
+RECOMENDAÇÕES PARA USO DE AGROTÓXICOS .............................. 44
+REFERÊNCIAS............................................................................................ 53
+LITERATURA RECOMENDADA.................................................................. 53
+
+
+8
+DOCUMENTOS 192
+Manejo Integrado de Pragas (MIP)
+	
+A sustentabilidade da agricultura implica, necessariamente na 
+resolução de problemas relacionados à ocorrência de pragas, com base na 
+conservação dos recursos naturais, aumento da diversidade biológica, redução 
+no uso de agrotóxicos, maximização da produção, viabilidade econômica e 
+preservação da saúde humana, ao longo do tempo e das gerações.
+	
+Neste contexto, o Manejo Integrado de Pragas (MIP) mostra-se como 
+uma alternativa economicamente viável e mais compatível com as premissas 
+da sustentabilidade.
+	
+O MIP é uma filosofia de controle de pragas, que tem como princípios:
+•	
+Manter os níveis populacionais das pragas abaixo do nível de dano 
+econômico (NDE), ou seja, em níveis de infestação e de perdas na 
+produção que sejam toleráveis pelos agricultores, mediante a adoção 
+planejada e simultânea de diferentes técnicas ou métodos de controle 
+compatíveis entre si, de forma econômica e harmoniosa com o meio 
+ambiente; 
+•	
+Preservar e/ou incrementar os fatores de mortalidade natural, com 
+ênfase nos agentes de controle biológico, por meio do uso planejado de 
+práticas para conservação da biodiversidade e dos serviços ecológicos 
+do agroecossistema; 
+•	
+Racionalizar o uso de agrotóxicos, mediante a tomada de decisão sobre 
+o momento mais adequado de controlar as pragas, levando em conta 
+fatores econômicos, ambientais e sociais associados à cadeia de valor 
+da cultura agrícola envolvida; e
+•	
+Garantir a produção, com baixo custo e com o menor risco possível de 
+perdas econômicas.
+	
+A filosofia do MIP se materializa em um sistema de controle de pragas 
+e para sua adoção em uma cultura é necessário reconhecer as pragas e suas 
+injúrias na planta, reconhecer os inimigos naturais dessas pragas, saber o 
+período (estádio fenológico) mais sensível da cultura em relação ao ataque 
+
+
+9
+Manejo integrado de pragas do tomate para mesa
+das pragas-alvo, conhecer a biologia e a ecologia dessas pragas, realizar o 
+monitoramento de pragas e inimigos naturais mediante amostragens periódicas 
+no cultivo, dominar os mecanismos envolvidos na tomada de decisão para 
+controle das pragas, além de saber selecionar e planejar o uso dos métodos 
+(táticas) de controle disponíveis. Dentre eles: o manejo do ambiente de cultivo 
+(controles cultural, físico e mecânico), o controle legislativo, o controle por 
+comportamento, a resistência de plantas (incluindo plantas geneticamente 
+modificadas – OGM), o controle biológico (ação de predadores, parasitoides 
+e patógenos de artrópodes), a manipulação genética de pragas, o controle 
+alternativo e, quando necessário e apropriado, o controle químico com 
+produtos seletivos em favor dos organismos benéficos e de baixa toxicidade 
+ao homem. As bases e a estrutura do MIP estão representadas na Figura 1.
+Figura 1. Bases e estrutura do manejo integrado de pragas (MIP). Adaptado de 
+Gonzalez (1971). 
+	
+No MIP, a tomada de decisão de controle é baseada em sistemas 
+de amostragem (monitoramento de pragas) e em índices de tomada de 
+decisão pré-determinados para as pragas e a cultura, os quais encontram-se 
+Arte: Miguel Michereff Filho
+
+
+10
+DOCUMENTOS 192
+disponibilizados em várias publicações nacionais especializadas.
+	
+A maneira mais eficiente e econômica para se prevenir os danos 
+ocasionados por insetos e ácaros pragas consiste no monitoramento periódico 
+da cultura, o qual permite detectar o início da infestação, determinar o local 
+de entrada das pragas no cultivo, identificar como estão distribuídos os focos 
+de infestação e estimar a densidade populacional das pragas e seus danos. 
+	
+A ocorrência das pragas conforme a fenologia do tomateiro pode 
+ser observada na Figura 2 e deve ser levada em consideração quando for 
+realizado o monitoramento. 
+Figura 2. Fenologia do tomateiro e ocorrência de pragas. Adaptado de Zucchi et al. 
+(1993). 
+	
+As amostragens devem ser realizadas semanalmente e, em épocas 
+de alta infestação, duas vezes por semana, durante todo o ciclo do tomateiro, 
+ou seja, tanto no viveiro de mudas, como no cultivo definitivo (campo aberto 
+ou cultivo protegido), logo após o transplantio das mudas.
+Arte: Miguel Michereff Filho
+
+
+11
+Manejo integrado de pragas do tomate para mesa
+	
+A amostragem no cultivo pode ser realizada de forma direta, por 
+meio da contagem do número de insetos e/ou ácaros presentes sobre as 
+plantas ou da quantificação de suas injúrias às folhas ou frutos, ou ainda de 
+forma indireta, por meio do uso de armadilhas (Figura 3). Diferentes técnicas 
+de amostragem (inspeção) devem ser utilizadas na cultura do tomateiro, 
+conforme a biologia, o comportamento e o tipo de injúrias ocasionadas pelas 
+pragas-alvo (Figuras 3 e 4).
+	
+Recomenda-se que a inspeção na lavoura seja feita em quatro pontos 
+escolhidos aleatoriamente, contendo cinco plantas cada um, sequenciadas 
+na linha de plantio, totalizando 20 plantas/área ou talhão de até 1,0 ha. Em 
+áreas superiores, amostrar mais 20 plantas/ha. 
+Figura 3. Posições estratégicas na planta e nos arredores para o monitoramento de 
+pragas do tomateiro.
+	
+A cada inspeção devem ser amostradas plantas distintas, realizando 
+o caminhamento (deslocamento e inspeção) em zigue-zague, percorrendo as 
+bordaduras e o centro da área.
+Arte: Miguel Michereff Filho
+
+
+12
+DOCUMENTOS 192
+	
+No monitoramento por meio de armadilhas, estas devem ser 
+instaladas dentro do viveiro de mudas antes da semeadura, assim como 
+na área de cultivo definitivo, tanto antes como depois do transplantio das 
+mudas. Antes do transplantio, as armadilhas deverão ser instaladas apenas 
+nas bordas da área a ser cultivada. No cultivo definitivo, as armadilhas devem 
+ser distribuídas ao longo da bordadura e no interior da lavoura, de modo que 
+os dados obtidos sejam representativos de toda a área cultivada. A instalação 
+da armadilha deve ser feita em local que permita a captura dos insetos-alvo e 
+não prejudique o tráfego de máquinas e de pessoais durante as atividades de 
+rotina na área cultivada. Armadilhas adesivas para monitoramento de moscas-
+brancas, tripes e pulgões devem ser instaladas na altura do ápice das plantas. 
+Para o monitoramento de lepidópteros (mariposas) com feromônio sexual 
+sintético, as armadilhas devem ser instaladas na altura correspondente ao 
+terço mediano das plantas.
+	
+Uma vez conhecido o nível de infestação ou de injúria da praga no 
+cultivo, também é importante avaliar a população e/ou a ação dos inimigos 
+naturais (parasitismo e predação), visando obter subsídios para previsão da 
+tendência populacional da praga. 
+	
+Todas as informações sobre infestação das pragas e ocorrência de 
+inimigos naturais devem ser registradas em uma ficha de monitoramento de 
+pragas (Figura 5) e de inimigos naturais (Figura 6). Deve haver uma ficha por 
+talhão de 1 ha, onde serão anotadas as quantidades de insetos e ácaros/
+sinais de ataque da praga e/ou as porcentagens de infestação.
+	
+Inicialmente, a pessoa que realizará o monitoramento das pragas 
+deverá preencher o cabeçalho da ficha de monitoramento, anotando o nome 
+do produtor/empresa, cidade, a data do monitoramento, a área, a cultivar, a 
+idade da cultura e o talhão. Em seguida, o inspetor deve realizar a busca por 
+pragas/danos nas plantas e anotar os dados na ficha de monitoramento.
+	
+Considerando o estádio fenológico das plantas, o inspetor deve 
+realizar o procedimento de batedura de ponteiros sobre bandejas brancas 
+para contabilizar tripes, pulgões, lagartas da traça-do-tomateiro e da falsa-
+medideira; a inspeção de tripes também poderá ser realizada pela inspeção 
+direta de flores; as folhas do tomateiro deverão ser inspecionadas na busca 
+
+
+13
+Manejo integrado de pragas do tomate para mesa
+Figura 4. Técnicas de amostragem (inspeção) adotadas no monitoramento de 
+pragas do tomateiro. A - batedura do ponteiro da planta em bandeja branca; B - 
+inspeção visual das folhas/folíolos; C - inspeção visual de flores; D - inspeção visual 
+de frutos; E - armadilhas atrativas (amarela e azul) adesivas; F - armadilha modelo 
+Delta, iscada com feromônio sexual sintético, para captura de mariposas machos 
+(F). 
+Fotos: Miguel Michereff Filho (A e B) e Ítalo Lüdke (C-F)
+A
+B
+C
+D
+E
+F
+
+
+14
+DOCUMENTOS 192
+por adultos de mosca-branca, ovos e lagartas vivas da traça, lagarta-militar, 
+broca-grande, larvas vivas da mosca-minadora e ácaros; os frutos do 
+tomateiro devem ser inspecionados na busca por ovos ou danos provocados 
+pela traça, broca-pequena, lagarta-militar, falsa-medideira, broca-grande 
+e ácaro-do-bronzeamento. A utilização de lupas de aumento (20 vezes ou 
+mais) facilitará a visualização de pequenos insetos, ovos e sinais da broca-
+pequena e ácaros. Machos da traça e da broca-pequena capturados nas 
+armadilhas de feromônio devem ser anotados em local específico na ficha de 
+monitoramento. Após a contagem, o inspetor deve realizar a troca dos pisos 
+adesivos das armadilhas ou remover os machos capturados com auxílio de 
+uma espátula. 
+	
+No final do processo, o inspetor deve anotar na ficha de monitoramento 
+as quantidades totais de insetos ou ácaros/danos amostrados, as médias e 
+calcular as porcentagens de infestação utilizando-se a seguinte fórmula:
+	
+        
+                                           
+	
+A partir desses dados é possível efetuar a tomada de decisão sobre a 
+necessidade de controle (geralmente pulverizar ou não um inseticida/acaricida, 
+ou liberar ou não um inimigo natural no cultivo). Portanto, uma determinada 
+praga só será controlada quando seu nível populacional ou intensidade de 
+ataque for igual ou maior que o nível de controle (NC). Na prática, utiliza-se o 
+NC como guia para adoção de medidas de manejo curativo (principalmente 
+controle químico).
+
+
+15
+Manejo integrado de pragas do tomate para mesa
+Arte: Juracy Caldeira Lins Junior
+Figura 5. Modelo de ficha de monitoramento de pragas na cultura do tomateiro. 
+
+
+16
+DOCUMENTOS 192
+Figura 6. Modelo de ficha de monitoramento de inimigos naturais na cultura do tomateiro.
+Arte: Juracy Caldeira Lins Junior
+
+
+17
+Manejo integrado de pragas do tomate para mesa
+	
+Informações sobre a descrição e o ciclo biológico da praga, os 
+sintomas de infestação e injúrias, as técnicas de amostragem e o nível de 
+controle (NC) serão apresentados a seguir para as principais pragas-alvo do 
+tomateiro.
+Pragas do tomateiro
+	
+Diferentemente do sistema tradicional de controle de pragas 
+(convencional), no MIP um inseto ou ácaro fitófago (herbívoro) somente é 
+considerado praga quando causa dano econômico, ou seja, quando pode 
+causar prejuízo financeiro igual ou superior ao custo do seu controle. 
+	
+Independente do sistema de produção adotado, vários insetos e 
+ácaros fitófagos utilizam o tomateiro como planta hospedeira, desde a fase 
+de produção de mudas em viveiro até a colheita dos frutos na lavoura. A 
+identificação correta das pragas pelo agricultor ou técnico, durante as 
+inspeções de rotina no cultivo, é fundamental para o sucesso no controle 
+desses problemas fitossanitários. Para facilitar o reconhecimento das 
+pragas do tomateiro e seu manejo, os insetos e ácaros fitófagos podem ser 
+reunidos em dois grupos distintos: pragas chaves e pragas secundárias. São 
+consideradas pragas-chave da cultura do tomateiro aquelas espécies de 
+insetos e ácaros fitófagos que, frequentemente, provocam danos econômicos, 
+exigindo adoção criteriosa e integrada de medidas de controle. Pragas 
+secundárias ou ocasionais são aquelas que, embora possam causar injúria 
+ao tomateiro, só provocam prejuízos esporadicamente e, quando isso ocorre, 
+verifica-se em áreas localizadas e em determinado período. Além disso, a 
+maior ou menor importância de cada praga varia de acordo com a região, a 
+época de cultivo e o sistema de produção.
+	
+Para obter informações mais detalhadas e imagens das pragas e 
+dos inimigos naturais encontrados em cultivos de tomateiro recomenda-se 
+consultar as publicações técnicas da Embrapa Hortaliças “Documentos 169 e 
+175” de 2019, os quais podem ser baixados gratuitamente e cujas referências 
+estão disponibilizadas no final desta publicação.
+
+
+18
+DOCUMENTOS 192
+Pragas chaves
+Vetores de vírus
+Moscas-brancas 
+Bemisia tabaci (Gennadius, 1889) (Hemiptera: Aleyrodidae)
+Trialeurodes vaporariorum Westwood, 1856
+Ciclo biológico: ovo, ninfa e adulto. Duração – 14 a 27 dias.
+Sintomas de ataque e injúrias: Adultos e ninfas (Figuras 7 A-B) sugam a 
+seiva e reduzem o vigor das plantas; na alimentação injetam toxinas que 
+causam anomalias nos frutos (amadurecimento irregular, polpa descolorida, 
+esponjosa e sem sabor) (Figura 8 A); excretam substância açucarada 
+(honeydew) que favorece a formação de fumagina (Capnodium sp., fungo 
+que cresce em forma de lâmina fina e preta) recobrindo as folhas (Figura 8 B) 
+e frutos; e transmitem vírus. 
+	
+No Brasil, já foram detectadas quatro espécies crípticas do complexo 
+B. tabaci: duas invasoras, Middle East-Asia Minor 1 - MEAM1 (também 
+denominada biótipo B) e Mediterranean – MED (biótipo Q) e duas espécies 
+nativas, New World 1 - NW1 (biótipo A) e New World 2. A espécie B. tabaci 
+MEAM1 é prevalente, amplamente distribuída no país e destaca-se como 
+praga-chave do tomateiro. As espécies do complexo B. tabaci são vetores 
+de vírus causadores do mosaico-dourado ou geminivirose (tomato severe 
+rugose virus - ToSRV e tomato mottle leaf curl virus - ToMoLCV, dentre outros) 
+(Figuras 9 A-C) e do amarelão ou crinivirose (tomato chlorosis virus - ToCV) 
+(Figuras 10 A-B). Já a mosca-branca T. vaporariorum ocorre principalmente 
+nas regiões elevadas e/ou de clima ameno e transmite o vírus causador da 
+crinivirose (tomato chlorosis virus - ToCV).
+	
+As moscas-brancas são pragas com alta relevância em lavoura de 
+tomateiro e exigem monitoramento rigoroso na fase de viveiro e nos primeiros 
+40 dias após o transplantio em razão da transmissão de vírus. 
+
+
+19
+Manejo integrado de pragas do tomate para mesa
+Fotos: Alexandre Pinho de Moura
+Fotos: Miguel Michereff Filho
+Figura 7. Mosca-branca (Bemisia tabaci). A – adulto; B – ninfa.
+Figura 8. Sintomas de infestação da mosca-branca (Bemisia tabaci). A – maturação 
+irregular de frutos; B – fumagina na folha.
+Amostragem: 
+•	
+Inspeção da face ventral (abaxial) de uma folha expandida do terço 
+superior da planta em busca de adultos, num total de 20 plantas por área 
+ou talhão;
+•	
+Contagem do número de adultos capturados em armadilha adesiva de 
+coloração amarela, considerando no mínimo 20 armadilhas por área ou 
+talhão.
+Nível de controle:
+•	 Em média, 1(um) adulto por planta; 
+A
+B
+A
+B
+
+
+20
+DOCUMENTOS 192
+Figura 9. Sintomas de geminivirose em tomateiro. A – mosaico nas folhas do terço 
+apical; B – deformação e enrolamento foliar; C – nanismo.
+Fotos: Alice Kazuko Inoue Nagata
+Figura 10. Tomateiros com sintomas de crinivirose. A – clorose entre as nervuras nas 
+folhas mais velhas (baixeiras); B – enrolamento foliar e folhas com aspecto coriáceo.
+A
+Fotos: Alice Kazuko Inoue Nagata
+A
+B
+•	 Detecção de adultos capturados nas armadilhas.
+Tripes 
+Frankliniella schultzei (Trybom, 1910) (Thysanoptera: Thripidae)
+F. occidentalis (Pergande, 1895)
+Thrips tabaci Lindeman, 1889
+T. palmi Karny, 1925
+B
+C
+
+
+21
+Manejo integrado de pragas do tomate para mesa
+Ciclo biológico: ovo, larva, pupa e adulto. Duração – 12 a 25 dias.
+Sintomas de ataque e injúrias: Adultos e larvas (Figuras 11  A-B) perfuraram os 
+tecidos vegetais e sugam o conteúdo das células; a região atacada apresenta 
+pequenas manchas irregulares de coloração esbranquiçada ou prateada, com 
+presença de pontuações escuras (gotículas fecais). O principal dano deve-
+se à transmissão de vírus causadores do vira-cabeça-do-tomateiro (tomato 
+spotted wilt virus orthotospovirus - TSWV; groundnut ringspot orthotospovirus 
+- GRSV e tomato chlorotic spot orthotospovirus – TCSV) (Figuras 12 A-C e 
+13 A-B), por larvas e adultos. Praga com alta relevância na fase de viveiro e 
+nos primeiros 45 dias após o plantio das mudas no campo, em decorrência da 
+transmissão de vírus. Frankliniella schultzei é o principal transmissor.
+Amostragem:
+•	
+Agitação ou batedura de um ponteiro da planta sobre um recipiente 
+plástico de fundo branco para a quantificação de insetos (adultos e 
+larvas), num total de 20 plantas por área ou talhão;
+•	
+Contar o número de adultos capturados em armadilhas adesivas de 
+coloração amarela e azul, considerando no mínimo 20 armadilhas por 
+área ou talhão;
+•	
+Inspeção de uma inflorescência do terço superior da planta em busca de 
+adultos, com lupa de bolso de 20 vezes de aumento.
+Figura 11. Tripes (Frankliniella schultzei). A – adulto; B – larva. F
+Fotos: Miguel Michereff Filho
+A
+B
+
+
+22
+DOCUMENTOS 192
+Nível de controle:
+•	
+Em média, 1(um) adulto por planta (ponteiro e/ou inflorescência 
+inspecionada); 
+•	
+Detecção de adultos capturados nas armadilhas.
+Figura 12. Sintomas de Vira-cabeça em tomateiro. A – mosaico e arroxeamento e 
+manchas necróticas nas folhas e no caule; B – deformação foliar e curvatura do topo 
+da planta; C – nanismo. 
+Figura 13. Sintomas de Vira-cabeça em tomateiro – anéis amarronzados (necróticos) 
+nos frutos.
+Fotos: Alice Kazuko Inoue Nagata
+A
+B
+C
+Foto:  Alice Kazuko Inoue Nagata
+Foto: Mirtes Freitas Lima
+
+
+23
+Manejo integrado de pragas do tomate para mesa
+Pulgões 
+Aphis gossypii Glover, 1877 (Hemiptera: Aphididae)
+Macrosiphum euphorbiae (Thomas, 1878) 
+Myzus persicae (Sulzer, 1776)  
+Ciclo biológico:  ninfa e adulto. Duração – 5 a 15 dias.
+Sintomas de ataque e injúrias: Adultos (Figuras 14 A-B) e ninfas sugam a 
+seiva e injetam de toxinas nas plantas; sua excreção favorece a formação de 
+fumagina nas folhas; adultos e ninfas transmitem os vírus causadores do topo 
+amarelo do tomateiro/amarelo baixeiro (potato leafroll virus – PLRV), fogo-
+mexicano potato virus Y – PVY) (Figura  15) e o mosaico-amarelo (pepper 
+yellow mosaic virus – PepYMV) (Figura 16). Infestam plantas no viveiro de 
+mudas e na lavoura após o transplantio. Tanto os pulgões como as viroses 
+têm baixa incidência e relevância nos cultivos de tomateiro sob controle 
+rigoroso de moscas-brancas e tripes.
+Amostragem:
+•	
+Agitação ou batedura de um ponteiro da planta sobre um recipiente 
+plástico de fundo branco para a quantificação de insetos (adultos alados 
+e ápteros e ninfas), num total de 20 plantas por área ou talhão;
+•	
+Contar o número de adultos capturados em armadilhas adesivas de 
+coloração amarela, considerando no mínimo 20 armadilhas por área ou 
+talhão.
+Nível de controle:
+•	
+Em média, 1(um) adulto por planta (ponteiro); 
+•	
+Detecção de adultos capturados nas armadilhas.
+
+
+24
+DOCUMENTOS 192
+Figura 14. Pulgões. A – adulto áptero de Myzus persicae; B – adulto áptero de Aphis 
+gossypii.
+Figura 15. Sintomas de Fogo-mexicano (PVY) em tomateiro – lesões necróticas no 
+meio da planta, evoluindo para as partes mais novas. Não se observa sintomas nos 
+frutos.
+Figura 16. Sintomas de Mosaico-amarelo (PepYMV) em tomateiro – mosaico e 
+mosqueado em folhas de tomateiro, principalmente nas folhas mais novas. Não se 
+observa sintomas nos frutos. 
+A
+Fotos: Miguel Michereff Filho
+B
+Foto: Alice Kazuko Inoue Nagata
+Foto: Alice Kazuko Inoue Nagata
+
+
+25
+Manejo integrado de pragas do tomate para mesa
+Broqueadores de frutos
+Traça-do-tomateiro 
+Tuta absoluta (Meyrick, 1917)(Lepidoptera: Gelechiidae)
+Ciclo biológico: ovo, larva, pupa e adulto. Duração – 25 a 40 dias.
+Sintomas de ataque e injúrias: A mariposa deposita os ovos (Figuras 17 
+A-B) isoladamente em folhas jovens, flores e frutos pequenos dos terços 
+superior e médio da planta. A lagarta (Figuras 17 A-C) abre uma galeria (mina) 
+larga dentro do folíolo, deixando fezes em seu interior (Figura 18 A); perfura 
+os ponteiros (gemas apicais) e brotações (Figura 18 B); ataca botões florais 
+e broqueia o fruto (Figura 18 C). Os frutos atacados apresentam perfurações 
+de coloração escura e galerias junto à região do cálice, com a presença de 
+fezes. Alta infestação pode causar seca das folhas e aborto de flores e de 
+frutos pequenos (Figura 18 D). Praga chave da cultura, da fase de mudas em 
+viveiro até a colheita dos frutos.
+Figura 17. Traça-do-tomateiro (Tuta absoluta). A – adulto; B – ovo; C – lagarta. 
+Amostragem:
+•	
+Agitação ou batedura de um ponteiro da planta sobre um recipiente 
+plástico de fundo branco para a quantificação de lagartas, num total de 
+20 plantas por área ou talhão;
+Fotos: José Luiz Pereira (B); Miguel Michereff Filho (C)
+Foto: Moises Lopes Fernandes (A)
+A
+B
+C
+
+
+26
+DOCUMENTOS 192
+•	
+Inspeção de uma folha expandida do terço superior com mina (galeria) 
+e de uma folha do terço médio da mesma planta em busca de lagartas 
+vivas;
+•	
+Inspeção de cinco frutos por planta com diâmetro de até 2cm, 
+preferencialmente na mesma penca, em busca de ovos, lagartas vivas e 
+sinais de ataque;
+•	
+Contagem do número de mariposas capturadas em armadilha iscada com 
+feromônio sexual sintético da espécie, a partir das 10h, considerando no 
+mínimo duas armadilhas por hectare. A troca periódica do piso adesivo 
+da armadilha e do liberador de feromônio deve seguir as instruções do 
+fabricante.
+Figura 18. Sintomas de infestação da traça-do-tomateiro (Tuta absoluta). A – galeria 
+alargada no folíolo com lagarta e detritos (fezes) pretos; B – perfuração de ramo, com 
+detritos pretos; C – broqueamento de fruto; D – ataque severo, com secamento das 
+folhas minadas.
+Fotos: Miguel Michereff Filho (A-C); Ítalo Rocha Guedes (D)
+A
+B
+D
+C
+
+
+27
+Manejo integrado de pragas do tomate para mesa
+Nível de controle: (baseado no que for atingido primeiro)
+•	
+20% de ponteiros com presença de lagarta viva na batedura;
+•	
+20% de folhas com larvas vivas;
+•	
+5% de plantas com ovos, lagartas vivas ou sinais de ataque nos frutos;
+•	
+Captura acumulada de 10 machos por armadilha, em média, ao longo da 
+semana.
+Broca-pequena-do-fruto 
+Neoleucinodes elegantalis (Guenée, 1854) (Lepidoptera: Crambidae)
+Ciclo biológico: ovo, larva, pupa e adulto. Duração – 30 a 50 dias.
+Sintomas de ataque e injúrias: A mariposa (Figura 19 A) deposita os ovos 
+isoladamente ou em grupo, no pecíolo, cálice e na face inferior das sépalas ou 
+na lateral do fruto pequeno. A lagarta (Figura 19 B) broqueia o fruto. Ao nascer 
+raspa a superfície dos frutos e perfura o pericarpo, deixando uma pequena 
+cicatriz escura. A lagarta se desenvolve dentro do fruto, alimentando-se da 
+polpa e sementes (Figura 19 C e D). Ao final da fase larval, o inseto abandona 
+o fruto e o orifício de saída da lagarta possibilita a entrada de umidade, insetos 
+(pequenos besouros e moscas) e microrganismos saprófitos, que causam 
+o apodrecimento do fruto atacado, inutilizando-o para o mercado de frutos 
+frescos e para o processamento industrial. Praga-chave da cultura a partir 
+do florescimento, principalmente no cultivo de tomate de mesa em campo 
+aberto, em clima com umidade relativa superior a 50%.
+Amostragem:
+• 
+Inspeção de uma penca de frutos por planta, com frutos de até 2cm de 
+diâmetro, em busca de ovos e sinais de ataque das lagartas, num total de 
+20 plantas por área ou talhão;
+• 
+Contagem do número de mariposas capturadas em armadilha iscada com 
+feromônio sexual sintético da espécie, a partir das 10h, considerando no 
+mínimo duas armadilhas por hectare.
+
+
+28
+DOCUMENTOS 192
+Nível de controle: (baseado no que for atingido primeiro)
+•	
+3% de pencas com ovos ou sinais de ataque nos frutos;
+•	
+Captura de 1 (um) macho por semana, na média das armadilhas.
+Figura 19. Broca-pequena-do-fruto (Neoleucinodes elegantalis). A – adulto; B – lagarta; 
+C e D – danos nos frutos que indicam a infestação do tomateiro pela praga.
+Pragas Secundárias
+Mosca-minadora 
+Liriomyza huidobrensis (Blanchard, 1926) (Diptera: Agromyzidae)
+L. sativae Blanchard, 1938
+L. trifolii(Burgess, 1880)	
+Ciclo biológico: ovo, larva, pupa e adulto. Duração – 14 a 30 dias.
+Fotos: Moises Lopes Fernandes (A e B); Alexandre Pinho de Moura (C e D)
+A
+B
+D
+C
+
+
+29
+Manejo integrado de pragas do tomate para mesa
+Sintomas de ataque e injúrias: A fêmea (Figura 20 A) deposita o ovo dentro 
+do tecido do folíolo (postura endofítica). A larva (Figura 20 B) abre galeria 
+ou mina translúcida, estreita e irregular, em forma de serpentina no folíolo 
+(Figura 20 C). Alta infestação provoca necrose e secamento dos folíolos e 
+desfolha precoce, com impacto negativo na produção e qualidade dos frutos.
+Amostragem:
+•	
+Inspeção de uma folha do terço médio com mina (galeria) por planta, em 
+busca de lagartas vivas, num total de 20 plantas por área ou talhão.
+Nível de controle:
+•	
+25% das folhas minadas com presença de larvas vivas ou presença do 
+inseto em 10% das plantas amostradas.
+Figura 20. Mosca-minadora (Liriomyza spp.). A – adulto; B – larva; C – galerias 
+estreitas, em forma de serpentina no folíolo.
+Lagarta-militar (complexo Spodoptera) 
+Spodoptera eridania Stoll, 1781 (Lepidoptera: Noctuidae)
+Spodoptera cosmioides Walker 1858
+Spodoptera frugiperda (J. E. Smith, 1797)
+A
+B
+C
+Foto: Moises Lopes Fernandes (C)
+Fotos: Jorge Anderson Guimarães (A-B)
+
+
+30
+DOCUMENTOS 192
+Foto: Moises Lopes Fernandes
+Foto: Alexandre Specht
+Ciclo biológico: ovo, larva, pupa e adulto. Duração – 21 a 46 dias.
+Sintomas de ataque e injúrias: A mariposa (Figuras 21 A-C) deposita os ovos 
+em grupo (massa) e coberto por escamas (Figura 22), na face ventral (abaxial) 
+das folhas baixeiras. A lagarta (Figuras 23 A-C) pode seccionar as plantas 
+rente ao solo e matá-las logo após o transplantio (como a lagarta-rosca); 
+quando nova a lagarta raspa a face inferior do folíolo, tornando-o rendilhado 
+(Figura 24 A). Posteriormente, a lagarta broqueia os frutos (principal dano), 
+os quais apresentam grandes perfurações próximas ao cálice (Figura 24 B). 
+O ataque aos frutos inicia-se do terço inferior (folhas baixeiras e primeiros 
+cachos) para o ápice da copa da planta. Surtos frequentes ocorrem na região 
+Centro-Oeste, na transição entre as estações seca e chuvosa do ano.
+Figura 21. Lagarta-militar (complexo Spodoptera). Adultos com as asas abertas, 
+apresentando manchas características da espécie. A – macho de S. eridania; B – fêmea 
+de S. cosmioides; C – macho de S. frugiperda. 
+Figura 22. Lagarta-militar (complexo Spodoptera). Grupo de ovos com coloração 
+esverdeada ou alaranjada, depositados em camadas, na face inferior do folíolo e com 
+escamas da mariposa.
+Foto: Alexandre Specht (A e C)
+Foto: Moises Lopes Fernandes (B)
+B
+C
+A
+
+
+31
+Manejo integrado de pragas do tomate para mesa
+Figura 23. Lagarta-militar (complexo Spodoptera). Aspecto do inseto no final da fase 
+larval da espécie. A – S. eridania; B – S. cosmioides; C – S. frugiperda.
+Figura 24. Sintomas de infestação da lagarta-militar (similar para as três espécies de 
+Spodoptera). A – folíolos rendilhados, nas folhas mais velhas (baixeiras); B – fruto 
+broqueado.
+Amostragem:
+•	
+Inspeção da face ventral (abaxial) de uma folha do terço inferior (baixeira) 
+da planta em busca de massas de ovos e lagartas pequenas, num total 
+de 20 plantas por área ou talhão.
+•	
+Inspeção de cinco frutos por planta com diâmetro de até 2cm, 
+preferencialmente na mesma penca, em busca de lagartas vivas e sinais 
+de ataque.
+Fotos: Alexandre Pinho de Moura
+A
+B
+A
+B
+C
+Fotos: Alexandre Pinho de Moura (A);
+Moises Fernandes (B) 
+Foto: Alexandre Specht (C)
+
+
+32
+DOCUMENTOS 192
+Nível de controle:
+•	
+10% de plantas como massas de ovos; 
+•	
+3% de pencas com lagartas ou sinais de ataque nos frutos.
+Lagarta-falsa-medideira (complexo Plusiinae) 
+Chrysodeixis includens (Walker, [1858]) (Lepidoptera: Noctuidae) 
+Trichoplusia ni (Hübner, 1802)
+Rachiplusia nu (Guenée, 1852)
+Ciclo biológico: ovo, larva, pupa e adulto. Duração – 21 a 40 dias.
+Sintomas de ataque e injúrias: A mariposa (Figura 25 A) deposita o ovo 
+isoladamente na face inferior de folíolos das folhas novas, brotações e flores. A 
+lagarta (Figura 25 B) inicialmente causa desfolha acentuada no terço superior 
+da planta e quando desenvolvida ataca os frutos ainda verdes, nos quais 
+deixa vários orifícios e pode se alimentar de grande parte da polpa (Figura 
+25 C). A espécie C. includens é a principal Plusiinae que infesta cultivos de 
+tomateiro nas regiões Centro-Oeste e Nordeste brasileiras. Rachiplusia nu 
+tem maior ocorrência na região Sul brasileira.
+Amostragem:
+•	
+Agitação ou batedura de um ponteiro da planta sobre um recipiente 
+plástico de fundo branco para a quantificação de lagartas;
+•	
+Inspeção de cinco frutos por planta, preferencialmente na mesma penca, 
+em busca de lagartas vivas e sinais de ataque.
+Nível de controle:
+•	
+1 (uma) lagarta por ponteiro, em média, ou 20% dos ponteiros com 
+lagartas; 
+•	
+3% de pencas com lagartas ou sinais de ataque nos frutos.
+
+
+33
+Manejo integrado de pragas do tomate para mesa
+Figura 25. Lagarta-falsa-medideira (Chrysodeixis includens). A – adulto com as asas 
+em repouso; B – lagarta; C – fruto severamente broqueado pela praga. 
+Broca-grande (complexo Heliothinae) 
+Helicoverpa armigera (Hübner, [1808])(Lepidoptera: Noctuidae)
+H. zea (Boddie, 1850)
+Chloridea virescens (Fabricius, 1777)
+Ciclo biológico:  ovo, larva, pupa e adulto. Duração – 35 a 60 dias.
+Sintomas de ataque e injúrias: A mariposa (Figura 26 A e B) deposita o 
+ovo isoladamente na folha logo acima da inflorescência ou diretamente nas 
+flores (sépalas e pétalas) e nos frutos pequenos. A lagarta (Figura 27 A) 
+ataca folhas, ramos, brotações, ponteiros, flores e frutos. Atua principalmente 
+como broqueadora de frutos. Perfura os frutos, alimenta-se da polpa e deixa 
+grandes orifícios (Figura 27 B). Esses orifícios de alimentação tornam o 
+fruto suscetível à infestação por pequenos besouros e larvas de moscas e 
+a infecções secundárias por microrganismos saprófitos, os quais promovem 
+o apodrecimento do fruto. Em alta infestação, a lagarta de Helicoverpa spp. 
+pode permanecer dentro do fruto até a pupação.
+A
+B
+C
+Fotos: Moises Lopes Fernandes (A); 
+Miguel Michereff Filho (B)
+Foto: Raphael Augusto de Castro e Melo (C)
+
+
+34
+DOCUMENTOS 192
+Figura 26. Broca-grande. A – adulto de Helicoverpa armigera; B – adulto de Chloridea 
+virescens.
+Figura 27. Broca-grande. A – lagarta de Helicoverpa armigera; B – fruto broqueado, 
+com grandes orifícios. 
+Amostragem:
+•	
+Inspeção de uma folha do terço superior da planta, próxima a uma 
+inflorescência, em busca de ovos e lagartas pequenas;
+•	
+Inspeção de cinco frutos por planta, preferencialmente na mesma penca, 
+em busca de ovos e sinais de ataque das lagartas, num total de 20 plantas 
+por área ou talhão.
+Nível de controle:
+•	
+Presença de ovos ou lagartas em circulação, em 3% das pencas de frutos 
+e/ou das folhas inspecionadas.
+Fotos: Moises Lopes Fernandes
+A
+B
+Fotos: Moises Lopes Fernandes
+A
+B
+
+
+35
+Manejo integrado de pragas do tomate para mesa
+Ácaro-do-bronzeamento 
+Aculops lycopersici (Massee, 1937) (Acari: Eriophyidae)
+Ciclo biológico:ovo, imaturo (larva e ninfa) e adulto. Duração – 6 dias.
+Sintomas de ataque e injúrias: O adulto (Figura 28 A) e as formas imaturas 
+perfuram as células da epiderme vegetal com seu aparelho bucal e sugam o 
+conteúdo que extravasa. As folhas atacadas ficam amareladas, bronzeadas, 
+levemente retorcidas, com aspecto brilhante na face inferior e secam sem 
+murchar; a infestação também é detectada pelo bronzeamento da base dos 
+ramos (Figura 28 B), frutos pequenos e bronzeados ou com pele áspera e 
+queimada (escaldadura) pelo sol (Figura 28 C). A infestação inicia-se nas 
+folhas mais velhas, ou seja, do terço inferior em direção ao ápice das plantas. 
+Alta infestação pode reduzir substancialmente a produção ou causar a morte 
+da planta. Maior relevância em cultivos de tomate tutorado sob ambiente 
+protegido (estufa), em condições de clima quente e seco.
+Amostragem:
+•	
+Inspeção de uma folha do terço médio da planta, para detecção de 
+sintomas de ataque e presença de ácaros; detecção dos ácaros somente 
+possível com lupa com aumento de 40 vezes ou mais.
+Figura 28. Ácaro-do-bronzeamento (Aculops lycopersici). A – adulto; B – bronzeamento 
+dos ramos; C – fruto com epiderme áspera e queimada pela exposição ao sol. 
+Foto: Juracy Caldeira Lins Jr (C)
+A
+B
+C
+Fotos: Miguel Michereff Filho (A e B)
+
+
+36
+DOCUMENTOS 192
+Nível de controle:
+•	
+10 % de folhas sintomáticas e com presença de ácaros.
+Ácaro-rajado 
+Tetranychus urticae Koch, 1836(Acari: Tetranychidae)
+Ciclo biológico: ovo, imaturos (larva e ninfa) e adulto. Duração – 7 a 21 dias.
+Sintomas de ataque e injúrias: O adulto (Figura 29 A) e as formas imaturas 
+(Figura 29 B) perfuram as células da epiderme vegetal com seu aparelho 
+bucal (quelíceras modificadas em forma de estiletes) e sugam o conteúdo 
+que extravasa (Figura 29 C). Alojam-se na face inferior dosfolíolos, sendo 
+protegidos pela teia produzida pelos ácaros adultos. A face superior do folíolo 
+inicialmente apresenta pontuações cloróticas (amarelo-esbranquiçadas), que 
+posteriormente se unem, ficam marrom-avermelhadas e secam, causando 
+a senescência da folha. A infestação inicia-se nas folhas mais velhas, ou 
+seja, do terço inferior em direção ao ápice das plantas. Alta infestação causa 
+redução da fotossíntese, perda de vigor da planta, desfolha precoce, redução 
+da produção e a ocorrência de frutos com superfície áspera e queimada 
+(escaldadura) pela exposição ao sol. Maior relevância em cultivos de tomate 
+tutorado sob ambiente protegido (estufa), em regiões de clima quente e seco.
+Figura 29. Ácaro-rajado (Tetranychus urticae). A – fêmea adulta; B – ovos, formas 
+imaturas e teia; C – injúria na face inferior do folíolo de tomateiro causada pela 
+alimentação da praga.
+Fotos: Miguel Michereff Filho
+A
+B
+C
+
+
+37
+Manejo integrado de pragas do tomate para mesa
+Amostragem:
+•	
+Inspeção de uma folha do terço médio da planta, para detecção dos 
+sintomas de ataque e a presença de ácaros.
+Nível de controle:
+•	
+10 % de folhas com presença de ácaros.
+Controle de pragas
+Controle de vetores e viroses associadas
+•	
+Implantar barreiras vivas (capim elefante, milheto ou cana-de-açúcar) ao 
+redor do cultivo, no intuito de retardar a infestação por insetos vetores;
+•	
+Usar cultivares de tomateiro com resistência às viroses;
+•	
+Produzir as mudas em local protegido com tela antiafídeo (viveiro) 
+(Figura 30 A), distante de cultivos infestados com moscas-brancas, tripes, 
+pulgões e viroses associadas e longe do local definitivo de plantio. Outra 
+opção é a aquisição de mudas de procedência confiável;
+•	
+Evitar o estabelecimento de áreas novas de plantio próximo a lavouras de 
+tomateiro mais velhas e infectadas com viroses;
+•	
+Garantir o isolamento dos talhões por data e área, evitando o 
+escalonamento de plantio;
+•	
+Plantar os talhões no sentido contrário à direção do vento, iniciando do 
+mais velho para o mais novo, para desfavorecer o deslocamento das 
+pragas dos talhões velhos para os novos;
+•	
+Realizar a adubação química conforme análise de solo ou foliar e 
+requerimentos da cultura, evitando-se excesso de nitrogênio;
+•	
+Utilizar cobertura do solo com superfície refletora de raios ultravioleta 
+
+
+38
+DOCUMENTOS 192
+(casca de arroz, palha ou mulch plástico de coloração prateada ou 
+aluminizada), para dificultar a colonização dos vetores (Figura 30 B);
+•	
+Selecionar mudas sadias e vigorosas para o transplantio;
+•	
+Em localidades com histórico de alta incidência de viroses (mosaico-
+dourado, amarelão e vira-cabeça) associadas a moscas-brancas e 
+tripes, deve-se efetuar o tratamento de mudas com inseticidas de ação 
+sistêmica (imersão das mudas em bandejas ou via esguicho), dois dias 
+antes do transplantio;
+•	
+Transplantar somente mudas com mais de 21 dias de idade (Figura 30 C);
+•	
+Adequar a época de plantio para a região, de maneira que coincida com 
+o período de baixa infestação de moscas-brancas, tripes e pulgões no 
+campo (preferencialmente na estação chuvosa);
+•	
+Destruir plantas hospedeiras alternativas (ervas daninhas, plantas 
+espontâneas de tomateiro, maxixe, abóboras, feijoeiro, caupi ou soja, 
+dentre outras e plantas silvestres) de dentro da área de cultivo e também 
+de suas proximidades, visando eliminar fontes dos vírus e/ou dos vetores 
+e que podem atuar como reservatório para infecção da cultura;
+•	
+Adotar o controle químico de vetores com base no monitoramento 
+e ao atingir o nível de controle (NC). Evitar a aplicação preventiva e 
+calendarizada de inseticidas após o transplantio de mudas de tomateiro; 
+•	
+Empregar a irrigação por aspersão, com gotas grandes, por poucas horas 
+no dia e apenas algumas vezes na semana, para controle mecânico de 
+tripes e pulgões (Figura 30 D);
+•	
+Manejar adequadamente a irrigação para evitar o estresse hídrico e 
+favorecer o estabelecimento rápido das plantas (Figura 30 E); 
+•	
+Eliminar plantas de tomateiro com sintomas de viroses e descartá-las 
+longe do cultivo; 
+•	
+Destruir e incorporar os restos culturais logo após a última colheita;
+
+
+39
+Manejo integrado de pragas do tomate para mesa
+•	
+Destruir cultivos de tomateiro abandonados;
+•	
+Realizar a rotação de culturas com plantas não hospedeiras de moscas-
+brancas, tripes, pulgões e dos vírus associados (evitar a sucessão com 
+solanáceas, cucurbitáceas e leguminosas);
+•	
+Para o controle de moscas-brancas e pulgões, visando exclusivamente a 
+redução de sua infestação em regiões de baixa incidência de viroses, pode-
+se utilizar: 1) óleo mineral, óleo vegetal emulsionável ou inseticida botânico 
+à base de óleo de nim (Azadirachta indica A. Juss), na concentração de 
+0,25% (250 ml para 100 litros de água); 2) inseticidas biológicos à base 
+dos fungos entomopatogênicos Isaria (= Cordyceps) spp., Lecanicillium 
+(= Akanthomyces) spp. e Beauveria bassiana (Balsamo) Vuillemin, 1912, 
+quando a umidade relativa do ar for superior a 60% e 3) suspensão de 
+sabões ou detergente neutro em água (concentrações de 0,6 a 0,8%); 
+•	
+No caso da doença “vira-cabeça”, o uso de inseticidas químicos (com 
+ação sistêmica ou de contato) para controle de tripes (larvas e adultos) 
+pode reduzir a incidência dessa virose desde que sejam adotados os 
+procedimentos técnicos recomendados para a aplicação dos produtos 
+químicos e logo no início da infestação das plantas por insetos adultos nas 
+bordaduras do cultivo. Em caso de baixa incidência de viroses, também 
+pode-se empregar o inseticida botânico a base de nim pulverizado 
+na parte aérea do tomateiro. Fungos entomopatogênicos, utilizados 
+isoladamente, não propiciam controle eficaz de tripes e redução da 
+doença “vira-cabeça”;
+•	
+O uso de inseticidas químicos e de óleos (mineral ou vegetal emulsionável) 
+para controle de pulgões não é eficaz para impedir a transmissão dos 
+vírus transmitidos por picada de prova (PVY e PepYMV) no cultivo e a sua 
+disseminação dentro da área de plantio. Nesse tipo de transmissão, os 
+insetos vetores são capazes de transmitir o vírus em poucos segundos, 
+antes mesmo de sofrerem a ação dos inseticidas e óleos. Para vírus 
+transmitidos por pulgões, de maneira persistente ou circulativa (no caso, 
+PRLV), o tempo necessário para que ocorra a transmissão às plantas é 
+maior e, neste caso, o uso de inseticidas e de óleos pode contribuir para 
+a redução da virose no cultivo;
+• Usar, quando necessário, inseticida com seletividade em favor dos inimigos 
+naturais e polinizadores e
+• Fazer a rotação de inseticidas conforme o modo de ação. 
+
+
+40
+DOCUMENTOS 192
+Figura 30. Medidas para o controle de pragas vetores de vírus. A – viveiro telado com 
+mudas de tomateiro em desenvolvimento; B – cobertura do solo nas entrelinhas com 
+palha de capim-elefante Napier; C – transplantio de mudas de tomateiro com idade 
+superior a 21 dias para tolerar estresses bióticos e abióticos no ambiente de cultivo; 
+D – irrigação por aspersão como método de controle mecânico de pragas em cultivo de 
+tomateiro; E – manejo da irrigação do tomateiro através da leitura da tensão do solo a 
+20 e 40 cm de profundidade.
+Controle de broqueadores de frutos
+•	
+Implantar barreiras vivas (capim elefante, milheto ou cana-de-açúcar) ao 
+redor do cultivo, no intuito de retardar a infestação;
+•	
+Evitar o estabelecimento de áreas novas de plantio próximo a lavouras de 
+tomateiro, jiloeiro, berinjela e pimentão;
+•	
+Produziras mudas em locais protegidos com tela, distantes de campos 
+infestados com brocas e longe do local definitivo de plantio;
+•	
+Plantar os talhões no sentido contrário ao vento, do mais velho para o 
+mais novo, para desfavorecer o deslocamento das pragas dos talhões 
+velhos para os novos;
+•	
+Destruir plantas hospedeiras de brocas (tigueras de tomateiro, ervas 
+Fotos: Alice Kazuko Inoue Nagata (A e C)
+A
+B
+E
+C
+D
+Fotos: Waldir Aparecido Marouelli (B e D); 
+Juracy Caldeira Lins Jr (E)
+
+
+41
+Manejo integrado de pragas do tomate para mesa
+daninhas, e plantas silvestres) que estejam dentro da área de cultivo e 
+também nas suas proximidades;
+•	
+Em cultivos com até 2.500 plantas, efetuar o ensacamento de 
+inflorescências (logo após a polinização – murchamento das pétalas) ou 
+pencas (Figuras 31 A-C), mantendo as embalagens até a colheita;
+•	
+Empregar a irrigação por aspersão, com gotas grandes, por poucas horas 
+no dia e apenas algumas vezes na semana, para controle mecânico de 
+ovos e lagartas da traça-do-tomateiro;
+•	
+Retirar os frutos atacados que permanecem nas plantas;
+•	
+Coletar frutos caídos no chão e enterrá-los em trincheira longe do cultivo 
+para evitar novas infestações (Figura 32 A);
+•	
+Destruir e incorporar os restos culturais logo após a última colheita 
+(Figuras 32 B e C);
+•	
+Destruir cultivos abandonados;
+•	
+Realizar a rotação de culturas com plantas não hospedeiras das brocas 
+(evitar tomateiro, jiloeiro, berinjela, pimentão, grão-de-bico, milho e soja);
+•	
+Utilizar inseticidas químicos específicos para a espécie-alvo, que sejam 
+registrados para o tomateiro, aqueles menos tóxicos ao homem e 
+seletivos em favor dos inimigos naturais e polinizadores; como alternativa, 
+pulverizar óleo de sementes de nim na concentração de 0,25% (volume/
+volume) na calda; 
+•	
+Fazer a rotação de inseticidas conforme o modo de ação; e
+•	
+Adotar o controle biológico mediante liberação inundativa (massal) do 
+parasitoide de ovos Trichogramma pretiosum Riley, 1879 (Figura 33) 
+em combinação com inseticida biológico à base da bactéria Bacillus 
+thuringiensis (Berliner, 1915) ou inseticidas químicos seletivos a esse 
+parasitoide, tanto em cultivos sob ambiente protegido como em campo 
+aberto (para T. absoluta, N.  elegantalis, H. armigera, H. zea e C. 
+virescens).
+
+
+42
+DOCUMENTOS 192
+Figura 31. Ensacamento de inflorescências e pencas para proteção contra infestação 
+de lagartas broqueadoras de frutos. A – frutos ensacados em plástico polipropileno 
+microperfurado; B e C – frutos ensacados em sacos de papel. 
+Figura 32. Prática realizada após a última colheita. A – frutos caídos no solo após o 
+ataque de pragas e abandono do cultivo (manejo errado); B e C – remoção e destruição 
+de restos culturais para redução dos focos de infestação de pragas (manejo correto).
+Figura 33. Estaca com pedaço de cartela contendo ovos parasitados por Trichogramma 
+pretiosum, como forma de liberação inundativa do inimigo natural no cultivo de tomateiro. 
+Foto: Miguel Michereff Filho (B)
+Fotos: Alice K. Inoue Nagata (A e C)
+A
+B
+C
+Foto: Miguel Michereff Filho
+ Fotos: José Ronaldo de Macedo (B e C)
+Foto: Janaína Pereira dos Santos (A)
+A
+B
+C
+
+
+43
+Manejo integrado de pragas do tomate para mesa
+Controle de outras pragas (secundárias)
+•	
+Além dos métodos de controle citados para vetores e broqueadores de 
+frutos, recomendam-se algumas medidas complementares como:
+•	
+Utilizar placas ou faixas adesivas de coloração amarela para a captura 
+massal de mosca-minadora (Liriomyza spp.) e vaquinhas (Diabrotica 
+spp.); 
+•	
+Utilizar armadilhas confeccionadas com garrafas tipo PET contendo 
+atrativo alimentar como sementes, raízes, caules e frutos de Cayaponia 
+tayuya (Vell.)   Cogniaux (tajujá ou taiuiá) ou Lagenaria siceraria (Molina) 
+Standl. (porongo ou cabaça) para captura massal de vaquinhas (Figura 
+34);
+•	
+Evitar o estabelecimento de áreas novas de plantio próximo a lavouras de 
+tomateiro, jiloeiro, berinjela, pimentão, feijoeiro, soja e mamona;
+•	
+Empregar a irrigação por aspersão, com gotas grandes, por poucas horas 
+no dia e três vezes na semana, para controle mecânico do ácaro-rajado 
+(T. urticae) e do ácaro-do-bronzeamento (A. lycopersici);
+•	
+Evitar a adoção de pulverizações preventivas e calendarizadas de 
+inseticidas e acaricidas químicos, para preservação de inimigos naturais 
+no cultivo e no entorno da lavoura; e
+Figura 34. Armadilha de garrafa PET com isca de tajujá para coleta massal de adultos 
+de vaquinhas (Diabrotica spp.). 
+Foto: Janaína Pereira dos Santos
+
+
+44
+DOCUMENTOS 192
+•	
+Utilizar inseticidas químicos específicos para a espécie-alvo, que sejam 
+registrados para o tomateiro e aqueles menos tóxicos ao homem; como 
+alternativa, pulverizar óleo de sementes de nim na concentração de 
+0,25% (volume/volume) na calda.
+	
+A lista completa e atualizada dos inseticidas, químicos e biológicos 
+para pragas da cultura do tomateiro pode ser consultada no AGROFIT, no 
+seguinte endereço: http://extranet.agricultura.gov.br/agrofit_cons/principal_
+agrofit_cons.
+	
+É importante reforçar ao produtor que não considere apenas o controle 
+químico como única forma de controle das pragas. O uso de inseticidas e 
+acaricidas sempre deve estar associado a outros métodos de controle. 
+Para o uso de inseticidas e acaricidas químicos várias precauções devem 
+ser tomadas para se alcançar a eficiência de controle desejada, causar o 
+mínimo de desequilíbrio biológico e evitar a seleção de populações de pragas 
+resistentes aos produtos. 
+Recomendações para uso de agrodóxicos
+	
+O controle químico com uso de inseticidas e acaricidas sintéticos 
+não deve ser utilizado como único método de controle de pragas dentro 
+do sistema de produção integrada de tomate. A aplicação de inseticidas 
+de forma calendarizada deve ser evitada, portanto, o controle só deve 
+ser realizado quando as pragas atingirem o nível de controle. Inseticidas 
+químicos utilizados de forma indiscriminada e sem critérios técnicos podem 
+acarretar sérios problemas como surgimento de populações de insetos e 
+ácaros resistentes, eliminação de inimigos naturais e polinizadores, causar 
+intoxicações de pessoas no campo, deixar resíduos nos alimentos, além 
+de provocar contaminação ambiental. Para minimizar esses problemas, no 
+sistema de produção integrada de tomate, o produtor deve buscar a integração 
+de métodos apropriados para manter a população das pragas abaixo do nível 
+de dano. Dentre esses métodos, preconiza-se o monitoramento das pragas 
+e a utilização das diversas táticas de controle disponíveis, como o controle 
+químico com inseticidas, o controle biológico com predadores, parasitoides e 
+microrganismos patogênicos (fungos, bactérias e vírus), o controle cultural, 
+o uso de inseticidas botânicos, caldas fitoprotetoras (calda bordalesa, calda 
+
+
+45
+Manejo integrado de pragas do tomate para mesa
+sulfocálcica, etc.), entre outros. Mesmo quando um bom programa de 
+controle biológico para uma determinada praga for estabelecido, pode haver 
+momentos em que seja necessário a aplicação de um inseticida ou acaricida 
+sintético. Entretanto, ao utilizar esses produtos, o agricultor deve estar ciente 
+dos riscos (principalmente devido à sua toxicidade para seres humanos, bem 
+como ao meio ambiente) e seguir as recomendações técnicas específicas. 
+	
+De um modo geral, as recomendações para o uso de inseticidas e 
+acaricidas dentro do sistema de produção integrada de tomate são:
+a) Escolha corretamente o inseticida/acaricida.
+	
+O produto a ser aplicado só deve ser escolhido após a correta 
+identificação do inseto ou ácaro praga. Identificar qual estágio do ciclo de 
+vida que a praga se encontra e conhecer a sua biologia é fundamental, pois, 
+muitas vezes, um inseticida que é eficaz contra a fase jovem (imaturo) do 
+inseto ou ácaro apresenta baixa eficiência no controle dos adultos. O hábito 
+do inseto também tem influência direta na escolha do inseticida. Por exemplo, 
+inseticidas sistêmicos serão mais eficazes no controle de insetos que vivem 
+dentro dos tecidos vegetais ou aqueles insetos que se alimentam na parte 
+inferior das folhas sugando a seiva das plantas (sugadores), enquanto que 
+os inseticidas de contato serão mais indicados para controlar insetos que 
+se encontram sobre a folhagem, como lagartas e coleópteros. Inseticidas 
+sistêmicos aplicados na parte aérea, em algumas situações específicas, 
+também podem compensar a falta de cobertura da vegetação como resultado 
+das limitações da tecnologia de aplicação e garantir a eficiência de controle 
+da praga. No momento de escolher o produto a ser aplicado, o agricultor 
+deve optar, sempre que possível, por aqueles que tenham ação específica 
+contra a praga identificada. Produtos com largo espectro de ação, ou seja, 
+aqueles que tem ação tóxica sobre uma ampla faixa de insetos e ácaros, 
+devem ser evitados. Tais produtos causam desequilíbrios biológicos que 
+podem resultar em surtos (explosões populacionais) de pragas secundárias.
+Também é importante dar preferência aos inseticidas que sejam seletivos, 
+ou seja, aqueles produtos que tenham mais efeito sobre as pragas e menos 
+efeito sobre os inimigos naturais. Cabe ressaltar que a seletividade varia com 
+o tipo de inseticida, a forma de aplicação, condições de cultivo e de ambiente, 
+o tipo de cultura, a forma de aplicação, a praga visada, a dosagem utilizada 
+
+
+46
+DOCUMENTOS 192
+e a formulação do produto. Atualmente existem aplicativos específicos para 
+consulta, sites de empresas fabricantes de insumos biológicos (biofábricas) 
+e de instituições de ensino e pesquisa que disponibilizam informações sobre 
+seletividade e compatibilidade entre agrotóxicos e organismos benéficos.
+	
+Outro parâmetro importante relacionado à escolha do inseticida é o 
+intervalo de segurança, que também é conhecido como período de carência 
+do produto. A carência é definida como o período entre a última aplicação 
+do produto e a colheita. Obviamente, inseticidas com períodos de carência 
+longo não devem ser utilizados se a colheita dos frutos está próxima ou 
+já foi iniciada, caso contrário frutos que serão colhidos nos dias seguintes 
+ao tratamento apresentarão altos níveis de resíduos colocando em risco a 
+saúde dos consumidores. Outro aspecto importante a ser considerado é a 
+toxicidade do inseticida. É sempre aconselhável tentar usar produtos com 
+baixa toxicidade (faixas verde e azul) para proteger a saúde do agricultor, e 
+também aqueles que têm o menor impacto no meio ambiente. Por exemplo, 
+a toxicidade aguda dos piretroides ao homem e mamíferos em geral não é 
+tão alta, entretanto, esta classe de produtos tem uma toxicidade ambiental 
+muito alta e sua aplicação matará praticamente todos os inimigos naturais, 
+polinizadores e muitos outros organismos não-alvo (principalmente peixes e 
+outros organismos aquáticos).
+	
+Por fim, o inseticida ou acaricida escolhido deve possuir registro no 
+Ministério da Agricultura, Pecuária e Abastecimento (MAPA) para a cultura do 
+tomateiro. A lista completa e atualizada dos produtos químicos e biológicos 
+para controle de pragas do tomateiro pode ser consultada no Agrofit (http://
+extranet.agricultura.gov.br/agrofit_cons/principal_agrofit_cons).
+b) Use a quantidade adequada de inseticida/acaricida
+	
+Depois de escolhido o inseticida/acaricida, o agricultor deve ler 
+atentamente a bula do produto para consultar a dose correta a ser aplicada. 
+Muitos produtos apresentam faixas de dose para uma determinada praga. 
+Nesses casos, a dose a ser utilizada vai depender do tamanho ou do estágio 
+de desenvolvimento da praga e o quanto a população está alta ou baixa. 
+Aplicar inseticida acima da dose recomendada, além de ser um desperdício 
+de dinheiro, significa um impacto desnecessário no meio ambiente. Por outro 
+
+
+47
+Manejo integrado de pragas do tomate para mesa
+lado, aplicar inseticidas abaixo da dose recomendada pode resultar em falhas 
+no controle e contribuir para o desenvolvimento de populações da praga 
+resistentes.
+	
+É de fundamental importância que a quantidade de produto a ser 
+aplicado seja precisa. Para tanto, a utilização de vasilhames graduados tais 
+como copos, baldes e provetas são muito úteis para medição de produtos 
+líquidos. Uma balança de precisão é indispensável para medir produtos 
+com formulação sólida. A medição precisa é essencial para a eficácia dos 
+produtos contra a praga alvo. Além disso, a utilização da dose correta garante 
+que os resíduos nos alimentos estejam dentro dos limites de segurança aos 
+consumidores, proporciona o uso eficiente de inseticidas e dinheiro e não 
+causa fitotoxicidade.
+	
+É importante não exceder as doses estabelecidas na bula do 
+produto. Tanto a supderdosagem, como a subdosagem podem favorecer a 
+evolução da resistência aos agrotóxicos. Se a dose máxima recomendada 
+não estiver controlando as pragas, investigue os motivos das falhas como 
+pouca cobertura na pulverização, equipamentos desregulados ou resistência 
+da população da praga ao inseticida. 
+c)  Aplique o inseticida/acaricida no momento correto
+	
+Determinar o melhor momento para aplicar o controle químico é uma 
+tarefa muito dinâmica. No campo, cada situação é diferente e não há regras 
+gerais para decidir se e quando pulverizar. O controle tardio é umas das 
+principais razões para o insucesso no manejo de pragas. Por esse motivo, o 
+agricultor deve monitorar regularmente o plantio para observar a presença e o 
+aumento populacional de insetos e ácaros praga na lavoura. Em muitos casos, 
+a presença reduzida de uma praga pode ser tolerada e somente quando a 
+sua população aumenta significativamente, e não há ocorrência de inimigos 
+naturais na área, o agricultor deve aplicar inseticidas. No entanto, quando se 
+tratar de pragas vetores de vírus (tripes e moscas-brancas principalmente) o 
+agricultor deve fazer o controle antes que a população desses insetos aumente. 
+	
+Os técnicos e agricultores devem conhecer a biologia da praga para 
+que a aplicação do inseticida ou acaricida seja dirigida para os estádios mais 
+vulneráveis da praga. Alguns estádios de desenvolvimento de insetos e ácaros, 
+
+
+48
+DOCUMENTOS 192
+como o estádio de ovo, raramente são controlados pelos inseticidas e acaricidas. 
+Larvas ou ninfas jovens são mais facilmente controlados e requerem menos 
+inseticida do que larvas grandes ou insetos adultos. Os inseticidas geralmente 
+não afetam as pupas pelo fato de muitas delas estarem protegidas por casulos 
+ou escondidas no solo ou em partes da planta onde os inseticidas não as 
+atingem. Além disso, também é de suma importância que os agricultores e 
+técnicos conheçam o comportamento e capacidade das pragas em danificar a 
+cultura.
+	
+O monitoramento deve ser realizado pelo menos uma vez por 
+semana, caminhando através da cultura e verificando as diferentes partes 
+das plantas quanto a presença de pragas, inimigos naturais e sintomas de 
+doenças. Vistoriar de 10 a 20 plantas por glebas de 1.000 m2 é o suficiente. É 
+importante registrar o número de pragas e inimigos naturais encontrados, pois 
+a manutenção de registros é a única maneira de saber se o problema está 
+aumentando ou não. Se o número de insetos praga não aumentou de uma 
+semana para a outra, isso significa que seus inimigos naturais ou algumas 
+outras causas estão impedindo que a população da praga aumente e, 
+portanto, não há necessidade, por enquanto, de usar inseticidas. No sistema 
+de produção integrada de tomate, as pulverizações devem ser realizadas 
+somente quando a população das pragas atingirem o nível de controle. Para 
+saber o nível de controle das principais pragas do tomateiro, consulte o item 2.
+	
+As aplicações de inseticidas devem ser realizadas, preferencialmente, 
+no final da tarde ou a noite quando as temperaturas começam a diminuir, a 
+fim de evitar a evaporação rápida do produto aplicado. Além disso, o risco 
+de fitointoxicação é maior quando os inseticidas e acaricidas são aplicados 
+nos horários mais quentes do dia. Pelo mesmo motivo, deve-se evitar fazer 
+pulverizações quando as plantas se encontram em estresse hídrico.
+d)  Aplique os inseticidas/acaricidas corretamente
+	
+Uma vez que a praga atingiu o nível de controle e o agricultor optou por 
+realizar o controle químico com inseticidas, a aplicação desses produtos deve 
+ser feita de forma adequada e no momento correto. Não adianta nada seguir 
+todas as recomendações descritas anteriormente e, em seguida, fazer uma 
+pulverização mal feita sem seguir os preceitos técnicos para essa operação. 
+Muitas vezes, as principais falhas no controle de pragas estão mais relacionadas 
+ao processo de aplicação dos inseticidas do que ao produto em si. 
+
+
+49
+Manejo integrado de pragas do tomate para mesa
+e)  Rotacione inseticidas/acaricidas com modos de ação diferentes
+Populações de insetos e ácaros pragas podem apresentar resistência à maioria 
+dos inseticidas e acaricidas utilizados nos cultivos, principalmente quando há 
+grande pressão de seleção nas populações dessas pragas em razão do uso 
+incorreto e abusivo dos produtos químicos. Para evitar o desenvolvimento 
+da resistência, os produtores são constantemente incentivados a seguir um 
+plano de manejo da resistência aos inseticidas/acaricidas que se baseia na 
+rotação de produtos com modo de ação distintos. Uma síntese dos modos de 
+ação e dos grupos químicos dos principais inseticidas e acaricidas utilizados 
+para controle de pragas do tomateiro é apresentada na Figura 35.
+Figura 35. Modos de ação e grupos químicos dos principais inseticidas e acaricidas 
+utilizados no controle de pragas do tomateiro. 
+De um modo geral, para implementar um plano de manejo da resistência, 
+técnicos e agricultores devem seguir as recomendações a seguir.
+	
+Passo 1. Aprenda sobre o sistema de classificação dos modos de 
+ação de inseticidas e acaricidas proposto pelo Comitê de Ação à Resistência 
+a Inseticidas (www.irac-br.org) no qual cada modo de ação é representado 
+por um código distinto, representado por um número ou por um número e 
+uma letra. No rótulo e na bula de todos os inseticidas e acaricidas é possível 
+encontrar esse código logo abaixo do nome do ingrediente ativo, como mostra 
+a Figura 36.
+Arte: Thaíse K. R. Dias
+
+
+50
+DOCUMENTOS 192
+	
+Este sistema é muito mais simples de usar do que tentar lembrar a 
+qual grupo químico cada produto pertence (por exemplo, organofosforados, 
+diacilhidrazinas, benzoilureias, diamidas).
+	
+A resistência dos insetos ou ácaros a um produto em um grupo químico 
+geralmente causa resistência a todos os outros produtos relacionados, ou 
+seja, aqueles que pertencem ao mesmo grupo químico e tem mesmo número 
+de grupo estampado no rótulo. Por exemplo, é muito alta a probabilidade 
+de uma população de insetos resistentes a deltametrina (piretroide, grupo 
+3A) também ser resistente a outros piretroides, como a lambda-cialotrina, 
+betaciflutrina, etofenproxi (todas pertencentes ao grupo 3A).
+Figura 36. Exemplo de um rótulo de inseticida destacando o código do modo de ação 
+do produto. 
+Fonte: Agrofit (2020).
+	
+O uso repetido de um único produto ou de produtos com o mesmo 
+código de modo de ação por tempo prolongado (semanas a meses 
+consecutivos) para o controle de insetos e ácaros fitófagos selecionará uma 
+proporção cada vez maior de indivíduos na população que, geneticamente 
+serão menos suscetíveis aos ingredientes ativos utilizados. Se o produtor não 
+mudar de atitude, esse fenômeno ocorrerá continuamente e a população de 
+pragas gradualmente se tornará mais e mais resistente até a ocorrência de 
+redução expressiva da eficiência de controle a campo ou de nenhum controle, 
+mesmo quando o produto é aplicado de acordo com as recomendações da 
+bula.
+	
+Para evitar ou mitigar a resistência aos agrotóxicos, sempre que 
+possível, deve-se utilizar o mesmo modo de ação em apenas uma geração 
+
+
+51
+Manejo integrado de pragas do tomate para mesa
+da praga-alvo, pois isto reduzirá a pressão de seleção em favor de indivíduos 
+resistentes. Por convenção, uma geração corresponderia à duração média 
+do ciclo biológico da espécie (de ovo a adulto ou de ninfa a adulto). A 
+frequência das aplicações dentro desse período também não poderá ser 
+elevada, não ultrapassando uma pulverização por semana, assim como deve 
+ser respeitada a quantidade máxima recomendada de aplicações do produto 
+durante o ciclo ou safra da cultura, conforme informações apresentadas na 
+bula. Um exemplo prático de rotação de inseticidas com diferentes modos de 
+ação é apresentado na Figura 37.
+Figura 37. Esquema de rotação de inseticidas para o controle da traça-do-tomateiro 
+(Tuta absoluta) levando em consideração o ciclo biológico da praga (ovo a adulto) ou 
+tempo de uma geração (janela temporal) que corresponde a 28 dias. Dentro desse 
+intervalo podem ser feitas até quatro aplicações do mesmo inseticida antes de trocar 
+o modo de ação do produto.
+	
+Na Tabela 1 é apresentado o tempo médio para troca do modo de 
+ação dos inseticidas considerando o ciclo biológico da praga (ovo-adulto ou 
+ninfa-adulto).
+	
+Passo 2. Crie uma lista de inseticidas e acaricidas que você costuma 
+utilizar durante a safra separando-os pelo código do modo de ação e pelas 
+pragas que podem aparecer na sua lavoura. Faça as pulverizações tomando 
+o cuidado para que produtos com o mesmo código não sejam aplicados 
+consecutivamente (preferencialmente não mais que três aplicações de um 
+mesmo produto para cada praga). Lembre-se: sempre rotacione produtos 
+com códigos de modo de ação diferentes. Tome cuidado com aqueles 
+produtos que apresentam em sua formulação mistura de ingredientes ativos.
+Arte: Thaíse K. R. Dias
+
+
+52
+DOCUMENTOS 192
+	
+Certifique-se que o produto inseticida/acaricida aplicado na sequência 
+tenha um código de modo de ação diferente dos que foram aplicados 
+anteriormente (produto com mistura de i.a.), conforme ilustrado na Figura 38.
+Tabela 1. Tempo necessário para a troca do modo de ação do inseticida/acaricida 
+em função do tipo de praga do tomateiro.
+Praga
+Trocar o modo de ação a cada:
+Pulgões
+7 dias
+Ácaro-do-bronzeamento
+7 dias
+Ácaro-branco
+7 dias
+Ácaro-rajado
+10 dias
+Tripes 
+12 dias
+Mosca-branca
+21 dias
+Mosca-minadora
+21 dias
+Traça, broca-pequena, broca-grande e 
+demais lagartas
+28 dias
+	
+Figura 38. Sequências corretas e incorretas de aplicação de inseticidas levanto em 
+consideração o código do modo de ação escrito no rótulo do produto. Adaptado de 
+IRAC-BR.
+	
+Passo 3. Aplique o produto na dose correta, no momento certo e 
+utilize equipamentos de pulverização devidamente calibrados. 
+	
+Passo 4. A etapa mais importante: siga a sequência planejada de 
+aplicações de inseticidas/acaricidas e mantenha registros dessas aplicações 
+no caderno de campo. Anote também se o controle da praga foi satisfatório 
+ou não. Esses registros ajudarão a determinar se possíveis falhas no 
+controle foram devidas ao aumento da tolerância das pragas aos produtos, a 
+problemas na mistura e/ou aplicação, ou algum outro fator.
+
+
+53
+Manejo integrado de pragas do tomate para mesa
+Referências
+AGROFIT: consulta aberta. Brasília, DF: Ministério da Agricultura, Pecuária e Abastecimento, 
+2003. Disponível em: https://agrofit.agricultura.gov.br/agrofit_cons/principal_agrofit_cons.
+AGROFIT. Acesso em: 20 out. 2020.
+ZUCCHI, R. A.; SILVEIRA NETO, S.; NAKANO, O. Guia de identificação de pragas 
+agrícolas. Piracicaba: FEALQ, 1993. 139 p.
+Literatura recomendada
+BACCI, L.; PICANÇO, M. C.; QUEIROZ, R. B.; SILVA, E. M. Sistemas de tomada de decisão 
+de controle dos principais grupos de ácaros e insetos-praga em hortaliças no Brasil. In: 
+ZAMBOLIM, L.; LOPES, C. A.; PICANÇO, M. C.; COSTA, H. (ed.). Manejo integrado de 
+doenças e pragas: hortaliças. Viçosa, MG: UFV, 2007. p. 423‑462.
+BACCI, L.; PICANÇO, M. C.; FERNANDES, F. L.; SILVA, N. R. MARTINS, J. C. Estratégias 
+e táticas de manejo dos principais grupos de ácaros e insetos-praga em hortaliças no Brasil. 
+In: ZAMBOLIM, L.; LOPES, C. A.; PICANÇO, M. C.; COSTA, H. (ed.). Manejo integrado de 
+doenças e pragas: hortaliças. Viçosa, MG: UFV, 2007. p. 463-504.
+BECKER, W.F.; WAMSER, A.F.; FELTRIN, A.L.; SUZUKI, A.; SANTOS, J.P.; VALMORBIDA, J.; 
+HAHN, L.; MARCUZZO, L.L; MUELLER, S. Sistema de produção integrada para o tomate 
+tutorado em Santa Catarina. Florianópolis: Epagri, 2016. 149 p.
+COMITÊ DE AÇÃO À RESISTENCIA A INSETIDAS (Brasil).Rótulo com mais informação: 
+mais eficiência no manejo da resistência. Disponível em: https://92813ac4-b3b4-47f4-a8b3-
+43c4292d561c.filesusr.com/ugd/2bed6c_8ee808fce5274781838b2bbf961458ab.pdf. Acesso 
+em: 05 ago. 2020.
+COSTA-LIMA, T. C.; SILVA, A. C.; PARRA, J. R. P. Moscas-minadoras do gênero Liriomyza 
+(Diptera: Agromyzidae): aspectos taxonômicos e biologia. Petrolina: Embrapa Semiárido, 
+2015. 36p. (Embrapa Semiárido. Documentos, 268). Disponível em: https://ainfo.cnptia.
+embrapa.br/digital/bitstream/item/140807/1/SDC268.pdf. Acesso em: 23 ago. 2022.
+DENT, D. Insect pest management. 2. ed. Wallingford: CABI Publishing, 2000. 410 p.
+DITTAR, P.; FREEMAN, J.; PARET, M.; SMITH, H. Vegetable production handbook of 
+Florida. Gainesville: University of Florida, Institute of Food and Agricultural Sciences, 2019.
+Disponível em: https://pt.scribd.com/document/472184278/Vegetable-Production-Handbook-of-
+Florida-219-2020-pdf. Acesso em: 23 ago. 2022.
+DUTRA, C.; SCHNEIDER, A.; DE CONTI, B.; FRANCISCHINI, F.; OLIVEIRA, J. A.; MUÑOZ, 
+A.; BORN, B. Manual de bolso: identificação de lagartas pragas. São Paulo: Monsanto. 2015. 
+17 p. Disponível em: www.refugiocomdesconto.com.br/Manual_de_Bolso.pdf. Acesso em: 30 
+nov.2020.
+EHLER, L.E. Perspective integrated pest management (IPM): definition, historical development 
+and implementation, and other IPM. Pest Management Science, v. 62, p. 787-789, 2006.
+
+
+54
+DOCUMENTOS 192
+FONTES, E. M. G.; VALADARES-INGLIS, M. C. (ed.). Controle biológico de pragas da 
+agricultura. Brasília, DF: Embrapa, 2020. 510p.
+FORNAZIER, M. J.; PRATISSOLI, D.; MARTINS, D.S. Principais pragas da cultura do tomateiro 
+estaqueado na região das montanhas do Espírito Santo. In: TOMATE. Vitória, ES: Incaper, 
+2010. p.185-226.
+GALLO, D.; NAKANO, O.; SILVEIRA NETO, S.; CARVALHO, R. P. L.; BAPTISTA, G. C.; BERTI 
+FILHO, E.; PARRA, J. R. P.; ZUCCHI, R. A.; ALVES, S. B.; VENDRAMIM, J. D.; MARCHINI, L. 
+C; LOPES, J. R. S.; OMOTO, C. Entomologia Agrícola. Piracicaba: Fealq, 2002. 920p.
+GRAVENA, S.; BENVENGA, S.R. Manual prático para manejo de pragas do tomate. 
+Jaboticabal, SP: Gravena-ManEcol Ltda., 2003. 144p.
+INOUE-NAGATA, A. K. Doenças viróticas. In: ALVARENGA, M. A. R. (ed.). Tomate: produção 
+em campo, em casa-de-vegetação e em hidroponia. 2. ed. rev. e ampl. Lavras: UFLA, 2013. p. 
+327-344.
+INSECTICIDE RESISTANCE ACTION COMMITTEE. Iracmode of action 
+classification scheme, 2017. Disponível em: https://docs.wixstatic.com/
+ugd/2bed6c_0942c97d407e4a5eaa83467af2f79d47.pdf. Acesso em: 03 ago. 2020. 
+LEWIS, T. Thrips, their biology, ecology and economic importance. London: Academic 
+Press, 1973. 349p.
+LIMA, M. F.; MICHEREFF FILHO, M. Vira-cabeça do tomateiro: sintomas, epidemiologia, 
+transmissão e medidas de manejo. Brasília, DF: Embrapa Hortaliças, 2015. 16p. (Embrapa 
+Hortaliças. Comunicado Técnico, 110). Disponível em:https://ainfo.cnptia.embrapa.br/digital/
+bitstream/item/131429/1/COT-110.pdf. Acesso em: 23 ago. 2022.
+MACEDO, J. R.; CAPECHE, C. L.; MELO, A. S.; PAIVA, D. W.; SILVA, L. V.; BASTOS, 
+L. H. P.; CARDOSO, M. H. W. M. Bases tecnológicas para o cultivo de tomate no 
+sistema de produção TOMATEC®. Rio de Janeiro: Embrapa Solos, 2016. 45p. (Embrapa 
+Solos. Documentos, 189). Disponível em: https://ainfo.cnptia.embrapa.br/digital/bitstream/
+item/158098/1/Doc-189-Cultivo-de-tomate-sistema-Tomatec.pdf. Acesso em: 22 ago. 2022.
+McDOUGALL, S.; WATSON, A.; STODART, B.; NAPIER, T.; KELLY, G.; TROLDAHL, D.; 
+TESORIERO, L. Tomato, capsicum, chilli and eggplant: a field guide for the identification 
+of insect pests, beneficials, diseases and disorders in Australia and Cambodia. Canberra: 
+Australian Centre for International Agricultural Research, 2013. 233p. (ACIAR Monograph, 157). 
+Disponível em: https://www.aciar.gov.au/publication/books-and-manuals/tomato-capsicum-chilli-
+and-eggplant-field-guide-identification-insect-pests-beneficial. Acesso em: 23 ago. 2022.
+MICHEREFF FILHO, M.; GUIMARÃES, J. A.; MOURA, A. P.; LIZ, R. S. Pragas do tomateiro. 
+In: CLEMENTE, F. M. V. T.; BOITEUX, L. S. (org.). Produção de tomate para processamento 
+industrial. Brasília, DF: Embrapa, 2012. p. 265-300.
+MICHEREFFFILHO, M.; GUIMARÃES, J. A.; MOURA, A. P.; VILELA, E. F. Traça-do-tomateiro, 
+Tuta absoluta (Meyrick). In: VILELA, E. F.; ZUCCHI, R. A.  (ed.). Pragas introduzidas no 
+Brasil: insetos e ácaros.Piracicaba: Fealq, 2015. p. 500-515. Parte 3 - Horticultura e plantas 
+forrageiras.
+MICHEREFF FILHO, M.; INOUE-NAGATA, A. K. Guia para o reconhecimento e manejo 
+
+
+55
+Manejo integrado de pragas do tomate para mesa
+da mosca-branca, da geminivirose e da crinivirose na cultura do tomateiro. Brasília, 
+DF:Embrapa Hortaliças, 2015. 16 p. (Embrapa Hortaliças. Circular Técnica, 142). Disponível 
+em:http://www.infoteca.cnptia.embrapa.br/infoteca/handle/doc/1021765. Acesso em: 10 dez. 
+2020.
+MICHEREFF FILHO, M; SOUSA, N. C. M.; SCHMIDT, F.G.V.; TORRES, J. B.; TORRES, 
+C. S. A. S.; MOURA, A. P. DE; GUIMARÃES, J. A. Guia para identificação de inimigos 
+naturais em cultivos de hortaliças. Brasília, DF: Embrapa Hortaliças, 2019. 88 p. (Embrapa 
+Hortaliças. Documentos, 169). Disponível em: http://ainfo.cnptia.embrapa.br/digital/bitstream/
+item/214496/1/DOC-169-Internet-2.pdf. Acesso em: 10 dez. 2020.
+MICHEREFF FILHO, M. SCHMIDT, F. G. V.; SOUSA, N. C. M.; SPECHT, A.; MOURA, A. P.; 
+LOPES, L. H. R.; INOUE-NAGATA, A. K.; LIMA, M. F.; GUIMARÃES, J. A.; TORRES, J. B. Guia 
+para identificação de pragas do tomateiro. Brasília, DF: Embrapa Hortaliças, 2019. 102 p. 
+(Embrapa Hortaliças. Documentos, 175). Disponível em: https://www.embrapa.br/busca-de-
+publicacoes/-/publicacao/1124115/guia-de-identificacao-para-pragas-do-tomateiro. Acesso em: 
+10 dez. 2020.
+MORAES, G. J. de; FLECHTMANN, C. H. W. Manual de acarologia: acarologia básica e 
+ácaros de plantas cultivadas no Brasil. Ribeirão Preto: Holos, 2008. 288 p.
+MORAIS, E. G. F.; PICANÇO, M. C.; SENA, M. E.; BACCI, L.; SILVA, G. A.; CAMPOS, M. 
+R. Identificação das principais pragas de hortaliças no Brasil. In: ZAMBOLIM, L.; LOPES, C. 
+A.; PICANÇO, M. C.; COSTA, H. (ed.). Manejo integrado de doenças e pragas: hortaliças. 
+Viçosa, MG: UFV: DFP, Cap. 11, p.381-422, 2007.
+MOREIRA, H. J. C.; ARAGÃO, F. D. Manual de pragas da soja. Campinas: FMC, 2009.  144 
+p. Disponível em: https://www.fmcagricola.com.br/portal/manuais/pragas_soja/index.html. 
+Acesso em: 30 nov. 2020.
+MOSCARDI, F.; BUENO, A. F.; SOSA-GÓMEZ, D. R.; ROGGIA, S.; HOFFMAN-CAMPO, C. 
+B.; POMARI, A. F.; CORSO, I. V.; YANO, S. A. C. Artrópodes que atacam as folhas da soja. In: 
+HOFFMAN-CAMPO, C. B.; CORRÊA-FERREIRA, B. S.; MOSCARDI, F. (ed.). Soja: manejo 
+integrado de insetos e outros artrópodes-praga. Brasília, DF: Embrapa, 2012. p. 213-309.
+MOTA-SANCHEZ, D.; WISE, J. C. The Arthropod Pesticide Resistance Database. Michigan: 
+Michigan State University, 2022. Disponível em: http://www.pesticideresistance.org/display.
+php?page=species&arId=41. Acesso em: 01 out. 2020.
+MOURA, A. P. Manejo integrado de pragas: estratégias e táticas de manejo para o controle 
+de insetos e ácaros-praga em hortaliças. Brasília, DF: Embrapa Hortaliças, 2015. 28p. 
+(Embrapa Hortaliças. Circular técnica, 141). Disponível em:https://ainfo.cnptia.embrapa.br/
+digital/bitstream/item/127768/1/CT-141.pdf. Acesso em: 22 ago. 2022.
+MOURA, A.P.; MICHEREFF FILHO, M.; GUIMARÃES, J.A.; LIZ, R.S. Manejo integrado de 
+pragas do tomateiro para processamento industrial.Brasília: Embrapa Hortaliças, 2014. 
+(Embrapa Hortaliça. Circular técnica, 129).Disponível em: https://ainfo.cnptia.embrapa.br/digital/
+bitstream/item/105986/1/12-05-CT-129.pdf. Acesso em: 22 ago. 2022.
+PAPINI, S.; ANDREA, M.M.; LUCHINI, L.C. Segurança ambiental no controle químico de 
+pragas e vetores. São Paulo: Atheneu, 2014.
+PRATISSOLI, D. Guia ilustrado de pragas da cultura do tomateiro. Alegre: UFES, Centro de 
+
+
+56
+DOCUMENTOS 192
+Ciências Agrárias, 2015. 45p.
+SANTOS, J. P. Principais pragas e seu controle. In: BECKER, W. F. (coord.); WAMSER, A. F.; 
+FELTRIM, A. L.; SUZUKI, A.; SANTOS, J. P.; VALMORBIDA, J.; HAHN, L.; MARCUZZO, L. L; 
+MUELLER, S. Sistema de produção integrada para o tomate tutorado em Santa Catarina. 
+Florianópolis: Epagri, 2016. Cap. 11, p. 105-124.
+SILVA, A. C.; CARVALHO, G. A. Manejo integrado de pragas. In: ALVARENGA, M. A. R. (Ed.). 
+Tomate: produção em campo, em casa-de-vegetação e em hidroponia. 2. ed. rev. e ampl. 
+Lavras: Universitária de Lavras, 2013. p. 355-412.
+SOUZA, J. C.; REIS, P. R. Principais pragas do tomate para mesa: bioecologia, dano e 
+controle. Informe Agropecuário, Belo Horizonte, v.24, p.79-92, 2003.
+VILLAS-BÔAS, G.L.; CASTELO BRANCO, M. Manejo integrado da mosca branca (Bemisia 
+tabaci biótipo B) em sistema de produção integrada de tomate indústria (PITI). Brasília, 
+DF: Embrapa Hortaliças, 2009. 16p. (Embrapa Hortaliças. Circular Técnica, 70). Disponível em: 
+https://ainfo.cnptia.embrapa.br/digital/bitstream/item/75710/1/ct-70.pdf. Acesso em: 22 ago. 
+2022. 
+WALGENBACH, J.F. Integrated pest management strategies for field-grown tomatoes. In: 
+WAKIL, W.; BRUST, G.E; PERRING, T.M. (ed.) Suitable management of arthropod pests of 
+tomato. New York: Academic Press, 2017. p. 323-339.
+
+
+Apoio: Termo de Execução Descentralizado Mapa/Embrapa: Suporte à 
+Elaboração das Normas Técnicas Específicas de Tomate Tutorado no Brasil.
+CGPE 017801
+
+

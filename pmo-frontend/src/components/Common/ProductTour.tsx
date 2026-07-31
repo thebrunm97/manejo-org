@@ -23,7 +23,7 @@ export const ProductTour: React.FC<ProductTourProps> = ({ ready = true }) => {
             nextBtnText: 'Próximo',
             prevBtnText: 'Anterior',
             steps: [
-                { element: '#tour-welcome', popover: { title: 'Bem-vindo ao Manejo.org', description: 'O seu painel de controlo para certificação orgânica.' } },
+                { element: '#tour-welcome', popover: { title: 'Bem-vindo ao Manejo.org', description: 'O seu painel de controle para certificação orgânica.' } },
                 { element: '#tour-pmo-card', popover: { title: 'Plano de Manejo', description: 'Aqui gere o estado do seu plano, culturas e insumos.' } },
                 { element: '#tour-sidebar-map', popover: { title: 'Mapa da Propriedade', description: 'Desenhe e visualize os seus talhões através do menu lateral.' } },
                 { element: '#tour-whatsapp-card', popover: { title: 'Assistente IA', description: 'Conecte o WhatsApp para enviar áudios e deixar a IA preencher tudo!' } }

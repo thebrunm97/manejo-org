@@ -13,10 +13,12 @@
 package llm
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -81,6 +83,7 @@ type OpenAIAdapterConfig struct {
 type OpenAIAdapter struct {
 	client       *openai.Client
 	routerClient *openai.Client // Optional dedicated client for ClassifyIntent
+	httpClient   *http.Client   // Kept for raw HTTP requests
 	cfg          OpenAIAdapterConfig
 	prompts      PromptConfig
 }
@@ -127,9 +130,17 @@ func NewOpenAIAdapter(cfg OpenAIAdapterConfig) (*OpenAIAdapter, error) {
 	log.Printf("📡 [OpenAIAdapter] Inicializado: model=%s baseURL=%s", cfg.Model, cfg.BaseURL)
 
 	adapter := &OpenAIAdapter{
-		client:  openai.NewClientWithConfig(clientCfg),
-		cfg:     cfg,
-		prompts: prompts,
+		client:     openai.NewClientWithConfig(clientCfg),
+		cfg:        cfg,
+		prompts:    prompts,
+	}
+	if clientCfg.HTTPClient != nil {
+		if c, ok := clientCfg.HTTPClient.(*http.Client); ok {
+			adapter.httpClient = c
+		}
+	}
+	if adapter.httpClient == nil {
+		adapter.httpClient = http.DefaultClient
 	}
 
 	if cfg.RouterAPIKey != "" && cfg.RouterModel != "" {
@@ -387,15 +398,121 @@ func (a *OpenAIAdapter) EvaluateEvidenceListwise(ctx context.Context, query stri
 	return result, nil
 }
 
+// ChatRaw sends a raw chat completion request to the provider.
+func (a *OpenAIAdapter) ChatRaw(ctx context.Context, req ChatRequest) (ChatResponse, error) {
+	model := req.Model
+	if model == "" {
+		model = a.cfg.Model
+	}
+
+	// 1. Fallback Route: Custom HTTP Request via OpenRouter native "models" array.
+	if len(req.FallbackModels) > 0 {
+		modelsList := append([]string{model}, req.FallbackModels...)
+		
+		payloadMap := map[string]interface{}{
+			"models":      modelsList,
+			"temperature": req.Temperature,
+			"messages": []map[string]string{
+				{"role": "system", "content": req.SystemPrompt},
+				{"role": "user", "content": req.UserPrompt},
+			},
+		}
+
+		if req.ResponseFormat != nil {
+			payloadMap["response_format"] = req.ResponseFormat
+		}
+
+		payloadBytes, _ := json.Marshal(payloadMap)
+
+		httpReq, err := http.NewRequestWithContext(ctx, "POST", a.cfg.BaseURL+"/chat/completions", bytes.NewReader(payloadBytes))
+		if err != nil {
+			return ChatResponse{}, fmt.Errorf("openai_adapter: ChatRaw fallback: build request: %w", err)
+		}
+		
+		// The custom transport handles Authorization natively if we added it, BUT go-openai's clientCfg does NOT inject Authorization into HTTPClient.
+		// Wait, go-openai injects auth inside its request builder. 
+		// We MUST inject Authorization header manually since our httpClient is just standard with OpenRouter headers.
+		httpReq.Header.Set("Authorization", "Bearer "+a.cfg.APIKey)
+		httpReq.Header.Set("Content-Type", "application/json")
+
+		httpResp, err := a.httpClient.Do(httpReq)
+		if err != nil {
+			return ChatResponse{}, fmt.Errorf("openai_adapter: ChatRaw fallback: do request: %w", err)
+		}
+		defer httpResp.Body.Close()
+
+		if httpResp.StatusCode >= 300 {
+			b, _ := io.ReadAll(httpResp.Body)
+			return ChatResponse{}, fmt.Errorf("openai_adapter: ChatRaw fallback: status %d - %s", httpResp.StatusCode, string(b))
+		}
+
+		var oaiResp openai.ChatCompletionResponse
+		if err := json.NewDecoder(httpResp.Body).Decode(&oaiResp); err != nil {
+			return ChatResponse{}, fmt.Errorf("openai_adapter: ChatRaw fallback: decode response: %w", err)
+		}
+
+		if len(oaiResp.Choices) == 0 {
+			return ChatResponse{}, fmt.Errorf("openai_adapter: ChatRaw fallback: empty choices")
+		}
+
+		return ChatResponse{
+			Text:        oaiResp.Choices[0].Message.Content,
+			ActualModel: oaiResp.Model,
+			Usage: ChatUsage{
+				PromptTokens:     oaiResp.Usage.PromptTokens,
+				CompletionTokens: oaiResp.Usage.CompletionTokens,
+			},
+			ProviderResponseID: oaiResp.ID,
+		}, nil
+	}
+
+	// 2. Standard Route: Use go-openai SDK
+	oaiReq := openai.ChatCompletionRequest{
+		Model:       model,
+		Temperature: float32(req.Temperature),
+		Messages: []openai.ChatCompletionMessage{
+			{Role: openai.ChatMessageRoleSystem, Content: req.SystemPrompt},
+			{Role: openai.ChatMessageRoleUser, Content: req.UserPrompt},
+		},
+	}
+
+	if req.ResponseFormat != nil {
+		formatBytes, _ := json.Marshal(req.ResponseFormat)
+		var format openai.ChatCompletionResponseFormat
+		if err := json.Unmarshal(formatBytes, &format); err == nil {
+			oaiReq.ResponseFormat = &format
+		}
+	}
+
+	resp, err := a.client.CreateChatCompletion(ctx, oaiReq)
+	if err != nil {
+		return ChatResponse{}, fmt.Errorf("openai_adapter: ChatRaw: %w", err)
+	}
+	if len(resp.Choices) == 0 {
+		return ChatResponse{}, fmt.Errorf("openai_adapter: ChatRaw: empty choices")
+	}
+
+	return ChatResponse{
+		Text:        resp.Choices[0].Message.Content,
+		ActualModel: resp.Model,
+		Usage: ChatUsage{
+			PromptTokens:     resp.Usage.PromptTokens,
+			CompletionTokens: resp.Usage.CompletionTokens,
+		},
+		ProviderResponseID: resp.ID,
+	}, nil
+}
+
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 
 // toAgnosticResponse converts an openai.ChatCompletionResponse to RespostaAgnostica.
 func (a *OpenAIAdapter) toAgnosticResponse(resp openai.ChatCompletionResponse) RespostaAgnostica {
 	choice := resp.Choices[0].Message
 	agnostic := RespostaAgnostica{
-		Texto:    choice.Content,
-		Model:    resp.Model,
-		Provider: "openai_adapter",
+		Texto:              choice.Content,
+		Model:              resp.Model,
+		Provider:           "openai_adapter",
+		ProviderResponseID: resp.ID,
 		Usage: UsoMetadados{
 			PromptTokens:     int32(resp.Usage.PromptTokens),
 			CandidatesTokens: int32(resp.Usage.CompletionTokens),

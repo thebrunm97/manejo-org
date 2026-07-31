@@ -41,6 +41,7 @@ type AIWorkerConfig struct {
 	MCP          *mcp.Server
 	History      *history.Manager
 	PollInterval time.Duration // Default: 200ms (polling mais rápido pois é downstream do media worker)
+	RouterConfig state.RouterConfig
 
 	// GuardrailPipeline executes input validation before every LLM call.
 	// If nil, guardrails are disabled (legacy/test mode).
@@ -127,6 +128,10 @@ func (w *AIWorker) processAIJob(ctx context.Context, job *Job, start time.Time) 
 	msg.Body = job.BodyText
 	msg.IsAudio = false // Já foi processado — IA enxerga apenas texto
 	msg.IsImage = false // Já foi processado — IA enxerga apenas texto
+	resolvedResponseMode := job.ShouldRespondWithAudio()
+	msg.RespondWithAudio = resolvedResponseMode
+	msg.HasExplicitResponseMode = true
+	LogResponseModeDecision(job.ID, msg, resolvedResponseMode, false)
 
 	// ── Guardrail Layer 1: Input Validation Pipeline ──────────────────────────
 	// Runs PIIScrubber (redact) → InjectionDetector (block-or-pass).
@@ -183,6 +188,7 @@ func (w *AIWorker) processAIJob(ctx context.Context, job *Job, start time.Time) 
 		w.cfg.MCP,
 		w.cfg.History,
 		nil, // flagsmithClient: não necessário no worker (usado apenas pela sessão HTTP)
+		w.cfg.RouterConfig,
 	)
 	log.Printf("⏱️ [TRACING] Sub-passo: ProcessMessage: %v", time.Since(startProcessMessage))
 

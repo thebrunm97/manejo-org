@@ -1,0 +1,4297 @@
+PORTARIA MAPA Nº 52, DE 15 DE MARÇO DE 2021            
+  
+  
+Estabelece o Regulamento Técnico para os Sistemas Orgânicos de Produção e as 
+listas de substâncias e práticas para o uso nos Sistemas Orgânicos de Produção. 
+  
+A MINISTRA DE ESTADO DA AGRICULTURA, PECUÁRIA E ABASTECIMENTO, no uso da 
+atribuição que lhe confere o art. 87, parágrafo único, inciso II, da Constituição, tendo em vista o 
+disposto na Lei nº 10.831, de 23 de dezembro de 2003, no Decreto nº 6.323, de 27 de dezembro de 
+2007, na Lei nº 10.711, de 5 de agosto de 2003, no Decreto nº 5.153, de 23 de julho de 2004, e o que 
+consta do Processo nº 21000.039145/2017-27, resolve:  
+  
+TÍTULO I 
+REQUISITOS GERAIS DOS SISTEMAS ORGÂNICOS DE PRODUÇÃO 
+CAPÍTULO I 
+DAS DISPOSIÇÕES PRELIMINARES 
+  
+Art. 1º  Estabelecer o Regulamento Técnico para os Sistemas Orgânicos de Produção 
+e as listas de substâncias e práticas autorizadas para uso nos Sistemas Orgânicos de Produção, na 
+forma desta Portaria e dos seus Anexos I a VIII. 
+§ 1º  O descumprimento desse Regulamento Técnico implicará nas infrações previstas 
+na Lei nº 10.831/2003 e no Decreto nº 6.323/2007. 
+§ 2º  A aquicultura orgânica e o extrativismo sustentável orgânico seguem 
+regulamentos específicos. 
+Art. 2º  Para efeito deste Regulamento Técnico, considera-se:  
+I -  ácido desoxirribonucleico - ADN / ácido ribonucleico – ARN recombinante: são 
+moléculas de ADN ou ARN resultantes da combinação de fragmentos derivados de duas ou mais 
+fontes, geralmente de espécies diferentes, mediante técnicas da Engenharia Genética; 
+II -  análise de risco: procedimento adotado pelo OAC ou OCS com a finalidade de 
+identificar riscos potenciais que insumos, ambientes e práticas de manejo adotados na unidade de 
+produção possam comprometer a qualidade orgânica do produto; 
+III - biofertilizante: produto, que contém componentes ativos ou agentes biológicos, 
+capaz de atuar, direta ou indiretamente, sobre o todo ou parte das plantas cultivadas, melhorando 
+o desempenho do sistema de produção e que seja isento de substâncias não autorizadas neste 
+Regulamento Técnico; 
+IV - campo de produção de sementes orgânicas: área contínua de uma espécie ou 
+cultivar em monocultivo ou em consórcio, desde que as espécies ou cultivares sejam compatíveis 
+com as técnicas de produção de sementes, sendo que esta área deverá ser dividida em módulos ou 
+glebas para efeito de vistoria ou de fiscalização; 
+
+
+V  - castração: técnica de retirada dos testículos nos machos e ovários nas fêmeas em 
+diferentes espécies; 
+VI - compostagem: processo de decomposição onde microrganismos agindo em 
+condições  adequadas de temperatura e umidade, transformam a matéria orgânica de origem 
+animal ou vegetal e suas misturas em fertilizante natural para o solo,  ao mesmo tempo em que 
+reduz a presença de agentes patogênicos e sementes de invasoras eventualmente presentes na 
+matéria-prima, podendo ser enriquecido com minerais ou agentes capazes de melhorar suas 
+características físicas, químicas ou biológicas, autorizadas neste Regulamento Técnico; 
+VII - composto orgânico: produto obtido por processo de compostagem; 
+VIII - conversão parcial: quando somente parte da unidade de produção é submetida 
+ao período de conversão e deverão ser previstos, no plano de manejo, cuidados que se aplicam na 
+produção paralela; 
+IX - Cultivar Geneticamente Modificada: cultivar cujo material genético tenha sido 
+modificado por qualquer técnica de engenharia genética;   
+X - debicagem: técnica de retirada de parte dos bicos das aves; 
+XI - doma racional: processo de adestramento e treinamento do animal sem uso de 
+violência; 
+XII - engenharia genética: um conjunto de técnicas da biologia molecular por meio das 
+quais o material genético de plantas, animais, microrganismos, células e outras unidades biológicas 
+são alterados de forma que não poderia ser obtido pelos métodos de reprodução ou recombinação 
+naturais, como ADN ou ARN recombinantes e outros; 
+XIII - imunocastração: método de castração em suínos com uso de vacina injetável em 
+substituição a castração cirúrgica; 
+XIV  - mochação: técnica de retirada dos chifres de animais jovens; 
+XV - muda orgânica: muda produzida em sistemas orgânicos de produção; 
+XVI - Organismo de Avaliação da Conformidade Orgânica - OAC: instituição que avalia, 
+verifica e atesta que produtos ou estabelecimentos produtores ou comerciais atendem o disposto 
+no regulamento da produção orgânica, podendo ser uma Certificadora ou Organismo Participativo 
+de Avaliação da Conformidade; 
+XVII - Organização de Controle Social - OCS: grupo, associação, cooperativa, consórcio 
+com ou sem personalidade jurídica, previamente cadastrado no Ministério da Agricultura, Pecuária 
+e Abastecimento - MAPA, a que está vinculado o agricultor familiar em venda direta, com processo 
+organizado de geração de credibilidade a partir da interação de pessoas ou organizações, sustentado 
+na participação, comprometimento, transparência e confiança, reconhecido pela sociedade; 
+XVIII - Organismo Geneticamente Modificado - OGM: planta, animal ou 
+microrganismo, que tenham sido modificados por qualquer técnica de engenharia genética, que 
+incluem os transgênicos, onde um ou mais genes de outra espécie foram incorporados, causando 
+modificação no seu genoma; 
+XIX - Organismo Participativo de Avaliação da Conformidade Orgânica - OPAC: é uma 
+organização que assume a responsabilidade formal pelo conjunto de atividades desenvolvidas num 
+Sistema Participativo de Garantia - SPG, constituindo na sua estrutura organizacional uma Comissão 
+de Avaliação e um Conselho de Recursos, ambos compostos por representantes dos membros do 
+SPG; 
+XX  - pastejo rotacionado: sistema de manejo do pasto em que a pastagem é dividida 
+em piquetes, os quais são pastejados pelos animais de forma sucessiva; 
+
+
+XXI - procedimentos de abate humanitário: é o conjunto de processos, baseado em 
+diretrizes técnicas oficiais e científicas que garantam o bem-estar dos animais desde o embarque até 
+a operação de sangria; 
+XXII - produção paralela: produção obtida onde, na mesma unidade de produção ou 
+estabelecimento, haja coleta, cultivo, criação ou processamento de produtos orgânico e não-
+orgânico; 
+XXIII - semente orgânica: semente obtida em sistemas orgânicos de produção ou 
+oriunda de processo extrativista sustentável orgânico;  
+XXIV - território de instalação: trata-se do local onde estão fixadas as colmeias e a 
+extensão territorial do pasto apícola disponível para as abelhas;   
+XXV - trator animal: prática de manejo integrada à agricultura, em que se utilizam 
+animais em cercado móvel com objetivo de capina, roçada, adubação, controle de pragas e doenças 
+dos vegetais ou controle de endo e ectoparasitas; e 
+XXVI - Unidade de Beneficiamento de Sementes - UBS: unidade com instalações e 
+equipamentos que atendam as especificações técnicas necessárias para realizar as diversas etapas 
+do beneficiamento, de forma a conferir ao lote de sementes, no mínimo, o padrão de qualidade 
+estabelecido, respeitadas as particularidades das espécies. 
+  
+CAPÍTULO II 
+DA CARACTERIZAÇÃO DA UNIDADE DE PRODUÇÃO ORGÂNICA 
+Art. 3º  A unidade de produção orgânica deve buscar: 
+I - a gestão da unidade de produção como um organismo agrícola em que se maneja 
+o sistema como um todo, considerando o inter-relacionamento das partes, cada qual com sua 
+função, importância e complementaridade para o funcionamento do todo, baseada no 
+conhecimento do regulamento e domínio das práticas decorrentes de sua aplicação; 
+II - cumprimento dos dispositivos legais pertinentes às áreas de preservação 
+permanente e áreas de reserva legal; 
+III - a atenuação do impacto negativo de atividades humanas sobre os ecossistemas 
+naturais e modificados; 
+IV - a proteção, a conservação e o uso racional dos recursos naturais; 
+V - manutenção ou incremento da biodiversidade dos sistemas orgânicos de 
+produção mediante implantação de áreas de refúgio e técnicas recomendadas e permitidas, tais 
+como rotação de culturas, consórcios, faixas vegetadas, sistemas agroflorestais, incremento de 
+espécies vegetais que favoreçam polinizadores e outros tipos de fauna benéfica, entre outros; 
+VI - a manutenção  e  a  recuperação  de  variedades  locais, tradicionais ou 
+crioulas  ameaçadas pela erosão genética,  bem como do material genético adaptado às condições 
+locais; 
+VII - regeneração de áreas degradadas; 
+VIII - gestão dos resíduos visando sua destinação adequada, respeitando a legislação 
+ambiental, sendo vedado o descarte inadequado de lixo; 
+IX - manutenção de cobertura permanente do solo; 
+X - material genético adaptado às condições ambientais locais; 
+
+
+XI - a promoção e a manutenção do equilíbrio do sistema de produção, bem como a 
+utilização de práticas preventivas para promover e manter a sanidade dos vegetais e a saúde e o 
+bem-estar dos animais; 
+XII - a interação da produção animal e vegetal; 
+XIII - a valorização dos aspectos culturais e a regionalização da produção; 
+XIV - a utilização de insumos cujo processo de obtenção, utilização e armazenamento, 
+atenda a legislação aplicável e esteja autorizado neste Regulamento Técnico; 
+XV - redução da dependência de insumos externos;  
+XVI - exploração baseada no uso adequado do solo, da água e do ar, visando à 
+manutenção e incremento da fertilidade e conservação do solo e das fontes de água ao longo do 
+tempo, reduzindo as potenciais formas de contaminação das práticas agrícolas; 
+XVII - manejo da fertilidade do solo por meio da reciclagem dos resíduos orgânicos e 
+outras formas de acréscimo contínuo de matéria orgânica, como base para o incremento dos 
+processos biológicos; 
+XVIII - relações de trabalho fundamentadas nos direitos sociais determinados pela 
+legislação vigente; e    
+XIX - capacitação continuada dos agentes responsáveis por atividades inerentes à 
+unidade de produção orgânica. 
+Art. 4º  As instalações, os equipamentos e os utensílios devem ser mantidos limpos e 
+desinfetados adequadamente, utilizando métodos físicos, mecânicos e as substâncias e produtos 
+autorizados no Anexo I deste Regulamento Técnico, respeitadas as exigências a seguir: 
+I - utilização de acordo com o estabelecido no Plano de Manejo Orgânico; 
+II - aplicação com equipamentos de proteção individual adequados; e 
+III - para produtos comerciais, atendimento ao disposto nas legislações específicas. 
+Parágrafo único.  No caso de equipamentos e utensílios a necessidade de limpeza e 
+desinfecção fica condicionada à avaliação do impacto na sanidade vegetal, na saúde dos animais e 
+nos aspectos sanitários dos produtos destinados ao consumo. 
+Art. 5º  As instalações devem ser funcionais e, no caso da produção animal, 
+adequadas a cada espécie e local de criação. 
+Art. 6º  As instalações de armazenagem e manipulação de dejetos, incluindo as áreas 
+de compostagem, deverão ser projetadas, implantadas e operadas de maneira a prevenir a 
+contaminação das águas subterrâneas e superficiais, do solo, a multiplicação e a disseminação de 
+pragas, vetores de doenças e de agentes patógenos eventualmente presentes nos dejetos. 
+Art. 7º  A madeira para instalações, equipamentos e suportes deve ser proveniente 
+de extração legal, e deve ser tratada preferencialmente com as substâncias autorizadas no Anexo 
+VII deste Regulamento Técnico ou com produtos considerados de baixa toxicidade e risco ambiental 
+pelo órgão competente. 
+Parágrafo único.  Na indisponibilidade de madeira tratada com os produtos previstos 
+no caput e para uso na condução de plantas cultivadas, será necessária a autorização do OAC ou da 
+OCS para utilização dos produtos existentes no mercado. 
+Art. 8º  Nas instalações de produção, beneficiamento, armazenamento e transporte 
+de produtos,  sementes e mudas orgânicas, devem ser adotadas as seguintes medidas para o 
+controle de pragas, preferencialmente, nessa ordem: 
+
+
+I - eliminação do abrigo de pragas e do acesso das mesmas às instalações, mediante 
+o uso de equipamentos e instalações adequadas; 
+II - métodos mecânicos, físicos e biológicos, a seguir descritos: 
+a) som; 
+b) ultrassom; 
+c) luz; 
+d) repelentes à base de vegetal; 
+e) armadilhas (de feromônios, mecânicas, cromáticas); 
+f) ratoeiras; 
+g) controle de umidade; 
+h) temperatura; e 
+i) atmosfera controlada. 
+III - uso de substâncias e práticas autorizadas para manejo e controle de pragas e 
+doenças nos vegetais em sistemas orgânicos de produção, conforme Anexo VII deste Regulamento 
+Técnico. 
+Art. 9º  Durante o armazenamento e o transporte, os produtos e os materiais de 
+propagação orgânicos deverão ser devidamente acondicionados e identificados, assegurando sua 
+separação dos materiais não orgânicos. 
+Art. 10.  As áreas de produção orgânica devem ser protegidas contra as 
+contaminações provenientes de atividades em unidades vizinhas ou dentro da própria unidade, 
+quando em produção paralela, bem como de outras fontes de contaminação do solo, ar e água, 
+mediante o uso de barreiras, áreas de amortecimento ou outra medida eficiente para prevenir 
+contaminação da produção orgânica, mediante prévia aprovação do OAC ou OCS. 
+Parágrafo único.  Em situações eventuais que não seja possível garantir a ausência de 
+contaminantes no produto final deverão ser adotadas faixas de exclusão ou bordadura onde a 
+produção obtida deverá ser comercializada como não orgânica. 
+  
+CAPÍTULO III 
+DA DOCUMENTAÇÃO E DO REGISTRO 
+Art. 11.  A unidade de produção orgânica deverá possuir documentos e registros de 
+procedimentos das operações envolvidas na produção, que permita a rastreabilidade e avaliação de 
+risco e estabelecimento dos pontos críticos que podem influenciar a qualidade orgânica. 
+§ 1º  O Plano de Manejo Orgânico da unidade de produção orgânica e suas 
+atualizações, devem estar disponíveis na unidade de produção para consulta do OAC ou OCS, do 
+órgão fiscalizador e outros envolvidos em processos de controle social. 
+§ 2º  Todos os documentos e registros deverão ser mantidos por um período mínimo 
+de 3 (três) anos. 
+§ 3º  Os documentos e registros citados no caput devem no mínimo, informar: 
+I - aquisição, produção e uso de insumos; 
+II - datas de plantio e colheita; 
+III - produção, vendas e saída de produtos; e 
+
+
+IV - áreas ocupadas com culturas e criações. 
+  
+CAPÍTULO IV 
+DO PLANO DE MANEJO ORGÂNICO 
+Art. 12.  O sistema orgânico de produção deve estar baseado em Plano de Manejo 
+Orgânico, aprovado pelo OAC ou OCS ao qual esteja vinculado, que represente a realidade da 
+unidade de produção. 
+§ 1º  O Plano de Manejo Orgânico da unidade de produção em conversão deverá 
+informar o período estimado para o fim do processo de conversão. 
+§ 2º  O Plano de Manejo Orgânico, suas alterações e atualizações, quando efetuadas, 
+deverão contemplar: 
+I - histórico de utilização da área; 
+II - manutenção ou incremento da biodiversidade;  
+III - manejo dos resíduos; 
+IV - conservação do solo e da água; 
+V - manejos da produção vegetal, tais como: 
+a) manejo fitossanitário; 
+b) material de propagação; 
+c) instalações e equipamentos; 
+d) nutrição; e 
+e) beneficiamento, armazenamento e transporte no caso da produção de sementes e 
+mudas. 
+VI - manejos da produção animal, tais como: 
+a) bem-estar animal; 
+b) manejo sanitário; 
+c) nutrição, incluindo plano anual de alimentação; 
+d) reprodução e material de multiplicação; 
+e) evolução do plantel a partir de animais próprios e adquiridos; 
+f) instalações e equipamentos; e 
+g) transporte. 
+VII - estimativa da produção orgânica; 
+VIII - procedimentos para pós-produção, envase, armazenamento, processamento, 
+transporte e comercialização; 
+IX - medidas para prevenção e mitigação de riscos em relação às fontes de 
+contaminantes, das áreas de produção não orgânicas para as orgânicas, principalmente em 
+relação  a: 
+a) Organismos Geneticamente Modificados - OGM e derivados; 
+b) insumos não autorizados neste Regulamento Técnico; e 
+
+
+c) qualidade da água. 
+X - manejo dos animais de serviço, de seus produtos, subprodutos ou dejetos sem fins 
+de comercialização como orgânicos, e insumos usados nesses animais; 
+XI - os animais de subsistência, companhia, ornamentais e outros, deverão ser listados 
+indicando os insumos utilizados e áreas de circulação na unidade de produção orgânica; 
+XII - croqui e descrição da ocupação, localização e acesso da unidade de produção 
+considerando os aspectos produtivos e ambientais; 
+XIII - a periodicidade das análises e meios de controle da qualidade da água, para uso 
+no sistema orgânico de produção, serão definidos em função das avaliações de risco de suas fontes 
+e das exigências contidas em regulamentos específicos; e 
+XIV - procedimentos de segregação e identificação de produtos, insumos e 
+equipamentos, quando da existência de produção paralela na unidade de produção. 
+§ 3º  Para aprovação dos Planos de Manejo Orgânico, o OAC ou OCS deve avaliar 
+potenciais riscos de comprometimento do sistema orgânico de produção, levando em conta os 
+impactos que os insumos e as práticas de manejo podem trazer à saúde humana e animal, ao sistema 
+e ao ambiente em que se insere a unidade produtiva. 
+§ 4º  São instrumentos da análise de risco: questionário para coleta de dados, vistorias 
+nas unidades que fornecem o insumo para a unidade produtiva, levantamentos bibliográficos, 
+análises laboratoriais, documentos assinados por fornecedores, ficha técnica de produto e outros 
+considerados necessários pelo OAC ou OCS. 
+§ 5º  Alterações e atualizações no Plano de Manejo Orgânico deverão ser informadas 
+para aprovação do OAC ou OCS, podendo ser efetuadas em documento complementar. 
+§ 6º  Substâncias, produtos e práticas que constem no texto e nos anexos deste 
+Regulamento Técnico e que necessitem de autorização de uso pelo OAC ou OCS, já previstas no 
+Plano de Manejo Orgânico aprovado, não necessitarão de nova autorização para seu uso. 
+Art. 13.  As situações não previstas no Plano de Manejo Orgânico deverão ser 
+comunicadas ao OAC ou à OCS, para definição das medidas mitigadoras. 
+  
+CAPÍTULO V 
+DO PERÍODO DE CONVERSÃO 
+Art. 14.  O período de conversão para que as unidades de produção possam ser 
+consideradas orgânicas tem por objetivo: 
+I - assegurar que as unidades de produção estejam aptas a produzir em conformidade 
+com os regulamento técnico da produção orgânica, incluindo a capacitação dos produtores e 
+trabalhadores; e  
+II - garantir a implantação de um sistema de manejo orgânico por meio: 
+a) da manutenção ou construção ecológica da vida e da fertilidade do solo; 
+b) do estabelecimento do equilíbrio do agroecossistema; e  
+c) da preservação da diversidade biológica dos ecossistemas naturais e modificados. 
+Art. 15.  Durante o período de conversão, produtos e subprodutos da unidade de 
+produção não podem ser comercializados como orgânicos. 
+
+
+Art. 16.  Para que um produto receba a denominação de orgânico, deverá ser 
+proveniente de um sistema de produção onde tenham sido aplicados os princípios e normas 
+estabelecidos na regulamentação da produção orgânica, por um período variável de acordo com: 
+I - a espécie cultivada ou manejada;  
+II - a utilização anterior da unidade de produção; 
+III - a situação ecológica atual; 
+IV - a capacitação em produção orgânica dos agentes envolvidos no processo 
+produtivo; e 
+V - as análises e as avaliações das unidades de produção pelo OAC ou OCS. 
+  
+Seção I - Do Início do Período de Conversão 
+Art. 17.  O início do período de conversão deverá ser estabelecido pelo OAC ou pela 
+OCS. 
+§ 1º  A decisão da data a ser considerada como ponto de partida do período de 
+conversão terá como base as informações levantadas nas inspeções ou visitas de controle interno 
+que deverão verificar a compatibilidade da situação encontrada nos regulamentos técnicos da 
+produção orgânica, por meio de elementos comprobatórios, tais como: 
+I - declarações de órgãos oficiais relacionados às atividades agropecuárias; 
+II - declarações de órgãos ambientais oficiais; 
+III - declarações de vizinhos, associações e outras organizações envolvidas com a rede 
+de produção orgânica; 
+IV - análises laboratoriais; 
+V - fotos aéreas e imagens de satélite; 
+VI - inspeção in loco na área; 
+VII - documentos de aquisição de animais, sementes, mudas e outros insumos; e 
+VIII - verificação do conhecimento dos produtores e trabalhadores da unidade 
+produtiva quanto aos princípios, às práticas e à regulamentação da produção orgânica. 
+§ 2º  Independente da data do início do período de conversão será obrigatório o 
+cumprimento de pelo menos 6 (seis) meses com o devido acompanhamento do OAC ou OCS, não 
+aplicável para a criação de abelhas. 
+Art. 18.  Para que a produção animal seja considerada orgânica, deverá ser respeitado 
+o período de conversão da unidade de produção e dos animais. 
+Parágrafo único.  A conversão da área e dos animais poderá ocorrer 
+simultaneamente, considerando-se o período de maior duração, podendo os animais consumirem 
+os alimentos produzidos na própria unidade durante o período de conversão. 
+  
+Seção II - Da Duração do Período de Conversão 
+Art. 19.  A duração do período de conversão da área da unidade produtiva ou da 
+produção vegetal deverá ser estabelecida pelo OAC ou OCS.  
+
+
+§ 1º  O período de conversão será variável de acordo com o tipo de exploração e a 
+utilização anterior da unidade de produção, considerando a situação ecológica e social atual, com 
+duração mínima de: 
+I - 12 (doze) meses de manejo orgânico na produção vegetal de culturas anuais, para 
+que a produção do ciclo subsequente seja considerada como orgânica; 
+II - 18 (dezoito) meses de manejo orgânico na produção vegetal de culturas perenes, 
+para que a colheita subsequente seja considerada como orgânica; e  
+III - 12 (doze) meses de manejo orgânico ou pousio na produção vegetal de pastagens 
+perenes. 
+§ 2º  No caso de aceitação de unidades de produção controladas por outro OAC ou 
+OCS ficará a critério deste o cumprimento do período de conversão. 
+Art. 20.  O período de conversão para que animais, seus produtos e subprodutos 
+possam ser reconhecidos como orgânicos, será de: 
+I - para aves de corte: pelo menos 3/4 (três quartos) do período de vida em sistema 
+de manejo orgânico, observado o artigo 29 deste Regulamento Técnico; 
+II - para aves de postura: no mínimo 75 (setenta e cinco) dias em sistema de manejo 
+orgânico, com exceção de codornas que será de 45 (quarenta e cinco) dias; 
+III - para bovinos, bubalinos, ovinos e caprinos leiteiros: pelo menos 6 (seis) meses em 
+sistema de manejo orgânico; 
+IV - para bovinos e bubalinos e equídeos para corte: pelo menos 2/3 (dois terços) do 
+período de vida do animal em sistema de manejo orgânico, sendo esse período de no mínimo 12 
+(doze) meses; 
+V - para ovinos, caprinos e suínos para corte: pelo menos 3/4 (três quartos) do período 
+de vida do animal em sistema de manejo orgânico, sendo esse período de no mínimo 6 (seis) meses; 
+ VI - para coelhos de corte: no mínimo 3 (três) meses em sistema de manejo orgânico; 
+e 
+VII - para os demais animais: pelo menos 3/4 (três quartos) do período de vida em 
+sistema de manejo orgânico. 
+Parágrafo único.  Nos casos onde a vida ou o bem-estar dos animais esteja em risco 
+na unidade de produção em conversão e houver necessidade de deslocamento dos animais para 
+outra propriedade, o OAC ou a OCS deverão ser consultados. 
+  
+CAPÍTULO VI 
+DA CONVERSÃO PARCIAL E DA PRODUÇÃO PARALELA 
+Art. 21.  A conversão parcial ou a produção paralela será permitida desde que 
+atendidas as seguintes condições: 
+I - no caso de culturas anuais e na implantação de culturas perenes no início da 
+conversão, deverão ser utilizadas espécies diferentes ou variedades que apresentem diferenças 
+visuais em áreas distintas e demarcadas; 
+II - no caso de culturas perenes preexistentes ao período de conversão, somente será 
+permitida a conversão parcial ou a produção paralela, de mesma espécie ou variedades sem 
+diferenças visuais, se forem obtidas em áreas distintas e demarcadas, e no máximo por cinco anos; 
+a partir deste período, só será permitida a conversão parcial ou a produção paralela com o uso de 
+espécies diferentes ou variedades com diferenças visuais em áreas distintas e demarcadas; e  
+
+
+III - a criação de animais que tenham a mesma finalidade produtiva será permitida em 
+áreas distintas e demarcadas, e no máximo por cinco anos; a partir deste período, só será permitido 
+o uso de animais com finalidades produtivas diferentes em áreas distintas e demarcadas. 
+Parágrafo único.  A conversão parcial, bem como a produção paralela devem ser 
+autorizadas pelo OAC ou pela OCS e deverão ser concedidas em função dos seguintes critérios: 
+I - separação entre as áreas sob manejo orgânico e não orgânico; 
+II - proteção da área sob o manejo orgânico contra as contaminações provenientes 
+das áreas de manejo não orgânico; 
+III - insumos utilizados nas áreas não orgânicas, forma de aplicação e controle; e 
+IV - demarcação específica da área não orgânica. 
+Art. 22.  Na conversão parcial, bem como na produção paralela, a unidade de 
+produção deverá ser dividida em áreas, com demarcações definidas, sendo vedada a alternância de 
+práticas de manejo orgânico e não orgânico numa mesma área. 
+§ 1º  Os equipamentos de pulverização empregados em áreas e animais sob o manejo 
+não orgânico não poderão ser usados em áreas e animais sob o manejo orgânico. 
+§ 2º  Os equipamentos e implementos utilizados na produção animal e vegetal, sob 
+manejo não orgânico, excetuados os equipamentos de pulverização mencionados no § 1º, deverão 
+passar por limpeza para uso em manejo orgânico. 
+§ 3º  Os insumos utilizados em cada uma das áreas, sob manejo orgânico e não 
+orgânico, devem ser armazenados separadamente, perfeitamente identificados, e os não 
+autorizados para uso na agricultura orgânica não poderão ser armazenados na área de produção 
+orgânica. 
+§ 4º  Os resíduos da produção animal não orgânica, seja da propriedade ou de fora 
+dela, somente poderão ser utilizados de acordo com o especificado nas normas de produção vegetal 
+dispostas neste Regulamento Técnico. 
+Art. 23.  O plano de manejo da unidade de produção com conversão parcial, bem 
+como na produção paralela deverá conter procedimentos que visem à eliminação do cultivo e 
+criação de organismos geneticamente modificados em toda a unidade de produção. 
+  
+TÍTULO II 
+CERTIFICAÇÃO E ATESTAÇÃO DE INSUMOS 
+Art. 24.  Os insumos produzidos em sistemas orgânicos de produção, em 
+conformidade com este Regulamento Técnico e demais normas pertinentes poderão receber 
+certificação orgânica. 
+Art. 25.  Os insumos produzidos em conformidade com o estabelecido nos Anexos 
+deste Regulamento Técnico, porém oriundos de sistemas não orgânicos de produção poderão 
+receber atestação de aprovação para uso na produção orgânica pelo OAC, respeitada a legislação 
+específica vigente. 
+  
+TÍTULO III 
+DOS SISTEMAS ORGÂNICOS DE PRODUÇÃO ANIMAL 
+  
+CAPÍTULO I 
+
+
+REQUISITOS GERAIS 
+  
+Seção I - Dos Objetivos 
+  
+Art. 26.  Os sistemas orgânicos de produção animal devem: 
+I - promover prioritariamente a saúde e o bem-estar animal em todas as fases do 
+processo produtivo; 
+II - manter a higiene em todo o processo criatório, compatível com a legislação 
+sanitária vigente e com o emprego de produtos autorizados para uso na produção orgânica; 
+III - oferecer alimentação nutritiva, saudável, de qualidade e em quantidade adequada 
+de acordo com as exigências nutricionais de cada espécie; 
+IV - ofertar água de qualidade e em quantidade adequada, que garanta a saúde e vigor 
+dos animais, a qualidade dos produtos e dos recursos naturais; e 
+V - utilizar apenas animais não geneticamente modificados. 
+  
+Seção II - Da Aquisição de Animais 
+  
+Art. 27.  A aquisição de animais para início, reposição ou ampliação da produção 
+animal deverá ser comunicada ao OAC ou a OCS e inserida no Plano de Manejo Orgânico. 
+Art. 28.  Quando for necessário introduzir animais no sistema de produção, estes 
+deverão ser provenientes de sistemas orgânicos. 
+Parágrafo único.  Na indisponibilidade de animais de sistemas orgânicos ou em 
+conversão para o sistema orgânico, poderão ser adquiridos animais de unidades de produção não 
+orgânicas, preferencialmente em conversão para o sistema orgânico, ou que adotem condutas de 
+bem estar animal, desde que previamente aprovado pelo OAC ou pela OCS, e respeitado o período 
+de conversão previsto neste Regulamento Técnico. 
+Art. 29.  A idade máxima para ingresso de aves não orgânicas de corte é 15 (quinze) 
+dias de vida e para aves de postura é de 35 (trinta e cinco) dias. 
+  
+Seção III - Do Bem-Estar Animal 
+  
+Art. 30.  Os sistemas orgânicos de produção animal devem ser planejados de forma 
+que sejam produtivos e respeitem as necessidades e o bem-estar dos animais. 
+Parágrafo único.  As instalações devem ser planejadas e todo manejo deve ser 
+realizado de forma a gerar o mínimo de estresse aos animais. 
+Art. 31.  Deve-se buscar preferencialmente animais de raças adaptadas às condições 
+climáticas e ao tipo do manejo empregado. 
+Art. 32.  Devem ser respeitados: 
+I - o princípio da nutrição: os animais devem estar bem nutridos e sem sede e fome 
+prolongadas; 
+
+
+II - o princípio do estado sanitário: os animais devem apresentar ausência de dor 
+associada ao manejo ou instalações inadequadas, e ter ferimentos e doenças tratados 
+adequadamente; 
+III - o princípio das instalações: os animais devem dispor de área de descanso 
+confortável, conforto térmico e facilidade de movimento e de expressar seus comportamentos 
+inatos; e 
+IV - o princípio do comportamento: garantir a expressão de comportamentos sociais 
+adequados, a expressão de comportamentos inatos, uma boa relação homem e animal e estados 
+emocionais positivos para os animais manejados. 
+Art. 33.  Qualquer desvio de comportamento detectado deverá ser objeto de 
+avaliação e possível redefinição pelo OAC e OCS de procedimentos de manejo e densidades animais 
+utilizados. 
+  
+CAPÍTULO II 
+DOS SISTEMAS PRODUTIVOS E DAS PRÁTICAS DE MANEJO ORGÂNICO 
+  
+Seção I - Da Nutrição 
+  
+Art. 34.  Os sistemas orgânicos de produção animal deverão utilizar alimentação da 
+própria unidade de produção orgânica ou de outra unidade sob sistema orgânico de produção. 
+§ 1º  A produção de alimentos vegetais deverá atender os requisitos gerais dos 
+sistemas orgânicos de produção vegetal estabelecidos neste Regulamento Técnico. 
+§ 2º  Em casos de escassez ou em condições especiais, de acordo com o Plano de 
+Manejo Orgânico aprovado pelo OAC ou OCS, será permitida a utilização de alimentos não orgânicos, 
+desde que não contenham Organismos Geneticamente Modificados, na proporção da ingestão 
+diária, com base na matéria seca, de: 
+I - até 15% (quinze por cento) para animais ruminantes; e 
+II - até 20% (vinte por cento) para animais não ruminantes. 
+§ 3º  Para os herbívoros, deverá ser utilizado ao máximo o sistema de pastagem, 
+sendo que as forragens frescas, secas ou ensiladas deverão constituir pelo menos 60% (sessenta por 
+cento) da matéria seca que compõe sua dieta, permitindo-se redução dessa percentagem para 50% 
+(cinquenta por cento) aos animais em produção leiteira, durante um período máximo de 3 (três) 
+meses a partir do início da lactação. 
+§ 4º  Em condições especiais oficialmente comprovadas de enchente, seca extrema, 
+queimada/incêndio criminoso, poderão ser alteradas as proporções de ingestão, desde que 
+previamente aprovado pelo OAC ou pela OCS, devidamente acordado e formalizado por um período 
+determinado.                        
+§ 5º  Os animais de que trata o parágrafo 4º perderão a condição de orgânicos 
+devendo ser submetidos a novo período de conversão, correspondente a metade do período 
+estipulado no art. 20 deste Regulamento Técnico. 
+§ 6º  Somente poderão ser utilizadas na alimentação animal, substâncias, aditivos e 
+auxiliares tecnológicos (provenientes de fontes naturais) autorizados no Anexo III deste 
+Regulamento Técnico e de acordo com o estabelecido no Plano de Manejo Orgânico, e não poderão 
+
+
+apresentar moléculas de ADN / ARN recombinante ou proteína resultante de modificação genética 
+em seu produto final. 
+§ 7º  Os produtos comerciais utilizados na alimentação animal devem atender ao 
+disposto nas legislações específicas. 
+§ 8º  Nos casos específicos de alimentos produzidos na própria unidade de produção, 
+durante o período de conversão simultânea de área e herbívoros, será permitido o seu consumo por 
+estes animais, após o término do período de conversão. 
+Art. 35.  Não poderão ser utilizados compostos nitrogenados não proteicos e 
+nitrogênio sintético na alimentação de animais em sistemas orgânicos de produção. 
+Art. 36.  É permitido o uso de suplementos minerais e vitamínicos, que atendam à 
+legislação específica. 
+Art. 37.  Os mamíferos jovens deverão ser amamentados pela mãe ou por fêmea 
+substituta, no mínimo, nos primeiros 7 (sete) dias de vida. 
+§ 1º  Na ausência de mãe ou de fêmea substituta, nos primeiros 7 (sete) dias de vida, 
+será permitido o uso de alimentação artificial, preferencialmente com leite da mesma espécie 
+animal. 
+§ 2º  Tanto no aleitamento natural quanto na alimentação artificial, para os animais 
+que permanecerão no sistema orgânico de produção, o período de aleitamento deve ser de, no 
+mínimo: 
+I - 90 (noventa) dias para bovinos, bubalinos e equídeos; 
+II - 28 (vinte e oito) dias para suínos; e 
+III - 45 (quarenta e cinco) dias para ovinos e caprinos. 
+  
+Seção II - Do Ambiente de Criação 
+  
+Art. 38.  Todos os animais deverão ser criados em regime de vida livre, tendo acesso 
+à área externa, em pelo menos parte do dia. 
+Art. 39.  Não será permitida a retenção permanente em gaiolas, galpões, estábulos, 
+correntes, cordas ou qualquer outro método restritivo aos movimentos naturais dos animais. 
+§ 1º  No caso de animais abrigados em instalações, deve ser facultada a eles a 
+possibilidade de saída para área externa, durante pelo menos 6 (seis) horas no período diurno, salvo 
+em situações especiais de enfermidades, endemias ou alterações climáticas severas, devendo ser 
+comunicada ao OAC ou OCS. 
+§ 2º  Em todos os casos, as densidades animais devem estar de acordo com as 
+determinações deste Regulamento Técnico. 
+§ 3º  Ninhos, bebedouros e comedouros de criações comerciais de aves deverão ser 
+mantidos no interior dos galpões ou em instalações providas de proteção ao ambiente externo, por 
+meio de telas ou outro meio com o propósito de evitar o acesso das aves silvestres. 
+Art. 40.  Os ambientes de criação deverão dispor de áreas que assegurem: 
+ I - aos animais assumirem seus movimentos naturais, o contato social e descanso; 
+ II - alimentação, reprodução e proteção em condições que garantam a saúde e o bem-
+estar animal; 
+
+
+III - acesso a pastagem ou área de circulação ao ar livre, com vegetação arbórea 
+suficiente para garantir sombra a todos os animais sem que esses tenham que disputar espaço; e 
+ IV - às aves aquáticas, o acesso a fontes artificiais de água protegidas do acesso de 
+aves aquáticas silvestres, sempre que as condições climáticas permitirem. 
+Art. 41.  As pastagens e áreas de circulação ao ar livre devem ser compostas com 
+vegetação arbórea, podendo ser de espécies nativas, frutíferas e outras, para cumprir sua função 
+ecossistêmica e propiciar sombreamento necessário ao bem-estar da espécie em pastejo. 
+§ 1º  No caso de pastagens recomenda-se adotar o pastejo rotacionado, o consórcio 
+ou a rotação de culturas, ou ambos. 
+§ 2º  Em caso de pastagens e áreas de circulação ao ar livre, sem sombreamento, 
+determina-se um prazo de 5 (cinco) anos, a partir do início do manejo dos animais, para 
+estabelecimento de vegetação arbórea suficiente e, durante este período, poderá ser utilizado 
+sombreamento artificial. 
+Art. 42.  Quando da utilização de áreas de lavoura como opção de pastoreio ou com 
+o objetivo de utilização de trator animal, poderá ser utilizado o sombreamento artificial. 
+Parágrafo único.  Nos casos de uso do trator animal, deve ser atendido o disposto nos 
+arts. 39 e 44. 
+Art. 43.  As densidades máximas dos animais em área externa deverão obedecer ao 
+disposto abaixo: 
+I - para aves de postura: 
+a) 3 m² (três metros quadrados) por galinha em sistema extensivo ou 0,8 m² (oito 
+décimos de metro quadrado) disponíveis por ave, no piquete, em sistema rotacionado; e 
+b) 0,5 m² (meio metro quadrado) por codorna, em sistema extensivo, ou 0,2 m² (dois 
+décimos de metro quadrado) disponíveis por codorna poedeira, no piquete, em sistema 
+rotacionado. 
+II - para aves de corte: 
+a) 2 m² (dois metros quadrados) por frango em sistema extensivo ou 0,4 m² (quatro 
+décimos de metro quadrado) disponíveis por ave, no piquete, em sistema rotacionado; e 
+b) 0,3 m² (três décimos de metro quadrado) por codorna, em sistema extensivo, ou 
+0,1 m² (um décimo de metro quadrado) disponíveis por codorna de corte, no piquete, em sistema 
+rotacionado. 
+III - para ruminantes: 500 m²/100 kg (quinhentos metros quadrados por cem quilos) 
+de peso vivo; 
+IV - para suínos: 
+a) 5 m² (cinco metros quadrados) por suíno de até 25 kg (vinte e cinco quilos) em 
+sistema extensivo ou 2,5 m² (dois e meio metros quadrados) disponíveis, no piquete, em sistema 
+rotacionado; 
+b) 10 m² (dez metros quadrados) por suíno de 26 (vinte e seis quilos) até 50 kg 
+(cinquenta quilos) em sistema extensivo ou 5 m² (cinco metros quadrados) disponíveis, no piquete, 
+em sistema rotacionado; 
+c) 15 m² (quinze metros quadrados) por suíno de 51 kg (cinquenta e um quilos) até 85 
+kg (oitenta e cinco quilos) em sistema extensivo ou 7,5 m² (sete e meio metros quadrados) 
+disponíveis, no piquete, em sistema rotacionado; 
+
+
+d) 20 m² (vinte metros quadrados) por suíno de 86 kg (oitenta e seis quilos) até 110 
+kg (cento e dez quilos) em sistema extensivo ou 10 m² (dez metros quadrados) disponíveis, no 
+piquete, em sistema rotacionado; 
+e) 40 m² (quarenta metros quadrados) por suíno de 111 kg (cento e onze quilos) até 
+200 kg (duzentos quilos) em sistema extensivo ou 20 m² (vinte metros quadrados) disponíveis, no 
+piquete, em sistema rotacionado; 
+f) 60 m² (sessenta metros quadrados) por suíno acima de 201 kg (duzentos e um 
+quilos) em sistema extensivo ou 30 m² (trinta metros quadrados) disponíveis, no piquete, em sistema 
+rotacionado; e 
+g) 60 m² (sessenta metros quadrados) por fêmea suína reprodutora acompanhada de 
+leitegada em sistema extensivo ou 30 m² (trinta metros quadrados)  disponíveis, no piquete, em 
+sistema rotacionado. 
+§ 1º  Nos casos de pastejo rotacionado, para os incisos III e IV, considerar para cálculo 
+de densidade, a área total dos piquetes. 
+§ 2º  Para animais não contemplados nos itens anteriores, o OAC ou OCS deverá 
+estipular densidades máximas em área externa em função das características de cada espécie 
+(tamanho, peso, hábitos), observando o bem-estar e o comportamento natural da espécie e a 
+capacidade do pasto. 
+Art. 44.  Quando necessárias, as instalações para os animais deverão dispor de 
+condições de temperatura, umidade, iluminação e ventilação que garantam o bem-estar animal, 
+respeitando as densidades máximas abaixo: 
+I - para aves poedeiras: 
+a) 7 galinhas por m² (sete galinhas por metro quadrado); e 
+b) 18 codornas por m² (dezoito codornas por metro quadrado). 
+II - para aves de corte: 
+a) 30 Kg por m² (trinta quilos por metro quadrado); e 
+b) 18 codornas por m² (dezoito codornas por metro quadrado). 
+III - para bovinos e bubalinos de leite, o alojamento deve respeitar a relação de, no 
+mínimo, 6 m² (seis metros quadrados) por unidade animal; 
+IV - para bovinos de corte, o alojamento deve respeitar a relação de, no mínimo, 1,5 
+m² (um e meio metro quadrado) para cada 100 kg (cem quilos) de peso vivo dos animais; 
+V - para leitões acima de 28 (vinte e oito) dias e até 30 kg (trinta quilos), a lotação 
+máxima permitida para área de galpão deve respeitar a relação de, no mínimo, 0,6 m² (seis décimos 
+de metro quadrado) para cada animal; 
+VI - para suínos adultos, a área de galpão deve respeitar a relação de, no mínimo: 
+a) 0,8 m² (oito décimos de metro quadrado) para cada animal com até 50 kg 
+(cinquenta quilos) de peso vivo; 
+b) 1,1 m² (um e um décimo de metro quadrado) para cada animal com até 85 kg 
+(oitenta e cinco quilos) de peso vivo; e 
+c) 1,3 m² (um e três décimos de metro quadrado) para cada animal com até 110 kg 
+(cento e dez quilos) de peso vivo. 
+
+
+VII - para ovelhas e cabras, a área de abrigo deve respeitar a relação de, no mínimo, 
+1,5 m² (um e meio metro quadrado) para cada animal de reprodução e de 0,5 m² (meio metro 
+quadrado) para cada animal jovem. 
+Parágrafo único.  Para animais não contemplados nos itens anteriores, o OAC ou OCS 
+deverá estipular densidades máximas a serem respeitadas na acomodação em instalações em 
+função das características de cada espécie (tamanho, peso, hábitos), observando o bem-estar e o 
+comportamento natural da espécie. 
+Art. 45.  Na confecção das camas, os materiais utilizados devem ser naturais e livres 
+de resíduos de substâncias não autorizadas neste Regulamento Técnico. 
+§ 1º  Deverá ser oferecida cama seca e limpa para os animais. 
+§ 2º  Para suínos deverá ser oferecida cama com material manipulável como palha ou 
+serragem para possibilitar aos animais a expressão de seus comportamentos naturais. 
+§ 3º  Não será permitido o uso de piso ripado para suínos. 
+Art. 46.  A cerca elétrica é permitida desde que sejam respeitadas as medidas de 
+segurança com relação ao seu uso. 
+  
+Seção III - Do Manejo dos Animais 
+  
+Art. 47.  O manejo deve ser realizado de forma tranquila, sendo vedado o uso de 
+instrumentos que possam causar medo ou sofrimento aos animais. 
+Art. 48.  É proibida a alimentação forçada dos animais. 
+Art. 49.  Será permitido o uso de inseminação artificial, cujo sêmen preferencialmente 
+advenha de animais de sistemas orgânicos de produção. 
+Art. 50.  Serão proibidas as técnicas de transferência de embrião, fertilização in vitro, 
+sincronização de cio e técnicas que utilizem indução hormonal artificial. 
+Parágrafo único.  A sincronização de cio por métodos físicos ou comportamentais é 
+permitida. 
+Art. 51.  O corte de ponta de chifres, a castração, o mochamento e as marcações, 
+quando necessários, deverão ser efetuados na idade apropriada, visando reduzir processos 
+dolorosos e acelerar o tempo de recuperação. 
+§ 1º  As práticas citadas no caput, bem como os insumos utilizados para sua execução 
+deverão constar no plano de manejo orgânico. 
+§ 2º  A castração, se necessária, deverá ser feita por imunocastração ou por outros 
+métodos, desde que com uso de anestésico e/ou analgésico local de longa duração.        
+§ 3º  Não será permitido o uso de anel de borracha na castração de animais, o corte 
+de dentes dos leitões, a debicagem das aves, o corte da cauda, assim como a inserção de "anel" no 
+focinho, a descorna de animais e outras mutilações não mencionadas no caput. 
+§ 4º  Não serão permitidos sistemas de marcação que impliquem mutilações nos 
+animais. 
+§ 5º Para as aves será permitida a realização da apara anatômica do bico, no 
+incubatório.  
+Art. 52.  Não será permitida a prática da muda forçada em aves de postura e de 
+reprodução. 
+
+
+Art. 53.  A iluminação artificial será permitida desde que se garanta um período 
+mínimo de 8 (oito) horas por dia no escuro. 
+Parágrafo único.  O período mínimo no escuro, previsto no caput, não se aplica na 
+fase inicial de criação de animais, quando a iluminação artificial for a melhor opção como fonte de 
+calor. 
+Art. 54.  Não será permitido o uso de estímulos elétricos ou tranquilizantes 
+quimiossintéticos no manejo de animais. 
+Art. 55.  É proibido utilizar em serviço animais feridos, enfermos, fracos ou 
+extenuados ou obrigar animais de serviço a trabalhos excessivos ou superiores às suas forças por 
+meio de torturas ou castigos. 
+Art. 56.  A doma de animais, quando feita em unidades de produção orgânica, deve 
+ser realizada seguindo os princípios da doma racional. 
+Art. 57.  Para preservar o bem estar animal, o transporte, o pré-abate, o abate e 
+procedimentos de sacrifício sanitário, eutanásia ou descarte deverão atender: 
+I - redução de processos dolorosos; 
+II - procedimentos de abate humanitário; e 
+III - a legislação específica e recomendações técnicas oficiais vigentes. 
+§ 1º  No caso de animais que necessitem ser mortos na unidade de produção, será 
+permitido o uso de anestésico. 
+§ 2º  Não será permitido manter, conduzir ou transportar animais, por qualquer meio 
+de locomoção, de cabeça para baixo ou de qualquer outro modo que lhes produza sofrimento. 
+§ 3º  O tempo e a forma de transporte dos animais deverão obedecer as normas e 
+recomendações técnicas oficiais de bem-estar animal, não sendo permitido manter animais 
+embarcados, sem água e alimento, por um período superior a 12 (doze) horas. 
+Art. 58.  Nas exposições e aglomerações, nos mercados e outros locais de venda, 
+deverão ser atendidos os princípios de bem-estar e necessidades fisiológicas de cada espécie animal, 
+atendendo legislação específica. 
+  
+Seção IV - Da Sanidade Animal 
+  
+Art. 59.  Para obtenção e manutenção da saúde dos animais, deve-se utilizar o 
+princípio da prevenção: alimentação adequada, exercícios regulares e acesso à água e pastagem de 
+boa qualidade, os quais têm o efeito de promover as defesas imunológicas dos animais. 
+Parágrafo único.  O sistema de pastejo deve ser preferencialmente rotativo para 
+controle de parasitoses. 
+Art. 60.  O uso de produtos provenientes de organismos geneticamente modificados, 
+quimiossintéticos artificiais e hormônios só será permitido quando não houver similar de fonte 
+natural disponível no mercado nas seguintes situações: 
+I -  para as vacinas; 
+II - vitaminas, pró-vitaminas e aminoácidos para a prevenção de doenças carenciais 
+que afetem a saúde e o bem-estar animal, sendo vedado o uso para aumento de produtividade; 
+III - tratamentos hormonais e com quimiossintéticos artificiais para fins terapêuticos 
+deverão respeitar as disposições previstas no art. 63 deste Regulamento Técnico; e 
+
+
+IV - substâncias utilizadas para imunocastração. 
+§ 1º  Deve-se dar preferência à utilização de alimentos ricos nos princípios ativos 
+discriminados no inciso II, de origem da própria unidade de produção ou outra unidade de produção 
+orgânica. 
+§ 2º O uso dos produtos mencionados no caput deve ser aprovado pelo OAC ou OCS. 
+Art. 61.  Somente poderão ser utilizados na prevenção e tratamento de enfermidades 
+as substâncias e produtos autorizados no Anexo II deste Regulamento Técnico, respeitadas as 
+exigências a seguir: 
+I - utilização de acordo com o estabelecido no Plano de Manejo Orgânico; 
+II - aplicação com equipamentos de proteção individual adequados; e   
+III - para produtos comerciais, atendimento ao disposto nas legislações específicas. 
+Art. 62.  Todas as vacinas e exames determinados pela legislação de sanidade animal 
+serão obrigatórios. 
+Art. 63.  No caso de doenças ou ferimentos em que o uso das substâncias e produtos 
+autorizados no Anexo II deste Regulamento Técnico não esteja surtindo efeito e o animal esteja em 
+sofrimento ou risco de morte, excepcionalmente poderão ser utilizados produtos não autorizados 
+neste Regulamento Técnico. 
+§ 1º  Quando se fizer uso de produtos não autorizados neste Regulamento Técnico, o 
+período de carência a ser respeitado para que os produtos e subprodutos dos animais tratados 
+possam voltar a ter o reconhecimento como orgânicos deverá ser duas vezes o período de carência 
+estipulado na bula do produto e, em qualquer caso, ser no mínimo de 96 (noventa e seis) horas. 
+§ 2º  A utilização de produtos não autorizados neste Regulamento Técnico deverá ser 
+informada ao OAC ou OCS, no prazo estabelecido por eles, que avaliarão a pertinência de sua 
+excepcionalidade e justificativa. 
+§ 3º  Cada animal só poderá ser tratado com medicamentos não autorizados neste 
+Regulamento Técnico, no máximo, por duas vezes no período de 12 (doze) meses. Se houver 
+necessidade de se efetuar um número maior de tratamentos, o animal deverá ser retirado da 
+certificação orgânica. 
+§ 4º  Durante o tratamento e no período de carência, o animal deverá ser identificado 
+e alojado em ambiente isolado do contato com os outros animais, sendo que ele, seus produtos, 
+subprodutos e dejetos não poderão ser vendidos ou utilizados como orgânicos. 
+§ 5º  Devem ser respeitadas, ainda, as exigências a seguir: 
+ I - aplicação com o uso adequado de equipamentos de proteção individual; e  
+II - para produtos comerciais, atendimento ao disposto nas legislações específicas. 
+Art. 64.  É obrigatório o registro em livro específico, a ser mantido na unidade de 
+produção, das terapêuticas utilizadas nos animais e previstas no artigo 63 deste Regulamento 
+Técnico, constando, no mínimo, as seguintes informações: 
+I - data de aplicação; 
+II - período de tratamento; 
+III - identificação do animal; e 
+IV - medicamento utilizado. 
+  
+
+
+CAPÍTULO III 
+DOS SISTEMAS PRODUTIVOS E DAS PRÁTICAS DE MANEJO ORGÂNICO DAS ABELHAS 
+  
+Art. 65.  As normas estabelecidas neste Capítulo dizem respeito à criação, fixa ou 
+migratória, de abelhas em sistemas orgânicos de produção. 
+Art. 66.  Os sistemas orgânicos de produção de abelhas devem: 
+I - disponibilizar áreas de colheita de néctar e pólen com dimensões suficientes para 
+promover a nutrição adequada e o acesso à água de qualidade isenta de contaminantes intencionais; 
+II - adotar medidas preventivas para a promoção da saúde das abelhas, tais como a 
+seleção adequada das raças, a existência de área de liberação favorável e suficiente e o manejo 
+apropriado dos enxames; 
+III - garantir a construção de colmeias mediante a utilização de materiais naturais 
+renováveis que não apresentem risco de comprometimento e contaminação para o meio ambiente 
+e para os produtos de abelhas; 
+IV - quando da liberação de abelhas em áreas silvestres, respeitar a capacidade de 
+suporte do pasto para manutenção das populações de insetos nativos; e 
+V - utilizar apenas abelhas não geneticamente modificadas. 
+  
+Seção I - Da Localização dos Apiários e dos Meliponários 
+  
+Art. 67.  Os apiários e os meliponários deverão estar instalados em unidades de 
+produção orgânica. 
+§ 1º  No território de instalação do apiário e do meliponário deverão ser observadas 
+possíveis fontes de contaminação, dentro do raio de três quilômetros, para que o OAC ou a OCS siga 
+os critérios e requisitos da produção orgânica. 
+§ 2º Em caso de apicultura migratória e de meliponicultura migratória, as colméias 
+poderão ser instaladas em áreas de vegetação nativa de terceiros, desde que se adote os 
+procedimentos estabelecidos para unidades com produção paralela. 
+§ 3º  Na apicultura migratória e na meliponicultura migratória, deverá ser identificado 
+o território de instalação onde serão realizadas as atividades de armazenamento e a preparação do 
+material utilizado no apiário. 
+§ 4 º O apicultor e o meliponicultor deverão garantir o livre acesso do OAC ou OCS, 
+bem como do órgão fiscalizador, a todas as unidades de produção sob sua responsabilidade. 
+Art. 68.  O plano de manejo orgânico, para apicultura migratória e para 
+meliponicultura migratória, deverá contemplar todas as unidades de produção, bem como o croqui 
+de cada uma delas. 
+Parágrafo único.  O croqui deverá indicar os locais de implantação das colmeias e as 
+áreas de pasto para as abelhas. 
+Art. 69.  As localizações dos apiários e dos meliponários orgânicos devem ser 
+avaliadas levando-se em consideração recursos alimentares, bem como resinas, na unidade de 
+produção, mas também a avaliação de risco de contaminação num raio de 3 km (três quilômetros) 
+a partir do apiário ou do meliponário. 
+
+
+§ 1º  A área contida no raio de 3 km (três quilômetros) deverá ser constituída 
+essencialmente por: 
+I - culturas em manejo orgânico; 
+II - vegetação nativa ou espontânea; ou  
+III - outras atividades, ou implantação de pasto para abelhas, em que não tenham sido 
+utilizados organismos geneticamente modificados e substâncias não autorizadas neste Regulamento 
+Técnico. 
+§ 2º  Dentro do raio estabelecido, não poderão existir fontes potenciais de 
+contaminação, tais como zonas urbanas e industriais, aterros e depósitos de lixo, sendo 
+responsabilidade do OAC ou da OCS a verificação desses riscos. 
+§ 3º  O plano de manejo orgânico deverá prever medidas para prevenção e mitigação 
+de riscos na área do raio de 3 km (três quilômetros). 
+§ 4º  O OAC ou a OCS poderá exigir evidências comprobatórias de que as regiões 
+acessíveis às abelhas atendem ao estabelecido neste Regulamento Técnico. 
+Art. 70.  Os apiários e os meliponários devem ser instalados em locais onde os 
+produtores orgânicos tenham a capacidade de monitorar todas as atividades que possam afetar as 
+colmeias. 
+  
+Seção II - Da Origem das Abelhas 
+  
+Art. 71.  Na escolha das abelhas deverá ser levada em consideração a capacidade de 
+adaptação às condições locais, sua vitalidade e sua resistência às doenças. 
+Art. 72.  Os apiários e os meliponários deverão ser constituídos, preferencialmente, 
+por enxames provenientes de unidades de produção orgânica. 
+Parágrafo único.  Os enxames adquiridos de unidades de produção não orgânicas ou 
+em conversão para o manejo orgânico, assim como os enxames que venham a se instalar 
+espontaneamente na própria unidade de produção, deverão passar por período de conversão. 
+Art. 73.  Para fins de reposição, poderão ser adquiridos até 10% (dez por cento) de 
+enxames não orgânicos por ano. 
+Parágrafo único. Em casos fortuitos ou de força maior, o OAC ou a OCS poderá 
+autorizar a aquisição de uma porcentagem maior de enxames, desde que observado o período de 
+conversão. 
+Art. 74.  Será permitida a captura de enxames na natureza, desde que verificada a 
+ausência de doenças, observado o período de conversão e realizada de forma a mitigar danos aos 
+habitats naturais de nidificação. 
+  
+Seção III - Da Conversão 
+  
+Art. 75.  O período de conversão aplica-se tanto às unidades de produção em 
+conversão para sistemas orgânicos, como para as colmeias trazidas de sistemas de produção não-
+orgânicos. 
+
+
+Art. 76.  Para que as colmeias, seus produtos e subprodutos possam ser reconhecidos 
+como orgânicos, devem estar sob manejo orgânico por: 
+I - no mínimo 120 (cento e vinte) dias para colmeias em produção ou enxames 
+capturados ou adquiridos de unidade de produção não orgânica; e  
+II - no mínimo 30 (trinta) dias para enxames capturados dentro de unidades de 
+produção orgânica. 
+Parágrafo único.  Transcorridos os prazos previstos nos incisos I e II, toda produção 
+existente nas colmeias deve ser retirada e comercializada como produto não orgânico, a partir daí a 
+produção destas colmeias serão consideradas orgânicas. 
+Art. 77. Desde o início do período de conversão e durante todo o período de 
+produção, a cera necessária para a fabricação de lâminas de cera alveoladas, para ser utilizadas nas 
+melgueiras e ninhos, deve ser proveniente de unidades orgânicas de produção ou dos opérculos 
+produzidos neste período. 
+Parágrafo único.  Em circunstâncias excepcionais, na indisponibilidade de cera 
+produzida organicamente, poderá ser autorizada, pelo OAC ou pela OCS, a utilização de cera que 
+não provenha de unidades de produção orgânicas, nas quais não tenham sido utilizados ou aplicados 
+produtos proibidos para produção orgânica de abelhas e livres da presença de agentes etiológicos 
+de doenças. 
+Art. 78.  Não será necessária a substituição da cera quando, no enxame, não houve a 
+utilização prévia de produtos não autorizados neste Regulamento Técnico. 
+  
+Seção IV - Da Alimentação 
+  
+Art. 79.  Deverá haver disponibilidade de água de boa qualidade nas proximidades do 
+apiário e do meliponário. 
+Art. 80.  Ao término de cada estação de produção, deverão ser deixadas reservas de 
+mel e pólen suficientes para a sobrevivência dos enxames até o início de uma nova estação de 
+produção. 
+Art. 81.  No caso de deficiências temporárias de alimento, devido a condições 
+climáticas adversas, poderá ser administrada alimentação artificial ao enxame, devendo ser 
+utilizados mel, açúcares, pólen, plantas e extratos de plantas produzidas organicamente, 
+preferencialmente da mesma unidade de produção. 
+§ 1º  No caso de indisponibilidade de produtos produzidos organicamente e, de 
+acordo com o OAC ou com a OCS, poderão ser utilizados produtos não orgânicos, desde que nestes 
+não tenham sido utilizados produtos não autorizados neste Regulamento Técnico. 
+§ 2º  A alimentação suplementar só poderá ser fornecida:  
+I - após a última colheita; 
+II - até 15 (quinze) dias antes do início do período subsequente de produção; e 
+III - mediante prévia aprovação pelo OAC ou OCS. 
+§ 3º  Os apiários e os meliponários que utilizarem alimentação suplementar deverão 
+manter registros nos quais constem o tipo e a quantidade de produto utilizado, as datas da utilização 
+e os enxames alimentados. 
+  
+
+
+Seção V - Do Manejo Sanitário 
+  
+Art. 82.  Os enxames que apresentarem sintomas de doenças devem ser tratados com 
+as substâncias e produtos autorizados no Anexo II deste Regulamento Técnico, dando preferência 
+aos tratamentos fitoterápicos e homeopáticos, observando o contido no art. 61 deste Regulamento 
+Técnico. 
+Art. 83.  Em caso de tratamento com substâncias químicas sintéticas, os produtos 
+obtidos não poderão ser comercializados como orgânicos. 
+Parágrafo único.  Para recuperar a condição de orgânico, o apiário e o meliponário 
+deverão passar por período de conversão, contado a partir da última aplicação do medicamento, 
+exceto no caso de aplicação de medicamento de uso obrigatório imposto pela legislação de sanidade 
+animal. 
+Art. 84.  É obrigatório o registro em livro específico, a ser mantido na unidade de 
+produção, das terapêuticas utilizadas e previstas nos artigos 60, 61 e 62 deste Regulamento Técnico, 
+ajustados às diferenças e peculiaridades da produção de abelhas, constando, no mínimo, as 
+seguintes informações: 
+I - data de aplicação; 
+II - período de tratamento; 
+III - identificação da colmeia; e 
+IV - produto utilizado. 
+Art. 85.  Para desinfecção, higienização e controle de pragas das colmeias, das 
+melgueiras vazias e dos quadros são autorizadas as substâncias e produtos do Anexo IV deste 
+Regulamento Técnico, desde que respeitadas as exigências a seguir: 
+I - utilização de acordo com o estabelecido no plano de manejo orgânico; 
+II - aplicação com equipamentos de proteção individual adequados; e 
+III - para produtos comerciais, atendimento ao disposto nas legislações específicas. 
+  
+Seção VI - Do Manejo das Colmeias 
+  
+Art. 86.  É proibida a colheita de mel a partir de favos que contenham ovos ou larvas 
+de abelhas e a destruição das abelhas nos favos como método associado à colheita de produtos, 
+assim como não são permitidas mutilações nas abelhas, tais como o corte das asas das abelhas 
+rainhas. 
+Art. 87.  Será permitida a substituição de abelha-rainha com supressão da antiga. 
+Art. 88.  A prática da supressão dos machos somente será permitida como meio de 
+contenção da varroatose. 
+Art. 89.  O deslocamento das colmeias somente poderá ser efetuado mediante 
+aprovação pelo OAC ou OCS. 
+Art. 90.  Será proibido o uso de repelentes, em qualquer fase de manejo ou de 
+extração de mel. 
+Parágrafo único.  Com exceção do uso de fumaça, conforme definido no art. 94 deste 
+Regulamento Técnico. 
+
+
+Art. 91.  É proibido o uso de materiais sintéticos para confecção de colmeias.           
+Art. 92.  É proibido o uso de materiais tóxicos para revestimento e proteção de 
+colmeias para acondicionamento dos enxames, tais como tintas sintéticas, óleo diesel, querosene e 
+parafina. 
+Art. 93.  Não é permitido o uso de telhas de amianto ou outro material tóxico, para a 
+cobertura das colmeias. 
+Art. 94.  Para a produção de fumaça, necessária para o manejo das abelhas, deverão 
+ser usados materiais naturais ou madeira sem tratamento químico. 
+Parágrafo único.  É vedado o uso de combustíveis que gerem gases tóxicos, tais como 
+querosene e gasolina, para viabilizar a queima do material gerador da fumaça. 
+  
+TÍTULO IV 
+DOS SISTEMAS ORGÂNICOS DE PRODUÇÃO VEGETAL 
+  
+CAPÍTULO I 
+DOS OBJETIVOS 
+  
+Art. 95.  Os sistemas orgânicos de produção vegetal devem priorizar: 
+I - a utilização de material de propagação originário de espécies vegetais adaptadas 
+às condições ambientais locais e tolerantes a pragas e doenças; 
+II - a manutenção da atividade biológica do solo, o equilíbrio de nutrientes e a 
+qualidade da água; 
+III -  a adoção de manejo de pragas e doenças que: 
+a)  respeite o desenvolvimento natural das plantas; 
+b)  respeite a sustentabilidade ambiental; 
+c)  respeite a saúde humana e animal, inclusive em sua fase de armazenamento; e  
+d)  privilegie métodos culturais, físicos e biológicos. 
+IV - a redução do revolvimento do solo ao mínimo possível, a exemplo do plantio 
+direto, cultivo mínimo e outras técnicas conservacionistas. 
+  
+CAPÍTULO II 
+DOS SISTEMAS PRODUTIVOS E DAS PRÁTICAS DE MANEJO ORGÂNICO 
+  
+Art. 96.  A irrigação e a aplicação de insumos devem ser realizadas de forma a evitar 
+desperdícios e poluição da água de superfície ou do lençol freático. 
+Art. 97.  A produção vegetal deverá ser feita com o uso de solo, preferencialmente no 
+ambiente natural, tendo em vista a importância da relação entre as raízes das plantas e a fração 
+orgânica e mineral do solo, que resultará no estabelecimento de uma rizosfera ativa e responsável 
+pela promoção e manutenção do equilíbrio dos nutrientes. 
+§ 1º  O disposto no caput não se aplica ao cultivo de espécies naturalmente aquáticas, 
+epífitas, rupestres e à produção de brotos comestíveis. 
+
+
+§ 2º  Na impossibilidade do cultivo no ambiente natural, será permitido 
+excepcionalmente o cultivo em vasos ou similares, canteiros ou estruturas elevadas, desde que o 
+substrato seja elaborado exclusivamente a partir de materiais autorizados neste Regulamento 
+Técnico, com características físicas, químicas e biológicas que se assemelhem aos solos em 
+ambientes naturais, capazes de promover o estabelecimento e a manutenção de uma rizosfera ativa 
+e biologicamente diversificada, mediante autorização do OAC ou da OCS. 
+§ 3º  O estabelecido no parágrafo 2º não se aplica a composição de substratos para a 
+produção de mudas. 
+§ 4º  São proibidos os métodos de cultivo onde a nutrição das plantas se dá 
+exclusivamente por meio de soluções nutritivas, tais como a hidroponia e técnicas similares. 
+Art. 98.  Os brotos comestíveis devem ser produzidos a partir de grãos e outros 
+materiais obtidos em sistemas orgânicos de produção. 
+Art.99.  Nas atividades de pós-colheita, a unidade de produção deve garantir a 
+reciclagem da água e dos resíduos, evitando o desperdício e a contaminação química e biológica do 
+ambiente. 
+Art. 100.  É proibida a utilização de organismos geneticamente modificados e seus 
+derivados, em sistemas orgânicos de produção vegetal. 
+  
+Seção I - Das Sementes e Mudas 
+  
+Art. 101.  As normas estabelecidas nesta Seção dizem respeito à produção, o 
+beneficiamento, a embalagem, o armazenamento, o transporte, o comércio, o uso, a importação e 
+a exportação de sementes e mudas orgânicas. 
+Parágrafo único.  A produção, o beneficiamento, a embalagem, o armazenamento, o 
+transporte, o comércio, a importação e a exportação de sementes e mudas orgânicas deverão 
+também atender o que estabelece a regulamentação brasileira para produção de sementes e mudas. 
+  
+Subseção I - Das Disposições Gerais  
+Art. 102.  A produção de sementes e mudas orgânicas deverá obedecer às normas e 
+padrões de identidade e qualidade estabelecidas na regulamentação brasileira para produção de 
+sementes e mudas.  
+ 
+Subseção II - Da Utilização 
+  
+Art. 103.  As sementes e mudas deverão ser oriundas de sistemas orgânicos de 
+produção. 
+§ 1º  Se constatada a indisponibilidade da cultivar de sementes e mudas oriundas de 
+sistemas orgânicos de produção, o OAC ou a OCS poderá autorizar a utilização de outros materiais 
+existentes no mercado, dando preferência aos sem tratamento ou que tenham sido tratados com 
+substâncias e produtos autorizados neste Regulamento Técnico. 
+§ 2º  Fica estabelecido o prazo de 01 (um) ano, contado da publicação deste 
+Regulamento Técnico, a partir do qual: (Alterado pela Portaria nº 404/2022) 
+
+
+I - as mudas de hortaliças obtidas a partir de sementes somente poderão ser 
+produzidas em sistemas orgânicos de produção; e (Alterado pela Portaria nº 404/2022) 
+II - as espécies não contempladas no inciso anterior, provenientes de mudas não 
+orgânicas, deverão ter pelo menos três quartos do seu desenvolvimento vegetativo, antes do início 
+da colheita, em sistema orgânico. (Alterado pela Portaria nº 404/2022) 
+ § 2º Fica estabelecido o prazo de 05 (cinco) anos, contados a partir de 2 de março de 
+2022, como período de adequação para uso de mudas de hortaliças obtidas a partir de sementes. 
+(Redação dada pela Portaria nº 404/2022) 
+§ 2º-A Durante o período estabelecido no § 2º, o OAC ou a OCS, verificando a 
+indisponibilidade de mudas obtidas a partir de sementes oriundas de sistemas orgânicos, poderá 
+autorizar a utilização de outros materiais existentes no mercado, atendendo ao disposto no § 1º 
+deste artigo. (Redação dada pela Portaria nº 404/2022) 
+§ 2º-B A permissão indicada no § 2º-A não poderá exceder a 80% (oitenta por cento) 
+das mudas utilizadas no segundo ano, a 60 % (sessenta por cento) no terceiro ano, a 40 % (quarenta 
+por cento) no quarto ano e a 20% (vinte por cento) no quinto ano. (Redação dada pela Portaria nº 
+404/2022) 
+§ 2º-C Encerrado o prazo previsto no § 2º-A, as mudas de hortaliças obtidas a partir 
+de sementes somente poderão ser produzidas em sistemas orgânicos de produção. (Redação dada 
+pela Portaria nº 404/2022) 
+§ 2º-D As espécies não contempladas no § 2º, provenientes de mudas não orgânicas, 
+deverão ter pelo menos três quartos do seu desenvolvimento vegetativo, antes do início da colheita, 
+em sistema orgânico. (Redação dada pela Portaria nº 404/2022) 
+§ 3º  O uso de sementes tratadas com insumos não autorizados nos sistemas 
+orgânicos de produção, fica proibido a partir de cinco de 5 (cinco) anos da publicação do presente 
+Regulamento Técnico, excetuados os tratamentos quarentenários impostos pela autoridade 
+competente. 
+§ 4º  A Coordenação de Produção Orgânica (CPOR) manterá, no sítio eletrônico do 
+Ministério da Agricultura, Pecuária e Abastecimento, lista de espécies com disponibilidade de 
+sementes e mudas orgânicas, para subsidiar as autorizações previstas no § 1º. 
+§ 5º  A lista prevista no § 4º deverá: 
+I - ser atualizada com dados provenientes das Comissões da Produção Orgânica nas 
+Unidades da Federação (CPOrg-UF); 
+II - apresentar espécies agrupadas por cultivares ou variedades; 
+III - apresentar as características gerais, informação sobre a recomendação por região 
+e o número de inscrição no Registro Nacional de Cultivares - RNC da cultivar ou variedade, quando 
+exigido pela legislação específica; e 
+IV - identificar o fornecedor da cultivar ou variedade com o nome, endereço e número 
+de inscrição no Registro Nacional de Sementes e Mudas – RENASEM, quando exigido pela legislação 
+específica. 
+§ 6º  A lista prevista no parágrafo anterior, quando elaborada, será disponibilizada 
+como referência para os plantios do ano posterior. 
+§ 7º  O produtor que tiver adquirido, em data anterior a divulgação de nova lista, 
+sementes não orgânicas de variedades que passaram a constar da lista, poderá utilizá-las dando 
+ciência ao OAC ou OCS. 
+
+
+§ 8º Ficam suspensos por 2 (dois) anos, os prazos previstos neste artigo. (Redação dada 
+pela Portaria nº 685/2024) 
+ 
+Art. 104.  É proibida a certificação como orgânico de material de multiplicação vegetal 
+obtido por meio de indução de mutação por irradiação ou a partir do uso da técnica de fusão de 
+protoplasma. 
+Art. 105.  Para o tratamento e armazenamento de sementes e mudas somente será 
+autorizado o uso de produtos que contenham substâncias autorizadas neste Regulamento Técnico. 
+  
+Subseção III - Da Produção de Sementes e Mudas 
+  
+Art. 106.  Para serem considerados como orgânicos os materiais de propagação, na 
+fase de campo, deverão ter sido produzidos em conformidade com o estabelecido neste 
+Regulamento Técnico. 
+Art. 107.  É permitida a policultura e o convívio com plantas espontâneas nos campos 
+de produção de sementes orgânicas desde que adotadas medidas que garantam os padrões de 
+qualidade das sementes.  
+Parágrafo único.  Os organismos de avaliação da conformidade deverão aprovar as 
+medidas previstas no caput, devendo estas estarem previstas no plano de manejo orgânico do 
+produtor.  
+Art. 108.  Na produção de sementes orgânicas é permitida a utilização de material de 
+multiplicação vegetal oriundo de sistemas não orgânicos de produção, desde que esta produção seja 
+conduzida em manejo orgânico durante um ciclo de produção, desde que cumprido o período de 
+conversão. 
+Art. 109.  No caso de o produtor de mudas orgânicas necessitar adquirir material de 
+propagação vegetativa oriundo de sistemas não orgânicos de produção, ele deverá ter 3/4 (três 
+quartos) de seu período de produção em manejo orgânico para que a muda produzida possa ser 
+considerada orgânica.  
+Parágrafo único.  O estabelecido no caput não se aplica ao produtor de mudas 
+orgânicas de hortaliças obtidas a partir de sementes, que deverá atender ao disposto no inciso I, do 
+§ 2º do art. 103. (Alterado pela Portaria nº 404/2022) 
+Parágrafo único. O estabelecido no caput não se aplica ao produtor de mudas 
+orgânicas de hortaliças obtidas a partir de sementes, que deverá atender ao disposto nos §§ 2º, 2º-
+A, 2º-B e 2º-C do art. 103.” (Redação dada pela Portaria nº 404/2022). 
+Art. 110.  Caso constatada a presença de cultivares geneticamente modificadas nas 
+proximidades, os organismos de avaliação da conformidade orgânica deverão, segundo sua análise 
+de risco, avaliar a necessidade de coletar amostras das sementes orgânicas para verificar a 
+ocorrência de contaminações. 
+Art. 111.  O produtor de sementes e mudas orgânicas, ao adquirir o material de 
+propagação que irá multiplicar, deverá solicitar do fornecedor uma declaração de que a cultivar não 
+foi obtida por meio de indução de mutação, utilizando irradiação. 
+Art. 112.  Na produção de mudas orgânicas, a partir de cultura de tecidos e 
+micropropagação, só poderão ser utilizadas substâncias e práticas autorizadas neste Regulamento 
+Técnico. 
+
+
+  
+Subseção IV - Do Beneficiamento, Armazenamento e Transporte 
+  
+Art. 113.  Quando uma Unidade de Beneficiamento de Sementes - UBS receber 
+sementes de produtores certificados por Organismo de Avaliação da Conformidade Orgânica 
+diferente do que a certifica, as sementes deverão estar acompanhadas de Declaração de Transação 
+Comercial.  
+Art. 114.  Quando o beneficiamento de sementes orgânicas for realizado em Unidade 
+de Beneficiamento de Sementes - UBS que também opera com sementes oriundas de sistemas 
+convencionais, deverão ser implementadas medidas que assegurem a sua efetiva separação.  
+§ 1º  Todas as sementes que entrem ou estejam armazenadas na UBS deverão estar 
+devidamente identificadas e as sementes orgânicas deverão ser dispostas em espaços específicos.  
+§ 2º  Todas as vezes que as máquinas e equipamentos forem trabalhar com sementes 
+orgânicas, após terem sido utilizadas com sementes convencionais, deverão passar por rigorosa 
+limpeza a fim de que não ocorram misturas.  
+§ 3º  Conforme avaliação de risco, o Organismo de Avaliação da Conformidade 
+Orgânica poderá determinar uma quantidade de sementes orgânicas que deverá ser descartada no 
+início da operação de beneficiamento.  
+Art. 115.  A semente orgânica a granel deverá ser armazenada e transportada de 
+forma que se assegure o isolamento e a não contaminação por sementes oriundas de sistema não 
+orgânico de produção. 
+Art. 116.  As embalagens de sementes orgânicas deverão trazer, além das 
+informações obrigatórias estabelecidas na regulamentação específica para sementes e mudas, o selo 
+do Sistema Brasileiro de Avaliação da Conformidade Orgânica e, opcionalmente, a identificação do 
+Organismo de Avaliação da Conformidade Orgânica. 
+  
+Seção II - Da Fertilidade do Solo e Fertilização 
+  
+Art. 117.  Somente é permitida a utilização de fertilizantes, corretivos e inoculantes 
+que sejam constituídos por substâncias e produtos autorizados, nas condições de uso 
+especificadas no Anexo V deste Regulamento Técnico, e de acordo com a necessidade de uso 
+prevista no Plano de Manejo Orgânico. 
+§ 1º  A utilização desses insumos deverá ser autorizada especificamente pelo OAC ou 
+pela OCS, quando da aprovação do Plano de Manejo Orgânico, devendo levar em consideração: 
+I - as matérias-primas e o processo de obtenção do produto; 
+II - a quantidade aplicada; e 
+III - a necessidade de análise laboratorial, em caso de suspeita de contaminação. 
+§ 2º  O fornecimento de nitrogênio por meio das adubações deverá ser feito 
+preponderantemente na forma sólida. 
+§ 3º  Devem ser observados, quando indicado, os limites máximos de contaminantes 
+estabelecidos no Anexo VI deste Regulamento Técnico. 
+§ 4º  Devem ser respeitadas, ainda, as exigências a seguir: 
+
+
+I - aplicação com equipamentos de proteção individual adequados; e 
+II - para produtos comerciais, atendimento ao disposto nas legislações específicas. 
+Art. 118.  Em caso de suspeita de contaminação dos insumos de que trata o art. 117, 
+deverá ser exigida, pelo OAC ou pela OCS, a análise laboratorial e, se constatada a contaminação, 
+estes não poderão ser utilizados em sistemas orgânicos de produção. 
+Art. 119.  Deverão ser mantidos registros e identificações, detalhados e atualizados, 
+das práticas de manejo e insumos utilizados nos sistemas de produção orgânica. 
+  
+Seção III - Do Manejo de Pragas 
+  
+Art. 120.  Somente poderão ser utilizadas para o manejo, controle e tratamento pós-
+colheita de pragas e doenças, nos sistemas orgânicos de produção, as substâncias e práticas 
+autorizadas, nas condições de uso especificadas no Anexo VII e no Anexo VIII deste Regulamento 
+Técnico, dando preferência às fontes naturais. 
+§ 1º  Devem ser observados, quando indicado, os limites máximos de contaminantes 
+estabelecidos no Anexo VI deste Regulamento Técnico. 
+§ 2º  As substâncias elencadas no Anexo VIII deste Regulamento Técnico, somente 
+poderão ser utilizadas, na condição de outros ingredientes e em formulações comerciais de produtos 
+fitossanitários. 
+§ 3º  Fica permitida a utilização de produtos registrados no Ministério da Agricultura, 
+Pecuária e Abastecimento, cujas substâncias ativas constem no Anexo VII deste Regulamento 
+Técnico, ainda que contenham, em suas formulações, substâncias, na condição de outros 
+ingredientes, não listadas no Anexo VIII deste Regulamento Técnico. 
+§ 4º  As substâncias e práticas devem ter o seu uso autorizado pelo OAC ou pela OCS. 
+§ 5º Quando determinadas pelas autoridades sanitárias ou como imposição pela 
+legislação específica aos produtos e processos, o uso de substâncias ou práticas não autorizadas 
+neste Regulamento Técnico, deve-se buscar medidas de controle visando garantir a qualidade 
+orgânica dos produtos, caso contrário, implicará na perda da qualidade orgânica. 
+Art. 121.  Os insumos destinados ao controle de pragas na agricultura orgânica não 
+deverão gerar resíduos, nos seus produtos finais, que possam acumular-se em organismos vivos ou 
+conter contaminantes maléficos à saúde humana e animal, ao ecossistema, aos agentes biológicos 
+de controle e aos polinizadores. 
+Art. 122.  É vedado o uso de irradiações ionizantes para qualquer finalidade em todas 
+as fases do processo produtivo, inclusive na pós-colheita e armazenagem. 
+Parágrafo único.  É permitida a utilização, no controle biológico de pragas, de machos 
+esterilizados por radiação ionizante. 
+Art. 123.  São proibidos insumos que possuam propriedades mutagênicas ou 
+carcinogênicas. 
+  
+TÍTULO V 
+DA PRODUÇÃO DE COGUMELOS COMESTÍVEIS EM SISTEMAS ORGÂNICOS DE PRODUÇÃO 
+  
+
+
+Art. 124.  A extração de cogumelos silvestres deverá atender aos princípios 
+estabelecidos em regulamentação específica sobre o extrativismo sustentável orgânico. 
+  
+CAPÍTULO I 
+DA PRODUÇÃO 
+  
+Art. 125.  Na produção de substrato ou composto para cogumelos deverão ser 
+utilizados substâncias e produtos autorizados no Anexo V deste Regulamento Técnico, desde que 
+oriundos de sistemas orgânicos de produção. 
+Parágrafo único.  Se constatado a indisponibilidade de materiais citados no caput, o 
+OAC ou a OCS poderá autorizar a utilização de outros materiais existentes no mercado, dando 
+preferência aos que tenham sido tratados com substâncias e produtos autorizados neste 
+Regulamento Técnico, até o limite de 50% (cinquenta por cento) da composição do substrato. 
+Art. 126.  O solo utilizado na camada de cobertura de substrato ou composto deverá 
+ser proveniente de locais identificados e sujeitos à inspeção pelo OAC ou OCS, não podendo ter sido 
+submetido a tratamento com substâncias e produtos não autorizados por este Regulamento Técnico 
+nos últimos três anos. 
+Art. 127.  A madeira utilizada no substrato ou na produção em toras, bem como a 
+lenha utilizada para produção de vapor, não poderá ter sido submetida a tratamento para 
+conservação com produtos não autorizados neste Regulamento Técnico e deverá ser oriunda de 
+extração legal. 
+Art. 128.  A água utilizada na produção do substrato, bem como a utilizada na 
+irrigação, deverá ser de boa qualidade e isenta de contaminantes. 
+Art. 129.  Os níveis de metais pesados no substrato ou no material de cobertura não 
+deverão exceder os níveis fixados para compostos orgânicos estabelecidos no Anexo VI deste 
+Regulamento Técnico. 
+Parágrafo único.  As análises de que trata o caput deverão ter a frequência 
+determinada por análise de risco desenvolvida pelo OAC ou OCS. 
+Art. 130.  É proibido o uso de radiações ionizantes ou micro-ondas para esterilização 
+dos substratos, da camada de cobertura, bem como para esterilização e secagem dos produtos. 
+Art. 131.  O destino final do substrato e do chorume não deverá causar danos 
+ambientais e deverá estar em conformidade com as regras estabelecidas pelo órgão ambiental. 
+Art. 132.  Os inóculos adquiridos de fora da unidade de produção deverão ser 
+acompanhados de documento de comprovação da origem do produto. 
+Parágrafo único.  É proibido utilizar inóculo proveniente de material transgênico. 
+Art. 133.  Para o controle de pragas e doenças, somente poderão ser utilizadas 
+substâncias e práticas autorizadas no Anexo VII deste Regulamento Técnico. 
+  
+CAPÍTULO II 
+DO PROCESSAMENTO E ARMAZENAGEM 
+  
+
+
+Art. 134.  O processamento, armazenagem e transporte de cogumelos orgânicos 
+deverá obedecer ao que está estabelecido pela Instrução Normativa Conjunta MAPA/MS nº 
+18/2009, que trata do processamento, armazenagem e transporte de produtos orgânicos. 
+  
+TÍTULO VI 
+CRITÉRIOS PARA ALTERAÇÃO DE NORMAS E LISTAS DE SUBSTÂNCIAS E PRÁTICAS 
+AUTORIZADAS PARA USO NA PRODUÇÃO ORGÂNICA 
+  
+Art. 135.  Os critérios para a alteração de listas de substâncias e práticas autorizadas 
+para uso na agricultura orgânica deverão ser observados, no processo de análise das propostas, 
+pelas Comissões da Produção Orgânica nas Unidades da Federação (CPOrg-UF) e por seu 
+Fórum Nacional e pela Câmara Temática de Agricultura Orgânica (CTAO). 
+  
+CAPÍTULO I 
+DAS ALTERAÇÕES DAS PRÁTICAS E LISTAS DE SUBSTÂNCIAS 
+AUTORIZADAS PARA USO NA PRODUÇÃO ORGÂNICA 
+  
+Seção I - Das Propostas de Inclusão e Exclusão de Substâncias e Práticas 
+  
+Art. 136.  As propostas de inclusão e exclusão de substâncias e práticas autorizadas 
+para uso na produção orgânica deverão ser submetidas à apreciação da CTAO, que as encaminhará, 
+acompanhadas de parecer, à Coordenação de Produção Orgânica (CPOR), que deliberará sobre a 
+matéria. 
+Art. 137.  Na avaliação das propostas de inclusão ou exclusão de substâncias e práticas 
+nas listas, deverão ser considerados os seguintes aspectos: 
+I - descrição detalhada do produto e de suas condições de uso, abordando aspectos 
+relacionados à toxicidade, seletividade, impactos sobre o meio ambiente, saúde humana e animal; 
+II - situação da substância e práticas em listas de normas internacionais ou de 
+legislações de países ou blocos, de referência em agricultura orgânica; 
+III - o comprometimento da percepção por parte dos consumidores sobre o que é 
+considerado produto orgânico; e  
+IV - a oposição ou resistência ao consumo como consequência da inclusão da 
+substância ou prática no sistema orgânico de produção. 
+  
+Seção II - Dos Critérios para Inclusão de Substâncias e Práticas  
+  
+Art. 138.  Somente será aprovada a inclusão nas listas de substâncias e práticas 
+autorizadas para a produção orgânica aquelas que atendam aos seguintes critérios: 
+I - estejam de acordo com os princípios da produção orgânica; 
+II - apresentem argumentos que comprovem a necessidade de a substância ser 
+incluída, fundamentados nos seguintes critérios: 
+
+
+a) conservação e remineralização dos solos; 
+b) qualidade do produto; 
+c) segurança ambiental; 
+d) proteção ecológica; 
+e) bem-estar humano e animal; e 
+f) indisponibilidade de alternativas aprovadas em quantidade ou qualidade 
+suficientes. 
+III - sejam preferencialmente passíveis de serem geradas em sistemas orgânicos de 
+produção; 
+IV - sejam prioritariamente renováveis, seguidas das de origem mineral e, por fim, das 
+quimicamente idênticas aos produtos naturais; 
+V - possam sofrer processos mecânicos, físicos, químicos, enzimáticos e ação de 
+microrganismos, observadas as exceções e restrições estabelecidas na Lei nº 10.831, de 23 de 
+dezembro de 2003, e na sua regulamentação; 
+VI - o processo de obtenção das substâncias não deve afetar a estabilidade do habitat 
+natural nem a manutenção da biodiversidade original da área de extração;  
+VII - não devem ser prejudiciais nem produzir impacto negativo prolongado sobre o 
+meio ambiente, assim como não deverá acarretar poluição da água superficial ou subterrânea, do 
+ar ou do solo; 
+VIII - sejam avaliados todos os estágios durante o processamento, uso e 
+decomposição da substância, sendo consideradas as seguintes características: 
+a) todas as substâncias devem ser degradáveis a gás carbônico, água ou a sua 
+forma  mineral; 
+b) as substâncias com elevada toxicidade aos organismos que não sejam alvo de sua 
+ação principal deverão possuir meia vida de no máximo 5 (cinco) dias; e 
+c) as substâncias naturais não tóxicas não necessitarão apresentar degradabilidade 
+dentro de prazos limitados. 
+IX - não produzam efeitos negativos sobre aspectos da qualidade do produto tais 
+como paladar, capacidade de armazenamento e aparência; e  
+X - não produzam influência negativa sobre o desempenho natural ou sobre as 
+funções orgânicas dos animais criados na unidade de produção. 
+Art. 139.  O uso de uma substância em sistemas orgânicos de produção poderá ser 
+restrito a culturas, criações, regiões e condições específicas de utilização. 
+Art. 140.  Quando da inclusão das substâncias quimicamente idênticas aos produtos 
+naturais, deverão ser considerados os aspectos ecológicos, técnicos e econômicos. 
+Art. 141.  Quando as substâncias apresentarem toxicidade a organismos que não 
+sejam alvo de sua ação principal, será necessário estabelecer restrições ao seu uso, a fim de garantir 
+a sobrevivência daqueles organismos. 
+§ 1º  Nos casos descritos no caput, deverão ser estabelecidas as dosagens máximas a 
+serem aplicadas. 
+§ 2º  Quando não for possível adotar as medidas restritivas cabíveis, citadas no caput, 
+o uso da substância deverá ser proibido. 
+
+
+  
+Seção III - Dos Critérios para Exclusão de Substâncias e Práticas 
+  
+Art. 142.  A aprovação da exclusão de substâncias e práticas autorizadas para a 
+produção orgânica deve observar os seguintes requisitos: 
+I - justificação da necessidade de exclusão da substância, com base em critérios como: 
+a) qualidade do produto; 
+b) segurança ambiental; 
+c) proteção ecológica; 
+d) bem-estar humano e animal; e 
+e) disponibilidade de alternativas aprovadas em quantidade ou qualidade suficientes. 
+II - comprovação de que o seu uso compromete a percepção dos consumidores sobre 
+o que é considerado produto orgânico ou gere resistência ao seu consumo. 
+Art. 143. O Secretário de Defesa Agropecuária poderá editar normas complementares 
+necessárias para aplicação do disposto nesta Portaria e para atualização dos anexos I, II, III, IV, V, VI, 
+VII e VIII. 
+Art. 144.  Ficam revogadas: 
+I - a Instrução Normativa nº 37, de 2 de agosto de 2011; 
+II - a Instrução Normativa nº 38, de 2 de agosto de 2011; 
+III - a Instrução Normativa nº 46, de 6 de outubro de 2011; 
+IV - a Instrução Normativa nº 17, de 18 de junho de 2014; e 
+V - a Instrução Normativa nº 35, de 8 de setembro de 2017. 
+Art. 145.  Esta Portaria entra em vigor em 01 de abril de 2021. 
+  
+  
+TEREZA CRISTINA CORREA DA COSTA DIAS 
+ 
+ 
+Documento assinado eletronicamente por DALVA HELENA FERREIRA, Coordenador (a) Geral, em 
+23/03/2021, às 14:46, conforme horário oficial de Brasília, com fundamento no art. 6º,§ 1º, do Decreto nº 
+8.539, de 8 de outubro de 2015. 
+ 
+ 
+A autenticidade deste documento pode ser conferida no site 
+https://sei.agro.gov.br/sei/controlador_externo.php?acao=documento_conferir&id_orgao_acesso_externo=
+0, informando o código verificador 14292486 e o código CRC 5FFC8841. 
+ 
+ 
+ 
+  
+  
+  
+ANEXO I 
+SUBSTÂNCIAS E PRODUTOS AUTORIZADOS NA HIGIENIZAÇÃO DE INSTALAÇÕES, 
+
+
+EQUIPAMENTOS E UTENSÍLIOS EM SISTEMAS ORGÂNICOS DE PRODUÇÃO 
+  
+SUBSTÂNCIAS E PRODUTOS* 
+CONDIÇÕES DE USO 
+Ácido acético 
+- 
+Ácido butírico (Redação dada pela Portaria nº 811/2023) 
+- 
+Ácido cáprico (Redação dada pela Portaria nº 811/2023) 
+- 
+Ácido caprílico (Redação dada pela Portaria nº 811/2023) 
+-  
+Ácido capróico (Redação dada pela Portaria nº 811/2023) 
+- 
+Ácido cítrico 
+- 
+Ácido fórmico (Redação dada pela Portaria nº 811/2023) 
+- 
+Ácido fosfórico  
+Desde que como parte da composição de 
+produtos comerciais. 
+Ácido lático 
+- 
+Ácido láurico (Redação dada pela Portaria nº 811/2023) 
+- 
+Ácido nítrico 
+Desde que como parte da composição de 
+detergentes comerciais. 
+Ácido oxálico (Redação dada pela Portaria nº 811/2023) 
+  
+Ácido peracético 
+- 
+Ácido propiônico (Redação dada pela Portaria nº 811/2023) 
+- 
+Água e vapor 
+- 
+Álcool etílico 
+- 
+Cal hidratada e cal virgem 
+- 
+Carbonato de sódio 
+- 
+Dióxido de cloro 
+- 
+Extratos vegetais ou essências naturais de plantas 
+- 
+Hidróxido de sódio (soda cáustica) 
+- 
+Hipoclorito de sódio 
+- 
+Iodóforo e soluções à base de iodo 
+- 
+Microrganismos (biorremediadores) 
+- 
+Oxidantes minerais 
+- 
+Permanganato de potássio 
+- 
+Peróxido de hidrogênio 
+- 
+Sabões e detergentes biodegradáveis 
+- 
+Sais minerais solúveis 
+- 
+* As substâncias e produtos deverão ser utilizadas de acordo com o que estiver estabelecido no plano de 
+manejo orgânico. 
+  
+ANEXO II 
+SUBSTÂNCIAS E PRODUTOS AUTORIZADOS NA PREVENÇÃO E TRATAMENTO DE ENFERMIDADES 
+DE 
+ANIMAIS EM SISTEMAS ORGÂNICOS DE PRODUÇÃO 
+  
+SUBSTÂNCIAS E PRODUTOS* 
+CONDIÇÕES DE USO 
+Aminoácidos 
+Atendidos os critérios constantes no art. 60 
+deste Regulamento Técnico. 
+Enzimas 
+Desde que de origem natural. 
+Florais 
+- 
+
+
+Iodo e seus derivados 
+A tintura de iodo não deve ter uso frequente 
+como antisséptico, a exemplo da utilização no 
+"pré e pós-dipping" 
+Ácido acético (Redação dada pela Portaria nº 811/2023) 
+Ácido cítrico (Redação dada pela Portaria nº 811/2023) 
+Ácido butírico (Redação dada pela Portaria nº 811/2023) 
+Ácido fórmico (Redação dada pela Portaria nº 811/2023) 
+- 
+Ácido láctico (Redação dada pela Portaria nº 811/2023) 
+Ácido peracético (Redação dada pela Portaria nº 811/2023) 
+Ácido propiônico (Redação dada pela Portaria nº 811/2023) 
+Ácido oxálico (Redação dada pela Portaria nº 811/2023) 
+ -  
+Ácido cáprico (Redação dada pela Portaria nº 811/2023) 
+Ácido caprílico (Redação dada pela Portaria nº 811/2023) 
+Ácido capróico (Redação dada pela Portaria nº 811/2023) 
+Ácido láurico (Redação dada pela Portaria nº 811/2023) 
+- 
+Microrganismos 
+- 
+Minerais 
+- 
+Permanganato de potássio 
+- 
+Peróxido de hidrogênio 
+- 
+Plantas medicinais, drogas vegetais e seus derivados 
+- 
+Preparados homeopáticos e biodinâmicos 
+- 
+Própolis 
+- 
+Sabões e detergentes biodegradáveis 
+- 
+Veículos inertes 
+- 
+Vitaminas e pró-vitaminas 
+Atendidos os critérios constantes no art. 60 
+deste Regulamento Técnico. 
+* As substâncias e produtos deverão ser utilizados de acordo com o estabelecido no plano de manejo 
+orgânico. 
+ 
+ANEXO III 
+SUBSTÂNCIAS E PRODUTOS AUTORIZADOS NA ALIMENTAÇÃO DE ANIMAIS 
+EM SISTEMAS ORGÂNICOS DE PRODUÇÃO 
+  
+SUBSTÂNCIAS E PRODUTOS* 
+CONDIÇÕES DE USO 
+Algas e seus derivados 
+Algas marinhas têm que ser lavadas a fim de 
+reduzir o teor de iodo. 
+Aminoácidos, vitaminas e pró-vitaminas 
+Atendidos os critérios constantes no art. 60 
+deste Regulamento Técnico. 
+Enzimas 
+Desde que de origem natural. 
+Extratos protéicos vegetais 
+- 
+Forragens e outros alimentos grosseiros e seus derivados 
+- 
+Frutas e seus derivados 
+- 
+Grãos de cereais, seus produtos e subprodutos 
+- 
+Hortaliças e seus derivados 
+- 
+Leite, produtos e subprodutos lácteos 
+Lactose em pó somente extraída por meio de 
+tratamento físico. 
+Melaço 
+- 
+Microrganismos 
+- 
+Óleos e gorduras 
+- 
+Peixes, outros animais aquáticos e derivados 
+- 
+Pós e extratos de plantas 
+- 
+
+
+Produtos de animais terrestres e seus derivados (tais como 
+farinha de sangue, farinha de carne e ossos, entre outros) 
+Atender a legislação específica. 
+Sal marinho 
+O produto não pode ser refinado. 
+Sementes ou frutos de leguminosas, de oleaginosas e outras 
+e seus derivados 
+- 
+Tubérculos, raízes e seus derivados 
+- 
+Ácido acético 
+Ácido cítrico (Redação dada pela Portaria nº 811/2023) 
+Ácido butírico (Redação dada pela Portaria nº 811/2023) 
+Ácido fórmico 
+Para uso apenas para ensilagem. (Redação 
+dada pela Portaria nº 811/2023) 
+Ácido láctico 
+Ácido peracético (Redação dada pela Portaria nº 811/2023) 
+Ácido propiônico 
+Ácido oxálico (Redação dada pela Portaria nº 811/2023) 
+  
+Ácido cáprico (Redação dada pela Portaria nº 811/2023) 
+Ácido caprílico (Redação dada pela Portaria nº 811/2023) 
+Ácido capróico (Redação dada pela Portaria nº 811/2023) 
+Ácido láurico (Redação dada pela Portaria nº 811/2023) 
+- 
+Argilas cauliníticas 
+Bentonita 
+Diatomita 
+Perlita 
+Sepiolita 
+Utilizados como agentes aglutinantes, 
+antiaglomerantes e coagulantes (aditivos 
+tecnológicos). 
+Sílica coloidal 
+Vermiculita 
+- 
+Bicarbonato de sódio 
+Calcário calcítico 
+Carbonato de cálcio 
+Carbonato de sódio 
+Cloreto de sódio 
+  
+Fosfato bicálcico desfluorado 
+Fosfatos bicálcicos de osso precipitados 
+Fosfato monocálcico desfluorado 
+Gluconato de cálcio 
+Lactato de cálcio 
+Permitidos desde que não contenham 
+resíduos contaminantes oriundos do processo 
+de fabricação. 
+Magnésio anidro 
+Sal não refinado 
+Sulfato de magnésio 
+Sulfato de sódio 
+  
+Carbonato básico de cobalto monohidratado 
+Carbonato básico de cobre monohidratado 
+Carbonato de magnésio 
+Carbonato de zinco 
+Carbonato ferroso 
+  
+Carbonato manganoso 
+Cloreto de magnésio 
+Iodato de cálcio anidro 
+Iodato de cálcio hexahidratado 
+Iodeto de potássio 
+Permitidos desde que não contenham 
+resíduos contaminantes oriundos do processo 
+de fabricação. 
+Molibdato de amônio 
+Molibdato de sódio 
+Óxido cúprico 
+Óxido de zinco 
+Óxido férrico 
+  
+
+
+Óxido manganoso e óxido mangânico 
+Selenato de sódio 
+Selenito de sódio 
+Sulfato de cobalto mono ou heptahidratado 
+Sulfato de cobre penta-hidratado 
+  
+Sulfato de zinco mono ou heptahidratado 
+Sulfato ferroso monohidratado 
+Sulfato manganoso mono ou tetrahidratado 
+ 
+*As substâncias e produtos deverão ser utilizados de acordo com o estabelecido no plano de manejo 
+orgânico. 
+  
+  
+ANEXO IV  
+SUBSTÂNCIAS E PRODUTOS AUTORIZADOS NA DESINFESTAÇÃO, HIGIENIZAÇÃO E CONTROLE DE  
+PRAGAS DAS COLMEIAS EM SISTEMAS ORGÂNICOS DE PRODUÇÃO 
+SUBSTÂNCIAS E PRODUTOS* 
+Ácidos acético, cítrico, butírico, fórmico, lático, oxálico, peracético, propiônico 
+(Redação dada pela Portaria nº 811/2023) 
+Ácidos cáprico, caprílico, capróico, láurico (Redação dada pela Portaria nº 811/2023) 
+Agentes de controle biológico 
+Álcool 
+Cal (óxido de cálcio) e cal virgem 
+Detergentes biodegradáveis 
+Enxofre 
+Eucaliptol, mentol e timol 
+Extratos vegetais 
+Hipoclorito de sódio 
+Peróxido de hidrogênio 
+Potassa cáustica (óxido ou hidróxido de potássio) 
+Sabões potássicos e sódicos 
+Soda cáustica 
+ *As substâncias e produtos deverão ser utilizados de acordo com o estabelecido no plano de manejo 
+orgânico. 
+  
+  
+  
+ANEXO V 
+SUBSTÂNCIAS E PRODUTOS AUTORIZADOS COMO FERTILIZANTES, CORRETIVOS E SUBSTRATOS 
+EM 
+SISTEMAS ORGÂNICOS DE PRODUÇÃO  
+  
+SUBSTÂNCIAS E PRODUTOS* 
+RESTRIÇÕES, DESCRIÇÕES, REQUISITOS DE COMPOSIÇÃO E 
+CONDIÇÕES DE USO 
+Condições Gerais 
+Condições adicionais para as 
+substâncias e produtos obtidos 
+
+
+de sistemas de produção não 
+orgânicos 
+Ácido bórico e bórax 
+- 
+Permitidos somente em 
+biofertilizantes na concentração 
+máxima de 8 g por litro, desde 
+que autorizado pelo OAC ou pela 
+OCS. 
+Ácidos naturais não sintéticos 
+Permitido o uso como 
+acidificante no preparo de 
+biofertilizantes. 
+- 
+Adubos verdes 
+- 
+- 
+Algas marinhas 
+Desde que provenientes de 
+extração legal ou de produção 
+legalizada. 
+- 
+Argilas 
+Desde que provenientes de 
+extração legal. 
+- 
+Biofertilizantes obtidos de componentes 
+de origem vegetal 
+Permitidos desde que seu uso 
+e manejo não causem danos à 
+saúde e ao meio ambiente. 
+Permitidos desde que a matéria-
+prima contenha apenas 
+substâncias e produtos 
+autorizados neste Regulamento 
+Técnico. 
+Permitidos somente com a 
+autorização do OAC ou da OCS. 
+Carbonatos, hidróxidos e óxidos de cálcio 
+e magnésio 
+(calcários e cal) 
+- 
+- 
+Carcaças e resíduos de abate para 
+consumo próprio 
+Permitidos desde que 
+oriundos da própria unidade 
+de produção, compostados e 
+bioestabilizados. 
+Permitidos somente com a 
+autorização do OAC ou da 
+OCS. 
+Permitidos apenas se oriundos 
+da produção paralela. 
+Cloreto de cálcio 
+- 
+Permitido somente nas 
+formulações de biofertilizantes, 
+na concentração máxima de 12 g 
+por litro, desde que autorizado 
+pelo OAC ou pela OCS. 
+Composto orgânico, vermicomposto 
+Permitidos desde que seu uso 
+e manejo não causem danos à 
+saúde e ao meio ambiente. 
+Permitido somente com a 
+autorização do OAC ou da OCS. 
+A análise de risco indicará a 
+necessidade de verificação dos 
+contaminantes constantes do 
+Anexo VI deste Regulamento 
+Técnico, e deve levar em 
+consideração o estabelecimento 
+ou propriedade de origem do 
+insumo, não sendo obrigatória 
+por partida. 
+Composto proveniente de resíduos 
+orgânicos domésticos, resíduos de 
+alimentos oriundos de comercialização, 
+resíduos do preparo e consumo em 
+estabelecimentos comerciais e industriais 
+Permitidos desde que oriundo 
+de coleta seletiva e 
+bioestabilizado. 
+Permitidos desde que seu uso 
+e manejo não causem danos à 
+saúde e ao meio ambiente. 
+Permitidos desde que não usado 
+diretamente nas partes aéreas 
+comestíveis, e autorizado pelo 
+OAC ou OCS mediante a 
+realização de análise de risco. 
+
+
+A análise de risco indicará a 
+necessidade de verificação dos 
+contaminantes constantes do 
+Anexo VI deste Regulamento 
+Técnico, e deve levar em 
+consideração o estabelecimento 
+ou propriedade de origem do 
+insumo, não sendo obrigatória 
+por partida. 
+Escórias industriais de reação básica 
+Respeitados os limites 
+máximos de metais pesados 
+estabelecidos no Anexo VI 
+deste Regulamento Técnico. 
+Permitidas somente com a 
+autorização do OAC ou da 
+OCS. 
+- 
+Enxofre elementar 
+Permitido somente com a 
+autorização do OAC ou da 
+OCS. 
+- 
+Enzimas, inoculantes e microrganismos 
+- 
+Desde que não sejam 
+geneticamente modificados ou 
+originários de organismos 
+geneticamente modificados. 
+Desde que não causem danos à 
+saúde e ao ambiente. 
+Excrementos de animais, compostos e 
+biofertilizantes obtidos de componentes 
+de origem animal 
+Permitidos desde que 
+compostados ou 
+bioestabilizados, para 
+aplicação direta no solo. 
+Quando não compostados, 
+aplicar com pelo menos 60 
+(sessenta) dias de 
+antecedência da colheita em 
+caso de culturas que possuam 
+partes comestíveis em contato 
+com o solo. 
+Proibida a aplicação direta nas 
+partes comestíveis. 
+Permitidos desde que seu uso 
+e manejo não causem danos à 
+saúde e ao meio ambiente. 
+O produto oriundo de sistemas 
+não orgânicos de criação só será 
+permitido quando na região não 
+existir alternativa disponível e 
+deverá ser obrigatoriamente 
+compostado. 
+Permitido somente com a 
+autorização do OAC ou da OCS. 
+A análise de risco indicará a 
+necessidade de verificação dos 
+contaminantes constantes do 
+Anexo VI deste Regulamento 
+Técnico, e deve levar em 
+consideração o estabelecimento 
+ou propriedade de origem do 
+insumo, não sendo obrigatória 
+por partida. 
+Excrementos humanos e de animais 
+carnívoros domésticos 
+Não aplicado a cultivos para 
+consumo humano. 
+Bioestabilizado. 
+Não aplicado em adubação de 
+cobertura na superfície do 
+solo e parte aérea das plantas. 
+Permitidos somente com a 
+autorização do OAC ou da 
+OCS. 
+Uso proibido. 
+Fosfatos de rocha, hiperfosfatos e 
+termofosfatos 
+- 
+- 
+Micronutrientes - Boro (B), Cobre (Cu), 
+Cloro (Cl), Cobalto (Co), Ferro (Fe), 
+- 
+Desde que o produto seja 
+constituído somente por 
+
+
+Manganês (Mn), Molibdênico (Mo) e 
+Zinco (Zn) 
+substâncias autorizadas neste 
+Regulamento Técnico. 
+Pós de rocha - remineralizadores e 
+fertilizantes derivados de rochas 
+silicáticas. (Redação dada pela Portaria nº 
+811/2023) 
+  
+Devidamente registrados no 
+MAPA, conforme o estabelecido 
+pela Instrução Normativa nº 5, 
+de 10 de março de 2016. 
+(Redação dada pela Portaria nº 
+811/2023) 
+Respeitados os limites máximos 
+de metais pesados estabelecidos 
+no Anexo VI deste Regulamento 
+Técnico.  
+Pó de serra, casca e outros derivados da 
+madeira, pó de carvão e cinzas 
+Permitidos desde que a 
+matéria-prima contenha 
+apenas substâncias e produtos 
+autorizados neste 
+Regulamento Técnico. 
+Permitidos desde que sejam 
+oriundos de atividade legal. 
+Permitidos desde que sejam 
+oriundos de atividade legal. 
+  
+Preparados biodinâmicos e 
+homeopáticos 
+- 
+- 
+Produtos derivados da 
+aquicultura e pesca 
+Permitidos desde que 
+processados. 
+O uso em partes comestíveis 
+das plantas é permitido 
+somente com a autorização do 
+OAC ou da OCS. 
+Restrição para contaminação 
+química e biológica. 
+Produtos, subprodutos e resíduos 
+industriais de origem vegetal 
+Permitidos desde que sejam 
+oriundos de atividade legal. 
+Permitidos desde que seu uso 
+e manejo não causem danos à 
+saúde e ao meio ambiente. 
+Permitidos somente com a 
+autorização do OAC ou da 
+OCS. 
+Proibido o uso de vinhaça 
+amônica. 
+Desde que não sejam 
+geneticamente modificados ou 
+derivados de organismos 
+geneticamente modificados. 
+Produtos e subprodutos processados de 
+origem animal 
+Permitidos desde que sejam 
+oriundos de atividade legal e 
+somente com a autorização do 
+OAC ou da OCS. 
+O produto oriundo de sistemas 
+de criação com o uso intensivo 
+de alimentos e produtos 
+veterinários não autorizados 
+neste Regulamento Técnico só 
+será permitido quando na região 
+não existir alternativa 
+disponível. 
+A análise de risco indicará a 
+necessidade de verificação dos 
+contaminantes constantes do 
+Anexo VI deste Regulamento 
+Técnico, e deve levar em 
+consideração o estabelecimento 
+ou propriedade de origem do 
+insumo, não sendo obrigatórias 
+por partida. 
+
+
+Resíduos de biodigestores e de lagoas de 
+decantação e fermentação 
+Permitidos desde que seu uso 
+e manejo não causem danos à 
+saúde e ao meio ambiente. 
+Permitidos desde que 
+bioestabilizados. 
+Proibido o contato com partes 
+comestíveis das plantas. 
+Proibidos resíduos de 
+biodigestores e lagoas que 
+recebam excrementos 
+humanos. 
+Permitidos somente com a 
+autorização do OAC ou da OCS. 
+A análise de risco indicará a 
+necessidade de verificação dos 
+contaminantes constantes do 
+Anexo VI deste Regulamento 
+Técnico, e deve levar em 
+consideração o estabelecimento 
+ou propriedade de origem do 
+insumo, não sendo obrigatórias 
+por partida. 
+Resíduos de origem vegetal, incluindo 
+materiais de podas 
+- 
+Permitidos somente com a 
+autorização do OAC ou da OCS. 
+Desde que não sejam 
+geneticamente modificados ou 
+derivados de organismos 
+geneticamente modificados. 
+A análise de risco indicará a 
+necessidade de verificação dos 
+contaminantes constantes do 
+Anexo VI deste Regulamento 
+Técnico, e deve levar em 
+consideração o estabelecimento 
+ou propriedade de origem do 
+insumo, não sendo obrigatórias 
+por partida. 
+Solo 
+Permitido desde que obtido 
+sem causar dano ambiental. 
+Desde que não tenham sido 
+utilizados substâncias e 
+produtos não autorizados neste 
+Regulamento Técnico, nos 
+últimos 18 meses. 
+Substrato para plantas 
+Permitidos desde que obtido 
+sem causar dano ambiental. 
+Proibido o uso de radiação. 
+Permitido desde que utilize 
+apenas substâncias e produtos 
+autorizados neste Regulamento 
+Técnico. 
+Substrato para produção fora do solo 
+Permitidos desde que obtido 
+sem causar dano ambiental. 
+Proibido o uso de radiação. 
+Permitido desde que utilize 
+apenas substâncias e produtos 
+autorizados neste Regulamento 
+Técnico. 
+Na produção de mudas e de 
+cogumelos orgânicos, 50% da 
+composição do substrato deverá 
+ser oriundo de sistemas 
+orgânicos de produção. 
+Sulfato de cálcio (gesso) 
+- 
+Desde que o nível de 
+radioatividade não ultrapasse o 
+limite máximo regulamentado. 
+Gipsita (gesso mineral) sem 
+restrição. 
+Sulfato de magnésio ou sulfato de 
+magnésio monohidratado (Kieserita) 
+Sais de extração mineral. 
+Permitido desde que de 
+origem natural. 
+- 
+
+
+Sulfato de potássio e sulfato duplo de 
+potássio e magnésio 
+- 
+Desde que obtidos por 
+procedimentos físicos, não 
+enriquecidos por processo 
+químico e não tratados 
+quimicamente para o aumento 
+da solubilidade. 
+Permitidos somente com a 
+autorização do OAC ou da OCS. 
+Turfa 
+Autorizado apenas como 
+veículo nas formulações de 
+inoculantes microbianos, 
+desde que proveniente de 
+extração legal e que os limites 
+de contaminantes não 
+ultrapassem os estabelecidos 
+no Anexo VI deste 
+Regulamento Técnico. 
+- 
+ *As substâncias e produtos deverão ser utilizados de acordo com o estabelecido no plano de manejo 
+orgânico. 
+  
+  
+ANEXO VI 
+LIMITES MÁXIMOS DE CONTAMINANTES* 
+  
+ELEMENTO 
+BIOFERTILIZANTES, COMPOSTOS 
+ORGÂNICOS, VERMICOMPOSTOS, 
+FERTILIZANTES ORGÂNICOS, 
+CONDICIONADORES DE SOLO E 
+SUBSTRATOS PARA PLANTAS* 
+PÓS DE ROCHA, REMINERALIZADORES E 
+FERTILIZANTES DERIVADOS DE ROCHAS 
+SILICÁTICAS*** 
+Arsênio 
+20 mg/kg de matéria seca 
+< 15 mg/kg de matéria seca (Redação dada 
+pela Portaria nº 811/2023) 
+Cádmio 
+0,7 mg/kg de matéria seca 
+< 10 mg/kg de matéria seca (Redação dada 
+pela Portaria nº 811/2023) 
+Chumbo 
+45 mg/kg de matéria seca 
+< 200 mg/kg de matéria seca (Redação dada 
+pela Portaria nº 811/2023) 
+Cobre 
+70 mg/kg de matéria seca 
+  
+Cromo 
+hexavalente 
+2,0 mg/kg de matéria seca (limite 
+detectável) (Redação dada pela Portaria 
+nº 811/2023) 
+  
+Cromo total 
+70 mg/kg de matéria seca 
+  
+Mercúrio 
+0,4 mg/kg de matéria seca 
+< 0,1 mg/kg de matéria seca (Redação dada 
+pela Portaria nº 811/2023) 
+Níquel 
+25 mg/kg de matéria seca 
+  
+Selênio 
+80 mg/kg de matéria seca 
+  
+Zinco 
+200 mg/kg de matéria seca 
+  
+Coliformes 
+termotolerantes 
+1.000 NMP/g de MS (número mais 
+provável por grama de matéria seca) 
+  
+< 1.000 UFC/g ou ml (Unidade 
+Formadora de Colônia por grama ou 
+mililitro de produto formulado)** 
+  
+
+
+Ovos viáveis de 
+helmintos 
+1 em 4g ST (em 4 gramas de sólidos 
+totais) 
+  
+Salmonella sp 
+Ausência em 10g de matéria seca 
+  
+Ausência em 25g ou 25ml de produto 
+formulado** 
+ 
+  
+*Aplicado para compostos orgânicos, resíduos de biodigestor, resíduos de lagoa de decantação e 
+fermentação, excrementos oriundos de sistema de criação com o uso intenso de alimentos e produtos 
+obtidos de sistemas não orgânicos e, quando indicado, para produtos registrados com a denominação de 
+“PRODUTO FITOSSANITÁRIO COM USO APROVADO PARA A AGRICULTURA ORGÂNICA”. 
+** No caso de coliformes termotolerantes e Salmonella sp: limite exigido para produtos registrados com a 
+denominação de “PRODUTO FITOSSANITÁRIO COM USO APROVADO PARA A AGRICULTURA ORGÂNICA”, 
+formulados à base de agentes microbiológicos de controle. 
+*** Conforme o estabelecido pela Instrução Normativa nº 5, de 10 de março de 2016. (Redação dada pela 
+Portaria nº 811/2023) 
+  
+  
+  
+ANEXO VII 
+SUBSTÂNCIAS E PRÁTICAS AUTORIZADAS PARA MANEJO, CONTROLE DE PRAGAS E DOENÇAS 
+NOS VEGETAIS, TRATAMENTO DE MADEIRA E TRATAMENTOS PÓS-COLHEITA NOS SISTEMAS 
+ORGÂNICOS DE PRODUÇÃO 
+  
+SUBSTÂNCIAS E PRÁTICAS* 
+DESCRIÇÃO, REQUISITOS DE COMPOSIÇÃO E 
+CONDIÇÕES DE USO 
+Ácido bórico 
+Autorizado somente em formulações de caldas na 
+concentração máxima de 0,1% 
+Ácido bórico e seus sais (octaborato de sódio 
+tetrahidratado e tetraborato de sódio 
+decahidratado - boráx) 
+Uso para tratamento de madeira. 
+Ácido pelargônico 
+Autorizado na condição de herbicida, desde que obtido 
+de fontes naturais ou por síntese através da clivagem 
+oxidativa do ácido oleico. 
+Permitido somente com a autorização do OAC ou da 
+OCS. 
+Ácido peracético 
+Autorizado na concentração máxima de 2% na 
+formulação, com diluições que não excedam 
+concentração de 0,005% para tratamentos preventivos 
+e de 0,4% para tratamentos curativos. 
+Permitido somente com a autorização do OAC ou da 
+OCS. 
+Ácidos naturais (acético, ascórbico, cítrico, lático e 
+outros) 
+Permitido somente com a autorização do OAC ou da 
+OCS. 
+Agentes biológicos e microbiológicos de controle 
+de pragas e doenças 
+O uso de preparados viróticos, fúngicos ou 
+bacteriológicos é permitido somente com a autorização 
+do OAC ou da OCS. 
+Somente machos esterilizados por radiação ionizante. 
+Desde que não sejam geneticamente modificados ou 
+derivados de organismos geneticamente modificados. 
+
+
+Álcool etílico 
+Permitido somente com a autorização do OAC ou da 
+OCS. 
+Algas e seus derivados 
+Desde que provenientes de extração legal. Desde que 
+sem tratamento químico. 
+Armadilhas de insetos, repelentes mecânicos e 
+materiais repelentes 
+Permitido o uso de substâncias com ação inseticida 
+quando autorizadas neste Anexo. 
+Permitido somente com a autorização do OAC ou da 
+OCS. 
+Bentonita 
+- 
+Bicarbonato de potássio 
+Permitido somente com a autorização do OAC ou da 
+OCS. 
+Bicarbonato de sódio 
+- 
+Cal hidratada 
+- 
+Calda sulfocálcica 
+Permitido somente com a autorização do OAC ou da 
+OCS. 
+Carbureto de cálcio 
+Agente de maturação de frutas; indução floral. 
+Permitido somente com a autorização do OAC ou da 
+OCS. 
+Carvão vegetal 
+- 
+Caseína 
+- 
+Ceras naturais 
+- 
+Cloreto de sódio 
+- 
+Cobre nas formas de hidróxido, oxicloreto, sulfato, 
+óxido e octanoato e, as diferentes formas de 
+apresentação da calda bordalesa 
+Uso proibido em pós-colheita. 
+Uso como fungicida e para tratamento de madeira. 
+Permitido somente com a autorização do OAC ou da 
+OCS, de forma a minimizar o acúmulo de cobre no solo. 
+Quantidade máxima a ser aplicada: 6 kg de 
+cobre/ha/ano. 
+Dióxido de carbono, gás de nitrogênio (atmosfera 
+modificada) e tratamento térmico 
+Permitido somente com a autorização do OAC ou da 
+OCS. 
+Dióxido de cloro 
+- 
+Enxofre 
+Permitido somente com a autorização do OAC ou da 
+OCS. 
+Espinosinas  
+Desde que naturalmente originadas de microrganismos 
+não OGM e não irradiados. 
+Permitido somente com a autorização do OAC ou da 
+OCS. 
+Etileno 
+Agente de maturação de frutas. 
+Extrato de levedura 
+Desde que não sejam geneticamente modificados ou 
+derivados de organismos geneticamente modificados. 
+Extrato pirolenhoso 
+Permitido somente em formulações comerciais obtidas 
+através de processo industrial reprodutível e sob 
+controle de qualidade, o qual deve obrigatoriamente 
+incluir o doseamento de hidrocarbonetos policíclicos 
+aromáticos (HPAs) e possuir limite máximo de 0,7 
+microgramas de HPAs por litro de produto formulado. 
+Desde que a madeira usada como matéria-prima seja 
+constituída por bambu, eucalipto, pinus, e acácia sem 
+tratamento químico.  
+Permitido somente com a autorização do OAC ou da 
+OCS. 
+Extratos de insetos 
+- 
+Extratos de plantas e outros preparados 
+fitoterápicos 
+Poderão ser utilizados livremente em partes 
+comestíveis, os extratos e preparados de plantas 
+
+
+utilizadas na alimentação humana, a menos que existam 
+estudos e pesquisas que comprovem que os mesmos 
+causam danos à saúde ou ao meio ambiente. 
+O uso do extrato de fumo, piretro, rotenona e 
+azadiractina naturais, para uso em qualquer parte da 
+planta, deverá ser autorizado pelo OAC ou pela OCS, 
+sendo proibido o uso de nicotina pura. 
+Extratos de plantas e outros preparados fitoterápicos de 
+plantas não utilizadas na alimentação humana poderão 
+ser aplicados nas partes comestíveis, desde que existam 
+estudos e pesquisas que comprovem que não causam 
+danos à saúde humana ou ao meio ambiente, 
+permitidos somente com a autorização do OAC ou da 
+OCS. 
+Fosfato de ferro (III); fosfato férrico 
+Autorizado na concentração máxima de 3% (três por 
+cento) (p/p) em formulações sólidas, como moluscicida; 
+as formulações comerciais não podem conter ácido 
+etilenodiamino tetra-acético (EDTA) como agente 
+quelante ou de complexação. 
+Gelatina 
+- 
+Goma arábica 
+- 
+Goma guar 
+- 
+Goma xantana 
+- 
+Água sanitária - hipoclorito de cálcio (oxicloreto de 
+cálcio) e hipoclorito de sódio (oxicloreto de sódio) 
+Permitido somente em tratamento pós colheita, na 
+forma de solução aquosa com teor de cloro entre 2 e 
+2,5%. Utilizar de 10 a 15 ml da solução por litro de água. 
+Desde que autorizado pelo OAC ou pela OCS. 
+Lactose 
+- 
+Lecitina e Lecitina de soja 
+Desde que não sejam geneticamente modificados ou 
+derivados de organismos geneticamente modificados. 
+Melaço 
+- 
+Óleo mineral 
+Uso proibido em pós-colheita. 
+Permitido somente com a autorização do OAC ou da 
+OCS. 
+Óleos essenciais 
+- 
+Óleos vegetais e derivados 
+Desde que não sejam geneticamente modificados ou 
+derivados de organismos geneticamente modificados. 
+Permanganato de potássio 
+Permitido somente com a autorização do OAC ou da 
+OCS. 
+Uso proibido em pós-colheita. 
+Peróxido de hidrogênio 
+- 
+Pó de rocha 
+Respeitados os limites máximos de metais pesados 
+estabelecidos no Anexo VI deste Regulamento Técnico. 
+Preparados           homeopáticos            e 
+biodinâmicos 
+- 
+Produtos da alimentação humana de origem 
+animal e vegetal 
+Desde que não sejam geneticamente modificados ou 
+derivados de organismos geneticamente modificados. 
+Própolis 
+- 
+Sabão e detergente neutros e biodegradáveis 
+- 
+Semioquímicos (feromônios e aleloquímicos) 
+naturais ou sintéticos 
+Proibida a aplicação por pulverização. 
+Somente poderão ser utilizados em armadilhas ou sua 
+aplicação deverá ser realizada em estacas, em partes 
+aéreas não comestíveis de plantas ou em plantas não 
+comestíveis. 
+
+
+Permitida a associação com substâncias de ação 
+inseticida autorizadas neste Anexo. 
+Os semioquímicos sintéticos serão permitidos desde 
+que similares aos encontrados na natureza e que 
+apresentem o mesmo modo de ação dos de origem 
+natural ou biológica. 
+Permitido somente com a autorização do OAC ou da 
+OCS. 
+Silicatos de cálcio e magnésio 
+Respeitados os limites máximos de metais pesados 
+estabelecidos no Anexo VI deste Regulamento Técnico. 
+Solventes (álcool e amoníaco) 
+Uso proibido em pós-colheita. 
+Permitido somente com a autorização do OAC ou da 
+OCS. 
+Sulfato de alumínio 
+Solução em concentração máxima de 1%. 
+Permitido somente com a autorização do OAC ou da 
+OCS. 
+Termoterapia 
+- 
+Terras diatomáceas 
+Permitido somente com a autorização do OAC ou da 
+OCS. 
+*As substâncias e práticas deverão ser utilizadas de acordo com o estabelecido no plano de manejo orgânico. 
+  
+  
+  
+ANEXO VIII 
+OUTROS INGREDIENTES AUTORIZADOS NAS FORMULAÇÕES COMERCIAIS DE PRODUTOS 
+FITOSSANITÁRIOS COM USO APROVADO PARA A AGRICULTURA ORGÂNICA 
+  
+SUBSTÂNCIA 
+OUTROS NOMES 
+CAS* INS
+** 
+FUNÇÃO 
+DESCRIÇÃO, 
+REQUISITOS DE 
+COMPOSIÇÃO E 
+CONDIÇÕES DE USO 
+Acetato de 
+amônio 
+Sal de amônio do ácido acético; 
+etanoato de amônio; ammonium 
+acetate, acetic acid; ammonium 
+ethanoate, azanium acetate 
+631-
+61-8 
+264 
+Conservant
+e/ 
+Regulador 
+de acidez 
+Concentração máxima 
+de 2,5% (dois vírgula 
+cinco por cento) no 
+produto formulado. 
+Ácido acético 
+Ácido acético glacial; acetic acid; 
+acetic acid, glacial 
+64-
+19-7 
+260 
+- 
+Concentração máxima 
+de 8% (oito por cento) 
+no produto formulado. 
+Ácido ascórbico 
+Vitamina             C; L-ácido 
+ascórbico; ascorbic acid; L-ascorbic 
+acid 
+50-
+81-7 
+300 
+- 
+- 
+Ácido cítrico 
+Ácido cítrico anidro; citric acid; 
+citric acid anydrous 
+77-
+92-9 
+330 
+- 
+- 
+Ácido cítrico 
+monoidratado 
+Citric acid monohydrate 
+5949
+-29-1 - 
+- 
+- 
+Ácido fosfórico 
+Ácido ortofosfórico; phosphoric 
+acid; orthophosphoric acid 
+7664
+-38-2 388 
+Regulador 
+de acidez/ 
+acidulante 
+Concentração máxima 
+de 1,5% (um vírgula 
+cinco por cento) no 
+produto formulado. 
+Ácido fumárico 
+Fumaric               acid; (E)-
+butenedioic acid 
+110-
+17-8 
+297 
+- 
+- 
+
+
+Ácido láctico 
+Lactic acid; propanoic acid, 2-
+hydroxy 
+50-
+21-5 
+270 
+- 
+- 
+Ácido sórbico 
+Sorbic         acid;          2,4- 
+Hexadienoic acid; 11044-1; 
+(2E,4E)-hexa-2,4dienoic acid; 
+2E,4EHexadienoic acid 
+110-
+44-1 
+200 
+Conservant
+e 
+Concentração máxima 
+de 1% (um por cento) 
+no produto formulado. 
+Ácido sulfúrico 
+Sulfuric acid, oil of vitriol, óleo de 
+vitríolo, sulfato de hidrogênio 
+7664
+-93-9 513 
+Conservant
+e/ 
+estabilizant
+e/ regulador 
+de pH 
+Somente nas 
+formulações de 
+produtos 
+microbiológicos e na 
+concentração máxima 
+de 0,1% (zero vírgula 
+um por cento). 
+Açúcar 
+Sacarose; açúcar refinado; açúcar 
+de cana; açúcar de beterraba; αD-
+glucopyranosyl-β-
+Dfructofuranoside 
+57-
+50-1 
+- 
+Nutriente 
+(substrato 
+nutritivo) 
+Desde que isentos de 
+componentes não 
+autorizados neste 
+Regulamento Técnico. 
+Água 
+ - 
+- 
+- 
+Veículo/ 
+diluente 
+Desde que isenta de 
+componentes não 
+autorizados neste 
+Regulamento Técnico. 
+Álcool etílico 
+Álcool etílico 96 º GL; etanol; 
+ethanol; ethyl alcohol 
+64-
+17-5 
+- 
+- 
+Somente poderá ser 
+utilizado no preparo de 
+extratos vegetais. 
+Álcool polivinílico 
+Poli(álcool vinílico); polivinol; PVA; 
+vinil álcool polímero; etenol 
+homopolímero; polyvinyl alcohol; 
+PVOH; vinyl alcohol polymer; 
+ethenol homopolymer. 
+9002
+-89-5 
+120
+3 
+ Estabilizant
+e 
+Concentração máxima 
+de 5% (cinco por cento) 
+no produto formulado. 
+Agente de 
+revestiment
+o/ 
+lubrificante/ 
+agente de 
+aumento 
+de  viscosid
+ade/ veículo 
+em 
+aerossóis 
+Autorizado nas 
+formulações na 
+concentração quantum 
+satis. 
+Alfa-ciclodextrina 
+Alpha-cyclodextrin; 
+cyclohexapentylose; alfadex 
+1001
+6-20-
+3 
+- 
+- 
+- 
+Aluminosilicato de 
+sódio 
+Alumínio silicato de sódio; silicato 
+de alumínio e sódio; aluminum 
+sodium silicate; silicic acid, 
+aluminum sodium salt; 
+aluminosilicic acid, sodium salt 
+(8CI) 
+1344
+-00-9 554 
+- 
+- 
+Amido de milho 
+- 
+9005
+-25-8 - 
+- 
+Desde que isento de 
+componentes não 
+autorizados neste 
+Regulamento Técnico. 
+Azul brilhante 
+Azul FD&C No.1; Azul ácido 9; Azul 
+D&C No. 4; Erioglaucina; C.I. 
+42090; Brilliant Blue FCF; FD&C 
+Blue No. 1, 
+3844
+-45-9 133 
+Corante 
+Concentração máxima 
+de 0,5% (zero vírgula 
+cinco por cento) no 
+produto formulado. 
+
+
+Food Blue No.1, Acid Blue 9 e 
+Erioglaucine disodium salt 
+Azul brilhante laca 
+de alumínio 
+Food      Blue      No.      1 
+Aluminum Lake 
+6892
+1-42-
+6 
+133 
+Corante        
+     
+Concentração máxima 
+de 0,5% (zero vírgula 
+cinco por cento) no 
+produto formulado. 
+Bentonita 
+Bentonite 
+1302
+-78-9 558 
+Veículo/age
+nte de 
+suspensão 
+Concentração máxima 
+de 20% (vinte por 
+cento) no produto 
+formulado 
+Benzoato de 
+potássio 
+Potassium Benzoate  
+582-
+25-2 
+212 
+Conservant
+e  
+Autorizado em 
+formulações com pH 
+menor que 4,2 e com 
+concentração máxima 
+de 0,1% (zero vírgula 
+um por cento) de Ácido 
+benzóico.        
+Não permitido em uso 
+simultâneo com ácido 
+ascórbico. 
+Benzoato de sódio Sodium benzoate; benzoic acid, 
+sodium salt 
+532-
+32-1 
+211 
+Conservant
+e  
+Autorizado em 
+formulações com pH 
+menor que 4,2 e com 
+concentração máxima 
+de 0,1% (zero vírgula 
+um por cento) de Ácido 
+benzóico. 
+Não permitido em uso 
+simultâneo com ácido 
+ascórbico. 
+Bicarbonato de 
+sódio 
+Carbonato ácido de sódio; 
+bicarbonato de sódio anidro; 
+carbonic acid monosodium salt; 
+carbonic acid sodium salt (1:1); 
+sodium bicarbonate; sodium 
+hydrogencarbonate 
+144-
+55-8 
+500i
+i 
+- 
+- 
+Bórax 
+Tetraborato de sódio 
+decahidratado 
+1303
+-96-4 - 
+Conservant
+e 
+Autorizado nas 
+formulações de 
+feromônio na 
+concentração máxima 
+de 2,5% (dois vírgula 
+cinco por cento). 
+Borracha,       sept
+o de borracha 
+Rubber 
+9006
+-04-6 - 
+- 
+Autorizado somente 
+para uso nas 
+formulações de 
+feromônio. 
+Calcário 
+Limestone 
+1317
+-65-3 - 
+Veículo 
+Desde que livre de 
+asbesto e isento de 
+outros componentes 
+não autorizados neste 
+Regulamento Técnico, e 
+que o conteúdo de 
+sílica cristalina seja 
+menor que 1% (um por 
+
+
+cento) no produto 
+formulado. 
+Carbonato de 
+cálcio 
+Calcium carbonate; carbonic acid 
+calcium 
+salt (1:1) 
+471-
+34-1 
+170i - 
+- 
+Carbonato de 
+magnésio 
+Magnesium carbonate; carbonic 
+acid, magnesium salt (1:1) 
+546-
+93-0 
+504i - 
+- 
+Carbonato de 
+sódio 
+Sodium carbonate; carbonic acid 
+sodium salt (1:2); sodium 
+carbonate (2:1) 
+497-
+19-8 
+500i - 
+- 
+Carboximetilcelul
+ose 
+Carmelose; carboxymethyl 
+cellulose; cellulose, carboxymethyl 
+ether 
+9000
+-11-7 - 
+- 
+- 
+Carboximetilcelul
+ose sódica 
+Carmelose sódica; carboximetil 
+amido sódico; sodium 
+carboxymethyl cellulose 
+(cellulose            gum); cellulose, 
+carboxymethyl      ether, 
+sodium salt 
+9004
+-32-4 466 
+Espessante/ 
+emulsificant
+e/ 
+estabilizant
+e 
+- 
+Carvão vegetal 
+Carvão vegetal ativado; carvão 
+ativado; carbon; activated carbon 
+7440
+-44-0 153 
+Corante/ 
+agente de 
+descolorizaç
+ão/ 
+adsorvente/ 
+carreador 
+(veículo)  
+Autorizado nas 
+formulações na 
+concentração quantum 
+satis. 
+Casca de arroz 
+Rice husk 
+- 
+- 
+Veículo 
+Autorizado nas 
+formulações na 
+concentração quantum 
+satis, desde que 
+esterilizados e isentos 
+de               componente
+s          não autorizados 
+neste Regulamento 
+Técnico. 
+Caulim 
+Kaolim; silicato de alumínio 
+hidratado; hydrated aluminium 
+silicate 
+1332
+-58-7 - 
+Diluente 
+sólido/ 
+veículo 
+Desde que livre de 
+asbesto e que o 
+conteúdo de sílica 
+cristalina seja menor 
+que 1% (um por cento) 
+no produto formulado. 
+Caulinita  
+Kaolinite 
+(Al2(OH)4(Si2O5)) 
+1318
+-74-7 - 
+Diluente 
+sólido/ 
+veículo 
+- 
+Cera de abelha 
+Beeswax     (yellow     or 
+white) 
+8012
+-89-3 901 
+- 
+- 
+Cera de carnaúba 
+Carnauba wax 
+8015
+-86-9 903 
+- 
+- 
+Cera 
+microcristalina 
+Cera       amorfa;      cera 
+petrolato microcristalina; 
+microcrystalline wax 
+6323
+1-60-
+7 
+905
+c (i) 
+Veículo 
+oleoso/ 
+agente 
+espessante/ 
+doador de 
+consistência 
+Autorizado na 
+concentração quantum 
+satis, desde que em 
+formulações de 
+feromônio. 
+
+
+Cinza de casca de 
+arroz 
+Casca    de           arroz carbonizada; 
+Rice husk ash; ashes, residues, rice 
+husk 
+7163
+0-92-
+7 
+- 
+Veículo 
+Autorizado nas 
+formulações na 
+concentração quantum 
+satis, desde que isento 
+de componentes não 
+autorizados neste 
+Regulamento Técnico. 
+Citrato de sódio 
+Citrato trissódico; trisodium 
+citrate; citric acid, trisodium salt; 
+sodium citrate anhydrous; sodium 
+citrate;                     1,2,3- 
+propanetricarboxylic 
+acid,               2-hydroxy-, 
+trisodium salt 
+68-
+04-2 
+331i
+ii 
+- 
+- 
+Cloreto de 
+magnésio 
+Cloreto de magnésio anidro; 
+magnesium chloride; magnesium 
+dichloride; magnesium chloride 
+anhydrous 
+7786
+-30-3 511 
+- 
+- 
+Cloreto de 
+potássio 
+Potassium chloride (KCl) 
+7447
+-40-7 508 
+- 
+- 
+Cloreto de sódio 
+Sodium chloride 
+7647
+-14-5 - 
+- 
+- 
+Dióxido de silício 
+Dióxido de silício coloidal; silicon 
+dioxide; 
+7631
+-86-9 551 
+Diluente 
+sólido/ 
+veículo/ 
+agente 
+antiaglomer
+ante / 
+dispersante 
+Concentração máxima 
+de 10% (dez por cento) 
+no produto formulado, 
+desde que livre de sílica 
+cristalina. 
+Espiga de milho 
+- 
+- 
+- 
+- 
+Desde que isento de 
+componentes não 
+autorizados neste 
+Regulamento Técnico. 
+Estearato de 
+magnésio 
+Magnesium stearate; magnesium 
+distearate, pure; octadecanoic 
+acid, magnesium salt; 
+octadecanoic acid, magnesium salt 
+(2:1); stearic acid, magnesium salt 
+557-
+04-0 
+470(
+iii) 
+- 
+- 
+Estearato de 
+sorbitana 
+  
+Monoestearato           de 
+sorbitana; monoestearato de 
+sorbitano; 1,4-anhydro6-O-
+stearoyl-D-glucitol; sorbitan 
+stearate; sorbitan, 
+monooctadecanoate; sorbitan 
+monostearate; 
+1338
+-41-6 491 
+Antiumecta
+nte/ 
+emulsificant
+e/ 
+estabilizant
+e/ 
+surfactante 
+(tensoativo)
+  
+Concentração máxima 
+de 3% (três por cento) 
+no produto formulado. 
+Diluente de 
+cor/ 
+solvente/ 
+veículo 
+Autorizado nas 
+formulações na 
+concentração quantum 
+satis. 
+Extrato de grãos 
+de café torrado 
+Grãos de café; coffee grounds; 
+roasted coffee bean extract 
+6891
+6-18-
+7 
+- 
+- 
+Desde que isento de 
+componentes não 
+autorizados neste 
+Regulamento Técnico. 
+
+
+Extrato de 
+levedura 
+Yeast extract; extract of yeast 
+8013
+-01-2 - 
+Nutriente 
+(substrato 
+nutritivo) 
+Autorizado nas 
+formulações na 
+concentração quantum 
+satis, desde que isento 
+de componentes não 
+autorizados neste 
+Regulamento Técnico. 
+Extrato de malte 
+Extrato de malte seco, extrato de 
+malte xaroposo, xarope de malte, 
+extrato de malte de cevada, 
+extrato de Hordeum vulgare, malt 
+syrup, barley malt extract, 
+Hordeum 
+vulgare extract, maltine 
+8002
+-48-0 - 
+Nutriente 
+(substrato 
+nutritivo)/ 
+modificador 
+de textura 
+Autorizado nas 
+formulações na 
+concentração quantum 
+satis, desde que isento 
+de componentes não 
+autorizados neste 
+Regulamento Técnico. 
+Extrato 
+de  repolho roxo 
+ - 
+- 
+- 
+- 
+Desde que obtido das 
+cabeças de repolho 
+roxo através de 
+processo de 
+prensagem, usando 
+somente água 
+acidificada. 
+Extrato de Saccha
+romyces 
+cerevisiae 
+Saccharomyces 
+cerevisiae extract 
+8460
+4-16-
+0 
+- 
+- 
+- 
+Extrato de 
+urucum (Bixa 
+orellana) 
+Extrato de Bixa orellana; Anato; 
+Annatto extract 
+- 
+160
+b 
+Corante/ 
+antioxidant
+e/ 
+fotoproteto
+r (protetor 
+solar) 
+Concentração máxima 
+de 10% (dez por cento) 
+no produto formulado. 
+Farinha de arroz 
+ - 
+- 
+- 
+- 
+Desde que isento de 
+componentes não 
+autorizados neste 
+Regulamento Técnico. 
+Farinha de milho 
+ - 
+- 
+- 
+- 
+Desde que isento de 
+componentes não 
+autorizados neste 
+Regulamento Técnico. 
+Farinha de soja 
+- 
+6851
+3-95-
+1 
+- 
+- 
+Desde que isento de 
+componentes não 
+autorizados neste 
+Regulamento Técnico. 
+Farinha de trigo 
+ - 
+- 
+- 
+- 
+Desde que isento de 
+componentes não 
+autorizados neste 
+Regulamento Técnico. 
+Gelatina 
+Gelatins;             gelatins, 
+acetylated, conjugates 
+9000
+-70-8 428 
+- 
+- 
+Gipsita 
+Phosphogypsum; gypsum 
+(Ca(SO4).2H2O) 
+1339
+7-24-
+5 
+- 
+Diluente 
+sólido/ 
+veículo 
+- 
+Glicerina 
+Glicerol;         glicetanila; 
+1,2,3-propanetriol; 
+glycerol;             glycerin; 
+glycerine 
+56-
+81-5 
+422 
+Espessante/ 
+emulsificant
+e/ 
+- 
+
+
+estabilizant
+e/ veículo 
+Glicose 
+Glicose monoidratada; D-glucose, 
+anhydrous; dextrose; glucose; corn 
+sugar (dextrose) 
+50-
+99-7 
+- 
+- 
+-  
+Goma arábica 
+Goma acácia; gum arabic; acacia 
+gum; 
+acacia 
+9000
+-01-5 414 
+Espessante/ 
+emulsificant
+e/ 
+estabilizant
+e/ 
+agente          
+     de 
+suspensão/ 
+surfactante/ 
+agente          
+     de 
+dispersão 
+- 
+Goma guar 
+Guar gum 
+9000
+-30-0 412 
+- 
+-  
+Goma xantana 
+Xanthan gum 
+1113
+8-66-
+2 
+415 
+Espessante/ 
+emulsificant
+e/ 
+estabilizant
+e/ 
+agente          
+     de 
+suspensão 
+- 
+Grafite 
+Carbono mineral, plumbago, 
+grafite natural, graphite, black 
+lead, mineral carbon 
+7782
+-42-5 - 
+Diluente 
+sólido/ 
+lubrificante 
+sólido para 
+sementes/ 
+carreador 
+(veículo) 
+Autorizado nas 
+formulações na 
+concentração quantum 
+satis. 
+Grãos de arroz 
+ - 
+- 
+- 
+Veículo 
+Inteiros, quebrados ou 
+moídos desde que 
+esterilizados e isentos 
+de   componentes    não 
+autorizados neste 
+Regulamento Técnico. 
+Grãos de milheto 
+ - 
+- 
+- 
+Veículo 
+Inteiros, quebrados ou 
+moídos desde que 
+esterilizados e isentos 
+de   componentes    não 
+autorizados neste 
+Regulamento Técnico. 
+Grãos de milho 
+ - 
+- 
+- 
+Veículo 
+Inteiros, quebrados ou 
+moídos desde que 
+esterilizados e isentos 
+de   componentes    não 
+autorizados neste 
+Regulamento Técnico. 
+Grãos de soja 
+ - 
+- 
+- 
+Veículo 
+Inteiros, quebrados ou 
+moídos desde que 
+esterilizados e isentos 
+
+
+de   componentes    não 
+autorizados neste 
+Regulamento Técnico. 
+Grãos de sorgo 
+ - 
+- 
+- 
+Veículo 
+Inteiros, quebrados ou 
+moídos desde que 
+esterilizados e isentos 
+de   componentes    não 
+autorizados neste 
+Regulamento Técnico. 
+Grãos de trigo 
+ - 
+- 
+- 
+Veículo 
+Inteiros, quebrados ou 
+moídos desde que 
+esterilizados e isentos 
+de   componentes    não 
+autorizados neste 
+Regulamento Técnico. 
+Hidróxido de 
+potássio 
+Potassium               hydroxide 
+(K(OH)) 
+1310
+-58-3 525 
+- 
+-  
+Hidróxido de 
+sódio 
+  Sodium            hydroxide 
+(Na(OH)) 
+1310
+-73-2 524 
+Regulador    
+     de 
+acidez 
+ - 
+Hietelose 
+Hidroxietilcelulose; hyetellose; 
+hydroxyethyl cellulose; cellulose, 
+2hydroxyethyl ether 
+9004
+-62-0 - 
+- 
+- 
+Hiprolose 
+Hidroxipropilcelulose; 
+hydroxypropyl cellulose; cellulose, 
+2hydroxypropyl ether 
+9004
+-64-2 463 
+- 
+- 
+Hipromelose 
+Hidroxipropilmetilcelul ose; éter 
+hidroxilpropil metil celulose; 
+hydroxypropyl methyl cellulose; 
+cellulose, 2hydroxypropyl methyl 
+ether; hypromellose 
+9004
+-65-3 464 
+- 
+- 
+Lactose 
+D-Glucose, 4-o-beta-
+Dgalactopyranosyl; D- 
+Lactose; D-(+)-Lactose 
+63-
+42-3 
+- 
+Veículo/ 
+diluente 
+- 
+Látex de borracha Latex rubber 
+- 
+- 
+- 
+Autorizado somente 
+para uso nas 
+formulações de 
+feromônio. 
+Lecitina 
+Lecithins; lecithine 
+8002
+-43-5 322 
+Dispersante
+/ 
+emulsificant
+e/ agente 
+solubilizant
+e 
+Desde que isenta de 
+componentes não 
+autorizados neste 
+Regulamento Técnico. 
+Lecitina de soja 
+Soya lecithins; lecithins, soya; soy 
+lecithin 
+8030
+-76-0 - 
+- 
+Desde que isenta de 
+componentes não 
+autorizados neste 
+Regulamento Técnico. 
+Leite 
+- 
+- 
+- 
+- 
+Desde que isento de 
+componentes não 
+autorizados neste 
+Regulamento Técnico. 
+Leite em pó 
+- 
+- 
+- 
+- 
+Desde que isento de 
+componentes não 
+
+
+autorizados neste 
+Regulamento Técnico. 
+Lignosulfonato de 
+sódio 
+Lignosulfonic acid, sodium salt; 
+sodium polignate; sodium 
+lignosulfonate; sodium 
+lignosulfonic acid 
+8061
+-51-6 - 
+Dispersante
+/ 
+surfactante 
+/ 
+emulsificant
+e / agente 
+quelante 
+Concentração máxima 
+de 15% (quinze por 
+cento) no produto 
+formulado. 
+Maltodextrina 
+Maltodextrin 
+9050
+-36-6   
+Veículo/ 
+diluente/ 
+aglutinante 
+Concentração máxima 
+de 23% (vinte e três por 
+cento) no produto 
+formulado. 
+Matéria orgânica 
+residual de cultivo 
+de 
+Baculovírus 
+Matéria orgânica (fase líquida e 
+semissólida do corpo de inseto 
+contendo o vírus) 
+- 
+- 
+Veículo 
+Autorizado nas 
+formulações na 
+concentração quantum 
+satis, desde que 
+apresente 
+correspondência entre 
+a espécie de inseto 
+utilizada no cultivo e a 
+espécie presente na 
+matéria orgânica 
+residual do cultivo de 
+Baculovírus. 
+Melaço 
+Molasses 
+8052
+-35-5 - 
+Nutriente 
+(substrato 
+nutritivo) 
+Autorizado nas 
+formulações na 
+concentração quantum 
+satis, desde que isento 
+de componentes não 
+autorizados neste 
+Regulamento Técnico. 
+Metil parabeno 
+Methylparaben; methyl p-
+hydroxybenzoate;  para-
+hidroxibenzoato de metila, 
+metilparabeno; methyl 
+paraben;  methyl 
+parahydroxybenzoate; p-
+carbomethoxyphenol;  pmethoxyc
+arbonylphenol ; 4-
+hydroxybenzoate ester 
+99-
+76-3 
+218 
+Conservant
+e  
+Concentração máxima 
+de 0,3% (zero vírgula 
+três por cento) no 
+produto formulado; e 
+de 0,5% (zero vírgula 
+cinco por cento) em 
+formulações de 
+semioquímicos. 
+Microcápsulas de 
+polímeros 
+naturais (gelatina 
+ou goma 
+arábica) 
+- 
+- 
+- 
+- 
+Autorizado somente 
+para uso nas 
+formulações de 
+feromônio. 
+Monoestearato     
+   de 
+glicerila 
+Glyceryl monostearate; 
+octadecanoic acid, monoester with 
+1,2,3propanetriol; stearic acid, 
+monoester with glycerol 
+3156
+6-31-
+1 
+- 
+- 
+- 
+Oleato de 
+potássio 
+Sabão potássico; potassium 
+oleate; 9octadecenoic acid (9Z), 
+potassium salt; oleic acid, 
+potassium salt; potassium cis-9- 
+octadecenoic acid 
+143-
+18-0 
+- 
+- 
+- 
+
+
+Óleo    de       baba
+çu 
+(Attalea 
+speciosa ou 
+Orbignya oleifera) 
+Óleo de coco babaçu; 
+Babassu oil; Orbignya 
+Oleifera Seed Oil 
+9107
+8-92-
+1 
+- 
+Emoliente/ 
+hidratante/ 
+antioxidant
+e 
+Autorizado nas 
+formulações na 
+concentração quantum 
+satis, desde que obtido 
+a partir de extrativismo 
+legal. 
+Óleo   de    canola 
+(Brassica 
+napus var. oleifera
+) 
+Canola oil; rapeseed oil 
+1209
+62-
+03-0 
+- 
+Veículo 
+(carreador)/ 
+lubrificante 
+Autorizado nas 
+formulações na 
+concentração quantum 
+satis, desde que tenha 
+concentração máxima 
+de 2% de Ácido erúcico 
+e isento de 
+componentes não 
+autorizados neste 
+Regulamento Técnico. 
+Óleo de girassol 
+Sunflower oil; sunflower seed oil 
+8001
+-21-6 - 
+Diluente/ 
+veículo 
+(carreador)/ 
+solvente/ 
+emulsificant
+e/ 
+lubrificante 
+Autorizado nas 
+formulações na 
+concentração quantum 
+satis. 
+Óleo de mamona 
+Óleo de rícino; castor oil 
+8001
+-79-4 
+150
+3 
+- 
+-  
+Óleo   de   mamon
+a 
+hidrogenado 
+Castor oil, hydrogenated 
+8001
+-78-3 - 
+- 
+-  
+Óleo de milho  
+Corn oil; maize oil 
+8001
+-30-7 - 
+Veículo 
+(carreador)/ 
+solvente/ 
+lubrificante 
+  
+Autorizado nas 
+formulações na 
+concentração quantum 
+satis, desde que isento 
+de componentes não 
+autorizados neste 
+Regulamento Técnico. 
+Óleo de semente 
+de uva  
+Grape seed oil; Vitis vinifera seed 
+oil 
+8024
+-22-4 - 
+Veículo 
+(carreador)/ 
+antioxidant
+e 
+Concentração máxima 
+de 10% (dez por cento) 
+no produto formulado. 
+Óleo de soja e 
+óleo de soja 
+degomado 
+Soybean oil; degummed soybean 
+oil 
+8001
+-22-7 - 
+  
+Veículo/ 
+solvente 
+  
+Desde que isento de 
+componentes não 
+autorizados neste 
+Regulamento Técnico. 
+Óleo       de      soja 
+hidrogenado 
+Hydrogenated soybean oil 
+8016
+-70-4 - 
+Veículo 
+Desde que isento de 
+componentes não 
+autorizados neste 
+Regulamento Técnico. 
+Óleo mineral 
+branco 
+Petrolato branco; vaselina sólida; 
+white mineral oil (petroleum) 
+8042
+-47-5 - 
+- 
+- 
+Óleo mineral 
+Parafina líquida; óleo de parafina; 
+mineral oil; paraffin oil 
+8012
+-95-1 
+905
+a 
+- 
+-  
+Óxido de cálcio 
+Cal; lime; calcium oxide (CaO) 
+1305
+-78-8 529 
+- 
+-  
+Óxido de ferro (III) Óxido férrico; óxido de ferro 
+vermelho; iron oxide (Fe2O3); iron 
+1309
+-37-1 
+172(
+iii) 
+- 
+- 
+
+
+oxide red 
+Óxido de 
+magnésio 
+Magnesium oxide (MgO) 
+1309
+-48-4 530 
+- 
+- 
+Óxido de zinco 
+Zinc oxide (ZnO) 
+1314
+-13-2 - 
+- 
+- 
+Peróxido      de 
+hidrogênio 
+Água oxigenada; hydrogen 
+peroxide (H2O2) 
+7722
+-84-1 - 
+- 
+- 
+Peptona 
+Peptone; peptone from animal 
+tissue; hydrolyzed algin; triptones; 
+hydrolyzed protein; brewers 
+peptone; 
+7304
+9-73-
+7 
+429 
+Nutriente 
+(substrato 
+nutritivo)/ 
+emulsificant
+e 
+Autorizado nas 
+formulações na 
+concentração quantum 
+satis. 
+Peptona de carne 
+Proteose-peptone; neopeptone 
+9107
+9-38-
+8 
+429 
+Nutriente 
+(substrato 
+nutritivo)/ 
+emulsificant
+e 
+Autorizado nas 
+formulações na 
+concentração quantum 
+satis. 
+Peptona de 
+caseína 
+Triptona; hidrolisado de caseína; 
+tryptone; casein hydrolysate; 
+peptone from casein, acid digest; 
+peptone from casein, 
+tryptic digest 
+9107
+9-40-
+2 
+429 
+Nutriente 
+(substrato 
+nutritivo)/ 
+emulsificant
+e 
+Autorizado nas 
+formulações na 
+concentração quantum 
+satis. 
+Peptona de 
+gelatina 
+Hidrolisado de gelatina; peptone 
+from gelatin; gelatin hydrolysate 
+9107
+9-43-
+5 
+429 
+Nutriente 
+(substrato 
+nutritivo)/ 
+emulsificant
+e 
+Autorizado nas 
+formulações na 
+concentração quantum 
+satis. 
+Peptona de soja 
+Peptone from soybean, enzymatic 
+digest 
+9107
+9-46-
+8 
+429 
+Nutriente 
+(substrato 
+nutritivo)/ 
+emulsificant
+e 
+Autorizado nas 
+formulações na 
+concentração quantum 
+satis. 
+Peptona de 
+vegetais 
+Peptona de batata; peptone from 
+vegetable; peptone from pea; 
+peptone from potatoes 
+1002
+09-
+45-8 
+429 
+Nutriente 
+(substrato 
+nutritivo)/ 
+emulsificant
+e 
+Autorizado nas 
+formulações na 
+concentração quantum 
+satis. 
+Peptona suína 
+Peptone porcine 
+9338
+4-33-
+9 
+429 
+Nutriente 
+(substrato 
+nutritivo)/ 
+emulsificant
+e 
+Autorizado nas 
+formulações na 
+concentração quantum 
+satis. 
+Perlita 
+Perlite; expanded perlite 
+9376
+3-70-
+3 
+- 
+Veículo 
+Autorizado nas 
+formulações na 
+concentração quantum 
+satis. 
+Polietileno 
+Polyethylene;     ethene, 
+homopolymer; ethylene polymers 
+(8CI) 
+9002
+-88-4 - 
+- 
+- 
+Polissorbato 20 
+Monolaurato de sorbitana 
+etoxilado 20 EO; Monolaurato de 
+poliexietileno sorbitana 
+20;  
+9005
+-64-5 432 
+Emulsificant
+e/ 
+estabilizant
+e/ 
+dispersante
+/ 
+Concentração máxima 
+de 20% (vinte por 
+cento) no produto 
+formulado. 
+
+
+polyoxyethylene 20 laurate; 
+Polyethylene glycol (80) sorbitan 
+monolaurate 
+solubilizant
+e/ 
+umectante/ 
+surfactante 
+(tensoativo) 
+Polissorbato 40 
+Sorbitan monohexadecanoate 
+9005
+-66-7 434 
+Emulsificant
+e/ 
+estabilizant
+e/ 
+dispersante
+/ 
+solubilizant
+e/ 
+umectante/ 
+surfactante 
+(tensoativo) 
+Concentração máxima 
+de 20% (vinte por 
+cento) no produto 
+formulado. 
+Polissorbato 60 
+Polyoxyethylene 20 stearate; 
+sorbitan monooctadecanoate 
+9005
+-67-8 435 
+Emulsificant
+e/ 
+estabilizant
+e/ 
+dispersante
+/ 
+solubilizant
+e/ 
+umectante/ 
+surfactante 
+(tensoativo) 
+Concentração máxima 
+de 20% (vinte por 
+cento) no produto 
+formulado. 
+Polissorbato 65 
+Sorbitan trioctadecanoate 
+9005
+-71-4 436 
+Emulsificant
+e/ 
+estabilizant
+e/ 
+dispersante
+/ 
+solubilizant
+e/ 
+umectante/ 
+surfactante 
+(tensoativo) 
+Concentração máxima 
+de 20% (vinte por 
+cento) no produto 
+formulado. 
+Polissorbato 80 
+Polyoxyethylene 20 oleate; (Z)-
+sorbitan mono-9-octadecenoate 
+9005
+-65-6 433 
+Emulsificant
+e/ 
+estabilizant
+e/ 
+dispersante
+/ 
+solubilizant
+e/ 
+umectante/ 
+surfactante 
+(tensoativo) 
+Concentração máxima 
+de 20% (vinte por 
+cento) no produto 
+formulado. 
+Polissorbato 85 
+  Sorbitan                    tri-9- 
+octadecenoate 
+9005
+-70-3 - 
+Emulsificant
+e/ 
+estabilizant
+e/ 
+dispersante
+/ 
+solubilizant
+Concentração máxima 
+de 20% (vinte por 
+cento) no produto 
+formulado. 
+
+
+e/ 
+umectante/ 
+surfactante 
+(tensoativo) 
+Polpa cítrica 
+Citrus pulp, orange 
+6851
+4-76-
+1 
+- 
+- 
+-  
+Sabão sódico 
+Soap (Fatty acids, C8-18 and C18-
+unsatd., sodium salts) 
+6770
+1-10-
+4 
+- 
+Surfactante/ 
+emulsificant
+e 
+Concentração máxima 
+de 5% (cinco por cento) 
+no produto formulado, 
+sendo que por sabão 
+sódico entende-se 
+qualquer sal sódico de 
+ácido graxo (exemplos: 
+laurato de sódio, 
+estearato de sódio e 
+palmitato de sódio). 
+Sílica amorfa 
+coloidal 
+Silica, fumed amorphous, 
+1129
+45-
+52-5 
+- 
+- 
+Desde que livre de sílica 
+cristalina. 
+Sílica  amorfa 
+precipitada e gel 
+Silica, amorphous, precipated and 
+gel; 
+silicic acid (H2SiO3) 
+7699
+-41-4 - 
+- 
+-  
+Sílica gel 
+Silica gel 
+6323
+1-67-
+4 
+- 
+Antiaglomer
+ante/ 
+antiespuma
+nte 
+Concentração máxima 
+de 10% (dez por cento) 
+de SiO2 (Dióxido de 
+silício) no produto 
+formulado. 
+Sílica gel 
+precipitada 
+Silica gel, precipitated; hydrated 
+silica; silica, amorphous, 
+precipitated and gel 
+1129
+26-
+00-8 
+- 
+- 
+Desde que livre de sílica 
+cristalina. 
+Silicato de cálcio 
+Calcium silicate; silicic acid, 
+calcium salt 
+1344
+-95-2 552 
+- 
+-  
+Silicato de 
+magnésio 
+Magnesium        silicate; silicic acid, 
+magnesium salt 
+1343
+-88-0 
+553(
+i) 
+Anti-
+aglomerant
+e/ 
+dispersante 
+Concentração máxima 
+de 10% (dez por cento) 
+de SiO2 (Dióxido de 
+silício) no produto 
+formulado. 
+Silicato de 
+magnésio 
+hidratado 
+  Magnesium           silicate 
+hydrate; soapstone 
+1343
+-90-4 - 
+Diluente 
+sólido 
+Concentração máxima 
+de 10% (dez por cento) 
+de SiO2 (Dióxido de 
+silício) no produto 
+formulado. 
+Sorbato de 
+potássio 
+Potassium sorbate; sorbic acid, 
+potassium salt; sorbic acid, 
+potassium salt, (E,E)-; 2,4-
+hexadienoic        acid, 
+(E,E)-, potassium salt 
+2463
+4-61-
+5 
+202 
+Conservant
+e 
+Concentração máxima 
+de 1% (um por cento) 
+no produto formulado. 
+Sorbitol 
+Sorbitol; D-sorbitol; glucitol; D-
+glucitol 
+50-
+70-4 
+420 
+(i) 
+Emulsificant
+e/ 
+estabilizant
+e/ 
+espessante/ 
+umectante/ 
+- 
+
+
+veículo/ 
+diluente 
+Sulfato de cálcio 
+Sulfato de berberina; calcium 
+sulfate; calcium sulphate, natural; 
+sulfuric acid, calcium 
+salt (1:1) 
+7778
+-18-9 516 
+- 
+- 
+Sulfato de 
+magnésio 
+Magnesium sulfate; magnesium 
+sulfate anhydrous; sulfuric acid, 
+magnesium salt (1:1) 
+7487
+-88-9 518 
+- 
+- 
+Sulfato de 
+magnésio 
+heptaidratado  
+Magnesium            sulfate 
+heptahydrate 
+(MgSO47H2O); sulfuric acid 
+magnesium salt 
+(1:1), heptahydrate 
+1003
+4-99-
+8 
+- 
+- 
+- 
+Sulfato de 
+manganês 
+Sulfato de manganês anidro; ácido 
+sulfúrico, manganês (II) sal (1:1); 
+sulfato de manganês (II) (1:1); 
+monosulfato de manganês; 
+mangenese sulfate 
+7785
+-87-7 - 
+- 
+Autorizado somente 
+nas formulações de 
+preparados viróticos, 
+fúngicos e 
+bacteriológicos, na 
+concentração máxima 
+de 0,02% (zero vírgula 
+zero dois por cento) no 
+produto formulado 
+Sulfato de 
+potássio 
+Potassium sulfate; sulfuric acid, 
+dipotassium salt 
+7778
+-80-5 
+515(
+i) 
+- 
+- 
+Sulfato de sódio 
+Sodium sulfate; sodium sulfate, 
+dried; sulfuric acid disodium salt; 
+sulfuric acid sodium salt(1:2) 
+7757
+-82-6 
+514 
+(i) 
+Diluente 
+sólido/ 
+veículo 
+- 
+Terra diatomácea 
+Silica, amorphous - diatomaceous 
+earth 
+6179
+0-53-
+2 
+  
+Diluente 
+sólido/ 
+veículo 
+Concentração máxima 
+de 10% (dez por cento) 
+de SiO2 (Dióxido de 
+silício) no produto 
+formulado, desde que o 
+conteúdo de sílica 
+cristalina seja menor 
+que 1% (um por cento). 
+Turfa 
+ Peat;         peat      moss; 
+Sphagnum peat moss 
+- 
+- 
+Veículo 
+Autorizado nas 
+formulações de agentes 
+biológicos de controle 
+na 
+concentração quantum 
+satis, desde que 
+proveniente de 
+extração legal e que os 
+limites de 
+contaminantes não 
+ultrapassem os 
+estabelecidos no Anexo 
+VI deste Regulamento 
+Técnico. 
+Vermiculita 
+Vermiculite 
+1318
+-00-9 - 
+Veículo 
+Autorizado nas 
+formulações na 
+concentração quantum 
+satis, desde que os 
+limites de 
+
+
+contaminantes não 
+ultrapassem os 
+estabelecidos no Anexo 
+VI deste Regulamento 
+Técnico. 
+Vinagre 
+Vinegar 
+8028
+-52-2 - 
+- 
+Concentração máxima 
+de 8% (oito por cento) 
+de ácido acético no 
+produto formulado. 
+Vitamina E 
+Alpha-tocopherol 
+1406
+-18-4 - 
+Antioxidant
+e 
+Autorizado nas 
+formulações na 
+concentração quantum 
+satis. 
+*CAS: É o código de registro, usado mundialmente como referência, atribuído às substâncias químicas 
+pelo Chemical Abstract Service (CAS), órgão da Sociedade Americana de Química. 
+**INS: Sistema Internacional de Numeração de Aditivos Alimentares elaborado pelo Comitê do Codex sobre 
+Aditivos Alimentares e Contaminantes de Alimentos. 
+ 
+
+

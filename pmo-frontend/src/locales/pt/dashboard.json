@@ -1,0 +1,17 @@
+{
+  "overview": {
+    "title": "Visão Geral da Organização",
+    "restrictedAccess": "Acesso Restrito",
+    "restrictedMessage": "Apenas gestores desta organização podem visualizar a Torre de Controle.",
+    "errorLoading": "Não foi possível carregar os dados.",
+    "goBack": "Voltar",
+    "coopProfile": "Perfil da Cooperativa"
+  },
+  "stats": {
+    "totalMembers": "Total de Membros",
+    "certifiedProperties": "Propriedades Certificadas",
+    "totalArea": "Área Total Certificada",
+    "status": "Status de Certificação",
+    "pending": "Pendentes"
+  }
+}

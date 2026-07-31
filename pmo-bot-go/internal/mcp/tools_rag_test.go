@@ -102,7 +102,8 @@ func TestMetaRAGFiltering(t *testing.T) {
 		"pergunta": "Como plantar milho orgânico?",
 	}
 
-	res, err := server.handleConsultarBaseConhecimento(args)
+	mockProfile := &supabase.Profile{PmoAtivoID: 6, ID: "test-user"}
+	res, err := server.handleConsultarBaseConhecimento(context.Background(), args, mockProfile)
 	if err != nil {
 		t.Fatalf("handleConsultarBaseConhecimento failed: %v", err)
 	}
@@ -176,7 +177,8 @@ func TestMetaRAGFailOpen(t *testing.T) {
 		"pergunta": "Como plantar milho orgânico?",
 	}
 
-	res, err := server.handleConsultarBaseConhecimento(args)
+	mockProfile := &supabase.Profile{PmoAtivoID: 6, ID: "test-user"}
+	res, err := server.handleConsultarBaseConhecimento(context.Background(), args, mockProfile)
 	if err != nil {
 		t.Fatalf("handleConsultarBaseConhecimento failed on fail-open: %v", err)
 	}

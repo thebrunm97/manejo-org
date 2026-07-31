@@ -12,13 +12,17 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 )
 
-func (s *Server) handleConsultarDadosFazenda(args map[string]interface{}) (interface{}, error) {
-	pmoIDFloat, err := parseArgToFloat(args["pmo_id"])
-	if err != nil {
-		return nil, fmt.Errorf("pmo_id is required and must be numeric: %w", err)
+func (s *Server) handleConsultarDadosFazenda(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
+	// SECURE SESSION INJECTION
+	if profile == nil {
+		return nil, fmt.Errorf("unauthorized: missing profile")
 	}
-	pmoID := int64(pmoIDFloat)
-
+	pmoID := profile.PmoAtivoID
+	userID := profile.ID
+	propID := profile.PropriedadeAtivaID
+	_ = pmoID
+	_ = userID
+	_ = propID
 	tabela, ok := args["tabela"].(string)
 	if !ok {
 		return nil, fmt.Errorf("tabela is required and must be a string")
@@ -27,6 +31,7 @@ func (s *Server) handleConsultarDadosFazenda(args map[string]interface{}) (inter
 	log.Printf("📊 [MCP-TOOL] Consultando dados estruturados (%s) para PMO %d", tabela, pmoID)
 
 	var data interface{}
+	var err error
 
 	switch tabela {
 	case "talhoes":
@@ -56,13 +61,17 @@ func (s *Server) handleConsultarDadosFazenda(args map[string]interface{}) (inter
 	return string(jsonBytes), nil
 }
 
-func (s *Server) handleConsultarBaseConhecimento(args map[string]interface{}) (interface{}, error) {
-	pmoIDFloat, err := parseArgToFloat(args["pmo_id"])
-	if err != nil {
-		return nil, fmt.Errorf("pmo_id is required and must be numeric: %w", err)
+func (s *Server) handleConsultarBaseConhecimento(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
+	// SECURE SESSION INJECTION
+	if profile == nil {
+		return nil, fmt.Errorf("unauthorized: missing profile")
 	}
-	pmoID := int64(pmoIDFloat)
-
+	pmoID := profile.PmoAtivoID
+	userID := profile.ID
+	propID := profile.PropriedadeAtivaID
+	_ = pmoID
+	_ = userID
+	_ = propID
 	pergunta, ok := args["pergunta"].(string)
 	if !ok {
 		return nil, fmt.Errorf("pergunta is required and must be a string")
@@ -113,7 +122,7 @@ func (s *Server) handleConsultarBaseConhecimento(args map[string]interface{}) (i
 	}
 
 	log.Printf("[META-RAG] Evaluating %d evidence chunks against query: %q", len(chunks), pergunta)
-	evalCtx, evalCancel := context.WithTimeout(context.Background(), 20*time.Second)
+	evalCtx, evalCancel := context.WithTimeout(ctx, 20*time.Second)
 
 	var evalResult llm.MetaRAGResult
 	var evalErr error
@@ -211,7 +220,18 @@ func (s *Server) handleConsultarBaseConhecimento(args map[string]interface{}) (i
 	return result, nil
 }
 
-func (s *Server) handleConsultarLeiOrganica(args map[string]interface{}) (interface{}, error) {
+func (s *Server) handleConsultarLeiOrganica(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
+	// SECURE SESSION INJECTION
+	if profile == nil {
+		return nil, fmt.Errorf("unauthorized: missing profile")
+	}
+	pmoID := profile.PmoAtivoID
+	userID := profile.ID
+	propID := profile.PropriedadeAtivaID
+	_ = pmoID
+	_ = userID
+	_ = propID
+
 	query, ok := args["query"].(string)
 	if !ok || strings.TrimSpace(query) == "" {
 		return nil, fmt.Errorf("argument 'query' is required and must be a non-empty string")
@@ -224,5 +244,5 @@ func (s *Server) handleConsultarLeiOrganica(args map[string]interface{}) (interf
 		"categoria_fonte": "institucional",
 	}
 
-	return s.handleConsultarBaseConhecimento(mappedArgs)
+	return s.handleConsultarBaseConhecimento(ctx, mappedArgs, profile)
 }

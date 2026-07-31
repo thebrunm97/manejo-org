@@ -1,0 +1,154 @@
+## MINISTÉRIO DA AGRICULTURA, PECUÁRIA E ABASTECIMENTO.
+
+## MINISTÉRIO DA SAÚDE
+
+GABINETE DO MINISTRO
+
+INSTRUÇÃO NORMATIVA CONJUNTA Nº 18, DE 28 DE MAIO DE 2009
+
+O MINISTRO DE ESTADO DA AGRICULTURA, PECUÁRIA E ABASTECIMENTO E O MINISTRO DA SAÚDE, no uso das atribuições que lhes confere o art. 87, parágrafo único, inciso II, da Constituição, tendo em vista o disposto na Lei nº 10.831, de 23 de dezembro de 2003, no Decreto nº 6.323, de 27 de dezembro de 2007, e o que consta do Processo nº 21000.001632/2008-26, resolvem:
+
+.Art. 1º Aprovar o REGULAMENTO TÉCNICO PARA O PROCESSAMENTO, ARMAZENAMENTO E TRANSPORTE DE PRODUTOS ORGÂNICOS, na forma dos Anexos à presente Instrução Normativa Conjunta.
+
+Art. 2º Os casos omissos e as dúvidas suscitadas na execução da presente Instrução Normativa Conjunta serão resolvidos pelo Ministério da Agricultura, Pecuária e Abastecimento - MAPA e pelo Ministério da Saúde - MS.
+
+Art. 3º Esta Instrução Normativa Conjunta entra em vigor na data de sua publicação.
+
+REINHOLD STEPHANES JOSÉ GOMES TEMPORÃO
+
+ANEXO I
+
+REGULAMENTO TÉCNICO PARA O PROCESSAMENTO,ARMAZENAMENTO E TRANSPORTE DE PRODUTOS ORGÂNICOS
+
+CAPÍTULO I
+
+DO ÂMBITO DE APLICAÇÃO
+
+Art. 1º Este regulamento aplica-se a toda pessoa física ou jurídica que processe, armazene e transporte produtos obtidos em sistemas orgânicos de produção ou oriundos de processo extrativista sustentável orgânico, desde que não prejudicial ao ecossistema local.
+
+CAPÍTULO II
+
+## DO PROCESSAMENTO
+
+Art. 2º O processamento de produtos orgânicos deverá obedecer igualmente à legislação específica para cada tipo de produto.
+
+Art. 3º É obrigatório o uso de boas práticas de manuseio e processamento de forma a manter a integridade orgânica dos produtos.
+
+Parágrafo único. A unidade de produção deverá manter registros atualizados que descrevam a manutenção da qualidade dos produtos orgânicos durante o processamento e assegurem a rastreabilidade de ingredientes, matéria-prima, embalagens e do produto final.
+
+Art. 4º Deverão ser exclusivamente utilizados os produtos de higienização de equipamentos e das instalações utilizadas para o processamento de produtos orgânicos dispostos no Anexo II da presente Instrução Normativa Conjunta.
+
+Art. 5º O processamento dos produtos orgânicos deverá ser realizado de forma separada dos não-orgânicos, em áreas fisicamente separadas ou, quando na mesma área, em momentos distintos.
+
+§ 1º No processamento de produtos orgânicos e não-orgânicos na mesma área, será exigida uma descrição do processo de produção, do processamento e do armazenamento.
+
+§ 2º Os equipamentos e instalações utilizados devem estar livres de resíduos de produtos não-orgânicos.
+
+Art. 6º Serão proibidos o emprego de radiações ionizantes, emissão de micro-ondas e nanotecnologia em qualquer etapa do processo produtivo.
+
+Art. 7º Os ingredientes utilizados no processamento de produtos orgânicos deverão ser provenientes de produção oriunda do Sistema Brasileiro de Avaliação da Conformidade Orgânica.
+
+§ 1º Em caso de indisponibilidade de ingredientes agropecuários obtidos em sistemas orgânicos de produção, poderá ser utilizada matéria-prima de origem não-orgânica em quantidade não superior a 5% (cinco por cento) em peso.
+
+§ 2º Não será permitida a utilização do mesmo ingrediente de origem orgânica e não-orgânica.
+
+§ 3º O emprego de água potável e sal (cloreto de sódio NaCl e cloreto de potássio - KCl) serão permitidos sem restrições e não serão incluídos no cálculo do percentual de ingredientes orgânicos.
+
+Art. 8º A defumação deverá ser realizada mediante a utilização de madeiras obtidas de manejo sustentável ou fonte renovável e que não produzam substâncias tóxicas durante o processo de combustão.
+
+Art. 9º No processamento de produto orgânico, será permitido o uso dos aditivos e coadjuvantes de tecnologia dispostos no Anexo III da presente Instrução Normativa Conjunta.
+
+§ 1º Os aditivos alimentares e coadjuvantes de tecnologia mencionados no caput deste artigo somente poderão ser utilizados no produto orgânico se estiverem autorizados para o respectivo produto não-orgânico pela legislação específica do órgão competente da Saúde ou da Agricultura, observadas as funções dos mesmos ou, quando houver, as condições de uso estabelecidas no Anexo III.
+
+§ 2º O uso dos aditivos alimentares e coadjuvantes de tecnologia autorizados para os produtos orgânicos está limitado à quantidade necessária para atender às Boas Práticas de Fabricação, em quantidade suficiente para obter o efeito tecnológico desejado (q.s.p ou quantum satis), salvo nos casos em que houver limite máximo estabelecido nesta Instrução Normativa Conjunta.
+
+Art. 10. O uso de enzimas deverá atender aos dispositivos legais vigentes.
+
+Art. 11. É proibido o uso de organismos geneticamente modificados ou produtos em cujo processo de obtenção aqueles organismos tenham sido utilizados.
+
+Art. 12. Durante o processamento de produtos orgânicos, deverão ser utilizados métodos de higienização de ingredientes e produtos mediante a utilização dos produtos dispostos no Anexo IV da presente Instrução Normativa Conjunta.
+
+## CAPÍTULO III
+
+## DO PROCESSAMENTO DOS PRODUTOS APÍCOLAS
+
+Art. 13. Os equipamentos utilizados para a extração e o processamento dos produtos apícolas deverão ser construídos com materiais inertes e estar de acordo com as recomendações técnicas específicas.
+
+Art. 14. É proibida a utilização de qualquer tipo de aditivo no mel, assim como açúcares e outras substâncias que alterem a sua composição original.
+
+- Art. 15. O processo de aquecimento do mel deverá atender a critérios técnicos no que se refere à combinação de temperatura e tempo de exposição ao calor, de forma a garantir a manutenção das características originais, considerando a origem do mel, seja do gênero apis ou de abelhas nativas sem ferrão (subfamília Meliponinae).
+- Art. 16. Os produtos apícolas de que trata este regulamento deverão atender aos requisitos mínimos de qualidade e ao regulamento técnico de produção, industrialização, envase e transporte, estabelecidos pela legislação vigente para os produtos apícolas.
+
+## CAPÍTULO IV
+
+## DO ARMAZENAMENTO E DO TRANSPORTE
+
+- Art. 17. No armazenamento e transporte de produtos orgânicos, deverão ser utilizados produtos de higienização de equipamentos e instalações permitidos na produção orgânica, constantes do Anexo II da presente Instrução Normativa Conjunta.
+- Art. 18. Durante o armazenamento e o transporte, os produtos orgânicos deverão ser devidamente acondicionados, identificados, assegurando sua separação dos produtos não-orgânicos.
+- Art. 19. O produto orgânico a granel deverá ser armazenado em áreas separadas e identificadas e transportado isoladamente.
+
+## CAPÍTULO V
+
+## DO CONTROLE DE PRAGAS NO PROCESSAMENTO, ARMAZENAMENTO E TRANSPORTE DE PRODUTOS ORGÂNICOS
+
+- Art. 20. Nas áreas físicas de processamento, armazenamento e transporte de produtos orgânicos, além de ser observada a legislação específica, deverão ser adotadas as seguintes medidas para o controle de pragas, preferencialmente nessa ordem:
+- I - eliminação do abrigo de pragas e do acesso das mesmas às instalações, mediante o uso de equipamentos e instalações adequadas;
+- II - métodos mecânicos, físicos e biológicos, a seguir descritos:
+- a) som;
+- b) ultrassom;
+- c) luz;
+- d) repelentes à base de vegetal;
+- e) armadilhas (de feromônios, mecânicas, cromáticas); e
+- f) ratoeiras;
+- III - uso de substâncias autorizadas pela regulamentação da produção orgânica.
+- Art. 21. É proibida a aplicação de produtos químicos sintéticos nas instalações de processamento, armazenamento e transporte de produtos orgânicos.
+
+## PRODUTOS PERMITIDOS PARA A HIGIENIZAÇÃO DE INSTALAÇÕES E EQUIPAMENTOS EMPREGADOS NO PROCESSAMENTO DE PRODUTO ORGÂNICO
+
+| PRODUTOS                                                                                                                                                                            |                                                                                                                                                                                     |
+|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Os produtos de que trata este anexo deverão ser utilizados de acordo com as boas práticas de manuseio e processamento descritos nos registros da unidade de produção o rg â n i c a | Os produtos de que trata este anexo deverão ser utilizados de acordo com as boas práticas de manuseio e processamento descritos nos registros da unidade de produção o rg â n i c a |
+| Água                                                                                                                                                                                |                                                                                                                                                                                     |
+| Vapor                                                                                                                                                                               |                                                                                                                                                                                     |
+| Hipoclorito de sódio em solução aquosa                                                                                                                                              |                                                                                                                                                                                     |
+| Hidróxido de cálcio (Cal hidratada)                                                                                                                                                 |                                                                                                                                                                                     |
+| Óxido de cálcio (Cal virgem)                                                                                                                                                        |                                                                                                                                                                                     |
+| Ácido fosfórico Uso                                                                                                                                                                 |                                                                                                                                                                                     |
+| Ácido nítrico Uso                                                                                                                                                                   |                                                                                                                                                                                     |
+| Ácido cítrico                                                                                                                                                                       |                                                                                                                                                                                     |
+| Ácido acético                                                                                                                                                                       |                                                                                                                                                                                     |
+| Ácido lático                                                                                                                                                                        |                                                                                                                                                                                     |
+| Ácido Peracético                                                                                                                                                                    |                                                                                                                                                                                     |
+| Álcool etílico                                                                                                                                                                      |                                                                                                                                                                                     |
+| Permanganato de potássio                                                                                                                                                            |                                                                                                                                                                                     |
+| Hidróxido de Sódio (Soda Cáustica)                                                                                                                                                  |                                                                                                                                                                                     |
+| Peróxido de hidrogênio                                                                                                                                                              |                                                                                                                                                                                     |
+| Carbonato de sódio                                                                                                                                                                  |                                                                                                                                                                                     |
+| Extratos vegetais ou essências naturais de plantas                                                                                                                                  |                                                                                                                                                                                     |
+| Micro-organismos (Biorremediadores)                                                                                                                                                 |                                                                                                                                                                                     |
+| Sabões (potassa, soda)                                                                                                                                                              |                                                                                                                                                                                     |
+| Biodegradáveis                                                                                                                                                                      |                                                                                                                                                                                     |
+| Detergentes                                                                                                                                                                         |                                                                                                                                                                                     |
+| Sais Minerais Solúveis                                                                                                                                                              |                                                                                                                                                                                     |
+| Oxidantes Minerais                                                                                                                                                                  |                                                                                                                                                                                     |
+| Iodóforo e soluções à base de iodo                                                                                                                                                  |                                                                                                                                                                                     |
+
+## ANEXO III
+
+ADITIVOS ALIMENTARES E COADJUVANTES DE TECNOLOGIA PERMITIDOS NO PROCESSAMENTO DE PRODUTOS DE ORIGEM VEGETAL E ANIMAL ORGÂNICOS
+
+\_\_\_\_\_\_\_\_\_\_\_
+
+Tabela alterada pelo(a) Nota: Instrução Normativa Interministerial 24/2011/MS/MP
+
+\_\_\_\_\_\_\_\_\_\_\_
+
+## ANEXO IV
+
+PRODUTOS DE LIMPEZA E DESINFECÇÃO PERMITIDOS PARA USO EM CONTATO COM OS ALIMENTOS ORGÂNICOS
+
+\_\_\_\_\_\_\_\_\_\_\_
+
+Tabela alterada pelo(a) Nota: Instrução Normativa Interministerial 24/2011/MS/MP
+
+\_\_\_\_\_\_\_\_\_\_\_

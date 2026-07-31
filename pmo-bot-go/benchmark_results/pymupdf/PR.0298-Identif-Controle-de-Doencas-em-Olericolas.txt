@@ -1,0 +1,2963 @@
+PR-298
+OLERICULTURA
+IDENTIFICAÇÃO E
+CONTROLE DE DOENÇAS
+
+
+TIAGO MIGUEL JAREK
+IDENTIFICAÇÃO E CONTROLE  
+DE DOENÇAS EM OLERÍCOLAS
+2015
+
+
+Depósito legal na CENAGRI, conforme Portaria Interministerial n. 164, datada de 22 de julho de 
+1994, e junto a Fundação Biblioteca Nacional e Senar-PR.
+Nenhuma parte desta publicação poderá ser reproduzida, por qualquer meio, sem a autorização 
+do editor.
+Autor: Tiago Miguel Jarek
+Coordenação técnica: Vanessa Reinhart – CREA PR-122367/D e Luis Guilherme Paraná Barbosa 
+Lemes
+Coordenação metodológica: Patrícia Lupion Torres
+Normalização: Rita de Cassia Teixeira Gusso – CRB 9./647
+Coordenação gráfica: Adilson Kussem
+Diagramação: Sincronia Design
+Capa: Adilson Kussem
+Catalogação no Centro de Editoração, Documentação
+e Informação Técnica do SENAR-PR.
+Jarek, Tiago Miguel
+Identificação e controle de doenças em olerícolas / Tiago Miguel Jarek. – Curitiba 
+: SENAR - Pr., 2015. – 96 p.
+ISBN 978-85-7565-118-6
+ 1. Controle de doenças. 2. Identificação. 3. Olerícolas. I. Título.
+CDU634.11/.19
+IMPRESSO NO BRASIL – DISTRIBUIÇÃO GRATUITA
+
+
+APRESENTAÇÃO
+O SENAR Nacional – Serviço Nacional de Aprendizagem Rural – é uma instituição prevista 
+na Constituição Federal e criada pela Lei nº 8.315, de 23/12/1991. Tem como objetivo a formação 
+profissional e a promoção social do homem do campo para que ele melhore o resultado do seu 
+trabalho e com isso aumente sua renda e a sua condição social.
+No Paraná, o SENAR é administrado pela Federação da Agricultura do Estado do Paraná – 
+FAEP – e vem respondendo por amplo e diversificado programa de treinamento.
+Todos os cursos ministrados por intermédio do SENAR são coordenados pelos Sindicatos 
+Rurais e contam com a colaboração de outras instituições governamentais e particulares, Prefeituras 
+Municipais, cooperativas e empresas privadas.
+O material didático de cada curso levado pelo SENAR é preparado de forma criteriosa e 
+exclusiva para seu público-alvo, a exemplo deste manual. O intuito não é outro senão o de assegurar 
+que os benefícios dos treinamentos se consolidem e se estendam. Afinal, quanto maior o número 
+de trabalhadores e produtores rurais qualificados, melhor será o resultado para a economia e para 
+a sociedade em geral.
+
+
+SUMÁRIO
+INTRODUÇÃO.........................................................................................................................................................................9
+REFERÊNCIAS.......................................................................................................................................................................11
+1	 DOENÇAS DA ALFACE...................................................................................................................................................13
+1.1	 MOFO BRANCO (Sclerotinia sclerotiorum)......................................................................................................................................................13
+1.2	 MÍLDIO (Bremia lactucae).........................................................................................................................................................................................15
+1.3	 SEPTORIOSE (Septoria lactucae)...........................................................................................................................................................................16
+1.4	 MANCHA DE CERCOSPORA (Cercospora longissima)..............................................................................................................................17
+1.5	 PODRIDÃO MOLE (Pectobacterium carotovorum).....................................................................................................................................17
+1.6	 QUEIMA DA SAIA (Rhizoctonia solani)..............................................................................................................................................................18
+1.7	 VÍRUS DO VIRA-CABEÇA...........................................................................................................................................................................................20
+1.8	 VÍRUS DO MOSAICO DA ALFACE (LMV)...........................................................................................................................................................21
+1.9	 VÍRUS DO MOSQUEADO DA ALFACE (LeMoV)............................................................................................................................................21
+1.10	VÍRUS DO ENGROSSAMENTO DAS NERVURAS (MiLV)............................................................................................................................22
+1.11	NEMATOIDES...................................................................................................................................................................................................................22
+REFERÊNCIAS.................................................................................................................................................................24
+2	 DOENÇAS DAS APIÁCEAS............................................................................................................................................25
+2.1	 QUEIMA DAS FOLHAS...............................................................................................................................................................................................25
+2.2	 SEPTORIOSE (Septoria petroselini)........................................................................................................................................................................26
+2.3	 PODRIDÃO DE ESCLEROTÍNIA (Sclerotinia sclerotiorum).......................................................................................................................27
+2.4	 PODRIDÃO DE ESCLERÓCIO (Sclerotium rolfsii)..........................................................................................................................................27
+2.5	 PODRIDÃO MOLE (Pectobacterium carotovorum).....................................................................................................................................28
+2.6	 DESORDENS FISIOLÓGICAS....................................................................................................................................................................................29
+REFERÊNCIAS.................................................................................................................................................................30
+3	 DOENÇAS DA BETERRABA...........................................................................................................................................31
+3.1	 CERCOSPORIOSE (Cercospora beticola)...........................................................................................................................................................31
+3.2	 FUSARIOSE (Fusarium oxysporum)......................................................................................................................................................................31
+3.3	 PODRIDÃO DE ESCLERÓCIO (Sclerotium rolfsii)..........................................................................................................................................33
+3.4	 NEMATOIDES...................................................................................................................................................................................................................34
+REFERÊNCIAS.................................................................................................................................................................35
+4	 DOENÇAS DAS BRÁSSICAS..........................................................................................................................................37
+4.1	 PODRIDÃO NEGRA DAS CRUCÍFERAS (Xanthomonas campestris pv. campestris).................................................................37
+4.2	 HÉRNIA DAS CRUCÍFERAS (Plasmodiophora brassicae).........................................................................................................................39
+4.3	 MÍLDIO (Peronospora parasitica)..........................................................................................................................................................................40
+4.4	 ALTERNARIOSE (Alternaria brassicae; Alternaria brassicicola)..............................................................................................................41
+4.5	 PODRIDÃO DE ESCLEROTÍNIA (Sclerotinia sclerotiorum).......................................................................................................................42
+4.6	 PODRIDÃO MOLE (Pectobacterium carotovorum).....................................................................................................................................44
+
+
+4.7	 FERRUGEM BRANCA (Albugo candida)............................................................................................................................................................45
+4.8	 CHUMBINHO OU MICOSFERELA (Mycosphaerella brassicicola; Mycosphaerella capsellae)..............................................46
+4.9	 PODRIDÃO DO COLO (Rhizoctonia solani)....................................................................................................................................................47
+4.10	 MURCHA DE FUSÁRIO (Fusarium oxysporum).............................................................................................................................................48
+4.11	VÍRUS DO MOSAICO DA COUVE-FLOR (CaMV)...........................................................................................................................................49
+4.12	VÍRUS DO MOSAICO DO NABO (TuMV)...........................................................................................................................................................49
+REFERÊNCIAS.................................................................................................................................................................51
+5	 DOENÇAS DA CEBOLA..................................................................................................................................................53
+5.1	 QUEIMA DAS PONTAS OU BOTRYTIS (Botrytis squamosa)...................................................................................................................53
+5.2	 MANCHA PÚRPURA (Alternaria porri)...............................................................................................................................................................54
+5.3	 MÍLDIO (Peronospora destructor).........................................................................................................................................................................56
+5.4	 PODRIDÃO BRANCA (Sclerotium cepivorum)...............................................................................................................................................57
+5.5	 MAL-DAS-SETE-VOLTAS (Colletotrichum gloeosporioides f. sp. cepae)...........................................................................................58
+5.6	 RAIZ ROSADA (Pyrenochaeta terrestris)............................................................................................................................................................58
+5.7	 NANISMO AMARELO DA CEBOLA, MOSAICO EM FAIXAS OU CRESPEIRA DA CEBOLA  
+(Onion yellow dwarf – OYDV).................................................................................................................................................................................60
+5.8	 DOENÇAS PÓS-COLHEITA.......................................................................................................................................................................................60
+REFERÊNCIAS.................................................................................................................................................................63
+6	
+DOENÇAS DAS CUCURBITÁCEAS.......................................................................................................................65
+6.1	 ANTRACNOSE (Colletotrichum orbiculare).....................................................................................................................................................65
+6.2	 MANCHA ZONADA (Leandria momordicae).................................................................................................................................................66
+6.3	 MANCHA DE CERCOSPORA (Cercospora citrullina)..................................................................................................................................67
+6.4	 MÍLDIO (Pseudoperonospora cubensis).............................................................................................................................................................68
+6.5	 OÍDIO (Sphaerotheca fuliginea).............................................................................................................................................................................70
+6.6	 DOENÇAS CAUSADAS POR BACTÉRIAS..........................................................................................................................................................71
+6.7	 PODRIDÃO DE FRUTOS.............................................................................................................................................................................................72
+6.8	 DISTÚRBIOS FISIOLÓGICOS....................................................................................................................................................................................74
+6.9	 VIROSES..............................................................................................................................................................................................................................75
+REFERÊNCIAS.................................................................................................................................................................78
+7	 DOENÇAS DAS SOLANÁCEAS.....................................................................................................................................79
+7.1	 REQUEIMA (Phytophthora infestans).................................................................................................................................................................79
+7.2	 PINTA PRETA (Alternaria solani).............................................................................................................................................................................81
+7.3	 MANCHA DE ESTENFÍLIO (Stemphylium spp.).............................................................................................................................................82
+7.4	 SARNA COMUM (Streptomyces scabies)..........................................................................................................................................................83
+7.5	 SARNA PULVERULENTA (Spongospora subterranea)................................................................................................................................84
+7.6	 SEPTORIOSE (Septoria lycopersici)........................................................................................................................................................................85
+7.7	 MURCHA BACTERIANA (Ralstonia solanacearum)....................................................................................................................................86
+
+
+7.8	 MURCHA DE FUSÁRIO (Fusarium oxysporum f. sp. lycopersici)..........................................................................................................88
+7.9	 MURCHA DE VERTICÍLIO (Verticillium dahliae).............................................................................................................................................89
+7.10	TALO OCO, PODRIDÃO MOLE OU CANELA PRETA (Pectobacterium carotovorum)..............................................................89
+7.11	PÚSTULA OU MANCHA BACTERIANA (Xanthomonas vesicatoria).................................................................................................90
+7.12	VIROSES DO TOMATEIRO.........................................................................................................................................................................................91
+7.13	VIROSES DA BATATA....................................................................................................................................................................................................93
+REFERÊNCIAS.................................................................................................................................................................94
+
+
+SENAR-PR
+9
+INTRODUÇÃO
+O Paraná é um grande produtor de hortaliças, sendo que, no ano de 2012, o VBP (Valor 
+Bruto da Produção) atingiu cerca de 2,48 bilhões de reais (PARANÁ, 2014). As hortaliças possuem 
+características de cultivo muito particulares, pois, devido ao melhoramento genético de grande 
+parte das espécies e à forma de cultivá-las, temos plantas altamente produtivas ocupando pequena 
+área de produção. O ciclo da maior parte das cultivares é curto, tornando-as muito exigentes em 
+termos de fertilidade do solo e condições de cultivo (FILGUEIRA, 2000).
+As doenças surgem como resultado da interação patógeno-planta-ambiente e, com 
+ambientes de produção cada vez mais intensivos, com maiores densidades de plantas, irrigação 
+abundante e hospedeiros mais produtivos, torna-se natural que doenças apareçam com muita 
+frequência nas lavouras de hortaliças, às vezes de forma irreversível.
+A identificação das doenças que estão ocorrendo nas lavouras se torna essencial nesse 
+sentido, pois o manejo da fitossanidade das hortaliças se torna cada vez mais complexo à medida 
+que surgem cada vez mais doenças e as formas de controle são cada vez mais específicas, seja ele 
+químico, genético ou cultural (AMORIM et al., 2011).
+Para a elaboração de um material didático sobre as doenças de hortaliças, é necessário 
+um levantamento de campo para o reconhecimento dos principais problemas fitossanitários. 
+Esse levantamento foi realizado na Região Metropolitana de Curitiba, um dos principais polos 
+produtores, por meio do Projeto “Diagnóstico da Produção de Hortaliças da Região Metropolitana 
+de Curitiba: Aspectos Técnicos, Sociais e Ambientais”, realizado nos anos de 2010 e 2011 em cerca 
+de 100 produtores em 7 municípios. 
+Alguns diagnósticos nos anos de 2012 e 2013 foram realizados no Laboratório de Patologia 
+de Sementes da Universidade Federal do Paraná, com a colaboração da Prof.ª PhD Lucimeris Ruaro. 
+O fornecimento de amostras e as visitas aos produtores nesse período foram auxiliados pelo Eng. 
+Agrônomo Ivan Guedes e pelos produtores que permitiram esse trabalho.
+Os trabalhos de diagnose das principais doenças que ocorrem no Paraná tiveram como 
+subsídio a análise de cerca de 200 amostras em laboratório e, agora, estão condensadas neste 
+manual, dando suas características gerais, como importância e sintomas, e as possíveis medidas 
+de controle a serem adotadas. O texto acompanha informações sobre os ingredientes ativos 
+registrados para cada doença e cultura afetada. As informações não constituem, sob nenhuma 
+hipótese, uma recomendação de produto, pois todo agrotóxico só pode ser comercializado 
+com emissão de receituário agronômico assinado e com número do registro profissional de um 
+engenheiro agrônomo ou responsável técnico. As informações servem apenas de subsídio para 
+que, em havendo produtos registrados para determinada doença, o produtor possa buscar junto 
+a um engenheiro agrônomo uma solução adequada. As informações foram retiradas do endereço 
+eletrônico da Secretaria de Agricultura e do Abastecimento do Estado do Paraná (SEAB) até fevereiro 
+
+
+SENAR-PR
+10
+de 2014. Alterações posteriores a essa data devem ser verificadas periodicamente.
+Também constam informações sobre medidas de controle cultural, as quais apresentam 
+melhor relação custo-benefício, tanto para o produtor quanto para consumidores e meio ambiente. 
+Entretanto, essas medidas devem ser planejadas a longo prazo e requerem maiores esforços; por 
+esse motivo, devemos buscar em nossa cadeia produtiva de hortaliças um melhor entendimento 
+dos fatores envolvidos na epidemia das doenças, as quais possuem uma íntima relação com o 
+ambiente de produção e que respondem de forma positiva ou negativa dependendo dos 
+procedimentos agronômicos adotados durante o cultivo. 
+O controle das doenças de hortaliças não é tarefa fácil, e seu planejamento requer 
+considerações financeiras, pois certas medidas fitossanitárias algumas vezes podem não ser viáveis 
+economicamente. As medidas de prevenção e o manejo integrado considerando o limiar de dano 
+econômico das doenças sempre serão a forma mais rentável e segura para o agricultor (AMORIM et 
+al., 2011). A infestação da lavoura reflete diretamente no desempenho econômico da propriedade 
+rural.
+Este manual traz informações para auxiliar na identificação e controle das principais doenças 
+encontradas em cultivos olerícolas no Paraná. Contudo, a atualização e a busca de informações 
+devem ser constantes, uma vez que a interação patógeno-hospedeiro é muito dinâmica e pode ser 
+alterada em curto período de tempo, levando à manifestação de uma nova doença.
+
+
+SENAR-PR
+11
+REFERÊNCIAS
+AMORIM, L. et al. Manual de fitopatologia: princípios e conceitos. São Paulo: Ed. Agronômica 
+Ceres, 2011. v. 1, 704 p.
+Coordenação da Região Metropolitana de Curitiba. Municípios da Região Metropolitana de 
+Curitiba. 
+Disponível 
+em:<http://www.comec.pr.gov.br/arquivos/File/RMC/Populacao_Total_
+Urbana_Rural_2010.pdf>. Acesso em: 23 fev. 2014.
+FILGUEIRA, F. A. R. Novo manual de olericultura: agrotecnologia moderna na produção e 
+comercialização de hortaliças. Viçosa: Editora UFV, 2000. 402 p.
+PARANÁ. Secretaria de Estado da Agricultura e do Abastecimento. Valor bruto da produção 
+agropecuária. Curitiba: SEAB-PR, 2014 Disponível em: <http://www.agricultura.pr.gov.br/arquivos/
+File/deral>. Acesso em: 20 fev. 2014.
+
+
+SENAR-PR
+13
+1	
+DOENÇAS DA ALFACE
+A alface é uma cultura extremamente importante para a maioria dos produtores de 
+hortaliças, sendo o 8°. maior valor bruto da produção (VBP) no Estado do Paraná em 2011 e, em 
+alguns municípios, como Colombo e Sarandi ela atingiu sozinha quase 10% do VBP agropecuário 
+no município (PARANÁ, 2014a).
+A alface é uma planta herbácea, delicada e suas folhas desenvolvem-se muito próximas ao solo. 
+As raízes são muito superficiais, atingindo apenas os primeiros 25 cm de solo. Entretanto, quando 
+a semente é plantada diretamente no lugar definitivo, sem o transplante, a raiz principal chega até 
+60 cm de profundidade. Essas características da planta exigem irrigações muito frequentes para o 
+sucesso da produção (FILGUEIRA, 2000).
+A condição de umidade elevada, devido à irrigação, à proximidade das folhas com o solo e ao 
+sombreamento do caule quando a lavoura “fecha”, ou seja, atinge o máximo desenvolvimento em 
+área foliar, são condições que favorecem sobremaneira o desenvolvimento de patógenos. 
+Considerando que essa hortaliça é consumida crua e seu ciclo é muito rápido, as pulverizações 
+com fungicidas e bactericidas são muito limitadas, pois efeitos residuais após a colheita são sempre 
+indesejáveis e passíveis de punição se acima do limite máximo de resíduo ou com produto não 
+registrado para a cultura.
+Neste capítulo, abordaremos as principais doenças da alface, são elas: mofo branco, míldio, 
+septoriose, mancha de cercospora, podridão mole, queima da saia, vírus do vira-cabeça, vírus 
+do mosaico da alface, vírus do mosqueado da alface, vírus do engrossamento das nervuras e os 
+nematoides de forma geral.
+1.1	
+MOFO BRANCO (Sclerotinia sclerotiorum)
+Essa é uma das doenças mais importantes da cultura da alface (JAREK; RUARO, 2011), 
+principalmente pelo fato de afetar não apenas a alface, mas várias outras, como repolho, feijão, 
+abobrinha e abóbora, totalizando mais de 360 espécies (RODRIGUES et al., 2007). O clima frio (18 
+°C) e úmido é um fator que agrava a incidência do fungo nos cultivos (LOPES et al., 2010) e que 
+sempre se apresenta de maneira muito severa, ou seja, levando a planta atacada à morte.
+Os sintomas aparecem principalmente nos estágios mais avançados do ciclo da cultura 
+próximo à colheita (LOPES et al., 2010), quando as folhas da saia criam um ambiente favorável ao 
+desenvolvimento do fungo, ou seja, sempre úmido e fresco. Esses sintomas iniciais podem não 
+ser percebidos por ficarem em baixo da planta (Figura 1A). Os sintomas também se caracterizam 
+pelo intenso crescimento de micélio (mofo) branco (KIMATI et al., 2011) (Figura 1B). As folhas mais 
+próximas ao solo são as primeiras a apresentar os sintomas, murchando e ficando com um aspecto 
+de apodrecimento mole. Mais tarde, o avanço da doença resulta na murcha de toda a planta, até o 
+apodrecimento total dela (LOPES et al., 2010).
+
+
+SENAR-PR
+14
+Figura 1 – Sintomas de mofo branco: na base de uma planta de alface, cuja cabeça foi removida (A). Aspecto do micélio 
+de mofo branco em uma planta de alface (B). Aspecto de encharcamento e podridão na base da planta (C). Presença de 
+escleródios e micélio na cabeça de uma planta de alface (D).
+a
+c
+b
+d
+Fonte: Jarek, 2011 (A e B); Holmes, 1995 (C e D).
+Para o controle, devem-se evitar as condições favoráveis ao desenvolvimento do fungo, como, 
+por exemplo, solos encharcados e excesso de irrigação. E em épocas de muita chuva e temperaturas 
+frias, pode-se adotar um espaçamento maior entre as plantas, a fim de evitar a umidade excessiva 
+no final do ciclo da cultura (LOPES et al., 2010). 
+Devem-se evitar áreas onde a doença já tenha ocorrido e fazer rotação de cultura dando 
+preferência a gramíneas e evitando outras culturas suscetíveis, como feijão, repolho, berinjela, 
+tomate, abobrinha, soja e tomate (KIMATI et al., 2011). A doença também é de difícil controle, 
+pois, uma vez estabelecida no campo, produz estruturas de resistência, os escleródios, que são 
+enegrecidos, rígidos e apresentam tamanho e forma variáveis, com cerca de 0,5 cm até 2 cm, e 
+podem permanecer viáveis no campo por até 10 anos (LOPES et al., 2010; RODRIGUES et al., 2007). 
+Por esse motivo, uma rotação de culturas nesse caso deve ser muito bem planejada para evitar que 
+outras culturas suscetíveis sejam plantadas na mesma área. Para essa doença, os únicos ingredientes 
+ativos registrados e liberados para a cultura encontram-se na Tabela 1.
+1571744
+1571737
+
+
+SENAR-PR
+15
+1.2	
+MÍLDIO (Bremia lactucae)
+Os sintomas caracterizam-se por manchas que no início apresentam-se verde-claras ou 
+amareladas, sempre delimitadas pelas nervuras, apresentando-se escurecidas nos estádios mais 
+avançados da lesão. Mas a característica que melhor diferencia o míldio das outras doenças foliares 
+da alface é a presença de uma esporulação esbranquiçada (mofo) na face inferior da folha no local 
+das lesões (Figura 2, A e B). A doença pode ser transmitida por sementes, solo contaminado, restos 
+de plantas do cultivo anterior, ou pode infectar uma nova área por intermédio do vento vindo de 
+áreas infectadas (LOPES et al., 2010).
+Figura 2 – Míldio da alface: aspecto da esporulação produzida pelo fungo causador do míldio (A e C). Sintomas de míldio 
+na face inferior das folhas (B). Detalhe da esporulação produzida pelo fungo (D).
+a
+c
+b
+d
+Fonte: Jarek, 2011 (A e B); Holmes, 1995 (C); Bruce, 2012 (D).
+O controle dessa doença inicia-se adquirindo mudas de boa qualidade livres do fungo. 
+É importante observar a existência de cultivares mais resistentes ou tolerantes, plantar em 
+espaçamentos que permitam maior aeração das plantas, para evitar que as folhas fiquem molhadas 
+por longos períodos, evitar irrigações desnecessárias ou em horários que propiciem que as folhas 
+fiquem molhadas por muito tempo, como, por exemplo, antes de anoitecer, dar preferência à 
+1571022
+5485249
+
+
+SENAR-PR
+16
+irrigação por gotejamento, eliminar restos de cultura atacada pela doença, enterrando ou retirando-
+os da área (LOPES et al., 2010), e fazer rotação de cultura preferencialmente com gramíneas (LOPES 
+et al., 2010; KIMATI et al., 2011). As pulverizações preventivas também são indicadas, desde que 
+sejam ingredientes ativos registrados e liberados para controle da doença no Paraná Tabela 1. É 
+recomendado fazer a alternância de ingredientes ativos, não utilizando apenas os específicos para 
+míldio, pois isso levará ao surgimento de resistência do patógeno.
+1.3	
+SEPTORIOSE (Septoria lactucae)
+A septoriose é considerada uma doença importante nas regiões produtoras de alface (LOPES et 
+al., 2010; KIMATI et al., 2011). Os sintomas caracterizam-se por manchas de contorno irregular e de cor 
+marrom-clara ou pardacenta (Figura 3). Com o progresso da doença, essas lesões podem coalescer, 
+necrosando toda a folha, principalmente a saia da planta (LOPES et al., 2010; KIMATI et al., 2011). No 
+interior das lesões, podem ser visualizados inúmeros pontos pretos, que correspondem aos corpos de 
+frutificação da Septoria e são chamados picnídios. A doença é disseminada principalmente pelo vento, 
+quando há a presença de água e os esporos germinam. Na ausência de filme de água, praticamente 
+não ocorre dispersão do patógeno (LOPES et al., 2010; KIMATI et al., 2011).
+O controle dessa doença inicia-se adquirindo mudas de boa qualidade livres do fungo, 
+observando a existência de cultivares mais resistentes ou tolerantes, e plantando em espaçamentos 
+que permitam maior aeração das plantas, para evitar que as folhas fiquem molhadas por longos 
+períodos. 
+Evitar irrigações desnecessárias ou em horários que propiciem que as folhas fiquem molhadas 
+por muito tempo, como, por exemplo, antes de anoitecer, e dar preferência a irrigação por gotejamento 
+são medidas primordiais, devido à dispersão ocorrer principalmente na presença de filme de água. 
+Também é importante eliminar restos de cultura atacada pela doença e fazer rotação de cultura 
+(LOPES et al., 2010; KIMATI et al., 2011). As pulverizações também são indicadas, desde que sejam 
+ingredientes ativos registrados e liberados para controle da doença no Paraná (Tabela 1).
+Figura 3 – Septoriose da alface: características das lesões nas partes inferior e superior das folhas (A e B).
+a
+b
+Fonte: Jarek, 2014 (A e B).
+
+
+SENAR-PR
+17
+1.4	
+MANCHA DE CERCOSPORA (Cercospora longissima)
+A mancha de cercospora é uma doença bem menos frequente, sendo mais encontrada 
+sob condições de cultivo protegido, por necessitar de temperaturas mais altas para o seu 
+desenvolvimento (25 °C) (LOPES et al., 2010). Essa doença apresenta-se bem menos destrutiva que 
+os demais patógenos foliares apresentados até agora (KIMATI et al., 2011). Os sintomas manifestam-
+se sob a forma de manchas marrons, apresentando sempre o centro mais claro (Figura 4), e as 
+frutificações do fungo podem ser visualizadas nas duas faces da folha (LOPES et al., 2010; KIMATI et 
+al., 2011). Para diferenciá-la da septoriose, deve-se observar que as lesões da cercospora são mais 
+individualizadas e o contorno das lesões é bem definido (LOPES et al., 2010). A doença pode ser 
+transmitida por sementes, resto de plantas do cultivo anterior que não foram decompostas e por 
+intermédio do vento (LOPES et al., 2010).
+As medidas de controle indicadas para septoriose geralmente são suficientes para o controle 
+da mancha de cercospora (KIMATI et al., 2011). Não existe no presente momento nenhum produto 
+registrado para o controle de Cercospora longissima (PARANÁ, 2014b).
+Figura 4 – Cercosporiose da alface: aspecto da lesão com centro claro na face superior das folhas (A). Conidióforo de 
+Cercospora longissima com conídios septados (B).
+a
+b
+Fonte: Jarek, 2014.
+1.5	
+PODRIDÃO MOLE (Pectobacterium carotovorum)
+Essa é uma doença causada por uma bactéria, o que resulta em algumas características 
+diferenciadas. Pode ocorrer tanto no campo como manifestar os sintomas após a colheita (LOPES 
+et al., 2010), por já estar contaminada anteriormente. Por ser uma bactéria, seu desenvolvimento 
+é facilitado no verão, quando as temperaturas são mais altas, acima de 28 ºC e com presença de 
+umidade. Ela é capaz de sobreviver no solo e em restos culturais. Como toda bactéria, necessita 
+de uma porta de entrada para infectar uma planta sadia, que pode ser um ferimento, causado por 
+tratos culturais ou por insetos (ROMEIRO, 2005). O sintoma mais característico é a murcha da planta 
+e o apodrecimento mole da medula (Figura 5), com um cheiro muitas vezes desagradável.
+
+
+SENAR-PR
+18
+Como medida de controle, deve-se priorizar a drenagem dos canteiros nos cultivos de 
+verão (época em que ocorrem as maiores temperaturas), procurar adotar espaçamentos mais 
+largos para aumentar a ventilação entre as plantas, evitar irrigações excessivas que favorecerão 
+o desenvolvimento da bactéria, bem como ferimentos que venham a permitir a entrada do 
+microrganismo. Além disso, é importante programar uma boa rotação de culturas, evitando outras 
+culturas suscetíveis, como batata, tomate, couve, couve-chinesa, brócolis, repolho e pimentão 
+(LOPES et al., 2010). Essa doença, em muitos casos, é resultado de uma nutrição desbalanceada, e 
+o excesso de nitrogênio, por exemplo, pode resultar em alta incidência dessa doença (SILVA; LIMA 
+NETO, 2007; LOPES et al., 2010; KIMATI et al., 2011). Nesses casos em que a doença aparece como 
+resultado de uma nutrição desequilibrada, qualquer medida de controle é ineficiente, a não ser a 
+própria correção da adubação.
+Devido às características da doença para a cultura da alface, até o momento não há nenhum 
+produto registrado para controlá-la, segundo informações disponíveis no site da SEAB (Secretaria de 
+Estado da Agricultura e do Abastecimento).
+Figura 5 – Sintomas da podridão mole em alface americana, mostrando os tecidos já 
+deteriorados (A). Medula de planta de alface apresentando apodrecimento mole (B).
+Fonte: Jarek, 2014.
+a
+b
+1.6	
+QUEIMA DA SAIA (Rhizoctonia solani)
+Essa doença é causada por um fungo de solo, cuja ocorrência tem se tornado alvo de 
+estudos, principalmente devido ao fato de estar sendo encontrado também na parte aérea de 
+algumas plantas, como pessegueiro e videira. O fungo desenvolve-se preferencialmente em 
+condições de temperaturas médias (15 a 25 °C) (KIMATI et al., 2011) e muita umidade, iniciando seu 
+desenvolvimento pelas folhas que estão mais próximas ao solo, as quais demonstram os sintomas 
+iniciais. 
+
+
+SENAR-PR
+19
+Os sintomas podem ser variáveis em função da ocorrência de outros microrganismos que 
+também podem se desenvolver após aberta a porta de entrada. Mas em boa parte dos casos as 
+lesões iniciam-se como pontos marrom-claros na nervura das folhas e, ao se desenvolverem para o 
+limbo foliar em condições favoráveis, podem necrosar completamente as folhas mais velhas (Figura 
+6 A, B e D). Em casos muito severos, pode ser perdida a planta inteira. Também é comum observar 
+um avermelhamento no centro da medula quando esta é cortada (Figura 6 C). Em alguns casos, 
+pode-se encontrar a presença de pequenos escleródios e um crescimento micelial frouxo na base 
+da planta (KIMATI et al., 2011).
+Como quase todas as doenças de solo, as recomendações para o controle são: favorecer uma 
+boa drenagem do canteiro para evitar o encharcamento, adotar espaçamentos que melhorem 
+a aeração entre as plantas, evitar irrigações excessivas, usar rotação de culturas para diminuir a 
+população do patógeno (LOPES et al., 2010), pois esse inóculo inicial é que determinará o grau de 
+incidência na lavoura (KIMATI et al., 2011). Quando a doença ocorre nos estádios iniciais da cultura, 
+podem ser aplicados ingredientes ativos registrados (Tabela 1).
+Figura 6 – Queima da saia: sintomas com necroses nas nervuras das folhas da base (A e B). Aspecto da medula avermelhada 
+em planta infectada por Rhizoctonia solani (C). Sintomas de queima da saia com murcha e seca das folhas mais velhas (D).
+a
+c
+b
+d
+Fonte: Jarek, 2011 (A, C e D); Holmes, 1995 (B).
+1571641
+
+
+SENAR-PR
+20
+1.7	
+VÍRUS DO VIRA-CABEÇA
+As doenças viróticas foram apontadas como sendo responsáveis por aproximadamente 50% 
+das moléstias encontradas na cultura da alface, em levantamento recente feito em parceria entre 
+UFPR, SENAR e SEBRAE (JAREK; RUARO, 2011). 
+O vírus do vira-cabeça é causado por espécies do gênero Tospovírus, os quais atacam 
+mais de mil espécies de plantas (LOPES et al., 2010; KIMATI et al., 2011). Na Região Sul, sua 
+ocorrência se dá principalmente no verão, devido ao fato de seu agente transmissor, o tripes, 
+preferir as condições dessa época do ano para se proliferar, quando a incidência da doença 
+pode chegar até 60% (KIMATI et al., 2011). As maiores perdas ocorrem quando plantas jovens 
+são atacadas. Os sintomas característicos são: crescimento desproporcional em um dos lados 
+da planta, causando um curvamento em relação ao eixo vertical (Figura 7) e bordos das folhas 
+externas com lesões marrom-claras (bronzeamento), que mais tarde escurecem (LOPES et al., 
+2010; KIMATI et al., 2011). 
+Para o controle, é fundamental adotar medidas preventivas, uma vez que não há nenhuma medida 
+curativa para a doença. Deve-se iniciar adquirindo mudas de boa qualidade, livres de tripes, evitar plantio 
+próximo às áreas com cultivo de estágio mais avançado e de plantas hospedeiras, como tomate e batata, 
+e adotar rotação de culturas, escolhendo variedades resistentes (KIMATI et al., 2011) para os cultivos de 
+verão principalmente. Controlar o inseto vetor (tripes) é essencial para evitar a disseminação em lavouras 
+em que já tenha sido observada a doença.
+Figura 7 – Sintomas do vírus do vira-cabeça em alface lisa.
+Fonte: Jarek, 2011.
+
+
+SENAR-PR
+21
+1.8	
+VÍRUS DO MOSAICO DA ALFACE (LMV)
+Essa virose é transmitida por pulgões de diversas espécies (Figura 8D), e também pode ser 
+transmitida por sementes (LOPES et al., 2010). Essa virose tem vários hospedeiros alternativos além 
+da alface, o que dificulta o controle (LOPES et al., 2010). O sintoma mais típico é o mosaico nas folhas, 
+que é caracterizado pela alternância das cores verde e amarela, e também pode ser acompanhado 
+de deformação foliar, como visto na Figura 8. Quando a infecção ocorre em fases iniciais da cultura, 
+a planta não se desenvolve adequadamente, ficando pequena, amarela e fora do padrão comercial. 
+Quando infectadas já na fase adulta, os sintomas são leves, vistos apenas nas folhas mais novas 
+(LOPES et al., 2010).
+Como medidas de controle, que devem ser sempre preventivas quando se trata de viroses, 
+devem-se adquirir mudas e sementes de boa procedência, que estejam livres do vírus e de pulgões. 
+É necessário evitar o plantio ao lado de plantas de alface mais velhas ou possíveis hospedeiros e 
+utilizar cultivares resistentes.
+Figura 8 – Sintomas do vírus do mosaico da alface (A). Afídeo transmitindo virose pela picada de prova (B).
+a
+b
+Fonte: Jarek, 2011.
+1.9	
+VÍRUS DO MOSQUEADO DA ALFACE (LeMoV)
+Essa virose tem sintomas muito parecidos com os causados pelo vírus do mosaico (JADÃO 
+et al., 2004), o que pode estar dificultando um levantamento mais exato da sua ocorrência no 
+campo. É transmitido por apenas uma espécie de pulgão (Hyperomyzus lactucae) que é pouco 
+frequente nas lavouras e, ao contrário do LMV o LeMoV, não é transmitido por semente. As 
+medidas de controle a serem adotadas são semelhantes às indicadas para o LMV e o vírus do 
+vira-cabeça.
+
+
+SENAR-PR
+22
+1.10	 VÍRUS DO ENGROSSAMENTO DAS NERVURAS (MiLV)
+Ocorrem duas espécies de vírus associadas com a doença (MiLV e LBVV), e sua ocorrência se 
+dá preferencialmente nos períodos mais frios do ano, principalmente em cultivos hidropônicos, mas 
+também vem sendo relatada em cultivos convencionais. O vírus é transmitido por um fungo de solo 
+(Olpidium brassicae) encontrado em condições de encharcamento. O sintoma característico é um 
+engrossamento das nervuras (Figura 9). Quando a planta é infectada ainda jovem, seu crescimento 
+é diminuído e pode ocorrer malformação da cabeça (LOPES et al., 2010).
+Figura 9 – Sintomas do vírus do engrossamento das nervuras (MiLV): folha com sintoma (A e B). Aspecto de uma planta 
+inteiramente atacada (C e D).
+a
+c
+b
+d
+Fonte: Jarek, 2011 (A); Holmes, 1996 (B, C e D).
+1571812
+1571988
+1571814
+1.11	
+NEMATOIDES
+Dois principais gêneros têm sido encontrados: Meloidogyne spp. (LOPES et al., 2010) e 
+Helicotylenchus spp. (ALVES et al., 2013; MORAES et al., 2006). Para o gênero Meloidogyne, a 
+identificação é facilitada pela presença de galhas nas raízes (Figura 10). Os sintomas variam 
+bastante devido ao fato de esses organismos estarem atacando as raízes, e a planta expressa 
+
+
+SENAR-PR
+23
+a dificuldade de manter as funções normais para 
+a absorção radicular por meio de deficiência 
+mineral, amarelecimento, crescimento reduzido 
+(LOPES et al., 2010) e, em muitos casos, resulta em 
+infecções secundárias por fungos ou bactérias 
+que mascaram o verdadeiro problema.
+A gravidade dessa doença se dá pela 
+dificuldade e alto custo para tratar uma área 
+severamente infestada, pois esses organismos 
+apresentam uma grande sobrevivência no solo. 
+Para o controle, indicam-se práticas culturais 
+como uso de matéria orgânica incorporada ao 
+solo, fazer as adubações de forma equilibrada 
+evitando excessos, rotação de culturas, solarização 
+e, considerando a relação custo-benefício, existe a 
+possibilidade de usar nematicidas liberados para 
+a cultura (Tabela 1).
+Tabela 1 – Ingredientes ativos registrados disponíveis no site da SEAB (2014b) para as principais doenças da alface.
+Doença
+Patógeno
+Ingrediente ativo
+Mofo branco
+Sclerotinia sclerotiorum
+Trichoderma harzianum
+Iprodiona
+Procimidona
+Míldio
+Bremia lactucae
+Mandipropamida
+Fenamidona
+Ciazofamida
+Septoriose
+Septoria lactucae
+Azoxistrobina
+Difenoconazol
+Queima da Saia
+Rhizoctonia solani
+Pencicurom
+Nematoides
+Meloidogyne spp.
+Paecilomyces lilacilus
+Fonte: Jarek, 2014.
+Figura 10 – Sintoma de raízes de alface atacas por 
+nematoides da espécie Meloidogyne incognita.
+Fonte: Holmes, 2009 (A).
+1572204
+
+
+SENAR-PR
+24
+REFERÊNCIAS
+ALVES, A. de F. et al. Levantamento de nematoides no cultivo orgânico da alface. In: Fórum de 
+Ensino, Pesquisa, Extensão e Gestão, 7. Montes Claros, 2013. Anais eletrônicos. Disponível em: 
+<http://www.fepeg.unimontes.br.>. Acesso em: 2 fev. 2014. 
+BRUCE, W. University of Maine. Bugwood.org. Disponível em: <http://www.forestryimages.org/>. 
+Acesso em: 13 out. 2014.
+FILGUEIRA, F. A. R. Novo manual de olericultura: agrotecnologia moderna na produção e 
+comercialização de hortaliças. Viçosa: Editora UFV, 2000. 402 p. 
+HOLMES, G. California polytechnic state university at San Luis, Obisp. Bugwood.org. Disponível em: 
+<http://www.forestryimages.org/>. Acesso em: 13 out. 2014.
+JADÃO, A. S. et al. Efeitos na fotossíntese e área foliar de cultivares de alface inoculadas mecanicamente 
+com patóticos do Lettuce Mosaic Virus e Lettuce Mottle Virus. Fitopatologia Brasileira, v. 29, n. 1, p. 
+11-15, 2004.
+JAREK, T. M.; RUARO, L. Ocorrência de doenças em olerícolas na Região Metropolitana de Curitiba. 
+In: CONGRESSO BRASILEIRO DE FITOPATOLOGIA, 44. Tropical Plant Pathology, v. 36 (Suplemento), 
+p. 785, 2011. 
+KIMATI, H. et al. Manual de fitopatologia: doenças das plantas cultivadas. São Paulo: Ed. Agronômica 
+Ceres, 2011. v. 2, 704 p.
+LOPES, C. A. et al. Doenças da alface. Brasília: Embrapa Hortaliças, 2010. 68 p.
+MORAES, S. R. G. et al. Influência de leguminosas no controle de fitonematoides no cultivo orgânico 
+de alface americana e de repolho. Fitopatologia Brasileira, v. 31, n. 2, p. 188-191, 2006.
+PARANÁ. Secretaria de Estado da Agricultura e do Abastecimento. Valor bruto da produção 
+agropecuária. Disponível em: <http://www.agricultura.pr.gov.br/arquivos/File/deral>. Acesso em: 
+20 fev. 2014a. 
+PARANÁ. Secretaria de Estado da Agricultura e do Abastecimento. Agrotóxicos no Paraná. 
+Disponível em: <http://celepar07web.pr.gov.br/agrotoxicos/pesquisar.asp>. Acesso em:  27 fev. 
+2014b.
+RODRIGUES, E. et al. Fungitoxidade, atividade elicitora de fitoalexinas e proteção de Alface em 
+sistema de cultivo orgânico contra Sclerotinia sclerotiorum pelo extrato de gengibre. Summa 
+Phytopathologica, v. 33, n. 2, p.124-128, 2007.
+ROMEIRO R. da S. Bactérias fitopatogênicas. 2. ed. Viçosa: Editora UFV, 2005. 417 p. 
+SILVA, M. E. C. da; Lima Neto, V. da C. Doenças em cultivos hidropônicos de alface na Região 
+Metropolitana de Curitiba/PR. Scientia agrária, v. 8, n. 3, p. 275-283, 2007.
+
+
+SENAR-PR
+25
+2	
+DOENÇAS DAS APIÁCEAS
+Entre as espécies que pertencem a essa família, podem ser citadas a cenoura, a mandioquinha-
+salsa, a salsa, o coentro, o aipo ou salsão, o funcho e a erva-doce. 
+A cenoura tem a maior área cultivada e, por isso, recebe maior destaque. No ano de 2011, atingiu 
+um valor bruto da produção de 171, 64 milhões de reais, sendo a quarta maior produção no Estado 
+(PARANÁ, 2014a). A mandioquinha-salsa, também conhecida como batata-baroa, fica em segundo 
+lugar nessa família, pois ocupa extensas áreas e, no mesmo ano (2011), produziu R$ 38,19 milhões no 
+Estado (PARANÁ, 2014a). A salsa seria uma das ervas condimentares mais cultivadas no Paraná.
+Tanto a cultura da cenoura como a da mandioquinha-salsa produzem raízes tuberosas, que 
+são as partes comercializáveis, e, por ficarem enterradas em contato direto com o solo, os maiores 
+problemas fitossanitários são com patógenos de solo. Entretanto, algumas doenças foliares podem 
+ser extremamente prejudiciais.
+2.1	
+QUEIMA DAS FOLHAS
+Normalmente, essa é a doença mais encontrada em cultivos de cenoura, principalmente 
+quando a umidade é alta e possibilita a doença se desenvolver muito rápido, deixando as folhas 
+com um aspecto muito semelhante ao de terem sido queimadas (STRADIOTTO, 1995; ZAMBOLIM 
+et al., 2000). Essa doença tem três possíveis microrganismos que podem causar sintomas muito 
+semelhantes (KIMATI et al., 2011), são eles: Cercospora carotae, Alternaria dauci e Xanthomonas 
+campestris pv. carotae. Eles podem ser encontrados todos ao mesmo tempo causando a lesão 
+ou individualmente. Os sintomas podem ser descritos como pequenas manchas de coloração 
+marrom-escura ou preta com halo amarelado (Figura 11) (STRADIOTTO, 1995; KIMATI et al., 2011). 
+A diferenciação entre cercospora e alternaria pode ser feita observando-se as lesões no pecíolo. As 
+lesões de cercospora são retangulares, com até 2 cm de comprimento, limitadas pelas nervuras, e 
+as lesões de alternaria são circulares (STRADIOTTO, 1995; KIMATI et al., 2011). 
+Para o controle, recomenda-se o uso de cultivares resistentes. As do grupo Nantes são as 
+mais suscetíveis; cultivares do grupo Brasília e Kuronan apresentam-se mais tolerantes; e Kuroda é 
+o grupo mais resistente (STRADIOTTO, 1995; ZAMBOLIM et al, 2000; KIMATI et al, 2011). Ao fazer a 
+colheita, se a parte aérea não for comercializada junto com a raiz, ela deve ser enterrada ou retirada 
+da área para evitar a sobrevivência do patógeno. Há recomendações de que o controle químico 
+deve ser iniciado quando 50% das plantas apresentarem os sintomas ou quando a doença atinge 
+1 a 2% das folhas medianas e em condições de chuvas ou temperaturas inferiores a 16 ºC na noite 
+anterior (ZAMBOLIM et al., 2000). No planejamento da rotação de culturas, deve-se evitar plantar 
+na sequência espécies da mesma família. Na maioria dos casos, as medidas convencionais não 
+são suficientes, necessitando o controle químico de A. dauci e C. carotae (KIMATI et al., 2011) com 
+ingredientes ativos registrados para a cultura da cenoura no Paraná (Tabela 2). Para Xanthomonas, 
+não há nenhum produto registrado e também não há produto liberado para as culturas da 
+mandioquinha-salsa, salsa e coentro.
+
+
+SENAR-PR
+26
+2.2	
+SEPTORIOSE (Septoria petroselini)
+Essa doença é a mais importante no cultivo da salsa e é considerada de ocorrência generalizada. 
+Os sintomas caracterizam-se por lesões amarronzadas de centro mais claro, medindo de 3 a 8 
+mm de diâmetro com um halo amarelado, com pequeninos pontos pretos no centro (Figura 12). 
+Em condições favoráveis, ou seja, alta umidade (umidade relativa acima de 90%) e temperaturas 
+mais amenas, ocorre a liberação de seus esporos juntamente com mucilagem, causando rápida 
+disseminação da doença e podendo levar a perdas severas (KURT; TOK, 2005). 
+Como medida de controle, indicam-se a rotação de culturas por um período mínimo de 2 
+anos, a remoção e a destruição das partes afetadas ou a incorporação profunda dessas. A irrigação 
+excessiva por aspersão é um fator que pode agravar muito a severidade da doença. Deve-se 
+irrigar pela manhã para que as folhas sequem logo e não permitam a germinação dos esporos do 
+fungo (KURT; TOK, 2005). Deve-se dar preferência para a irrigação por gotejamento. A adubação 
+nitrogenada em excesso agrava os sintomas da doença (SIMÓN et al., 2003). O controle químico 
+não é indicado, pois não há no momento nenhum fungicida registrado para o controle dessa 
+enfermidade na cultura da salsa (PARANÁ, 2014b).
+Figura 11 – Sintoma da queima das folhas em cenoura: detalhe das lesões na folha (A). Sintoma generalizado em folhas 
+apresentando amarelecimento (B).
+a
+b
+Fonte: Jarek, 2014. 
+Figura 12 – Sintomas da septoriose em folhas de salsinha.
+a
+b
+Fonte: Jarek, 2011 (A e B).
+
+
+SENAR-PR
+27
+2.3	
+PODRIDÃO DE ESCLEROTÍNIA (Sclerotinia sclerotiorum)
+Essa doença assume maior importância na cultura da mandioquinha-salsa, tendo sido 
+verificada também em salsa. São encontrados relatos da doença também na cultura de cenoura 
+e salsão (ZAMBOLIM et al., 2000). Devido às características apresentadas pelo fungo, já citadas 
+anteriormente (vide mofo branco em alface), a doença é de difícil controle e pode causar perdas 
+severas principalmente em áreas que já têm um histórico de incidência da doença (AGRIOS, 
+2005). Os sintomas característicos são: murcha seguida de amarelecimento da planta, devido ao 
+apodrecimento dos tecidos do colo (ZAMBOLIM et al., 2000). Também pode ser possível visualizar 
+um mofo branco produzido pelo fungo na base das plantas, no qual devem estar presentes 
+escleródios pretos (Figura 13), duros e de formato irregular, com tamanho que pode variar de 
+milímetros até 1 centímetro (STRADIOTTO, 1995). 
+As medidas de controle após a constatação da doença não são eficientes devido à severidade 
+com que o fungo ataca a planta. A adoção de medidas preventivas é o mais indicado. A rotação 
+de cultura com gramíneas, como o milho ou aveia, por exemplo, por longos períodos, pode ajudar 
+a reduzir a quantidade de inóculo na área (STRADIOTTO, 1995; KIMATI et al., 2011). A remoção 
+e a destruição de restos de plantas atacadas também são indicadas para reduzir o número de 
+escleródios deixados pelo fungo na lavoura. A irrigação excessiva, bem como a adubação 
+nitrogenada em excesso, que resulta em muita produção de folhas, cria um microclima muito 
+favorável ao desenvolvimento do fungo na base das plantas (ZAMBOLIM et al., 2000). Para o 
+controle químico, existe apenas um único ingrediente ativo registrado para a cultura da cenoura, 
+entretanto, é utilizado para o tratamento de solo, e não na cultura propriamente dita (Tabela 2).
+Figura 13 – Sintomas de podridão de esclerotínia e escleródios em raiz de cenoura (A). Escleródios no solo (B).
+a
+b
+Fonte: Willian, 2008 (A); Howard, 2008 (B).
+2.4	
+PODRIDÃO DE ESCLERÓCIO (Sclerotium rolfsii)
+Essa doença pode ser confundida com mofo branco causado por Sclerotinia sclerotiorum, 
+devido ao fato de possuírem sintomas muito parecidos (STRADIOTTO, 1995), entretanto, podem ser 
+diferenciados pelo tamanho e forma do escleródio. S. rolfsii produz escleródios pequenos e muito 
+circulares, atingindo no máximo 3 mm (Figura 17 B), enquanto que S. sclerotiorum produz escleródios 
+grandes e irregulares que podem até ultrapassar 1 cm de comprimento. Mas embora seus escleródios 
+sejam menores, a viabilidade deles no solo se mantém por vários anos (ZAMBOLIM et al., 2000). 
+5356789
+5359185
+
+
+SENAR-PR
+28
+O controle deve ser preventivo, uma vez que não existe nenhum fungicida registrado para o 
+controle do fungo. A rotação de culturas com gramíneas ajuda a reduzir o inóculo do fungo na área 
+(STRADIOTTO, 1995; ZAMBOLIM et al., 2000; KIMATI et al., 2011). A presença de matéria orgânica 
+no solo e adubações nitrogenadas favorecem o crescimento de microrganismos antagônicos que 
+podem parasitar os escleródios (ZAMBOLIM et al., 2000). Deve-se tomar muito cuidado com a 
+limpeza de equipamentos, como arados, grades e enxadas, pois, como os escleródios são menores, 
+podem ser facilmente transportados juntamente com pequenos torrões de terra e ser disseminados 
+para áreas que ainda estão livres da doença.
+Figura 14 – Sintomas de podridão de esclerócio em cenoura.
+a
+b
+Fonte: David, 2006 (A e B).
+2.5	
+PODRIDÃO MOLE (Pectobacterium carotovorum)
+Doença causada por bactéria, a podridão mole ocorre principalmente na cultura da cenoura no 
+verão (ZAMBOLIM et al., 2000; KIMATI et al., 2011) e resulta em algumas características diferenciadas. 
+Ocorre no campo ou manifesta os sintomas após a colheita devido ao fato de as raízes já estarem 
+contaminadas anteriormente. Seu desenvolvimento é acelerado quando as temperaturas são mais 
+altas, acima de 28 ºC com presença de umidade (ROMEIRO, 2005). A bactéria sobrevive no solo na 
+presença de restos culturais e/ou matéria orgânica, e na presença de umidade. Necessita de uma 
+porta de entrada para infectar uma planta sadia, seja por ferimento causado por tratos culturais 
+ou por insetos, no caso da cenoura pode ser também pelas lenticelas que são aberturas naturais 
+presentes nas raízes (ZAMBOLIM et al., 2000; ROMEIRO, 2005). O sintoma característico é a murcha 
+da parte aérea e o apodrecimento mole das raízes. 
+Como medida de controle, manter uma ótima drenagem dos canteiros nos cultivos de 
+verão e reduzir a irrigação. Qualquer trato cultural que venha a produzir ferimentos, seja durante 
+o ciclo ou na pós-colheita, poderá ser uma porta de entrada para a bactéria se desenvolver. Outra 
+medida é programar uma rotação de culturas evitando outras culturas suscetíveis, como batata, 
+tomate, couve, couve-chinesa, brócolis, repolho e pimentão (KIMATI et al., 2011). Na pós-colheita 
+da cenoura, é importante evitar ferimentos, fazendo a colheita apenas quando a umidade do solo 
+UGA5077071
+UGA5077073
+
+
+SENAR-PR
+29
+estiver adequada. Após a lavagem das raízes, estas devem ser mantidas em condições secas, a fim 
+de evitar a umidade favorável ao desenvolvimento da bactéria. É necessário retirar periodicamente 
+as raízes que se apresentarem podres, evitando assim a contaminação de todo o lote. Tomar muito 
+cuidado com a sanitização das embalagens, desinfectando-as caso já tenham sido utilizadas 
+anteriormente (ZAMBOLIM et al., 2000).
+Para o controle da doença, o único bactericida registrado e liberado para a cultura da cenoura 
+na SEAB/PR é do grupo da Casugamicina e é recomendado para o tratamento pós-colheita a fim de 
+evitar danos durante o transporte e armazenamento (PARANÁ, 2014b). 
+Tabela 2 – Ingredientes ativos fungicidas registrados disponíveis no site da SEAB (2014b) para as principais doenças da cenoura.
+Doença
+Patógeno
+Ingrediente ativo
+Queima das folhas (*)
+Alternaria dauci
+e
+Cercospora carotae
+Clorotalonil
+Mancozeb e oxicloreto de cobre
+Hidróxido de cobre
+Podridão de esclerotinia
+Sclerotinia sclerotiorum
+Metam-sódico
+Podridão mole
+Pectobacterium carotovorum
+Casugamicina
+*Os produtos indicados estão registrados para o controle dos dois agentes causais: Alternaria dauci e Cercospora carotae.
+Fonte: Jarek, 2014
+2.6	
+DESORDENS FISIOLÓGICAS
+As desordens fisiológicas correspondem aos danos provocados nas culturas de interesse 
+sem causa biótica, ou seja, não há nenhum microrganismo relacionado ao seu surgimento. Essas 
+alterações geralmente estão relacionadas a fatores como exposição ao sol, umidade do solo, 
+adubação, etc.
+2.6.1  Esverdecimento
+Essa desordem é resultado da exposição da parte superior da raiz ao sol, resultando na coloração 
+verde da área que fica exposta. Algumas cultivares, em vez de ficarem verdes, ficam arroxeadas. Solos 
+mais arenosos e que são mais facilmente levados pela chuva tendem a deixar as raízes descobertas 
+mais facilmente. O sombreamento pelas próprias folhas, como resultado de uma semeadura mais 
+adensada, é a melhor forma de controle (FILGUEIRA, 2000; ZAMBOLIM et al., 2000).
+2.6.2  Rachadura
+Essa é uma das anomalias mais comuns na cultura da cenoura, causando uma rachadura 
+longitudinal na raiz tuberosa. Pode ser originada por duas causas distintas: a primeira delas é 
+variação brusca de umidade do solo, na qual as partes interna e externa da raiz absorvem a umidade 
+de forma diferenciada, causando a rachadura; a segunda está relacionada à deficiência de boro. 
+O controle dessa anomalia pode ser realizado manejando adequadamente a água de irrigação 
+e suprindo de forma satisfatória as necessidades do micronutriente (boro) na planta (FILGUEIRA, 
+2000; ZAMBOLIM et al., 2000).
+
+
+SENAR-PR
+30
+REFERÊNCIAS
+AGRIOS, G. N. Plant patology. 5. ed. Florida: Elsevier Academic Press. 2005. 915 p.
+DAVID, B. L. University of Georgia. Bugwood.org. Disponível em: <http://www.forestryimages.org/>. 
+Acesso em: 13 out. 2014.
+FILGUEIRA, F. A. R. Novo manual de olericultura: Agrotecnologia moderna na produção e 
+comercialização de hortaliças. Viçosa: Editora UFV, 2000. 402 p.
+HOWARD, F. S. Colorado state university. Bugwood.org. Disponível em: <http://www.forestryimages.
+org/>. Acesso em: 13 out. 2014.
+KIMATI, H. et al. Manual de fitopatologia: Doenças das plantas cultivadas. v. 2, São Paulo: Ed. 
+Agronômica Ceres, 2011. 704 p.
+KURT, S.; TOK, F.M. Influence of inoculum concentration, leaf age, temperature, and duration of leaf 
+wetness on Septoria blight of parsley. Crop Protection, v. 25, p. 556-561, 2005.
+PARANÁ. Secretaria de Estado da Agricultura e do Abastecimento. Valor Bruto da Produção 
+Agropecuária. Disponível em: <http://www.agricultura.pr.gov.br/arquivos/File/deral>. Acesso em: 
+20 fev. 2014a.
+PARANÁ. Secretaria de Estado da Agricultura e do Abastecimento. Agrotóxicos no Paraná. 
+Disponível em: <http://celepar07web.pr.gov.br/agrotoxicos/pesquisar.asp>. Acesso em: 27 fev. 
+2014b.
+ROMEIRO R. da S. Bactérias fitopatogênicas. 2. ed. Viçosa: Editora UFV, 2005. 417 p. 
+SIMÓN, M. R. et al. Influence of nitrogen supply on the susceptibility of wheat to Septoria tritici. J. 
+Phytopathology, v. 151, p. 283-289, 2003.
+STRADIOTTO, M. F. Doenças das umbelíferas. In: PAULA JÚNIOR, T. J. de; PINTO, C. M. F. Doenças de 
+hortaliças 2. Informe Agropecuário, v. 17, n. 183, 1995.
+ZAMBOLIM, L. et al. Controle de doenças de plantas: hortaliças. Viçosa: Ed. UFV, 2000. v. 2, 878 p.
+WILLIAN, M. BROW Jr. Colorado State University. Bugwood.org. Disponível em: <http://www.
+forestryimages.org/>. Acesso em: 13 out. 2014.
+
+
+SENAR-PR
+31
+3	
+DOENÇAS DA BETERRABA
+A beterraba é a sexta cultura em importância econômica no Estado do Paraná, atingindo 
+no ano de 2011 um valor bruto da produção de 76,08 milhões de reais (PARANÁ, 2014a). Ocupa 
+uma grande área plantada e é comercializada tanto com folhas em maços ou em caixas sem a 
+parte aérea. Seu ciclo é rápido (50 a 65 dias) e não apresenta grandes problemas fitossanitários. 
+Porém, a cercosporiose, doença que atinge as folhas, é muito prejudicial principalmente quando 
+será comercializado o produto com as folhas (FILGUEIRA, 2000).
+3.1	
+CERCOSPORIOSE (Cercospora beticola)
+Os sintomas caracterizam-se por lesões com centro claro e um círculo arroxeado ao redor 
+delas (Figura 15), ocorrendo principalmente em plantas adultas e quando há condições de alta 
+umidade e temperaturas entre 22 a 26 ºC. O fungo pode sobreviver de uma estação para outra 
+nos restos de folhas deixados no campo após a colheita, por isso, áreas que já tenham histórico 
+da doença devem ser evitadas. Não é recomendada a rotação com acelga e espinafre, pois são da 
+mesma família e podem hospedar o patógeno (ZAMBOLIM et al., 2000). 
+Plantas com deficiência nutricional são mais suscetíveis à doença, portanto, deve-se 
+proceder a uma adubação equilibrada, evitando nitrogênio em excesso e valorizando cálcio 
+e potássio (ZAMBOLIM et al., 2000). A utilização de cultivar resistente é a forma mais barata 
+de controlar a doença (ZAMBOLIM et al., 
+2000), entretanto, são geralmente sementes 
+que apresentam maior custo, cabendo ao 
+produtor fazer uma análise de custo-benefício, 
+considerando o preço esperado para o produto 
+final e as possíveis perdas com a doença. A 
+utilização de fungicidas muitas vezes se faz 
+necessária, e existem cerca de seis princípios 
+ativos registrados para o controle da doença no 
+Paraná (PARANÁ, 2014b) (Tabela 3).
+3.2	
+FUSARIOSE (Fusarium oxysporum)
+As raízes apresentam lesões enegrecidas firmes atingindo diâmetro de até 4 cm (JAREK 
+et al., 2012) (Figura16). O fungo causador dessa doença é o Fusarium oxysporum, o qual foi 
+identificado na Universidade Federal de Viçosa e está depositado na micoteca do Departamento 
+de Fitopatologia. De maneira geral, os sintomas tornam-se severos em plantas mais velhas, em que 
+as raízes são comercializadas soltas e não em maços. Condições de maior umidade e ferimentos 
+por equipamentos ou insetos sempre são considerados facilitadores para o desenvolvimento da 
+doença. Pesquisas já comprovaram que o fungo também incide sobre o espinafre, que pertence à 
+mesma família (JAREK et al., 2012). As medidas devem ser preventivas evitando o plantio em áreas 
+Figura 15 – Manchas de cercosporiose em folha de 
+beterraba.
+Fonte: Jarek, 2011.
+
+
+SENAR-PR
+32
+com histórico da doença, mantendo sempre uma boa drenagem dos canteiros e reduzindo quando 
+possível a irrigação (HAVERSON; RUSH, 2002). Restos de cultura deixados no campo, geralmente, 
+são incorporados por enxada rotativa, o que representa um fator que aumenta a disseminação da 
+doença através do solo, e restos de plantas que vão aderidos ao implemento para outras áreas ainda 
+livres da doença. Da mesma forma que para cercosporiose, recomenda-se a rotação de culturas 
+evitando as culturas do espinafre e da acelga. 
+Figura 16 – Sintomas e sinais promovidos por Fusarium oxysporum. Micélio do fungo sobre a lesão em beterraba (A). 
+Cancro apresentando rachaduras (B). Necrose dos tecidos em caule de espinafre (C). Conídios do fungo visualizados em 
+microscópio (D). Raízes de plantas sadias de espinafre (esquerda) ao lado de plantas inoculadas (direita) (E). Planta inoculada 
+apresentando murcha (F).
+a
+c
+e
+b
+d
+f
+Fonte: Jarek, 2011.
+Testemunha
+Tratamento
+
+
+SENAR-PR
+33
+Figura 17 – Podridão de esclerócio em beterraba: raiz de beterraba recoberta por micélio de Sclerotium rolfsii e início da 
+formação de escleródios (A). Escleródios com 1 mm de diâmetro e micélio de Sclerotium rolfsii em meio de cultura batata-
+dextrose-ágar (BDA) (B). Aspecto de plantas atacadas no campo (C e D).
+a
+c
+b
+d
+Fonte: Jarek, 2011 (A e B); Don Ferrin, 2010 (C e D).
+3.3	
+PODRIDÃO DE ESCLERÓCIO (Sclerotium rolfsii)
+Embora essa doença ocorra com menor frequência, pode causar perdas quando o produtor 
+não está atento a sua ocorrência desde o início (ZAMBOLIM et al., 2000). O sintoma mais típico é o 
+de murcha acompanhada por podridão das raízes. Essa podridão vem acompanhada por grande 
+quantidade de micélio branco (mofo) e associado a ele há a presença de numerosos escleródios 
+amarronzados circulares, atingindo no máximo 3 mm de diâmetro, e que são responsáveis pela 
+sobrevivência do fungo no solo (Figura 17). O fungo se desenvolve mais facilmente em solos 
+encharcados (ZAMBOLIM et al., 2000) e em temperaturas altas (27 a 30 °C) (PUNJA, 1985). Da 
+mesma forma que o Fusarium, o patógeno pode ser disseminado por implementos como a enxada 
+rotativa. A adubação verde, bem como a adubação orgânica, pode ajudar a reduzir a viabilidade 
+dos escleródios pela maior atividade de microrganismos saprófitos sobre o fungo (ZAMBOLIM et 
+al., 2000; PUNJA, 1985). 
+5423959
+5423960
+
+
+SENAR-PR
+34
+3.4	
+NEMATOIDES
+Como os nematoides tendem a se tornar um problema crônico nas áreas produtoras de 
+hortaliças – isso já começa a ser evidenciado em áreas produtoras de alface no Paraná e em outras 
+áreas do Estado de São Paulo – é pertinente incluir este tópico (ROSA et al., 2013). 
+Para a cultura da beterraba são relatadas várias espécies, sendo o gênero Meloidogyne o 
+mais importante (ZAMBOLIM et al., 2000; ROSA et al., 2013). Os sintomas podem se manifestar sob 
+diferentes formas sendo as mais comuns a redução no crescimento, amarelecimento e murcha nas 
+horas mais quentes. Nas raízes, a presença de galhas é fundamental para o diagnóstico, quando o 
+agente causador é do gênero Meloidogyne (ZAMBOLIM et al., 2000).
+O plantio intenso de hortaliças na mesma área, sem intervalo com culturas que não sejam 
+hospedeiras, é um dos principais agravantes dessa enfermidade. Para o controle preventivo, além 
+da rotação de culturas é necessário evitar a entrada do patógeno por meio de implementos com 
+solo contaminado. Estimular a atividade microbiológica com a adição de compostos orgânicos 
+pode favorecer o controle biológico em áreas com baixas densidades de nematoides por grama de 
+solo (ZAMBOLIM et al., 2000).
+Tabela 3 – Ingredientes ativos registrados disponíveis no site da SEAB para a principal doença da beterraba.
+Doença
+Patógeno
+Ingrediente ativo
+Cercosporiose
+Cercospora beticola
+Azoxistrobina e Difenoconazol
+Azoxistrobina
+Difenoconazol
+Tebuconazol
+Mancozebe
+Mancozeb e oxicloreto de cobre
+Hidróxido de cobre
+Fonte: Jarek, 2014.
+
+
+SENAR-PR
+35
+REFERÊNCIAS
+DON FERRIN. Louisiania State University Agricultural Center. Bugwood.org. Disponível em: <http://
+www.forestryimages.org/>. Acesso em: 13 out. 2014.
+FILGUEIRA, F. A. R. Novo manual de olericultura: agrotecnologia moderna na produção e 
+comercialização de hortaliças. Viçosa: Editora UFV, 2000, 402 p.
+HAVERSON, R. M.; RUSH, C. M. The influence of irrigation frequency and cultivar blends on the 
+severity of multiple root diseases in sugar beets. Plant Disease, v. 86, n. 8, p. 901-908, 2002.
+JAREK, T. M.; RUARO, L. Ocorrência de doenças em olerícolas na Região Metropolitana de Curitiba 
+In: CONGRESSO BRASILEIRO DE FITOPATOLOGIA, 44. Tropical Plant Pathology, v. 36 (Suplemento), 
+p. 785, 2011.
+JAREK, T. M. et al. Primeiro relato de Fusarium oxysporum causando podridão em raízes de beterraba 
+no Paraná. In: CONGRESSO PAULISTA DE FITOPATOLOGIA, 35. Summa Phytopathologica, v. 38 
+(Suplemento), 2012.
+PARANÁ. Secretaria de Estado da Agricultura e do Abastecimento. Valor bruto da produção 
+agropecuária. Disponível em: <http://www.agricultura.pr.gov.br/arquivos/File/deral>. Acesso em: 
+20 fev. 2014a.
+PARANÁ. Secretaria da agricultura e do abastecimento. Agrotóxicos no Paraná. Disponível em: 
+<http://celepar07web.pr.gov.br/agrotoxicos/pesquisar.asp>. Acesso em: 27 fev. 2014b.
+PUNJA, Z. K. The biology, ecology and control of Sclerotium rolfsii. Annual Review Phytopathology, 
+v. 23, p. 97-127, 1985.
+ROSA, J. M. O. et al. Nematoides das galhas em áreas de cultivo de olerícolas no Estado de São Paulo. 
+Nematologia Brasileira, v. 37, n. 1-2, p. 15-19, 2013.
+ZAMBOLIM, L. et al. Controle de doenças de plantas: hortaliças. Viçosa: Ed. UFV, 2000. v. 2, 878 p.  
+
+
+SENAR-PR
+37
+4	
+DOENÇAS DAS BRÁSSICAS
+A família das brássicas compreende diversas espécies de hortaliças cultivadas, entre 
+elas podem ser citadas repolho, couve-flor, brócolis, couve-chinesa, nabo, rabanete e 
+couve. Serão apresentadas as doenças e dentro de cada uma delas serão indicados os 
+hospedeiros, pois muitas doenças têm mais de uma espécie como hospedeira ou até 
+mesmo chegam a infectar todas as espécies de brássicas (ZAMBOLIM et al., 2000; RIMMER 
+et al., 2007).
+Sem dúvida essa é uma das famílias mais representativas de hortaliças, por esse motivo, 
+as doenças se tornam um fator importantíssimo, pois a sua disseminação é facilitada pelo 
+plantio escalonado de brássicas o ano todo e em quase todas as áreas de cultivo.
+4.1	
+PODRIDÃO NEGRA DAS CRUCÍFERAS (Xanthomonas campestris pv. 
+campestris)
+Essa é a doença que ocorre com maior frequência nas áreas de cultivo de brássicas 
+e, por esse motivo, é uma das mais importantes. É encontrada em praticamente todas as 
+regiões do mundo e do Brasil (VENTURA; COSTA, 1995; CUCUZZA et al., 1999; ZAMBOLIM 
+et al., 2000) onde se cultivam brássicas, principalmente nas regiões mais úmidas e de 
+clima tropical, subtropical e região continental úmida (RIMMER et al., 2007). Em regiões 
+de clima temperado, sua ocorrência se dá preferencialmente no verão, entretanto, não 
+é difícil encontrar plantas infectadas mesmo no inverno. Em condições extremamente 
+favoráveis à doença, a bactéria causadora pode colonizar extensivamente os tecidos, 
+inclusive o caule, e facilitar o desenvolvimento de outros organismos saprofíticos (RIMMER 
+et al., 2007). A disseminação da doença ocorre principalmente por respingos de chuva que 
+transportam pequenas partículas de terra até as folhas, mas também pode ocorrer por 
+insetos e equipamentos utilizados na lavoura (RIMMER et al., 2007).
+O sintoma mais comum da podridão negra são lesões grandes de 1 a 3 cm, presentes 
+nas margens das folhas e com um halo amarelo ao redor delas. As lesões se expandem 
+acompanhando as nervuras, geralmente ficando com um formato de “V” (Figura 18 A e B). 
+À medida que a lesão vai crescendo, o centro dela vai ficando marrom com um aspecto 
+seco e bordos encharcados quando se olha a folha contra a luz. As lesões também podem 
+aparecer no centro das folhas ou até mesmo confundindo-se com sintomas de podridão 
+mole quando a infecção atinge primeiramente o sistema vascular, que ocorre quando 
+a bactéria é transmitida por insetos ou penetra por raízes ou ferimentos causados por 
+equipamentos (CUCUZZA et al., 1999; ZAMBOLIM et al., 2000; RIMMER et al., 2007).
+
+
+SENAR-PR
+38
+Essa doença pode incidir sobre a grande maioria de brássicas cultivadas, as quais incluem: 
+repolho, couve, couve-flor, brócolis, nabo, rabanete e até mesmo sobre plantas daninhas como a 
+nabiça (Raphanus raphanistrum) (VENTURA; COSTA, 1995; CUCUZZA et al., 1999; ZAMBOLIM et al., 
+2000; RIMMER et al., 2007). 
+Para o controle, deve-se agir preventivamente tentando evitar a entrada da bactéria na 
+lavoura, fazendo uso de sementes e mudas de boa procedência, uma vez que a doença pode ser 
+transmitida por sementes (RIMMER et al., 2007). A doença também é uma das poucas bacterioses 
+que podem ser transmitidas por insetos (CUCUZZA et al., 1999; RIMMER et al., 2007). Deve-se evitar 
+irrigação por aspersão sempre que possível; implementos usados em áreas contaminadas podem 
+levar a doença de uma área infestada para outra livre da doença. Existem cultivares resistentes à 
+podridão negra para a cultura de repolho, brócolis e couve-flor (ZAMBOLIM et al., 2000; RIMMER 
+et al., 2007). A rotação de culturas evitando o plantio de outras brássicas também ajuda a diminuir 
+o potencial da doença se desenvolver. Também é importante evitar o plantio no verão em áreas 
+com maior probabilidade da doença ocorrer, ou seja, que já possuem histórico da doença pode 
+Figura 18 – Podridão negra das crucíferas: causando necrose em forma de “V” (A e B). Sintoma da podridão negra em 
+brócolis (C e D).
+a
+c
+b
+d
+Fonte: Jarek, 2011 (A e C); Holmes, 2010 (B e D).
+1574935
+1573266
+
+
+SENAR-PR
+39
+ser considerada uma medida de prevenção. A retirada da área das plantas ou fragmentos que 
+apresentarem sintomas contribui para diminuição da fonte de inóculo (VENTURA; COSTA, 1995; 
+RIMMER et al., 2007). Para o controle químico, não há nenhum produto registrado (PARANÁ, 2014). 
+Tratamentos alternativos à base de cobre, como a calda bordalesa, têm resultados questionáveis e 
+muitas vezes podem não ser vantajosos economicamente.
+4.2	
+HÉRNIA DAS CRUCÍFERAS (Plasmodiophora brassicae)
+A hérnia das crucíferas é uma doença de 
+extrema importância para o cultivo das brássicas 
+com ocorrência generalizada. O fungo causador 
+da doença apresenta a característica de sobreviver 
+entre cinco e sete anos no solo (FILGUEIRA, 2000; 
+RIMMER et al., 2007). Os sintomas mais característicos 
+são a formação de galhas nas raízes (Figura 19) e, 
+nas horas mais quentes do dia, as plantas atacadas 
+apresentam-se murchas. Também é possível verificar 
+um menor desenvolvimento das plantas afetadas e 
+um aspecto amarelado das mesmas, ficando com um 
+porte inferior ao das demais (RIMMER et al., 2007). É 
+comum os sintomas aparecerem em reboleira, onde 
+se encontram as plantas atacadas e logo ao lado 
+plantas sadias (CUCUZZA et al., 1999). 
+Uma vez que o solo esteja severamente 
+infestado, dificilmente será possível erradicar o 
+patógeno, portanto, é imprescindível evitar a entrada 
+de mudas, solo ou equipamentos que possam estar 
+contaminados. O método mais tradicional para 
+minimizar os problemas com a hérnia das crucíferas 
+é corrigir o pH do solo para próximo de 7,0 pois 
+nessas condições o patógeno tem maior dificuldade 
+de completar o seu ciclo. Entretanto, essa medida 
+deve vir acompanhada de outras, como rotação 
+de culturas, boa drenagem do terreno, se possível 
+plantar em canteiros elevados e evitar irrigação 
+excessiva (CUCUZZA et al., 1999; RIMMER et al., 
+2007). Não há nenhum agrotóxico registrado para o 
+controle da doença (PARANÁ, 2014).
+Figura 19 – Galhas típicas da hérnia das crucíferas 
+em planta de couve-flor adulta.
+a
+b
+c
+d
+Fonte: Jarek, 2011 (A); Holmes, 2003 (B e D) e 2001 (C).
+5513016
+5513027
+1578084
+
+
+SENAR-PR
+40
+4.3	
+MÍLDIO (Peronospora parasitica)
+Trata-se de uma doença de ocorrência muito comum (JAREK; RUARO, 2011) e torna-
+se mais preocupante na cultura da couve por atacar diretamente a parte comercializável 
+da planta e na produção de mudas por provocar perda expressiva no viveiro. Embora 
+ela ataque outras culturas como o repolho, a incidência na fase adulta não chega afetar 
+significativamente a cultura. Porém, em couve-flor e brócolis o fungo pode atacar 
+diretamente a inflorescência, tornando-os impróprios para o consumo (CUCUZZA et al., 
+1999; RIMMER et al., 2007). O sintoma mais comum é visto na face inferior das folhas, 
+nas quais se pode observar a produção de uma esporulação esbranquiçada (mofo), que 
+correspondem na face superior a uma lesão angular amarelada (Figura 20). Quando o 
+fungo incide sobre inflorescências de couve-flor e brócolis, estes adquirem lesões marrom 
+acinzentadas, que eventualmente podem apresentar a esporulação típica do fungo, mas 
+também é comum nesses casos ocorrer um ataque desses tecidos que se encontram mais 
+vulneráveis, por bactérias ou fungos decompositores, causando a podridão total da parte 
+atacada (CUCUZZA et al., 1999; RIMMER et al., 2007). O fungo desenvolve-se com mais 
+facilidade em condições de alta umidade, como neblina, orvalhos e temperaturas amenas 
+em torno de 10 a 15 ºC (RIMMER et al., 2007). 
+O controle inicia-se desde a fase de sementeira ou na aquisição das mudas, as quais 
+devem estar livres do fungo, pois as mesmas podem levar o fungo para a lavoura, tornando-
+se um problema futuramente. Evitar irrigações por aspersão ou, quando necessário, 
+realizar pela manhã de modo que as folhas fiquem molhadas pelo menor período possível 
+(ZAMBOLIM et al., 2000; RIMMER et al., 2007). É recomendado fazer a rotação de culturas 
+evitando espécies como repolho, couve-flor, brócolis, couve, nabo, rabanete, couve-de-
+bruxelas, couve-chinesa e demais espécies da família. Sempre que possível, é preciso 
+remover restos culturais da área para evitar a sobrevivência e disseminação do fungo na 
+lavoura (RIMMER et al., 2007). As pulverizações podem auxiliar na prevenção e no controle da 
+doença. Para as culturas de brócolis, couve-flor, nabo, couve e repolho, os princípios ativos 
+registrados encontram-se na Tabela 4. O uso de fungicidas sistêmicos específicos, como 
+Metalaxyl, está se tornando ineficiente para o controle do míldio, devido ao surgimento 
+de resistência (RIMMER et al., 2007). Para evitar o surgimento de resistência do patógeno, 
+é necessário utilizar todas as medidas de controle indicadas e não apenas as pulverizações 
+e, havendo necessidade da aplicação de produtos, deve-se fazê-la alternando o princípio 
+ativo e seguindo rigorosamente o número de pulverizações indicadas pelo fabricante do 
+produto por ciclo da cultura.
+
+
+SENAR-PR
+41
+Figura 20 – Lesões de míldio (Peronospora parasitica) em folha de couve.
+a
+b
+c
+Fonte: USDA, 2002 (A); Holmes, 2010 (B); Jarek, 2011 (C).
+4.4	
+ALTERNARIOSE (Alternaria brassicae; Alternaria brassicicola)
+Doença de ocorrência muito comum, sua maior incidência é nas culturas de couve-chinesa 
+e repolho, com menor severidade restringindo-se apenas às folhas mais externas (JAREK; RUARO, 
+2011). A condição mais importante para o seu desenvolvimento é a alta umidade, quase não sendo 
+afetada pela variação na temperatura. Embora os sintomas possam aparecer desde a sementeira, 
+suas lesões mais características aparecem quando incide sobre as plantas adultas, causando 
+lesões que iniciam como pequenas manchas circulares, com aspecto de vários anéis (VENTURA; 
+COSTA, 1995) ocasionados pela forma de crescimento do fungo, podendo se unir e formar grandes 
+manchas, que podem estar circundadas por um halo amarelo (RIMMER et al., 2007) (Figura 21). Em 
+algumas situações, o centro da lesão pode encontrar-se perfurado. A doença também pode incidir 
+sobre as partes florais da couve-flor e do brócolis, causando manchas de cor marrom (VENTURA; 
+COSTA, 1995; CUCUZZA et al., 1999; ZAMBOLIM et al., 2000).
+A incorporação ao solo dos restos culturais acelera a decomposição e ajuda a reduzir o nível 
+de inóculo; sempre se deve usar sementes e mudas livres do patógeno. A rotação de culturas por 
+cerca de três anos é capaz de eliminar quase que totalmente a doença, desde que plantas daninhas 
+hospedeiras também sejam eliminadas (RIMMER et al., 2007). E quando houver necessidade de 
+UGA1436126
+1574623
+
+
+SENAR-PR
+42
+irrigação, é preciso realizar de forma que as folhas sequem o mais rápido possível, para que o 
+período de molhamento não chegue a atingir 12 horas (ZAMBOLIM et al., 2000). A aplicação de 
+fungicidas registrados pode ajudar na prevenção e controle (Tabela 4).
+Figura 21 – Lesão característica de alternarias em repolho (A e D). Esporos do fungo causador Alternaria brassicicola 
+visualizados em microscópio (B). Evolução das lesões em folha de repolho após as lesões coalescerem (C).
+a
+c
+b
+d
+Fonte: Jarek, 2011 (A, B e C); Holmes, 1997 (D).
+4.5	
+PODRIDÃO DE ESCLEROTÍNIA (Sclerotinia sclerotiorum)
+Embora essa doença apresente baixa incidência sobre brássicas, ela é um risco em potencial 
+devido à grande quantidade de inóculo presente nas lavouras pela ocorrência do fungo em outras 
+culturas, como alface (JAREK; RUARO, 2011), feijão, cenoura, abobrinha, tomate, etc. Desenvolve-se 
+preferencialmente sobre condições de clima mais frio e chuvoso. 
+Os sintomas caracterizam-se pela produção de grande quantidade de micélio branco (mofo) 
+na região do colo, mais próximo ao solo (Figura 22 A). Em meio a essa massa branca, é possível 
+visualizar escleródios negros e rígidos (Figura 22 B), que são responsáveis pela sobrevivência 
+do fungo nas lavouras infestadas, os quais se mantêm viáveis por 7 a 10 anos no solo (RIMMER 
+et al., 2007). Em condições de menor umidade, a doença também pode ocorrer, contudo, não 
+1572859
+
+
+SENAR-PR
+43
+apresenta os sintomas característicos de abundante produção de micélio; em vez disso, as lesões 
+apresentam-se sob a forma de cancros de coloração marrom sobre os caules (CUCUZZA et al., 
+1999; ZAMBOLIM et al., 2000; RIMMER et al., 2007). S. sclerotiorum também pode se desenvolver 
+durante o armazenamento e transporte das brássicas, principalmente couve-flor e repolho. 
+As medidas de controle devem ser adotadas em conjunto e preventivamente, pois após a 
+infestação da lavoura se torna mais difícil o manejo da doença, e os métodos resultam em menor 
+eficiência. A rotação de culturas com espécies não hospedeiras, de preferência gramíneas, como 
+o milho e a aveia preta, ou azevém, reduz o número de escleródios viáveis no solo (RIMMER et 
+al., 2007). Para o controle biológico, já há resultados positivos usando um fungo hiperparasita 
+(Trichoderma spp.) (ZAMBOLIM et al., 2000; RIMMER et al., 2007). Não existe até o momento cultivar 
+resistente à doença, nem mesmo fungicidas registrados para o controle em qualquer uma das 
+brássicas cultivadas. A boa drenagem do terreno também é uma medida importante para diminuir 
+a incidência, associada ao uso adequado da irrigação, evitando excessos.
+Figura 22 – Sintoma de mofo branco em brócolis (A). Repolho atacado por S. sclerotiorum, no qual se visualizam escleródios 
+na superfície (B e C). Sintomas de mofo branco em couve-chinesa (D).
+a
+c
+b
+d
+Fonte: Jarek, 2011 (A e B); Holmes, 1999 (C) e 2001 (D).
+1576086
+1578075
+
+
+SENAR-PR
+44
+4.6	
+PODRIDÃO MOLE (Pectobacterium carotovorum)
+A podridão mole incide sobre grande 
+número de hospedeiros e, em brássicas, as 
+perdas são maiores em repolho, couve-flor, 
+brócolis e couve-chinesa (JAREK; RUARO, 2011), 
+ocorrendo principalmente no verão, quando as 
+temperaturas são mais altas e em presença de 
+alta umidade. Na couve, a bactéria pode atacar 
+o interior do caule deixando-o com um aspecto 
+de talo oco. Além de ocorrer no campo, a 
+doença pode se manifestar no transporte ou 
+armazenamento, podendo causar grandes 
+perdas. A faca ou lâmina utilizada para fazer a 
+colheita pode ser um disseminador da bactéria. 
+Uma vez que a lâmina entra em contato com 
+uma planta adoecida, ela pode transmitir a 
+bactéria para várias outras no momento do 
+corte, e a podridão só irá se manifestar após 
+aproximadamente 2 dias, quando o produto já 
+está chegando ao consumidor final (RIMMER et 
+al., 2007). 
+A doença caracteriza-se principalmente 
+por apresentar um odor desagradável, 
+juntamente com uma podridão mole dos 
+tecidos, principalmente o interior do caule 
+(medula) (Figura 23). Essa podridão pode 
+estar associada à deficiência de boro, devido a 
+calagens feitas sem recomendação elevando 
+o pH excessivamente. A deficiência resultará 
+na presença de rachaduras (Tipburn) ou 
+má formação da medula, favorecendo o 
+desenvolvimento da bactéria (FILGUEIRA, 
+2000; RIMMER et al., 2007) (Figura 24). A 
+bactéria sobrevive no solo na presença de 
+restos culturais e/ou matéria orgânica, e na presença de umidade. Necessita de uma porta de entrada 
+para infectar uma planta sadia; isso pode ocorrer por ferimento causado por tratos culturais, como 
+colheita ou capinas, por insetos e por estruturas da própria planta, como estômatos e hidatódios.
+Figura 23 – Podridão mole em caule de brócolis (A). 
+Couve-chinesa atacada por P. carovotorum (B). Sintomas de 
+podridão mole em repolho (C).
+a
+b
+c
+Fonte: Jarek, 2011 (A e B); Holmes, 2003 (C).
+5512841
+
+
+SENAR-PR
+45
+Como medida de controle, deve-se manter uma ótima drenagem dos canteiros nos 
+cultivos de verão e reduzir a irrigação. Programar uma rotação de culturas evitando outras 
+culturas suscetíveis, como batata, tomate, couve, couve-chinesa, brócolis, repolho, e pimentão 
+(FILGUEIRA, 2000). Deve-se, sempre que possível, remover restos de cultura que estejam 
+atacados pela bactéria. Qualquer trato cultural que venha a produzir ferimentos, seja durante 
+o ciclo ou na pós-colheita, poderá ser uma porta de entrada para bactéria se desenvolver, por 
+isso, deve-se proceder com cuidado principalmente em áreas onde a doença já tenha ocorrido. 
+Instrumentos utilizados para a colheita 
+(corte das cabeças), devem ser lavados e 
+desinfetados com frequência (RIMMER et 
+al., 2007), pode-se adotar uma solução com 
+uma parte de água sanitária para duas partes 
+de água. Os instrumentos de corte devem 
+ficar imersos por 1 minuto nessa solução e 
+depois enxaguados com água. Tomar muito 
+cuidado com a sanitização das embalagens, 
+desinfetando-as caso já tenham sido utilizadas 
+anteriormente. 
+Não há nenhum agrotóxico registrado 
+para o controle dessa doença em brássicas 
+(PARANÁ, 2014).
+4.7	
+FERRUGEM BRANCA (Albugo candida)
+Os sintomas apresentam-se sob a forma de manchas amareladas na face superior da folha, 
+correspondendo a uma massa branca no outro lado da mesma, que são pústulas contendo esporos 
+do fungo. Estas atingem um tamanho de 1 a 3 mm (Figura 25). A doença é disseminada pelo vento, 
+que carrega esporos do fungo (RIMMER et al., 2007), pela água seja da chuva ou irrigação e por 
+insetos (KIMATI et al., 2011). A presença do fungo pode resultar em um crescimento anormal da 
+folha, resultando em hipertrofia ou hiperplasia que é um contorcimento da folha deixando-a com 
+um aspecto enrugado. 
+A presença de água livre em temperaturas de 10 a 20 ºC são condições ótimas para a 
+disseminação da doença (CUCUZZA et al., 1999; ZAMBOLIM et al., 2000; KIMATI et al., 2011), por isso, 
+as irrigações devem ser feitas procurando-se deixar as folhas molhadas o menor tempo possível, o 
+que pode ser conseguido irrigando pela manhã, por exemplo, em vez de no fim de tarde. Existem 
+cultivares resistentes à doença, as quais são indicadas em áreas de alta incidência. Deve-se adotar a 
+rotação de culturas, eliminando hospedeiros alternativos como a nabiça (Raphanus raphanistrum). 
+Para o controle químico, não existem produtos registrados na SEAB (PARANÁ, 2014).
+Figura 24 – Lesão de podridão mole em couve-flor 
+associada à deficiência de boro.
+Fonte: Jarek, 2011.
+
+
+SENAR-PR
+46
+4.8	
+CHUMBINHO OU MICOSFERELA (Mycosphaerella brassicicola; 
+Mycosphaerella capsellae)
+Causa maiores danos na cultura de repolho e couve-de-bruxelas (VENTURA; COSTA, 1995; 
+ZAMBOLIM et al., 2000). Porém, Mycosphaerella capsellae, causadora de uma doença conhecida como 
+mancha branca da folha, já foi encontrada atacando a cultura da couve (JAREK et al., 2012). Os sintomas 
+caracterizam-se por manchas brancas quebradiças, circundadas por um sutil halo enegrecido (RIMMER 
+et al., 2007) (Figura 26), mas esses sintomas podem mudar dependendo da espécie, da idade da folha 
+atacada e do desenvolvimento da lesão influenciada pelas condições ambientais (CUCUZZA et al., 
+1999; RIMMER et al., 2007). Entretanto, quando a doença é causada por Mycosphaerella brassicicola, as 
+lesões se iniciam com manchas pequenas escuras, aparecendo tanto na superfície superior da folha 
+quanto na inferior. As manchas crescem expandindo-se até um tamanho que pode atingir de 2,5 a 3 
+cm de diâmetro, com margens bem definidas e com halo amarelo no entorno (RIMMER et al., 2007). 
+Dentro das lesões formam-se pequenos pontos pretos que são as estruturas de frutificação do fungo, 
+formando anéis de crescimento (VENTURA; COSTA, 1995; CUCUZZA et al., 1999; ZAMBOLIM et al., 
+2000; RIMMER et al., 2007) muito semelhantes àqueles produzidos pela alternariose.
+Figura 25 ­– Sintomas de ferrugem branca na parte superior das folhas de mostarda (A) e inferior com pústulas brancas 
+(B, C e D).
+a
+c
+b
+d
+Fonte: Jarek, 2011 (A e B); Holmes, 1997 (C) e 2001 (D).
+1573193
+1577985
+
+
+SENAR-PR
+47
+Para o controle, recomenda-se a eliminação dos restos de cultura contendo estruturas do 
+fungo. A incorporação ao solo desses restos acelera a decomposição e diminui o período de 
+sobrevivência do fungo na lavoura (RIMMER et al., 2007). É recomendada a aquisição de mudas 
+livres da doença para a cultura do repolho e, quando atacada por Mycosphaerella brassicicola, 
+pulverizações com princípios ativos registrados (PARANÁ, 2014) (Tabela 4). Geralmente, o uso de 
+fungicidas para o controle de outras doenças acaba controlando indiretamente a micosferela, sem 
+necessitar de aplicações específicas para essa doença.
+Figura 26 – Lesão de Mycosphaerella capsellae em couve (A). Folha de couve atacada por Mycosphaerella capsellae (B).
+a
+b
+Fonte: Jarek, 2011.
+4.9	
+PODRIDÃO DO COLO (Rhizoctonia solani)
+É considerada uma doença de menor importância (JAREK; RUARO, 2011), pode se tornar 
+uma doença grave quando ataca as mudas na sementeira ou em viveiros causando o tombamento 
+de plântulas (RIMMER et al., 2007; KIMATI et al., 2011). Ataca uma grande quantidade de plantas 
+de diversas famílias, tornando difícil o planejamento de uma rotação de culturas que venha a ser 
+eficiente; em todo caso, gramíneas como milho e aveia preta são mais indicadas (ZAMBOLIM et al., 
+2000; RIMMER et al., 2007; KIMATI et al., 2011). A boa drenagem do solo, associada a um correto uso 
+da irrigação é efetiva na redução da incidência 
+da doença. Para a cultura do repolho, existe 
+princípio ativo registrado (Tabela 4), entretanto, 
+deve-se avaliar muito bem a relação custo-
+benefício, uma vez que a doença geralmente 
+apresenta baixa incidência e é de ocorrência 
+limitada. Muitas vezes, a retirada das plantas 
+atacadas da lavoura, associada às outras 
+medidas 
+indicadas 
+anteriormente, 
+pode 
+apresentar melhor resultado econômico para 
+o produtor.
+Figura 27 – Sintoma de damping-off sobre caule de muda 
+de repolho (A).
+Fonte: Holmes, 2008.
+5512889
+
+
+SENAR-PR
+48
+4.10	 MURCHA DE FUSÁRIO (Fusarium oxysporum)
+Encontrada com uma incidência relativamente alta na região, principalmente na cultura do 
+repolho (JAREK; RUARO, 2011), é uma doença que geralmente passa despercebida pelo produtor, 
+por apresentar sintomas sutis. Contudo, na maioria das vezes a doença impede a planta de formar 
+a cabeça, impedindo sua utilização para comercialização.
+Os sintomas caracterizam-se pela murcha da planta, principalmente nas horas mais 
+quentes do dia e, em algumas cultivares, as folhas da saia podem apresentar um pronunciado 
+arroxeamento ou amarelecimento (Figura 28 A). Mas o sintoma mais característico dessa doença é 
+o anel escurecido formado internamente nos vasos condutores da planta, só visto quando o caule 
+é cortado transversalmente (Figura 28 B). 
+Para o controle, a medida mais barata e efetiva é o uso de híbridos resistentes ao fungo 
+(CUCUZZA et al., 1999; ZAMBOLIM et al., 2000; RIMMER et al., 2007; KIMATI et al., 2011). Outras 
+espécies de brássicas também são suscetíveis, como couve-flor, brócolis, couve e nabo, por isso, 
+a rotação de culturas deve evitar outras espécies de brássicas. Também é de extrema importância 
+a sanitização dos equipamentos e ferramentas utilizados, os quais podem levar a doença de uma 
+área para a outra e, por esse motivo, devem ser lavados antes da entrada em um novo talhão. 
+Nenhum agrotóxico está registrado para o controle da doença em brássicas no Paraná.
+Figura 28 – Sintomas de Fusarium oxysporum em repolho. (A e B). Detalhe do escurecimento interno do sistema vascular 
+devido à fusariose (C).
+a
+b
+c
+Fonte: Jarek, 2011 (A e C); Bartolo, 2008 (B). 
+5357428
+
+
+SENAR-PR
+49
+4.11	 VÍRUS DO MOSAICO DA COUVE-FLOR (CaMV)
+Essa doença, cuja sintomatologia e etiologia foram pouco estudadas no Paraná, é complexa e 
+incide sobre diversas espécies de brássicas, como couve-flor, brócolis, repolho e couve-de-bruxelas, 
+e também pode hospedar-se em plantas alternativas, como a nabiça (Raphanus raphanistrum) 
+(CUCUZZA et al., 1999; RIMMER et al., 2007). A severidade dos sintomas varia muito em função do 
+hospedeiro e do isolado do vírus, bem como da associação entre CaMV e TuMV (VENTURA; COSTA, 
+1995; CUCUZZA et al., 1999), (Figura 29), mas via de regra os sintomas são mais graves no inverno, 
+quando as temperaturas estão entre 14 e 18 ºC (CUCUZZA et al., 1999; RIMMER et al., 2007). 
+O controle inclui a eliminação de hospedeiros alternativos, como a nabiça, além de evitar um 
+novo plantio próximo às áreas onde já estejam sendo cultivadas brássicas e fazer monitoramento 
+e controle de insetos transmissores, que são os pulgões (Brevicoryne brassicae e Myzus persicae) 
+(CUCUZZA et al., 1999; RIMMER et al., 2007). Existem também linhagens de couve-flor tolerantes ao 
+vírus que diminuem as perdas de campo, mas não evitam a dispersão do vírus para áreas adjacentes 
+(RIMMER et al., 2007). A retirada das plantas com sintomas ajuda a reduzir a dispersão do vírus. 
+Figura 29 – Sintomas de CaMV em folhas de brócolis (A). Couve-flor apresentando mosaico nas folhas mais novas (B).
+a
+b
+Fonte: Jarek, 2011.
+4.12	 VÍRUS DO MOSAICO DO NABO (TuMV)
+É uma das mais importantes e difundidas viroses que incidem sobre brássicas. O vírus 
+também possui uma enorme lista de hospedeiros que inclui 318 espécies (RIMMER et al., 2007; 
+KIMATI et al., 2011). A nabiça (Raphanus raphanistrum) é hospedeira do vírus (Figura 30 A) e, por 
+esse motivo, deve ser eliminada. Da mesma forma que o CaMV, os sintomas variam em função do 
+hospedeiro e das condições ambientais (RIMMER et al., 2007; KIMATI et al., 2011). O mosaico é o 
+sintoma mais encontrado, principalmente sobre plantas de couve-chinesa (Figura 30 B), contudo, 
+também podem ser encontrados sintomas necróticos ou uma combinação dos dois. A virose é 
+transmitida pelos mesmos pulgões que transmitem o CaMV (Brevicoryne brassicae e Myzus persicae) 
+(RIMMER et al., 2007).
+
+
+SENAR-PR
+50
+O controle é semelhante ao da maioria das viroses, fazer monitoramento e controle da 
+população de afídeos, evitar plantio em áreas onde já esteja ocorrendo a virose. Tem-se conseguido 
+algum controle dos vetores da virose com o uso de óleo mineral em estações do ano em que a 
+população de afídeos é baixa (RIMMER et al., 2007). A retirada e eliminação de plantas que estão 
+com os sintomas ajudam a reduzir a dispersão da virose (RIMMER et al., 2007; KIMATI et al., 2011).
+Figura 30 – Nabiça (Raphanus raphanistrum) apresentando sintomas típicos do vírus do mosaico do nabo (A). Couve-
+chinesa apresentando sintomas de vírus do mosaico do nabo (B e C). Sintoma típico de mosaico em folha de brassica (D).
+a
+c
+b
+d
+Fonte: Jarek, 2011 (A e B); Holmes, 1998 (C); Langston, 2006 (D).
+Tabela 4 – Ingredientes ativos registrados disponíveis no site da SEAB para as principais doenças das brássicas (PARANÁ, 2014).
+Doença
+Patógeno
+Hospedeiro
+Ingrediente ativo
+Míldio
+Peronospora parasitica
+Brócolis; couve-flor; repolho
+Mancozebe e oxicloreto de cobre
+Brócolis; couve; couve-flor; repolho
+Mancozebe
+Brócolis; couve; couve-flor;
+Mandipropamida
+Repolho
+Metalaxil-M e Clorotalonil
+Alternariose
+Alternaria brassicae; A. brassicicola
+Couve-flor
+Azoxistrobina
+Brócolis; couve; couve-flor; repolho
+Mancozebe e oxicloreto de cobre
+Brócolis; couve; couve-flor; repolho
+Mancozebe
+Chumbinho ou micosferela
+Mycosphaerella brassicicola;  
+M. capsellae
+Repolho
+Mancozebe e oxicloreto de cobre
+Podridão de colo
+Rhizoctonia solani
+Repolho
+Pencicurom
+Fonte: Jarek, 2014.
+1575845
+UGA5077037
+
+
+SENAR-PR
+51
+REFERÊNCIAS
+BARTOLO, M. E. Colorado State University. Bugwood.org. Disponível em: <http://www.forestryimages.
+org/>. Acesso em: 13 out. 2014.
+CUCUZZA, J. et al. Enfermidades de las crucíferas: guia practica para agricultores, productores y 
+comercializadores de semillas y asesores agrícolas. California: Petoseed, 1999. 38 p.
+FILGUEIRA, F. A. R. Novo manual de olericultura: agrotecnologia moderna na produção e 
+comercialização de hortaliças. Viçosa: Editora UFV, 2000. 402 p. 
+HOLMES G. California Polytechnic State University at San Luis, Obisp. Bugwood.org. Disponível em: 
+<http://www.forestryimages.org/>. Acesso em: 13 out. 2014.
+JAREK, T. M.; RUARO, L. Ocorrência de doenças em olerícolas na Região Metropolitana de Curitiba, 
+In: CONGRESSO BRASILEIRO DE FITOPATOLOGIA, 44. Tropical Plant Pathology, v. 36 (Suplemento), 
+p. 785, 2011.
+JAREK, T. M. et al. Ocorrência de Mycosphaerella capsellae causando mancha branca em folhas 
+de couve. In: CONGRESSO PAULISTA DE FITOPATOLOGIA, 35. Summa Phytopathologica, v. 38 
+(Suplemento), 2012.
+KIMATI, H. et al. Manual de fitopatologia: doenças das plantas cultivadas. Vol. 2, São Paulo: Ed. 
+Agronômica Ceres, 2011. 704 p.
+LANGSTON, D. B. University of Georgia. Bugwood.org. Disponível em: <http://www.forestryimages.
+org/>. Acesso em: 13 out. 2014.
+PARANÁ. Secretaria de Estado da Agricultura e do Abastecimento. Agrotóxicos no Paraná. 
+Disponível em: <http://celepar07web.pr.gov.br/agrotoxicos/pesquisar.asp>. Acesso em: 27 fev. 
+2014.
+RIMMER, S. R. et al. Compendium of Brassica diseases. St. Paul: APS Press, 2007.
+USDA - Clemson University. - Cooperative extension slide series. Bugwood.org. Disponível em: 
+<http://www.forestryimages.org/>. Acesso em: 13 out. 2014.
+VENTURA, J. A.; COSTA, H. Doenças das crucíferas. In: PAULA JÚNIOR, T. J. de; PINTO, C. M. F. Doenças 
+de hortaliças 2. Informe Agropecuário, v.17, n. 183, 1995.
+ZAMBOLIM, L. et al. Controle de doenças de plantas: hortaliças. Viçosa: Ed. UFV, 2000. v. 1. 878 p.
+
+
+SENAR-PR
+53
+5	
+DOENÇAS DA CEBOLA
+A cebola é uma hortaliça de muita importância no Paraná, sendo que em 2012 o valor bruto 
+da produção atingiu 88,66 milhões de reais (PARANÁ, 2014a), e o Estado é o sexto maior produtor 
+brasileiro (BETTONI, 2011). No Paraná, a produção se concentra principalmente nos municípios de 
+Campo Largo, Campo Magro, Contenda e Balsa Nova (PARANÁ, 2014a).
+A cultura é afetada por algumas doenças cujo conhecimento é muito importante, pois em 
+alguns casos essas doenças podem até inviabilizar a produção. O grau de resistência genética 
+encontrado atualmente nas cultivares não é suficiente para impedir o desenvolvimento das doenças, 
+ocasionando o uso intensivo de agrotóxicos que elevam os custos de produção (ZAMBOLIM et al., 
+2000).
+Devido às folhas da cebola serem cerosas, as pulverizações em alguns casos podem tornar-se 
+ineficientes devido ao escorrimento, sendo necessária a adição de adjuvantes (PINTO et al., 1995). 
+É necessária a adoção de medidas conjuntas de controle das doenças da cebola para o sucesso da 
+produção, sem aumentar os custos com o uso de agrotóxicos.
+5.1	
+QUEIMA DAS PONTAS OU BOTRYTIS (Botrytis squamosa)
+A diagnose dessa doença é difícil, primeiro pelos sintomas que podem ser confundidos com 
+danos por insetos, pela seca, por excesso de umidade, danos mecânicos ou injúria por herbicidas. 
+Além do que o isolamento do fungo é difícil (PINTO et al., 1995; GABOR, 1999; ZAMBOLIM et 
+al., 2000; KIMATI et al., 2011). Os sintomas caracterizam-se por pequenas manchas brancas, que 
+são circundadas por um leve contorno esverdeado (GABOR, 1999) (Figura 31). As lesões podem 
+aumentar a ponto de levar as folhas à morte, iniciando pelas pontas, e reduzindo o rendimento em 
+bulbos. Os sintomas também podem se manifestar na pós-colheita, resultando em uma podridão 
+aquosa no colo dos bulbos (PINTO et al., 1995; ZAMBOLIM et al., 2000; KIMATI et al., 2011). As 
+temperaturas baixas são mais favoráveis à infecção quando a umidade relativa é de 100% por pelo 
+menos 24 horas (ZAMBOLIM et al., 2000; KIMATI et al., 2011). O fungo pode sobreviver no solo 
+produzindo estruturas de resistência, os escleródios. 
+Como todas as demais doenças que produzem estruturas de resistência como escleródios, 
+a rotação de culturas é estratégia fundamental para diminuir o inóculo na lavoura. Um bom 
+planejamento das pulverizações preventivas também é indicado principalmente em cultivares 
+suscetíveis, embora os resultados obtidos a campo tenham mostrado pouco controle (ZAMBOLIM 
+et al., 2000). Poucos são os grupos de princípios ativos liberados para o controle da doença (PARANÁ, 
+2014b) (Tabela 5).
+Eliminar restos da cultura que ficam na lavoura ajuda a diminuir a formação de escleródios 
+que serão a forma de sobrevivência do fungo. Quanto mais adensado o espaçamento, menor é a 
+circulação de ar, maior é o tempo que as folhas ficam molhadas e, consequentemente, a incidência 
+da doença é maior (GABOR, 1999; KIMATI et al., 2011). 
+
+
+SENAR-PR
+54
+Figura 31 – Folhas de cebola atacada por B. squamosa.
+a
+c
+b
+d
+Fonte: Jarek, 2011 (A); Langston, 2006 (B); Du Toit, 2011 (C e D).
+5.2	
+MANCHA PÚRPURA (Alternaria porri)
+Importante doença em grande parte do território nacional, as perdas ocasionadas por ela 
+podem chegar de 50 a 60% (ZAMBOLIM et al., 2000). Além de atacar as folhas no campo o fungo 
+também pode causar problemas na pós-colheita (KIMATI et al., 2011). As lesões são encharcadas 
+normalmente apresentando um centro esbranquiçado (Figura 32), as bordas são de coloração 
+amarronzada, tornando-se púrpura depois. Com o tempo, formam-se anéis de coloração escura 
+que correspondem à frutificação do fungo. Com o avançar das lesões, toda a folha pode ser atacada 
+e vir a senescer.
+UGA5076070
+5435810
+5435813
+
+
+SENAR-PR
+55
+A principal condição para o seu desenvolvimento é a umidade presente nas folhas, não sendo 
+tão influenciada pela temperatura (PINTO et al., 1995, ZAMBOLIM et al., 2000) mas desenvolve-se 
+melhor em temperaturas quentes de 21 a 30 °C (PINTO et al., 1995; FILGUEIRA, 2000; ZAMBOLIM 
+et al., 2000; KIMATI et al., 2011). Períodos de alta umidade sobre as folhas em curto período são 
+suficientes para o fungo produzir esporos abundantemente, os quais são dispersos pelo vento 
+quando a folha seca. 
+O controle deve ser feito com medidas integradas, como, por exemplo, evitando 
+irrigar antes de anoitecer para que as folhas não fiquem umedecidas por várias horas 
+(ZAMBOLIM et al., 2000; KIMATI et al., 2011). Espaçamentos menos densos desfavorecem a 
+doença. Existem cultivares que apresentam maior resistência à doença (PINTO et al., 1995; 
+ZAMBOLIM et al., 2000; KIMATI et al., 2011). A rotação de culturas mais uma vez é indicada 
+para reduzir a doença. Eliminação dos restos culturais, enterrando-os, por exemplo, pode 
+ajudar a diminuir o período de sobrevivência do fungo na lavoura. E, associado a essas 
+medidas, o produtor pode usar fungicidas preventivamente, consultando aqueles que têm 
+princípio ativo registrado na SEAB (PARANÁ, 2014b) (Tabela 5).
+Figura 32 – Lesões de mancha púrpura (Alternaria porri) em folhas de cebola.
+a
+c
+b
+d
+Fonte: Jarek, 2011 (A e B); Schwartz, 2008 (C e D).
+5361486
+5364058
+
+
+SENAR-PR
+56
+5.3	
+MÍLDIO (Peronospora destructor)
+Doença muito importante por ter como condições ótimas ao seu desenvolvimento frio 
+e umidade, muito comuns nos meses em que se cultiva cebola no Paraná. O sintoma típico é 
+a própria esporulação do fungo que pode ser visualizada a olho nu, abundantemente sobre 
+as folhas (Figura 33). Com o tempo, as lesões aumentam de tamanho podendo envolver a 
+folha toda, que adquire uma cor amarelo-pálido (GABOR, 1999). O fungo pode sobreviver 
+no solo ou em restos de cultura, e seus esporos são facilmente disseminados pelo vento e 
+respingos de chuva. 
+Pelo fato de o fungo sobreviver no solo, é fundamental ter uma rotação de culturas 
+bem planejada, por três a quatro anos (PINTO et al., 1995, GABOR, 1999). Se o plantio for por 
+bulbilhos, estes devem ser livres do patógeno. Deve-se procurar eliminar restos de plantas ou 
+bulbos da lavoura e fazer a irrigação buscando-se manter as folhas úmidas o menor tempo 
+possível, irrigando-se pela manhã, por exemplo, em vez de no fim de tarde (GABOR, 1999). 
+Em terrenos planos, posicionar as linhas na direção do vento dominante pode favorecer 
+a secagem mais rápida das folhas (GABOR, 1999). Plantios muito adensados favorecem a 
+ocorrência da doença. 
+A aplicação de fungicidas deve ser racional observando-se as condições climáticas; 
+se estas forem favoráveis ao patógeno, procede-se à pulverização com os princípios ativos 
+registrados para a cebola no Estado do Paraná (Tabela 5). Porém, é de extrema importância o 
+produtor estar consciente de que Peronospora destructor é um fungo que tem características 
+especiais que o fazem adquirir muito rapidamente resistência a fungicidas, principalmente 
+aqueles com mecanismo de ação específico; portanto, deve-se sempre buscar alternar o 
+princípio ativo utilizado, pois o mesmo vai perdendo sua eficiência com o tempo se usado 
+continuamente. 
+Figura 33 – Vista em aumento de 40 vezes da esporulação produzida por P. destrutor na superfície de folha de cebola (A). 
+Esporulação típica de P. destrutor em folhas de cebola (B).
+a
+b
+Fonte: Jarek, 2011 (A); Petry, 2010 (B).
+
+
+SENAR-PR
+57
+5.4	
+PODRIDÃO BRANCA (Sclerotium cepivorum)
+Doença de ocorrência limitada, contudo, é extremamente destrutiva para cebola e deve ser 
+rigorosamente monitorada, pois pode representar uma séria ameaça as regiões produtoras (JAREK; 
+RUARO, 2011). 
+Os sintomas iniciam-se por amarelecimento e murcha somados a queda das folhas mais 
+velhas. Nota-se na lavoura uma reboleira de menor desenvolvimento (ZAMBOLIM et al., 2000; 
+KIMATI et al., 2011). As plantas são facilmente arrancadas do solo devido ao apodrecimento das 
+raízes (Figura 34 A). O sintoma mais característico é produzido quando o bulbo é deixado à sombra 
+em ambiente úmido por um ou dois dias e produz uma grande quantidade de micélio branco, 
+recobrindo a superfície do bulbo e, em meio à essa massa branca, há a presença de numerosos 
+escleródios enegrecidos (Figura 34 B). Esses escleródios serão responsáveis pela sobrevivência do 
+fungo no solo por vários anos. O fungo desenvolve-se melhor em condições mais frias (10 a 20 °C) 
+e de alta umidade (PINTO et al., 1995; ZAMBOLIM et al., 2000; KIMATI et al., 2011).
+O controle deve ser sempre preventivo, evitando-se a entrada na propriedade de solo 
+contaminado, equipamentos ou bulbilhos infectados. Bulbos sob suspeita devem ser eliminados 
+por meio da queima. As sementeiras de cebola devem situar-se em local seguramente livre da 
+doença. A rotação de culturas em áreas infestadas deve evitar o plantio de alho ou cebola por 
+um período de 8 a 11 anos. Quando detectada a presença de uma reboleira na lavoura, deve-se 
+proceder ao arranque das plantas afetadas e vizinhas e queimá-las no próprio local com auxílio de 
+palha seca ou ramos secos, para evitar que durante a retirada da lavoura aumente a disseminação 
+do fungo na área. Após a queima, se a área for pequena, recomenda-se a solarização com lona 
+de polietileno transparente por um período de 90 dias, o que deve reduzir muito a população de 
+escleródios viáveis (PINTO et al., 1995; ZAMBOLIM et al., 2000; KIMATI et al., 2011).
+Fungicidas não são registrados para o controle dessa doença (PARANÁ, 2014b) por serem 
+ineficientes e/ou muitas vezes antieconômicos.
+Figura 34 – Cebola apresentando folhas amarelecidas devido a podridão branca (A). Detalhe dos escleródios produzidos 
+por Sclerotium cepivorum (B).
+a
+b
+Fonte: Jarek, 2011.
+
+
+SENAR-PR
+58
+5.5	
+MAL-DAS-SETE-VOLTAS (Colletotrichum gloeosporioides f. sp. cepae)
+O fungo pode atacar as plantas desde a sementeira causando o tombamento e mela das 
+mudas (PINTO et al., 1995; ZAMBOLIM et al., 2000; KIMATI et al., 2011). Quando uma planta infectada 
+é puxada, o restante da planta (raiz e bulbo) se desprende ficando no solo. Observa-se também o 
+enrolamento das folhas e rigidez no pescoço. Nas lesões, é possível observar pontuações pretas 
+que correspondem aos corpos de frutificação do fungo, as quais podem estar dispostas em anéis 
+(Figura 35). Folhas com lesões grandes senescem diminuindo posteriormente o tamanho do bulbo. 
+A doença aumenta em temperaturas mais elevadas 24 a 29 ºC e é espalhada por respingos de 
+chuva ou de irrigação. 
+Como medidas de controle, recomenda-se usar cultivares resistentes (PINTO et al., 1995; 
+FILGUEIRA, 2000; ZAMBOLIM et al., 2000; KIMATI et al., 2011), rotação de culturas, eliminar bulbos 
+contaminados e jamais armazená-los junto com bulbos sadios, boa cura dos bulbos, evitar solos 
+maldrenados, manejando adequadamente a irrigação. Para o controle químico, a melhor eficiência 
+é conseguida com ingredientes ativos sistêmicos registrados para o controle dessa doença no 
+Estado do Paraná (PARANÁ, 2014b) (Tabela 5).
+Figura 35 – Sintomas do mal-das-sete-voltas, causado por Colletotrichumgloeosporioides f.sp. cepae em folhas da base de 
+uma planta de cebola (A) e no bulbo (B).
+a
+b
+Fonte: Shen, 2011 (A) e 2013 (B).
+5.6	
+RAIZ ROSADA (Pyrenochaeta terrestris)
+Doença que não tem sido observada nas principais regiões produtoras de cebola do Estado, mas 
+apresenta riscos por já estar amplamente disseminada nas regiões produtoras do país e porque seus 
+sintomas são pouco perceptíveis, por se tratar de um fungo de solo chamado Pyranochaeta terrestres 
+(Sin. Phoma terrestris) (PINTO et al., 1995; GABOR, 1999; ZAMBOLIM et al., 2000; KIMATI et al., 2011).
+5435616
+5492241
+
+
+SENAR-PR
+59
+O sintoma característico e diagnóstico dessa doença, como o próprio nome diz, é a coloração 
+rosada da raiz (Figura 36). Embora observada em todas as fases de desenvolvimento da cultura, é 
+mais evidente em plantas adultas (PINTO et al., 1995; KIMATI et al., 2011). Se as plantas são infectadas 
+quando novas, os sintomas se tornam mais graves e podem aparecer: murcha, deficiência nutricional 
+e as pontas das folhas podem começar a descolorir exibindo coloração amarela ou marrom. Todos 
+esses sintomas são relacionados ao comprometimento das raízes pelo ataque do fungo, inclusive 
+sendo fácil arrancar as plantas do solo (GABOR, 1999; ZAMBOLIM et al., 2000; KIMATI et al., 2011).
+O fungo é favorecido por temperaturas entre 24 e 28 °C, e sobrevive no campo na forma 
+de picnídios (dificilmente observados) e clamidosporos. A umidade no solo é essencial para 
+sobrevivência e desenvolvimento do fungo. Sua disseminação está relacionada às práticas culturais 
+que podem levar fragmentos de solo de um local para outro, como, por exemplo, implementos 
+contaminados, raízes de mudas e também pela água de escorrimento superficial ou irrigação.
+O controle envolve principalmente práticas culturais preventivas considerando a forma de 
+disseminação do fungo, pois não há fungicida registrado para a doença (PARANÁ, 2014b) e também 
+porque o patógeno é considerado pouco agressivo, atacando principalmente plantas que estão 
+debilitadas por alguma deficiência (GABOR, 1999; ZAMBOLIM et al., 2000; KIMATI et al., 2011). Em casos 
+de alta incidência existem referências sobre cultivares mais resistentes/tolerantes, indica-se a rotação de 
+culturas, e para locais que sejam foco da doença pode-se proceder a solarização do solo com polietileno 
+transparente (PINTO et al., 1995; GABOR, 1999; ZAMBOLIM et al., 2000; KIMATI et al., 2011).
+Figura 36 – Sintomas de Raiz rosada causada por Pyrenochaeta terrestris (Sin. Phoma terrestris) em raízes de cebola.
+a
+b
+c
+Fonte: Holmes, 1995 (A e B); Schwartz, 2008 (C).
+1571408
+1571409
+5359352
+
+
+SENAR-PR
+60
+5.7	
+NANISMO AMARELO DA CEBOLA, MOSAICO EM FAIXAS OU CRESPEIRA 
+DA CEBOLA (Onion yellow dwarf – OYDV)
+Essa virose não é transmitida pela semente, por esse motivo, ela tem menor importância, 
+visto que a propagação é feita em sementeiras ou semeadura direta. Situação diferente dos estados 
+de São Paulo e Minas Gerais, onde grande parte dos produtores faz a propagação por bulbilhos, os 
+quais podem disseminar a virose.
+Os principais sintomas são a presença de listras amarelas e/ou amarelecimento total, 
+acompanhados de enrolamento, achatamento e enrugamento. As plantas apresentam porte 
+menor quando infectadas jovens e produzem bulbos pequenos (PINTO et al., 1995; GABOR, 1999; 
+ZAMBOLIM et al., 2000; KIMATI et al., 2011).
+O vírus é transmitido por diversas espécies de afídeos (mais de 50) cuja transmissão é do 
+tipo não persistente, dessa forma, a principal forma de disseminação do vírus para novas áreas é 
+por intermédio de espécies hospedeiras e bulbos contaminados (PINTO et al., 1995; GABOR, 1999; 
+ZAMBOLIM et al., 2000; KIMATI et al., 2011).
+As formas de controle são preventivas, utilizando material propagativo livre do vírus. No caso 
+de plantio por sementes, assegura-se que as plantas estão livres de vírus. É importante eliminar 
+plantas hospedeiras da família das liliáceas, como cebolinha, alho e algumas espécies ornamentais, 
+e utilizar rotação de culturas, pois, sendo o vírus transmitido de maneira não persistente por pulgões 
+e não havendo espécies suscetíveis no campo, o vírus não sobrevive.
+5.8	
+DOENÇAS PÓS-COLHEITA	
+Boa parte da produção de cebola é comercializada após um período de armazenamento, 
+devido à necessidade de boa cura dos bulbos e também por razões econômicas, levando em conta 
+a elevação do preço no período entre safras. 
+Contudo, deve-se considerar que existem diversos patógenos que incidem sobre a cebola 
+após a colheita e que depreciam o produto, fazendo com que ele perca espaço para a cebola 
+importada (ZAMBOLIM et al., 2000). Entre os principais patógenos podem-se citar: Fusarium spp., 
+Penicillium sp., Aspergillus níger, Botrytis allii, Alternaria porri, Rhizopus spp., Colletotrichum circinans, 
+Sclerotium cepivorum, Cladosporium spp., Sclerotium rolfsii, Pseudomonas cepacia, Erwinia carotovora 
+subsp. carotovora (ZAMBOLIM et al., 2000).
+Embora cada um dos patógenos apresente características intrínsecas com relação aos 
+sintomas, forma de disseminação e estruturas de sobrevivência, o controle de todas essas 
+doenças pós-colheita apresenta muitas características em comum (ZAMBOLIM et al., 2000). A 
+boa conservação pós-colheita inicia no campo, um cultivo bem conduzido até a colheita terá boa 
+conservação, entretanto, após a colheita o produto não ganha mais qualidade por melhor que 
+seja o manejo, ele apenas perde qualidade com o passar do tempo, exceto pelo tempo de cura 
+necessário.
+
+
+SENAR-PR
+61
+Se o tempo decorrer seco, pode-se realizar a cura no campo por três a cinco dias, tomando 
+o cuidado de manter os bulbos cobertos pelo próprio arranjo das folhas em camadas do produto 
+sobrepostas, para que não ocorra a queima pelo sol (FILGUEIRA, 2000). Já em períodos com risco de 
+chuva, deve-se recolher o produto em galpões, pois chuvas no período de colheita são prejudiciais 
+à qualidade do produto (FILGUEIRA, 2000). A cura mais prolongada após cura preliminar também 
+se deve proceder em galpão, até o momento em que a película externa indique que o produto está 
+bom (FILGUEIRA, 2000). Esse galpão deve ser obrigatoriamente bem arejado, com baixa umidade 
+relativa e baixa temperatura (ZAMBOLIM et al., 2000).
+É fundamental a permanência das folhas para uma boa cura (FILGUEIRA, 2000), pois o corte 
+das folhas com os tecidos ainda tenros constitui porta de entrada para o crescimento de diversos 
+patógenos. Assim como a colheita, transporte e armazenagem também causam danos ao bulbo 
+em igual situação (ZAMBOLIM et al., 2000). O repasse dos bulbos que ficam armazenados com certa 
+periodicidade, retirando aqueles que apresentarem sintomas de doença, evita a disseminação dos 
+patógenos para os bulbos próximos, reduzindo as perdas.
+
+
+SENAR-PR
+62
+Tabela 5 – Ingredientes ativos registrados disponíveis no site da SEAB para as principais doenças da cebola.
+Doença
+Patógeno
+Ingrediente ativo
+Queima das pontas ou Botrytis
+Botrytis squamosa
+Mancozebe e oxicloreto de cobre
+Captana
+Mancha púrpura
+Alternaria porri
+Tebuconazol
+Azoxistrobina e Difenoconazol
+Azoxistrobina
+Propinebe
+Clorotalonil
+Metiram e Piraclostrobina
+Boscalida
+Metconazol
+Piraclostrobina
+Oxicloreto de cobre
+Mancozeb e oxicloreto de cobre
+Mancozebe
+Cimoxanil e Famaxadona
+Difenoconazol
+Famaxadona e mancozebe
+Pirimetanil
+Tebuconazol e Trifloxistrobina
+Iprodiona
+Bacillus subtilis
+Procimidona
+Procloraz
+Ciprodinil
+Mildio 
+Peronospora destructor
+Propinebe
+Clorotalonil
+Metiram e piraclostrobina
+Mandipropamida
+Fenamidona
+Cimoxanil e Mancozebe
+Piraclostrobina
+Mancozebe e oxicloreto de cobre
+Mancozebe
+Cimoxanil e Famoxadona
+Metalaxil-M e Clorotalonil
+Folpete
+Dimetomorfe e Clorotalonil
+Captana
+Cloridrato de Propramocarbe
+Ciazofamida
+Clorotalonil e mandipropamida
+Metalaxil-M e mancozebe
+Mal-das-sete-voltas
+Colletotrichum gloeosporioides f.sp. cepae
+Folpete
+Fonte: Jarek, 2011.
+
+
+SENAR-PR
+63
+REFERÊNCIAS
+BETTONI, M.M. Desempenho de cultivares de cebola em sistema orgânico na Região 
+Metropolitana de Curitiba. [Dissertação]. [Curitiba] Universidade Federal do Paraná, 2011. 72 p.
+DU TOIT, L. Washington State University. Bugwood.org. Disponível em: <http://www.forestryimages.
+org/>. Acesso em 13 out. 2014.
+FILGUEIRA, F. A. R. Novo manual de olericultura: agrotecnologia moderna na produção e 
+comercialização de hortaliças. Viçosa: Editora UFV, 2000. 402 p.
+GABOR, B.K. Onion Diseases. A practical guide for seedsmen, growers and agricultural advisors. 
+California: Petoseed, 1999.
+HOLMES G. California Polytechnic State University at San Luis, Obisp. Bugwood.org. Disponível em: 
+<http://www.forestryimages.org/>. Acesso em: 13 out. 2014.
+JAREK, T. M.; RUARO, L. In: CONGRESSO BRASILEIRO DE FITOPATOLOGIA, 44. Ocorrência de doenças 
+em olerícolas na Região Metropolitana de Curitiba, Tropical Plant Pathology, v. 36 (Suplemento), 
+p. 785, 2011.
+KIMATI, H. et al. Manual de fitopatologia: doenças das plantas cultivadas.  São Paulo: Ed. Agronômica 
+Ceres, 2011. 704 p.
+LANGSTON, D. B. University of Georgia. Bugwood.org. Disponível em: <http://www.forestryimages.
+org/>. Acesso em: 13 out. 2014.
+PARANÁ. Secretaria de Estado da Agricultura e do Abastecimento. Agrotóxicos no Paraná. 
+Disponível em: <http://celepar07web.pr.gov.br/agrotoxicos/pesquisar.asp>. Acesso em: 27 fev. 
+2014b.
+PARANÁ. Secretaria de Estado da Agricultura e do Abastecimento. Valor bruto da produção 
+agropecuária. Disponível em: <http://www.agricultura.pr.gov.br/arquivos/File/deral>. Acesso em: 
+20 fev. 2014a.
+PINTO, C. M. et al. Doenças da cebola. In: PAULA JÚNIOR, T. J. de; PINTO, C. M. F. Doenças de hortaliças 
+2. Informe Agropecuário, v. 17, n. 183, 1995.
+SCHWARTZ, H. F. Colorado State University. Bugwood.org. Disponível em: <http://www.
+forestryimages.org/>. Acesso em: 13 out. 2014.
+SHEN, Y. M. Taichung District Agricultural Research and Extension Station. University of Georgia. 
+Bugwood.org. Disponível em: <http://www.forestryimages.org/>. Acesso em: 13 out. 2014.
+ZAMBOLIM, L. et al.Controle de doenças de plantas: hortaliças. Viçosa: Ed. UFV, 2000. v. 1. 878 p.
+
+
+SENAR-PR
+65
+6	
+DOENÇAS DAS CUCURBITÁCEAS
+As cucurbitáceas têm ampla distribuição geográfica, sendo encontradas em praticamente 
+todo o território nacional. Ganham destaque no cenário estadual o município de Colombo, 
+cuja produção de pepino no ano de 2012 foi de cerca de 6,23 milhões de reais; o município de 
+Guapirama, cuja produção de abóboras no ano de 2012 atingiu cerca de 6 milhões de reais; a 
+cultura do chuchu e do pepino no município de Antonina, que teve produção de cerca de 840 
+e 500 mil reais respectivamente; ainda no litoral do Estado o município de Morretes, que nesse 
+mesmo ano teve o valor bruto da produção de chuchu próximo a 5,3 milhões de reais (PARANÁ, 
+2014a). Esses números ilustram a importância econômica dessas hortaliças no Estado.
+6.1	
+ANTRACNOSE (Colletotrichum orbiculare)
+A doença pode incidir sobre a cultura de 
+chuchu, melancia, melão e pepino (ZAMBOLIM et 
+al., 2000; KIMATI et al., 2011). Afeta tanto a parte 
+área da planta (Figura 37 A) quanto frutos após 
+a colheita (Figura 37 B) e pode ocorrer em todas 
+as fases de cultivo. O clima quente e úmido é a 
+condição ideal para o seu desenvolvimento; os 
+sintomas  aparecem em menos de uma semana. 
+As lesões são normalmente circulares, com centro 
+de cor mais clara e encharcada. É possível ver 
+pontuações enegrecidas em meio às lesões, os 
+acérvulos, que são responsáveis pela disseminação 
+e também uma massa rosada correspondente aos 
+esporos do fungo. As lesões podem coalescer 
+formando extensas áreas necrosadas (Figura 37 A). 
+Para o controle, a medida mais barata e eficaz é 
+a utilização de cultivares resistentes principalmente 
+para pepino e melancia (REDA et al., 2011; ZITTER et 
+al., 1996; BERNHARDT et al., 1999). A eliminação dos 
+restos de cultura também é uma forma de impedir 
+a sobrevivência do fungo de uma estação para 
+outra. A boa aeração da folhagem ajuda a diminuir a 
+umidade e, consequentemente, o desenvolvimento 
+da epidemia (ZAMBOLIM et al., 2000; KIMATI et al., 
+2011). Os princípios ativos registrados encontram-
+se na Tabela 6, devendo-se prestar a atenção no 
+hospedeiro para o qual o produto é registrado.
+Figura 37 – Antracnose em folhas de chuchuzeiro (A). 
+Lesões de antracnose em fruto de chuchu (B). Lesões 
+em fruto de pepino (C).
+a
+b
+c
+Fonte: Jarek, 2011 (A e B); Averre, 1962 (C).
+1563007
+
+
+SENAR-PR
+66
+6.2	
+MANCHA ZONADA (Leandria momordicae)
+A doença pode causar grandes perdas, principalmente na cultura do pepino (Figura 
+38). A doença também ataca chuchu e, em menor severidade, abóbora, melão e melancia. 
+Temperaturas altas e umidade elevada podem levar à perda total dentro de uma a duas 
+semanas (ZAMBOLIM et al., 2000).  Os sintomas aparecem apenas nas folhas nas quais se 
+observa inicialmente pontos pequenos claros que se desenvolvem formando manchas 
+esbranquiçadas (Figura 39 B), que podem se juntar formando áreas maiores (KIMATI et al., 
+2011) (Figura 39 A).
+O controle deve ser feito evitando-se irrigação por aspersão e dando preferência 
+ao gotejamento. O plantio próximo a áreas onde a doença esteja ocorrendo ou onde 
+ela já tenha incidido devem ser evitadas por algum tempo, além de evitar locais mais 
+úmidos, como baixadas. Somado às medidas anteriores, pode-se adotar um programa de 
+pulverizações preventivas (KIMATI et al., 2011) (Tabela 6), observando o hospedeiro em 
+questão pode não haver produto registrado ou não ser economicamente viável pulverizar 
+a lavoura.
+Figura 38 – Lavoura de pepino japonês atacada severamente por Leandria momordicae.
+Fonte: Jarek, 2011.
+
+
+SENAR-PR
+67
+6.3	
+MANCHA DE CERCOSPORA (Cercospora citrullina)
+A doença pode incidir sobre todas as cucurbitáceas. Os esporos do fungo podem ser 
+levados a longas distâncias pelo vento e para se desenvolver necessita de temperaturas 
+altas e que as folhas estejam molhadas (ZITTER et al., 1996). Os sintomas aparecem 
+primeiramente nas folhas mais velhas, mas, em condições favoráveis, em que ocorre 
+grande esporulação, podem aparecer sintomas sobre caule e pecíolo. As lesões são 
+pequenas manchas circulares com centro branco e bordos com tonalidade mais escura 
+(Figura 40). As lesões podem apresentar-se circundadas por um halo clorótico. Pode ser 
+diferenciada da mancha zonada pelo fato de que esta produz, na face inferior das folhas 
+no centro das lesões, pequeníssimos pontos pretos que são a esporulação do fungo, já 
+a cercospora não tem essa característica (ZAMBOLIM et al., 2000). Durante os trabalhos, 
+teve-se a oportunidade de diagnosticar uma amostra em que ambas as doenças ocorriam 
+simultaneamente em uma mesma folha. 
+O controle inicia-se com o planejamento de uma rotação de culturas que não inclua 
+outra cucurbitácea e, se possível, eliminar restos do cultivo, os quais podem ser enterrados 
+para diminuir a sobrevivência do fungo. Pulverizações periódicas podem ser necessárias 
+em culturas muito suscetíveis, e fungicidas registrados são encontrados para a cultura de 
+pepino, melancia e melão (Tabela 6).
+Figura 39 – Mancha zonada em fruto de pepino (A). Lesão de mancha zonada em folhas de pepino (B).
+a
+b
+Fonte: Jarek, 2011.
+
+
+SENAR-PR
+68
+6.4	
+MÍLDIO (Pseudoperonospora cubensis)
+Embora a doença ocorra em quase todas as espécies de cucurbitáceas, os danos são 
+maiores nas culturas de abobrinha, abóbora, melancia, melão e pepino (ZAMBOLIM et al, 2000; 
+KIMATI et al, 2011). Os sintomas aparecem exclusivamente em folhas e caracterizam-se por 
+lesões delimitadas pelas nervuras, que têm uma cor amarelada, e na face inferior a mesma área 
+da lesão corresponde a um amarelo mais desbotado, a qual em condições favoráveis de alta 
+umidade está recoberta por uma massa pulverulenta, que nada mais é do que a frutificação do 
+fungo (Figura 41). A temperatura para seu desenvolvimento está entre 10 a 25 ºC em condições 
+de alta umidade (REDA et al., 2011).
+Para o controle, é necessário observar a existência de cultivar resistente principalmente 
+para a cultura do pepino (ZITTER et al., 1996; BERNHARDT et al., 1999; ZAMBOLIM et 
+al., 2000; KIMATI et al., 2011). Essa é a forma mais barata e eficaz de controlar a doença. 
+Adicionado a isso, se a cultura for irrigada, deve-se dar preferência ao gotejamento e, se for 
+Figura 40 – Mancha de cercospora (Cercospora citrullina) em meloeiro (Cucumis melo).
+a
+c
+b
+d
+Fonte: Holmes, 1997.
+1573834
+1573815
+1573816
+1573835
+
+
+SENAR-PR
+69
+por aspersão, irrigar de preferência pela manhã para diminuir o período de molhamento. 
+A rotação de culturas é fundamental, uma vez que os esporângios do fungo sobrevivem 
+no solo (REDA et al., 2011). Pulverizações podem complementar o controle, havendo 
+vários grupos de ingredientes ativos sistêmicos registrados (Tabela 6), os quais devem 
+ser alternados (ZITTER et al., 1996; ZAMBOLIM et al., 2000) para evitar o surgimento 
+de resistência do fungo. Os fungicidas de contato, como ditiocarbamatos e cobre, são 
+registrados para o controle da doença e são mais eficientes quando se inclui no programa 
+de pulverizações um produto sistêmico.
+A cultura da abóbora é mais resistente à doença e, desde que adotadas as outras 
+medidas de controle, dispensa pulverizações. Há poucos princípios ativos registrados 
+(Tabela 6). 
+Figura 41 – Míldio (Pseudoperonospora cubensis) em folha de aboboreira (A). Lavoura de pepino atacada por míldio (B). 
+Míldio em folha de melão (C e D).
+a
+c
+b
+d
+Fonte: Holmes, 1998 (A), 2008 (B); USDA, 2003 (C e D).
+1575439
+UGA1234165
+5377180
+UGA1234166
+
+
+SENAR-PR
+70
+6.5	
+OÍDIO (Sphaerotheca fuliginea)
+Ocorre em praticamente todas as cucurbitáceas cultivadas e também em silvestres, no 
+entanto, é o problema mais grave em abobrinha, melão e pepino. Existe outro agente causal muito 
+citado para essa doença (Erisiphe cichoracearum), porém, nas condições brasileiras, Sphaerotheca 
+fuliginea tem sido mais encontrada (FILGUEIRA, 2000; ZAMBOLIM et al., 2000; KIMATI et al., 2011).
+A doença difere das demais por exigir condições de menor umidade, sendo que 70% de 
+umidade relativa é a condição ótima, mas pode se desenvolver em maiores umidades. As chuvas, 
+para essa doença, atuam como obstáculo à disseminação e reprodução do patógeno.
+Os sintomas caracterizam-se pela grande esporulação do patógeno, que tem seu crescimento 
+sobre a superfície do hospedeiro. São visualizadas manchas amarelas na parte superior da folha e 
+intensa esporulação do fungo na face inferior em condições de campo na cultura da abóbora (Figura 
+42) e também na face superior em alguns casos. Em cultivo protegido, em outros hospedeiros, o 
+sintoma pode ser visto na forma de manchas amarelas e esporulação branca na parte superior da 
+folha.
+O controle envolve práticas culturais, como rotação de culturas e eliminação de restos de 
+cultura que podem abrigar cleistotécios, que são estruturas de sobrevivência do fungo (REDA et al., 
+2011). Essa é a única doença que pode ter seu controle favorecido pela irrigação. Existem cultivares 
+resistentes para cultura de pepino, abóbora e melão (REDA et al., 2011). Plantas hospedeiras devem 
+ser eliminadas de áreas próximas. Embora as pulverizações com fungicidas sejam indicadas e 
+existam diversos produtos registrados (PARANÁ, 2014b), para essa doença especificamente existem 
+várias práticas que controlam a doença, como, por exemplo, a utilização de bicarbonato de sódio 
+ou de potássio (concentrações variando de 0,2 a 3%) pulverizados em água ou com óleo mineral 
+oferecem bom controle preventivo (ZAMBOLIM et al., 2000). Também é citado o controle biológico 
+com o fungo antagonista Ampelomyces quisqualis (REDA et al., 2011).
+Figura 42 – Sphaerotheca fuliginea fungo causador do oídio em cucurbitáceas (A). Lesões de oídio em folha de 
+aboboreira (B).
+a
+b
+Fonte: Jarek, 2011 (A e B).
+
+
+SENAR-PR
+71
+6.6	
+DOENÇAS CAUSADAS POR BACTÉRIAS
+Existem várias bactérias causadoras de doenças em cucurbitáceas, podendo ser citadas: 
+Pseudomonas syringae pv. lachrymans, causadora da mancha angular; podridão da medula causada 
+por Erwinia carotovora subsp. carotovora; mancha bacteriana provocada por Xanthomonas campestris 
+pv. cucurbitae; murcha bacteriana causada por Erwinia tracheiphila; mancha bacteriana do fruto 
+causada por Acidovorax avenae subsp citrulli (REDA et al., 2011; ZITTER et al., 1996; BERNHARDT et 
+al., 1999; ZAMBOLIM et al., 2000; KIMATI et al., 2011).
+Embora exista citação da ocorrência de Ralstonia solanacearum em cucurbitáceas (ZAMBOLIM 
+et al., 2000), as recentes descobertas taxonômicas sobre essa bactéria e sua divisão em três raças 
+diminui as possibilidades de que esta bactéria incida sobre cucurbitáceas. 
+Os sintomas de bactérias são típicos para a maioria das doenças, com lesões encharcadas e 
+presença de exsudatos. Em frutos, acompanham geralmente apodrecimento. A sobrevivência é 
+sempre favorecida pela presença de restos culturais, e a disseminação necessita da presença de 
+filme d’água. Sementes podem ser um meio de disseminação para a maioria delas; por esse motivo, 
+recomenda-se a aquisição de sementes de boa procedência livres de patógenos.
+O controle envolve basicamente práticas culturais como a rotação de culturas, eliminação 
+de restos de plantas infectados, adubação equilibrada evitando excessos, principalmente em 
+nitrogênio. A irrigação por aspersão precisa ser bem manejada, pois os respingos (splash) são 
+uma das principais causas do desenvolvimento de epidemias planta a planta. Existem produtos 
+registrados para realizar o controle químico, sendo representados principalmente por produtos à 
+base de cobre e, mais recentemente, do grupo do acibenzolar-S-metílico (PARANÁ, 2014b).
+Figura 43 – Lesões de Acidovorax avenae subsp citrulli em melão (A e B). Lesões de Erwinia tracheiphila em pepino (C) e 
+abobrinha (D).
+a
+c
+b
+d
+Fonte: Holmes, 2001 (A e B), 1999 (C); Schwartz, 2008 (D).
+1577750
+5362953
+1577739
+1576381
+
+
+SENAR-PR
+72
+6.7	
+PODRIDÃO DE FRUTOS
+Existem diversos fungos e bactérias que podem causar podridão de frutos, os quais ficaria 
+extensivo até mesmo citar. Também pode ocorrer colonização secundária, por microrganismos 
+saprófitas que dificultam até mesmo a diagnose da doença. Os maiores danos ocorrem em 
+abóbora, abobrinha e pepino (ZAMBOLIM et al., 2000). A entrada dos agentes patogênicos 
+nos frutos pode ser de diferentes formas dependendo do microrganismo em questão e 
+das condições ambientais, mas, de maneira geral, frutos que ficam em contato com o solo 
+favorecem a entrada de Fusarium, Phytophthora, Pythium, Myrothecium, Didymella e Rhizoctonia. 
+E por ferimentos e flores, Botrytis, Choanephora, Penicillium e a bactéria Acidorovax avenae. 
+Os sintomas variam muito, mas geralmente fungos produzem bolores, sendo visível seu 
+crescimento sobre os frutos (ZAMBOLIM et al., 2000) (Figura 43 A), e bactérias geram podridões 
+mais aquosas desintegrando totalmente os tecidos (Figura 43 B). As medidas de controle são 
+culturais (ZAMBOLIM et al., 2000), pois, como os patógenos apresentam alta agressividade 
+e fungicidas não têm efeito curativo, se as condições forem favoráveis às podridões, o uso 
+dos mesmos apenas aumentará os custos de produção, apresentando baixa relação custo-
+benefício. 
+O controle inicia-se tendo um plano de rotação de culturas, pois a maioria dos causadores 
+de podridão em frutos apresenta um longo período de sobrevivência no solo. Deve-se evitar 
+solos encharcados e ferimentos nos frutos (ZAMBOLIM et al., 2000). O plantio sobre palhada 
+para algumas cucurbitáceas, como abóbora, diminui o contato dos frutos com o solo, reduzindo 
+as podridões. Para culturas como o pepino, o tutoramento apresenta a mesma função e 
+evita o contato dos frutos com o solo. Embora muitos especialistas no assunto recomendem 
+pulverizações para o controle de podridões em frutos de abóbora, é difícil detalhar na presente 
+cartilha todas as implicações que tais pulverizações podem acarretar, do ponto de vista técnico 
+(como, por exemplo, abortamento de flores), saúde pública (contaminação do consumidor final 
+pela presença de resíduos) e econômico (retorno financeiro da aplicação), sendo necessário 
+que cada caso seja analisado individualmente.
+
+
+SENAR-PR
+73
+Figura 44 – Lesões de Phytophthora capsici em abóboras (A, B, C, D, E, F e G) e em melancia (H).
+a
+c
+e
+g
+b
+d
+f
+h
+Fonte: Holmes, 1998 (A, B e C), 2006 (D, E, F e G) e 2000 (H).
+1575121
+1575667
+5513058
+5513071
+1575170
+5513056
+5513061
+1577303
+
+
+SENAR-PR
+74
+6.8.2  Deficiências nutricionais
+A nutrição das cucurbitáceas pode estar diretamente relacionada ao aparecimento de 
+alguns distúrbios. Por exemplo, o formato anormal de frutos de pepino pode ser reflexo da falta 
+de nitrogênio e potássio. A deficiência de cálcio pode ser responsável pelo abortamento de flores 
+em melancia e abóbora. Em períodos de estresse hídrico, pode ocorrer maior incidência desse 
+distúrbio (ZITTER et al., 1996; BERNHARDT et al., 1999; FILGUEIRA, 2000).
+6.8.3  Descoloração dos frutos
+A descoloração dos frutos, embora não comprometa 
+a integridade dos tecidos, em algumas culturas essa 
+característica pode prejudicar a aceitabilidade do produto 
+no comércio, por exemplo, o pepino com barriga-branca. 
+Isso é provocado pelo sombreamento do fruto, geralmente 
+naquelas partes que encostam no solo, sendo indicado o 
+tutoramento das plantas para que a coloração dos frutos 
+seja uniforme (FILGUEIRA, 2000).
+6.8	
+DISTÚRBIOS FISIOLÓGICOS
+6.8.1  Podridão da ponta do fruto
+Esta anomalia, aqui considerando apenas os frutos em estádio inicial de desenvolvimento, 
+está relacionada à polinização dos frutos, pois as cucurbitáceas produzem flores masculinas e 
+femininas e seu pólen não é disseminado pelo vento. Se não houver abelhas visitando as flores 
+(Figura 46) para realizar a polinização, a ocorrência dessa desordem pode trazer prejuízos.
+Como forma de controle, indica-se todas as medidas que auxiliem a permanência das abelhas 
+na lavoura. Pulverização com inseticidas não seletivos podem reduzir a população de abelhas; dessa 
+forma, se for necessário aplicar esses produtos, jamais fazê-lo pela manhã (BERNHARDT et al., 1999; 
+FILGUEIRA, 2000).
+Figura 45 – Fruto de abobrinha atacada por Sclerotinia sclerotiorum (A). Bacteriose em fruto de abóbora (B).
+a
+b
+Fonte: Jarek, 2011.
+Figura 46 – Flor masculina de abóbora 
+sendo visitada por abelhas que são 
+responsáveis pela polinização dos frutos.
+Fonte: Jarek, 2011.
+
+
+SENAR-PR
+75
+6.9	
+VIROSES
+Os vírus que atacam cucurbitáceas são aproximadamente 32, distribuídos em diversos gêneros 
+(REDA et al., 2011; ZITTER et al., 1996) e seus sintomas podem ser semelhantes, além do fato de que 
+infecções mistas ocorrem (ZAMBOLIM et al., 2000; KIMATI et al., 2011). Por esse motivo, a descrição 
+individual dos sintomas de cada virose pode não ser útil para a diagnose. Mas, de maneira geral, 
+a cultura mais afetada é a abobrinha, e os sintomas viróticos caracterizam-se muitas vezes pelo 
+crescimento anormal das folhas, mosaico (Figura 47 A e C), manchas anelares, bolhas em frutos, 
+deformações e até mesmo redução no crescimento e queda na produção (Figura 47 B, D, E e F).
+Figura 47 – Sintoma virótico em folha de abobrinha (A e C). Planta de abobrinha apresentando sintomas viróticos nas 
+folhas mais novas (B). sintomas viróticos em frutos de abobrinha (D, E e F).
+a
+c
+e
+b
+d
+f
+Fonte: Jarek, 2011 (A e B), Holmes, 1997 (C e D); Sparks, 2003 (E e F).
+1573656
+UGA1305021
+1573657
+UGA1305023
+
+
+SENAR-PR
+76
+Essas viroses, de maneira geral, podem ser transmitidas por afídeos (pulgões), besouros da 
+família Crysomelidae (vaquinhas), via semente, e por transmissão mecânica no momento da colheita 
+(como no caso da abobrinha), quando a faca passa de uma planta infectada a outra sadia (REDA et 
+al., 2011; ZITTER et al., 1996; BERNHARDT et al., 1999; ZAMBOLIM et al., 2000; KIMATI et al., 2011). 
+Devido à complexidade do assunto, 
+apenas 
+medidas 
+preventivas 
+podem 
+servir de regra, como, por exemplo, usar 
+sementes de origem idônea em vez de 
+guardar a própria semente, evitar o plantio 
+sucessivo ou próximo a lavouras mais velhas 
+de cucurbitáceas, retirar e destruir restos 
+de plantas infectadas. Deve-se controlar a 
+população de insetos vetores, como pulgões 
+e vaquinhas, e utilizar cultivares resistentes 
+sempre que possível; esta última consiste na 
+medida mais eficaz de controle (REDA et al., 
+2011; ZITTER et al., 1996; BERNHARDT et al., 
+1999; ZAMBOLIM et al., 2000; KIMATI et al., 
+2011). 
+Figura 48 – Planta de abobrinha com crescimento reduzido 
+devido ao ataque por virose.
+Fonte: Jarek, 2011.
+
+
+SENAR-PR
+77
+Tabela 6 – Ingredientes ativos registrados disponíveis no site da SEAB para as principais doenças das cucurbitáceas.
+Doença
+Patógeno
+Hospedeiro
+Ingrediente ativo
+Antracnose
+Colletotrichum orbiculare
+Melancia, melão, pepino
+Clorotalonil
+Melão
+Flutriafol e tiofanato metílico
+Abóbora, melão, melancia, pepino
+Tiofanato metílico
+Melão, melancia, pepino
+Tiofanato metílico e Clorotalonil
+Melancia, melão
+Tebuconazol
+Melancia, melão, pepino
+Mancozebe e oxicloreto de cobre
+Melancia
+Oxicloreto de cobre e Clorotalonil
+Melancia, melão, pepino
+Mancozebe
+Melão
+Folpete
+Melão, pepino
+Hidróxido de cobre
+Melancia
+Imibenconazole
+Melancia, melão, pepino
+Captana
+Melancia, melão,
+Procimidona
+Mancha zonada
+Leandria momordicae
+Pepino
+Azoxistrobina
+Abóbora, Melancia, melão, pepino
+Tiofanato-metílico
+Melancia, melão, pepino
+Tiofanato-metílico e Clorotalonil
+Melancia
+Oxicloreto de cobre
+Pepino
+Tebuconazol
+Mancha de Cercospora
+Cercospora citrullina
+Melancia, pepino
+Tiofanato-metílico
+Melancia, melão, pepino
+Tiofanato-metílico, Clorotalonil
+Melancia
+Oxicloreto de cobre e Clorotalonil
+Míldio
+Pseudoperonospora cubensis
+Abóbora, abobrinha, melancia, melão, 
+pepino
+Mandipropamida
+Melancia, melão, pepino
+Azoxistrobina e Difenoconazol
+Melão
+Propinebe
+Melancia, melão, pepino
+Clorotalonil
+Melancia, melão, pepino
+Metiram e piraclostrobina
+Melancia, melão, pepino
+Captana
+Melancia, melão
+Fenamidona
+Melancia, melão, pepino
+Tiofanato-metílico e Clorotalonil
+Melancia, melão, pepino
+Piraclostrobina
+Abóbora, melancia, melão, pepino
+Mancozebe e oxicloreto de cobre
+Melancia
+Oxicloreto de cobre e Clorotalonil
+Melancia, melão
+Cimoxanil e Famoxadona
+Melancia, melão, pepino
+Metalaxil-M e Clorotalonil
+Melão
+Dimetomorfe e Clorotalonil
+Melão
+Hidróxido de Cobre
+Abóbora, melancia, melão, pepino
+Mancozebe
+Pepino
+Metiram
+Melão
+Cloridrato de propamocarbe
+Melão
+Ciazofamida
+Pepino
+Azoxistrobina
+Fonte: Jarek, 2014.
+
+
+SENAR-PR
+78
+REFERÊNCIAS
+AVERRE, C. North Carolina State University. Bugwood.org. Disponível em: <http://www.
+forestryimages.org/>. Acesso em: 13 out. 2014.
+BERNHARDT, E. et al. Cucurbit diseases: a practical guide for seedsmen, growers e agricultural 
+advisors. California: Petoseed 1999.
+FILGUEIRA, F.A.R. Novo manual de olericultura: agrotecnologia moderna na produção e 
+comercialização de hortaliças. Viçosa: Editora UFV, 2000. 402 p.
+HOLMES G. California Polytechnic State University at San Luis, Obisp. Bugwood.org. Disponível em: 
+<http://www.forestryimages.org/>. Acesso em: 13 out. 2014.
+KIMATI, H. et al. Manual de fitopatologia: doenças das plantas cultivadas. São Paulo: Ed. Agronômica 
+Ceres, 2011. v. 2. 704 p.
+PARANÁ. Secretaria de Estado da Agricultura e do Abastecimento. Valor bruto da produção 
+agropecuária. Disponível em: <http://www.agricultura.pr.gov.br/arquivos/File/deral>. Acesso em: 
+20 fev. 2014a. 
+PARANÁ. Secretaria de Estado da Agricultura e do Abastecimento. Agrotóxicos no Paraná. 
+Disponível em: <http://celepar07web.pr.gov.br/agrotoxicos/pesquisar.asp>. Acesso em: 27 fev. 
+2014b.
+REDA, R. et al. Le avversità delle cucurbitacee: guida alla prevenzione e alla difesa. Bologna: 
+Assosementi, 2011. 96 p.
+SCHWARTZ, H. F. Colorado State University. Bugwood.org. Disponível em: <http://www.
+forestryimages.org/>. Acesso em: 13 out. 2014.
+SPARKS Jr. A.N. University of Georgia. Bugwood.org. Disponível em: <http://www.forestryimages.
+org/>. Acesso em: 13 out. 2014.
+USDA - Clemson University.- Cooperative extension slide series. Bugwood.org. Disponível em: 
+<http://www.forestryimages.org/>. Acesso em: 13 out. 2014.
+ZAMBOLIM, L. et al. Controle de doenças de plantas: hortaliças. Viçosa: Ed. UFV, 2000. v. 2. 878 p.
+ZITTER, T. A. et al. Compendium of cucurbit diseases. New York: APS Press, 1996. 87 p.
+
+
+SENAR-PR
+79
+7	
+DOENÇAS DAS SOLANÁCEAS
+Esta é uma das famílias de maior importância quando se fala em hortaliças, tanto pelo volume 
+comercializado, quanto pelo valor da produção (PARANÁ, 2014a). Estão incluídas nela culturas 
+como a batata, tomate, pimentão, berinjela e jiló, que são muito conhecidas. Pelo motivo de serem 
+culturas cultivadas já de longa data em extensas áreas em quase todo o mundo, inúmeras são 
+as doenças que atacam essas culturas (FILGUEIRA, 2000; LOPES; ÁVILA, 2005). O melhoramento 
+genético, na grande maioria das vezes voltado para maiores produtividades, não priorizou a 
+resistência às doenças, a qual poderia trazer enormes benefícios do ponto de vista fitossanitário.
+A abordagem neste manual é sucinta e breve, comparada com todo o conhecimento já 
+construído a respeito das doenças que incidem sobre essas culturas. As informações aqui descritas 
+visam apenas o esclarecimento a respeito de alguns sintomas, para que o produtor possa estar 
+atento, monitorar e agir preventivamente. 
+7.1	
+REQUEIMA (Phytophthora infestans)
+Essa é sem dúvida uma das doenças mais devastadoras de toda a história da humanidade, 
+que, no século XIX, devido a uma grande epidemia ocorrida na cultura da batata, levou milhares de 
+irlandeses a morrerem de fome. 
+A doença se desenvolve principalmente em temperaturas mais amenas e sob alta umidade, 
+sendo que, em períodos chuvosos, a doença desenvolve-se rapidamente. A temperatura de 
+21 ºC é considerada ideal para o desenvolvimento do fungo. As culturas mais afetadas são a batata 
+e o tomateiro. Toda a parte aérea das plantas pode ser afetada, folhas, hastes, pecíolos e frutos de 
+tomate. As manchas em folhas são irregulares, encharcadas, ficando o tecido com uma cor verde 
+mais escura. Com o desenvolvimento do sintoma, as lesões ficam necrosadas, de cor marrom-
+escura, e se espalham rapidamente por toda a planta. Em condições de alta umidade é possível 
+visualizar a frutificação do fungo nas lesões (esporangióforos), que parecem com uma leve penugem 
+branca na área de transição entre o tecido encharcado e a região necrosada (Figura 49 A e B). A 
+doença também pode afetar tubérculos de batata, que na maioria das vezes permite a entrada 
+de patógenos secundários, causando o apodrecimento completo dos mesmos (FILGUEIRA, 2000; 
+ZAMBOLIM et al., 2000a; ZAMBOLIM et al., 2000 b; PERNEZNY et al., 2003; LOPES; ÁVILA, 2005; 
+KIMATI et al., 2011). 
+As medidas de controle iniciam-se pela aquisição de sementes e mudas sadias, que não 
+venham a trazer inóculo para a área. A destruição de plantas remanescentes e restos de cultura 
+deve ser feita a fim de evitar a sobrevivência do fungo na lavoura. A dessecação da parte aérea na 
+cultura da batata é uma medida que reduz as perdas na pós-colheita, por eliminar por desidratação 
+os esporângios do fungo, e quando houver tubérculos com sintoma os mesmos devem ser 
+retirados antes do armazenamento. Em tomateiro, o espaçamento deve ser o mais amplo possível 
+para facilitar a ventilação e diminuir a umidade ambiente. A rotação de cultura evitando a sucessão 
+
+
+SENAR-PR
+80
+batata-tomate impede a perpetuação da doença na lavoura. Adubação nitrogenada em excesso 
+pode aumentar a incidência da doença, bem como irrigações excessivas facilitam a dispersão da 
+doença (FILGUEIRA, 2000; ZAMBOLIM et al., 2000a; ZAMBOLIM et al., 2000 b; LOPES; ÁVILA, 2005). 
+Atualmente, para a cultura da batata, o material mais resistente à doença disponível é a cultivar BRS 
+Clara, lançada pela EMBRAPA (2014). 
+As pulverizações com fungicidas devem ser preventivas e correlacionadas com as condições 
+climáticas. Sempre que as condições forem muito favoráveis à doença, deve-se optar por 
+fungicidas sistêmicos que paralisam a epidemia, alternando com fungicidas de contato que atuam 
+preventivamente. Cuidados devem ser tomados para evitar resistência desse fungo aos fungicidas, 
+como utilizar ingredientes ativos sistêmicos e protetores, alternar os ingredientes ativos e não 
+utilizar mais do que três aplicações para aqueles com modo de ação específico. Existem muitos 
+produtos comerciais que já contêm a mistura entre fungicida sistêmico e protetor, o que facilita 
+as operações e diminui custos para o produtor (PARANÁ, 2014b). Existem, no momento, em torno 
+de 85 fungicidas registrados para o controle da doença nas diferentes espécies (PARANÁ, 2014b), 
+sendo pouco didático apresentar todos esses produtos. Cabem as indicações de buscar produtos 
+sempre de menor classe toxicológica, alternando os princípios ativos, e analisando sempre a relação 
+custo-benefício.
+Figura 49 – Sintomas de requeima em folha de tomateiro (A). Esporulação de Phytophthora infestans em folíolo de tomateiro 
+(B). Sintomas em fruto de tomateiro (C e D).
+a
+b
+c
+d
+Fonte: Jarek, 2014 (A e B); Shen, 2010 (C); Bush, 2012 (D).
+5426938
+5479932
+
+
+SENAR-PR
+81
+7.2	
+PINTA PRETA (Alternaria solani)
+Embora menos agressiva que a requeima, a pinta preta também pode prejudicar de maneira 
+considerável as solanáceas, pela desfolha excessiva. É mais frequente na cultura da batata, mas 
+também incide sobre tomate, afetando inclusive frutos. No tomateiro, a maior incidência ocorre no 
+período de frutificação. Também é muito encontrada incidindo sobre berinjela. Demais solanáceas, 
+como pimentão e jiló, também são afetadas (ZAMBOLIM et al., 2000a; ZAMBOLIM et al., 2000 b; 
+PERNEZNY et al., 2003; LOPES; ÁVILA, 2005). 
+Figura 50 – Sintomas de pinta preta em fruto de tomate (A e B), em folha de tomateiro (C) e em caule de tomateiro (D).
+a
+b
+c
+d
+Fonte: Jarek, 2014 (A); Shen, 2009 (B); Holmes, 1997 (C e D).
+Os sintomas aparecem de forma mais severa em temperaturas acima dos 25 ºC e em 
+períodos chuvosos, em toda a parte aérea da planta, mas há tendência de que as lesões ocorram 
+em folhas mais velhas (ZAMBOLIM et al., 2000b; KIMATI et al., 2011). Essas lesões são manchas 
+pequenas, circulares, com diâmetro que vai até 1,3 cm de coloração marrom a preta (ZAMBOLIM 
+et al., 2000a; ZAMBOLIM et al., 2000b; KIMATI et al, 2011). Devido à forma de crescimento do fungo, 
+nessas lesões é possível visualizar diversos anéis circulares. Ao redor da mancha, pode surgir uma 
+coloração amarela circundando-a (Figura 50). Em frutos de tomate, as lesões se iniciam a partir do 
+ponto de ligação entre o cálice e o fruto. A infecção severa pode causar a queda das folhas atacadas 
+em tomate, mas raramente em batata (ZAMBOLIM et al., 2000a; ZAMBOLIM et al., 2000b; KIMATI 
+et al., 2011). 
+5393411
+1573859
+1573854
+
+
+SENAR-PR
+82
+O manejo integrado se faz necessário para o controle dessa doença. A rotação de culturas, 
+evitando plantar em sucessão ou em locais próximos a culturas de batata, tomate, berinjela, 
+pimentão e jiló, são medidas que ajudam a diminuir as chances da doença se perpetuar na lavoura. 
+Deve-se dar prioridade a cultivares mais resistentes e só utilizar sementes e mudas certificadas. 
+Eliminar plantas voluntárias que possam servir como hospedeiras para a doença fora da época de 
+cultivo. 
+A adubação equilibrada, evitando a falta de nitrogênio, tem sido um dos fatores mais citados 
+como fator de interferência na severidade da doença. Baixadas em que ocorre maior formação de 
+orvalho e nevoeiros devem ser evitadas. É necessário adotar espaçamentos que proporcionem 
+maior ventilação das plantas. As irrigações pela manhã são mais indicadas por diminuírem o 
+período de molhamento foliar. 
+As pulverizações com fungicidas sistêmicos em alternância com fungicidas protetores são 
+indicadas quando as condições climáticas forem mais favoráveis à ocorrência da doença. Para as 
+culturas do tomate e batata, existem diversos ingredientes ativos registrados (cerca de 80 produtos) 
+para o controle da doença (PARANÁ, 2014). Para a berinjela, apenas um fungicida de contato à 
+base de mancozebe está registrado e, para o pimentão, Metconazol, modo de ação sistêmico, e 
+Clorotalonil, modo de ação de contato estão registrados (PARANÁ, 2014b). 
+7.3	
+MANCHA DE ESTENFÍLIO (Stemphylium spp.)
+A doença incide sobre tomate e pimentão, mas neste último os sintomas não são 
+severos dificilmente trazendo prejuízos. A distribuição geográfica desse fungo é grande, sendo 
+encontrado em todas as regiões (PERNEZNY et al., 2003). No entanto, a importância econômica 
+dessa doença tem diminuído devido à utilização de cultivares resistentes. São conhecidas duas 
+espécies causadoras da doença, Stemphylium solani e S. lycopersici (LOPES; ÁVILA, 2005, KIMATI 
+et al., 2011).
+Os sintomas caracterizam-se por lesões pequenas, irregulares, de cor cinza a marrom (Figura 
+51), sempre incidindo primeiramente nas folhas mais novas, ao contrário da septoriose, que incide 
+primeiro nas folhas mais velhas. A lesão pode apresentar um halo amarelo e, com o tempo, o centro 
+da lesão seca e se rompe. Sintomas em frutos não são observados e raramente podem ocorrer 
+sobre caule e pecíolos. A doença é mais destrutiva em plantas jovens, principalmente no tomateiro 
+(LOPES; ÁVILA, 2005, KIMATI et al., 2011).
+O fungo desenvolve-se bem em temperaturas entre 23 e 26 °C, e com umidade relativa alta 
+(ZAMBOLIM et al., 2000b; PERNEZNY et al., 2003). Sua disseminação na lavoura ocorre principalmente 
+por intermédio do vento, e também por respingos de chuva e irrigação. Sua sobrevivência no 
+campo ocorre em restos culturais e em plantas alternativas, visto que o fungo é um excelente 
+saprófita. O surgimento de novas lesões é dependente de água livre na superfície da folha, para que 
+os conídios possam germinar (PERNEZNY et al., 2003; KIMATI et al., 2011).
+
+
+SENAR-PR
+83
+O controle deve priorizar o uso de 
+cultivares resistentes, que é a forma mais 
+barata de controle da doença. Outras 
+medidas gerais de controle são indicadas, 
+como rotação de culturas, eliminação 
+de restos culturais que servem como 
+fonte de inóculo, correto manejo da 
+irrigação. Em manejo convencional, as 
+pulverizações para as demais doenças 
+das solanáceas, com fungicidas de 
+amplo espectro registrados (Clorotalonil, 
+Mancozebe e Oxicloreto de cobre), 
+podem ser suficientes para o controle 
+(PARANÁ, 2014b).
+7.4	
+SARNA COMUM (Streptomyces scabies)
+A doença ocorre em muitas áreas onde a batata é cultivada, sendo que o actinomiceto 
+responsável é um habitante do solo. A ocorrência da doença geralmente não prejudica a 
+qualidade do produto nem a produtividade da lavoura, mas devido ao aspecto visual o produto 
+tem menor aceitação no comércio (FILGUEIRA, 2000; ZAMBOLIM et al., 2000a; KIMATI et al., 
+2011).
+Os sintomas são exclusivos dos tubérculos, raízes e estolões nos quais se observa lesões 
+corticosas e pardacentas. Ocorre um processo de suberificação no qual a cutícula torna-se 
+áspera (Figura 52) e entre as lesões encontra-se tecido sadio.
+O agente causal Streptomyces scabies é uma bactéria actinomiceto que é favorecido por 
+solos com pH acima de 6,0 (FILGUEIRA, 2000; ZAMBOLIM et al., 2000a; KIMATI et al., 2011). 
+Seu desenvolvimento ocorre em ampla faixa de temperatura, sendo ótima entre 25 e 30 °C 
+(ZAMBOLIM et al., 2000a; KIMATI et al., 2011). Períodos secos durante o desenvolvimento dos 
+tubérculos favorecem a incidência. Pode infectar outras plantas, como beterraba, cenoura, 
+rabanete e nabo. A disseminação para novas áreas ocorre principalmente por intermédio de 
+batata-semente contaminada. Mas também pode ser transmitida por implementos com solo 
+contaminado aderido, esterco malcurtido de animais que ingeriram o patógeno e também 
+pela água e insetos.
+A utilização de batata-semente certificada é fundamental no controle dessa enfermidade. 
+A rotação de culturas com gramíneas é importante para redução do inóculo na área. A 
+Figura 51 – Sintomas da mancha de estenfílio (Stemphylium 
+solani) em folíolo de tomateiro (Lycopersicum esculentum).
+Fonte: USDA, 2003.
+UGA1234187
+
+
+SENAR-PR
+84
+manutenção do pH do solo em abaixo de 
+6,0 reduz o desenvolvimento do patógeno. 
+Evitar déficit hídrico reduz a severidade 
+da doença (FILGUEIRA, 2000; ZAMBOLIM 
+et al., 2000a; KIMATI et al., 2011). E, aliado 
+a essas medidas, recentemente existe 
+a possibilidade de se utilizar produtos 
+registrados para o controle da doença 
+(PARANÁ, 2014b). Atualmente, existem 
+seis produtos registrados para o controle 
+da doença, todos eles possuem como 
+princípio ativo o Fluazinam e têm alta 
+toxicidade, geralmente classe II (PARANÁ, 
+2014b).
+7.5	
+SARNA PULVERULENTA (Spongospora subterranea)
+Desenvolve-se melhor em condições de clima frio e úmido, sendo facilitada sua ocorrência 
+em terrenos encharcados (ZAMBOLIM et al., 2000a; KIMATI et al., 2011). É doença considerada grave 
+pelo fato de o fungo sobreviver no solo e ser disseminado por tubérculos infectados e implementos. 
+O fungo ainda pode atuar transmitindo viroses e facilitar a entrada de outros microrganismos que 
+apodrecerão o tubérculo (ZAMBOLIM et al., 2000a; KIMATI et al., 2011).
+Os sintomas apresentam-se sob a forma de lesões castanho-escuras (Figura 53 A e B), sendo 
+ligeiramente levantadas nos bordos e com centro deprimido, e o tubérculo fica com aspecto 
+esponjoso. Em raízes e estolões, os sintomas assemelham-se a galhas, que podem atingir até 1,5 
+cm (ZAMBOLIM et al., 2000a; KIMATI et al., 2011). 
+O fungo resiste no solo por um período de até 10 anos, portanto, agir preventivamente é 
+fundamental (ZAMBOLIM et al., 2000a). A entrada do patógeno na lavoura pode ser por meio de 
+sementes infectadas; por esse motivo deve-se procurar utilizar sempre sementes certificadas. Solos 
+já infestados dificilmente poderão ser recuperados, devido à grande resistência que os cistossoros 
+apresentam. Não se deve plantar nas proximidades onde a doença já tenha ocorrido ou em regiões 
+mais baixas do terreno em relação a um talhão mais alto que esteja infectado, pois a água da chuva 
+pode transportar o inóculo. A rotação de cultura com gramíneas (milho, sorgo ou pastagem) tem 
+sido recomendada (FILGUEIRA, 2000). O uso de esterco de animais que tenham sido alimentados 
+com tubérculos infectados causa a disseminação do fungo para novas áreas. A irrigação excessiva 
+também contribui para o desenvolvimento da doença devido ao encharcamento do solo. E o 
+controle químico, se considerado viável economicamente pelo produtor, pode reduzir a incidência 
+da doença. No Paraná, o único produto registrado para o controle da doença no momento é 
+composto pelo princípio ativo Fluazinam, na concentração de 500g/L (PARANÁ, 2014b).
+Figura 52 – Sintoma de sarna comum causada por 
+Streptomyces scabies em tubérculo batata.
+Fonte: Jarek, 2014.
+
+
+SENAR-PR
+85
+7.6	
+SEPTORIOSE (Septoria lycopersici)
+Essa doença foi uma das mais encontradas em folhas de tomateiro, segundo levantamento 
+feito recentemente pela Universidade Federal do Paraná, em parceria com SENAR-PR e SEBRAE-
+PR, mas também pode ocorrer em outras solanáceas. Pode ser extremamente destrutiva 
+levando a perdas de 100% (ZAMBOLIM et al., 2000b). 
+Os sintomas aparecem normalmente em folhas mais velhas logo após o início da 
+frutificação. As lesões iniciam-se como pequenas manchas encharcadas; ao se desenvolverem, 
+as manchas se tornam circulares a ovais, com a borda marrom escura (Figura 54 A); com o tempo 
+as lesões se unem adquirindo um formato irregular e atingindo áreas maiores (FILGUEIRA, 
+2000) (Figura 54 B). O ponto principal para diferenciar septoriose das demais manchas foliares 
+é a presença de numerosos pequenos pontos pretos, chamados picnídios, facilmente visíveis 
+no centro das lesões. 
+O controle inicia-se com a aquisição de mudas sadias livres da doença, além da rotação 
+de cultura por pelo menos dois anos, com outras plantas que não sejam batata e berinjela 
+(ZAMBOLIM et al., 2000b; LOPES; ÁVILA, 2005). Em condições favoráveis ao desenvolvimento 
+da doença, ou seja, quando as folhas permanecem molhadas por período superior a 16 horas e 
+as temperaturas estão entre 20 e 25 ºC, pode-se adotar pulverizações preventivas (ZAMBOLIM 
+et al., 2000b, KIMATI et al., 2011) com fungicidas sistêmicos e de contato, os quais são efetivos 
+no controle da doença. Para a cultura do tomate, estão registrados e liberados 37 produtos 
+para o controle da doença (PARANÁ, 2014b).
+Figura 53 – Tubérculo de batata afetado por sarna pulverulenta (A). Lesão típica de sarna pulverulenta vista em aumento 
+de 40 vezes (B).
+a
+b
+Fonte: Jarek, 2011.
+
+
+SENAR-PR
+86
+7.7	
+MURCHA BACTERIANA (Ralstonia solanacearum)
+Doença de causa bacteriana extremamente importante nas culturas de tomate e batata, 
+ocorre em todo o território nacional. A bactéria é capaz de sobreviver no solo por um período 
+de dois a dez anos (ZAMBOLIM et al., 2000a), e a maior severidade da doença é observada em 
+temperaturas acima dos 24 ºC (KIMATI et al., 2011). A bactéria penetra pelas raízes sem precisar de 
+ferimentos, contudo, danos no transplantio e cultivo, insetos e nematoides facilitam a penetração 
+e colonização (PERNEZNY et al., 2003; KIMATI et al., 2011). 
+Os sintomas são a murcha dos folíolos, podendo o ponteiro apresentar-se caído, principalmente 
+nas horas mais quentes do dia (Figura 55). À noite, a planta pode se recuperar e não exibir sintoma. 
+O crescimento é paralisado, e a evolução dos sintomas é bastante rápida, podendo causar a morte 
+da planta em poucos dias. Na região do caule próxima ao solo, ocorre a formação de raízes aéreas. 
+O diagnóstico pode ser feito de maneira prática, cortando-se um filete de aproximadamente 10 cm 
+de comprimento do caule, cortado logo abaixo da casca, e coloca-se aderido à parede interna de 
+um copo com água, com a parte inferior encostando na água. Se for positivo, em poucos minutos 
+serão observados filetes de um líquido leitoso saindo do tecido e indo para o fundo do copo. 
+Figura 54 – Lesão típica de Septoria lycopersici em tomateiro (A). Folíolo de tomateiro com várias lesões causadas pela 
+septoriose (B, C e D).
+a
+b
+c
+d
+Fonte: Jarek, 2011 (A) e 2014 (B); Bachi, 2008 (C e D).
+5369149
+5368790
+
+
+SENAR-PR
+87
+O controle é extremamente difícil, pelo fato de a bactéria sobreviver no solo por vários 
+anos, mas ainda assim a rotação com gramíneas é recomendada, eliminando-se plantas daninhas 
+hospedeiras como a maria-pretinha (Solanum americanum). Não existe cura para plantas doentes, 
+por isso, quando detectadas devem ser arrancadas juntamente com as plantas vizinhas que mesmo 
+sem sintomas podem já estarem infectadas, embaladas em sacos, levadas para longe da lavoura e 
+queimadas (ZAMBOLIM et al., 2000a, KIMATI et al., 2011), misturando-se palha e ramos secos. Se o 
+número de plantas infectadas for muito grande, a operação não é viável. Evitar ao máximo passar 
+novamente pelo local onde ocorrer a doença, para evitar a disseminação da bactéria pelo solo 
+aderido às botas ou pneus do trator (LOPES; ÁVILA, 2005). Não há constatação de cultivar resistente, 
+devido à complexidade que a bactéria exibe.
+Figura 55 – Plantas de tomateiro apresentando sintoma de murcha por volta das 10 horas da manhã.
+a
+c
+b
+d
+Fonte: Jarek, 2014 (A); USDA, 2003 (B e D); Don Ferrin, 2012 (C).
+UGA1234079
+UGA1234078
+5473709
+
+
+SENAR-PR
+88
+7.8	
+MURCHA DE FUSÁRIO (Fusarium oxysporum f. sp. lycopersici)
+Essa doença é muito importante pela sua ampla distribuição geográfica, pois, como é 
+transmitida pela semente, praticamente em todas as regiões onde se cultiva tomate ela já foi 
+encontrada. No Brasil, a doença tornou-se menos importante após o lançamento de cultivares 
+resistentes ao patógeno. Mas, em áreas onde a doença ocorre, há vários ciclos as perdas podem 
+chegar a 100% (ZAMBOLIM et al., 2000b; LOPES; ÁVILA, 2005; KIMATI et al., 2011).
+Os sintomas caracterizam-se pelo amarelecimento da planta, iniciando pelas folhas mais 
+velhas e progredindo para as mais novas. No tomate, geralmente ocorre no início da frutificação. 
+O fungo pode colonizar inicialmente apenas um dos lados da planta, refletindo nos sintomas 
+que aparecerão inicialmente em apenas um dos lados. A murcha da planta, causada pelo 
+comprometimento do sistema vascular, também é observada nas horas mais quentes (Figura 56) 
+do dia. O caule internamente pode apresentar um escurecimento dos vasos de coloração marrom, 
+mas a medula apresenta-se sadia.
+Existem pelo menos duas raças fisiológicas do fungo, e este cresce preferencialmente a 
+temperaturas de 28 °C. É um habitante do solo e, por meio de suas estruturas de resistência, como 
+clamidósporos, pode permanecer no solo por até dez anos. A disseminação assim como outros 
+patógenos de solo ocorre por intermédio de implementos contaminados, água, vento e tratos culturais 
+(PERNEZNY et al., 2003). Mas o transporte a longas distâncias é efetuado por sementes contaminadas.
+A principal medida de controle é a utilização de cultivares resistentes. Caso não disponha de 
+cultivares resistentes na sua região, as medidas de controle devem ser preventivas e integradas. A 
+rotação de culturas só é válida por um período que alcance cinco anos. A utilização de sementes 
+tratadas evita a entrada do patógeno na lavoura. É imporante evitar ferimentos no caule e nas raízes 
+por facilitarem a infecção.
+Figura 56 – Plantas de tomateiro apresentando sintoma de murcha por volta das 10 horas da manhã.
+a
+b
+Fonte: Jarek, 2011 (A); Florida Division of Plant Industry Archive, 2007 (B).
+UGA5222046
+
+
+SENAR-PR
+89
+7.9	
+MURCHA DE VERTICÍLIO (Verticillium dahliae)
+A murcha de verticílio assemelha-se muito à murcha descrita anteriormente por Fusarium, 
+entretanto, ela é de ocorrência mais limitada e menos severa, podendo inclusive estar na planta de 
+forma crônica sem prejuízo ao seu crescimento (FILGUEIRA, 2000). Por preferir temperaturas mais 
+amenas de 20 a 24 °C, sua ocorrência é mais comum nos estados do Sul e Sudeste (ZAMBOLIM et 
+al., 2000b; LOPES; ÁVILA, 2005).
+Os sintomas assemelham-se muito aos sintomas da murcha de Fusarium e, devido às 
+variações que os sintomas podem apresentar em decorrência das relações hospedeiro-
+patógeno-ambiente, a diferenciação entre as duas doenças no campo é difícil. Para um 
+diagnóstico mais correto, recomenda-se encaminhar amostras para um laboratório (ZAMBOLIM 
+et al., 2000b). 
+As medidas de controle, devido ao Verticillium também ser um habitante de solo, são as 
+mesmas indicadas para Fusarium, entretanto deve-se considerar que Verticillium não é transmitido 
+por semente. Mas, na cultura da batata, devido ao fato de o tubérculo-semente se desenvolver no 
+solo, a introdução pode ocorrer por batata-semente contaminada.
+7.10	 TALO OCO, PODRIDÃO MOLE OU CANELA PRETA (Pectobacterium 
+carotovorum)
+Essa doença causada pela bactéria Pectobacterium já foi tratada anteriormente, porém, 
+aqui ela toma um aspecto mais importante ao incidir sobre frutos e tubérculos na pós-colheita e 
+armazenamento. Temperaturas altas, presença de umidade e encharcamento do solo favorecem 
+sua ocorrência. 
+Quando a bactéria incide sobre o caule, os sintomas são de amarelecimento das folhas 
+e murcha. No tomateiro, o caule rompe-se sob a pressão dos dedos e apresenta interiormente 
+uma podridão mole (Figura 57). Na cultura da batata, quando sementes infectadas são 
+plantadas, ocorre um apodrecimento amarronzado das ramas e, por isso, chamado de canela-
+preta. Frutos e tubérculos afetados apresentam-se com uma podridão muito encharcada 
+desmanchando-se ao mais leve impacto. Tubérculos de batata apresentam odor desagradável 
+quando atacados.
+A doença é de difícil controle, entretanto, algumas medidas gerais são válidas: procurar 
+plantar em áreas que não tenham histórico de ocorrência da doença; fazer análise de solo para 
+que a adubação seja equilibrada; sementes e mudas devem ser de boa qualidade e certificadas; ao 
+proceder operações de desbrota, capinas e pulverizações, iniciar sempre pelas áreas mais sadias, 
+deixando as afetadas por último; proceder à erradicação de plantas afetadas da mesma forma 
+descrita para murcha bacteriana; e controlar insetos que podem agir como vetores ou abrindo 
+portas de entrada para a bactéria. 
+
+
+SENAR-PR
+90
+7.11	
+PÚSTULA OU MANCHA BACTERIANA (Xanthomonas vesicatoria)
+Essa doença é importante principalmente na cultura do tomate e, durante os trabalhos de 
+diagnose, foi encontrada causando severas lesões em berinjela (Figura 58). A bacteriose também 
+pode ocorrer em pimentão.
+Na berinjela, os sintomas caracterizam-se por lesões grandes, encharcadas, estendendo-
+se ao longo das nervuras (ZAMBOLIM et al., 2000b; PERNEZNY et al., 2003; KIMATI et al., 2011). 
+Olhando-se as folhas contra a luz, pode-se observar uma região mais translúcida, na qual está 
+ocorrendo o desenvolvimento da bactéria. Esta sobrevive no solo por pouco tempo, sendo a 
+rotação de culturas por um período curto (dois a três anos) eficiente (KIMATI et al., 2011). A principal 
+forma de disseminação é por sementes contaminadas (LOPES; ÁVILA, 2005). No tomate, as lesões 
+apresentam-se em pequenas áreas encharcadas, atingindo 0,5 cm de diâmetro. A doença pode 
+progredir causando a necrose de grandes áreas.
+Figura 57 – Talo oco observado em caule de tomateiro, em que a medula foi deteriorada pela ação da bactéria (A e B). Talo 
+oco em planta de batata (C) e tubérculo atacado (D).
+a
+b
+c
+d
+Fonte: Jarek, 2011 (A); Holmes, 1997 (B) e 2010 (D); Bachi, 2008 (C) e 2010 (D).
+1573597
+1573277
+5368600
+
+
+SENAR-PR
+91
+A forma mais efetiva de controle é aquisição de sementes e mudas livres da doença, somada 
+à rotação de culturas, evitando-se a sucessão de solanáceas. No início da epidemia, fungicidas 
+cúpricos e calda bordalesa podem ajudar a reduzir a incidência. Deve-se evitar o plantio próximo a 
+lavouras mais velhas. Existe uma cultivar de tomate que apresenta resistência à bactéria e constitui 
+medida muito eficaz e barata. Deve-se também evitar espaçamentos muito adensados que criam 
+um microclima mais úmido e favorável à bactéria. Ao realizar tratos culturais, como desbrota e 
+amarração, é preciso deixar áreas afetadas e próximas por último, percorrendo primeiro a parte 
+sadia da lavoura, para não disseminar a bactéria (ZAMBOLIM et al., 2000b).
+Figura 58 – Sintomas de pústula bacteriana em folha de berinjela (A), em folha de tomateiro (B) e em frutos de tomateiro 
+(C e D).
+a
+b
+c
+d
+Fonte: Jarek, 2011 (A); USDA, 2003 (B) e 2002 (C); Hansen, 2007 (D).
+7.12	 VIROSES DO TOMATEIRO
+As principais viroses do tomateiro são: vira-cabeça do tomateiro, topo amarelo, mosaico do 
+fumo, risca do tomateiro, mosaico amarelo, mosaico dourado do tomateiro e mosaico do pepino. 
+Os sintomas apresentados pelas viroses podem se alterar em função da idade e variedade da 
+planta, da estirpe do vírus e das condições ambientais. Geralmente, apresentam mosaico, clorose, 
+encurtamento dos entrenós e distorções foliares (LOPES; ÁVILA, 2005; KIMATI et al., 2011).
+UGA1234100
+5333058
+UGA1236106
+
+
+SENAR-PR
+92
+Dessa forma, é difícil estabelecer qual doença está incidindo sobre a cultura apenas com uma 
+avaliação visual, embora em alguns casos os sintomas sejam clássicos e permitam o diagnóstico 
+(Figura 59).
+O mais importante é entender que as principais viroses do tomateiro são transmitidas por 
+insetos vetores, por sementes, por danos mecânicos e/ou tratos culturais. Pulverizações após a 
+incidência da doença, no intuito de controlar o inseto vetor, quase sempre não surtem efeito e 
+aumentam os custos de produção (LOPES; ÁVILA, 2005).
+As principais medidas de controle dessas doenças envolvem a aquisição de sementes 
+de boa procedência. Em alguns casos, pode-se adquirir mudas com proteção cruzada, ou seja, 
+mais resistentes ao vírus por terem sido inoculadas com estirpe atenuada. É necessário evitar a 
+permanência no campo de focos de disseminação da doença e controlar insetos vetores. Sempre 
+que possível, deve-se utilizar variedades que apresentem resistência genética (ZAMBOLIM et al., 
+2000b; LOPES; ÁVILA, 2005; KIMATI et al., 2011).
+Figura 59 – Sintoma de tomateiro com a tospovirose conhecida como vira-cabeça.
+a
+b
+c
+Fonte: Jarek, 2014 (A); Florida Division of Plant Industry 
+Archive, 2007 (B), Holmes, 2010 (C).
+UGA5260061
+1577152
+
+
+SENAR-PR
+93
+7.13	 VIROSES DA BATATA
+A cultura da batata, assim como o tomateiro, é hospedeira de diversas viroses, sendo que, 
+das 30 viroses já relatadas mundialmente, mais da metade ocorre no Brasil (KIMATI et al., 2011). As 
+principais viroses citadas são: vírus do enrolamento da folha da batata, vírus Y da batata, vírus X da 
+batata, vírus S da batata.
+O reconhecimento dos sintomas de cada um dos vírus a campo é tarefa difícil, por isso, 
+abordaremos apenas as principais formas de controle. A batata tem a desvantagem de ser 
+propagada vegetativamente e isso propaga as viroses. Tubérculos-sementes totalmente livres de 
+vírus podem ser obtidos por cultura de meristemas em laboratório (LOPES; ÁVILA, 2005).
+As medidas de controle de viroses em batata são consideradas comuns e iniciam 
+preventivamente adquirindo sementes básicas e certificadas com baixos níveis das viroses. A 
+eliminação de plantas contaminadas é uma medida que impede os vetores que estiverem presentes 
+na planta de se dispersarem pela lavoura, necessitando para isso a utilização de sacos plásticos na 
+retirada das plantas infectadas e pulverizações com inseticidas para controle dos vetores. Também 
+é necessário controlar hospedeiros alternativos que servem como fonte de inóculo e/ou plantas 
+voluntárias oriundas de tubérculos deixados no campo (KIMATI et al., 2011).
+A proteção cruzada é uma alternativa para lotes de sementes, possibilitando a pré-imunização 
+da batata-semente (ZAMBOLIM et al., 2000a). A resistência genética deve sempre ser utilizada 
+sendo a forma mais barata e eficaz de controle de viroses.
+
+
+SENAR-PR
+94
+REFERÊNCIAS
+BACHI, P. University of Kentucky Research and Education Center. Bugwood.org. Disponível em: 
+<http://www.forestryimages.org/>. Acesso em: 13 out. 2014.0
+BUSH E. Virginia Polytechnic Institute and State University. Bugwood.org. Disponível em: <http://
+www.forestryimages.org/>. Acesso em: 13 out. 2014.
+DON FERRIN. Louisiania state university agricultural center. Bugwood.org. Disponível em: <http://
+www.forestryimages.org/>. Acesso em: 13 out. 2014.
+EMBRAPA PRODUTOS E MERCADOS. Página de negócios e cultivares. Disponível em: <http://snt.
+sede.embrapa.br/produtos/mostrar_produto/236/>. Acesso em: 27 fev. 2014.
+FILGUEIRA, F.A.R. Novo manual de olericultura: agrotecnologia moderna na produção e 
+comercialização de hortaliças. Viçosa: Editora UFV, 2000. 402 p.
+FLORIDA DIVISION OF PLANT INDUSTRY ARCHIVE. Florida Department of Agriculture and Consumer 
+Services. Bugwood.org. Disponível em: <http://www.forestryimages.org/>. Acesso em: 13 out. 2014.
+HANSEN, M. A. Virginia Polytechnic Institute and State University. Bugwood.org. Disponível em: 
+<http://www.forestryimages.org/>. Acesso em: 13 out. 2014.
+HOLMES G. California Polytechnic State University at San Luis, Obisp. Bugwood.org. Disponível em: 
+<http://www.forestryimages.org/>. Acesso em: 13 out. 2014.
+KIMATI, H. et al. Manual de fitopatologia: doenças das plantas cultivadas. São Paulo: Ed. Agronômica 
+Ceres, 2011. v. 2. 704 p.
+LOPES, C. A.; ÁVILA, A. C. de. Doenças do tomateiro, 2 ed. Brasília: Embrapa Hortaliças, 2005. 151 p.
+PARANÁ, Secretaria de Estado da Agricultura e do Abastecimento. Valor bruto da produção 
+agropecuária. Disponível em: <http://www.agricultura.pr.gov.br/arquivos/File/deral>. Acesso em: 
+20 fev. 2014a.
+PARANÁ, Secretaria de Estado da Agricultura e do Abastecimento. Agrotóxicos no Paraná. 
+Disponível em: <http://celepar07web.pr.gov.br/agrotoxicos /pesquisar.asp>. Acesso em: 27 fev. 
+2014b.
+PERNEZNY, K. et al. Compedium of pepper diseases. Minnesota: APS Press, 2003. 63 p.
+SHEN, Y. M. Taichung District Agricultural Research and Extension Station. University of Georgia. 
+Bugwood.org. Disponível em: <http://www.forestryimages.org/>. Acesso em: 13 out. 2014.
+USDA - Clemson University. - Cooperative extension slide series. Bugwood.org. Disponível em: 
+<http://www.forestryimages.org/>. Acesso em: 13 out. 2014.
+ZAMBOLIM, L. et al. Controle de doenças de plantas: hortaliças. Viçosa: Ed. UFV, 2000a. v. 1. 444 p.
+ZAMBOLIM, L. et al. Controle de doenças de plantas: hortaliças. Viçosa: Ed. UFV, 2000b. v.2, 878p.
+
+
+ANOTAÇÕES
+
+
+ANOTAÇÕES
+
+
+SERVIÇO NACIONAL DE APRENDIZAGEM RURAL
+Administração Regional do Estado do Paraná 
+Rua Marechal Deodoro, 450 - 16º andar
+Fone: (41) 2106-0401 - Fax: (41) 3323-1779
+80010-010 - Curitiba - Paraná
+e-mail: senarpr@senarpr.org.br
+www.sistemafaep.org.br
+
+

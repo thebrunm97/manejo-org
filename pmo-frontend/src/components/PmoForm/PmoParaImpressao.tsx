@@ -80,9 +80,8 @@ interface GroupedVegetal {
     locaisAgrupados: Record<string, number>;
 }
 
-// Estilos Globais de Impressão
-const PrintStyles: React.FC = () => (
-    <style>{`
+// Estilos Globais de Impressão com Cleanup
+const cssText = `
     @media print {
       @page {
         size: A4;
@@ -169,8 +168,21 @@ const PrintStyles: React.FC = () => (
       box-sizing: border-box;
       position: relative;
     }
-  `}</style>
-);
+`;
+
+const PrintStyles: React.FC = () => {
+    React.useEffect(() => {
+        const style = document.createElement('style');
+        style.setAttribute('data-print-styles', 'true');
+        style.innerHTML = cssText;
+        document.head.appendChild(style);
+        return () => {
+            document.head.removeChild(style);
+        };
+    }, []);
+
+    return null;
+};
 
 // Componente Auxiliar de Tabela Simples
 const SimpleTable: React.FC<SimpleTableProps> = ({ title, headers, rows }) => {

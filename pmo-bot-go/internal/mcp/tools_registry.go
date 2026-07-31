@@ -1,6 +1,7 @@
 package mcp
 
 import (
+	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -73,25 +74,25 @@ var RegistrarPlantioDef = llm.FerramentaAgnostica{
 func (s *Server) InitializeTools() {
 	s.RegisterTool(Tool{
 		Definition: RegistrarLoteOperacoesDef,
-		Category:   CategoryDatabase,
+		Category:   CategoryDBWrite,
 		Handler:    s.handleRegistrarLote,
 	})
 
 	s.RegisterTool(Tool{
 		Definition: CalcularAdubacaoDef,
-		Category:   CategoryDatabase,
+		Category:   CategoryDBWrite,
 		Handler:    s.handleCalcularAdubacao,
 	})
 
 	s.RegisterTool(Tool{
 		Definition: RegistrarPlantioDef,
-		Category:   CategoryDatabase,
+		Category:   CategoryDBWrite,
 		Handler:    s.handleRegistrarPlantio,
 	})
 
 	s.RegisterTool(Tool{
 		Definition: SalvarMemoriaProdutorDef,
-		Category:   CategoryDatabase,
+		Category:   CategoryDBWrite,
 		Handler:    s.handleSalvarMemoria,
 	})
 
@@ -102,11 +103,7 @@ func (s *Server) InitializeTools() {
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-					"pmo_id": map[string]interface{}{
-						"type":        "integer",
-						"description": "ID do PMO (fazenda) do usuario para filtrar os documentos.",
-					},
-					"pergunta": map[string]interface{}{
+										"pergunta": map[string]interface{}{
 						"type":        "string",
 						"description": "A pergunta ou termo de busca para pesquisar na base de conhecimento.",
 					},
@@ -116,7 +113,7 @@ func (s *Server) InitializeTools() {
 						"description": "Filtro opcional: restringir a busca a uma categoria de fonte. Omita para buscar em todas as categorias.",
 					},
 				},
-				"required": []string{"pmo_id", "pergunta"},
+				"required": []string{"pergunta"},
 			},
 		},
 		Category: CategoryRAG,
@@ -149,11 +146,7 @@ func (s *Server) InitializeTools() {
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-					"pmo_id": map[string]interface{}{
-						"type":        "integer",
-						"description": "ID do PMO (fazenda) do usuário.",
-					},
-					"tabela": map[string]interface{}{
+										"tabela": map[string]interface{}{
 						"type":        "string",
 						"enum":        []string{"talhoes", "canteiros", "caderno_recente"},
 						"description": "A categoria de dados que deseja consultar.",
@@ -163,7 +156,7 @@ func (s *Server) InitializeTools() {
 						"description": "Obrigatório se a tabela for 'canteiros'. ID do talhão para filtrar canteiros.",
 					},
 				},
-				"required": []string{"pmo_id", "tabela"},
+				"required": []string{"tabela"},
 			},
 		},
 		Category: CategoryRAG,
@@ -193,7 +186,7 @@ func (s *Server) InitializeTools() {
 				"required": []string{"nome_talhao", "area_hectares"},
 			},
 		},
-		Category: CategoryDatabase,
+		Category: CategoryDBWrite,
 		Options: &ToolOptions{
 			Schema:               &CriarInfraestruturaSchema{},
 			RequiresConfirmation: true,
@@ -208,8 +201,7 @@ func (s *Server) InitializeTools() {
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-					"pmo_id":          map[string]interface{}{"type": "integer"},
-					"produto_manejo":  map[string]interface{}{"type": "string", "description": "Nome do insumo ou equipamento (Ex: Esterco de curral, Enxada, Substrato)."},
+										"produto_manejo":  map[string]interface{}{"type": "string", "description": "Nome do insumo ou equipamento (Ex: Esterco de curral, Enxada, Substrato)."},
 					"cultura_destino": map[string]interface{}{"type": "string", "description": "Para qual cultura este insumo será usado (Ex: Alface, Milho)."},
 					"epoca_frequencia": map[string]interface{}{
 						"type":        "string",
@@ -232,10 +224,10 @@ func (s *Server) InitializeTools() {
 						"description": "OBRIGATÓRIO. Quantidade ou dose recomendada (Ex: 10kg/ha). Se o usuário não informou, NÃO invente e NÃO chame a função. Pergunte primeiro.",
 					},
 				},
-				"required": []string{"pmo_id", "produto_manejo", "dosagem"},
+				"required": []string{"produto_manejo", "dosagem"},
 			},
 		},
-		Category: CategoryDatabase,
+		Category: CategoryDBWrite,
 		Options: &ToolOptions{
 			Schema:               &AdicionarInsumoSchema{},
 			RequiresConfirmation: true,
@@ -250,9 +242,7 @@ func (s *Server) InitializeTools() {
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-					"pmo_id":         map[string]interface{}{"type": "integer"},
-					"propriedade_id": map[string]interface{}{"type": "string", "description": "ID da propriedade (fazenda) ativa."},
-					"tipo": map[string]interface{}{
+															"tipo": map[string]interface{}{
 						"type":        "string",
 						"description": "Atividade realizada: Compra/Aquisição (se apenas comprou), Plantio (se colocou na terra), Semeadura ou Transplante.",
 						"enum":        []string{"Compra/Aquisição", "Plantio", "Semeadura", "Transplante"},
@@ -282,10 +272,10 @@ func (s *Server) InitializeTools() {
 						"description": "O valor total em dinheiro gasto na operação/compra (opcional).",
 					},
 				},
-				"required": []string{"pmo_id", "propriedade_id", "tipo", "especies", "quantidade"},
+				"required": []string{"tipo", "especies", "quantidade"},
 			},
 		},
-		Category: CategoryDatabase,
+		Category: CategoryDBWrite,
 		Options: &ToolOptions{
 			Schema:               &RegistrarPropagacaoSchema{},
 			RequiresConfirmation: true,
@@ -300,18 +290,16 @@ func (s *Server) InitializeTools() {
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-					"pmo_id":            map[string]interface{}{"type": "integer"},
-					"propriedade_id":    map[string]interface{}{"type": "string", "description": "ID da propriedade (fazenda) ativa."},
-					"item_area":         map[string]interface{}{"type": "string", "description": "O que foi limpo (Ex: Trator, Galpão, Enxadas)."},
+															"item_area":         map[string]interface{}{"type": "string", "description": "O que foi limpo (Ex: Trator, Galpão, Enxadas)."},
 					"tipo_limpeza":      map[string]interface{}{"type": "string", "description": "Como foi feito (Ex: Lavagem, Varrição, Desinfecção)."},
 					"produto_utilizado": map[string]interface{}{"type": "string", "description": "Produto usado, se houver (Ex: Sabão neutro, Álcool 70%)."},
 					"dosagem":           map[string]interface{}{"type": "string", "description": "Quantidade do produto usado."},
 					"responsavel":       map[string]interface{}{"type": "string", "description": "Quem realizou a limpeza (Default: Produtor)."},
 				},
-				"required": []string{"pmo_id", "propriedade_id", "item_area", "tipo_limpeza"},
+				"required": []string{"item_area", "tipo_limpeza"},
 			},
 		},
-		Category: CategoryDatabase,
+		Category: CategoryDBWrite,
 		Options: &ToolOptions{
 			Schema:               &RegistrarLimpezaSchema{},
 			RequiresConfirmation: true,
@@ -326,16 +314,14 @@ func (s *Server) InitializeTools() {
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-					"pmo_id":         map[string]interface{}{"type": "integer"},
-					"propriedade_id": map[string]interface{}{"type": "integer", "description": "ID da propriedade (fazenda) onde o talhão será criado."},
-					"nome_talhao":    map[string]interface{}{"type": "string", "description": "Nome descritivo (Ex: Gleba 01, Horta dos Pomares)."},
+															"nome_talhao":    map[string]interface{}{"type": "string", "description": "Nome descritivo (Ex: Gleba 01, Horta dos Pomares)."},
 					"area_hectares":  map[string]interface{}{"type": "number", "description": "Tamanho da área em hectares (Ex: 0.5, 1.2)."},
 					"cultura":        map[string]interface{}{"type": "string", "description": "Cultura principal plantada (Opcional)."},
 				},
-				"required": []string{"pmo_id", "propriedade_id", "nome_talhao", "area_hectares"},
+				"required": []string{"nome_talhao", "area_hectares"},
 			},
 		},
-		Category: CategoryDatabase,
+		Category: CategoryDBWrite,
 		Options: &ToolOptions{
 			Schema:               &CriarTalhaoSchema{},
 			RequiresConfirmation: true,
@@ -357,7 +343,7 @@ func (s *Server) InitializeTools() {
 				"required": []string{"talhao_id", "quantidade", "identificador_inicial"},
 			},
 		},
-		Category: CategoryDatabase,
+		Category: CategoryDBWrite,
 		Options: &ToolOptions{
 			Schema:               &CriarCanteirosSchema{},
 			RequiresConfirmation: true,
@@ -372,18 +358,16 @@ func (s *Server) InitializeTools() {
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-					"pmo_id":              map[string]interface{}{"type": "integer"},
-					"propriedade_id":      map[string]interface{}{"type": "string", "description": "ID da propriedade (fazenda) ativa."},
-					"acao":                map[string]interface{}{"type": "string", "description": "Ação realizada: 'Nova Pilha', 'Revirada', 'Temperatura', 'Agua' ou 'Uso'.", "enum": []string{"Nova Pilha", "Revirada", "Temperatura", "Agua", "Uso"}},
+															"acao":                map[string]interface{}{"type": "string", "description": "Ação realizada: 'Nova Pilha', 'Revirada', 'Temperatura', 'Agua' ou 'Uso'.", "enum": []string{"Nova Pilha", "Revirada", "Temperatura", "Agua", "Uso"}},
 					"identificador_pilha": map[string]interface{}{"type": "string", "description": "Identificador ou número da pilha (ex: 'Pilha 01')."},
 					"materiais":           map[string]interface{}{"type": "string", "description": "Apenas se acao = 'Nova Pilha'. Ingredientes adicionados."},
 					"temperatura":         map[string]interface{}{"type": "number", "description": "Apenas se fornecida temperatura (em ºC)."},
 					"observacao":          map[string]interface{}{"type": "string", "description": "Observações adicionais ou notas."},
 				},
-				"required": []string{"pmo_id", "propriedade_id", "acao", "identificador_pilha"},
+				"required": []string{"acao", "identificador_pilha"},
 			},
 		},
-		Category: CategoryDatabase,
+		Category: CategoryDBWrite,
 		Options: &ToolOptions{
 			Schema:               &RegistrarCompostagemSchema{},
 			RequiresConfirmation: true,
@@ -398,9 +382,7 @@ func (s *Server) InitializeTools() {
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-					"pmo_id":         map[string]interface{}{"type": "integer"},
-					"propriedade_id": map[string]interface{}{"type": "integer", "description": "ID da propriedade (fazenda) ativa. OBRIGATÓRIO: Extraia do cabeçalho de contexto injetado pelo sistema."},
-					"produto": map[string]interface{}{
+															"produto": map[string]interface{}{
 						"type":        "string",
 						"description": "Nome do produto/insumo adquirido (Ex: Esterco, Enxada, Semente de Alface, Adubo orgânico).",
 					},
@@ -455,10 +437,10 @@ func (s *Server) InitializeTools() {
 						"description": "Nome da categoria da despesa (ex: 'Insumos', 'Manutenção', 'Logística/Frete'). Opcional.",
 					},
 				},
-				"required": []string{"pmo_id", "propriedade_id", "produto", "quantidade_valor", "quantidade_unidade"},
+				"required": []string{"produto", "quantidade_valor", "quantidade_unidade"},
 			},
 		},
-		Category: CategoryDatabase,
+		Category: CategoryDBWrite,
 		Options: &ToolOptions{
 			Schema:               &RegistrarCompraSchema{},
 			RequiresConfirmation: true,
@@ -473,9 +455,7 @@ func (s *Server) InitializeTools() {
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-					"pmo_id":          map[string]interface{}{"type": "integer"},
-					"propriedade_id":  map[string]interface{}{"type": "string", "description": "ID da propriedade (fazenda) ativa."},
-					"data":            map[string]interface{}{"type": "string", "description": "Data da colheita (YYYY-MM-DD)."},
+															"data":            map[string]interface{}{"type": "string", "description": "Data da colheita (YYYY-MM-DD)."},
 					"cultura":         map[string]interface{}{"type": "string", "description": "Nome da cultura colhida (Ex: Alface Crespa, Tomate)."},
 					"talhao":          map[string]interface{}{"type": "string", "description": "Nome do talhão onde foi colhido (Ex: Talhão 01)."},
 					"quantidade":      map[string]interface{}{"type": "number", "description": "Quantidade colhida."},
@@ -486,10 +466,10 @@ func (s *Server) InitializeTools() {
 						"description": "O valor total em dinheiro gasto na operação (opcional).",
 					},
 				},
-				"required": []string{"pmo_id", "propriedade_id", "cultura", "talhao", "quantidade", "unidade"},
+				"required": []string{"cultura", "talhao", "quantidade", "unidade"},
 			},
 		},
-		Category: CategoryDatabase,
+		Category: CategoryDBWrite,
 		Options: &ToolOptions{
 			Schema:               &RegistrarColheitaSchema{},
 			RequiresConfirmation: true,
@@ -499,14 +479,51 @@ func (s *Server) InitializeTools() {
 
 	s.RegisterTool(Tool{
 		Definition: llm.FerramentaAgnostica{
+			Name:        "registrar_despesa",
+			Description: "Ferramenta para registrar despesas financeiras (compras, pagamentos). IMPORTANTE: Você PRECISA do valor_total e da descricao. Se o usuário não informar o valor, NÃO chame a ferramenta, pergunte a ele primeiro.",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"descricao": map[string]interface{}{
+						"type":        "string",
+						"description": "Descrição do que foi comprado ou pago (ex: 10 sacos de adubo).",
+					},
+					"valor_total": map[string]interface{}{
+						"type":        "number",
+						"description": "Valor total pago pela despesa.",
+					},
+					"categoria_nome": map[string]interface{}{
+						"type":        "string",
+						"description": "Nome da categoria (ex: Insumos, Mão de Obra, Manutenção, Logística/Frete, Energia/Água, Outros).",
+					},
+					"data": map[string]interface{}{
+						"type":        "string",
+						"description": "Data da despesa no formato YYYY-MM-DD. Opcional.",
+					},
+					"talhao_nome": map[string]interface{}{
+						"type":        "string",
+						"description": "Se a despesa for destinada a um talhão específico, informe o nome aqui. Opcional.",
+					},
+				},
+				"required": []string{"descricao", "valor_total", "categoria_nome"},
+			},
+		},
+		Category: CategoryDBWrite,
+		Options: &ToolOptions{
+			Schema:               &RegistrarDespesaSchema{},
+			RequiresConfirmation: true,
+		},
+		Handler: s.handleRegistrarDespesa,
+	})
+
+	s.RegisterTool(Tool{
+		Definition: llm.FerramentaAgnostica{
 			Name:        "registrar_venda",
 			Description: "Registra a venda ou saída de produtos colhidos. Ferramenta de atividade de campo, não administrativa de infraestrutura.",
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-					"pmo_id":         map[string]interface{}{"type": "integer"},
-					"propriedade_id": map[string]interface{}{"type": "string", "description": "ID da propriedade (fazenda) ativa."},
-					"data":           map[string]interface{}{"type": "string", "description": "Data da venda/saída (YYYY-MM-DD)."},
+															"data":           map[string]interface{}{"type": "string", "description": "Data da venda/saída (YYYY-MM-DD)."},
 					"produto":        map[string]interface{}{"type": "string", "description": "Nome do produto vendido (Ex: Alface, Tomate)."},
 					"quantidade":     map[string]interface{}{"type": "number"},
 					"unidade":        map[string]interface{}{"type": "string", "description": "Unidade de medida (Ex: kg, maços, caixas)."},
@@ -524,10 +541,10 @@ func (s *Server) InitializeTools() {
 						"description": "O valor total recebido na venda (opcional, se omitido calcula-se como quantidade * valor_unitario).",
 					},
 				},
-				"required": []string{"pmo_id", "propriedade_id", "produto", "quantidade", "unidade", "destinacao"},
+				"required": []string{"produto", "quantidade", "unidade", "destinacao"},
 			},
 		},
-		Category: CategoryDatabase,
+		Category: CategoryDBWrite,
 		Options: &ToolOptions{
 			Schema:               &RegistrarVendaSchema{},
 			RequiresConfirmation: true,
@@ -542,13 +559,12 @@ func (s *Server) InitializeTools() {
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-					"propriedade_id":   map[string]interface{}{"type": "integer", "description": "O ID da propriedade (fazenda) que o usuário quer ativar."},
-					"nome_propriedade": map[string]interface{}{"type": "string", "description": "O nome da fazenda (para feedback amigável)."},
+										"nome_propriedade": map[string]interface{}{"type": "string", "description": "O nome da fazenda (para feedback amigável)."},
 				},
-				"required": []string{"propriedade_id"},
+				"required": []string{},
 			},
 		},
-		Category: CategoryDatabase,
+		Category: CategoryDBWrite,
 		Options: &ToolOptions{
 			Schema:               &SelecionarFazendaSchema{},
 			RequiresConfirmation: false,
@@ -563,13 +579,12 @@ func (s *Server) InitializeTools() {
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-					"pmo_id":    map[string]interface{}{"type": "integer", "description": "O ID do PMO que o usuário quer ativar."},
-					"ano_safra": map[string]interface{}{"type": "string", "description": "O ano ou identificador do PMO (para feedback amigável)."},
+										"ano_safra": map[string]interface{}{"type": "string", "description": "O ano ou identificador do PMO (para feedback amigável)."},
 				},
-				"required": []string{"pmo_id"},
+				"required": []string{},
 			},
 		},
-		Category: CategoryDatabase,
+		Category: CategoryDBWrite,
 		Options: &ToolOptions{
 			Schema:               &SelecionarPMOSchema{},
 			RequiresConfirmation: false,
@@ -584,15 +599,11 @@ func (s *Server) InitializeTools() {
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-					"propriedade_id": map[string]interface{}{
-						"type":        "integer",
-						"description": "ID da propriedade ativa do usuário (fazenda). OBRIGATÓRIO: Extraia do cabeçalho de contexto injetado pelo sistema.",
-					},
-				},
-				"required": []string{"propriedade_id"},
+									},
+				"required": []string{},
 			},
 		},
-		Category: CategoryDatabase,
+		Category: CategoryDBWrite,
 		Handler:  s.handleConsultarDemandasCooperativa,
 	})
 
@@ -603,11 +614,7 @@ func (s *Server) InitializeTools() {
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-					"propriedade_id": map[string]interface{}{
-						"type":        "integer",
-						"description": "ID da propriedade ativa do usuário (fazenda). OBRIGATÓRIO: Extraia do cabeçalho de contexto injetado pelo sistema.",
-					},
-					"ano": map[string]interface{}{
+										"ano": map[string]interface{}{
 						"type":        "integer",
 						"description": "O ano do balanço (ex: 2026). OBRIGATÓRIO: Se o usuário não especificar o ano, você DEVE fornecer o ano atual (2026) como padrão.",
 					},
@@ -616,10 +623,10 @@ func (s *Server) InitializeTools() {
 						"description": "O mês do balanço (1 a 12). Se o utilizador pedir o ano todo, deixa vazio.",
 					},
 				},
-				"required": []string{"propriedade_id", "ano"},
+				"required": []string{"ano"},
 			},
 		},
-		Category: CategoryDatabase,
+		Category: CategoryDBWrite,
 		Handler:  s.handleConsultarBalancoFinanceiro,
 	})
 
@@ -630,11 +637,7 @@ func (s *Server) InitializeTools() {
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-					"propriedade_id": map[string]interface{}{
-						"type":        "integer",
-						"description": "ID da propriedade ativa do usuário (fazenda). OBRIGATÓRIO: Extraia do cabeçalho de contexto injetado pelo sistema.",
-					},
-					"cidade_informada": map[string]interface{}{
+										"cidade_informada": map[string]interface{}{
 						"type":        "string",
 						"description": "Nome da cidade ou coordenadas informada na mesma frase. Apenas se o usuário pedir explicitamente para uma cidade, senão omita.",
 					},
@@ -643,7 +646,7 @@ func (s *Server) InitializeTools() {
 						"description": "A data ou período desejado (ex: 'hoje', 'amanhã', 'próximos 3 dias'). Opcional.",
 					},
 				},
-				"required": []string{"propriedade_id"},
+				"required": []string{},
 			},
 		},
 		Category: CategoryRAG, // RAG is used for knowledge/read-only info
@@ -682,10 +685,16 @@ var RegistrarLoteOperacoesDef = llm.FerramentaAgnostica{
 	},
 }
 
-func (s *Server) handleRegistrarLote(args map[string]interface{}) (interface{}, error) {
-	pmoIDFloat, _ := args["pmo_id"].(float64)
-	pmoID := int(pmoIDFloat)
-	userID, _ := args["user_id"].(string)
+func (s *Server) handleRegistrarLote(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
+	// SECURE SESSION INJECTION — pmo_id/user_id from profile ONLY, never from args
+	if profile == nil {
+		return nil, fmt.Errorf("unauthorized: missing profile")
+	}
+	if profile.PmoAtivoID == 0 {
+		return nil, fmt.Errorf("validation: usuário não tem PMO ativa selecionada")
+	}
+	pmoID := int(profile.PmoAtivoID)
+	userID := profile.ID
 
 	var payload RegistrarLoteOperacoesSchema
 	payloadBytes, _ := json.Marshal(args)

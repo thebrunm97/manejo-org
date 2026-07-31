@@ -40,9 +40,35 @@ type LLMProvider interface {
 	// EvaluateEvidenceListwise evaluates a list of retrieved chunks against a query.
 	EvaluateEvidenceListwise(ctx context.Context, query string, chunks []string) (MetaRAGResult, error)
 
+	// ChatRaw sends a raw chat completion request to the provider.
+	ChatRaw(ctx context.Context, req ChatRequest) (ChatResponse, error)
+
 	// Close releases any resources held by the provider.
 	Close() error
 }
+
+type ChatRequest struct {
+	Model          string
+	FallbackModels []string
+	SystemPrompt   string
+	UserPrompt     string
+	Temperature    float64
+	ResponseFormat map[string]any
+}
+
+type ChatUsage struct {
+	PromptTokens     int
+	CompletionTokens int
+	CostUSD          float64
+}
+
+type ChatResponse struct {
+	Text               string
+	ActualModel        string
+	Usage              ChatUsage
+	ProviderResponseID string
+}
+
 
 // Embedder generates text embeddings. Defined here (not in mcp) to avoid
 // import cycles. The mcp.Server accepts this interface at construction time.
