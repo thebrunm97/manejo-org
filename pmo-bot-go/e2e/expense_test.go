@@ -17,7 +17,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/thebrunm97/pmo-bot-go/internal/config"
-	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/webhook"
@@ -54,15 +53,9 @@ func TestExpenseMutationE2E(t *testing.T) {
 	key := os.Getenv("SUPABASE_KEY")
 
 	// 1. Instanciar LLM real (Gemini) e dependências básicas
-	cfg := config.LoadConfig()
+	_ = config.LoadConfig()
 
-	llmProvider, err := gemini.NewClient(gemini.Config{
-		APIKey:        os.Getenv("GEMINI_API_KEY"),
-		Model:         "gemini-2.0-flash",
-		FallbackModel: "gemini-1.5-flash",
-		APIVersion:    "v1",
-	})
-	assert.NoError(t, err, "Erro ao criar LLM Provider Gemini")
+	llmProvider := SetupLLMProvider(t)
 
 	historyManager := history.NewManager(5*time.Minute, 10)
 	mockWpp := &MockMessageSender{}
