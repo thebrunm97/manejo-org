@@ -8,7 +8,10 @@ import (
 	"os"
 	"testing"
 
+	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
+	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
+
 )
 
 const TestPMOID int64 = 9999
@@ -73,4 +76,38 @@ func TeardownE2E(t *testing.T, client *supabase.Client) {
 		}
 		resp.Body.Close()
 	}
+}
+
+// SetupLLMProvider resolves the active LLM provider from environment, matching production behavior.
+func SetupLLMProvider(t *testing.T) llm.LLMProvider {
+	activekind, factoryCfg := llm.NewProviderFromEnv()
+	promptCfg := llm.PromptConfig{} // Em testes E2E de sistema interno, prompts reais não são carregados daqui ou podemos deixá-los vazios
+
+	if activekind == llm.ProviderGemini {
+		geminiModel := factoryCfg.GeminiModel
+		if geminiModel == "" {
+			geminiModel = "gemini-2.0-flash"
+		}
+		geminiFallback := factoryCfg.GeminiFallback
+		if geminiFallback == "" {
+			geminiFallback = "gemini-1.5-flash"
+		}
+		client, err := gemini.NewClient(gemini.Config{
+			APIKey:          factoryCfg.GeminiAPIKey,
+			OpenRouterAPIKey: factoryCfg.OpenRouterAPIKey,
+			Model:           geminiModel,
+			FallbackModel:   geminiFallback,
+			APIVersion:      "v1",
+		})
+		if err != nil {
+			t.Fatalf("Erro ao inicializar Gemini: %v", err)
+		}
+		return client
+	}
+
+	oadapter, err := llm.NewOpenAICompatibleProvider(factoryCfg, promptCfg)
+	if err != nil {
+		t.Fatalf("Erro ao inicializar provider OpenAI-compatible (%s): %v", activekind, err)
+	}
+	return oadapter
 }
