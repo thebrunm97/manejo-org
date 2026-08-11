@@ -89,7 +89,7 @@ export async function fetchRecentBotActivities(telefone?: string): Promise<BotAc
 
     const { data, error } = await supabase
         .from('messages')
-        .select('id, timestamp, created_at, role, content, source')
+        .select('id, timestamp, role, content, source')
         .eq('phone', cleanPhone)
         .order('timestamp', { ascending: false })
         .limit(3);

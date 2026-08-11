@@ -208,8 +208,8 @@ export const LiveChatMonitor: React.FC = () => {
 
     // Filtrar a lista de conversas com base na barra de pesquisa
     const filteredConversations = conversations.filter(c => {
-        const term = searchTerm.toLowerCase();
-        const phoneMatch = c.phone.includes(term);
+        const term = (searchTerm || '').toLowerCase();
+        const phoneMatch = (c.phone || '').includes(term);
         const nameMatch = c.profile_name?.toLowerCase().includes(term);
         const msgMatch = c.last_message?.toLowerCase().includes(term);
         return phoneMatch || nameMatch || msgMatch;
