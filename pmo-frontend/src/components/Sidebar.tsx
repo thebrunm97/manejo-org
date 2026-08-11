@@ -91,7 +91,6 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
 
   if (isAdmin || isLoadingRole) {
     menuItems.push({ name: 'Administração', icon: <LayoutDashboard size={22} />, path: SCREENS.ADMIN });
-    menuItems.push({ name: 'Ingestão (RAG)', icon: <Database size={22} />, path: SCREENS.KNOWLEDGE_MONITORING });
     menuItems.push({ name: 'Monitor ao Vivo', icon: <MessageSquare size={22} />, path: SCREENS.LIVE_CHAT_MONITOR });
   }
 
@@ -114,7 +113,6 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
       case SCREENS.CROPS: return '/culturas';
       case SCREENS.CHANGELOG: return '/changelog';
       case SCREENS.ADMIN: return '/admin';
-      case SCREENS.KNOWLEDGE_MONITORING: return '/admin/conhecimento';
       case SCREENS.LIVE_CHAT_MONITOR: return '/admin/chat';
       case SCREENS.PROFILE: return '/perfil';
       case SCREENS.PROPERTY_PROFILE: return '/propriedade';
