@@ -10,7 +10,8 @@ type MessageSender interface {
 	SendMessage(to, message string) error
 	SendVoice(to, base64Audio string, isPtt bool) error
 	SendReply(to, message, replyToMessageID string) error
-	DownloadAudio(messageID string, rawPayload []byte) ([]byte, error)
+	// DownloadAudio returns the decoded audio bytes and the detected mimeType (e.g., "audio/ogg").
+	DownloadAudio(messageID string, rawPayload []byte) ([]byte, string, error)
 	DownloadImage(messageID string, rawPayload []byte) ([]byte, string, error)
 	SetPresence(to string, presence string) error
 	SendPresence(ctx context.Context, to string, state string) error

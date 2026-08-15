@@ -156,17 +156,20 @@ func (w *MediaWorker) processAudio(ctx context.Context, msg ports.IncomingMessag
 	audioCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	audioBytes, err := w.cfg.WhatsApp.DownloadAudio(msg.ID, msg.RawPayload)
+	audioData, audioMimeType, err := w.cfg.WhatsApp.DownloadAudio(msg.ID, msg.RawPayload)
 	if err != nil {
-		return "", true, fmt.Errorf("audio_download_failed: %w", err)
-	}
-	if len(audioBytes) == 0 {
-		return "", true, fmt.Errorf("audio_download_empty")
+		log.Printf("❌ [MediaWorker] Erro ao baixar áudio %s: %v", msg.ID, err)
+		return "", false, fmt.Errorf("audio download failed: %w", err)
 	}
 
+	log.Printf("🎙️ [MediaWorker] Áudio baixado, enviando para Whisper (ID: %s) mime: %s", msg.ID, audioMimeType)
+	// TODO(fase-5-ou-switchover): usar audioMimeType para derivar FileName dinamicamente,
+	// igual ao groq_audio_adapter.go, quando este caminho for substituído por domain.ProcessAudioMessage.
+	// Enquanto isso, audioMimeType é capturado (garante compilação e telemetria) mas NÃO altera o comportamento.
 	transcription, err := w.cfg.Groq.Transcribe(audioCtx, groq.AudioTranscriptionRequest{
-		FileData: audioBytes,
+		FileData: audioData,
 		FileName: "audio.ogg",
+		Language: "pt",
 	})
 	if err != nil {
 		return "", true, fmt.Errorf("audio_transcription_failed: %w", err)

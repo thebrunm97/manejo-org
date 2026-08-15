@@ -174,12 +174,12 @@ func (a *EvolutionAdapter) SendReply(to, message, replyToMessageID string) error
 }
 
 // DownloadAudio fetches the audio file from Evolution API and decodes it.
-func (a *EvolutionAdapter) DownloadAudio(messageID string, rawPayload []byte) ([]byte, error) {
+func (a *EvolutionAdapter) DownloadAudio(messageID string, rawPayload []byte) ([]byte, string, error) {
 	fullURL := fmt.Sprintf("%s/message/downloadmedia", a.BaseURL)
 	log.Printf("📥 [Evolution-Go] Solicitando download de áudio. URL: %s | MessageID: %s", fullURL, messageID)
 
 	if len(rawPayload) == 0 {
-		return nil, errors.New("rawPayload is empty, cannot download media in Evolution-Go")
+		return nil, "", errors.New("rawPayload is empty, cannot download media in Evolution-Go")
 	}
 
 	payload := map[string]interface{}{
@@ -188,19 +188,19 @@ func (a *EvolutionAdapter) DownloadAudio(messageID string, rawPayload []byte) ([
 
 	bodyBytes, err := json.Marshal(payload)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal download payload: %w", err)
+		return nil, "", fmt.Errorf("failed to marshal download payload: %w", err)
 	}
 
 	req, err := http.NewRequest(http.MethodPost, fullURL, bytes.NewReader(bodyBytes))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create download request: %w", err)
+		return nil, "", fmt.Errorf("failed to create download request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("apikey", a.APIKey)
 
 	resp, err := a.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("download request failed: %w", err)
+		return nil, "", fmt.Errorf("download request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -208,7 +208,7 @@ func (a *EvolutionAdapter) DownloadAudio(messageID string, rawPayload []byte) ([
 
 	if resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("evolution download error (status %d): %s", resp.StatusCode, string(respBody))
+		return nil, "", fmt.Errorf("evolution download error (status %d): %s", resp.StatusCode, string(respBody))
 	}
 
 	var result struct {
@@ -218,26 +218,32 @@ func (a *EvolutionAdapter) DownloadAudio(messageID string, rawPayload []byte) ([
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("failed to decode base64 response: %w", err)
+		return nil, "", fmt.Errorf("failed to decode base64 response: %w", err)
 	}
 
 	if result.Data.Base64 == "" {
-		return nil, errors.New("evolution returned empty base64 for audio in data field")
+		return nil, "", errors.New("evolution returned empty base64 for audio in data field")
 	}
 
-	// Simple base64 decode - Strip Data URL prefix if exists
+	// Simple base64 decode - Strip Data URL prefix if exists and extract mimeType
 	base64Str := result.Data.Base64
+	mimeType := ""
 	if idx := strings.Index(base64Str, ","); idx != -1 {
+		prefix := base64Str[:idx] // e.g., "data:audio/ogg; codecs=opus;base64"
+		if strings.HasPrefix(prefix, "data:") {
+			parts := strings.Split(prefix[5:], ";")
+			mimeType = parts[0]
+		}
 		base64Str = base64Str[idx+1:]
 	}
 
 	data, err := base64.StdEncoding.DecodeString(base64Str)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode standard base64: %w", err)
+		return nil, "", fmt.Errorf("failed to decode base64 audio data: %w", err)
 	}
 
 	log.Printf("✅ [Evolution-Go] Áudio baixado com sucesso: %d bytes", len(data))
-	return data, nil
+	return data, mimeType, nil
 }
 
 // DownloadImage fetches the image file from Evolution API and decodes it.
