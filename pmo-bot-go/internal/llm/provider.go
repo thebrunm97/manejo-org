@@ -2,6 +2,21 @@
 // The LLMProvider interface is the single contract that all providers (Gemini,
 // OpenRouter, Anthropic, Local) must satisfy. Business logic NEVER imports
 // provider-specific SDKs — it depends only on this package.
+//
+// # Boundary Rule (ENFORCED BY CONVENTION, NOT COMPILER)
+//
+// This interface is used by the LEGACY FSM pipeline:
+//
+//	internal/state · internal/queue · internal/guardrails → import THIS package
+//
+// The NEW audio-routing domain (internal/domain) uses a separate, narrower interface:
+//
+//	internal/domain → imports internal/ports (ports.LLMProvider, ports.AudioTranscriber)
+//
+// DO NOT inject a llm.LLMProvider where a ports.LLMProvider is expected, or vice versa.
+// These interfaces serve different pipelines with different contracts.
+//
+// See also: internal/ports/ai_ports.go for the complementary boundary note.
 package llm
 
 import "context"

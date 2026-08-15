@@ -23,6 +23,12 @@
    - Testámos os modelos `Xenova/all-MiniLM-L6-v2` (Inglês) e `Xenova/paraphrase-multilingual-MiniLM-L12-v2` (Multilingue) - ambos com 384 dimensões.
    - **Conclusão Crítica:** Ambos os modelos open-source falharam redondamente ao dar match preciso em palavras-chave importantes no idioma Português (ex: "glifosato"). Comprovámos empiricamente que a decisão de manter os vetores originais do `gemini-embedding-2` (3072 dimensões) no Supabase é de facto a melhor e mais segura arquitetura para o projeto.
 
+5. **Refactoring do Pipeline de Áudio (MIME Type & Fallbacks)**
+   - Extração e propagação ponta-a-ponta do `audioMimeType` a partir dos adapters de WhatsApp até o LLM e Groq, corrigindo bugs silenciosos no parse de Data URIs.
+   - **Decisão Arquitetural (Interfaces):** A nova interface `ports.LLMProvider` coexiste intencionalmente com `llm.LLMProvider` (FSM legado). Ambas são para pipelines diferentes e a fronteira está documentada nos pacotes.
+   - **Decisão Arquitetural (Fallbacks):** Operamos com dois fallbacks independentes. O `LLMProviderAdapter` faz o fallback primário (Gemini→OpenRouter) opaco ao domínio. O `ProcessAudioMessage` decide o secundário (Gemini→Groq) baseado em erro técnico ou intent `"unclear"`.
+   - **Tech-Debt Assumido:** Os caminhos legados (`fsm.go`, `media_worker.go`) capturam a telemetria do MIME, mas **mantêm o bug antigo de filename hardcoded ("audio.ogg")** até serem efetivamente migrados para `domain.ProcessAudioMessage`.
+
 ---
 
 ## 🚀 Próximos Passos (Próxima Sessão):
