@@ -21,7 +21,7 @@
 4. **Laboratório de Embeddings (Open-Source vs Gemini)**
    - Construímos um script 100% offline em NodeJS (`scratch/benchmark_os_local.js`) utilizando `Transformers.js`.
    - Testámos os modelos `Xenova/all-MiniLM-L6-v2` (Inglês) e `Xenova/paraphrase-multilingual-MiniLM-L12-v2` (Multilingue) - ambos com 384 dimensões.
-   - **Conclusão Crítica:** Ambos os modelos open-source falharam redondamente ao dar match preciso em palavras-chave importantes no idioma Português (ex: "glifosato"). Comprovámos empiricamente que a decisão de manter os vetores originais do `gemini-embedding-2` (3072 dimensões) no Supabase é de facto a melhor e mais segura arquitetura para o projeto.
+   - **Conclusão Crítica:** Ambos os modelos open-source iniciais falharam ao dar match preciso em português. Inicialmente decidimos manter o `gemini-embedding-2` (3072d), mas **esta decisão foi superada**. Posteriormente, validamos e migramos para o BGE-M3 (1024d), que apresentou resultados superiores no top-1 e eliminou vendor lock-in (conforme detalhado no item 6 abaixo).
 
 5. **Refactoring do Pipeline de Áudio (MIME Type & Fallbacks)**
    - Extração e propagação ponta-a-ponta do `audioMimeType` a partir dos adapters de WhatsApp até o LLM e Groq, corrigindo bugs silenciosos no parse de Data URIs.
