@@ -3,6 +3,8 @@ package webhook
 import (
 	"context"
 	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"log"
@@ -567,11 +569,13 @@ func (h *Handler) processKnowledgePDF(path string, originalName string, pmoID in
 	}
 
 	jobs := make(chan job, totalChunks)
+	results := make(chan supabase.FarmDocument, totalChunks)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	var wg sync.WaitGroup
 	var processedCount int64
+	var failedCount int64
 
 	// Start Workers
 	for w := 1; w <= numWorkers; w++ {
@@ -593,45 +597,63 @@ func (h *Handler) processKnowledgePDF(path string, originalName string, pmoID in
 						continue
 					}
 
-					// Rate Limiting
-					if err := h.limiter.Wait(ctx); err != nil {
-						log.Printf("⚠️ [Worker-%d] Rate limiter error: %v", workerID, err)
-						cancel() // Fail-fast
-						return
-					}
-
-					// Generate Embedding
-					embedding, err := h.cfg.LLMClient.Embedder().GenerateEmbedding(chunk)
-					if err != nil {
-						log.Printf("⚠️ [Worker-%d] Erro ao gerar embedding para chunk %d: %v", workerID, j.index, err)
-						// Check if it's a rate limit error (simplified check)
-						if strings.Contains(err.Error(), "429") {
-							log.Printf("🚫 [Worker-%d] Rate limit hit (429). Retrying after brief pause...", workerID)
-							time.Sleep(2 * time.Second)
-							// Retry once or just log and continue
-							embedding, err = h.cfg.LLMClient.Embedder().GenerateEmbedding(chunk)
-							if err != nil {
-								log.Printf("❌ [Worker-%d] Retry failed for chunk %d: %v", workerID, j.index, err)
-								continue
+					// Wrap in a function to easily defer the progress update
+					func() {
+						defer func() {
+							newCount := atomic.AddInt64(&processedCount, 1)
+							// Update progress periodically or on completion
+							if jobID != "" && (newCount%5 == 0 || int(newCount) == totalChunks) {
+								h.cfg.SupabaseClient.UpdateJobProgress(jobID, int(newCount), totalChunks)
 							}
-						} else {
-							continue
+						}()
+
+						// Rate Limiting
+						if err := h.limiter.Wait(ctx); err != nil {
+							log.Printf("⚠️ [Worker-%d] Rate limiter error: %v", workerID, err)
+							cancel() // Fail-fast
+							return
 						}
-					}
 
-					// Insert into Supabase
-					err = h.cfg.SupabaseClient.InsertFarmDocument(pmoID, originalName, chunk, embedding)
-					if err != nil {
-						log.Printf("⚠️ [Worker-%d] Erro ao inserir chunk %d no Supabase: %v", workerID, j.index, err)
-						continue
-					}
+						// Generate Embedding
+						embedding, err := h.cfg.SupabaseClient.GetEmbedding(chunk, "BASE_CONHECIMENTO")
+						if err != nil {
+							log.Printf("⚠️ [Worker-%d] Erro ao gerar embedding para chunk %d: %v", workerID, j.index, err)
+							if strings.Contains(err.Error(), "429") {
+								log.Printf("🚫 [Worker-%d] Rate limit hit (429). Retrying after brief pause...", workerID)
+								time.Sleep(2 * time.Second)
+								embedding, err = h.cfg.SupabaseClient.GetEmbedding(chunk, "BASE_CONHECIMENTO")
+								if err != nil {
+									log.Printf("❌ [Worker-%d] Retry failed for chunk %d: %v", workerID, j.index, err)
+									atomic.AddInt64(&failedCount, 1)
+									return
+								}
+							} else {
+								atomic.AddInt64(&failedCount, 1)
+								return
+							}
+						}
 
-					newCount := atomic.AddInt64(&processedCount, 1)
+						// Create chunk hash (same logic as ingestor)
+						hasher := sha256.New()
+						hasher.Write([]byte(chunk))
+						chunkHash := hex.EncodeToString(hasher.Sum(nil))
 
-					// Update progress periodically or on completion
-					if jobID != "" && (newCount%5 == 0 || int(newCount) == totalChunks) {
-						h.cfg.SupabaseClient.UpdateJobProgress(jobID, int(newCount), totalChunks)
-					}
+						var pmoPtr *int64
+						if pmoID > 0 {
+							pmoPtr = &pmoID
+						}
+
+						doc := supabase.FarmDocument{
+							PmoID:         pmoPtr,
+							DocumentName:  originalName,
+							Content:       chunk,
+							Embedding1024: embedding,
+							ChunkHash:     chunkHash,
+							ChunkIndex:    j.index,
+						}
+
+						results <- doc
+					}()
 				}
 			}
 		}(w)
