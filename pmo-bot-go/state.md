@@ -29,6 +29,15 @@
    - **Decisão Arquitetural (Fallbacks):** Operamos com dois fallbacks independentes. O `LLMProviderAdapter` faz o fallback primário (Gemini→OpenRouter) opaco ao domínio. O `ProcessAudioMessage` decide o secundário (Gemini→Groq) baseado em erro técnico ou intent `"unclear"`.
    - **Tech-Debt Assumido:** Os caminhos legados (`fsm.go`, `media_worker.go`) capturam a telemetria do MIME, mas **mantêm o bug antigo de filename hardcoded ("audio.ogg")** até serem efetivamente migrados para `domain.ProcessAudioMessage`.
 
+6. **Correção do Bug de Embedding no RAG (Vetores 1024d BGE-M3 vs 3072d Gemini)**
+   - **Causa raiz identificada:** a migração de embeddings de Gemini (3072d) para BGE-M3 (1024d) — já validada anteriormente com um benchmark de 50 perguntas (BGE-M3: 86% hit-rate top-1 / 92% top-3; Gemini: 78% top-1 / 98% top-3, decisão pró-BGE-M3 pelo ganho no top-1 e eliminação de vendor lock-in) — ficou **incompleta em produção**: a busca (RPC `match_documents_with_context_1024`) já apontava para a coluna nova, mas o caminho de escrita em `internal/webhook/handler.go` (upload de PDF via WhatsApp) continuava gerando e gravando vetores antigos de 3072d via `InsertFarmDocument`. Resultado: **todo documento enviado pelo usuário desde a migração ficava invisível para o RAG**, silenciosamente, sem erro visível.
+   - **Correção aplicada:** `handler.go` agora usa `SupabaseClient.GetEmbedding` (BGE-M3 via OpenRouter) e `UpsertFarmDocumentChunks`, o mesmo caminho já usado por `cmd/ingestor`. O worker pool foi refatorado para fan-in batch (uma única chamada de upsert por documento, em vez de uma por chunk), com falhas parciais não abortando o documento inteiro e progresso reportado de forma incremental.
+   - **Backfill:** os 17 registros pré-existentes com `embedding_1024 IS NULL` foram reindexados via `cmd/reindex/main.go` e a busca via RPC foi verificada como funcional após a correção.
+   - **Código morto removido:** `cmd/knowledge_loader/main.go` (utilitário de ingestão legado, sem uso em CI/pipeline, ainda escrevendo na coluna 3072d antiga) foi excluído.
+   - **Pendências em aberto:**
+     - `internal/supabase/client.go`'s `InsertFarmDocument` continua existindo e só popula a coluna 3072d antiga — não há mais nenhum caminho de produção ativo chamando-o (confirmado via grep), mas o método em si não foi removido nem marcado como deprecated no código.
+     - A `service_role` key do Supabase foi exposta em texto plano múltiplas vezes durante a investigação (comandos de terminal). Rotação da chave foi conscientemente adiada — registrar aqui como decisão aceita, não esquecida.
+
 ---
 
 ## 🚀 Próximos Passos (Próxima Sessão):
