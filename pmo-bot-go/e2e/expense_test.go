@@ -32,8 +32,8 @@ func (m *MockMessageSender) SendMessage(to, message string) error {
 }
 func (m *MockMessageSender) SendVoice(to, base64Audio string, isPtt bool) error { return nil }
 func (m *MockMessageSender) SendReply(to, message, replyToMessageID string) error { return nil }
-func (m *MockMessageSender) DownloadAudio(messageID string, rawPayload []byte) ([]byte, error) {
-	return nil, nil
+func (m *MockMessageSender) DownloadAudio(messageID string, rawPayload []byte) ([]byte, string, error) {
+	return nil, "", nil
 }
 func (m *MockMessageSender) DownloadImage(messageID string, rawPayload []byte) ([]byte, string, error) {
 	return nil, "", nil

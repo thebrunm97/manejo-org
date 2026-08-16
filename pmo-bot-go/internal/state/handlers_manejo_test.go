@@ -59,7 +59,7 @@ func (m *mockSender) SendMessage(to, message string) error {
 func (m *mockSender) SendVoice(to, audio string, isPtt bool) error                    { return nil }
 func (m *mockSender) SendReply(to, msg, replyTo string) error                         { return nil }
 func (m *mockSender) SendPresence(ctx context.Context, to string, state string) error { return nil }
-func (m *mockSender) DownloadAudio(id string, raw []byte) ([]byte, error)             { return nil, nil }
+func (m *mockSender) DownloadAudio(id string, raw []byte) ([]byte, string, error)     { return nil, "", nil }
 func (m *mockSender) DownloadImage(id string, raw []byte) ([]byte, string, error) {
 	return nil, "", nil
 }

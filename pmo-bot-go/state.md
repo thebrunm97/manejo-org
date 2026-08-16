@@ -51,3 +51,10 @@
 
 3. **Otimização de Latência e UX:**
    - *Concluído:* Implementado o indicador de "digitando..." (Chat Presence) integrado à Evolution API, que mascara ativamente a latência das ferramentas de LLM e RAG.
+
+4. **Pendências Técnicas e de Segurança (RAG & Modelos):**
+   - Rotação da `service_role` key do Supabase (exposta várias vezes em texto plano ao longo da investigação do RAG).
+   - Decisão sobre `rag_ingest.py` / Docling: aposentar em favor do `cmd/ingestor` ou manter como pré-processador isolado.
+   - Painel "Knowledge Ops" (trancado atrás do admin dashboard): decidir se reabre o acesso para os produtores ou mantém exclusivamente administrativo.
+   - IDs de modelo desatualizados no `.env` (`GEMINI_MODEL`, `OpenRouter`): revisitar com base no histórico do "Model Shootout" (benchmark) antes de fixar um padrão definitivo.
+   - `InsertFarmDocument` (método legado do Supabase Client): continua no código sem nenhum chamador ativo — candidato forte a remoção/deprecação futura.

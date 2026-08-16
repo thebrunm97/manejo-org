@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
 	"strings"
 
 	"github.com/joho/godotenv"
+	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 )
 
@@ -56,7 +58,7 @@ func main() {
 	// Passo B: Recuperação RPC
 	fmt.Println("🔍 [2] Buscando no Supabase (RPC match_documents_with_context)...")
 	// Usamos pmoID = 0 (global) ou nil se possível. Count = 2, Window = 1.
-	matches, err := sbClient.MatchFarmDocumentsContext(0, embedding, 0.4, 2, 1)
+	matches, err := sbClient.MatchFarmDocumentsContext(999999, embedding, 0.4, 2, 1)
 	if err != nil {
 		log.Fatalf("❌ Falha na busca RPC: %v", err)
 	}
@@ -103,5 +105,43 @@ func main() {
 	fmt.Println("📜 CONTEXTO ENRIQUECIDO (PRONTO PARA ENVIO AO LLM):")
 	fmt.Println("=======================================================")
 	fmt.Println(sb.String())
+	fmt.Println("=======================================================")
+
+	// Passo E: Chamar o LLM de verdade via internal/gemini
+	fmt.Println("\n🧠 [4] Chamando o modelo LLM (gemini.LLMProviderAdapter.GenerateStructured)...")
+
+	geminiCfg := gemini.Config{
+		APIKey:        os.Getenv("GEMINI_API_KEY"),
+		Model:         os.Getenv("GEMINI_MODEL"),
+		FallbackModel: os.Getenv("GEMINI_FALLBACK_MODEL"),
+	}
+	if geminiCfg.Model == "" {
+		geminiCfg.Model = "gemini-2.0-flash"
+	}
+	
+	geminiClient, err := gemini.NewClient(geminiCfg)
+	if err != nil {
+		log.Fatalf("❌ Falha ao criar gemini.Client: %v", err)
+	}
+
+	adapter := gemini.NewLLMProviderAdapter(geminiClient)
+
+	// Schema para extração (forçando saída estruturada)
+	type VerificacaoSchema struct {
+		Codigo string `json:"codigo" jsonschema:"description=O código de verificação encontrado no documento"`
+	}
+
+	promptText := fmt.Sprintf("Contexto recuperado:\n%s\n\nResponda estritamente baseado no contexto a seguinte pergunta: %s", sb.String(), pergunta)
+
+	importContext := context.Background()
+	resultStr, modelUsed, err := adapter.GenerateStructured(importContext, promptText, nil, "", VerificacaoSchema{})
+	if err != nil {
+		log.Fatalf("❌ Falha na geração do LLM (adapter): %v", err)
+	}
+
+	fmt.Println("\n=======================================================")
+	fmt.Printf("🤖 RESPOSTA ESTRUTURADA DO MODELO (%s):\n", modelUsed)
+	fmt.Println("=======================================================")
+	fmt.Println(resultStr)
 	fmt.Println("=======================================================")
 }
