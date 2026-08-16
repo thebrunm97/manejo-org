@@ -569,7 +569,6 @@ func (h *Handler) processKnowledgePDF(path string, originalName string, pmoID in
 	}
 
 	jobs := make(chan job, totalChunks)
-	results := make(chan supabase.FarmDocument, totalChunks)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -652,7 +651,13 @@ func (h *Handler) processKnowledgePDF(path string, originalName string, pmoID in
 							ChunkIndex:    j.index,
 						}
 
-						results <- doc
+						// Insert directly into DB via upsert (dedup by chunk_hash)
+						if err := h.cfg.SupabaseClient.UpsertFarmDocumentChunks([]supabase.FarmDocument{doc}); err != nil {
+							log.Printf("⚠️ [Worker-%d] Erro ao inserir chunk %d no Supabase: %v", workerID, j.index, err)
+							atomic.AddInt64(&failedCount, 1)
+						} else {
+							log.Printf("✅ [Worker-%d] Chunk %d inserido com sucesso", workerID, j.index)
+						}
 					}()
 				}
 			}
