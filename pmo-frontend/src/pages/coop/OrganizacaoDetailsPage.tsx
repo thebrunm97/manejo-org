@@ -24,6 +24,7 @@ const OrganizacaoDetailsPage: React.FC = () => {
     const [availablePropriedades, setAvailablePropriedades] = useState<Propriedade[]>([]);
     const [propSearchTerm, setPropSearchTerm] = useState('');
     const [isLinking, setIsLinking] = useState(false);
+    const [propToUnlink, setPropToUnlink] = useState<number | null>(null);
 
     const loadData = async () => {
         if (!slug) return;
@@ -92,7 +93,7 @@ const OrganizacaoDetailsPage: React.FC = () => {
         setIsLinking(true);
         const res = await addMembro(organizacao.id, propId);
         if (res.success) {
-            toast.success('Produtor vinculado com sucesso!');
+            toast.success('Propriedade vinculada com sucesso!');
             setIsLinkingModalOpen(false);
             loadData();
         } else {
@@ -101,16 +102,21 @@ const OrganizacaoDetailsPage: React.FC = () => {
         setIsLinking(false);
     };
 
-    const handleUnlink = async (propId: number) => {
-        if (!organizacao || !window.confirm('Deseja realmente desvincular este produtor?')) return;
+    const confirmUnlink = (propId: number) => {
+        setPropToUnlink(propId);
+    };
+
+    const executeUnlink = async () => {
+        if (!organizacao || !propToUnlink) return;
         
-        const res = await removeMembro(organizacao.id, propId);
+        const res = await removeMembro(organizacao.id, propToUnlink);
         if (res.success) {
             toast.success('Vínculo removido');
             loadData();
         } else {
             toast.error('Erro ao desvincular');
         }
+        setPropToUnlink(null);
     };
 
     if (isLoading) {
@@ -178,7 +184,7 @@ const OrganizacaoDetailsPage: React.FC = () => {
                             className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-md"
                         >
                             <UserPlus className="w-5 h-5" />
-                            Vincular Produtor
+                            Vincular Propriedade
                         </button>
                 </div>
             </div>
@@ -187,9 +193,9 @@ const OrganizacaoDetailsPage: React.FC = () => {
             <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
                 <div className="p-6 border-b border-slate-100 flex items-center gap-3">
                     <Users className="w-6 h-6 text-emerald-600" />
-                    <h2 className="text-xl font-bold text-slate-800">Produtores Associados</h2>
+                    <h2 className="text-xl font-bold text-slate-800">Propriedades Associadas</h2>
                     <span className="bg-slate-100 text-slate-500 px-3 py-1 rounded-full text-xs font-bold">
-                        {membros.length} associados
+                        {membros.length} propriedades
                     </span>
                 </div>
 
@@ -198,7 +204,7 @@ const OrganizacaoDetailsPage: React.FC = () => {
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-slate-50">
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Produtor / Propriedade</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Propriedade</th>
                                     <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Dono</th>
                                     <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">Área Total</th>
                                     <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Ações</th>
@@ -229,9 +235,9 @@ const OrganizacaoDetailsPage: React.FC = () => {
                                             </td>
                                             <td className="px-6 py-5 text-right">
                                                 <button
-                                                    onClick={() => handleUnlink(membro.propriedade_id)}
+                                                    onClick={() => confirmUnlink(membro.propriedade_id)}
                                                     className="p-2.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                                                    title="Remover do grupo"
+                                                    title="Remover propriedade"
                                                 >
                                                     <Trash2 className="w-5 h-5" />
                                                 </button>
@@ -246,7 +252,7 @@ const OrganizacaoDetailsPage: React.FC = () => {
                             <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
                                 <Users className="w-10 h-10 text-slate-200" />
                             </div>
-                            <h3 className="text-xl font-bold text-slate-400 mb-2">Nenhum produtor vinculado</h3>
+                            <h3 className="text-xl font-bold text-slate-400 mb-2">Nenhuma propriedade vinculada</h3>
                             <button
                                 onClick={() => setIsLinkingModalOpen(true)}
                                 className="text-emerald-600 font-bold hover:underline"
@@ -265,7 +271,7 @@ const OrganizacaoDetailsPage: React.FC = () => {
                         <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                             <div>
                                 <h2 className="text-xl font-bold text-slate-800">Vincular Propriedade</h2>
-                                <p className="text-xs text-slate-400 uppercase tracking-tighter font-bold">Base de Produtores Disponíveis</p>
+                                <p className="text-xs text-slate-400 uppercase tracking-tighter font-bold">Base de Propriedades Disponíveis</p>
                             </div>
                             <button onClick={() => setIsLinkingModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
                                 <Plus className="w-6 h-6 rotate-45" />
@@ -320,6 +326,33 @@ const OrganizacaoDetailsPage: React.FC = () => {
                                 className="px-6 py-2 text-slate-500 font-bold"
                             >
                                 Fechar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Confirmação de Desvínculo */}
+            {propToUnlink !== null && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center scale-in-center">
+                        <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Trash2 className="w-8 h-8 text-red-500" />
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-800 mb-2">Desvincular Propriedade</h3>
+                        <p className="text-slate-500 mb-6 text-sm">Deseja realmente desvincular esta propriedade da organização? Esta ação pode ser desfeita vinculando-a novamente depois.</p>
+                        <div className="flex gap-3 justify-center">
+                            <button
+                                onClick={() => setPropToUnlink(null)}
+                                className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors w-full"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={executeUnlink}
+                                className="px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-colors w-full"
+                            >
+                                Desvincular
                             </button>
                         </div>
                     </div>
