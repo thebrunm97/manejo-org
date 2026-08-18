@@ -20,21 +20,35 @@ export const createLoteRastreabilidade = async (loteData: Partial<LoteRastreabil
     const randomStr = Math.random().toString(36).substring(2, 5).toUpperCase();
     const codigoLote = loteData.codigo_lote || `LOT-${timestamp}-${randomStr}`;
 
-    const { data, error } = await supabase
-        .from('lotes_rastreabilidade')
-        .insert([{
-            ...loteData,
-            codigo_lote: codigoLote
-        }])
-        .select()
-        .single();
+    const { data: res, error } = await supabase.rpc('rpc_insert_lote_rastreabilidade', {
+        p_codigo_lote: codigoLote,
+        p_caderno_campo_id: loteData.caderno_campo_id || null,
+        p_propriedade_id: loteData.propriedade_id,
+        p_cultura: loteData.cultura,
+        p_data_colheita: loteData.data_colheita,
+        p_quantidade: loteData.quantidade,
+        p_qr_code_url: loteData.qr_code_url || null
+    });
 
-    if (error) {
-        console.error('Error creating traceability lot:', error);
+    if (error || !res) {
+        console.error('Error executing traceability RPC:', error);
         return null;
     }
 
-    return data as LoteRastreabilidade;
+    if (res.status === 'error') {
+        console.error('RPC Business Error:', res.message, res.code);
+        // O ideal é a UI tratar ERR_DUPLICATE e tentar novamente, mas
+        // por segurança retornamos null para abortar como o antigo erro de DB fazia.
+        return null;
+    }
+
+    // A RPC retorna apenas os campos base para economizar,
+    // nós montamos o objeto retornado juntando o loteData original
+    return {
+        ...loteData,
+        id: res.data.id,
+        codigo_lote: res.data.codigo_lote
+    } as LoteRastreabilidade;
 };
 
 export const getLoteByCadernoId = async (cadernoId: string): Promise<LoteRastreabilidade | null> => {
