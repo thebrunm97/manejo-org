@@ -37,7 +37,11 @@ export default defineConfig({
     projects: [
         {
             name: 'chromium',
-            use: { ...devices['Desktop Chrome'] },
+            use: { 
+                ...devices['Desktop Chrome'],
+                // workaround: CDN do Playwright 1.57.0 indisponível para win32, ver DT-18/Browser fallback
+                channel: process.env.CI ? undefined : 'chrome' 
+            },
         },
     ],
 
