@@ -11,7 +11,7 @@ import {
     RefreshCw
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
-import { formatarDataRelativa } from '../../utils/formatters';
+import { formatarDataRelativa, formatarHoraMensagem } from '../../utils/formatters';
 
 // --- Interfaces ---
 interface Message {
@@ -428,7 +428,7 @@ export const LiveChatMonitor: React.FC = () => {
                                                     )}
                                                     <span className="text-[9px] text-slate-400 font-bold flex items-center gap-0.5">
                                                         <Clock size={8} />
-                                                        {new Date(msg.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                                        {formatarHoraMensagem(msg.timestamp)}
                                                     </span>
                                                 </div>
 

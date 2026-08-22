@@ -194,3 +194,32 @@ export const formatComplianceMessage = (text: string | null | undefined): string
     // Garante primeira letra maiúscula
     return d.charAt(0).toUpperCase() + d.slice(1);
 };
+
+/**
+ * Formata a hora de uma mensagem do Monitor ao Vivo.
+ *
+ * Existe por causa do DT-39: a coluna `timestamp` de `messages` nunca era
+ * preenchida, e o código anterior fazia `new Date(msg.timestamp)` direto. Com
+ * NULL isso vira epoch (1970-01-01T00:00Z), que renderizado em UTC-3 exibia
+ * **21:00 em toda mensagem** — uma hora fabricada, com aparência de real.
+ *
+ * Num painel cuja finalidade é servir de trilha de auditoria para certificação
+ * orgânica, exibir hora inventada é pior do que admitir que ela falta. Por isso
+ * o retorno para valor ausente ou inválido é explícito, e não um horário
+ * plausível.
+ *
+ * As linhas históricas seguem sem hora de propósito: a migration que corrigiu a
+ * coluna deliberadamente não as preencheu, para não fabricar dado de auditoria.
+ */
+export const formatarHoraMensagem = (timestamp: string | null | undefined): string => {
+    if (!timestamp) return '--:--';
+
+    const d = new Date(timestamp);
+    if (isNaN(d.getTime())) return '--:--';
+
+    // Datas próximas ao epoch indicam valor ausente que escapou como 0/vazio,
+    // não uma mensagem real de 1970.
+    if (d.getUTCFullYear() < 2000) return '--:--';
+
+    return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+};

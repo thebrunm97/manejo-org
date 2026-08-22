@@ -135,10 +135,18 @@ type LogConsumoInsert struct {
 	Meta             map[string]interface{} `json:"meta,omitempty"`
 }
 
+// MessageInsert é uma mensagem da trilha de conversa exibida no Monitor ao Vivo.
+//
+// Timestamp é preenchido automaticamente por InsertMessage quando vazio. Ele
+// existe como campo explícito — em vez de depender só do DEFAULT do banco —
+// porque o instante que importa para auditoria é o do evento, não o do INSERT:
+// a gravação acontece numa goroutine assíncrona e pode atrasar segundos em
+// relação à mensagem real.
 type MessageInsert struct {
-	Phone   string `json:"phone"`
-	Content string `json:"content"`
-	Role    string `json:"role"`
+	Phone     string `json:"phone"`
+	Content   string `json:"content"`
+	Role      string `json:"role"`
+	Timestamp string `json:"timestamp,omitempty"`
 }
 
 type IngestionJob struct {
@@ -1060,6 +1068,14 @@ func (c *Client) InsertLogConsumo(logData LogConsumoInsert) error {
 
 // InsertMessage saves a message interaction to the messages table.
 func (c *Client) InsertMessage(ctx context.Context, msg MessageInsert) error {
+	// Sem isto a coluna ficava NULL — era a causa do DT-39: o Monitor ao Vivo
+	// exibia 21:00 em toda mensagem (epoch renderizado em UTC-3) e, pior,
+	// ordenava a conversa por uma coluna toda nula, deixando a sequência
+	// indefinida numa tela cujo propósito é auditoria.
+	if msg.Timestamp == "" {
+		msg.Timestamp = time.Now().UTC().Format(time.RFC3339)
+	}
+
 	reqURL := fmt.Sprintf("%s/rest/v1/messages", c.config.URL)
 	payload, err := json.Marshal(msg)
 	if err != nil {
