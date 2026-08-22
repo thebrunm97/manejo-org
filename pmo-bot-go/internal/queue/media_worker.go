@@ -25,12 +25,29 @@ import (
 )
 
 // MediaWorkerConfig contém as dependências do Media Worker.
+// AudioArchiver arquiva a gravação bruta no Cofre de Auditoria Efêmero.
+//
+// Recebe o TELEFONE, e não o profile_id, de propósito: resolver um no outro
+// exigiria dar ao worker de mídia um cliente de banco e conhecimento sobre
+// perfis, coisas que ele não tem e não precisa ter. A implementação faz a
+// resolução e chama domain.SaveAudioToEphemeralVault.
+//
+// Um valor nil é contrato válido e significa "cofre desativado" — o áudio segue
+// sendo transcrito e descartado normalmente.
+type AudioArchiver interface {
+	ArchiveAudio(ctx context.Context, phone string, audio []byte, intent string) error
+}
+
 type MediaWorkerConfig struct {
 	Queue        *Manager
 	WhatsApp     ports.MessageSender
 	Groq         *groq.Client
 	LLM          llm.LLMProvider
 	PollInterval time.Duration // Default: 500ms
+
+	// AudioVault guarda a gravação por 90 dias para não-repúdio (DT-42).
+	// Opcional: nil desativa o arquivamento sem afetar o resto do fluxo.
+	AudioVault AudioArchiver
 }
 
 // MediaWorker processa a camada de mídia (download + transcrição).
@@ -179,6 +196,35 @@ func (w *MediaWorker) processAudio(ctx context.Context, msg ports.IncomingMessag
 	if cleanText == "" {
 		return "", true, fmt.Errorf("audio_transcription_empty")
 	}
+
+	// Cofre de Auditoria Efêmero (DT-42).
+	//
+	// Arquiva AQUI, logo após a transcrição, para que os bytes brutos vivam o
+	// mínimo possível em memória: é o único ponto do fluxo onde eles existem, e
+	// quanto antes saírem daqui, menor a superfície da biometria vocal.
+	//
+	// O arquivamento é best-effort DE PROPÓSITO. Se o cofre falhar, o registro
+	// do produtor ainda precisa ser criado — perder o caderno de campo por
+	// causa da cópia de auditoria seria inverter as prioridades. Mas a falha é
+	// registrada em nível alto, porque significa que aquele registro específico
+	// ficou SEM prova de não-repúdio, e isso não pode passar silencioso.
+	//
+	// final_intent vai vazio: a intenção só é decidida adiante, pelo roteador.
+	// A coluna é anulável justamente para permitir esse preenchimento posterior.
+	if w.cfg.AudioVault != nil {
+		if err := w.cfg.AudioVault.ArchiveAudio(audioCtx, msg.From, audioData, ""); err != nil {
+			log.Printf("🚨 [MediaWorker] Áudio NÃO arquivado no cofre (msg=%s): %v — este registro ficará sem prova de não-repúdio", msg.ID, err)
+		}
+	}
+
+	// Descarte explícito da gravação bruta.
+	//
+	// Redundante para o coletor de lixo, que liberaria audioData ao fim da
+	// função de qualquer forma. Está aqui como declaração de intenção: nenhum
+	// caminho abaixo deste ponto deve voltar a tocar no áudio original, e
+	// qualquer código futuro que tente fazê-lo encontra nil em vez de bytes.
+	audioData = nil
+	_ = audioData
 
 	return cleanText, ports.ResolveResponseMode(msg), nil
 }
