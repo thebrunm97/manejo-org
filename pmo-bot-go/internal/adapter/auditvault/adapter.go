@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/domain"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
@@ -91,4 +92,38 @@ func (a *Adapter) InsertAuditRecord(ctx context.Context, rec domain.AuditRecord)
 var (
 	_ domain.AudioVaultStorage    = (*Adapter)(nil)
 	_ domain.AuditVaultRepository = (*Adapter)(nil)
+	_ domain.AuditVaultPurger     = (*Adapter)(nil)
 )
+
+// bucketAuditVault é o mesmo bucket privado usado no upload — mantido próximo
+// ao Purger para que expurgo e escrita nunca apontem para buckets diferentes.
+const bucketAuditVault = "audit-vault"
+
+// ListExpiredAuditRecords implementa domain.AuditVaultPurger.
+func (a *Adapter) ListExpiredAuditRecords(ctx context.Context, agora time.Time) ([]domain.AuditRecord, error) {
+	rows, err := a.client.ListExpiredAuditVaultRows(ctx, agora)
+	if err != nil {
+		return nil, fmt.Errorf("cofre de auditoria: listar vencidos: %w", err)
+	}
+
+	recs := make([]domain.AuditRecord, 0, len(rows))
+	for _, r := range rows {
+		recs = append(recs, domain.AuditRecord{
+			ProfileID:   r.ProfileID,
+			StoragePath: r.StoragePath,
+			CreatedAt:   r.CreatedAt,
+			ExpiresAt:   r.ExpiresAt,
+		})
+	}
+	return recs, nil
+}
+
+// DeleteAuditObject implementa domain.AuditVaultPurger.
+func (a *Adapter) DeleteAuditObject(ctx context.Context, storagePath string) error {
+	return a.client.DeleteStorageFile(ctx, bucketAuditVault, storagePath)
+}
+
+// DeleteAuditRecord implementa domain.AuditVaultPurger.
+func (a *Adapter) DeleteAuditRecord(ctx context.Context, storagePath string) error {
+	return a.client.DeleteAuditVaultRow(ctx, storagePath)
+}

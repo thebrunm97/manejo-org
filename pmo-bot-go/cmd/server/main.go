@@ -23,6 +23,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/adapter/embedcache"
 	"github.com/thebrunm97/pmo-bot-go/internal/adapter/evolution"
 	"github.com/thebrunm97/pmo-bot-go/internal/config"
+	"github.com/thebrunm97/pmo-bot-go/internal/domain"
 	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
 	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
@@ -253,8 +254,30 @@ func main() {
 	// o áudio segue sendo transcrito e descartado, sem cópia de auditoria.
 	var auditVault queue.AudioArchiver
 	if sbClient != nil {
-		auditVault = auditvault.New(sbClient)
+		vaultAdapter := auditvault.New(sbClient)
+		auditVault = vaultAdapter
 		log.Println("🔐 [Cofre] Auditoria Efêmera ativa — retenção de 90 dias em bucket privado")
+
+		// Triturador do cofre (expurgo de registros vencidos).
+		//
+		// Ticker em Go, não pg_cron: decisão do time porque o destino final é
+		// uma VPS 24/7 rodando o próprio binário, e a regra de exclusão deve
+		// ficar tipada e centralizada no repositório, não em SQL agendado fora
+		// do controle de versão do código.
+		//
+		// Intervalo configurável via AUDIT_GC_INTERVAL (ex: "1h" em teste),
+		// default 24h em produção — sem isso, validar o expurgo exigiria
+		// esperar um dia inteiro.
+		gcInterval := 24 * time.Hour
+		if v := os.Getenv("AUDIT_GC_INTERVAL"); v != "" {
+			if parsed, err := time.ParseDuration(v); err == nil {
+				gcInterval = parsed
+			} else {
+				log.Printf("⚠️ [Cofre-GC] AUDIT_GC_INTERVAL=%q inválido, usando default de 24h: %v", v, err)
+			}
+		}
+		gcTicker := domain.NewAuditGCTicker(vaultAdapter, gcInterval)
+		go gcTicker.Run(context.Background())
 	} else {
 		log.Println("⚠️ [Cofre] Desativado (sem cliente Supabase) — áudios não terão prova de não-repúdio")
 	}
