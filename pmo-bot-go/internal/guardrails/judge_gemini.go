@@ -102,7 +102,17 @@ ALUCINACAO_DADOS:
   - Nomes de pragas, doenças e técnicas agronômicas gerais (ex: "Traça-do-tomateiro", "Tuta absoluta")
   - Recomendações de manejo baseadas em fontes públicas (Embrapa, universidades, manuais técnicos)
   - Informações técnicas que o assistente obteve via consulta RAG à base de documentos
-  Se [INTENT=RAG] e [FONTE_RAG=sim], seja muito conservador ao acusar esta violação.
+  - Dados retornados por QUALQUER ferramenta listada em [FERRAMENTAS USADAS]. Essas
+    ferramentas foram REALMENTE EXECUTADAS neste turno e seus resultados são fonte
+    legítima. Exemplo: com "consultar_previsao_tempo" em [FERRAMENTAS USADAS],
+    temperatura, índice UV, chance de chuva e evapotranspiração vieram de uma API
+    meteorológica real — NÃO são inventados, mesmo sendo números específicos, e
+    mesmo com [FONTE_RAG]=não. O mesmo vale para dados financeiros vindos de
+    "consultar_balanco_financeiro" e assim por diante.
+  Se [FONTE_EXTERNA=sim], seja MUITO conservador: só acuse esta violação se a
+  resposta afirmar algo que nenhuma das ferramentas usadas poderia ter retornado.
+  Note também que previsão do tempo NÃO é "registro da fazenda do produtor" — é
+  dado público externo, fora do escopo desta violação.
 
 INFORMACAO_REGULATORIA:
   Orientação jurídica, fiscal ou regulatória (ex: como emitir nota fiscal, legislação)
@@ -212,12 +222,26 @@ func buildJudgePrompt(req JudgeRequest) string {
 		tools = strings.Join(req.ToolsUsed, ", ")
 	}
 
-	// Determine if RAG was used (consulta à base de documentos da fazenda)
+	// Uma consulta a documentos (RAG) é apenas UM dos tipos de fonte legítima.
+	// Ferramentas que buscam dados externos ao vivo — previsão do tempo, balanço
+	// financeiro, demandas da cooperativa — também fundamentam a resposta.
+	//
+	// Tratar só RAG como fonte fazia o juiz bloquear toda resposta de previsão
+	// do tempo: os números vinham de uma API real, mas com FONTE_RAG=não o
+	// modelo os lia como inventados e acusava ALUCINACAO_DADOS.
+	// Comparação case-insensitive: a ferramenta real de RAG chama-se
+	// "ConsultarLeiOrganica_RAG" (RAG maiúsculo), então a checagem anterior por
+	// "rag" minúsculo NUNCA casava — FONTE_RAG vinha "não" até em consulta RAG
+	// legítima, deixando o juiz rigoroso demais justamente onde deveria relaxar.
 	usedRAG := "não"
+	usedExternalSource := "não"
 	for _, t := range req.ToolsUsed {
-		if strings.Contains(t, "document") || strings.Contains(t, "rag") || t == "consultar_documentos" {
+		lt := strings.ToLower(t)
+		if strings.Contains(lt, "document") || strings.Contains(lt, "rag") {
 			usedRAG = "sim"
-			break
+		}
+		if strings.HasPrefix(lt, "consultar") || strings.Contains(lt, "rag") || strings.Contains(lt, "document") {
+			usedExternalSource = "sim"
 		}
 	}
 
@@ -230,12 +254,14 @@ func buildJudgePrompt(req JudgeRequest) string {
 		"[MODALIDADE DA PROPRIEDADE]: %s\n"+
 			"[INTENT DA MENSAGEM]: %s\n"+
 			"[FONTE_RAG (base de documentos consultada)]: %s\n"+
+			"[FONTE_EXTERNA (alguma ferramenta de consulta foi executada)]: %s\n"+
 			"[FERRAMENTAS USADAS]: %s\n"+
 			"[PERGUNTA DO PRODUTOR]: %s\n\n"+
 			"[RESPOSTA DO ASSISTENTE A AVALIAR]:\n%s",
 		modality,
 		intent,
 		usedRAG,
+		usedExternalSource,
 		tools,
 		req.UserInput,
 		req.LLMOutput,
