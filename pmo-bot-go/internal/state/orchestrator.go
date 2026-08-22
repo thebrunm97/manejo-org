@@ -78,14 +78,29 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 	}
 
 	if len(tools) == 0 || strings.Contains(systemPrompt, "CHAT") {
+		// Este atalho envia ZERO ferramentas — é o grupo de controle natural da
+		// hipótese do DT-37 (a carga das definições causa os timeouts?). Sem
+		// instrumentá-lo, a amostra ficaria enviesada: só apareceriam as chamadas
+		// pesadas, e não haveria com o que comparar.
+		reqBytes := approxRequestBytes(sysInst, history, nil)
+
+		startCall := time.Now()
 		resp, err := o.LLM.GenerateContent(ctx, llm.ContentRequest{
 			SystemInstruction: sysInst,
 			History:           history,
 			Tools:             nil,
 		})
+		latency := time.Since(startCall)
+
 		if err != nil {
+			log.Printf("telemetry event=llm_call status=erro turno=0 modelo=%s latency_ms=%d req_bytes=%d ferramentas=0 msgs_historico=%d erro=%q",
+				o.LLM.ModelName(), latency.Milliseconds(), reqBytes, len(history), err.Error())
 			return "", history, trace, usage, effectiveModel, err
 		}
+
+		log.Printf("telemetry event=llm_call status=ok turno=0 modelo=%s latency_ms=%d req_bytes=%d ferramentas=0 msgs_historico=%d input_tokens=%d output_tokens=%d tool_calls=0",
+			resp.Model, latency.Milliseconds(), reqBytes, len(history),
+			resp.Usage.PromptTokens, resp.Usage.CandidatesTokens)
 
 		usage.PromptTokens += resp.Usage.PromptTokens
 		usage.CandidatesTokens += resp.Usage.CandidatesTokens
@@ -119,6 +134,13 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 
 	seenToolCounts := make(map[string]int)
 
+	// DT-37 — sem saber QUAIS ferramentas cada intent realmente usa, apertar o
+	// filtro de `GetToolsForIntent` seria chute: se o roteador classificar
+	// "registra 10kg de tomate" como RAG e RAG tiver perdido as ferramentas de
+	// escrita, o registro falha silenciosamente. Esta linha monta a matriz
+	// intent × ferramenta a partir do uso real, para o corte ser feito com dado.
+	loopIntent := intentFromSystemPrompt(systemPrompt)
+
 	for i := 0; i < 3; i++ {
 		if o.WhatsApp != nil {
 			go o.WhatsApp.SendPresence(ctx, o.Phone, "composing")
@@ -133,18 +155,33 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 			currentHistory = promptManager.BuildTurnHistory(history)
 		}
 
+		// DT-33 — dimensiona a requisição ANTES de enviá-la. Sem isto só se
+		// enxerga o sintoma ("timeout") e não a carga que o provocou; medido em
+		// bancada, só as definições de ferramentas somam ~29KB (~7,4k tokens).
+		reqBytes := approxRequestBytes(sysInst, currentHistory, tools)
+
+		startCall := time.Now()
 		resp, err := o.LLM.GenerateContent(turnCtx, llm.ContentRequest{
 			SystemInstruction: sysInst,
 			History:           currentHistory,
 			Tools:             tools,
 		})
+		latency := time.Since(startCall)
 
 		if err != nil {
 			turnCancel()
+			// Linha agregável: permite responder "os timeouts se concentram em
+			// quais tamanhos de payload?" sem reler log a log.
+			log.Printf("telemetry event=llm_call status=erro turno=%d modelo=%s latency_ms=%d req_bytes=%d ferramentas=%d msgs_historico=%d erro=%q",
+				i+1, o.LLM.ModelName(), latency.Milliseconds(), reqBytes, len(tools), len(currentHistory), err.Error())
 			log.Printf("❌ [CRITICAL ORCHESTRATOR ERROR]: Turno %d — provider failed: %v", i+1, err)
 			return "", history, trace, usage, effectiveModel, fmt.Errorf("turno %d — provider failed: %w", i+1, err)
 		}
 		turnCancel()
+
+		log.Printf("telemetry event=llm_call status=ok turno=%d modelo=%s latency_ms=%d req_bytes=%d ferramentas=%d msgs_historico=%d input_tokens=%d output_tokens=%d tool_calls=%d",
+			i+1, resp.Model, latency.Milliseconds(), reqBytes, len(tools), len(currentHistory),
+			resp.Usage.PromptTokens, resp.Usage.CandidatesTokens, len(resp.ToolCalls))
 
 		usage.PromptTokens += resp.Usage.PromptTokens
 		usage.CandidatesTokens += resp.Usage.CandidatesTokens
@@ -173,14 +210,11 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 			finalTexto = sanitizeResponse(finalTexto)
 
 			if finalTexto != "" && o.OutputJudge != nil {
-				judgeIntent := ""
-				switch {
-				case strings.Contains(systemPrompt, "RAG") || strings.Contains(systemPrompt, "duvida"):
-					judgeIntent = "RAG"
-				case strings.Contains(systemPrompt, "DATABASE") || strings.Contains(systemPrompt, "registro"):
-					judgeIntent = "DATABASE"
-				case strings.Contains(systemPrompt, "FINANCE") || strings.Contains(systemPrompt, "financeiro"):
-					judgeIntent = "FINANCE"
+				// Mesma derivação usada pela telemetria (loopIntent): manter as
+				// duas cópias em sincronia era convite a divergência silenciosa.
+				judgeIntent := loopIntent
+				if judgeIntent == intentDesconhecido {
+					judgeIntent = ""
 				}
 
 				if judgeIntent == "" {
@@ -207,6 +241,8 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 
 		for _, tc := range resp.ToolCalls {
 			usedTools = append(usedTools, tc.Nome)
+			log.Printf("telemetry event=tool_invoked intent=%s tool=%s turno=%d ferramentas_ofertadas=%d",
+				loopIntent, tc.Nome, i+1, len(tools))
 			trace = append(trace, TraceEvent{
 				Action:   "tool_call",
 				Tool:     tc.Nome,
@@ -463,4 +499,49 @@ func getFallbackTools(tools []mcp.Tool) []mcp.Tool {
 		}
 	}
 	return fallback
+}
+
+// approxRequestBytes estima o tamanho da requisição enviada ao LLM.
+//
+// Aproximação deliberada: serializa o que domina o payload (instrução de
+// sistema, histórico e definições de ferramentas) sem replicar a conversão
+// específica de cada provider. Serve para correlacionar carga com latência e
+// timeout — ordem de grandeza, não cobrança.
+func approxRequestBytes(sysInst string, history []llm.MensagemAgnostica, tools []llm.FerramentaAgnostica) int {
+	total := len(sysInst)
+
+	for _, m := range history {
+		total += len(m.Content)
+		for _, tc := range m.ToolCalls {
+			total += len(tc.Nome) + len(tc.Args)
+		}
+	}
+
+	if raw, err := json.Marshal(tools); err == nil {
+		total += len(raw)
+	}
+
+	return total
+}
+
+// intentDesconhecido marca conversas sem intent operacional (CHAT ou não
+// classificado) — nesses casos o Output Judge é pulado.
+const intentDesconhecido = "CHAT_OU_DESCONHECIDO"
+
+// intentFromSystemPrompt deriva o intent a partir do prompt de sistema em uso.
+//
+// Reproduz a mesma heurística já aplicada ao Output Judge, extraída para poder
+// ser usada também na telemetria — sem ela, os eventos de uso de ferramenta não
+// teriam como ser agrupados por intent.
+func intentFromSystemPrompt(systemPrompt string) string {
+	switch {
+	case strings.Contains(systemPrompt, "RAG") || strings.Contains(systemPrompt, "duvida"):
+		return "RAG"
+	case strings.Contains(systemPrompt, "DATABASE") || strings.Contains(systemPrompt, "registro"):
+		return "DATABASE"
+	case strings.Contains(systemPrompt, "FINANCE") || strings.Contains(systemPrompt, "financeiro"):
+		return "FINANCE"
+	default:
+		return intentDesconhecido
+	}
 }

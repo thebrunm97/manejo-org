@@ -14,7 +14,12 @@ import (
 // CalcularAdubacaoDef is the agnostic definition for the agronomic calculation tool.
 var CalcularAdubacaoDef = llm.FerramentaAgnostica{
 	Name:        "calcular_recomendacao_adubacao",
-	Description: "Calcula a dose recomendada de adubo orgânico (NPK) baseada na cultura, meta de produtividade e adubo disponível. Use esta ferramenta sempre que o usuário pedir recomendações de adubação ou quiser saber quanto de adubo usar. # 7. NO TECHNICAL IDs: NUNCA mostre IDs de transação ou UUIDs. No entanto, para registros de *COLHEITA*, você DEVE obrigatoriamente informar o Lote gerado (Rastreabilidade) ao final da confirmação (ex: Lote: COL-20260415-TOM-123).\n# 8. EXTRAÇÃO DE CONTEXTO: Sempre que usar ferramentas de registro (colheita, venda, manejo, limpeza, etc.), você DEVE extrair o `propriedade_id` do cabeçalho de contexto injetado no sistema e enviá-lo como argumento obrigatório.\n# 9. LÓGICA DE ÁREA TOTAL: Se o usuário utilizar termos como \"área total\", \"toda a gleba\", \"gleba inteira\", \"tudo\" ou \"na gleba toda\" ao se referir a um local, você DEVE acrescentar o sufixo \" - Área Total\" ao nome do talhão/gleba no argumento da ferramenta (ex: \"Gleba 1 - Área Total\").",
+	// Regras gerais de comportamento do agente (IDs técnicos, extração de
+	// propriedade_id, lógica de "área total") vivem no system prompt — ver
+	// prompts/system_prompt.md e prompts/agronomist.md. Estavam duplicadas aqui
+	// por engano, o que inflava o payload de TODA chamada e misturava instrução
+	// global com a descrição de uma ferramenta específica.
+	Description: "Calcula a dose recomendada de adubo orgânico (NPK) baseada na cultura, meta de produtividade e adubo disponível. Use esta ferramenta sempre que o usuário pedir recomendações de adubação ou quiser saber quanto de adubo usar.",
 	Parameters: map[string]interface{}{
 		"type": "object",
 		"properties": map[string]interface{}{
