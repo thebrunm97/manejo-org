@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { formatDateBR, formatComplianceMessage } from '../../utils/formatters';
 import { CadernoCampoRecord, DetalhesColheita, DetalhesManejo, DetalhesPlantio } from '../../types/CadernoTypes';
+import { SignedAudioPlayer } from '../shared/SignedAudioPlayer';
 
 export interface RecordDetailsDialogProps {
     open: boolean;
@@ -251,11 +252,9 @@ const RecordDetailsDialog: React.FC<RecordDetailsDialogProps> = ({ open, onClose
                                 <Mic className="w-3.5 h-3.5 text-green-600" /> Prova de Auditoria (Áudio)
                             </h4>
                             <div className="p-3 bg-green-50/50 border border-green-100 rounded-lg flex flex-col gap-2">
-                                <audio
-                                    controls
-                                    src={record.audio_url}
+                                <SignedAudioPlayer
+                                    source={record.audio_url}
                                     className="w-full h-8"
-                                    preload="metadata"
                                 />
                                 <p className="text-[10px] text-green-700 italic font-medium opacity-75">
                                     Transcrição automática via WhatsApp Gateway

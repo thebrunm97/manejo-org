@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { cn } from '../../utils/cn';
+import { SignedAudioPlayer } from '../shared/SignedAudioPlayer';
 
 export interface LogData {
     id: string;
@@ -277,9 +278,8 @@ const LogDetailsDialog: React.FC<LogDetailsDialogProps> = ({ open, onClose, log 
                                             </div>
                                             <span className="text-[9px] font-black text-agro-ouro/50 uppercase tracking-widest">WhatsApp Message</span>
                                         </div>
-                                        <audio
-                                            controls
-                                            src={audioUrl}
+                                        <SignedAudioPlayer
+                                            source={audioUrl}
                                             className="w-full h-12 rounded-xl"
                                         />
                                         <p className="text-[10px] text-agro-floresta/40 italic font-medium leading-relaxed">

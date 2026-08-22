@@ -17,6 +17,7 @@ import {
 import { FieldDiaryFilters } from '../hooks/useFieldDiary';
 import { formatDateBR, formatComplianceMessage } from '../utils/formatters';
 import { AlertTriangle } from 'lucide-react'; // Already used
+import { SignedAudioPlayer } from './shared/SignedAudioPlayer';
 
 interface FieldDiaryTableV2Props {
     // Data (Prefiltered & Paginated)
@@ -489,7 +490,7 @@ const FieldDiaryTableV2: React.FC<FieldDiaryTableV2Props> = ({
                                             </td>
                                             <td className="px-4 py-3">
                                                 {reg.audio_url ? (
-                                                    <audio controls src={reg.audio_url} preload="metadata" style={{ height: '32px', maxWidth: '180px', width: '100%' }} />
+                                                    <SignedAudioPlayer source={reg.audio_url} style={{ height: '32px', maxWidth: '180px', width: '100%' }} />
                                                 ) : (
                                                     <span className="text-sm text-gray-300">—</span>
                                                 )}
