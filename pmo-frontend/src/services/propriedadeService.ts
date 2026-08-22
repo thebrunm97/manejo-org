@@ -55,10 +55,9 @@ export const updatePropriedade = async (id: number, updates: Partial<Propriedade
 
 export const updateActivePropriedade = async (userId: string, propriedadeId: number | null) => {
     try {
-        const { error } = await supabase
-            .from('profiles')
-            .update({ propriedade_ativa_id: propriedadeId })
-            .eq('id', userId);
+        const { error } = await supabase.rpc('update_profile', {
+            p_updates: { propriedade_ativa_id: propriedadeId }
+        });
 
         if (error) throw error;
         return { success: true };

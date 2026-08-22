@@ -86,15 +86,14 @@ const MuralDemandas: React.FC = () => {
 
         setOfertando(true);
         try {
-            const { error } = await supabase
-                .from('demandas_intencoes')
-                .insert([{
+            const { error } = await supabase.rpc('create_demanda_intencao', {
+                p_payload: {
                     demanda_id: selectedDemanda.id,
                     propriedade_id: currentPropriedade.id,
-                    user_id: profile.id,
                     volume_ofertado: parsedVolume,
                     status_intencao: 'pendente'
-                }]);
+                }
+            });
 
             if (error) throw error;
 

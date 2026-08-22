@@ -33,22 +33,7 @@ export const analiseService = {
 
             let result;
 
-            if (dados.id) {
-                // UPDATE existing analysis
-                result = await supabase
-                    .from('analises_solo')
-                    .update(payload)
-                    .eq('id', dados.id)
-                    .select()
-                    .single();
-            } else {
-                // INSERT new analysis
-                result = await supabase
-                    .from('analises_solo')
-                    .insert([payload])
-                    .select()
-                    .single();
-            }
+            const result = await supabase.rpc('upsert_analise_solo', { p_payload: payload });
 
             const { data, error } = result;
 

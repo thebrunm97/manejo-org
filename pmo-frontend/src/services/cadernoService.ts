@@ -10,7 +10,7 @@ import {
 export const getRegistros = async (pmoId?: number | null, propriedadeId?: number): Promise<CadernoEntry[]> => {
     let query = supabase
         .from('caderno_campo')
-        .select('*, talhoes(nome), caderno_campo_canteiros(canteiros(id, nome))')
+        .select('*, talhoes(nome), caderno_campo_canteiros(canteiros!caderno_campo_canteiros_canteiro_id_fkey(id, nome))')
         .order('data_registro', { ascending: false });
 
     let limpezaQuery = supabase
@@ -116,11 +116,10 @@ export const addRegistro = async (registro: any): Promise<CadernoEntry> => {
         delete payload.is_pmo_limpeza;
     }
 
-    const { data, error } = await supabase
-        .from(table)
-        .insert(payload)
-        .select()
-        .single();
+    const rpcName = isLimpeza ? 'create_limpeza_registro' : 'create_caderno_registro';
+    const { data, error } = await supabase.rpc(rpcName, { 
+        p_payload: payload 
+    });
 
     if (error) {
         console.error('Error adding registro:', error.message);
@@ -131,10 +130,9 @@ export const addRegistro = async (registro: any): Promise<CadernoEntry> => {
 };
 
 export const deleteRegistro = async (id: string): Promise<void> => {
-    const { error } = await supabase
-        .from('caderno_campo')
-        .delete()
-        .eq('id', id);
+    const { error } = await supabase.rpc('delete_caderno_registro', {
+        p_id: id
+    });
 
     if (error) {
         console.error('Error deleting registro:', error.message);
@@ -154,12 +152,11 @@ export const updateRegistro = async (id: string, updates: any): Promise<CadernoE
         delete payload.is_pmo_limpeza;
     }
 
-    const { data, error } = await supabase
-        .from(table)
-        .update(payload)
-        .eq('id', id)
-        .select()
-        .single();
+    const rpcName = isLimpeza ? 'update_limpeza_registro' : 'update_caderno_registro';
+    const { data, error } = await supabase.rpc(rpcName, {
+        p_id: id,
+        p_payload: payload
+    });
 
     if (error) {
         console.error('Error updating registro:', error.message);

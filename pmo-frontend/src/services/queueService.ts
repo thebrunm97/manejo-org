@@ -41,18 +41,7 @@ export const getRecentJobs = async (limit: number = 50): Promise<QueueJob[]> => 
  * Restarts a failed job by resetting its status, attempt count, and retry time.
  */
 export const restartJob = async (id: string): Promise<QueueJob> => {
-  const { data, error } = await supabase
-    .from('message_queue')
-    .update({
-      status: 'pending',
-      attempt_count: 0,
-      next_retry_at: new Date().toISOString(),
-      processed_at: null, // Reset processed time as it's being retried
-      error_msg: null     // Clear old error message
-    })
-    .eq('id', id)
-    .select()
-    .single();
+    const { data, error } = await supabase.rpc('restart_queue_job', { p_id: id });
 
   if (error) {
     console.error(`Error restarting job ${id}:`, error.message);

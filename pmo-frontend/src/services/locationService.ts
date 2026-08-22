@@ -92,11 +92,7 @@ export const locationService = {
             area_total_m2: metadata.area || null,
         };
 
-        const { data, error } = await supabase
-            .from('canteiros')
-            .insert([payload])
-            .select()
-            .single();
+        const { data, error } = await supabase.rpc('create_canteiro', { p_payload: payload });
 
         if (error) {
             console.error('Erro ao criar canteiro:', error);
@@ -109,10 +105,7 @@ export const locationService = {
      * Cria múltiplos canteiros/estruturas de uma vez (Batch Insert).
      */
     createCanteirosBatch: async (payloads: CanteiroInsert[]): Promise<CanteiroRow[]> => {
-        const { data, error } = await supabase
-            .from('canteiros')
-            .insert(payloads)
-            .select();
+        const { data, error } = await supabase.rpc('create_canteiros_batch', { p_payloads: payloads });
 
         if (error) {
             console.error('Erro ao criar canteiros em lote:', error);
@@ -125,10 +118,7 @@ export const locationService = {
      * Remove um canteiro pelo ID.
      */
     deleteCanteiro: async (id: string | number): Promise<boolean> => {
-        const { error } = await supabase
-            .from('canteiros')
-            .delete()
-            .eq('id', id);
+        const { error } = await supabase.rpc('delete_canteiro', { p_id: id });
 
         if (error) {
             console.error('Erro ao deletar canteiro:', error);
@@ -141,10 +131,7 @@ export const locationService = {
      * Atualiza dados de um canteiro.
      */
     updateCanteiro: async (id: string | number, data: Partial<CanteiroRow>): Promise<boolean> => {
-        const { error } = await supabase
-            .from('canteiros')
-            .update(data)
-            .eq('id', id);
+        const { error } = await supabase.rpc('update_canteiro', { p_id: id, p_payload: data });
 
         if (error) {
             console.error('Erro ao atualizar canteiro:', error);
@@ -157,10 +144,7 @@ export const locationService = {
      * Atualiza dados de um talhão.
      */
     updateTalhao: async (id: number, data: Partial<TalhaoRow>): Promise<boolean> => {
-        const { error } = await supabase
-            .from('talhoes')
-            .update(data)
-            .eq('id', id);
+        const { error } = await supabase.rpc('update_talhao', { p_id: id, p_payload: data });
 
         if (error) {
             console.error('Erro ao atualizar talhão:', error);
@@ -173,11 +157,7 @@ export const locationService = {
      * Cria um novo talhão.
      */
     createTalhao: async (talhaoData: TalhaoInsert): Promise<TalhaoRow> => {
-        const { data, error } = await supabase
-            .from('talhoes')
-            .insert([talhaoData])
-            .select()
-            .single();
+        const { data, error } = await supabase.rpc('create_talhao', { p_payload: talhaoData });
 
         if (error) {
             console.error("Erro ao criar talhão:", error);
@@ -190,10 +170,7 @@ export const locationService = {
      * Remove um talhão pelo ID.
      */
     deleteTalhao: async (id: string | number): Promise<boolean> => {
-        const { error } = await supabase
-            .from('talhoes')
-            .delete()
-            .eq('id', id);
+        const { error } = await supabase.rpc('delete_talhao', { p_id: id });
 
         if (error) {
             console.error('Erro ao deletar talhão:', error);

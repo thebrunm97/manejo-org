@@ -104,10 +104,10 @@ export const savePmoSection = async (
 
     // 2. Upsert no Supabase
     try {
-        const { data: result, error } = await supabase
-            .from(tableName)
-            .upsert(cleanedData)
-            .select();
+        const { data: result, error } = await supabase.rpc('upsert_pmo_relacoes', {
+            p_table: tableName,
+            p_payload: cleanedData
+        });
 
         if (error) {
             console.error(`Erro ao salvar ${tableName}:`, error);
@@ -234,11 +234,7 @@ export async function createPmo(
     payload: Omit<PmoPayload, 'id'>
 ): Promise<SaveResult> {
     try {
-        const { data, error } = await supabase
-            .from('pmos')
-            .insert(payload)
-            .select()
-            .single();
+        const { data, error } = await supabase.rpc('create_pmo', { p_payload: payload });
 
         if (error) {
             return { success: false, error: error.message };
@@ -269,10 +265,10 @@ export async function updatePmo(
         // Remove o id do payload para não conflitar com a condição eq()
         const { id, ...updateData } = payload as PmoPayload;
 
-        const { error } = await supabase
-            .from('pmos')
-            .update(updateData)
-            .eq('id', pmoId);
+        const { error } = await supabase.rpc('update_pmo', { 
+            p_id: pmoId, 
+            p_payload: updateData 
+        });
 
         if (error) {
             return { success: false, error: error.message };
@@ -307,24 +303,12 @@ export async function syncCulturasAnuais(
     console.group(`[pmoService] Sincronizando culturas_anuais (PMO: ${pmoId})`);
 
     try {
-        // 1. Delete existing
-        const { error: deleteError } = await supabase
-            .from('culturas_anuais')
-            .delete()
-            .eq('pmo_id', pmoId);
-
-        if (deleteError) {
-            console.warn('Erro ao deletar culturas existentes:', deleteError);
-        }
-
-        // 2. Insert new
-        const { error: insertError } = await supabase
-            .from('culturas_anuais')
-            .insert(culturas);
-
-        if (insertError) {
-            throw insertError;
-        }
+        const { error } = await supabase.rpc('sync_culturas_anuais', {
+            p_pmo_id: pmoId,
+            p_culturas: culturas
+        });
+        
+        if (error) throw error;
 
         console.log(`Sucesso! ${culturas.length} culturas sincronizadas.`);
     } catch (err) {
@@ -400,10 +384,7 @@ export async function fetchAllPmos(propriedadeId: number, userId?: string): Prom
  */
 export async function deletePmo(pmoId: string): Promise<SaveResult> {
     try {
-        const { error } = await supabase
-            .from('pmos')
-            .delete()
-            .eq('id', pmoId);
+        const { error } = await supabase.rpc('delete_pmo', { p_id: pmoId });
 
         if (error) {
             return { success: false, error: error.message };
