@@ -3,12 +3,72 @@ name: pmo-prod-stack
 services:
   # Serviço Principal (pmo-bot-go)
   # Ultra-leve graças à compilação estática de Go e gestão eficiente de memória.
+  # Sentinela de Clock Drift (DT-26).
+  #
+  # ATENÇÃO — este serviço MEDE, não corrige. A tentativa anterior de corrigir
+  # daqui não funcionava: o relógio autoritativo é o do Windows, e o Hyper-V
+  # TimeSync reimpõe esse horário na VM do Docker, desfazendo qualquer ajuste
+  # feito dentro do contêiner. O log dizia "setting time" a cada 30s enquanto o
+  # offset só crescia (+4,8s → +5,4s em três minutos), mascarando o problema.
+  #
+  # A correção de verdade é no host: o serviço W32Time do Windows estava PARADO
+  # (trigger-start por ingresso em domínio, que nunca ocorre nesta máquina), de
+  # modo que o Windows jamais sincronizava. Ver docs/debitos_tecnicos.md DT-26.
+  #
+  # Mantido como sentinela porque o drift já derrubou 100% dos downloads de
+  # mídia do WhatsApp (403) uma vez; um alerta explícito é o que permite
+  # perceber a recorrência antes do usuário.
+  clockwork:
+    image: alpine:latest
+    restart: always
+    # Mantido deliberadamente simples: lógica de limiar dentro de escalar YAML
+    # vira um emaranhado de escapes que já quebrou uma vez em produção. Aqui só
+    # se mede e imprime; a classificação fica em scripts/analisar_telemetria.sh,
+    # onde é testável.
+    command:
+      - sh
+      - -c
+      - while true; do busybox ntpd -n -q -w -p time.google.com 2>&1 | busybox grep -o 'offset:[+-][0-9.]*' | busybox tail -1; sleep 60; done
+    networks:
+      - pmo_prod_net
+
+  # Motor de Text-to-Speech (Piper) — auto-hospedado, gratuito e sem cota.
+  # Expõe uma API compatível com OpenAI (POST /v1/audio/speech), que é o mesmo
+  # protocolo falado por Groq/OpenRouter — por isso o bot usa um único cliente
+  # para todos (ver internal/tts/openai_compat.go).
+  #
+  # A voz é baixada do HuggingFace no primeiro uso e fica no volume piper_data,
+  # então só o primeiro pedido é lento. Vozes pt-BR disponíveis: faber, cadu,
+  # edresson, jeff — trocar via TTS_PIPER_VOICE em .env.prod.
+  piper:
+    image: kamilkrawiec/piper-openai-tts:latest
+    restart: always
+    environment:
+      - DATA_DIR=/data
+      - PORT=5000
+    volumes:
+      - piper_data:/data
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    networks:
+      - pmo_prod_net
+
   pmo-bot-go:
     build:
       context: ./pmo-bot-go
     restart: always
     env_file:
       - .env.prod
+    cap_add:
+      - SYS_TIME
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
     dns:
       - 8.8.8.8
       - 1.1.1.1
@@ -27,6 +87,8 @@ services:
     depends_on:
       - evolution-go
       - redis
+      - clockwork
+      - piper
 
   # Serviço do Motor de WhatsApp (evolution-go)
   # A versão em Go da Evolution API permite limites de RAM drasticaamente inferiores ao Node.js.
@@ -36,6 +98,8 @@ services:
     restart: always
     env_file:
       - .env.prod
+    cap_add:
+      - SYS_TIME
     environment:
       # Override db paths to explicit /data directory which is bind-mounted to the host
       DATABASE_CONNECTION_URI: file:/data/sqlite.db?_foreign_keys=on
@@ -49,6 +113,7 @@ services:
     volumes:
       # Bind-mount to host directory: session survives container rebuilds
       - ./evolution_data:/data
+      - /etc/localtime:/etc/localtime:ro
     dns:
       - 8.8.8.8
       - 1.1.1.1
@@ -62,6 +127,8 @@ services:
           memory: 64M
     networks:
       - pmo_prod_net
+    depends_on:
+      - clockwork
 
   # Serviço de Cache (Redis)
   redis:
@@ -78,3 +145,6 @@ networks:
 
 volumes:
   redis_data:
+  # Cache das vozes do Piper baixadas do HuggingFace — evita rebaixar a cada
+  # restart do container (a voz pt-BR tem alguns dezenas de MB).
+  piper_data:
