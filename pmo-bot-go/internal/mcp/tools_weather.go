@@ -26,16 +26,6 @@ func (s *Server) handleConsultarPrevisaoTempo(ctx context.Context, args map[stri
 
 	log.Printf("🌦️ [MCP] handleConsultarPrevisaoTempo executado com args: %v", args)
 
-	// Extrair propriedade_id (Obrigatório)
-	propriedadeIDInterface, ok := args["propriedade_id"]
-	if !ok {
-		return nil, fmt.Errorf("parâmetro 'propriedade_id' é obrigatório")
-	}
-	propriedadeID, err := parseArgToFloat(propriedadeIDInterface)
-	if err != nil {
-		return nil, fmt.Errorf("parâmetro 'propriedade_id' inválido: %w", err)
-	}
-
 	// Extrair cidade_informada (Opcional, se o usuário pediu especificamente)
 	var localidade string
 	if locInt, ok := args["cidade_informada"]; ok {
@@ -44,13 +34,13 @@ func (s *Server) handleConsultarPrevisaoTempo(ctx context.Context, args map[stri
 
 	// Se não veio cidade_informada nos args, buscar da propriedade no Supabase
 	if localidade == "" {
-		if s.supabase == nil {
+		if s.supabase == nil || propID == 0 {
 			return map[string]interface{}{
 				"status":  "requires_user_input",
 				"message": "Localização não encontrada no banco de dados. Instrua o usuário educadamente a informar para qual cidade e estado ele deseja a previsão do tempo.",
 			}, nil
 		}
-		loc, err := s.supabase.GetPropriedadeLocation(int64(propriedadeID))
+		loc, err := s.supabase.GetPropriedadeLocation(propID)
 		if err != nil {
 			// Não retorna um erro fatal, retorna instrução pro LLM
 			return map[string]interface{}{

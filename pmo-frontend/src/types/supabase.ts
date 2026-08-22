@@ -289,7 +289,7 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_canteiro"
+            foreignKeyName: "caderno_campo_canteiros_canteiro_id_fkey"
             columns: ["canteiro_id"]
             isOneToOne: false
             referencedRelation: "canteiros"

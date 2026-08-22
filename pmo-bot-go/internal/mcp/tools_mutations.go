@@ -77,3 +77,147 @@ func (s *Server) handleRegistrarPlantio(ctx context.Context, args map[string]int
 
 	return result, nil
 }
+
+// handleCadastrarPropriedade processes property creation, initial PMO setup, and profile activation.
+func (s *Server) handleCadastrarPropriedade(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
+	if profile == nil {
+		return nil, fmt.Errorf("unauthorized: missing profile")
+	}
+
+	nome, ok := args["nome"].(string)
+	if !ok || nome == "" {
+		return nil, fmt.Errorf("nome da propriedade é obrigatório")
+	}
+
+	areaTotal, _ := parseArgToFloat(args["area_total_ha"])
+	cidade, _ := args["municipio"].(string)
+	if cidade == "" {
+		cidade, _ = args["cidade"].(string)
+	}
+	estado, _ := args["uf"].(string)
+	if estado == "" {
+		estado, _ = args["estado"].(string)
+	}
+	modalidade, _ := args["modalidade_predominante"].(string)
+	if modalidade == "" {
+		modalidade = "Organico"
+	}
+
+	propID, pmoID, err := s.supabase.CriarPropriedadeComPMO(ctx, profile.ID, nome, areaTotal, cidade, estado, modalidade)
+	if err != nil {
+		return nil, fmt.Errorf("falha ao cadastrar propriedade: %w", err)
+	}
+
+	// Update local profile instance
+	profile.PropriedadeAtivaID = propID
+	profile.PmoAtivoID = pmoID
+
+	return fmt.Sprintf("✅ Propriedade '%s' cadastrada com sucesso (ID: %d)! PMO inicial ativado (ID: %d). A propriedade foi selecionada como ativa.", nome, propID, pmoID), nil
+}
+
+// handleRegistrarManejoCampo processes general field management operations (organic fertilization, biofertilizers, pruning, pest control).
+func (s *Server) handleRegistrarManejoCampo(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
+	if profile == nil {
+		return nil, fmt.Errorf("unauthorized: missing profile")
+	}
+	pmoID := profile.PmoAtivoID
+	userID := profile.ID
+	propID := profile.PropriedadeAtivaID
+
+	tipoManejo, _ := args["tipo_manejo"].(string)
+	if tipoManejo == "" {
+		tipoManejo = "Manejo Geral"
+	}
+
+	talhaoNome, _ := args["talhao_nome"].(string)
+	if talhaoNome == "" {
+		return nil, fmt.Errorf("talhao_nome é obrigatório para registrar manejo")
+	}
+
+	payloadArg := map[string]interface{}{
+		"tipo_manejo":       tipoManejo,
+		"talhao_nome":       talhaoNome,
+		"produto_utilizado": args["produto_utilizado"],
+		"dosagem_valor":     args["dosagem_valor"],
+		"dosagem_unidade":   args["dosagem_unidade"],
+		"observacoes":       args["observacoes"],
+		"canteiro_numero":   args["canteiro_numero"],
+	}
+
+	if data, ok := args["data"].(string); ok && data != "" {
+		payloadArg["data"] = data
+	} else {
+		payloadArg["data"] = time.Now().Format("2006-01-02")
+	}
+
+	if rawPayloadID, exists := args["raw_payload_id"]; exists {
+		payloadArg["raw_payload_id"] = rawPayloadID
+	}
+	if idempKey, exists := args["idempotency_key"]; exists {
+		payloadArg["idempotency_key"] = idempKey
+	}
+
+	rpcArgs := map[string]interface{}{
+		"pmo_id_arg":         pmoID,
+		"propriedade_id_arg": propID,
+		"user_id_arg":        userID,
+		"tipo_arg":           "Manejo",
+		"payload_arg":        payloadArg,
+	}
+
+	result, err := s.supabase.RegistrarOperacaoCampoRPC(ctx, rpcArgs, payloadArg["data"].(string))
+	if err != nil {
+		return nil, fmt.Errorf("falha ao registrar manejo de campo via RPC: %w", err)
+	}
+
+	return result, nil
+}
+
+// handleRegistrarCotaCooperativa processes quota commitments for cooperative demands.
+func (s *Server) handleRegistrarCotaCooperativa(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
+	if profile == nil {
+		return nil, fmt.Errorf("unauthorized: missing profile")
+	}
+
+	demandaIDStr, _ := args["demanda_id"].(string)
+	if demandaIDStr == "" {
+		if dNum, ok := args["demanda_id"].(float64); ok {
+			demandaIDStr = fmt.Sprintf("%.0f", dNum)
+		}
+	}
+	if demandaIDStr == "" {
+		return nil, fmt.Errorf("demanda_id é obrigatório para assumir cota")
+	}
+
+	qtd, err := parseArgToFloat(args["quantidade_comprometida"])
+	if err != nil || qtd <= 0 {
+		return nil, fmt.Errorf("quantidade_comprometida é obrigatória e deve ser maior que zero")
+	}
+
+	dataEntrega, _ := args["data_prevista_entrega"].(string)
+	if dataEntrega == "" {
+		dataEntrega = time.Now().AddDate(0, 1, 0).Format("2006-01-02")
+	}
+
+	obs, _ := args["observacoes"].(string)
+	unidade, _ := args["unidade"].(string)
+	if unidade == "" {
+		unidade = "kg"
+	}
+
+	payload := map[string]interface{}{
+		"demanda_id":     demandaIDStr,
+		"propriedade_id": profile.PropriedadeAtivaID,
+		"usuario_id":     profile.ID,
+		"quantidade":     qtd,
+		"data_plantio":   dataEntrega,
+		"observacao_ia":  fmt.Sprintf("Cota assumida via PMO Bot: %.2f %s. %s", qtd, unidade, obs),
+	}
+
+	err = s.supabase.RegistrarCotaComCronograma(ctx, payload)
+	if err != nil {
+		return nil, fmt.Errorf("falha ao registrar cota na cooperativa: %w", err)
+	}
+
+	return fmt.Sprintf("✅ Cota de %.2f %s registrada com sucesso para a Demanda #%s! O cronograma de entrega foi vinculado.", qtd, unidade, demandaIDStr), nil
+}

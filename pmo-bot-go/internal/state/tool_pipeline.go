@@ -18,13 +18,15 @@ import (
 
 // ToolRequest encapsulates the context and payload of a tool execution.
 type ToolRequest struct {
-	ToolName    string
-	ToolID      string
-	RawArgs     map[string]interface{}
-	ParsedArgs  any
-	Provider    string
-	TraceEvents *[]TraceEvent
-	History     *[]llm.MensagemAgnostica
+	ToolName       string
+	ToolID         string
+	RawArgs        map[string]interface{}
+	ParsedArgs     any
+	Provider       string
+	IdempotencyKey string
+	OccurrenceIdx  int
+	TraceEvents    *[]TraceEvent
+	History        *[]llm.MensagemAgnostica
 }
 
 // ToolResponse encapsulates the execution outcome.
@@ -56,7 +58,7 @@ func (m *HITLMiddleware) Process(ctx context.Context, req *ToolRequest) (ToolRes
 		return ToolResponse{}, nil
 	}
 
-	if needsHITL, label := guardrails.RequiresHITL(req.ToolName); needsHITL {
+	if needsHITL, label := guardrails.RequiresHITL(req.ToolName, req.RawArgs); needsHITL {
 		fp := hitlFingerprint(req.ToolName, req.RawArgs)
 		if m.HitlRequested[fp] {
 			log.Printf("🔄 [HITL-DEDUP] Confirmação já solicitada para tool=%s (fp=%s) — reutilizando synthetic result", req.ToolName, fp)
@@ -190,19 +192,23 @@ type MCPExecutionHandler struct {
 }
 
 func (h *MCPExecutionHandler) Execute(ctx context.Context, req *ToolRequest) (ToolResponse, error) {
-	// Trata tool-specific raw payload info se necessário (antes era no middleware)
+	if req.RawArgs == nil {
+		req.RawArgs = make(map[string]interface{})
+	}
+
+	// Injetar IdempotencyKey nos RawArgs e no Context para propagação transparente
+	if req.IdempotencyKey != "" {
+		req.RawArgs["idempotency_key"] = req.IdempotencyKey
+		ctx = context.WithValue(ctx, "idempotency_key", req.IdempotencyKey)
+	}
+
+	// Trata tool-specific raw payload info se necessário
 	if rawPayloadID, ok := ctx.Value("raw_payload_id").(string); ok && rawPayloadID != "" {
-		if req.RawArgs == nil {
-			req.RawArgs = make(map[string]interface{})
-		}
 		req.RawArgs["raw_payload_id"] = rawPayloadID
 	}
 
-	// Fallback específico de query (antes era no middleware)
+	// Fallback específico de query (RAG Lei Orgânica)
 	if req.ToolName == "ConsultarLeiOrganica_RAG" {
-		if req.RawArgs == nil {
-			req.RawArgs = make(map[string]interface{})
-		}
 		if q, ok := req.RawArgs["query"].(string); !ok || strings.TrimSpace(q) == "" {
 			log.Printf("⚠️ [ToolPipeline] Argumento 'query' faltando/malformado no ToolCall. Injetando fallback.")
 			req.RawArgs["query"] = "regras gerais lei organica agricultura"

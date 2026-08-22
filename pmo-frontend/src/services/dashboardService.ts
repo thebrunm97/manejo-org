@@ -159,7 +159,7 @@ export const dashboardService = {
         try {
             let query = supabase
                 .from('caderno_campo')
-                .select('*, talhoes(nome), caderno_campo_canteiros(canteiros(id, nome))')
+                .select('*, talhoes(nome), caderno_campo_canteiros(canteiros!caderno_campo_canteiros_canteiro_id_fkey(id, nome))')
                 .neq('tipo_atividade', 'CANCELADO');
 // turbo
             if (pmoId && pmoId !== '') query = query.eq('pmo_id', pmoId);
@@ -250,11 +250,11 @@ export const dashboardService = {
                 updateData.detalhes_tecnicos.justificativa_edicao = lastLog.motivo;
                 updateData.detalhes_tecnicos.data_edicao = lastLog.data;
             }
-            const result = await supabase.from('caderno_campo').update(updateData).eq('id', id);
+            const result = await supabase.rpc('update_caderno_registro', { p_id: id, p_payload: updateData });
             error = result.error;
         } else {
             const { id, ...insertData } = payload;
-            const result = await supabase.from('caderno_campo').insert([insertData]);
+            const result = await supabase.rpc('create_caderno_registro', { p_payload: insertData });
             error = result.error;
         }
 
@@ -315,7 +315,7 @@ export const dashboardService = {
                 });
             }
 
-            const { error: updateError } = await supabase.from('pmos').update({ form_data: formData }).eq('id', pmoId);
+            const { error: updateError } = await supabase.rpc('update_pmo', { p_id: pmoId, p_payload: { form_data: formData } });
             if (updateError) throw updateError;
             return nome;
         } catch (error: any) {

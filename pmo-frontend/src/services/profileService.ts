@@ -40,10 +40,9 @@ export async function setActivePmo(
     pmoId: string
 ): Promise<SaveResult> {
     try {
-        const { error } = await supabase
-            .from('profiles')
-            .update({ pmo_ativo_id: pmoId })
-            .eq('id', userId);
+        const { error } = await supabase.rpc('update_profile', {
+            p_updates: { pmo_ativo_id: pmoId }
+        });
 
         if (error) {
             return { success: false, error: error.message };
@@ -92,10 +91,9 @@ export async function updateUserProfile(
     data: { nome?: string; telefone?: string; avatar_url?: string }
 ): Promise<SaveResult> {
     try {
-        const { error } = await supabase
-            .from('profiles')
-            .update(data)
-            .eq('id', userId);
+        const { error } = await supabase.rpc('update_profile', {
+            p_updates: data
+        });
 
         if (error) {
             return { success: false, error: error.message };
