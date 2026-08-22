@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
+	"github.com/thebrunm97/pmo-bot-go/internal/pricing"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 )
@@ -83,35 +84,30 @@ func sendFeedback(sbClient *supabase.Client, wpClient ports.MessageSender, ttsCl
 	return err
 }
 
-// CalculateAICost returns the estimated cost in USD based on model and token usage
+// CalculateAICost estima o custo em USD de uma chamada ao LLM.
+//
+// Delega ao catálogo multi-fornecedor em internal/pricing, gerado por
+// cmd/pricing-refresh a partir de uma fonte pública e verificável.
+//
+// A implementação anterior era um `switch` com preços digitados à mão e tinha
+// dois defeitos que tornavam o relatório de custo inutilizável:
+//
+//  1. Os valores estavam defasados. Cobrava gemini-3.1-flash-lite a
+//     US$0,075/US$0,30 por 1M quando o preço real é US$0,250/US$1,500 —
+//     subestimando a entrada em 3,3x e a saída em 5x.
+//  2. Retornava ZERO para qualquer modelo fora da família Gemini. Desde que o
+//     sistema passou a escalar para a OpenRouter, todo o gasto do fallback
+//     simplesmente não aparecia.
+//
+// Modelo desconhecido agora recebe uma estimativa conservadora (cara), não
+// zero: subestimar custo desconhecido induz a decisão errada de arquitetura,
+// enquanto superestimar apenas provoca uma conferência.
 func CalculateAICost(model string, pTokens, cTokens int) float64 {
-	// Reference prices per 1M tokens
-	var inputPrice, outputPrice float64
-
-	m := strings.ToLower(model)
-	switch {
-	case strings.Contains(m, "gemini-3.1") || strings.Contains(m, "flash-lite"):
-		// Flash Lite is generally cheaper, but using Flash baseline for safety
-		inputPrice = 0.075
-		outputPrice = 0.30
-	case strings.Contains(m, "gemini-2.0") || strings.Contains(m, "gemini-2.5") || strings.Contains(m, "flash"):
-		inputPrice = 0.10
-		outputPrice = 0.40
-	case strings.Contains(m, "groq"):
-		inputPrice = 0.05
-		outputPrice = 0.05
-	default:
-		// Default to 1.5-flash prices if unknown but clearly Gemini
-		if strings.Contains(m, "gemini") {
-			inputPrice = 0.075
-			outputPrice = 0.30
-		} else {
-			return 0
-		}
+	est := pricing.Cost(model, pTokens, cTokens)
+	if !est.Exact && model != "" {
+		log.Printf("⚠️ [Custo] Modelo %q ausente do catálogo — usando estimativa conservadora. Rode `go run ./cmd/pricing-refresh` para atualizar.", model)
 	}
-
-	cost := (float64(pTokens)/1000000.0)*inputPrice + (float64(cTokens)/1000000.0)*outputPrice
-	return cost
+	return est.CostUSD
 }
 
 // recordLog is a helper to centralize all logging to Supabase (Telemetry + Process Log)

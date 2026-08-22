@@ -1,0 +1,1663 @@
+{
+  "generated_at": "2026-08-22T16:06:08Z",
+  "source": "https://openrouter.ai/api/v1/models?supported_parameters=tools",
+  "filter": "supported_parameters=tools",
+  "note": "Gerado por cmd/pricing-refresh. Preços em USD por 1M de tokens, nas condições padrão — pricing.overrides (contexto longo, janelas de horário) NÃO está modelado.",
+  "models": {
+    "aion-labs/aion-2.0": {
+      "in": 0.7999999999999999,
+      "out": 1.5999999999999999,
+      "ctx": 131072
+    },
+    "aion-labs/aion-3.0": {
+      "in": 3,
+      "out": 6,
+      "ctx": 131072
+    },
+    "aion-labs/aion-3.0-mini": {
+      "in": 0.7,
+      "out": 1.4,
+      "ctx": 131072
+    },
+    "amazon/nova-2-lite-v1": {
+      "in": 0.3,
+      "out": 2.5,
+      "ctx": 1000000
+    },
+    "amazon/nova-lite-v1": {
+      "in": 0.06,
+      "out": 0.24,
+      "ctx": 300000
+    },
+    "amazon/nova-micro-v1": {
+      "in": 0.035,
+      "out": 0.14,
+      "ctx": 128000
+    },
+    "amazon/nova-premier-v1": {
+      "in": 2.5,
+      "out": 12.5,
+      "ctx": 1000000
+    },
+    "amazon/nova-pro-v1": {
+      "in": 0.7999999999999999,
+      "out": 3.1999999999999997,
+      "ctx": 300000
+    },
+    "anthropic/claude-3-haiku": {
+      "in": 0.25,
+      "out": 1.25,
+      "ctx": 200000
+    },
+    "anthropic/claude-fable-5": {
+      "in": 10,
+      "out": 50,
+      "ctx": 1000000
+    },
+    "anthropic/claude-fable-5:batch": {
+      "in": 5,
+      "out": 25,
+      "ctx": 1000000
+    },
+    "anthropic/claude-haiku-4.5": {
+      "in": 1,
+      "out": 5,
+      "ctx": 200000
+    },
+    "anthropic/claude-haiku-4.5:batch": {
+      "in": 0.5,
+      "out": 2.5,
+      "ctx": 200000
+    },
+    "anthropic/claude-opus-4": {
+      "in": 15,
+      "out": 75,
+      "ctx": 200000
+    },
+    "anthropic/claude-opus-4.1": {
+      "in": 15,
+      "out": 75,
+      "ctx": 200000
+    },
+    "anthropic/claude-opus-4.1:batch": {
+      "in": 7.5,
+      "out": 37.5,
+      "ctx": 200000
+    },
+    "anthropic/claude-opus-4.5": {
+      "in": 5,
+      "out": 25,
+      "ctx": 200000
+    },
+    "anthropic/claude-opus-4.5:batch": {
+      "in": 2.5,
+      "out": 12.5,
+      "ctx": 200000
+    },
+    "anthropic/claude-opus-4.6": {
+      "in": 5,
+      "out": 25,
+      "ctx": 1000000
+    },
+    "anthropic/claude-opus-4.6:batch": {
+      "in": 2.5,
+      "out": 12.5,
+      "ctx": 1000000
+    },
+    "anthropic/claude-opus-4.7": {
+      "in": 5,
+      "out": 25,
+      "ctx": 1000000
+    },
+    "anthropic/claude-opus-4.7-fast": {
+      "in": 30,
+      "out": 150,
+      "ctx": 1000000
+    },
+    "anthropic/claude-opus-4.7:batch": {
+      "in": 2.5,
+      "out": 12.5,
+      "ctx": 1000000
+    },
+    "anthropic/claude-opus-4.8": {
+      "in": 5,
+      "out": 25,
+      "ctx": 1000000
+    },
+    "anthropic/claude-opus-4.8-fast": {
+      "in": 10,
+      "out": 50,
+      "ctx": 1000000
+    },
+    "anthropic/claude-opus-4.8:batch": {
+      "in": 2.5,
+      "out": 12.5,
+      "ctx": 1000000
+    },
+    "anthropic/claude-opus-5": {
+      "in": 5,
+      "out": 25,
+      "ctx": 1000000
+    },
+    "anthropic/claude-opus-5-fast": {
+      "in": 10,
+      "out": 50,
+      "ctx": 1000000
+    },
+    "anthropic/claude-opus-5:batch": {
+      "in": 2.5,
+      "out": 12.5,
+      "ctx": 1000000
+    },
+    "anthropic/claude-sonnet-4": {
+      "in": 3,
+      "out": 15,
+      "ctx": 1000000,
+      "conditional_pricing": true
+    },
+    "anthropic/claude-sonnet-4.5": {
+      "in": 3,
+      "out": 15,
+      "ctx": 1000000,
+      "conditional_pricing": true
+    },
+    "anthropic/claude-sonnet-4.5:batch": {
+      "in": 1.5,
+      "out": 7.5,
+      "ctx": 1000000,
+      "conditional_pricing": true
+    },
+    "anthropic/claude-sonnet-4.6": {
+      "in": 3,
+      "out": 15,
+      "ctx": 1000000
+    },
+    "anthropic/claude-sonnet-4.6:batch": {
+      "in": 1.5,
+      "out": 7.5,
+      "ctx": 1000000
+    },
+    "anthropic/claude-sonnet-5": {
+      "in": 2,
+      "out": 10,
+      "ctx": 1000000
+    },
+    "anthropic/claude-sonnet-5:batch": {
+      "in": 1,
+      "out": 5,
+      "ctx": 1000000
+    },
+    "arcee-ai/trinity-large-thinking": {
+      "in": 0.22,
+      "out": 0.85,
+      "ctx": 262144
+    },
+    "arcee-ai/virtuoso-large": {
+      "in": 0.75,
+      "out": 1.2,
+      "ctx": 131072
+    },
+    "bytedance-seed/seed-1.6": {
+      "in": 0.25,
+      "out": 2,
+      "ctx": 262144,
+      "conditional_pricing": true
+    },
+    "bytedance-seed/seed-1.6-flash": {
+      "in": 0.075,
+      "out": 0.3,
+      "ctx": 262144,
+      "conditional_pricing": true
+    },
+    "bytedance-seed/seed-2-1-turbo": {
+      "in": 0.5,
+      "out": 2.5,
+      "ctx": 262144
+    },
+    "bytedance-seed/seed-2.0-code": {
+      "in": 0.5,
+      "out": 3,
+      "ctx": 262144,
+      "conditional_pricing": true
+    },
+    "bytedance-seed/seed-2.0-lite": {
+      "in": 0.25,
+      "out": 2,
+      "ctx": 256000,
+      "conditional_pricing": true
+    },
+    "bytedance-seed/seed-2.0-mini": {
+      "in": 0.09999999999999999,
+      "out": 0.39999999999999997,
+      "ctx": 256000,
+      "conditional_pricing": true
+    },
+    "cohere/command-r-08-2024": {
+      "in": 0.15,
+      "out": 0.6,
+      "ctx": 128000
+    },
+    "cohere/command-r-plus-08-2024": {
+      "in": 2.5,
+      "out": 10,
+      "ctx": 128000
+    },
+    "deepseek/deepseek-chat": {
+      "in": 0.2574,
+      "out": 1.0287,
+      "ctx": 131072
+    },
+    "deepseek/deepseek-chat-v3-0324": {
+      "in": 0.25,
+      "out": 1,
+      "ctx": 131072
+    },
+    "deepseek/deepseek-chat-v3.1": {
+      "in": 0.55,
+      "out": 1.6500000000000001,
+      "ctx": 131072
+    },
+    "deepseek/deepseek-r1": {
+      "in": 0.7,
+      "out": 2.5,
+      "ctx": 163840
+    },
+    "deepseek/deepseek-r1-0528": {
+      "in": 0.5,
+      "out": 2.1799999999999997,
+      "ctx": 163840
+    },
+    "deepseek/deepseek-v3.1-terminus": {
+      "in": 0.27,
+      "out": 1,
+      "ctx": 131072
+    },
+    "deepseek/deepseek-v3.2": {
+      "in": 0.26,
+      "out": 0.38,
+      "ctx": 131072
+    },
+    "deepseek/deepseek-v3.2-exp": {
+      "in": 0.27,
+      "out": 0.41,
+      "ctx": 131072
+    },
+    "deepseek/deepseek-v4-flash": {
+      "in": 0.060059999999999995,
+      "out": 0.12011999999999999,
+      "ctx": 1048576
+    },
+    "deepseek/deepseek-v4-flash-0731": {
+      "in": 0.08,
+      "out": 0.18,
+      "ctx": 1048576
+    },
+    "deepseek/deepseek-v4-flash-vision-exp": {
+      "in": 0.22,
+      "out": 0.66,
+      "ctx": 1048576,
+      "conditional_pricing": true
+    },
+    "deepseek/deepseek-v4-pro": {
+      "in": 0.413772,
+      "out": 0.827544,
+      "ctx": 1048576
+    },
+    "deepseek/deepseek-v4-pro-0813": {
+      "in": 1.1880000000000002,
+      "out": 3.564,
+      "ctx": 1048576
+    },
+    "google/gemini-2.5-flash": {
+      "in": 0.3,
+      "out": 2.5,
+      "ctx": 1048576
+    },
+    "google/gemini-2.5-flash-lite": {
+      "in": 0.09999999999999999,
+      "out": 0.39999999999999997,
+      "ctx": 1048576
+    },
+    "google/gemini-2.5-flash-lite:batch": {
+      "in": 0.049999999999999996,
+      "out": 0.19999999999999998,
+      "ctx": 1048576
+    },
+    "google/gemini-2.5-flash:batch": {
+      "in": 0.15,
+      "out": 1.25,
+      "ctx": 1048576
+    },
+    "google/gemini-2.5-pro": {
+      "in": 1.25,
+      "out": 10,
+      "ctx": 1048576,
+      "conditional_pricing": true
+    },
+    "google/gemini-2.5-pro-preview": {
+      "in": 1.25,
+      "out": 10,
+      "ctx": 1048576,
+      "conditional_pricing": true
+    },
+    "google/gemini-2.5-pro-preview-05-06": {
+      "in": 1.25,
+      "out": 10,
+      "ctx": 1048576,
+      "conditional_pricing": true
+    },
+    "google/gemini-2.5-pro:batch": {
+      "in": 0.625,
+      "out": 5,
+      "ctx": 1048576,
+      "conditional_pricing": true
+    },
+    "google/gemini-3-flash-preview": {
+      "in": 0.5,
+      "out": 3,
+      "ctx": 1048576
+    },
+    "google/gemini-3-flash-preview:batch": {
+      "in": 0.25,
+      "out": 1.5,
+      "ctx": 1048576
+    },
+    "google/gemini-3-pro-image": {
+      "in": 2,
+      "out": 12,
+      "ctx": 65536
+    },
+    "google/gemini-3.1-flash-lite": {
+      "in": 0.25,
+      "out": 1.5,
+      "ctx": 1048576
+    },
+    "google/gemini-3.1-flash-lite-preview": {
+      "in": 0.25,
+      "out": 1.5,
+      "ctx": 1048576
+    },
+    "google/gemini-3.1-flash-lite:batch": {
+      "in": 0.125,
+      "out": 0.75,
+      "ctx": 1048576
+    },
+    "google/gemini-3.1-pro-preview": {
+      "in": 2,
+      "out": 12,
+      "ctx": 1048576,
+      "conditional_pricing": true
+    },
+    "google/gemini-3.1-pro-preview-customtools": {
+      "in": 2,
+      "out": 12,
+      "ctx": 1048756,
+      "conditional_pricing": true
+    },
+    "google/gemini-3.1-pro-preview:batch": {
+      "in": 1,
+      "out": 6,
+      "ctx": 1048576,
+      "conditional_pricing": true
+    },
+    "google/gemini-3.5-flash": {
+      "in": 1.5,
+      "out": 9,
+      "ctx": 1048576
+    },
+    "google/gemini-3.5-flash-lite": {
+      "in": 0.3,
+      "out": 2.5,
+      "ctx": 1048576
+    },
+    "google/gemini-3.5-flash-lite:batch": {
+      "in": 0.15,
+      "out": 1.25,
+      "ctx": 1048576
+    },
+    "google/gemini-3.5-flash:batch": {
+      "in": 0.75,
+      "out": 4.5,
+      "ctx": 1048576
+    },
+    "google/gemini-3.6-flash": {
+      "in": 0.75,
+      "out": 3.75,
+      "ctx": 1048576
+    },
+    "google/gemini-3.6-flash:batch": {
+      "in": 0.375,
+      "out": 1.875,
+      "ctx": 1048576
+    },
+    "google/gemini-3.7-flash": {
+      "in": 0.375,
+      "out": 1.875,
+      "ctx": 1048576
+    },
+    "google/gemini-3.7-flash:batch": {
+      "in": 0.1875,
+      "out": 0.9375,
+      "ctx": 1048576
+    },
+    "google/gemma-3-12b-it": {
+      "in": 0.049999999999999996,
+      "out": 0.15,
+      "ctx": 131072
+    },
+    "google/gemma-3-27b-it": {
+      "in": 0.08,
+      "out": 0.16,
+      "ctx": 131072
+    },
+    "google/gemma-4-26b-a4b-it": {
+      "in": 0.07,
+      "out": 0.33999999999999997,
+      "ctx": 262144
+    },
+    "google/gemma-4-31b-it": {
+      "in": 0.09999999999999999,
+      "out": 0.33999999999999997,
+      "ctx": 262144
+    },
+    "ibm-granite/granite-4.1-8b": {
+      "in": 0.049999999999999996,
+      "out": 0.09999999999999999,
+      "ctx": 131072
+    },
+    "inception/mercury-2": {
+      "in": 0.25,
+      "out": 0.75,
+      "ctx": 128000
+    },
+    "inclusionai/ling-2.6-1t": {
+      "in": 0.075,
+      "out": 0.625,
+      "ctx": 262144,
+      "expires_at": "2026-08-24"
+    },
+    "inclusionai/ling-2.6-flash": {
+      "in": 0.01,
+      "out": 0.03,
+      "ctx": 262144,
+      "expires_at": "2026-08-24"
+    },
+    "inclusionai/ling-3.0-flash": {
+      "in": 0.020999999999999998,
+      "out": 0.063,
+      "ctx": 262144
+    },
+    "inclusionai/ring-2.6-1t": {
+      "in": 0.075,
+      "out": 0.625,
+      "ctx": 262144,
+      "expires_at": "2026-08-24"
+    },
+    "kwaipilot/kat-coder-air-v2.5": {
+      "in": 0.15,
+      "out": 0.6,
+      "ctx": 256000
+    },
+    "kwaipilot/kat-coder-pro-v2": {
+      "in": 0.3,
+      "out": 1.2,
+      "ctx": 256000
+    },
+    "kwaipilot/kat-coder-pro-v2.5": {
+      "in": 0.74,
+      "out": 2.96,
+      "ctx": 256000
+    },
+    "meituan/longcat-2.0": {
+      "in": 0.3,
+      "out": 1.2,
+      "ctx": 1048756
+    },
+    "meta-llama/llama-3.1-70b-instruct": {
+      "in": 0.39999999999999997,
+      "out": 0.39999999999999997,
+      "ctx": 131072
+    },
+    "meta-llama/llama-3.1-8b-instruct": {
+      "in": 0.049999999999999996,
+      "out": 0.08,
+      "ctx": 131072
+    },
+    "meta-llama/llama-3.3-70b-instruct": {
+      "in": 0.09999999999999999,
+      "out": 0.32,
+      "ctx": 131072
+    },
+    "meta-llama/llama-4-maverick": {
+      "in": 0.19999999999999998,
+      "out": 0.696,
+      "ctx": 1048576
+    },
+    "meta-llama/llama-4-scout": {
+      "in": 0.11,
+      "out": 0.33999999999999997,
+      "ctx": 10000000
+    },
+    "meta/muse-glimmer-30b": {
+      "in": 0.3,
+      "out": 1.1,
+      "ctx": 131072
+    },
+    "meta/muse-spark-1.1": {
+      "in": 1.25,
+      "out": 4.25,
+      "ctx": 1048576
+    },
+    "meta/muse-spark-1.2": {
+      "in": 1.25,
+      "out": 4.25,
+      "ctx": 1048576
+    },
+    "meta/muse-spark-1.2-contributor": {
+      "in": 0.09999999999999999,
+      "out": 0.19999999999999998,
+      "ctx": 1048576
+    },
+    "minimax/minimax-m1": {
+      "in": 0.55,
+      "out": 2.2,
+      "ctx": 1000000
+    },
+    "minimax/minimax-m2": {
+      "in": 0.255,
+      "out": 1.02,
+      "ctx": 204800
+    },
+    "minimax/minimax-m2.1": {
+      "in": 0.3,
+      "out": 1.2,
+      "ctx": 204800
+    },
+    "minimax/minimax-m2.5": {
+      "in": 0.27,
+      "out": 1.08,
+      "ctx": 204800
+    },
+    "minimax/minimax-m2.7": {
+      "in": 0.3,
+      "out": 1.2,
+      "ctx": 204800
+    },
+    "minimax/minimax-m3": {
+      "in": 0.3,
+      "out": 1.2,
+      "ctx": 1048576
+    },
+    "minimax/minimax-m3:batch": {
+      "in": 0.3,
+      "out": 1.2,
+      "ctx": 1048576
+    },
+    "mistralai/codestral-2508": {
+      "in": 0.3,
+      "out": 0.8999999999999999,
+      "ctx": 256000
+    },
+    "mistralai/ministral-14b-2512": {
+      "in": 0.19999999999999998,
+      "out": 0.19999999999999998,
+      "ctx": 128000
+    },
+    "mistralai/ministral-3b-2512": {
+      "in": 0.09999999999999999,
+      "out": 0.09999999999999999,
+      "ctx": 128000
+    },
+    "mistralai/ministral-8b-2512": {
+      "in": 0.15,
+      "out": 0.15,
+      "ctx": 128000
+    },
+    "mistralai/mistral-large": {
+      "in": 2,
+      "out": 6,
+      "ctx": 128000
+    },
+    "mistralai/mistral-large-2407": {
+      "in": 2,
+      "out": 6,
+      "ctx": 128000
+    },
+    "mistralai/mistral-large-2512": {
+      "in": 0.5,
+      "out": 1.5,
+      "ctx": 256000
+    },
+    "mistralai/mistral-medium-3": {
+      "in": 0.39999999999999997,
+      "out": 2,
+      "ctx": 131072
+    },
+    "mistralai/mistral-medium-3-5": {
+      "in": 1.5,
+      "out": 7.5,
+      "ctx": 262144
+    },
+    "mistralai/mistral-medium-3.1": {
+      "in": 0.39999999999999997,
+      "out": 2,
+      "ctx": 131072
+    },
+    "mistralai/mistral-nemo": {
+      "in": 0.044,
+      "out": 0.16,
+      "ctx": 131072
+    },
+    "mistralai/mistral-saba": {
+      "in": 0.19999999999999998,
+      "out": 0.6,
+      "ctx": 32000
+    },
+    "mistralai/mistral-small-2603": {
+      "in": 0.15,
+      "out": 0.6,
+      "ctx": 262144
+    },
+    "mistralai/mistral-small-3.2-24b-instruct": {
+      "in": 0.075,
+      "out": 0.19999999999999998,
+      "ctx": 128000
+    },
+    "mistralai/mixtral-8x22b-instruct": {
+      "in": 2,
+      "out": 6,
+      "ctx": 65536
+    },
+    "mistralai/voxtral-small-24b-2507": {
+      "in": 0.09999999999999999,
+      "out": 0.3,
+      "ctx": 32000
+    },
+    "moonshotai/kimi-k2": {
+      "in": 0.5700000000000001,
+      "out": 2.3,
+      "ctx": 131072
+    },
+    "moonshotai/kimi-k2-0905": {
+      "in": 0.6,
+      "out": 2.5,
+      "ctx": 262144
+    },
+    "moonshotai/kimi-k2-thinking": {
+      "in": 0.6,
+      "out": 2.5,
+      "ctx": 262144
+    },
+    "moonshotai/kimi-k2.5": {
+      "in": 0.44999999999999996,
+      "out": 2.25,
+      "ctx": 262144
+    },
+    "moonshotai/kimi-k2.6": {
+      "in": 0.5415,
+      "out": 2.2800000000000002,
+      "ctx": 262144
+    },
+    "moonshotai/kimi-k2.7-code": {
+      "in": 0.67,
+      "out": 3.4,
+      "ctx": 262144
+    },
+    "moonshotai/kimi-k2.7-code:batch": {
+      "in": 0.95,
+      "out": 4,
+      "ctx": 262144
+    },
+    "moonshotai/kimi-k3": {
+      "in": 3,
+      "out": 15,
+      "ctx": 1048576
+    },
+    "nex-agi/nex-n2-mini": {
+      "in": 0.024999999999999998,
+      "out": 0.09999999999999999,
+      "ctx": 262144
+    },
+    "nex-agi/nex-n2-pro": {
+      "in": 0.25,
+      "out": 1,
+      "ctx": 262144
+    },
+    "nvidia/nemotron-3-nano-30b-a3b": {
+      "in": 0.049999999999999996,
+      "out": 0.19999999999999998,
+      "ctx": 256000
+    },
+    "nvidia/nemotron-3-super-120b-a12b": {
+      "in": 0.08499999999999999,
+      "out": 0.39999999999999997,
+      "ctx": 1000000
+    },
+    "nvidia/nemotron-3-ultra-550b-a55b": {
+      "in": 0.6,
+      "out": 3.5999999999999996,
+      "ctx": 1000000
+    },
+    "nvidia/nemotron-3-ultra-550b-a55b:batch": {
+      "in": 0.6,
+      "out": 3.5999999999999996,
+      "ctx": 1000000
+    },
+    "nvidia/nemotron-3.5-lightning": {
+      "in": 0.08,
+      "out": 0.19999999999999998,
+      "ctx": 1000000
+    },
+    "openai/gpt-3.5-turbo": {
+      "in": 0.5,
+      "out": 1.5,
+      "ctx": 16385
+    },
+    "openai/gpt-3.5-turbo-0613": {
+      "in": 1,
+      "out": 2,
+      "ctx": 4095
+    },
+    "openai/gpt-3.5-turbo-16k": {
+      "in": 3,
+      "out": 4,
+      "ctx": 16385
+    },
+    "openai/gpt-3.5-turbo:batch": {
+      "in": 0.25,
+      "out": 0.75,
+      "ctx": 16385
+    },
+    "openai/gpt-4": {
+      "in": 30,
+      "out": 60,
+      "ctx": 8191
+    },
+    "openai/gpt-4-turbo": {
+      "in": 10,
+      "out": 30,
+      "ctx": 128000
+    },
+    "openai/gpt-4-turbo-preview": {
+      "in": 10,
+      "out": 30,
+      "ctx": 128000
+    },
+    "openai/gpt-4-turbo:batch": {
+      "in": 5,
+      "out": 15,
+      "ctx": 128000
+    },
+    "openai/gpt-4.1": {
+      "in": 2,
+      "out": 8,
+      "ctx": 1047576
+    },
+    "openai/gpt-4.1-mini": {
+      "in": 0.39999999999999997,
+      "out": 1.5999999999999999,
+      "ctx": 1047576
+    },
+    "openai/gpt-4.1-mini:batch": {
+      "in": 0.19999999999999998,
+      "out": 0.7999999999999999,
+      "ctx": 1047576
+    },
+    "openai/gpt-4.1-nano": {
+      "in": 0.09999999999999999,
+      "out": 0.39999999999999997,
+      "ctx": 1047576
+    },
+    "openai/gpt-4.1-nano:batch": {
+      "in": 0.049999999999999996,
+      "out": 0.19999999999999998,
+      "ctx": 1047576
+    },
+    "openai/gpt-4.1:batch": {
+      "in": 1,
+      "out": 4,
+      "ctx": 1047576
+    },
+    "openai/gpt-4o": {
+      "in": 2.5,
+      "out": 10,
+      "ctx": 128000
+    },
+    "openai/gpt-4o-2024-05-13": {
+      "in": 5,
+      "out": 15,
+      "ctx": 128000
+    },
+    "openai/gpt-4o-2024-08-06": {
+      "in": 2.5,
+      "out": 10,
+      "ctx": 128000
+    },
+    "openai/gpt-4o-2024-11-20": {
+      "in": 2.5,
+      "out": 10,
+      "ctx": 128000
+    },
+    "openai/gpt-4o-mini": {
+      "in": 0.15,
+      "out": 0.6,
+      "ctx": 128000
+    },
+    "openai/gpt-4o-mini-2024-07-18": {
+      "in": 0.15,
+      "out": 0.6,
+      "ctx": 128000
+    },
+    "openai/gpt-4o-mini:batch": {
+      "in": 0.075,
+      "out": 0.3,
+      "ctx": 128000
+    },
+    "openai/gpt-4o:batch": {
+      "in": 1.25,
+      "out": 5,
+      "ctx": 128000
+    },
+    "openai/gpt-5": {
+      "in": 1.25,
+      "out": 10,
+      "ctx": 400000
+    },
+    "openai/gpt-5-codex:batch": {
+      "in": 0.625,
+      "out": 5,
+      "ctx": 400000
+    },
+    "openai/gpt-5-mini": {
+      "in": 0.25,
+      "out": 2,
+      "ctx": 400000
+    },
+    "openai/gpt-5-mini:batch": {
+      "in": 0.125,
+      "out": 1,
+      "ctx": 400000
+    },
+    "openai/gpt-5-nano": {
+      "in": 0.049999999999999996,
+      "out": 0.39999999999999997,
+      "ctx": 400000
+    },
+    "openai/gpt-5-nano:batch": {
+      "in": 0.024999999999999998,
+      "out": 0.19999999999999998,
+      "ctx": 400000
+    },
+    "openai/gpt-5-pro": {
+      "in": 15,
+      "out": 120,
+      "ctx": 400000
+    },
+    "openai/gpt-5-pro:batch": {
+      "in": 7.5,
+      "out": 60,
+      "ctx": 400000
+    },
+    "openai/gpt-5.1": {
+      "in": 1.25,
+      "out": 10,
+      "ctx": 400000
+    },
+    "openai/gpt-5.1-codex": {
+      "in": 1.25,
+      "out": 10,
+      "ctx": 400000
+    },
+    "openai/gpt-5.1-codex-max": {
+      "in": 1.25,
+      "out": 10,
+      "ctx": 400000
+    },
+    "openai/gpt-5.1-codex-mini": {
+      "in": 0.25,
+      "out": 2,
+      "ctx": 400000
+    },
+    "openai/gpt-5.1:batch": {
+      "in": 0.625,
+      "out": 5,
+      "ctx": 400000
+    },
+    "openai/gpt-5.2": {
+      "in": 1.75,
+      "out": 14,
+      "ctx": 400000
+    },
+    "openai/gpt-5.2-chat": {
+      "in": 1.75,
+      "out": 14,
+      "ctx": 128000
+    },
+    "openai/gpt-5.2-codex": {
+      "in": 1.75,
+      "out": 14,
+      "ctx": 400000
+    },
+    "openai/gpt-5.2-pro": {
+      "in": 21,
+      "out": 168,
+      "ctx": 400000
+    },
+    "openai/gpt-5.2-pro:batch": {
+      "in": 10.5,
+      "out": 84,
+      "ctx": 400000
+    },
+    "openai/gpt-5.2:batch": {
+      "in": 0.875,
+      "out": 7,
+      "ctx": 400000
+    },
+    "openai/gpt-5.3-codex": {
+      "in": 1.75,
+      "out": 14,
+      "ctx": 400000
+    },
+    "openai/gpt-5.4": {
+      "in": 2.5,
+      "out": 15,
+      "ctx": 1050000,
+      "conditional_pricing": true
+    },
+    "openai/gpt-5.4-mini": {
+      "in": 0.75,
+      "out": 4.5,
+      "ctx": 400000
+    },
+    "openai/gpt-5.4-mini:batch": {
+      "in": 0.375,
+      "out": 2.25,
+      "ctx": 400000
+    },
+    "openai/gpt-5.4-nano": {
+      "in": 0.19999999999999998,
+      "out": 1.25,
+      "ctx": 400000
+    },
+    "openai/gpt-5.4-nano:batch": {
+      "in": 0.09999999999999999,
+      "out": 0.625,
+      "ctx": 400000
+    },
+    "openai/gpt-5.4-pro": {
+      "in": 30,
+      "out": 180,
+      "ctx": 1050000,
+      "conditional_pricing": true
+    },
+    "openai/gpt-5.4-pro:batch": {
+      "in": 15,
+      "out": 90,
+      "ctx": 1050000,
+      "conditional_pricing": true
+    },
+    "openai/gpt-5.4:batch": {
+      "in": 1.25,
+      "out": 7.5,
+      "ctx": 1050000,
+      "conditional_pricing": true
+    },
+    "openai/gpt-5.5": {
+      "in": 5,
+      "out": 30,
+      "ctx": 1050000,
+      "conditional_pricing": true
+    },
+    "openai/gpt-5.5-pro": {
+      "in": 30,
+      "out": 180,
+      "ctx": 1050000,
+      "conditional_pricing": true
+    },
+    "openai/gpt-5.5-pro:batch": {
+      "in": 15,
+      "out": 90,
+      "ctx": 1050000,
+      "conditional_pricing": true
+    },
+    "openai/gpt-5.5:batch": {
+      "in": 2.5,
+      "out": 15,
+      "ctx": 1050000,
+      "conditional_pricing": true
+    },
+    "openai/gpt-5.6-luna": {
+      "in": 0.19999999999999998,
+      "out": 1.2,
+      "ctx": 1050000,
+      "conditional_pricing": true
+    },
+    "openai/gpt-5.6-luna-pro": {
+      "in": 0.19999999999999998,
+      "out": 1.2,
+      "ctx": 1050000,
+      "conditional_pricing": true
+    },
+    "openai/gpt-5.6-luna-pro:batch": {
+      "in": 0.09999999999999999,
+      "out": 0.6,
+      "ctx": 1050000,
+      "conditional_pricing": true
+    },
+    "openai/gpt-5.6-luna:batch": {
+      "in": 0.09999999999999999,
+      "out": 0.6,
+      "ctx": 1050000,
+      "conditional_pricing": true
+    },
+    "openai/gpt-5.6-sol": {
+      "in": 2,
+      "out": 10,
+      "ctx": 1050000,
+      "conditional_pricing": true
+    },
+    "openai/gpt-5.6-sol-pro": {
+      "in": 2,
+      "out": 10,
+      "ctx": 1050000,
+      "conditional_pricing": true
+    },
+    "openai/gpt-5.6-sol-pro:batch": {
+      "in": 1,
+      "out": 5,
+      "ctx": 1050000,
+      "conditional_pricing": true
+    },
+    "openai/gpt-5.6-sol:batch": {
+      "in": 1,
+      "out": 5,
+      "ctx": 1050000,
+      "conditional_pricing": true
+    },
+    "openai/gpt-5.6-terra": {
+      "in": 2,
+      "out": 12,
+      "ctx": 1050000,
+      "conditional_pricing": true
+    },
+    "openai/gpt-5.6-terra-pro": {
+      "in": 2,
+      "out": 12,
+      "ctx": 1050000,
+      "conditional_pricing": true
+    },
+    "openai/gpt-5.6-terra-pro:batch": {
+      "in": 1,
+      "out": 6,
+      "ctx": 1050000,
+      "conditional_pricing": true
+    },
+    "openai/gpt-5.6-terra:batch": {
+      "in": 1,
+      "out": 6,
+      "ctx": 1050000,
+      "conditional_pricing": true
+    },
+    "openai/gpt-5:batch": {
+      "in": 0.625,
+      "out": 5,
+      "ctx": 400000
+    },
+    "openai/gpt-audio": {
+      "in": 2.5,
+      "out": 10,
+      "ctx": 128000
+    },
+    "openai/gpt-audio-mini": {
+      "in": 0.6,
+      "out": 2.4,
+      "ctx": 128000
+    },
+    "openai/gpt-chat-latest": {
+      "in": 5,
+      "out": 30,
+      "ctx": 400000
+    },
+    "openai/gpt-oss-120b": {
+      "in": 0.03,
+      "out": 0.16999999999999998,
+      "ctx": 131072
+    },
+    "openai/gpt-oss-20b": {
+      "in": 0.03,
+      "out": 0.13,
+      "ctx": 131072
+    },
+    "openai/gpt-oss-safeguard-20b": {
+      "in": 0.075,
+      "out": 0.3
+    },
+    "openai/o1": {
+      "in": 15,
+      "out": 60,
+      "ctx": 200000
+    },
+    "openai/o1:batch": {
+      "in": 7.5,
+      "out": 30,
+      "ctx": 200000
+    },
+    "openai/o3": {
+      "in": 2,
+      "out": 8,
+      "ctx": 200000
+    },
+    "openai/o3-mini": {
+      "in": 1.1,
+      "out": 4.4,
+      "ctx": 200000
+    },
+    "openai/o3-mini-high": {
+      "in": 1.1,
+      "out": 4.4,
+      "ctx": 200000
+    },
+    "openai/o3-mini-high:batch": {
+      "in": 0.55,
+      "out": 2.2,
+      "ctx": 200000
+    },
+    "openai/o3-mini:batch": {
+      "in": 0.55,
+      "out": 2.2,
+      "ctx": 200000
+    },
+    "openai/o3-pro": {
+      "in": 20,
+      "out": 80,
+      "ctx": 200000
+    },
+    "openai/o3-pro:batch": {
+      "in": 10,
+      "out": 40,
+      "ctx": 200000
+    },
+    "openai/o3:batch": {
+      "in": 1,
+      "out": 4,
+      "ctx": 200000
+    },
+    "openai/o4-mini": {
+      "in": 1.1,
+      "out": 4.4,
+      "ctx": 200000
+    },
+    "openai/o4-mini-high": {
+      "in": 1.1,
+      "out": 4.4,
+      "ctx": 200000
+    },
+    "openai/o4-mini-high:batch": {
+      "in": 0.55,
+      "out": 2.2,
+      "ctx": 200000
+    },
+    "openai/o4-mini:batch": {
+      "in": 0.55,
+      "out": 2.2,
+      "ctx": 200000
+    },
+    "poolside/laguna-s-2.1": {
+      "in": 0.09,
+      "out": 0.18,
+      "ctx": 1048576
+    },
+    "poolside/laguna-xs-2.1": {
+      "in": 0.06,
+      "out": 0.12,
+      "ctx": 262144
+    },
+    "qwen/qwen-2.5-72b-instruct": {
+      "in": 0.36,
+      "out": 0.39999999999999997,
+      "ctx": 131072
+    },
+    "qwen/qwen-2.5-7b-instruct": {
+      "in": 0.09999999999999999,
+      "out": 0.19999999999999998,
+      "ctx": 131072
+    },
+    "qwen/qwen-plus": {
+      "in": 0.26,
+      "out": 0.78,
+      "ctx": 131072,
+      "conditional_pricing": true
+    },
+    "qwen/qwen-plus-2025-07-28": {
+      "in": 0.26,
+      "out": 0.78,
+      "ctx": 1000000,
+      "conditional_pricing": true
+    },
+    "qwen/qwen-plus-2025-07-28:thinking": {
+      "in": 0.26,
+      "out": 0.78,
+      "ctx": 1000000,
+      "conditional_pricing": true
+    },
+    "qwen/qwen3-14b": {
+      "in": 0.12,
+      "out": 0.24,
+      "ctx": 131702
+    },
+    "qwen/qwen3-235b-a22b": {
+      "in": 0.45499999999999996,
+      "out": 1.8199999999999998,
+      "ctx": 131072
+    },
+    "qwen/qwen3-235b-a22b-2507": {
+      "in": 0.09,
+      "out": 0.55,
+      "ctx": 262144
+    },
+    "qwen/qwen3-235b-a22b-thinking-2507": {
+      "in": 0.22999999999999998,
+      "out": 2.3,
+      "ctx": 262144
+    },
+    "qwen/qwen3-30b-a3b": {
+      "in": 0.13,
+      "out": 0.52,
+      "ctx": 131072
+    },
+    "qwen/qwen3-30b-a3b-instruct-2507": {
+      "in": 0.04815,
+      "out": 0.19305,
+      "ctx": 131072
+    },
+    "qwen/qwen3-30b-a3b-thinking-2507": {
+      "in": 0.19999999999999998,
+      "out": 2.4,
+      "ctx": 131072
+    },
+    "qwen/qwen3-32b": {
+      "in": 0.08,
+      "out": 0.28,
+      "ctx": 131072
+    },
+    "qwen/qwen3-8b": {
+      "in": 0.117,
+      "out": 0.45499999999999996,
+      "ctx": 131072
+    },
+    "qwen/qwen3-coder": {
+      "in": 0.3,
+      "out": 1,
+      "ctx": 1048576
+    },
+    "qwen/qwen3-coder-30b-a3b-instruct": {
+      "in": 0.07,
+      "out": 0.28
+    },
+    "qwen/qwen3-coder-flash": {
+      "in": 0.195,
+      "out": 0.975,
+      "ctx": 128000,
+      "conditional_pricing": true
+    },
+    "qwen/qwen3-coder-next": {
+      "in": 0.12,
+      "out": 0.7999999999999999,
+      "ctx": 262144
+    },
+    "qwen/qwen3-coder-plus": {
+      "in": 0.65,
+      "out": 3.25,
+      "ctx": 128000,
+      "conditional_pricing": true
+    },
+    "qwen/qwen3-max": {
+      "in": 0.78,
+      "out": 3.9,
+      "ctx": 256000,
+      "conditional_pricing": true
+    },
+    "qwen/qwen3-max-thinking": {
+      "in": 0.78,
+      "out": 3.9,
+      "ctx": 262144,
+      "conditional_pricing": true
+    },
+    "qwen/qwen3-next-80b-a3b-instruct": {
+      "in": 0.09999999999999999,
+      "out": 1.1,
+      "ctx": 262144
+    },
+    "qwen/qwen3-next-80b-a3b-thinking": {
+      "in": 0.15,
+      "out": 1.2,
+      "ctx": 262144
+    },
+    "qwen/qwen3-vl-235b-a22b-instruct": {
+      "in": 0.21,
+      "out": 1.9,
+      "ctx": 131072
+    },
+    "qwen/qwen3-vl-235b-a22b-thinking": {
+      "in": 0.39999999999999997,
+      "out": 4,
+      "ctx": 131072
+    },
+    "qwen/qwen3-vl-30b-a3b-instruct": {
+      "in": 0.13,
+      "out": 0.52,
+      "ctx": 262144
+    },
+    "qwen/qwen3-vl-30b-a3b-thinking": {
+      "in": 0.19999999999999998,
+      "out": 2.4
+    },
+    "qwen/qwen3-vl-32b-instruct": {
+      "in": 0.10400000000000001,
+      "out": 0.41600000000000004,
+      "ctx": 262144
+    },
+    "qwen/qwen3-vl-8b-instruct": {
+      "in": 0.117,
+      "out": 0.45499999999999996,
+      "ctx": 256000
+    },
+    "qwen/qwen3-vl-8b-thinking": {
+      "in": 0.18,
+      "out": 2.0999999999999996,
+      "ctx": 256000
+    },
+    "qwen/qwen3.5-122b-a10b": {
+      "in": 0.26,
+      "out": 2.08,
+      "ctx": 262144
+    },
+    "qwen/qwen3.5-27b": {
+      "in": 0.195,
+      "out": 1.56,
+      "ctx": 256000
+    },
+    "qwen/qwen3.5-35b-a3b": {
+      "in": 0.25,
+      "out": 1.25,
+      "ctx": 256000
+    },
+    "qwen/qwen3.5-397b-a17b": {
+      "in": 0.39,
+      "out": 2.34,
+      "ctx": 256000
+    },
+    "qwen/qwen3.5-9b": {
+      "in": 0.09999999999999999,
+      "out": 0.15,
+      "ctx": 256000
+    },
+    "qwen/qwen3.5-flash-02-23": {
+      "in": 0.065,
+      "out": 0.26,
+      "ctx": 1000000
+    },
+    "qwen/qwen3.5-plus-02-15": {
+      "in": 0.26,
+      "out": 1.56,
+      "ctx": 1000000,
+      "conditional_pricing": true
+    },
+    "qwen/qwen3.5-plus-20260420": {
+      "in": 0.3,
+      "out": 1.7999999999999998,
+      "ctx": 1000000,
+      "conditional_pricing": true
+    },
+    "qwen/qwen3.6-27b": {
+      "in": 0.6,
+      "out": 3.5999999999999996,
+      "ctx": 262144
+    },
+    "qwen/qwen3.6-35b-a3b": {
+      "in": 0.14,
+      "out": 1,
+      "ctx": 262144
+    },
+    "qwen/qwen3.6-flash": {
+      "in": 0.1875,
+      "out": 1.125,
+      "ctx": 1000000,
+      "conditional_pricing": true
+    },
+    "qwen/qwen3.6-max-preview": {
+      "in": 1.0270000000000001,
+      "out": 6.162,
+      "ctx": 262144,
+      "conditional_pricing": true
+    },
+    "qwen/qwen3.6-plus": {
+      "in": 0.325,
+      "out": 1.95,
+      "ctx": 1000000,
+      "conditional_pricing": true
+    },
+    "qwen/qwen3.7-flash": {
+      "in": 0.03,
+      "out": 0.13,
+      "ctx": 1000000,
+      "conditional_pricing": true
+    },
+    "qwen/qwen3.7-max": {
+      "in": 1.475,
+      "out": 4.425,
+      "ctx": 1000000
+    },
+    "qwen/qwen3.7-plus": {
+      "in": 0.32,
+      "out": 1.28,
+      "ctx": 1000000,
+      "conditional_pricing": true
+    },
+    "qwen/qwen3.8-2.4t-a95b": {
+      "in": 2,
+      "out": 6,
+      "ctx": 1000000
+    },
+    "qwen/qwen3.8-27b": {
+      "in": 0.44999999999999996,
+      "out": 3.1999999999999997,
+      "ctx": 262144
+    },
+    "qwen/qwen3.8-max": {
+      "in": 2,
+      "out": 6,
+      "ctx": 1000000
+    },
+    "rekaai/reka-edge": {
+      "in": 0.09999999999999999,
+      "out": 0.09999999999999999,
+      "ctx": 16384
+    },
+    "relace/relace-search": {
+      "in": 1,
+      "out": 3,
+      "ctx": 256000
+    },
+    "sakana/fugu-ultra": {
+      "in": 5,
+      "out": 30,
+      "ctx": 1000000,
+      "conditional_pricing": true
+    },
+    "sakana/sakana-namazu": {
+      "in": 0.95,
+      "out": 4,
+      "ctx": 262144
+    },
+    "sao10k/l3.1-euryale-70b": {
+      "in": 1.4504,
+      "out": 1.4504,
+      "ctx": 131072
+    },
+    "stepfun/step-3.5-flash": {
+      "in": 0.09999999999999999,
+      "out": 0.3,
+      "ctx": 256000
+    },
+    "stepfun/step-3.7-flash": {
+      "in": 0.19999999999999998,
+      "out": 1.15,
+      "ctx": 256000
+    },
+    "tencent/hy3": {
+      "in": 0.13199999999999998,
+      "out": 0.5279999999999999,
+      "ctx": 262144
+    },
+    "tencent/hy3-preview": {
+      "in": 0.18,
+      "out": 0.6,
+      "ctx": 262144
+    },
+    "thedrummer/unslopnemo-12b": {
+      "in": 0.39999999999999997,
+      "out": 0.39999999999999997,
+      "ctx": 32000
+    },
+    "thinkingmachines/inkling": {
+      "in": 0.95,
+      "out": 4.05,
+      "ctx": 1048576
+    },
+    "thinkingmachines/inkling-small": {
+      "in": 0.44999999999999996,
+      "out": 1.2,
+      "ctx": 1048576
+    },
+    "thinkingmachines/inkling:batch": {
+      "in": 1,
+      "out": 4.05,
+      "ctx": 1048576
+    },
+    "upstage/solar-pro-3": {
+      "in": 0.15,
+      "out": 0.6,
+      "ctx": 128000
+    },
+    "upstage/solar-pro4": {
+      "in": 0.03,
+      "out": 0.12,
+      "ctx": 524288
+    },
+    "x-ai/grok-4.20": {
+      "in": 1.25,
+      "out": 2.5,
+      "ctx": 2000000,
+      "conditional_pricing": true
+    },
+    "x-ai/grok-4.3": {
+      "in": 1.25,
+      "out": 2.5,
+      "ctx": 1000000,
+      "conditional_pricing": true
+    },
+    "x-ai/grok-4.5": {
+      "in": 2,
+      "out": 6,
+      "ctx": 500000,
+      "conditional_pricing": true
+    },
+    "x-ai/grok-4.6": {
+      "in": 2,
+      "out": 6,
+      "ctx": 500000,
+      "conditional_pricing": true
+    },
+    "x-ai/grok-build-0.1": {
+      "in": 1,
+      "out": 2,
+      "ctx": 256000,
+      "conditional_pricing": true
+    },
+    "xiaomi/mimo-v2.5": {
+      "in": 0.14,
+      "out": 0.28,
+      "ctx": 1048576
+    },
+    "xiaomi/mimo-v2.5-pro": {
+      "in": 0.435,
+      "out": 0.87,
+      "ctx": 1048576
+    },
+    "z-ai/glm-4.5": {
+      "in": 0.6,
+      "out": 2.2,
+      "ctx": 131072,
+      "expires_at": "2026-12-31"
+    },
+    "z-ai/glm-4.5-air": {
+      "in": 0.13,
+      "out": 0.85,
+      "ctx": 131072
+    },
+    "z-ai/glm-4.5v": {
+      "in": 0.6,
+      "out": 1.7999999999999998,
+      "ctx": 65536
+    },
+    "z-ai/glm-4.6": {
+      "in": 0.5,
+      "out": 2,
+      "ctx": 200000
+    },
+    "z-ai/glm-4.6v": {
+      "in": 0.3,
+      "out": 0.8999999999999999,
+      "ctx": 131072
+    },
+    "z-ai/glm-4.7": {
+      "in": 0.39999999999999997,
+      "out": 1.75,
+      "ctx": 200000
+    },
+    "z-ai/glm-4.7-flash": {
+      "in": 0.06,
+      "out": 0.39999999999999997,
+      "ctx": 200000
+    },
+    "z-ai/glm-5": {
+      "in": 0.6,
+      "out": 1.92,
+      "ctx": 202752
+    },
+    "z-ai/glm-5-turbo": {
+      "in": 1.2,
+      "out": 4,
+      "ctx": 202752,
+      "expires_at": "2098-12-31"
+    },
+    "z-ai/glm-5.1": {
+      "in": 0.966,
+      "out": 3.036,
+      "ctx": 202752
+    },
+    "z-ai/glm-5.2": {
+      "in": 0.966,
+      "out": 3.036,
+      "ctx": 1048576
+    },
+    "z-ai/glm-5.2:batch": {
+      "in": 1.4,
+      "out": 4.4,
+      "ctx": 1048576
+    },
+    "z-ai/glm-5.3": {
+      "in": 1.4,
+      "out": 4.4,
+      "ctx": 1048576,
+      "expires_at": "2098-12-31"
+    },
+    "z-ai/glm-5v-turbo": {
+      "in": 1.2,
+      "out": 4,
+      "ctx": 202752,
+      "expires_at": "2098-12-31"
+    }
+  }
+}
