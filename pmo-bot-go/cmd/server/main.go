@@ -19,6 +19,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/thebrunm97/pmo-bot-go/internal/adapter/agriculture"
+	"github.com/thebrunm97/pmo-bot-go/internal/adapter/auditvault"
 	"github.com/thebrunm97/pmo-bot-go/internal/adapter/embedcache"
 	"github.com/thebrunm97/pmo-bot-go/internal/adapter/evolution"
 	"github.com/thebrunm97/pmo-bot-go/internal/config"
@@ -244,6 +245,19 @@ func main() {
 	agriRepo := agriculture.NewSupabaseAgriculturalRepository(sbClient)
 	cachedEmbedder := embedcache.NewCachedEmbedder(llmProvider.Embedder(), 15*time.Minute)
 	mcpServer := mcp.NewServer(sbClient, agriRepo, cachedEmbedder, llmProvider)
+
+	// --- Cofre de Auditoria Efêmero (DT-42) ---
+	//
+	// Ativado apenas com cliente Supabase disponível. Sem ele o campo fica nil,
+	// que é contrato válido no worker de mídia e significa "cofre desativado":
+	// o áudio segue sendo transcrito e descartado, sem cópia de auditoria.
+	var auditVault queue.AudioArchiver
+	if sbClient != nil {
+		auditVault = auditvault.New(sbClient)
+		log.Println("🔐 [Cofre] Auditoria Efêmera ativa — retenção de 90 dias em bucket privado")
+	} else {
+		log.Println("⚠️ [Cofre] Desativado (sem cliente Supabase) — áudios não terão prova de não-repúdio")
+	}
 	mcpServer.InitializeTools()
 	log.Println("✅ Servidor MCP (Internal) inicializado com Tool RAG")
 
@@ -358,6 +372,12 @@ func main() {
 				WhatsApp: wpClient,
 				Groq:     groqClient,
 				LLM:      llmProvider,
+				// Cofre de Auditoria Efêmero (DT-42): guarda a gravação por 90
+				// dias em bucket privado, para que o produtor possa contestar um
+				// registro que a IA tenha alucinado. Sem isto o áudio é apenas
+				// transcrito e descartado — o que protege a privacidade e
+				// desprotege o produtor.
+				AudioVault: auditVault,
 			},
 			AI: queue.AIWorkerConfig{
 				Queue:             queueManager,

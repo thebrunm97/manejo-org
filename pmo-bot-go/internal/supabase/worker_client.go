@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -213,4 +214,73 @@ func (c *Client) DownloadStorageFile(ctx context.Context, bucket, path string) (
 		return nil, fmt.Errorf("read body: %w", err)
 	}
 	return data, nil
+}
+
+// UploadStorageFile envia um objeto para um bucket do Supabase Storage.
+//
+// Usa `x-upsert: false` deliberadamente: o Cofre de Auditoria gera nomes
+// aleatórios e uma colisão significaria sobrescrever a gravação de outra
+// pessoa. Falhar é o comportamento correto — colisão silenciosa destruiria a
+// prova de não-repúdio de alguém.
+func (c *Client) UploadStorageFile(ctx context.Context, bucket, path string, data []byte, contentType string) error {
+	url := fmt.Sprintf("%s/storage/v1/object/%s/%s", c.config.URL, bucket, path)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(data))
+	if err != nil {
+		return fmt.Errorf("build request: %w", err)
+	}
+	req.Header.Set("apikey", c.config.Key)
+	req.Header.Set("Authorization", "Bearer "+c.config.Key)
+	req.Header.Set("Content-Type", contentType)
+	req.Header.Set("x-upsert", "false")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("http: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 300 {
+		b, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("storage upload: status %d — %s", resp.StatusCode, string(b))
+	}
+	return nil
+}
+
+// InsertAuditVaultRecord indexa uma gravação do Cofre de Auditoria (DT-42).
+//
+// Recebe apenas tipos primitivos, deliberadamente: importar domain.AuditRecord
+// aqui criaria um ciclo (supabase → domain → ports → supabase). A tradução do
+// tipo de domínio para estes parâmetros fica em internal/adapter/auditvault,
+// que pode importar os dois lados sem fechar o ciclo.
+//
+// finalIntent vazio é gravado como NULL, e não como string vazia: a intenção só
+// é decidida adiante pelo roteador, e é essa distinção entre "ainda não
+// classificado" e "classificado como nada" que permite preencher depois.
+func (c *Client) InsertAuditVaultRecord(
+	ctx context.Context,
+	profileID, storagePath, finalIntent string,
+	createdAt, expiresAt time.Time,
+) error {
+	var intent interface{}
+	if strings.TrimSpace(finalIntent) != "" {
+		intent = finalIntent
+	}
+
+	payload, err := json.Marshal(map[string]interface{}{
+		"profile_id":   profileID,
+		"storage_path": storagePath,
+		"final_intent": intent,
+		"created_at":   createdAt,
+		"expires_at":   expiresAt,
+	})
+	if err != nil {
+		return fmt.Errorf("serializar registro do cofre: %w", err)
+	}
+
+	reqURL := fmt.Sprintf("%s/rest/v1/audios_audit", c.config.URL)
+	if _, err := c.doRequestWithContext(ctx, http.MethodPost, reqURL, payload); err != nil {
+		return fmt.Errorf("indexar registro do cofre: %w", err)
+	}
+	return nil
 }
