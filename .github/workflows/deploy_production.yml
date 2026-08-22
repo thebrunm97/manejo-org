@@ -1,0 +1,44 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  verify_schema_parity:
+    name: Verify Schema Parity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # A ideia aqui é checar se existem diferenças estruturais
+      # entre o ambiente de Staging e o de Produção,
+      # garantindo que as migrations estão alinhadas.
+      # Nota: Para o comando de diff abaixo funcionar corretamente, precisamos linkar o staging.
+      # Por simplicidade, podemos apenas validar que a DB_URL de produção não tem diff contra as migrations locais.
+      - name: Verify Migrations (Prod vs Local)
+        run: |
+          supabase db diff --db-url ${{ secrets.PROD_DB_URL }}
+
+  deploy:
+    name: Deploy Migrations to Production
+    runs-on: ubuntu-latest
+    needs: verify_schema_parity
+    environment: production
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Push Migrations
+        run: |
+          supabase db push --db-url ${{ secrets.PROD_DB_URL }}

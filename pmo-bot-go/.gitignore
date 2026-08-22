@@ -34,3 +34,9 @@ Thumbs.db
 
 # Docker
 docker-compose.override.yml
+
+# Scratch & Temporary Test Artifacts
+scratch/
+*.pdf
+nemotron_monitoring.csv
+

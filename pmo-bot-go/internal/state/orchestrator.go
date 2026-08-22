@@ -117,6 +117,8 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 		SB:        o.SB,
 	}
 
+	seenToolCounts := make(map[string]int)
+
 	for i := 0; i < 3; i++ {
 		if o.WhatsApp != nil {
 			go o.WhatsApp.SendPresence(ctx, o.Phone, "composing")
@@ -218,14 +220,41 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 				log.Printf("⚠️ [Orchestrator] Erro ao parsear args da ferramenta %s: %v", tc.Nome, errParse)
 			}
 
+			// Gerar IdempotencyKey determinística por grupo (tool_name + canonical_args)
+			cJSON, _ := guardrails.NormalizeCanonicalJSON(tc.Args)
+			groupKey := tc.Nome + ":" + string(cJSON)
+			occurrenceIdx := seenToolCounts[groupKey]
+			seenToolCounts[groupKey]++
+
+			messageID := ""
+			if mid, ok := ctx.Value("message_id").(string); ok && mid != "" {
+				messageID = mid
+			} else if rawID, ok := ctx.Value("raw_payload_id").(string); ok && rawID != "" {
+				messageID = rawID
+			} else {
+				messageID = fmt.Sprintf("msg-%d", len(history))
+			}
+
+			phone := ""
+			if profile != nil {
+				phone = profile.Telefone
+			}
+
+			idempKey, errIdemp := guardrails.GenerateIdempotencyKey(phone, messageID, tc.Nome, tc.Args, occurrenceIdx)
+			if errIdemp != nil {
+				log.Printf("⚠️ [Orchestrator] Falha ao gerar IdempotencyKey para %s: %v", tc.Nome, errIdemp)
+			}
+
 			req := ToolRequest{
-				ToolName:    tc.Nome,
-				ToolID:      tc.ID,
-				RawArgs:     tc.Args,
-				ParsedArgs:  parsedArgs,
-				Provider:    resp.Provider,
-				TraceEvents: &trace,
-				History:     &history,
+				ToolName:       tc.Nome,
+				ToolID:         tc.ID,
+				RawArgs:        tc.Args,
+				ParsedArgs:     parsedArgs,
+				Provider:       resp.Provider,
+				IdempotencyKey: idempKey,
+				OccurrenceIdx:  occurrenceIdx,
+				TraceEvents:    &trace,
+				History:        &history,
 			}
 
 			// 1. Contexto - não injetamos mais IDs em req.RawArgs

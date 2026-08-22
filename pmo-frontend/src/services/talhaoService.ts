@@ -106,11 +106,9 @@ export const talhaoService = {
         // Adiciona FK da propriedade apenas se definida
         if (talhao.propriedade_id) payload.propriedade_id = talhao.propriedade_id;
 
-        const { data, error } = await supabase
-            .from('talhoes')
-            .insert(payload)
-            .select()
-            .single();
+        const { data, error } = await supabase.rpc('create_talhao', { 
+            p_payload: payload 
+        });
 
         if (error) throw new Error(error.message);
 
@@ -129,10 +127,9 @@ export const talhaoService = {
     },
 
     async delete(id: string): Promise<void> {
-        const { error } = await supabase
-            .from('talhoes')
-            .delete()
-            .eq('id', id);
+        const { error } = await supabase.rpc('delete_talhao', { 
+            p_id: parseInt(id, 10) 
+        });
 
         if (error) throw new Error(error.message);
     }

@@ -78,9 +78,8 @@ const CoopDemandasPage: React.FC = () => {
         if (!organizacao) return;
         setSubmitting(true);
         try {
-            const { error } = await supabase
-                .from('demandas_coletivas')
-                .insert([{
+            const { error } = await supabase.rpc('create_demanda_coletiva', {
+                p_payload: {
                     titulo: formData.titulo,
                     cultura: formData.cultura,
                     quantidade_total: parseFloat(formData.volume_necessario),
@@ -89,9 +88,9 @@ const CoopDemandasPage: React.FC = () => {
                     modalidade_exigida: formData.modalidade_exigida,
                     cooperativa_id: organizacao.id,
                     data_entrega: formData.data_limite_entrega,
-                    criado_por: profile?.id,
                     status: 'aberta'
-                }]);
+                }
+            });
 
             if (error) throw error;
 
