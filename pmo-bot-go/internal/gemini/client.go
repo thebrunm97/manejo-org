@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -25,6 +26,64 @@ import (
 
 // Compile-time check: *Client must satisfy llm.LLMProvider.
 var _ llm.LLMProvider = (*Client)(nil)
+
+const (
+	// attemptTimeout limita cada tentativa do modelo PRIMÁRIO. Deriva do
+	// contexto do chamador, portanto continua respeitando o prazo do turno —
+	// nunca o estende.
+	attemptTimeout = 25 * time.Second
+
+	// fallbackTimeout é o orçamento próprio da ESCALADA.
+	//
+	// Só a escalada usa WithoutCancel, e por um motivo específico: quando o
+	// primário falha por timeout, o contexto do turno já está vencido e a
+	// escalada nasceria morta (era o bug: retornava em ~0,5ms). O teto curto
+	// aqui é o que impede a exceção de virar execução sem limite — sem ele, 3
+	// tentativas do primário mais a escalada poderiam ultrapassar 100s, muito
+	// além dos 30s de orçamento do turno.
+	fallbackTimeout = 15 * time.Second
+)
+
+// FallbackReason classifica POR QUE houve escalada.
+//
+// A distinção é operacional, não cosmética: falha de infraestrutura (timeout,
+// 429, 5xx) se resolve trocando de PROVEDOR com a mesma tarefa; falha de
+// capacidade (resposta inválida ou fraca) exige um modelo MAIS FORTE. Tratar
+// todo timeout como "precisa de mais raciocínio" mistura os dois e impede
+// descobrir onde o problema realmente está.
+type FallbackReason string
+
+const (
+	ReasonTimeout    FallbackReason = "timeout"
+	ReasonRateLimit  FallbackReason = "rate_limit"
+	ReasonServer5xx  FallbackReason = "erro_5xx"
+	ReasonBadRequest FallbackReason = "requisicao_invalida"
+	ReasonOutro      FallbackReason = "outro"
+)
+
+// classifyFallbackReason mapeia o erro para o vocabulário controlado acima, de
+// modo que os logs possam ser agregados por motivo em vez de lidos um a um.
+func classifyFallbackReason(err error) FallbackReason {
+	if err == nil {
+		return ReasonOutro
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return ReasonTimeout
+	}
+	msg := strings.ToLower(err.Error())
+	switch {
+	case strings.Contains(msg, "deadline exceeded"), strings.Contains(msg, "timeout"):
+		return ReasonTimeout
+	case strings.Contains(msg, "429"), strings.Contains(msg, "resource_exhausted"), strings.Contains(msg, "quota"):
+		return ReasonRateLimit
+	case strings.Contains(msg, "500"), strings.Contains(msg, "503"), strings.Contains(msg, "unavailable"), strings.Contains(msg, "overloaded"):
+		return ReasonServer5xx
+	case strings.Contains(msg, "400"), strings.Contains(msg, "invalid"), strings.Contains(msg, "404"), strings.Contains(msg, "not found"):
+		return ReasonBadRequest
+	default:
+		return ReasonOutro
+	}
+}
 
 // Config holds Gemini API configuration
 type Config struct {
@@ -207,10 +266,19 @@ func (c *Client) GenerateContent(ctx context.Context, req llm.ContentRequest) (l
 	}
 
 	op := func(modelName string) (any, error) {
+		// O primário deriva do contexto do chamador e continua sujeito ao prazo
+		// do turno. Só a ESCALADA descarta o deadline (WithoutCancel), porque
+		// nesse ponto o prazo já foi consumido pelo primário e ela nasceria
+		// morta — era exatamente o bug observado (retorno em ~0,5ms, sem abrir
+		// conexão). O orçamento curto e próprio evita que a exceção vire
+		// execução sem limite.
+		attemptCtx, cancel := newAttemptContext(ctx, modelName == c.Config.Model)
+		defer cancel()
+
 		if modelName == c.Config.Model || modelName == c.Config.FallbackModel {
-			return c.CallGoogle(ctx, req.SystemInstruction, req.History, req.Tools, googleSchema)
+			return c.CallGoogle(attemptCtx, modelName, req.SystemInstruction, req.History, req.Tools, googleSchema)
 		}
-		return c.CallOpenRouter(ctx, req.SystemInstruction, req.History, req.Tools, openrouterSchema)
+		return c.CallOpenRouter(attemptCtx, req.SystemInstruction, req.History, req.Tools, openrouterSchema)
 	}
 
 	res, _, err := c.withFallback(op)
@@ -235,13 +303,13 @@ func (c *Client) ClassifyIntent(ctx context.Context, text string) (llm.UnifiedIn
 	op := func(modelName string) (any, error) {
 		if strings.Contains(modelName, "/") || c.OpenAI != nil {
 			if modelName == c.Config.Model || modelName == c.Config.FallbackModel {
-				return c.CallGoogle(ctx, sysInst, []llm.MensagemAgnostica{{Role: llm.PapelUser, Content: text}}, nil, googleSchema)
+				return c.CallGoogle(ctx, modelName, sysInst, []llm.MensagemAgnostica{{Role: llm.PapelUser, Content: text}}, nil, googleSchema)
 			}
 			return c.CallOpenRouter(ctx, sysInst, []llm.MensagemAgnostica{
 				{Role: llm.PapelUser, Content: text},
 			}, nil, openRouterSchema)
 		}
-		return c.CallGoogle(ctx, sysInst, []llm.MensagemAgnostica{{Role: llm.PapelUser, Content: text}}, nil, googleSchema)
+		return c.CallGoogle(ctx, modelName, sysInst, []llm.MensagemAgnostica{{Role: llm.PapelUser, Content: text}}, nil, googleSchema)
 	}
 
 	res, modelUsed, err := c.withFallback(op)
@@ -314,7 +382,10 @@ func (c *Client) AskSimple(ctx context.Context, question string, systemInstructi
 
 // DescribeImage analyzes an image and returns a technical description.
 func (c *Client) DescribeImage(ctx context.Context, imageBytes []byte, mimeType string) (string, string, error) {
-	modelName := "gemini-1.5-flash"
+	// Antes fixava "gemini-1.5-flash", modelo já descontinuado pela API — ou
+	// seja, a descrição de imagem estava quebrada de forma silenciosa. Usa o
+	// modelo configurado, que é multimodal.
+	modelName := c.Config.Model
 
 	config := &genai.GenerateContentConfig{
 		SystemInstruction: &genai.Content{
@@ -385,6 +456,15 @@ func (c *Client) withFallback(fn func(model string) (any, error)) (any, string, 
 
 		primaryErr = err
 
+		// Conexão travada: escala IMEDIATAMENTE, sem repetir no mesmo endpoint.
+		// Insistir custava ~79s (3 × 25s + backoffs) antes de sequer tentar
+		// outro provedor — e o dado mostra que o stall não depende da carga,
+		// então repetir a mesma chamada tende a travar de novo.
+		if isStallError(err) {
+			log.Printf("⏱️ [GEMINI] Conexão travada no modelo primário (%s) após %v. Escalando de imediato — repetir o mesmo endpoint não resolve stall.", c.Config.Model, attemptTimeout)
+			break
+		}
+
 		if !isOverloadedError(err) {
 			// Non-transient error (e.g. bad request): skip retries, go straight to fallback.
 			log.Printf("⚠️ [GEMINI] Primary model (%s) failed with non-retryable error: %v. Escalating to fallback.", c.Config.Model, err)
@@ -398,6 +478,12 @@ func (c *Client) withFallback(fn func(model string) (any, error)) (any, string, 
 			log.Printf("⚠️ [GEMINI] Primary model (%s) exhausted after %d attempts: %v", c.Config.Model, maxAttempts, err)
 		}
 	}
+
+	// Linha agregável: permite responder "os timeouts são do modelo, da rede ou
+	// do nosso prompt?" contando por motivo, em vez de ler log a log.
+	primaryReason := classifyFallbackReason(primaryErr)
+	log.Printf("telemetry event=llm_fallback motivo_do_fallback=%s modelo_primario=%s tentativas=%d",
+		primaryReason, c.Config.Model, maxAttempts)
 
 	// 2. Escalate to Fallback Model (paid tier) only after primary is exhausted or non-retryable error
 	if c.Config.FallbackModel != "" {
@@ -436,10 +522,34 @@ func isOverloadedError(err error) bool {
 		strings.Contains(errStr, "503") ||
 		strings.Contains(errStr, "resource_exhausted") ||
 		strings.Contains(errStr, "overloaded") ||
-		strings.Contains(errStr, "context deadline exceeded") ||
 		strings.Contains(errStr, "high demand") ||
 		strings.Contains(errStr, "rate limit exceeded") ||
 		strings.Contains(errStr, "currently experiencing high demand")
+}
+
+// isStallError identifica uma conexão que travou (deadline estourado), o que é
+// diferente de sobrecarga declarada pelo servidor.
+//
+// A distinção vale tempo real. Medição de 2026-08-22 (121 chamadas): 7% das
+// requisições travam e só morrem no timeout, e a latência dos casos travados
+// não guarda relação com o tamanho do payload — chamadas do roteador, com
+// payload mínimo, travam MAIS que as de 44KB. Ou seja, não é o servidor
+// processando devagar: é a conexão que não responde.
+//
+// Repetir a mesma requisição no mesmo endpoint que acabou de ficar mudo por 25s
+// é improvável de ajudar, e custava 25+2+25+2+25 = ~79s antes de escalar. Um
+// 429/503, ao contrário, é o servidor dizendo "estou cheio agora" — aí repetir
+// com backoff faz sentido.
+func isStallError(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return true
+	}
+	errStr := strings.ToLower(err.Error())
+	return strings.Contains(errStr, "context deadline exceeded") ||
+		strings.Contains(errStr, "client.timeout")
 }
 
 // GenerateContentWithTools handles the interactive tool calling flow with history support.
@@ -568,9 +678,15 @@ func (c *Client) CallOpenRouter(ctx context.Context, sysInst string, history []l
 
 // CallGoogle executes a completion request via Google GenAI SDK.
 // It converts agnostic history and tools to the Google format and returns an agnostic response.
-func (c *Client) CallGoogle(ctx context.Context, sysInst string, history []llm.MensagemAgnostica, agnosticTools []llm.FerramentaAgnostica, agnosticSchema *genai.Schema) (llm.RespostaAgnostica, error) {
+// O parâmetro modelName é OBRIGATÓRIO e define qual modelo será efetivamente
+// chamado. Antes esta função fixava c.Config.Model internamente, o que anulava
+// silenciosamente todo o withFallback: ao "escalar" para o modelo de fallback,
+// a chamada seguia batendo no primário que acabara de falhar.
+func (c *Client) CallGoogle(ctx context.Context, modelName string, sysInst string, history []llm.MensagemAgnostica, agnosticTools []llm.FerramentaAgnostica, agnosticSchema *genai.Schema) (llm.RespostaAgnostica, error) {
 	defer utils.TraceLatency("Google Gemini API", time.Now())
-	modelName := c.Config.Model
+	if modelName == "" {
+		modelName = c.Config.Model
+	}
 	var tools []*genai.Tool
 	for _, f := range agnosticTools {
 		tools = append(tools, f.ParaGoogle())
@@ -595,12 +711,25 @@ func (c *Client) CallGoogle(ctx context.Context, sysInst string, history []llm.M
 
 	log.Printf("📡 [GEMINI SDK] Chamada (%s) com %d ferramentas e %d msgs de histórico.", modelName, len(tools), len(googleHistory))
 
-	// Chamada direta ao SDK (sem usar o abstração de Chat para ter controle total da última resposta)
-	// Nota: O Orquestrador gere o histórico manualmente agora.
+	// DT-33 — instrumentação no nível do PROVIDER, e não de cada chamador.
+	//
+	// Existem 6 pontos que chamam o LLM (orquestrador, atalho de CHAT, roteador
+	// de intenção, resumo de histórico…). Instrumentar um a um deixaria buracos:
+	// o roteador, por exemplo, já foi observado levando 19s para classificar
+	// "Olá, bom dia" com ZERO ferramentas — um dado que contraria a hipótese de
+	// que só a carga explica os timeouts. Medindo aqui, nenhuma chamada escapa.
+	startProvider := time.Now()
 	resp, err := c.Client.Models.GenerateContent(ctx, modelName, googleHistory, config)
+	providerLatency := time.Since(startProvider)
+
 	if err != nil {
+		log.Printf("telemetry event=llm_provider_call provider=google status=erro modelo=%s latency_ms=%d ferramentas=%d msgs_historico=%d motivo=%s",
+			modelName, providerLatency.Milliseconds(), len(tools), len(googleHistory), classifyFallbackReason(err))
 		return llm.RespostaAgnostica{}, err
 	}
+
+	log.Printf("telemetry event=llm_provider_call provider=google status=ok modelo=%s latency_ms=%d ferramentas=%d msgs_historico=%d",
+		modelName, providerLatency.Milliseconds(), len(tools), len(googleHistory))
 
 	if len(resp.Candidates) == 0 {
 		return llm.RespostaAgnostica{}, fmt.Errorf("no candidates in google response")
@@ -676,13 +805,13 @@ func (c *Client) EvaluateEvidenceListwise(ctx context.Context, query string, chu
 	op := func(modelName string) (any, error) {
 		if strings.Contains(modelName, "/") || c.OpenAI != nil {
 			if modelName == c.Config.Model || modelName == c.Config.FallbackModel {
-				return c.CallGoogle(ctx, sysInst, []llm.MensagemAgnostica{{Role: llm.PapelUser, Content: input}}, nil, googleSchema)
+				return c.CallGoogle(ctx, modelName, sysInst, []llm.MensagemAgnostica{{Role: llm.PapelUser, Content: input}}, nil, googleSchema)
 			}
 			return c.CallOpenRouter(ctx, sysInst, []llm.MensagemAgnostica{
 				{Role: llm.PapelUser, Content: input},
 			}, nil, openRouterSchema)
 		}
-		return c.CallGoogle(ctx, sysInst, []llm.MensagemAgnostica{{Role: llm.PapelUser, Content: input}}, nil, googleSchema)
+		return c.CallGoogle(ctx, modelName, sysInst, []llm.MensagemAgnostica{{Role: llm.PapelUser, Content: input}}, nil, googleSchema)
 	}
 
 	// 4. Run with fallback
@@ -706,4 +835,15 @@ func (c *Client) ChatRaw(ctx context.Context, req llm.ChatRequest) (llm.ChatResp
 	// For Gemini, we might route to OpenRouter or implement directly.
 	// We'll stub this out for now since the Judge explicitly uses OpenAIAdapter.
 	return llm.ChatResponse{}, fmt.Errorf("ChatRaw not implemented for Gemini adapter yet")
+}
+
+// newAttemptContext monta o contexto de uma tentativa.
+//
+// isPrimary=true  → deriva do pai: respeita o prazo do turno, nunca o estende.
+// isPrimary=false → escalada: prazo próprio e curto, imune ao pai já vencido.
+func newAttemptContext(parent context.Context, isPrimary bool) (context.Context, context.CancelFunc) {
+	if isPrimary {
+		return context.WithTimeout(parent, attemptTimeout)
+	}
+	return context.WithTimeout(context.WithoutCancel(parent), fallbackTimeout)
 }
