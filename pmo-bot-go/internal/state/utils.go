@@ -11,7 +11,7 @@ import (
 
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
-	"github.com/thebrunm97/pmo-bot-go/internal/tts"
+	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 )
 
 const (
@@ -22,25 +22,46 @@ const (
 	StateAguardandoRateio     = "aguardando_rateio"
 )
 
-// sendFeedback encapsulates the logic of responding to the user via WhatsApp and/or TTS
-func sendFeedback(sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient *tts.Orchestrator, from string, message string, respondWithAudio bool) error {
-	var err error
+// sendFeedback responde ao produtor via WhatsApp, em texto e/ou áudio.
+//
+// O texto é SEMPRE enviado, mesmo quando há áudio: o produtor pode estar em
+// lugar onde não dá para ouvir, e sem o texto a resposta seria inacessível. O
+// áudio é um acréscimo, nunca um substituto — por isso ele vai primeiro (chega
+// como a resposta "principal") e o texto logo em seguida, como apoio.
+//
+// Consequência importante: uma falha no TTS deixou de ser um caminho de erro.
+// Antes exigia um fallback explícito para texto; agora o texto já está garantido
+// e a falha apenas degrada a experiência, sem perder a resposta.
+func sendFeedback(sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient ports.TTSProvider, from string, message string, respondWithAudio bool) error {
+	// O texto é o canal garantido e vai primeiro: a síntese leva dezenas de
+	// segundos, e mandar o áudio antes deixaria o produtor sem resposta nesse
+	// intervalo — ou sem nenhuma, se o TTS falhasse.
+	err := wpClient.SendMessage(from, message)
+
 	if respondWithAudio && ttsClient != nil {
-		log.Printf("🔊 [FSM] Gerando áudio para resposta...")
-		audioBytes, errSpeech := ttsClient.GenerateSpeech(context.Background(), message)
-		if errSpeech == nil {
-			b64 := base64.StdEncoding.EncodeToString(audioBytes)
-			err = wpClient.SendVoice(from, b64, false)
-			if err != nil {
-				log.Printf("⚠️ [FSM] Falha ao enviar áudio (SendVoice), tentando fallback para texto: %v", err)
-				err = wpClient.SendMessage(from, message)
-			}
-		} else {
-			log.Printf("⚠️ [FSM] Falha no TTS, enviando texto como fallback: %v", errSpeech)
-			err = wpClient.SendMessage(from, message)
+		// Sem sanitizar, o motor lê a formatação ("asterisco asterisco Consulta
+		// Técnica") e narra o nome de cada emoji. A mensagem escrita acima
+		// mantém a formatação intacta; só o áudio usa a versão limpa.
+		spoken := utils.SanitizeForSpeech(message)
+		if strings.TrimSpace(spoken) == "" {
+			return err
 		}
-	} else {
-		err = wpClient.SendMessage(from, message)
+
+		log.Printf("🔊 [FSM] Gerando áudio para resposta...")
+		ttsCtx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+		defer cancel()
+
+		audioBytes, mimeType, errSpeech := ttsClient.GenerateSpeech(ttsCtx, spoken)
+		if errSpeech != nil {
+			log.Printf("⚠️ [FSM] Falha no TTS (%s), texto já foi entregue: %v", ttsClient.Name(), errSpeech)
+		} else {
+			b64 := base64.StdEncoding.EncodeToString(audioBytes)
+			if errVoice := wpClient.SendVoice(from, b64, true); errVoice != nil {
+				log.Printf("⚠️ [FSM] Falha ao enviar áudio, texto já foi entregue: %v", errVoice)
+			} else {
+				log.Printf("✅ [FSM] Áudio enviado (%s, %s, %d bytes)", ttsClient.Name(), mimeType, len(audioBytes))
+			}
+		}
 	}
 
 	// Persist outgoing assistant message in a non-blocking goroutine

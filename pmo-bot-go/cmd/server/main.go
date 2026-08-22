@@ -150,10 +150,15 @@ func main() {
 		if geminiVersion == "" {
 			geminiVersion = "v1"
 		}
+		// Sem default embutido: "gemini-1.5-flash" já foi descontinuado pela API
+		// (confirmado — não consta mais em /v1beta/models) e um default morto é
+		// pior que nenhum, porque desvia a escalada para um modelo inexistente.
+		//
+		// Vazio é intencional: withFallback então escala para a OpenRouter, que é
+		// OUTRO provedor. Falha de infraestrutura (timeout/5xx/429) se resolve
+		// trocando de provedor, não de modelo — trocar de modelo dentro do mesmo
+		// provedor indisponível não resolve nada.
 		geminiFallback := factoryCfg.GeminiFallback
-		if geminiFallback == "" {
-			geminiFallback = "gemini-1.5-flash"
-		}
 		geminiClient, gemErr := gemini.NewClient(gemini.Config{
 			APIKey:           geminiKey,
 			OpenRouterAPIKey: cfg.OpenRouterKey,
@@ -280,10 +285,14 @@ func main() {
 	knowledgeHandler.RegisterRoutes(adminGroup)
 	log.Println("✅ [KnowledgeOps] Rotas /api/v1/admin/knowledge/* registradas")
 
-	// --- Initialize TTS Orchestrator ---
-	// Use Google Translate TTS (free, no API key required)
-	ttsClient := tts.NewGoogleOrchestrator()
-	log.Println("✅ TTS Orchestrator inicializado (Google Translate TTS)")
+	// --- Initialize TTS Provider ---
+	// Único ponto do sistema que conhece um fornecedor concreto de TTS. Todo o
+	// resto depende apenas de ports.TTSProvider, então trocar Piper por Google
+	// Cloud TTS/ElevenLabs é mudar TTS_PROVIDER — nada de lógica de negócio.
+	ttsClient, err := tts.NewFromEnv()
+	if err != nil {
+		log.Fatalf("❌ [TTS] Configuração inválida: %v", err)
+	}
 
 	// --- Harness de Produção (Feature Flag: HARNESS_ENABLED) ---
 	// HARNESS_ENABLED=true  → PostgreSQL queue + 3 Media Workers + 2 AI Workers

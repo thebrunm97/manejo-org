@@ -31,7 +31,6 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/state"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/telemetry"
-	"github.com/thebrunm97/pmo-bot-go/internal/tts"
 	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 	"golang.org/x/time/rate"
 )
@@ -47,7 +46,7 @@ type Config struct {
 	SupabaseClient  *supabase.Client
 	WhatsAppClient  ports.MessageSender
 	LLMClient       llm.LLMProvider
-	TtsClient       *tts.Orchestrator
+	TtsClient       ports.TTSProvider
 	MCPServer       *mcp.Server
 	HistoryManager  *history.Manager
 	FlagsmithClient *flagsmith.Client

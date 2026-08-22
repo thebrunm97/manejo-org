@@ -7,7 +7,8 @@ package queue
 //
 // Estratégia de Retry:
 //   - 3 tentativas com backoff linear (1s, 3s, 5s)
-//   - Fallback automático: TTS falhou na tentativa 2 → degrada para texto
+//   - O TEXTO é o canal garantido e é o que decide sucesso/retry
+//   - O ÁUDIO é um acréscimo best-effort, tentado uma única vez e nunca repetido
 //   - Nunca propaga erro para o caller principal (falha de entrega ≠ falha de processamento)
 
 import (
@@ -15,10 +16,11 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
-	"github.com/thebrunm97/pmo-bot-go/internal/tts"
+	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 )
 
 // DeliveryConfig configura o comportamento de entrega e retry.
@@ -35,19 +37,19 @@ func defaultDeliveryConfig() DeliveryConfig {
 	}
 }
 
-// SendWithRetry tenta entregar a resposta ao usuário com backoff e fallback.
+// SendWithRetry entrega a resposta ao usuário com backoff.
 //
-// Política de fallback TTS→Texto:
-//   Na tentativa 2, se a mensagem era para ser áudio e TTS falhou,
-//   degrada silenciosamente para envio de texto na próxima tentativa.
-//   O usuário recebe a resposta (mesmo que em formato diferente).
-func SendWithRetry(ctx context.Context, wp ports.MessageSender, ttsClient *tts.Orchestrator, to, msg string, asAudio bool) error {
+// Quando asAudio está ativo, o produtor recebe áudio E texto: o áudio como
+// resposta principal e o texto logo em seguida, para quem não pode ouvir. Uma
+// falha no TTS ou no envio do áudio degrada a experiência mas não a entrega —
+// o texto continua garantido.
+func SendWithRetry(ctx context.Context, wp ports.MessageSender, ttsClient ports.TTSProvider, to, msg string, asAudio bool) error {
 	cfg := defaultDeliveryConfig()
 	return sendWithConfig(ctx, wp, ttsClient, to, msg, asAudio, cfg)
 }
 
 // sendWithConfig é a implementação interna testável.
-func sendWithConfig(ctx context.Context, wp ports.MessageSender, ttsClient *tts.Orchestrator, to, msg string, asAudio bool, cfg DeliveryConfig) error {
+func sendWithConfig(ctx context.Context, wp ports.MessageSender, ttsClient ports.TTSProvider, to, msg string, asAudio bool, cfg DeliveryConfig) error {
 	var lastErr error
 	currentAsAudio := asAudio
 
@@ -58,30 +60,32 @@ func sendWithConfig(ctx context.Context, wp ports.MessageSender, ttsClient *tts.
 		default:
 		}
 
-		var err error
-		if currentAsAudio && ttsClient != nil {
-			err = sendAsAudio(ctx, wp, ttsClient, to, msg)
-		} else {
-			err = wp.SendMessage(to, msg)
-		}
+		// O TEXTO vai primeiro, de propósito: a síntese no Piper leva dezenas de
+		// segundos e, se o áudio fosse enviado antes, o produtor ficaria sem
+		// resposta nenhuma nesse intervalo — e sem nada caso o TTS falhasse.
+		// Com o texto na frente, a resposta chega imediatamente e o áudio é um
+		// complemento que chega depois.
+		err := wp.SendMessage(to, msg)
 
 		if err == nil {
 			if attempt > 0 {
-				log.Printf("✅ [Delivery] Entregue na tentativa %d (áudio=%v) to=%s",
-					attempt+1, currentAsAudio, to)
+				log.Printf("✅ [Delivery] Entregue na tentativa %d to=%s", attempt+1, to)
+			}
+
+			// Áudio é best-effort e só depois do texto garantido. Fica dentro do
+			// bloco de sucesso para nunca ser enviado mais de uma vez, mesmo que
+			// o texto tenha exigido retries.
+			if currentAsAudio && ttsClient != nil {
+				if errAudio := sendAsAudio(ctx, wp, ttsClient, to, msg); errAudio != nil {
+					log.Printf("⚠️  [Delivery] Áudio falhou (texto já entregue): %v — to=%s", errAudio, to)
+				}
 			}
 			return nil
 		}
 
 		lastErr = err
-		log.Printf("⚠️  [Delivery] Tentativa %d/%d falhou (áudio=%v): %v — to=%s",
-			attempt+1, cfg.MaxAttempts, currentAsAudio, err, to)
-
-		// Fallback de TTS na tentativa 2: degrada para texto
-		if currentAsAudio && attempt == 1 {
-			log.Printf("🔄 [Delivery] Degradando TTS→Texto (attempt=%d)", attempt+1)
-			currentAsAudio = false
-		}
+		log.Printf("⚠️  [Delivery] Tentativa %d/%d falhou: %v — to=%s",
+			attempt+1, cfg.MaxAttempts, err, to)
 
 		// Aguarda backoff antes da próxima tentativa (não aguarda na última)
 		if attempt < cfg.MaxAttempts-1 && attempt < len(cfg.Backoff) {
@@ -101,16 +105,27 @@ func sendWithConfig(ctx context.Context, wp ports.MessageSender, ttsClient *tts.
 }
 
 // sendAsAudio tenta enviar a resposta como áudio via TTS.
-func sendAsAudio(ctx context.Context, wp ports.MessageSender, ttsClient *tts.Orchestrator, to, text string) error {
+func sendAsAudio(ctx context.Context, wp ports.MessageSender, ttsClient ports.TTSProvider, to, text string) error {
 	if ttsClient == nil {
 		return fmt.Errorf("tts_client_nil")
 	}
 
-	ttsCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	// O Piper roda em CPU e leva ~15-30s numa resposta longa. Como o texto já
+	// foi entregue neste ponto, podemos esperar com folga sem prejudicar o
+	// produtor — um teto apertado só produziria áudio perdido por timeout.
+	ttsCtx, cancel := context.WithTimeout(ctx, 120*time.Second)
 	defer cancel()
 
-	// GenerateSpeech returns raw MP3 bytes
-	audioBytes, err := ttsClient.GenerateSpeech(ttsCtx, text)
+	// Sem isto o motor lê a formatação em voz alta ("asterisco asterisco
+	// Consulta Técnica") e narra o nome de cada emoji.
+	spoken := utils.SanitizeForSpeech(text)
+	if strings.TrimSpace(spoken) == "" {
+		return fmt.Errorf("tts_empty_after_sanitize")
+	}
+
+	// O formato concreto (mp3/wav/ogg) depende do provider configurado; o
+	// evolution-go detecta e reconverte para Opus, então aqui basta repassar.
+	audioBytes, _, err := ttsClient.GenerateSpeech(ttsCtx, spoken)
 	if err != nil {
 		return fmt.Errorf("tts_synthesis_failed: %w", err)
 	}

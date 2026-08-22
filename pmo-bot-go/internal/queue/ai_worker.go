@@ -27,7 +27,6 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/state"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
-	"github.com/thebrunm97/pmo-bot-go/internal/tts"
 	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 )
 
@@ -37,7 +36,7 @@ type AIWorkerConfig struct {
 	Supabase     *supabase.Client
 	WhatsApp     ports.MessageSender
 	LLM          llm.LLMProvider
-	TTS          *tts.Orchestrator
+	TTS          ports.TTSProvider
 	MCP          *mcp.Server
 	History      *history.Manager
 	PollInterval time.Duration // Default: 200ms (polling mais rápido pois é downstream do media worker)
