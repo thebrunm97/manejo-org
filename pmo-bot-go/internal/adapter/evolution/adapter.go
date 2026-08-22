@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"strings"
 	"time"
@@ -92,27 +93,44 @@ func (a *EvolutionAdapter) SendButton(to string, title, description, footer stri
 }
 
 // SendVoice sends a PTT (push-to-talk) audio message via Evolution API.
+//
+// O endpoint /send/media do evolution-go tem dois caminhos: o de JSON exige um
+// campo "url" acessível por HTTP (ele faz http.Get nela), então não aceita
+// base64 nem data URI. O caminho multipart aceita os bytes crus no campo "file",
+// converte para Opus automaticamente e já envia com PTT=true. Como aqui o áudio
+// é gerado em memória (TTS), usamos o multipart.
 func (a *EvolutionAdapter) SendVoice(to, base64Audio string, isPtt bool) error {
 	url := fmt.Sprintf("%s/send/media", a.BaseURL)
 
-	payload := map[string]interface{}{
-		"number":       to,
-		"media":        "data:audio/ogg;base64," + base64Audio,
-		"mediatype":    "audio",
-		"ptt":          isPtt,
-		"instanceName": a.InstanceName,
-	}
-
-	bodyBytes, err := json.Marshal(payload)
+	audioBytes, err := base64.StdEncoding.DecodeString(base64Audio)
 	if err != nil {
-		return fmt.Errorf("failed to marshal SendVoice payload: %w", err)
+		return fmt.Errorf("failed to decode SendVoice base64 audio: %w", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(bodyBytes))
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+	if err := writer.WriteField("number", to); err != nil {
+		return fmt.Errorf("failed to write SendVoice field 'number': %w", err)
+	}
+	if err := writer.WriteField("type", "audio"); err != nil {
+		return fmt.Errorf("failed to write SendVoice field 'type': %w", err)
+	}
+	part, err := writer.CreateFormFile("file", "ManejoORG_Resposta.ogg")
+	if err != nil {
+		return fmt.Errorf("failed to create SendVoice form file: %w", err)
+	}
+	if _, err := part.Write(audioBytes); err != nil {
+		return fmt.Errorf("failed to write SendVoice audio bytes: %w", err)
+	}
+	if err := writer.Close(); err != nil {
+		return fmt.Errorf("failed to close SendVoice multipart writer: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body.Bytes()))
 	if err != nil {
 		return fmt.Errorf("failed to create SendVoice request: %w", err)
 	}
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", writer.FormDataContentType())
 	req.Header.Set("apikey", a.APIKey)
 
 	resp, err := a.httpClient.Do(req)
