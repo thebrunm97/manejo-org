@@ -65,6 +65,12 @@ type Profile struct {
 	ModalidadePredominante string   `json:"modalidade_predominante,omitempty"`
 	TemProducaoParalela    bool     `json:"tem_producao_paralela,omitempty"`
 	Talhoes                []Talhao `json:"talhoes,omitempty"`
+
+	// PreferenciaResposta é o formato de resposta escolhido pelo produtor
+	// (DT-29): "texto", "audio" ou "automatico". Vazio significa que ele nunca
+	// escolheu, e o código trata como "automatico" (espelha a entrada).
+	// Interpretar com ports.ParseResponsePreference.
+	PreferenciaResposta string `json:"preferencia_resposta,omitempty"`
 }
 
 type Talhao struct {
@@ -501,6 +507,59 @@ func (c *Client) ResolvePhone(from string) (string, error) {
 
 	// Fallback general
 	return sanitized, nil
+}
+
+// GetResponsePreference reads only the response-format preference (DT-29).
+//
+// Consulta dedicada em vez de reaproveitar GetProfileByPhone porque roda no
+// caminho quente, uma vez por job, e a consulta de perfil completa traz
+// propriedade e talhões aninhados — payload grande para ler uma coluna.
+//
+// Devolve string vazia quando o produtor não tem perfil ou nunca escolheu; o
+// chamador normaliza com ports.ParseResponsePreference. Erro de rede também
+// resulta em vazio: a preferencia é uma otimização de UX e capacidade, e
+// falhar a entrega inteira porque ela não pôde ser lida seria pior que cair no
+// comportamento de espelhamento.
+func (c *Client) GetResponsePreference(phone string) (string, error) {
+	phone = utils.SanitizePhone(phone)
+	reqURL := fmt.Sprintf("%s/rest/v1/profiles?telefone=eq.%s&select=preferencia_resposta", c.config.URL, phone)
+
+	body, err := c.doRequest(http.MethodGet, reqURL, nil)
+	if err != nil {
+		return "", err
+	}
+
+	var results []struct {
+		PreferenciaResposta *string `json:"preferencia_resposta"`
+	}
+	if err := json.Unmarshal(body, &results); err != nil {
+		return "", err
+	}
+	if len(results) == 0 || results[0].PreferenciaResposta == nil {
+		return "", nil
+	}
+	return *results[0].PreferenciaResposta, nil
+}
+
+// SetResponsePreference grava a preferência de formato do produtor (DT-29).
+//
+// Diferente da leitura, aqui o erro IMPORTA e deve subir: o produtor acabou de
+// pedir explicitamente para mudar o modo, e confirmar uma mudança que não foi
+// gravada faria o bot mentir — ele voltaria a responder no formato antigo na
+// mensagem seguinte, sem explicação.
+func (c *Client) SetResponsePreference(phone string, pref string) error {
+	phone = utils.SanitizePhone(phone)
+	reqURL := fmt.Sprintf("%s/rest/v1/profiles?telefone=eq.%s", c.config.URL, phone)
+
+	payload, err := json.Marshal(map[string]interface{}{
+		"preferencia_resposta": pref,
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = c.doRequest(http.MethodPatch, reqURL, payload)
+	return err
 }
 
 // GetProfileByPhone fetches the user's active profile using their phone number

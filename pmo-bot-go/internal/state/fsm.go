@@ -108,6 +108,21 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 		}
 	}
 
+	// 0.1 Comando de preferência de formato (DT-29).
+	//
+	// Vem logo depois do greeting guard e antes de qualquer chamada de LLM,
+	// pelo mesmo motivo: interpretar "modo texto" com um modelo gastaria uma
+	// chamada, uma cota e alguns segundos para reconhecer duas palavras fixas.
+	//
+	// Fica fora do bloco do greeting guard porque a condição é diferente: um
+	// produtor pode perfeitamente MANDAR um áudio dizendo "modo texto", e
+	// nesse caso o comando chega aqui já transcrito, com IsAudio falso.
+	if msg.Body != "" && !msg.IsImage {
+		if res, tratado := handlePreferenceCommand(msg.Body, msg.From, phone, sbClient, wpClient, ttsClient); tratado {
+			return res
+		}
+	}
+
 	// 1. Context Resolution & Authentication
 	profile, _ := sbClient.GetProfileByPhone(phone)
 

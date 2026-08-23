@@ -127,10 +127,33 @@ func (w *AIWorker) processAIJob(ctx context.Context, job *Job, start time.Time) 
 	msg.Body = job.BodyText
 	msg.IsAudio = false // Já foi processado — IA enxerga apenas texto
 	msg.IsImage = false // Já foi processado — IA enxerga apenas texto
-	resolvedResponseMode := job.ShouldRespondWithAudio()
+	// DT-29: a preferência declarada pelo produtor ganha do espelhamento da
+	// entrada. Lida aqui, e não dentro do ProcessMessage, porque a decisão
+	// precisa ser resolvida UMA vez: logo abaixo o modo é marcado como
+	// explícito, e a partir daí todo o pipeline respeita o que foi decidido.
+	//
+	// Falha de leitura não interrompe nada: cai no comportamento anterior
+	// (espelhar a entrada), que é exatamente o default de quem nunca escolheu.
+	pref := ports.PreferenceAuto
+	if w.cfg.Supabase != nil && job.FromPhone != "" {
+		if raw, errPref := w.cfg.Supabase.GetResponsePreference(job.FromPhone); errPref != nil {
+			log.Printf("⚠️ [AIWorker] Não consegui ler a preferência de resposta (usando espelhamento): %v", errPref)
+		} else {
+			pref = ports.ParseResponsePreference(raw)
+		}
+	}
+
+	resolvedResponseMode := job.ShouldRespondWithAudioFor(pref)
+
+	// O log vem ANTES das duas atribuições abaixo, de propósito. Elas marcam
+	// o modo como explícito, e a função de log deriva a ORIGEM da decisão dos
+	// campos de msg — logar depois faria toda decisão ser atribuída a
+	// "explicit", que é o que o pipeline acabou de escrever, e nunca à causa
+	// real. Sem isto não dá para medir a adoção da preferência do DT-29.
+	LogResponseModeDecisionFor(job.ID, msg, pref, resolvedResponseMode, false)
+
 	msg.RespondWithAudio = resolvedResponseMode
 	msg.HasExplicitResponseMode = true
-	LogResponseModeDecision(job.ID, msg, resolvedResponseMode, false)
 
 	// ── Guardrail Layer 1: Input Validation Pipeline ──────────────────────────
 	// Runs PIIScrubber (redact) → InjectionDetector (block-or-pass).
