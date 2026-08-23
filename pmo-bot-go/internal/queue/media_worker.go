@@ -125,8 +125,29 @@ func (w *MediaWorker) tick(ctx context.Context, workerID string) (bool, error) {
 	if processErr != nil {
 		log.Printf("❌ [MediaWorker-%s] Falha no job %s: %v", workerID, job.ID, processErr)
 		_ = w.cfg.Queue.MarkFailed(ctx, job.ID, processErr.Error(), job.AttemptCount)
-		return true, nil // Processou (mesmo que com falha), conta como jobFound para o backoff?
-		// Na verdade, se falhou, talvez queiramos processar o próximo logo. Sim, true.
+
+		// Na ULTIMA tentativa o job vira dead letter e ninguem mais o processa.
+		// Sem este aviso o produtor manda um audio e recebe SILENCIO — nao sabe
+		// se o bot esta lento, se caiu, ou se o registro foi feito. Medido em
+		// producao: 6 jobs de audio morreram assim, todos por 500 do Evolution
+		// ao baixar a midia (que ja retentou 3 vezes; o problema nao e
+		// transitorio, e a midia deixou de estar disponivel).
+		//
+		// Avisar transforma silencio em algo que o produtor pode resolver:
+		// reenviar ou escrever. O texto e deliberadamente sem jargao — "erro
+		// 500" nao significa nada para quem esta no campo.
+		if IsDeadLetter(job.AttemptCount+1) && w.cfg.WhatsApp != nil {
+			aviso := "Não consegui ouvir esse áudio — ele pode ter expirado no WhatsApp. " +
+				"Pode gravar de novo ou me escrever o que precisa registrar?"
+			if errAviso := w.cfg.WhatsApp.SendMessage(job.FromPhone, aviso); errAviso != nil {
+				log.Printf("⚠️ [MediaWorker-%s] Job %s morreu e o aviso ao produtor tambem falhou: %v",
+					workerID, job.ID, errAviso)
+			} else {
+				log.Printf("📨 [MediaWorker-%s] Job %s em dead letter, produtor avisado", workerID, job.ID)
+			}
+		}
+
+		return true, nil
 	}
 
 	if err := w.cfg.Queue.MarkAIPending(ctx, job.ID, bodyText, respondAudio); err != nil {

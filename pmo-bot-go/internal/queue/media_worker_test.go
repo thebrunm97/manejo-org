@@ -26,7 +26,7 @@ func TestMediaWorker_ProcessAudio_WrongMediaType(t *testing.T) {
 
 	// If we call processMedia directly
 	_, _, err := worker.processMedia(ctx, job)
-	
+
 	if err == nil {
 		t.Fatal("expected error for unsupported media type, got nil")
 	}

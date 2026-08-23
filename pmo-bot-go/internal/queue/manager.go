@@ -272,6 +272,23 @@ func (m *Manager) MarkDone(ctx context.Context, jobID string, meta JobMeta) erro
 	return m.updateJob(ctx, jobID, update)
 }
 
+// MaxRetryAttempts e o numero de tentativas antes do dead letter.
+//
+// Existe como constante, e nao como numero solto no switch abaixo, porque a
+// decisao "este job morreu" e tomada em mais de um lugar: aqui, e no
+// MediaWorker, que precisa saber se deve avisar o produtor. Duplicar o numero
+// faria as duas divergirem em silencio, e o sintoma seria o produtor ser
+// avisado cedo demais ou nunca.
+//
+// ATENCAO: a coluna message_queue.max_attempts NAO e usada nesta decisao. Isso
+// e divergencia pre-existente entre schema e codigo — a coluna existe, o
+// codigo a ignora. Nao alterado aqui para nao mudar comportamento junto com
+// uma correcao de outra natureza.
+const MaxRetryAttempts = 3
+
+// IsDeadLetter informa se a proxima tentativa esgota o limite de retentativas.
+func IsDeadLetter(nextAttempt int) bool { return nextAttempt >= MaxRetryAttempts }
+
 // MarkFailed registra falha, incrementa attempt_count e agenda o próximo retry.
 // Backoff: 1ª falha=30s, 2ª=5min, 3ª+=dead letter (status=failed).
 func (m *Manager) MarkFailed(ctx context.Context, jobID, reason string, currentAttempt int) error {
@@ -292,7 +309,7 @@ func (m *Manager) MarkFailed(ctx context.Context, jobID, reason string, currentA
 		// Dead letter: sem mais tentativas
 		newStatus = "failed"
 		retryDelay = 0
-		log.Printf("💀 [Queue] Dead letter: id=%s attempts=%d reason=%s", jobID, nextAttempt, reason)
+		log.Printf("💀 [Queue] Dead letter: id=%s attempts=%d/%d reason=%s", jobID, nextAttempt, MaxRetryAttempts, reason)
 	}
 
 	update := map[string]interface{}{

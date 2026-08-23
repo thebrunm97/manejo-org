@@ -372,6 +372,37 @@ func main() {
 		queueManager := queue.NewManager(sbURL, sbKey)
 		harnessQueue = queueManager
 
+		// Reaper de jobs presos.
+		//
+		// `claim_next_message_job` marca o job como em processamento e so o
+		// proprio worker o tira desse estado. Se o worker morre no meio — deploy,
+		// crash, container reiniciado — ninguem devolve o job, e como o Claim so
+		// busca `pending`/`ai_pending`, nenhum worker futuro o enxerga. Para o
+		// produtor, a mensagem nunca recebeu resposta.
+		//
+		// Medido em 2026-08-23: 8 jobs presos, o mais antigo desde 2026-06-07.
+		//
+		// A primeira varredura roda na subida, e nao so apos o primeiro tick: o
+		// momento em que o processo sobe e exatamente quando existem orfaos do
+		// processo que acabou de morrer.
+		reaperInterval := 5 * time.Minute
+		if v := os.Getenv("REAPER_INTERVAL"); v != "" {
+			if parsed, err := time.ParseDuration(v); err == nil {
+				reaperInterval = parsed
+			} else {
+				log.Printf("⚠️ [Reaper] REAPER_INTERVAL=%q invalido, usando default de 5min: %v", v, err)
+			}
+		}
+		reaperStuckAfter := queue.DefaultStuckAfter
+		if v := os.Getenv("REAPER_STUCK_AFTER"); v != "" {
+			if parsed, err := time.ParseDuration(v); err == nil {
+				reaperStuckAfter = parsed
+			} else {
+				log.Printf("⚠️ [Reaper] REAPER_STUCK_AFTER=%q invalido, usando default de %s: %v", v, queue.DefaultStuckAfter, err)
+			}
+		}
+		go queue.NewStuckJobReaper(queueManager, reaperInterval, reaperStuckAfter).Run(context.Background())
+
 		// ── Guardrails: Input Pipeline + Output Judge ─────────────────────────
 		violationLogger := guardrails.NewSupabaseViolationLogger(sbURL, sbKey)
 		guardrailPipeline := guardrails.NewDefaultPipeline(violationLogger)
