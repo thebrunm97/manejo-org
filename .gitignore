@@ -323,3 +323,9 @@ docs-private/
 # pmo-bot-go/cmd/loadtest/README.md.
 test_assets/
 **/test_assets/
+
+# evolution-go-source virou diretório normal deste repo (DT-30 — era um
+# gitlink quebrado, sem .gitmodules, código ficava fora de qualquer controle
+# de versão). Este binário compilado é build artifact local (`go build`),
+# não deve ser versionado.
+evolution-go-source/evolution-go

@@ -23,7 +23,9 @@ LOGS="$(docker logs "$CONTAINER" --since "$JANELA" 2>&1)"
 # execução deste script arquiva as linhas de telemetria vistas até aqui. A
 # deduplicação por `sort -u` torna a execução repetida idempotente.
 ARQUIVO="${ARQUIVO_TELEMETRIA:-$(dirname "$0")/../.telemetria_acumulada.log}"
-grep -E 'event=(llm_call|llm_provider_call|llm_fallback|tool_invoked)' <<<"$LOGS" >> "$ARQUIVO" 2>/dev/null || true
+# self_heal_* somado ao filtro (DT-53): é justamente na recriação do
+# contêiner que se quer o histórico de tentativas de reconexão automática.
+grep -E 'event=(llm_call|llm_provider_call|llm_fallback|tool_invoked|self_heal_probe|self_heal_attempt|self_heal_result|self_heal_exhausted|self_heal_alert)' <<<"$LOGS" >> "$ARQUIVO" 2>/dev/null || true
 if [ -f "$ARQUIVO" ]; then
   sort -u "$ARQUIVO" -o "$ARQUIVO" 2>/dev/null || true
   # A partir daqui analisa-se o HISTÓRICO acumulado, não apenas a janela atual.

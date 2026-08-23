@@ -363,6 +363,186 @@ func (a *EvolutionAdapter) GetConnectionState() (string, error) {
 	return "close", nil
 }
 
+// StatusError carrega o código HTTP de uma resposta não-2xx da Evolution API.
+//
+// Existe para os chamadores classificarem por código em vez de vasculhar a
+// string do erro — o padrão `strings.Contains(err.Error(), "status 401")` já
+// usado no heartbeat (cmd/server/main.go) é exatamente a fragilidade que isto
+// evita no código novo do healer (DT-53), onde 401 precisa de um tratamento
+// diferente de "gateway indisponível".
+type StatusError struct {
+	Code int
+	Body string
+}
+
+func (e *StatusError) Error() string {
+	return fmt.Sprintf("evolution api error (status %d): %s", e.Code, e.Body)
+}
+
+// InstanceStatus espelha a resposta de GET /instance/status.
+//
+// LoggedIn é o campo que GetConnectionState descarta ao colapsar tudo em
+// "open"/"close". Ele importa porque, com o socket caído, LoggedIn vem false
+// mesmo quando a sessão salva em disco continua perfeitamente válida — por
+// isso o healer (DT-53) não pode decidir só por ele; precisa também de
+// InstanceInfo.Jid.
+type InstanceStatus struct {
+	Connected bool
+	LoggedIn  bool
+	Name      string
+}
+
+// InstanceInfo espelha a resposta de GET /instance/info/:id — rota
+// administrativa no evolution-go.
+//
+// Jid é o telefone do produtor codificado (ex.: "5534...@s.whatsapp.net").
+// Nunca deve ser logado nem colocado em corpo de alerta por extenso; o healer
+// só verifica se está vazio ou não. Um Jid vazio é o sinal que StartClient usa
+// para decidir entre retomar sessão e abrir fluxo de QR — checar isso aqui,
+// antes de agir, é a segunda das três travas contra QR automático.
+type InstanceInfo struct {
+	Jid              string
+	Connected        bool
+	DisconnectReason string
+	Events           string
+}
+
+// FetchStatus consulta GET /instance/status com contexto.
+//
+// Autentica com a apikey por-instância — a mesma que os demais métodos deste
+// adapter já usam, sem exigir chave admin.
+func (a *EvolutionAdapter) FetchStatus(ctx context.Context) (InstanceStatus, error) {
+	url := fmt.Sprintf("%s/instance/status", a.BaseURL)
+
+	var result struct {
+		Data struct {
+			Connected bool   `json:"Connected"`
+			LoggedIn  bool   `json:"LoggedIn"`
+			Name      string `json:"Name"`
+		} `json:"data"`
+	}
+	if err := a.getJSON(ctx, url, &result); err != nil {
+		return InstanceStatus{}, err
+	}
+	return InstanceStatus{
+		Connected: result.Data.Connected,
+		LoggedIn:  result.Data.LoggedIn,
+		Name:      result.Data.Name,
+	}, nil
+}
+
+// FetchInfo consulta GET /instance/info/:id — rota administrativa.
+//
+// A chave do bot só alcança esta rota se coincidir com a GLOBAL_API_KEY do
+// evolution-go (verificado nesta instalação: é o caso). Se não coincidir, o
+// erro vem como StatusError com Code 401/403, e o healer (DT-53) trata isso
+// como estado NAO_AUTORIZADA — nunca como "sessão caiu", que exigiria uma
+// remediação completamente diferente.
+func (a *EvolutionAdapter) FetchInfo(ctx context.Context, instanceID string) (InstanceInfo, error) {
+	url := fmt.Sprintf("%s/instance/info/%s", a.BaseURL, instanceID)
+
+	var result struct {
+		Data struct {
+			Jid              string `json:"jid"`
+			Connected        bool   `json:"connected"`
+			DisconnectReason string `json:"disconnect_reason"`
+			Events           string `json:"events"`
+		} `json:"data"`
+	}
+	if err := a.getJSON(ctx, url, &result); err != nil {
+		return InstanceInfo{}, err
+	}
+	return InstanceInfo{
+		Jid:              result.Data.Jid,
+		Connected:        result.Data.Connected,
+		DisconnectReason: result.Data.DisconnectReason,
+		Events:           result.Data.Events,
+	}, nil
+}
+
+// ForceReconnect chama POST /instance/forcereconnect/:id — rota administrativa,
+// e a única forma confirmada de recuperar uma sessão cujo socket caiu sem
+// derrubar o cliente do pool (POST /instance/reconnect recusa esse caso
+// específico com "client disconnected", sem nunca chamar ReconnectClient).
+//
+// `number` é exigido pela API mas é inofensivo aqui: no evolution-go,
+// ForceUpdateJid só reescreve o jid quando a instância NÃO tem um — e o healer
+// (DT-53) só chama este método depois de confirmar via FetchInfo que o Jid
+// está preenchido. Ou seja, o parâmetro nunca tem efeito no caminho que o
+// healer usa; ele existe só porque a API exige o campo no corpo.
+//
+// O status HTTP da resposta NÃO deve ser usado para decidir sucesso ou
+// falha: o serviço dorme só 2s antes de responder, e a conexão real leva bem
+// mais que isso — uma reconexão bem-sucedida frequentemente devolve 500
+// "failed to connect" mesmo assim. Quem decide é uma nova consulta a
+// FetchStatus depois, nunca o retorno deste método.
+func (a *EvolutionAdapter) ForceReconnect(ctx context.Context, instanceID, number string) error {
+	url := fmt.Sprintf("%s/instance/forcereconnect/%s", a.BaseURL, instanceID)
+	payload := map[string]interface{}{"number": number}
+	return a.doRequestCtx(ctx, http.MethodPost, url, payload)
+}
+
+// getJSON faz um GET com contexto e decodifica a resposta em out.
+func (a *EvolutionAdapter) getJSON(ctx context.Context, url string, out interface{}) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("apikey", a.APIKey)
+
+	resp, err := a.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return &StatusError{Code: resp.StatusCode, Body: string(body)}
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(out); err != nil {
+		return fmt.Errorf("failed to decode response: %w", err)
+	}
+	return nil
+}
+
+// doRequestCtx é a variante context-aware de doRequest.
+//
+// doRequest (abaixo) não foi tocado: está em produção há mais tempo e mexer
+// nele arriscaria os call sites existentes (SendMessage, SendButton, etc.) sem
+// necessidade — o healer é o único chamador que precisa respeitar
+// cancelamento de contexto até aqui.
+func (a *EvolutionAdapter) doRequestCtx(ctx context.Context, method, url string, payload interface{}) error {
+	var bodyReader io.Reader
+	if payload != nil {
+		bodyBytes, err := json.Marshal(payload)
+		if err != nil {
+			return fmt.Errorf("failed to marshal payload: %w", err)
+		}
+		bodyReader = bytes.NewReader(bodyBytes)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, method, url, bodyReader)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("apikey", a.APIKey)
+
+	resp, err := a.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return &StatusError{Code: resp.StatusCode, Body: string(respBody)}
+	}
+	return nil
+}
+
 // ConfigureWebhooks ensures that only the correct webhook is registered for the instance.
 // It fetches existing webhooks and sets the new one, effectively overriding or cleaning up old ones.
 func (a *EvolutionAdapter) ConfigureWebhooks(webhookURL string) error {
@@ -376,6 +556,11 @@ func (a *EvolutionAdapter) ConfigureWebhooks(webhookURL string) error {
 			"MESSAGE",
 			"SEND_MESSAGE",
 			"CONNECTION",
+			// QRCODE (DT-53): sem esta assinatura, um fluxo de QR aberto pelo
+			// evolution-go seria invisível para o bot — o self-heal nunca saberia
+			// que precisa se desligar. Com ela, ExtractEventType detecta o evento
+			// "QRCode" e o healer trata como disjuntor: para de agir e alerta.
+			"QRCODE",
 		},
 	}
 
@@ -458,6 +643,42 @@ type EvolutionWebhook struct {
 		} `json:"info"`
 		Message json.RawMessage `json:"message"`
 	} `json:"data"`
+}
+
+// Eventos de CONNECTION que interessam ao self-heal (DT-53) — os únicos que
+// justificam acordar a sondagem antes do próximo tick de 60s.
+//
+// StreamReplaced somado depois do Estágio 3: o evolution-go passou a reportar
+// esse evento em vez de engoli-lo em silêncio (era exatamente a causa do
+// DT-52 — 24min fora do ar sem nenhum aviso). O healer trata como suspeita
+// elevada quando chega por este caminho.
+var eventosDeConexao = map[string]bool{
+	"Disconnected":   true,
+	"ConnectFailure": true,
+	"LoggedOut":      true,
+	"Connected":      true,
+	"QRCode":         true,
+	"StreamReplaced": true,
+}
+
+// ExtractEventType lê só o campo "event" do payload bruto do webhook, sem
+// decodificar o resto.
+//
+// Existe porque ParseWebhook descarta de propósito tudo que não é mensagem
+// (webhook.go:471-473) — correto para o caminho de mensagens, mas isso também
+// jogava fora eventos de CONNECTION que o evolution-go já entrega e que o
+// self-heal precisa ver. Em vez de sobrecarregar ParseWebhook com uma
+// responsabilidade que não é dele, esta função fica isolada e é chamada à
+// parte, no handler do webhook.
+func ExtractEventType(rawBody []byte) string {
+	var envelope struct {
+		Event string `json:"event"`
+	}
+	_ = json.Unmarshal(rawBody, &envelope)
+	if !eventosDeConexao[envelope.Event] {
+		return ""
+	}
+	return envelope.Event
 }
 
 // ParseWebhook converts an Evolution API webhook payload into a ports.IncomingMessage.

@@ -33,13 +33,16 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
 	"github.com/thebrunm97/pmo-bot-go/internal/middleware"
+	"github.com/thebrunm97/pmo-bot-go/internal/notify"
 	"github.com/thebrunm97/pmo-bot-go/internal/okf"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/proactivity"
 	"github.com/thebrunm97/pmo-bot-go/internal/prompt"
 	"github.com/thebrunm97/pmo-bot-go/internal/queue"
+	"github.com/thebrunm97/pmo-bot-go/internal/selfheal"
 	"github.com/thebrunm97/pmo-bot-go/internal/state"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
+	"github.com/thebrunm97/pmo-bot-go/internal/telemetry"
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
 	"github.com/thebrunm97/pmo-bot-go/internal/weather"
 	"github.com/thebrunm97/pmo-bot-go/internal/webhook"
@@ -53,6 +56,23 @@ func parseEnvInt(key string, defaultVal int) int {
 		}
 	}
 	return defaultVal
+}
+
+// parseEnvDuration segue o mesmo padrão já usado inline para
+// AUDIT_GC_INTERVAL/REAPER_INTERVAL/REAPER_STUCK_AFTER: valor ausente ou
+// inválido cai no default, com aviso no segundo caso — nunca erro fatal na
+// subida por causa de uma env var mal formatada.
+func parseEnvDuration(key string, defaultVal time.Duration) time.Duration {
+	v := os.Getenv(key)
+	if v == "" {
+		return defaultVal
+	}
+	parsed, err := time.ParseDuration(v)
+	if err != nil {
+		log.Printf("⚠️ %s=%q inválido, usando default de %s: %v", key, v, defaultVal, err)
+		return defaultVal
+	}
+	return parsed
 }
 
 func main() {
@@ -484,25 +504,79 @@ func main() {
 	})
 	handler.RegisterRoutes(r)
 
+	// --- Canal de alerta fora de banda (DT-53) ---
+	// Fora de banda porque o primeiro uso é avisar que o WhatsApp caiu — avisar
+	// pelo WhatsApp seria telefonar para dizer que o telefone não funciona.
+	notificador, temCanal := notify.NewFromEnv()
+	if temCanal {
+		log.Println("📣 [Alerta] Notificação de incidentes ATIVA")
+	} else {
+		log.Println("⚠️  [Alerta] Nenhum canal configurado — quedas do WhatsApp só aparecerão no log (ver DT-53)")
+	}
+	rastreador := selfheal.NewRastreador(cfg.EvoInstance, parseEnvInt("SELF_HEAL_DOWN_THRESHOLD", selfheal.LimiarPadrao))
+
+	// Prova, na subida, que o alerta consegue sair do container. Vale mais que
+	// qualquer teste unitário do notificador: o compose fixa DNS externo e já
+	// vimos resolução de DNS falhar de dentro deste host (incidente 2026-08-23).
+	if os.Getenv("SELF_HEAL_TEST_ALERT") == "true" {
+		notify.Disparar(context.Background(), notificador, ports.Alerta{
+			Chave:      ports.ChaveTeste,
+			Severidade: ports.SeveridadeRecuperado,
+			Titulo:     "Teste de alerta (" + cfg.EvoInstance + ")",
+			Corpo:      "Se você recebeu isto, o canal de alerta do DT-53 funciona ponta a ponta.",
+			Em:         time.Now(),
+		})
+	}
+
+	// --- Self-healing (Estágio 1, DT-53) ---
+	// SELF_HEAL_ENABLED=false por padrão: rollback é essa flag + restart, mesmo
+	// desenho do HARNESS_ENABLED. SELF_HEAL_DRY_RUN=true por padrão mesmo quando
+	// ligado: percorre a máquina de estados inteira, emite toda telemetria e
+	// todo alerta, mas nunca chama forcereconnect — todo o valor de detecção
+	// contra a sessão real, com risco zero à sessão. Só desligar o dry-run
+	// depois de observar o estado sendo classificado corretamente ao vivo.
+	selfHealEnabled := os.Getenv("SELF_HEAL_ENABLED") == "true"
+	if selfHealEnabled {
+		dryRun := os.Getenv("SELF_HEAL_DRY_RUN") != "false" // default true
+		healer := selfheal.NewHealer(wpClient, notificador, selfheal.Options{
+			Instance:      cfg.EvoInstance,
+			Interval:      parseEnvDuration("SELF_HEAL_INTERVAL", 60*time.Second),
+			DownThreshold: parseEnvInt("SELF_HEAL_DOWN_THRESHOLD", selfheal.LimiarPadrao),
+			MaxAttempts:   parseEnvInt("SELF_HEAL_MAX_ATTEMPTS", 4),
+			Cooldown:      parseEnvDuration("SELF_HEAL_COOLDOWN", 6*time.Hour),
+			DailyCap:      parseEnvInt("SELF_HEAL_DAILY_CAP", 10),
+			DryRun:        dryRun,
+		})
+		modo := "ATIVO"
+		if dryRun {
+			modo = "DRY-RUN (nenhuma reconexão real será tentada)"
+		}
+		log.Printf("🩺 [SelfHeal] SELF_HEAL_ENABLED=true — self-healing %s", modo)
+
+		// Contexto cancelável, mesma convenção já usada para o harness e o
+		// worker de knowledge neste arquivo: o encerramento é implícito quando o
+		// processo termina (SIGINT → main retorna), não precisa de um cancel()
+		// explícito no desligamento gracioso.
+		healerCtx, healerCancel := context.WithCancel(context.Background())
+		_ = healerCancel
+		go healer.Run(healerCtx)
+
+		// Estágio 2: liga o detector por webhook — eventos de CONNECTION
+		// (Disconnected, LoggedOut, QRCode...) acordam a sondagem em segundos em
+		// vez de esperar até 60s pelo próximo tick. handler já existe e está
+		// registrado nas rotas neste ponto; SetConnectionEventNotifier segue o
+		// mesmo padrão do SetWhatsAppClient logo acima.
+		handler.SetConnectionEventNotifier(healer)
+	} else {
+		log.Println("⚠️  [SelfHeal] SELF_HEAL_ENABLED=false — heartbeat continua só detectando e alertando (DT-53 Estágio 0), sem tentar reconectar sozinho")
+	}
+
 	// --- Heartbeat goroutine ---
 	// Also checks if webhook is still registered after reconnections.
 	// evolution-go loses webhook config on disconnect/reconnect cycles.
 	go func() {
-		// Run immediate heartbeat at startup
-		isConnected := sendHeartbeat(cfg.EvoInstance, wpClient, sbClient)
-		if isConnected && cfg.WebhookURL != "" {
-			if err := wpClient.ConfigureWebhooks(cfg.WebhookURL); err != nil {
-				log.Printf("⚠️ [Heartbeat] Falha ao reconfigurar webhook: %v", err)
-			} else {
-				log.Printf("🔁 [Heartbeat] Webhook reconfigurado: %s", cfg.WebhookURL)
-			}
-		}
-
-		ticker := time.NewTicker(60 * time.Second)
-		defer ticker.Stop()
-
-		for range ticker.C {
-			isConnected = sendHeartbeat(cfg.EvoInstance, wpClient, sbClient)
+		bater := func() {
+			isConnected := sendHeartbeat(cfg.EvoInstance, wpClient, sbClient, notificador, rastreador)
 			if isConnected && cfg.WebhookURL != "" {
 				if err := wpClient.ConfigureWebhooks(cfg.WebhookURL); err != nil {
 					log.Printf("⚠️ [Heartbeat] Falha ao reconfigurar webhook: %v", err)
@@ -510,6 +584,16 @@ func main() {
 					log.Printf("🔁 [Heartbeat] Webhook reconfigurado: %s", cfg.WebhookURL)
 				}
 			}
+		}
+
+		// Run immediate heartbeat at startup
+		bater()
+
+		ticker := time.NewTicker(60 * time.Second)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			bater()
 		}
 	}()
 
@@ -600,11 +684,30 @@ func checkClockSync() {
 
 // sendHeartbeat checks WhatsApp connection state and updates the bot status in Supabase.
 // Returns true if the instance is currently connected.
-func sendHeartbeat(instance string, wp ports.MessageSender, sb *supabase.Client) bool {
+//
+// O rastreador e o notificador são o Estágio 0 do DT-53: esta função já detectava
+// a queda e apenas escrevia no log, o que deixou o bot fora do ar por 24 minutos
+// (DT-52) e por 36 minutos em 2026-08-23 sem que ninguém soubesse. Agora ela
+// continua só detectando — a ação corretiva é o Estágio 1 —, mas o silêncio
+// acabou.
+func sendHeartbeat(instance string, wp ports.MessageSender, sb *supabase.Client, notificador ports.Notifier, rastreador *selfheal.Rastreador) bool {
 	checkClockSync()
 
+	obs := selfheal.Observacao{}
+	defer func() {
+		if alerta := rastreador.Observar(time.Now(), obs); alerta != nil {
+			notify.Disparar(context.Background(), notificador, *alerta)
+		}
+		if obs.Conectado {
+			telemetry.WhatsAppConnected.Set(1)
+		} else {
+			telemetry.WhatsAppConnected.Set(0)
+		}
+	}()
+
 	if wp == nil {
-		log.Println("❌ Heartbeat: Adapter NOT Initialized")
+		slog.Error("Heartbeat: Adapter NOT Initialized")
+		obs.Erro = "adapter não inicializado"
 		_ = sb.UpsertBotStatus(instance, "DISCONNECTED", nil)
 		return false
 	}
@@ -619,6 +722,7 @@ func sendHeartbeat(instance string, wp ports.MessageSender, sb *supabase.Client)
 			log.Printf("⚠️ Heartbeat: Failed to get connection state: %v", err)
 			status = "ERROR"
 			details = map[string]interface{}{"error": err.Error()}
+			obs.Erro = err.Error()
 
 			// Detect 401 Unauthorized from Evolution API
 			if strings.Contains(err.Error(), "status 401") {
@@ -634,17 +738,26 @@ func sendHeartbeat(instance string, wp ports.MessageSender, sb *supabase.Client)
 			}
 		} else {
 			details = map[string]interface{}{"instance": adapter.InstanceName, "evolution_state": evoState}
+			obs.Detalhe = evoState
 			if evoState == "open" {
 				status = "CONNECTED"
 				isConnected = true
+				obs.Conectado = true
 			} else {
 				status = "DISCONNECTED"
-				log.Printf("❌ Heartbeat: WhatsApp DISCONNECTED (State: %s)", evoState)
+				// slog.Warn, e não log.Printf: slog.SetDefault roteia o pacote log
+				// pelo handler JSON com nível fixo INFO, então esta linha saía como
+				// "level":"INFO" e nenhum alerta baseado em nível conseguia vê-la.
+				slog.Warn("Heartbeat: WhatsApp DISCONNECTED",
+					slog.String("evolution_state", evoState),
+					slog.String("instance", instance),
+				)
 			}
 		}
 	} else {
 		status = "CONNECTED"
 		isConnected = true
+		obs.Conectado = true
 		details = map[string]interface{}{"note": "generic sender"}
 	}
 

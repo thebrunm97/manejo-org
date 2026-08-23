@@ -67,6 +67,12 @@ type Config struct {
 
 	WorkerCount int
 	QueueSize   int
+
+	// ConnectionEvents recebe eventos de CONNECTION (Disconnected,
+	// ConnectFailure, LoggedOut, Connected, QRCode) — o self-heal do DT-53,
+	// quando ligado. Se nil, esses eventos continuam sendo só ignorados, como
+	// sempre foram.
+	ConnectionEvents ports.ConnectionEventNotifier
 }
 
 // ---------------------------------------------------------------------------
@@ -133,6 +139,14 @@ func (h *Handler) SetWhatsAppClient(c ports.MessageSender) {
 	h.cfg.WhatsAppClient = c
 }
 
+// SetConnectionEventNotifier liga o self-heal (DT-53) depois do handler já
+// construído — mesmo padrão do SetWhatsAppClient, necessário porque em
+// cmd/server/main.go o healer só existe depois que o webhook.Handler já foi
+// criado e registrado nas rotas.
+func (h *Handler) SetConnectionEventNotifier(n ports.ConnectionEventNotifier) {
+	h.cfg.ConnectionEvents = n
+}
+
 // handleWebhook processes incoming Evolution API messages.
 // REGRA DE OURO: Always returns HTTP 200 to avoid sender retry loops.
 func (h *Handler) handleWebhook(c *gin.Context) {
@@ -156,6 +170,17 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 
 	// 2. Parse the Evolution payload via Adapter
 	rawBody, _ := c.GetRawData()
+
+	// DT-53: eventos de CONNECTION (Disconnected, LoggedOut, QRCode...) não são
+	// mensagens — ParseWebhook abaixo vai descartá-los de propósito. Espiamos o
+	// tipo ANTES disso pra alimentar o self-heal, sem interferir no caminho de
+	// mensagens: a checagem devolve "" pra qualquer coisa que não interesse, e
+	// o restante do handler segue idêntico.
+	if h.cfg.ConnectionEvents != nil {
+		if evento := evolution.ExtractEventType(rawBody); evento != "" {
+			h.cfg.ConnectionEvents.NotificarEvento(evento)
+		}
+	}
 
 	payload, err := evolution.ParseWebhook(rawBody)
 	if err != nil {
