@@ -19,7 +19,7 @@
 
 set -uo pipefail
 
-TELEFONE="${TELEFONE:-553497317545}"
+TELEFONE="${TELEFONE:-5511999999999}"  # ficticio; exporte TELEFONE para usar outro
 WEBHOOK="${WEBHOOK:-http://localhost:8080/webhook/evolution}"
 TOKEN="${TOKEN:-ManejoOrgToken}"
 INTERVALO="${INTERVALO:-45}"

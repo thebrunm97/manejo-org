@@ -14,13 +14,19 @@ import (
 )
 
 func main() {
-	// Configurações do .env.prod
-	baseURL := "http://localhost:8082" // Evolution Go exposto na porta 8082
-	instanceName := "manejo-org"
-	apiKey := "SsU8y6SMSvsMkZdvWqFNqxQKs5c8F3gKWCl3xuht7uNRSI1qPkomSwoQsS0VyuN1"
+	// Configurações lidas do ambiente. NUNCA embutir credencial ou número
+	// real aqui: este arquivo está num repositório público.
+	baseURL := getenv("EVOLUTION_BASE_URL", "http://localhost:8082")
+	instanceName := getenv("EVOLUTION_INSTANCE", "manejo-org")
 
-	// Número do destinatário (formato WhatsApp)
-	to := "553497317545@s.whatsapp.net"
+	apiKey := os.Getenv("EVOLUTION_API_KEY")
+	if apiKey == "" {
+		log.Fatal("EVOLUTION_API_KEY não definida. Exporte-a antes de rodar " + "(bash: export EVOLUTION_API_KEY=... / PowerShell: $env:EVOLUTION_API_KEY = '...')")
+	}
+
+	// Número do destinatário (formato WhatsApp). O default é um número
+	// fictício; passe TEST_AUDIO_TO para enviar de verdade.
+	to := getenv("TEST_AUDIO_TO", "5511999999999") + "@s.whatsapp.net"
 
 	// Gerar um áudio de teste simples (silêncio de 1 segundo em MP3)
 	// Usando um MP3 mínimo válido (ID3 header + frame mpeg)
@@ -70,4 +76,12 @@ func main() {
 		fmt.Println("❌ Falha ao enviar áudio")
 		os.Exit(1)
 	}
+}
+
+// getenv devolve a variável de ambiente ou o default se ela estiver vazia.
+func getenv(chave, padrao string) string {
+	if v := os.Getenv(chave); v != "" {
+		return v
+	}
+	return padrao
 }

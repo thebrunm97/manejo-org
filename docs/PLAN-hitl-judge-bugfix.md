@@ -111,7 +111,7 @@ go build ./...
 $body = @{
   event = "Message"
   data = @{
-    info = @{ ID = "test-multifix-1"; Chat = "553497317545@c.us"; Sender = "553497317545@c.us"; IsFromMe = $false; Timestamp = (Get-Date -Format "o"); Type = "conversation" }
+    info = @{ ID = "test-multifix-1"; Chat = "5511999999999@c.us"; Sender = "5511999999999@c.us"; IsFromMe = $false; Timestamp = (Get-Date -Format "o"); Type = "conversation" }
     message = @{ conversation = "Colhi 10 caixas de tomate, paguei 150 de frete (50% talhão 1, 50% talhão 2) e qual é a principal praga do tomate?" }
   }
 } | ConvertTo-Json -Depth 5
