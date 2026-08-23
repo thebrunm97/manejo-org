@@ -20,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/telemetry"
 	"github.com/thebrunm97/pmo-bot-go/internal/utils"
@@ -132,9 +133,19 @@ func sendAsAudio(ctx context.Context, wp ports.MessageSender, ttsClient ports.Sy
 
 	// O formato concreto (mp3/wav/ogg) depende do provider configurado; o
 	// evolution-go detecta e reconverte para Opus, então aqui basta repassar.
+	// Decide ANTES de sintetizar se o texto pode sair para um provedor externo.
+	// O roteador recusa mandar requisição sensível para a nuvem, mas só
+	// consegue fazê-lo se este campo for preenchido de verdade — com ele fixo
+	// em false, plugar um provedor de nuvem mandaria 100% das respostas para
+	// fora, inclusive balanço financeiro e nome de talhão.
+	sensitive, reason := guardrails.ClassifySpeechSensitivity(spoken)
+	if sensitive {
+		log.Printf("🔒 [Delivery] TTS restrito ao provedor local (motivo=%s)", reason)
+	}
+
 	req := ports.SynthesisRequest{
 		Text:      spoken,
-		Sensitive: false, // Default false, deve ser sobreescrito pelo handler
+		Sensitive: sensitive,
 	}
 	art, err := ttsClient.Synthesize(ttsCtx, req)
 	if err != nil {

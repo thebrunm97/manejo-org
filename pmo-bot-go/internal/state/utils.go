@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/pricing"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
@@ -54,9 +55,17 @@ func sendFeedback(sbClient *supabase.Client, wpClient ports.MessageSender, ttsCl
 		ttsCtx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 		defer cancel()
 
+		// Decide ANTES de sintetizar se o texto pode sair para um provedor
+		// externo. O roteador recusa mandar requisição sensível para a nuvem,
+		// mas só consegue fazê-lo se este campo for preenchido de verdade.
+		sensitive, reason := guardrails.ClassifySpeechSensitivity(spoken)
+		if sensitive {
+			log.Printf("🔒 [FSM] TTS restrito ao provedor local (motivo=%s)", reason)
+		}
+
 		req := ports.SynthesisRequest{
 			Text:      spoken,
-			Sensitive: false, // Pode ser ajustado depois se for info de farm/financeiro
+			Sensitive: sensitive,
 		}
 		art, errSpeech := ttsClient.Synthesize(ttsCtx, req)
 		if errSpeech != nil {
