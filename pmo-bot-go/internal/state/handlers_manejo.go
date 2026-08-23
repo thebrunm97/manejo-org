@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/thebrunm97/pmo-bot-go/internal/domain"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
 	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
@@ -192,11 +193,28 @@ func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profi
 		"observacao_original": originalBody,
 		"valor_total":         parseToFloat(ext.ValorTotal),
 	}
+	// A RPC valida `tipo_arg` contra um vocabulario fechado de sete valores e
+	// recusa qualquer outro. Passar `ext.Atividade` cru — texto livre do LLM —
+	// custou 26 registros perdidos em producao, todos com "aplicacao de composto
+	// organico". O texto original nao se perde: continua no payload em
+	// `metodo_aplicacao`, que e campo livre.
+	tipoOperacao, reconhecido := domain.NormalizeTipoOperacao(ext.Atividade)
+	if !reconhecido {
+		// Deliberadamente NAO chuta um tipo. Caderno de campo e prova perante
+		// certificadora; arquivar uma venda como manejo e pior que perguntar.
+		log.Printf("❓ [FSM] Tipo de operacao nao reconhecido: %q", ext.Atividade)
+		msg := fmt.Sprintf(
+			"Nao consegui identificar que tipo de registro e \"%s\". "+
+				"Voce pode me dizer se foi plantio, manejo, colheita, venda, limpeza, propagacao ou compostagem?",
+			ext.Atividade)
+		return msg, ProcessResult{Success: false, Reason: "tipo_operacao_nao_reconhecido"}
+	}
+
 	resp, err := sbClient.RegistrarOperacaoCampoRPC(ctx, map[string]interface{}{
 		"pmo_id_arg":         pmoID,
 		"propriedade_id_arg": profile.PropriedadeAtivaID,
 		"user_id_arg":        profile.ID,
-		"tipo_arg":           ext.Atividade,
+		"tipo_arg":           string(tipoOperacao),
 		"payload_arg":        payload,
 	}, ext.Data)
 
