@@ -14,7 +14,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 )
 
-func handleAguardandoQuantidade(ctx context.Context, body string, from string, phone string, profile *supabase.Profile, respondWithAudio bool, sbClient ports.DatabaseRepository, wpClient ports.MessageSender, ttsClient ports.TTSProvider, historyManager *history.Manager, extraction map[string]interface{}, startTime time.Time, modelConfigured string) (string, ProcessResult) {
+func handleAguardandoQuantidade(ctx context.Context, body string, from string, phone string, profile *supabase.Profile, respondWithAudio bool, sbClient ports.DatabaseRepository, wpClient ports.MessageSender, ttsClient ports.Synthesizer, historyManager *history.Manager, extraction map[string]interface{}, startTime time.Time, modelConfigured string) (string, ProcessResult) {
 	log.Printf("📥 [FSM-TURN2] Recebida quantidade: %s", body)
 
 	var ext groq.ExtractionResult
@@ -29,7 +29,7 @@ func handleAguardandoQuantidade(ctx context.Context, body string, from string, p
 	return finalizeRegistration(ctx, &ext, profile, sbClient, wpClient, ttsClient, from, body, respondWithAudio, startTime, historyManager, phone, modelConfigured)
 }
 
-func handleAguardandoCompra(ctx context.Context, body string, from string, phone string, profile *supabase.Profile, respondWithAudio bool, sbClient ports.DatabaseRepository, wpClient ports.MessageSender, ttsClient ports.TTSProvider, historyManager *history.Manager, extraction map[string]interface{}, startTime time.Time, modelConfigured string) (string, ProcessResult) {
+func handleAguardandoCompra(ctx context.Context, body string, from string, phone string, profile *supabase.Profile, respondWithAudio bool, sbClient ports.DatabaseRepository, wpClient ports.MessageSender, ttsClient ports.Synthesizer, historyManager *history.Manager, extraction map[string]interface{}, startTime time.Time, modelConfigured string) (string, ProcessResult) {
 	log.Printf("📥 [FSM-TURN2] Recebido fornecedor: %s", body)
 
 	var ext groq.ExtractionResult
@@ -44,7 +44,7 @@ func handleAguardandoCompra(ctx context.Context, body string, from string, phone
 	return finalizeRegistration(ctx, &ext, profile, sbClient, wpClient, ttsClient, from, body, respondWithAudio, startTime, historyManager, phone, modelConfigured)
 }
 
-func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient ports.DatabaseRepository, _ ports.MessageSender, _ ports.TTSProvider, _ string, originalBody string, _ bool, startTime time.Time, historyManager *history.Manager, phone string, modelConfigured string) (string, ProcessResult) {
+func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient ports.DatabaseRepository, _ ports.MessageSender, _ ports.Synthesizer, _ string, originalBody string, _ bool, startTime time.Time, historyManager *history.Manager, phone string, modelConfigured string) (string, ProcessResult) {
 	pmoID := profile.PmoAtivoID
 
 	// 1. Compliance Check (Spatial-Aware) - Reused from fsm.go

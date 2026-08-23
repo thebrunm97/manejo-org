@@ -17,7 +17,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 )
 
-func handleRegistroFinanceiro(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, _ ports.MessageSender, _ ports.TTSProvider, from string, _ bool, historyManager *history.Manager) (string, ProcessResult) {
+func handleRegistroFinanceiro(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, _ ports.MessageSender, _ ports.Synthesizer, from string, _ bool, historyManager *history.Manager) (string, ProcessResult) {
 	// 1. Extração e Normalização do Valor Total
 	valorTotal, err := parseNumeric(ext.ValorTotal)
 	if err != nil || valorTotal <= 0 {

@@ -12,7 +12,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 )
 
-func handleAguardandoFazenda(_ context.Context, body string, _ string, phone string, profile *supabase.Profile, _ bool, sbClient *supabase.Client, _ ports.MessageSender, _ ports.TTSProvider, historyManager *history.Manager, extraction map[string]interface{}, _ time.Time, _ string) (string, ProcessResult) {
+func handleAguardandoFazenda(_ context.Context, body string, _ string, phone string, profile *supabase.Profile, _ bool, sbClient *supabase.Client, _ ports.MessageSender, _ ports.Synthesizer, historyManager *history.Manager, extraction map[string]interface{}, _ time.Time, _ string) (string, ProcessResult) {
 	bodyTrim := strings.TrimSpace(body)
 
 	optionsIface, ok := extraction["options"].([]interface{})

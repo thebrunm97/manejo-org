@@ -5,6 +5,8 @@ import (
 	"errors"
 	"testing"
 	"time"
+
+	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 )
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
@@ -54,12 +56,12 @@ type fakeTTS struct {
 	err   error
 }
 
-func (f *fakeTTS) GenerateSpeech(ctx context.Context, text string) ([]byte, string, error) {
+func (f *fakeTTS) Synthesize(ctx context.Context, req ports.SynthesisRequest) (ports.AudioArtifact, error) {
 	f.calls++
 	if f.err != nil {
-		return nil, "", f.err
+		return ports.AudioArtifact{}, f.err
 	}
-	return []byte{0x49, 0x44, 0x33}, "audio/mpeg", nil
+	return ports.AudioArtifact{Data: []byte("fake"), Format: "audio/ogg", Source: "fake"}, nil
 }
 func (f *fakeTTS) Name() string { return "fake" }
 

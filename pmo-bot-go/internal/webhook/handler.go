@@ -46,7 +46,7 @@ type Config struct {
 	SupabaseClient  *supabase.Client
 	WhatsAppClient  ports.MessageSender
 	LLMClient       llm.LLMProvider
-	TtsClient       ports.TTSProvider
+	TtsClient       ports.Synthesizer
 	MCPServer       *mcp.Server
 	HistoryManager  *history.Manager
 	FlagsmithClient *flagsmith.Client

@@ -36,7 +36,7 @@ type AIWorkerConfig struct {
 	Supabase     *supabase.Client
 	WhatsApp     ports.MessageSender
 	LLM          llm.LLMProvider
-	TTS          ports.TTSProvider
+	TTS          ports.Synthesizer
 	MCP          *mcp.Server
 	History      *history.Manager
 	PollInterval time.Duration // Default: 200ms (polling mais rápido pois é downstream do media worker)

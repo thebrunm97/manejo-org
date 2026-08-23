@@ -14,12 +14,14 @@ package queue
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
 	"time"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
+	"github.com/thebrunm97/pmo-bot-go/internal/telemetry"
 	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 )
 
@@ -43,13 +45,13 @@ func defaultDeliveryConfig() DeliveryConfig {
 // resposta principal e o texto logo em seguida, para quem não pode ouvir. Uma
 // falha no TTS ou no envio do áudio degrada a experiência mas não a entrega —
 // o texto continua garantido.
-func SendWithRetry(ctx context.Context, wp ports.MessageSender, ttsClient ports.TTSProvider, to, msg string, asAudio bool) error {
+func SendWithRetry(ctx context.Context, wp ports.MessageSender, ttsClient ports.Synthesizer, to, msg string, asAudio bool) error {
 	cfg := defaultDeliveryConfig()
 	return sendWithConfig(ctx, wp, ttsClient, to, msg, asAudio, cfg)
 }
 
 // sendWithConfig é a implementação interna testável.
-func sendWithConfig(ctx context.Context, wp ports.MessageSender, ttsClient ports.TTSProvider, to, msg string, asAudio bool, cfg DeliveryConfig) error {
+func sendWithConfig(ctx context.Context, wp ports.MessageSender, ttsClient ports.Synthesizer, to, msg string, asAudio bool, cfg DeliveryConfig) error {
 	var lastErr error
 	currentAsAudio := asAudio
 
@@ -77,7 +79,12 @@ func sendWithConfig(ctx context.Context, wp ports.MessageSender, ttsClient ports
 			// o texto tenha exigido retries.
 			if currentAsAudio && ttsClient != nil {
 				if errAudio := sendAsAudio(ctx, wp, ttsClient, to, msg); errAudio != nil {
-					log.Printf("⚠️  [Delivery] Áudio falhou (texto já entregue): %v — to=%s", errAudio, to)
+					if errors.Is(errAudio, ports.ErrSynthesizerSaturated) {
+						telemetry.TTSFallbackStarvationTotal.Inc()
+						log.Printf("⚠️ [Delivery] TTS Fallback triggered due to starvation — to=%s", to)
+					} else {
+						log.Printf("⚠️  [Delivery] Áudio falhou (texto já entregue): %v — to=%s", errAudio, to)
+					}
 				}
 			}
 			return nil
@@ -105,7 +112,7 @@ func sendWithConfig(ctx context.Context, wp ports.MessageSender, ttsClient ports
 }
 
 // sendAsAudio tenta enviar a resposta como áudio via TTS.
-func sendAsAudio(ctx context.Context, wp ports.MessageSender, ttsClient ports.TTSProvider, to, text string) error {
+func sendAsAudio(ctx context.Context, wp ports.MessageSender, ttsClient ports.Synthesizer, to, text string) error {
 	if ttsClient == nil {
 		return fmt.Errorf("tts_client_nil")
 	}
@@ -125,12 +132,16 @@ func sendAsAudio(ctx context.Context, wp ports.MessageSender, ttsClient ports.TT
 
 	// O formato concreto (mp3/wav/ogg) depende do provider configurado; o
 	// evolution-go detecta e reconverte para Opus, então aqui basta repassar.
-	audioBytes, _, err := ttsClient.GenerateSpeech(ttsCtx, spoken)
+	req := ports.SynthesisRequest{
+		Text:      spoken,
+		Sensitive: false, // Default false, deve ser sobreescrito pelo handler
+	}
+	art, err := ttsClient.Synthesize(ttsCtx, req)
 	if err != nil {
 		return fmt.Errorf("tts_synthesis_failed: %w", err)
 	}
 
-	audioBase64 := base64.StdEncoding.EncodeToString(audioBytes)
+	audioBase64 := base64.StdEncoding.EncodeToString(art.Data)
 
 	// Força `ptt: true` para garantir que o cliente leia como voice note (microfone azul)
 	if err := wp.SendVoice(to, audioBase64, true); err != nil {

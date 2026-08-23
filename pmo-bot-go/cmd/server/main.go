@@ -326,9 +326,18 @@ func main() {
 	// Único ponto do sistema que conhece um fornecedor concreto de TTS. Todo o
 	// resto depende apenas de ports.TTSProvider, então trocar Piper por Google
 	// Cloud TTS/ElevenLabs é mudar TTS_PROVIDER — nada de lógica de negócio.
-	ttsClient, err := tts.NewFromEnv()
+	rawTTS, err := tts.NewFromEnv()
 	if err != nil {
 		log.Fatalf("❌ [TTS] Configuração inválida: %v", err)
+	}
+	var ttsClient ports.Synthesizer
+	if rawTTS != nil {
+		// Adapta o Piper (ou Google Translate legado) para a interface Synthesizer
+		localSynth := tts.NewLegacyTTSAdapter(rawTTS)
+		// Limita a concorrência a 1 para evitar CPU Starvation no Piper
+		localLimited := tts.NewConcurrencyLimiter(localSynth, 1)
+		// O Roteador gerencia Cache -> Local -> Cloud. Por enquanto Cloud é nil.
+		ttsClient = tts.NewRouter(nil, localLimited, nil)
 	}
 
 	// --- Harness de Produção (Feature Flag: HARNESS_ENABLED) ---

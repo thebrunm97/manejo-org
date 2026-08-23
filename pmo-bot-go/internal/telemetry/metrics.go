@@ -44,4 +44,11 @@ var (
 			Help: "Count of times the legacy audio fallback was used",
 		},
 	)
+
+	TTSFallbackStarvationTotal = promauto.NewCounter(
+		prometheus.CounterOpts{
+			Name: "tts_fallback_starvation_total",
+			Help: "Count of times TTS was downgraded to text due to saturation/timeout",
+		},
+	)
 )

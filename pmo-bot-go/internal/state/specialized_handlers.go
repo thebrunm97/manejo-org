@@ -47,7 +47,7 @@ func SetBusinessEvaluator(eval guardrails.BusinessEvaluator) {
 
 // handleDuvidaFallback is the specialist multi-agent entry point.
 // It uses modular prompts, filtered tools, loop protection, and short-term memory injection.
-func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, _ ports.TTSProvider, from string, llmClient llm.LLMProvider, body string, _ bool, sbClient *supabase.Client, profile *supabase.Profile, startTime time.Time, _ int, _ int, finalIntent string, tools []llm.FerramentaAgnostica, guard *mcp.LoopGuard, historyManager *history.Manager, mcpServer *mcp.Server, agentDomain string, routerResult RouterResult) (string, ProcessResult) {
+func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, _ ports.Synthesizer, from string, llmClient llm.LLMProvider, body string, _ bool, sbClient *supabase.Client, profile *supabase.Profile, startTime time.Time, _ int, _ int, finalIntent string, tools []llm.FerramentaAgnostica, guard *mcp.LoopGuard, historyManager *history.Manager, mcpServer *mcp.Server, agentDomain string, routerResult RouterResult) (string, ProcessResult) {
 	log.Printf("🤖 [FSM] Iniciando Fluxo Especialista (Intent: %s)", finalIntent)
 
 	// 1. Prepare Specialized Context

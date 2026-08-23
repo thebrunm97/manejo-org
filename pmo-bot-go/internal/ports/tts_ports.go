@@ -8,7 +8,10 @@
 // sem tocar em nenhuma regra de negócio.
 package ports
 
-import "context"
+import (
+	"context"
+	"errors"
+)
 
 // TTSProvider é a interface para serviços de síntese de voz (Text-to-Speech).
 //
@@ -44,4 +47,36 @@ type TTSProvider interface {
 	// implementação tem fallback interno entre modelos/vozes, Name DEVE refletir
 	// o que de fato produziu o áudio, nunca apenas o configurado.
 	Name() string
+}
+
+// SynthesisRequest contém os parâmetros para geração de áudio.
+type SynthesisRequest struct {
+	Text      string
+	Sensitive bool   // true → nunca pode ser roteado para provedores externos (Cloud)
+	VoiceID   string
+	CacheKey  string
+}
+
+// AudioArtifact representa o áudio gerado e metadados.
+type AudioArtifact struct {
+	Data       []byte
+	Format     string // MIME type (ex: "audio/ogg", "audio/mpeg")
+	Source     string // "cache" | "local" | "cloud" — para telemetria/logs
+	DurationMS int64  // Opcional, útil para fallback/tracking
+}
+
+// ErrSynthesizerSaturated indica que o provedor (geralmente o Local)
+// atingiu o limite de concorrência e não conseguiu alocar um worker
+// antes do tempo limite estipulado pelo contexto.
+var ErrSynthesizerSaturated = errors.New("synthesizer saturated")
+
+// Synthesizer é a evolução do TTSProvider (Fase 1 Híbrida).
+// Ele abstrai a geração, roteamento, limite de concorrência e cache.
+//
+// CONTRATO de falha: as implementações DEVEM propagar erros estruturados,
+// especialmente `context.DeadlineExceeded` e `ErrSynthesizerSaturated`,
+// mantendo a capacidade de `errors.Is` e `%w`. Nunca formate erros
+// finais em string pura se houver intenção de tratamento no chamador.
+type Synthesizer interface {
+	Synthesize(ctx context.Context, req SynthesisRequest) (AudioArtifact, error)
 }
