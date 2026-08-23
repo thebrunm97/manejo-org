@@ -4,27 +4,49 @@ Dois binários que medem o teto de capacidade da stack antes da migração para 
 VPS. Foram escritos para responder a uma pergunta específica: **quantos
 produtores simultâneos o Piper aguenta com 1 vCPU?**
 
-| Binário | O que mede |
-|---|---|
-| `cmd/loadtest` | Pipeline inteiro, entrando pelo webhook (áudio → transcrição → LLM → TTS → envio) |
-| `cmd/loadtest_piper` | Só o Piper, direto na porta 5000, isolando o passo de CPU |
+## ⚠️ Leia antes de rodar `cmd/loadtest` — incidente real em 2026-08-23 (DT-52)
+
+`cmd/loadtest` entra pelo webhook real e fabrica envelopes de mensagem do
+WhatsApp com ID inexistente. Rodá-lo contra a URL de produção (que, antes da
+VPS, é a única URL que funciona nesta máquina — ver DT-38) fez o
+`evolution-go` tentar baixar mídia para uma mensagem que a sessão real do
+WhatsApp nunca recebeu de verdade. O protocolo Signal da sessão dessincronizou,
+a Meta derrubou a conexão (`StreamReplaced`), e o bot ficou **24 minutos fora
+do ar**, sem nenhum aviso, até um restart manual do container.
+
+Por isso `-url` não tem valor padrão, e o script pede confirmação digitada
+(`CONFIRMO`) antes de disparar contra qualquer alvo que não pareça
+inequivocamente seguro (staging, CI). Não desative isso com `-yes` a menos que
+o alvo seja garantidamente uma instância de WhatsApp descartável.
+
+**Se o objetivo é só medir CPU do Piper — que é o objetivo original do
+DT-38 — use `cmd/loadtest_piper`.** Ele fala direto com o Piper, nunca passa
+pelo WhatsApp, e não tem este risco. É a escolha padrão certa; só use
+`cmd/loadtest` quando precisar validar o pipeline ponta a ponta de verdade.
+
+| Binário | O que mede | Risco de sessão do WhatsApp |
+|---|---|---|
+| `cmd/loadtest_piper` | Só o Piper, direto na porta 5000, isolando o passo de CPU | Nenhum — não toca o WhatsApp |
+| `cmd/loadtest` | Pipeline inteiro, entrando pelo webhook (áudio → transcrição → LLM → TTS → envio) | **Sim, se o alvo for uma sessão real** |
 
 Os dois existem porque medir só a ponta não distingue "o LLM está lento" de
-"o TTS está saturado". O `loadtest_piper` é o grupo de controle.
+"o TTS está saturado". O `loadtest_piper` é o grupo de controle — e o ponto de
+partida seguro.
 
 ## Rodando
-
-```bash
-cd pmo-bot-go/cmd/loadtest
-go run . -workers 5 -timeout 150
-```
 
 ```bash
 cd pmo-bot-go/cmd/loadtest_piper
 go run . -workers 5 -url http://piper:5000/v1/audio/speech
 ```
 
-Use `-h` para as demais flags (URL, token, porta do file server, texto).
+```bash
+cd pmo-bot-go/cmd/loadtest
+go run . -url http://localhost:8080/webhook/evolution -workers 5 -timeout 150
+# o script vai pedir para digitar CONFIRMO antes de disparar
+```
+
+Use `-h` para as demais flags (token, porta do file server, texto).
 
 ## Pré-requisito: o áudio de teste
 

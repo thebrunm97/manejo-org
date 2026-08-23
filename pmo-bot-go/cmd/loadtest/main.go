@@ -3,25 +3,50 @@
 // Objetivo: provar que 5 produtores enviando áudio simultaneamente engargalam
 // o serviço Piper numa VPS com 2 vCPUs.
 //
+// RISCO REAL, JÁ MATERIALIZADO (incidente de 2026-08-23, ver DT-52)
+//
+// Este script não gera só "carga" — ele fabrica envelopes de mensagem do
+// WhatsApp com ID inexistente e os injeta no webhook real. Do outro lado, o
+// evolution-go tenta baixar mídia para uma mensagem que a sessão REAL do
+// WhatsApp nunca recebeu de verdade. Isso não é carga sintética inofensiva:
+// dessincronizou o protocolo Signal da sessão (erro "old counter") e a Meta
+// derrubou a conexão com StreamReplaced. A instância ficou 24 minutos fora do
+// ar, sem nenhum aviso, até um restart manual do container.
+//
+// Como antes da VPS (DT-38) a stack de produção roda NESTA MESMA MÁQUINA,
+// "localhost:8080" na prática significa "o WhatsApp real de produção" — não
+// existe hoje um alvo seguro por padrão. Por isso -url não tem valor default
+// (abaixo), e por isso o script pede uma CONFIRMAÇÃO DIGITADA antes de
+// disparar, não apenas uma flag. Uma flag pode ser colada do histórico do
+// terminal sem que ninguém releia o que está prestes a acontecer; digitar
+// "CONFIRMO" exige reler a mensagem.
+//
+// Se o objetivo é só medir a capacidade de CPU do Piper (que foi o objetivo
+// original do DT-38), prefira cmd/loadtest_piper: ele fala direto com o
+// Piper, nunca passa pelo WhatsApp, e não tem este risco.
+//
 // Arquitetura:
 //   1. Sobe um mini HTTP file server (porta 8081) servindo ./test_assets/
 //      para que o evolution-go (dentro do Docker) baixe o áudio via
 //      http://host.docker.internal:8081/audio_teste.ogg
 //   2. Lê o template payload_audio_stress.json
-//   3. Dispara 5 goroutines simultâneas via sync.WaitGroup
+//   3. Dispara N goroutines simultâneas via sync.WaitGroup
 //   4. Cada goroutine envia um POST para /webhook/evolution com ID único
 //      (para passar pelo dedup) e timestamp fresco (para passar pelo TTL)
 //   5. Imprime latência individual e sumário agregado
 //
 // Pré-requisitos:
 //   - ./test_assets/audio_teste.ogg  (arquivo OGG real)
-//   - Stack de produção rodando (docker compose -f docker-compose.prod.yml up -d)
-//   - Porta 8080 acessível (webhook do pmo-bot-go)
+//   - -url apontando para um webhook cujo evolution-go NÃO seja a sessão de
+//     WhatsApp de produção. Se essa garantia não existir (caso comum antes da
+//     VPS), responda a confirmação com consciência do que está em jogo.
+//   - Porta 8080 (ou a porta do alvo) acessível
 //   - Porta 8081 livre (mini file server)
 //
 // Uso:
-//   go run load_test.go
-//   go run load_test.go -workers=10 -token=OutroToken -port=9091
+//   go run . -url http://localhost:8080/webhook/evolution
+//   go run . -url http://localhost:8080/webhook/evolution -workers=10 -token=OutroToken
+//   go run . -url ... -yes   # pula a confirmação (uso em CI/script, com cautela)
 
 package main
 
@@ -44,23 +69,74 @@ import (
 // ---------------------------------------------------------------------------
 
 var (
-	webhookURL    string
-	token         string
-	workers       int
-	timeoutSec    int
+	webhookURL     string
+	token          string
+	workers        int
+	timeoutSec     int
 	fileServerPort int
-	payloadFile   string
-	assetsDir     string
+	payloadFile    string
+	assetsDir      string
+	skipConfirm    bool
 )
 
 func init() {
-	flag.StringVar(&webhookURL, "url", "http://localhost:8080/webhook/evolution", "URL do webhook")
+	// SEM DEFAULT DE PROPÓSITO. Um default apontando para localhost:8080 foi
+	// exatamente o que permitiu disparar isto contra produção sem perceber —
+	// ver o aviso no topo do arquivo. Quem roda precisa escrever o alvo.
+	flag.StringVar(&webhookURL, "url", "", "URL do webhook (OBRIGATÓRIO — sem valor padrão, de propósito)")
 	flag.StringVar(&token, "token", "ManejoOrgToken", "WEBHOOK_TOKEN para autenticação")
 	flag.IntVar(&workers, "workers", 5, "Número de goroutines simultâneas")
 	flag.IntVar(&timeoutSec, "timeout", 150, "Timeout HTTP em segundos")
 	flag.IntVar(&fileServerPort, "port", 8081, "Porta do file server local para servir o áudio")
 	flag.StringVar(&payloadFile, "payload", "payload_audio_stress.json", "Caminho para o template JSON")
 	flag.StringVar(&assetsDir, "assets", "./test_assets", "Diretório com os arquivos de áudio de teste")
+	flag.BoolVar(&skipConfirm, "yes", false, "Pula a confirmação interativa (uso em CI/script — CUIDADO)")
+}
+
+// alvoPareceSeguro reconhece padrões de host que claramente NÃO são a
+// instância de WhatsApp de produção — staging, CI, portas fora do padrão.
+// É uma lista de permissão pequena de propósito: o padrão é pedir
+// confirmação, e só pula quando o alvo é inconfundivelmente seguro.
+func alvoPareceSeguro(url string) bool {
+	sinaisSeguros := []string{"staging", "test", "ci-", "-ci", "example.com"}
+	lower := strings.ToLower(url)
+	for _, s := range sinaisSeguros {
+		if strings.Contains(lower, s) {
+			return true
+		}
+	}
+	return false
+}
+
+// confirmarAlvo exige que o operador digite "CONFIRMO" antes de disparar
+// contra um alvo que não foi reconhecido como seguro. Diferente de uma flag
+// obrigatória — que pode ser copiada do README ou do histórico do shell sem
+// ninguém reler — digitar a palavra exige reler o aviso acima dela.
+//
+// Foi exatamente a ausência disto que permitiu o incidente de 2026-08-23
+// (DT-52): a URL de produção era o único alvo funcional na máquina, então
+// "-url http://localhost:8080/..." era o comando óbvio e correto de digitar
+// — só que ninguém tinha motivo para parar e pensar no que aconteceria do
+// outro lado daquele POST.
+func confirmarAlvo(url string) {
+	if skipConfirm || alvoPareceSeguro(url) {
+		return
+	}
+
+	fmt.Printf("\n🚨 ATENÇÃO: %s NÃO foi reconhecido como alvo seguro (staging/CI).\n", url)
+	fmt.Println("   Se este for o webhook de produção, os workers vão fabricar mensagens de")
+	fmt.Println("   áudio inexistentes. Em 2026-08-23 isso dessincronizou o protocolo Signal")
+	fmt.Println("   da sessão real do WhatsApp e derrubou a conexão por 24 minutos.")
+	fmt.Println("   Prefere só medir CPU do Piper, sem esse risco? Use cmd/loadtest_piper.")
+	fmt.Print("\n   Digite CONFIRMO para prosseguir mesmo assim: ")
+
+	var resposta string
+	fmt.Scanln(&resposta)
+	if strings.TrimSpace(resposta) != "CONFIRMO" {
+		fmt.Println("❌ Abortado — resposta diferente de CONFIRMO.")
+		os.Exit(1)
+	}
+	fmt.Println()
 }
 
 // ---------------------------------------------------------------------------
@@ -83,6 +159,13 @@ func main() {
 	flag.Parse()
 
 	// ── Validações ──────────────────────────────────────────────────────
+	if webhookURL == "" {
+		fmt.Fprintln(os.Stderr, "❌ -url é obrigatório. Não há valor padrão de propósito (ver cabeçalho do arquivo).")
+		fmt.Fprintln(os.Stderr, "   Exemplo: go run . -url http://localhost:8080/webhook/evolution")
+		os.Exit(1)
+	}
+	confirmarAlvo(webhookURL)
+
 	if _, err := os.Stat(assetsDir); os.IsNotExist(err) {
 		fmt.Fprintf(os.Stderr, "❌ Diretório %q não encontrado. Crie-o e coloque audio_teste.ogg dentro.\n", assetsDir)
 		os.Exit(1)
