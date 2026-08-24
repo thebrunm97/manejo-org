@@ -80,7 +80,7 @@ Responda de forma extremamente curta e direta, apenas a data ou um pequeno inter
 	botResponse := fmt.Sprintf("🤝 *Cota Confirmada!*\n\n*Cultura:* %s\n*Quantidade:* %v %s\n*Prazo de Entrega:* %s\n\n💡 **Dica do Agrônomo:** Para entregar no prazo, o ideal é você iniciar o plantio por volta de *%s*. Já anotei aqui para te lembrar!",
 		demanda.Cultura, quantidade, demanda.Unidade, demanda.DataEntrega, dataSugerida)
 
-	recordLog(sbClient, profile, originalBody, botResponse, modelConfigured, modelUsed, 0, 0, "assumir_cota", toMap(ext), startTime, true, nil)
+	recordLog(sbClient, profile, originalBody, botResponse, modelConfigured, modelUsed, 0, 0, 0, 0, "assumir_cota", toMap(ext), startTime, true, nil)
 
 	return botResponse, ProcessResult{Success: true, Reason: "quota_assumed"}
 }

@@ -426,10 +426,18 @@ type MetaRAGResult struct {
 // ─── Agnostic Response ───────────────────────────────────────────────────────
 
 // UsoMetadados identifies the token usage of a request.
+//
+// CachedTokens e CacheWriteTokens vêm da telemetria de prompt caching (DT-37):
+// CachedTokens é a fração de PromptTokens já servida do cache (mais barata);
+// CacheWriteTokens é o custo do primeiro armazenamento. Nenhum dos dois é
+// estimado — ficam 0 quando o provedor/adapter não expõe o dado (ex:
+// go-openai não modela cache_write_tokens no SDK padrão).
 type UsoMetadados struct {
 	PromptTokens     int32
 	CandidatesTokens int32
 	TotalTokens      int32
+	CachedTokens     int32
+	CacheWriteTokens int32
 }
 
 // RespostaAgnostica is a provider-neutral representation of an LLM response.

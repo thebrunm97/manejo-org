@@ -175,6 +175,15 @@ type openRouterTransport struct {
 	apiKey         string
 	responseFormat map[string]interface{}
 	mu             sync.RWMutex
+
+	// lastCacheWriteTokens guarda usage.prompt_tokens_details.cache_write_tokens
+	// da resposta mais recente (DT-37). O SDK go-openai não modela esse campo
+	// (só cached_tokens), então é preciso interceptar o body cru aqui — mesmo
+	// padrão set/read-and-clear já usado acima para responseFormat. Só é
+	// seguro porque CallOpenRouter é síncrono: seta antes de chamar, lê e zera
+	// logo depois de a chamada retornar, sem chamadas concorrentes na mesma
+	// goroutine.
+	lastCacheWriteTokens int
 }
 
 func (t *openRouterTransport) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -211,7 +220,48 @@ func (t *openRouterTransport) RoundTrip(req *http.Request) (*http.Response, erro
 		}
 	}
 
-	return http.DefaultTransport.RoundTrip(req)
+	resp, err := http.DefaultTransport.RoundTrip(req)
+	if err != nil || resp == nil || resp.Body == nil {
+		return resp, err
+	}
+
+	// Tee do corpo da resposta: extrai cache_write_tokens sem consumir o body
+	// que o SDK ainda vai decodificar. Falha ao ler ou parsear não é fatal —
+	// apenas mantém lastCacheWriteTokens no valor anterior (default 0).
+	bodyBytes, readErr := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+	if readErr == nil {
+		var probe struct {
+			Usage struct {
+				PromptTokensDetails struct {
+					CacheWriteTokens int `json:"cache_write_tokens"`
+				} `json:"prompt_tokens_details"`
+			} `json:"usage"`
+		}
+		if json.Unmarshal(bodyBytes, &probe) == nil {
+			t.mu.Lock()
+			t.lastCacheWriteTokens = probe.Usage.PromptTokensDetails.CacheWriteTokens
+			t.mu.Unlock()
+		}
+		resp.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+	} else {
+		// Não foi possível ler o body para o tee — restaura vazio para não
+		// quebrar o decode do SDK de forma inesperada (melhor um erro de
+		// decode visível do que um body parcialmente consumido).
+		resp.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+	}
+
+	return resp, nil
+}
+
+// cachedTokensFromDetails lê cached_tokens de forma nil-safe: PromptTokensDetails
+// é um ponteiro no SDK go-openai e vem nil sempre que o provedor não retorna o
+// bloco (ex: nenhum hit de cache, ou provedor sem suporte a prompt caching).
+func cachedTokensFromDetails(d *openai.PromptTokensDetails) int32 {
+	if d == nil {
+		return 0
+	}
+	return int32(d.CachedTokens)
 }
 
 // Close releases resources held by the provider.
@@ -642,6 +692,19 @@ func (c *Client) CallOpenRouter(ctx context.Context, sysInst string, history []l
 	}
 
 	resp, err := c.OpenAI.CreateChatCompletion(ctx, req)
+
+	// Lê e zera o cache_write_tokens capturado pelo tee do transport (ver
+	// openRouterTransport.RoundTrip) — mesmo padrão set/read-and-clear já
+	// usado acima para responseFormat. Feito incondicionalmente (erro ou não)
+	// para não deixar lixo de uma chamada anterior contaminar a próxima.
+	var cacheWriteTokens int
+	if c.OpenRouterTransport != nil {
+		c.OpenRouterTransport.mu.Lock()
+		cacheWriteTokens = c.OpenRouterTransport.lastCacheWriteTokens
+		c.OpenRouterTransport.lastCacheWriteTokens = 0
+		c.OpenRouterTransport.mu.Unlock()
+	}
+
 	if err != nil {
 		return llm.RespostaAgnostica{}, fmt.Errorf("openrouter error: %w", err)
 	}
@@ -659,6 +722,8 @@ func (c *Client) CallOpenRouter(ctx context.Context, sysInst string, history []l
 			PromptTokens:     int32(resp.Usage.PromptTokens),
 			CandidatesTokens: int32(resp.Usage.CompletionTokens),
 			TotalTokens:      int32(resp.Usage.TotalTokens),
+			CachedTokens:     cachedTokensFromDetails(resp.Usage.PromptTokensDetails),
+			CacheWriteTokens: int32(cacheWriteTokens),
 		},
 	}
 
@@ -746,6 +811,10 @@ func (c *Client) CallGoogle(ctx context.Context, modelName string, sysInst strin
 			PromptTokens:     resp.UsageMetadata.PromptTokenCount,
 			CandidatesTokens: resp.UsageMetadata.CandidatesTokenCount,
 			TotalTokens:      resp.UsageMetadata.TotalTokenCount,
+			// CachedContentTokenCount só é != 0 quando a chamada usa Context
+			// Caching explícito (Task 2 do relatório) — sem cache configurado,
+			// o SDK devolve 0, que é o valor correto (não há o que descontar).
+			CachedTokens: resp.UsageMetadata.CachedContentTokenCount,
 		}
 	}
 

@@ -113,6 +113,8 @@ type LogProcessamentoInsert struct {
 	ModeloEfetivo     string      `json:"modelo_efetivo"`
 	TokensPrompt      int         `json:"tokens_prompt"`
 	TokensCompletion  int         `json:"tokens_completion"`
+	CachedTokens      int         `json:"cached_tokens"`
+	CacheWriteTokens  int         `json:"cache_write_tokens"`
 	Intencao          string      `json:"intencao"`
 	CustoDolar        float64     `json:"custo_dolar"`
 	RaciocinioAgente  interface{} `json:"raciocinio_agente"`
@@ -133,6 +135,8 @@ type LogConsumoInsert struct {
 	TokensPrompt     int                    `json:"tokens_prompt"`
 	TokensCompletion int                    `json:"tokens_completion"`
 	TotalTokens      int                    `json:"total_tokens"`
+	CachedTokens     int                    `json:"cached_tokens"`
+	CacheWriteTokens int                    `json:"cache_write_tokens"`
 	ModeloIA         string                 `json:"modelo_ia"`
 	Acao             string                 `json:"acao"`
 	CustoEstimado    float64                `json:"custo_estimado"`

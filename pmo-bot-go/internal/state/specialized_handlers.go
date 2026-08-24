@@ -110,7 +110,7 @@ func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, _ p
 				historyManager.AppendAgnosticHistory(phone, newHistory)
 				historyManager.TriggerAsyncCompression(phone, llmClient, 1500) // 1500 tokens threshold
 			}
-			recordLog(sbClient, profile, body, "[HITL PENDING]", llmClient.ModelName(), modelUsed, int(usage.PromptTokens), int(usage.CandidatesTokens), finalIntent, map[string]interface{}{"status": "hitl_pending"}, startTime, true, trace)
+			recordLog(sbClient, profile, body, "[HITL PENDING]", llmClient.ModelName(), modelUsed, int(usage.PromptTokens), int(usage.CandidatesTokens), int(usage.CachedTokens), int(usage.CacheWriteTokens), finalIntent, map[string]interface{}{"status": "hitl_pending"}, startTime, true, trace)
 			return "", ProcessResult{Success: false, Reason: "hitl_pending"}
 		}
 
@@ -120,7 +120,7 @@ func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, _ p
 			if historyManager != nil {
 				historyManager.ClearFSMState(phone)
 			}
-			recordLog(sbClient, profile, body, err.Error(), llmClient.ModelName(), modelUsed, int(usage.PromptTokens), int(usage.CandidatesTokens), finalIntent, map[string]interface{}{"status": "guardrail_failed", "error": err.Error()}, startTime, false, trace)
+			recordLog(sbClient, profile, body, err.Error(), llmClient.ModelName(), modelUsed, int(usage.PromptTokens), int(usage.CandidatesTokens), int(usage.CachedTokens), int(usage.CacheWriteTokens), finalIntent, map[string]interface{}{"status": "guardrail_failed", "error": err.Error()}, startTime, false, trace)
 			return err.Error(), ProcessResult{Success: false, Reason: "guardrail_blocked"}
 		}
 
@@ -159,7 +159,7 @@ func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, _ p
 		"query":  body,
 		"trace":  trace, // Include trace in training log for better debugging
 	}
-	recordLog(sbClient, profile, body, botResponse, llmClient.ModelName(), modelUsed, totalPromptTokens, totalCompletionTokens, finalIntent, extraction, startTime, true, trace)
+	recordLog(sbClient, profile, body, botResponse, llmClient.ModelName(), modelUsed, totalPromptTokens, totalCompletionTokens, int(usage.CachedTokens), int(usage.CacheWriteTokens), finalIntent, extraction, startTime, true, trace)
 
 	if historyManager != nil {
 		historyManager.AppendAgnosticHistory(phone, newHistory)

@@ -56,7 +56,7 @@ func handleLimpeza(ctx context.Context, ext *groq.ExtractionResult, profile *sup
 	botResponse := fmt.Sprintf("✅ *Limpeza Registrada!*\n\n*Área/Item:* %s\n*Data:* %s\n*Produto:* %s\n*Responsável:* %s\n*ID:* %v",
 		ext.ItemArea, dataLimpeza, ext.ProdutoUtilizado, ext.Responsavel, id)
 
-	recordLog(sbClient, profile, body, botResponse, modelConfigured, modelEffective, pTokens, cTokens, "limpeza", toMap(ext), startTime, true, nil)
+	recordLog(sbClient, profile, body, botResponse, modelConfigured, modelEffective, pTokens, cTokens, 0, 0, "limpeza", toMap(ext), startTime, true, nil)
 
 	return botResponse, ProcessResult{Success: true, Reason: "limpeza_saved", TransactionID: id}
 }

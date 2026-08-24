@@ -200,7 +200,16 @@ func cacheMultiplierFor(model string) CacheMultiplier {
 // conta os cached_tokens dentro do total).
 func CostWithCache(model string, inputTokens, cachedReadTokens, cacheWriteTokens, outputTokens int) Estimate {
 	p, found, exact := Lookup(model)
-	cm := cacheMultiplierFor(model)
+
+	// cacheMultiplierFor resolve pelo prefixo "fornecedor/" — mas o chamador
+	// pode passar um id sem prefixo (ex: CallGoogle devolve "gemini-3.1-..."
+	// puro, sem "google/"). Usar `found` em vez de `model` aproveita a mesma
+	// normalização que Lookup já fez: toda entrada do catálogo gerado tem
+	// prefixo de fornecedor, então quando exact==true, found sempre tem
+	// "fornecedor/modelo" — mesmo que o `model` recebido não tivesse. Sem
+	// isso, o caminho Gemini nativo (produção primária) sempre caía em
+	// noCacheMultiplier mesmo com cache real.
+	cm := cacheMultiplierFor(found)
 
 	freshInputTokens := inputTokens - cachedReadTokens
 	if freshInputTokens < 0 {

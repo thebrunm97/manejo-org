@@ -493,7 +493,7 @@ Você DEVE retornar EXCLUSIVAMENTE um objeto JSON válido, sem markdown, sem jus
 
 		botResponse := "Olá! Sou o assistente do ManejoORG. Como posso ajudar você hoje?"
 		sendFeedback(sbClient, wpClient, ttsClient, msg.From, botResponse, respondWithAudio)
-		recordLog(sbClient, profile, body, botResponse, string(routerModel), string(routerModel), 0, 0, "chat_fast", nil, startTime, true, nil)
+		recordLog(sbClient, profile, body, botResponse, string(routerModel), string(routerModel), 0, 0, 0, 0, "chat_fast", nil, startTime, true, nil)
 		return ProcessResult{Success: true, Reason: "chat_fast"}
 	}
 

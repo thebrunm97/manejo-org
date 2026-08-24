@@ -82,7 +82,7 @@ func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profi
 
 		if temOrganicoNoMeio {
 			botResponse := fmt.Sprintf("🚨 *ALERTA DE NÃO-CONFORMIDADE!*\n\n⚠️ O uso de *%s* é proibido em áreas orgânicas. Registro **BLOQUEADO**.", produtoAlvo)
-			recordLog(sbClient, profile, originalBody, botResponse, modelConfigured, "fsm-v4", 0, 0, "alerta_conformidade", nil, startTime, false, nil)
+			recordLog(sbClient, profile, originalBody, botResponse, modelConfigured, "fsm-v4", 0, 0, 0, 0, "alerta_conformidade", nil, startTime, false, nil)
 			return botResponse, ProcessResult{Success: false, Reason: "organic_compliance_block"}
 		}
 	}
@@ -114,7 +114,7 @@ func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profi
 				if historyManager != nil {
 					historyManager.ClearFSMState(phone)
 				}
-				recordLog(sbClient, profile, originalBody, evalErr.Error(), modelConfigured, "fsm-v4", 0, 0, "guardrail_failed", toMap(ext), startTime, false, nil)
+				recordLog(sbClient, profile, originalBody, evalErr.Error(), modelConfigured, "fsm-v4", 0, 0, 0, 0, "guardrail_failed", toMap(ext), startTime, false, nil)
 				return evalErr.Error(), ProcessResult{Success: false, Reason: "guardrail_blocked"}
 			}
 		}
@@ -146,7 +146,7 @@ func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profi
 		}
 
 		botResponse := fmt.Sprintf("✅ *Compra Registrada com Sucesso!*\n*Item:* %s\n*Qtd:* %v %s\n*Fornecedor:* %s\n*ID:* %v", ext.InsumoCultura, ext.Quantidade, ext.Unidade, ext.Fornecedor, id)
-		recordLog(sbClient, profile, originalBody, botResponse, modelConfigured, "fsm-v4", 0, 0, "registro", toMap(ext), startTime, true, nil)
+		recordLog(sbClient, profile, originalBody, botResponse, modelConfigured, "fsm-v4", 0, 0, 0, 0, "registro", toMap(ext), startTime, true, nil)
 
 		return botResponse, ProcessResult{Success: true, Reason: "record_saved"}
 	}
@@ -175,7 +175,7 @@ func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profi
 			if historyManager != nil {
 				historyManager.ClearFSMState(phone)
 			}
-			recordLog(sbClient, profile, originalBody, evalErr.Error(), modelConfigured, "fsm-v4", 0, 0, "guardrail_failed", toMap(ext), startTime, false, nil)
+			recordLog(sbClient, profile, originalBody, evalErr.Error(), modelConfigured, "fsm-v4", 0, 0, 0, 0, "guardrail_failed", toMap(ext), startTime, false, nil)
 			return evalErr.Error(), ProcessResult{Success: false, Reason: "guardrail_blocked"}
 		}
 	}
@@ -239,7 +239,7 @@ func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profi
 	}
 
 	botResponse := fmt.Sprintf("✅ *Registro com Sucesso!*\n*Atividade:* %s\n*Item:* %s\n*Qtd:* %v %s\n*Lote:* %v\n*ID:* %v", ext.Atividade, ext.InsumoCultura, ext.Quantidade, ext.Unidade, lote, id)
-	recordLog(sbClient, profile, originalBody, botResponse, modelConfigured, "fsm-v4", 0, 0, "registro", toMap(ext), startTime, true, nil)
+	recordLog(sbClient, profile, originalBody, botResponse, modelConfigured, "fsm-v4", 0, 0, 0, 0, "registro", toMap(ext), startTime, true, nil)
 
 	return botResponse, ProcessResult{Success: true, Reason: "record_saved"}
 }

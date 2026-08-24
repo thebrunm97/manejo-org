@@ -105,6 +105,8 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 		usage.PromptTokens += resp.Usage.PromptTokens
 		usage.CandidatesTokens += resp.Usage.CandidatesTokens
 		usage.TotalTokens += resp.Usage.TotalTokens
+		usage.CachedTokens += resp.Usage.CachedTokens
+		usage.CacheWriteTokens += resp.Usage.CacheWriteTokens
 		effectiveModel = resp.Model
 
 		history = append(history, llm.MensagemAgnostica{
@@ -186,6 +188,8 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 		usage.PromptTokens += resp.Usage.PromptTokens
 		usage.CandidatesTokens += resp.Usage.CandidatesTokens
 		usage.TotalTokens += resp.Usage.TotalTokens
+		usage.CachedTokens += resp.Usage.CachedTokens
+		usage.CacheWriteTokens += resp.Usage.CacheWriteTokens
 		effectiveModel = resp.Model
 
 		history = append(history, llm.MensagemAgnostica{

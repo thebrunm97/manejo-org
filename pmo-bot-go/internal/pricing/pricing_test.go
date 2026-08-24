@@ -136,6 +136,42 @@ func TestCostWithCacheFornecedorSemMultiplicadorNaoDaDescontoFantasma(t *testing
 	}
 }
 
+// Escrever no cache tem um prêmio sobre o preço normal de entrada para a
+// maioria dos fornecedores (ex: Anthropic 1.25x) — CostWithCache precisa
+// refletir isso, e não ignorar cacheWriteTokens.
+func TestCostWithCacheWriteEncareceQuandoFornecedorCobraPremio(t *testing.T) {
+	semEscrita := CostWithCache("anthropic/claude-haiku-4.5", 10_000, 0, 0, 100)
+	comEscrita := CostWithCache("anthropic/claude-haiku-4.5", 10_000, 0, 5_000, 100)
+
+	if comEscrita.CostUSD <= semEscrita.CostUSD {
+		t.Errorf("cache_write_tokens > 0 (US$%.6f) deveria custar mais que sem escrita de cache (US$%.6f) para um fornecedor com prêmio de escrita",
+			comEscrita.CostUSD, semEscrita.CostUSD)
+	}
+}
+
+// Regressão: CallGoogle (caminho Gemini nativo, produção primária) devolve o
+// id do modelo SEM prefixo de fornecedor ("gemini-3.1-flash-lite", não
+// "google/gemini-3.1-flash-lite"). cacheMultiplierFor resolve só por prefixo
+// "fornecedor/" — sem usar o id já normalizado por Lookup (`found`), esse
+// caminho sempre caía em noCacheMultiplier (1.0x) mesmo com cache read real,
+// fazendo o custo relatado ficar sistematicamente mais caro que o real.
+func TestCostWithCacheResolveMultiplicadorMesmoSemPrefixoDeFornecedor(t *testing.T) {
+	comPrefixo := CostWithCache("google/gemini-3.1-flash-lite", 10_000, 9_000, 0, 100)
+	semPrefixo := CostWithCache("gemini-3.1-flash-lite", 10_000, 9_000, 0, 100)
+
+	const epsilon = 1e-9
+	if diff := semPrefixo.CostUSD - comPrefixo.CostUSD; diff > epsilon || diff < -epsilon {
+		t.Errorf("id sem prefixo de fornecedor deveria resolver o mesmo multiplicador de cache: com_prefixo=US$%.9f sem_prefixo=US$%.9f",
+			comPrefixo.CostUSD, semPrefixo.CostUSD)
+	}
+
+	semCache := CostWithCache("gemini-3.1-flash-lite", 10_000, 0, 0, 100)
+	if semPrefixo.CostUSD >= semCache.CostUSD {
+		t.Errorf("id sem prefixo com cache read (US$%.6f) deveria custar menos que sem cache (US$%.6f) — desconto de cache não pode ficar fantasma por causa do formato do id",
+			semPrefixo.CostUSD, semCache.CostUSD)
+	}
+}
+
 // A ordem de custo muda com o perfil de uso: modelos com saída cara podem ser
 // os mais baratos em classificação (muita entrada, pouca saída). Compare
 // precisa refletir isso, senão a escolha do roteador (DT-34) sai enviesada.

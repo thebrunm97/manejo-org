@@ -517,6 +517,11 @@ func (a *OpenAIAdapter) toAgnosticResponse(resp openai.ChatCompletionResponse) R
 			PromptTokens:     int32(resp.Usage.PromptTokens),
 			CandidatesTokens: int32(resp.Usage.CompletionTokens),
 			TotalTokens:      int32(resp.Usage.TotalTokens),
+			CachedTokens:     cachedTokensFromDetails(resp.Usage.PromptTokensDetails),
+			// CacheWriteTokens fica 0: o SDK go-openai não modela
+			// cache_write_tokens em PromptTokensDetails, e este adapter não é
+			// o transport de produção (ver openRouterTransport em
+			// internal/gemini/client.go, que faz a captura via tee de body).
 		},
 	}
 
@@ -531,6 +536,16 @@ func (a *OpenAIAdapter) toAgnosticResponse(resp openai.ChatCompletionResponse) R
 	}
 
 	return agnostic
+}
+
+// cachedTokensFromDetails lê cached_tokens de forma nil-safe: PromptTokensDetails
+// é um ponteiro no SDK go-openai e vem nil sempre que o provedor não retorna o
+// bloco (ex: nenhum hit de cache, ou provedor sem suporte a prompt caching).
+func cachedTokensFromDetails(d *openai.PromptTokensDetails) int32 {
+	if d == nil {
+		return 0
+	}
+	return int32(d.CachedTokens)
 }
 
 // adapterTruncate is a safe string truncator for log messages.

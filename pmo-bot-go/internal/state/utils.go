@@ -122,8 +122,14 @@ func sendFeedback(sbClient *supabase.Client, wpClient ports.MessageSender, ttsCl
 // Modelo desconhecido agora recebe uma estimativa conservadora (cara), não
 // zero: subestimar custo desconhecido induz a decisão errada de arquitetura,
 // enquanto superestimar apenas provoca uma conferência.
-func CalculateAICost(model string, pTokens, cTokens int) float64 {
-	est := pricing.Cost(model, pTokens, cTokens)
+//
+// cachedTokens e cacheWriteTokens vêm da telemetria de prompt caching (DT-37).
+// Sempre delega a pricing.CostWithCache: com os dois em zero, a fórmula é
+// idêntica à de pricing.Cost (freshInputTokens = pTokens, termos de cache
+// zerados) — não há branch, nem mudança de comportamento para as chamadas que
+// não têm dado de cache.
+func CalculateAICost(model string, pTokens, cTokens, cachedTokens, cacheWriteTokens int) float64 {
+	est := pricing.CostWithCache(model, pTokens, cachedTokens, cacheWriteTokens, cTokens)
 	if !est.Exact && model != "" {
 		log.Printf("⚠️ [Custo] Modelo %q ausente do catálogo — usando estimativa conservadora. Rode `go run ./cmd/pricing-refresh` para atualizar.", model)
 	}
@@ -131,7 +137,7 @@ func CalculateAICost(model string, pTokens, cTokens int) float64 {
 }
 
 // recordLog is a helper to centralize all logging to Supabase (Telemetry + Process Log)
-func recordLog(sbClient ports.LogPersister, profile *supabase.Profile, msgIn string, msgOut string, modelConfigured string, modelEffective string, pTokens int, cTokens int, intent string, extraction map[string]interface{}, startTime time.Time, success bool, raciocinio interface{}) {
+func recordLog(sbClient ports.LogPersister, profile *supabase.Profile, msgIn string, msgOut string, modelConfigured string, modelEffective string, pTokens int, cTokens int, cachedTokens int, cacheWriteTokens int, intent string, extraction map[string]interface{}, startTime time.Time, success bool, raciocinio interface{}) {
 	if sbClient == nil || profile == nil {
 		return
 	}
@@ -141,7 +147,7 @@ func recordLog(sbClient ports.LogPersister, profile *supabase.Profile, msgIn str
 
 	go func() {
 		duration := time.Since(startTime).Milliseconds()
-		custo := CalculateAICost(modelEffective, pTokens, cTokens)
+		custo := CalculateAICost(modelEffective, pTokens, cTokens, cachedTokens, cacheWriteTokens)
 
 		// 1. Log de Processamento (Audit)
 		var pmoIDPtr *int64
@@ -158,6 +164,8 @@ func recordLog(sbClient ports.LogPersister, profile *supabase.Profile, msgIn str
 			ModeloEfetivo:     modelEffective,
 			TokensPrompt:      pTokens,
 			TokensCompletion:  cTokens,
+			CachedTokens:      cachedTokens,
+			CacheWriteTokens:  cacheWriteTokens,
 			Intencao:          intent,
 			CustoDolar:        custo,
 			RaciocinioAgente:  raciocinio,
@@ -169,6 +177,8 @@ func recordLog(sbClient ports.LogPersister, profile *supabase.Profile, msgIn str
 			TokensPrompt:     pTokens,
 			TokensCompletion: cTokens,
 			TotalTokens:      pTokens + cTokens,
+			CachedTokens:     cachedTokens,
+			CacheWriteTokens: cacheWriteTokens,
 			ModeloIA:         modelEffective,
 			Acao:             intent,
 			CustoEstimado:    custo,
