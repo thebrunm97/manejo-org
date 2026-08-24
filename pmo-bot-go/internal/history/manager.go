@@ -214,6 +214,13 @@ func (m *Manager) InjectSystemNote(phone string, note string) {
 	}
 }
 
+// ContentGenerator é a interface segregada com o único método de llm.LLMProvider
+// que o pacote history realmente usa: a geração de conteúdo empregada na
+// compressão/sumarização assíncrona do histórico de conversa.
+type ContentGenerator interface {
+	GenerateContent(ctx context.Context, req llm.ContentRequest) (llm.RespostaAgnostica, error)
+}
+
 // estimateTokens returns a rough estimate of tokens using Characters/4 heuristic
 func estimateTokens(messages []llm.MensagemAgnostica) int {
 	totalChars := 0
@@ -230,7 +237,7 @@ func estimateTokens(messages []llm.MensagemAgnostica) int {
 }
 
 // TriggerAsyncCompression starts a background worker that measures context length and summarizes it via LLM if needed
-func (m *Manager) TriggerAsyncCompression(phone string, llmClient llm.LLMProvider, thresholdTokens int) {
+func (m *Manager) TriggerAsyncCompression(phone string, llmClient ContentGenerator, thresholdTokens int) {
 	m.mu.RLock()
 	conv, ok := m.conversations[phone]
 	if !ok || len(conv.Messages) == 0 {

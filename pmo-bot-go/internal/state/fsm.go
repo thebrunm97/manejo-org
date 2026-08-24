@@ -19,6 +19,21 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+// LLMClient é a interface estreita com os métodos de llm.LLMProvider
+// efetivamente usados pelo pacote state (FSM, orquestrador e handlers
+// especializados). Segue a convenção de "Segregated Interfaces" já
+// adotada em internal/ports/database.go: em vez de receber a interface
+// "gorda" llm.LLMProvider (9 métodos), o pacote declara aqui apenas o
+// subconjunto de que precisa. Qualquer implementação de llm.LLMProvider
+// satisfaz esta interface automaticamente (regra de superconjunto).
+type LLMClient interface {
+	GenerateContent(ctx context.Context, req llm.ContentRequest) (llm.RespostaAgnostica, error)
+	ClassifyIntent(ctx context.Context, text string) (llm.UnifiedIntentResult, string, error)
+	AskSimple(ctx context.Context, question string, systemInstruction string) (string, string, error)
+	DescribeImage(ctx context.Context, imageBytes []byte, mimeType string) (string, string, error)
+	ModelName() string
+}
+
 // ProcessResult gives insight into what happened (useful for tests/metrics)
 type ProcessResult struct {
 	Success       bool
@@ -42,7 +57,7 @@ func getSessionMutex(phone string) *sync.Mutex {
 
 // ProcessMessage orchestrates the flow:
 // LID -> Phone -> Profile -> Media Handling -> State Logic -> Extraction -> Intent Routing
-func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *supabase.Client, groqClient *groq.Client, wpClient ports.MessageSender, llmClient llm.LLMProvider, ttsClient ports.Synthesizer, mcpServer *mcp.Server, historyManager *history.Manager, flgClient *flagsmith.Client, routerCfg RouterConfig) (res ProcessResult) {
+func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *supabase.Client, groqClient *groq.Client, wpClient ports.MessageSender, llmClient LLMClient, ttsClient ports.Synthesizer, mcpServer *mcp.Server, historyManager *history.Manager, flgClient *flagsmith.Client, routerCfg RouterConfig) (res ProcessResult) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("🔥 [FSM-PANIC] Erro interno catastrófico: %v", r)
@@ -654,7 +669,7 @@ func entityMatchesIntent(entityIntencao string, intent llm.Intent) bool {
 }
 
 // dispatchEntity routes a single action to its respective handler and returns the response string
-func dispatchEntity(ctx context.Context, entity llm.AcaoEstruturada, profile *supabase.Profile, sbClient *supabase.Client, wpClient ports.MessageSender, llmClient llm.LLMProvider, ttsClient ports.Synthesizer, mcpServer *mcp.Server, historyManager *history.Manager, phone string, body string, respondWithAudio bool, startTime time.Time, routedIntent llm.Intent, filteredTools []llm.FerramentaAgnostica, guard *mcp.LoopGuard, routerModel string, agentDomain string, fastRouterRes RouterResult) (string, ProcessResult) {
+func dispatchEntity(ctx context.Context, entity llm.AcaoEstruturada, profile *supabase.Profile, sbClient *supabase.Client, wpClient ports.MessageSender, llmClient LLMClient, ttsClient ports.Synthesizer, mcpServer *mcp.Server, historyManager *history.Manager, phone string, body string, respondWithAudio bool, startTime time.Time, routedIntent llm.Intent, filteredTools []llm.FerramentaAgnostica, guard *mcp.LoopGuard, routerModel string, agentDomain string, fastRouterRes RouterResult) (string, ProcessResult) {
 	// Map AcaoEstruturada to groq.ExtractionResult for handler compatibility
 	extracted := &groq.ExtractionResult{
 		Intencao:          entity.Intencao,
@@ -738,7 +753,7 @@ func dispatchEntity(ctx context.Context, entity llm.AcaoEstruturada, profile *su
 
 // handleActiveState dispatches turn-2 messages to their respective handlers
 // handleActiveState dispatches turn-2 messages to their respective handlers
-func handleActiveState(state string, ctxState map[string]interface{}, body string, from string, phone string, profile *supabase.Profile, respondWithAudio bool, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient ports.Synthesizer, historyManager *history.Manager, startTime time.Time, modelConfigured string, llmClient llm.LLMProvider, mcpServer *mcp.Server) ProcessResult {
+func handleActiveState(state string, ctxState map[string]interface{}, body string, from string, phone string, profile *supabase.Profile, respondWithAudio bool, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient ports.Synthesizer, historyManager *history.Manager, startTime time.Time, modelConfigured string, llmClient LLMClient, mcpServer *mcp.Server) ProcessResult {
 	ctx := context.Background()
 	var botResponse string
 	var res ProcessResult

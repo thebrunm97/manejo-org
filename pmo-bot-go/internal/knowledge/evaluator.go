@@ -11,10 +11,16 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 )
 
+// RawChatter define a capacidade mínima de LLM exigida pelo avaliador: apenas
+// disparar uma chamada de chat "crua" e receber a resposta estruturada.
+type RawChatter interface {
+	ChatRaw(ctx context.Context, req llm.ChatRequest) (llm.ChatResponse, error)
+}
+
 // AutomatedEvaluator is the engine for LLM-as-a-Judge RAG evaluations.
 type AutomatedEvaluator struct {
 	supa          *supabase.Client
-	openrouter    llm.LLMProvider
+	openrouter    RawChatter
 	model         string
 	promptVersion string
 	schemaVersion string
@@ -38,7 +44,7 @@ type JudgeUsage struct {
 }
 
 // NewAutomatedEvaluator creates a new Evaluator.
-func NewAutomatedEvaluator(supa *supabase.Client, openrouter llm.LLMProvider) *AutomatedEvaluator {
+func NewAutomatedEvaluator(supa *supabase.Client, openrouter RawChatter) *AutomatedEvaluator {
 	model := getenv("LLM_JUDGE_MODEL_ID", "openai/gpt-4o")
 	promptVersion := getenv("JUDGE_PROMPT_VERSION", "judge_v2")
 	schemaVersion := getenv("JUDGE_SCHEMA_VERSION", "v2")

@@ -28,7 +28,7 @@ type TraceEvent struct {
 
 // Orchestrator manages the lifecycle of an agentic session with context injection and traceability.
 type Orchestrator struct {
-	LLM llm.LLMProvider
+	LLM LLMClient
 	SB  *supabase.Client
 	MCP *mcp.Server
 	// OutputJudge validates the LLM's final response before delivery.
@@ -46,7 +46,7 @@ type Orchestrator struct {
 }
 
 // NewOrchestrator creates a new agentic orchestrator.
-func NewOrchestrator(provider llm.LLMProvider, sb *supabase.Client, mcpServer *mcp.Server) *Orchestrator {
+func NewOrchestrator(provider LLMClient, sb *supabase.Client, mcpServer *mcp.Server) *Orchestrator {
 	return &Orchestrator{
 		LLM:               provider,
 		SB:                sb,

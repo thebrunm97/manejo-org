@@ -20,6 +20,15 @@ type Embedder interface {
 	GenerateQueryEmbedding(query string) ([]float32, error)
 }
 
+// EvidenceEvaluator define o contrato mínimo que o servidor MCP precisa de um
+// provedor de LLM: avaliar evidências recuperadas (chunks) contra a pergunta
+// do usuário no fluxo META-RAG. Estreita llm.LLMProvider (9 métodos) para o
+// único método efetivamente usado por este pacote.
+type EvidenceEvaluator interface {
+	// EvaluateEvidenceListwise avalia uma lista de chunks recuperados contra a pergunta.
+	EvaluateEvidenceListwise(ctx context.Context, query string, chunks []string) (llm.MetaRAGResult, error)
+}
+
 // LoopGuard prevents infinite tool-calling loops by tracking repeated calls with same args.
 type LoopGuard struct {
 	MaxRepeats int
@@ -51,7 +60,7 @@ type Server struct {
 	supabase    *supabase.Client
 	agriRepo    ports.AgriculturalRepository[OperacaoLoteItem]
 	embedder    Embedder
-	llmProvider llm.LLMProvider
+	llmProvider EvidenceEvaluator
 	tools       map[string]Tool
 }
 
@@ -84,7 +93,7 @@ type Tool struct {
 }
 
 // NewServer initializes a new agnostic MCP server.
-func NewServer(sb *supabase.Client, agriRepo ports.AgriculturalRepository[OperacaoLoteItem], emb Embedder, llmProvider llm.LLMProvider) *Server {
+func NewServer(sb *supabase.Client, agriRepo ports.AgriculturalRepository[OperacaoLoteItem], emb Embedder, llmProvider EvidenceEvaluator) *Server {
 	return &Server{
 		supabase:    sb,
 		agriRepo:    agriRepo,

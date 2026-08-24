@@ -47,7 +47,7 @@ func SetBusinessEvaluator(eval guardrails.BusinessEvaluator) {
 
 // handleDuvidaFallback is the specialist multi-agent entry point.
 // It uses modular prompts, filtered tools, loop protection, and short-term memory injection.
-func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, _ ports.Synthesizer, from string, llmClient llm.LLMProvider, body string, _ bool, sbClient *supabase.Client, profile *supabase.Profile, startTime time.Time, _ int, _ int, finalIntent string, tools []llm.FerramentaAgnostica, guard *mcp.LoopGuard, historyManager *history.Manager, mcpServer *mcp.Server, agentDomain string, routerResult RouterResult) (string, ProcessResult) {
+func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, _ ports.Synthesizer, from string, llmClient LLMClient, body string, _ bool, sbClient *supabase.Client, profile *supabase.Profile, startTime time.Time, _ int, _ int, finalIntent string, tools []llm.FerramentaAgnostica, guard *mcp.LoopGuard, historyManager *history.Manager, mcpServer *mcp.Server, agentDomain string, routerResult RouterResult) (string, ProcessResult) {
 	log.Printf("🤖 [FSM] Iniciando Fluxo Especialista (Intent: %s)", finalIntent)
 
 	// 1. Prepare Specialized Context
@@ -108,7 +108,7 @@ func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, _ p
 			log.Printf("⏸️ [FSM] HITL pendente. Salvando histórico e silenciando resposta conversacional.")
 			if historyManager != nil {
 				historyManager.AppendAgnosticHistory(phone, newHistory)
-				historyManager.TriggerAsyncCompression(phone, llmClient, 1500) // 1500 tokens threshold
+				historyManager.TriggerAsyncCompression(phone, llmClient.(llm.LLMProvider), 1500) // 1500 tokens threshold
 			}
 			recordLog(sbClient, profile, body, "[HITL PENDING]", llmClient.ModelName(), modelUsed, int(usage.PromptTokens), int(usage.CandidatesTokens), int(usage.CachedTokens), int(usage.CacheWriteTokens), finalIntent, map[string]interface{}{"status": "hitl_pending"}, startTime, true, trace)
 			return "", ProcessResult{Success: false, Reason: "hitl_pending"}
@@ -163,7 +163,7 @@ func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, _ p
 
 	if historyManager != nil {
 		historyManager.AppendAgnosticHistory(phone, newHistory)
-		historyManager.TriggerAsyncCompression(phone, llmClient, 1500) // 1500 tokens threshold
+		historyManager.TriggerAsyncCompression(phone, llmClient.(llm.LLMProvider), 1500) // 1500 tokens threshold
 	}
 
 	return botResponse, ProcessResult{Success: true, Reason: "agent_responded"}

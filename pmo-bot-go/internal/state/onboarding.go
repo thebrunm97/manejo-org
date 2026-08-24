@@ -96,7 +96,7 @@ Nesta etapa só o nome é obrigatório. Extraia APENAS o que estiver explicitame
 Campo ausente na mensagem = deixe de fora. É melhor omitir do que preencher errado: o nome vai virar o cadastro oficial do produtor.`
 
 // extrairDadosCadastro roda a extração estruturada sobre a mensagem.
-func extrairDadosCadastro(ctx context.Context, llmClient llm.LLMProvider, texto string) (DadosCadastro, error) {
+func extrairDadosCadastro(ctx context.Context, llmClient LLMClient, texto string) (DadosCadastro, error) {
 	var vazio DadosCadastro
 
 	raw, err := schema.Reflect[DadosCadastro]()
@@ -166,7 +166,7 @@ func HandleOnboarding(
 	sbClient *supabase.Client,
 	wpClient ports.MessageSender,
 	ttsClient ports.Synthesizer,
-	llmClient llm.LLMProvider,
+	llmClient LLMClient,
 	historyManager *history.Manager,
 ) (ProcessResult, bool) {
 	if sbClient == nil || llmClient == nil || historyManager == nil {
