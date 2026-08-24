@@ -53,3 +53,68 @@ export async function goApiFetch(path: string, init: RequestInit = {}): Promise<
 
   return fetch(goApiUrl(path), { ...init, headers });
 }
+
+// RPCs que o backend Go encaminha ao PostgREST (DT-59, fatia 3).
+//
+// POR QUE UM ALLOWLIST AQUI TAMBÉM, DUPLICANDO O DO GO
+//
+// O gateway (internal/gateway/rpc_proxy.go) já recusa qualquer nome fora da
+// lista com 404 — essa é a barreira que importa de verdade, porque o
+// frontend não é o único cliente possível do endpoint. Esta lista aqui é só
+// para o TypeScript pegar erro de digitação em tempo de compilação, não uma
+// segunda camada de segurança.
+const RPCS_VIA_GATEWAY = [
+  'create_talhao',
+  'update_talhao',
+  'delete_talhao',
+  'create_caderno_registro',
+  'update_caderno_registro',
+  'delete_caderno_registro',
+  'rpc_update_propriedade',
+  'create_pmo',
+  'update_pmo',
+  'delete_pmo',
+] as const;
+
+export type RpcViaGateway = (typeof RPCS_VIA_GATEWAY)[number];
+
+/**
+ * Chama uma RPC do Supabase através do backend Go, no lugar de
+ * `supabase.rpc(nome, params)` direto.
+ *
+ * A ASSINATURA IMITA supabase.rpc() DE PROPÓSITO: devolve `{ data, error }`
+ * em vez de lançar exceção, para o corpo de cada service que já trata esse
+ * formato (`if (error) throw ...`) não precisar mudar — só a chamada em si.
+ *
+ * O que muda de verdade por trás: em vez de ir direto ao PostgREST com a
+ * anon key, a chamada passa pelo Go, que valida o JWT e reencaminha o MESMO
+ * token do produtor para o PostgREST — auth.uid() dentro da RPC resolve
+ * exatamente igual. O Go só acrescenta um log central da chamada.
+ */
+export async function goApiRpc<T = unknown>(
+  nome: RpcViaGateway,
+  params: Record<string, unknown>
+): Promise<{ data: T | null; error: { message: string } | null }> {
+  try {
+    const response = await goApiFetch(`/api/v1/rpc/${nome}`, {
+      method: 'POST',
+      body: JSON.stringify(params),
+    });
+
+    const texto = await response.text();
+    const corpo = texto ? JSON.parse(texto) : null;
+
+    if (!response.ok) {
+      const mensagem =
+        (corpo && (corpo.message || corpo.error)) || `Erro ${response.status} ao chamar ${nome}`;
+      return { data: null, error: { message: mensagem } };
+    }
+
+    return { data: corpo as T, error: null };
+  } catch (err) {
+    return {
+      data: null,
+      error: { message: err instanceof Error ? err.message : `Falha desconhecida ao chamar ${nome}` },
+    };
+  }
+}

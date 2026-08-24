@@ -24,6 +24,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/adapter/evolution"
 	"github.com/thebrunm97/pmo-bot-go/internal/config"
 	"github.com/thebrunm97/pmo-bot-go/internal/domain"
+	"github.com/thebrunm97/pmo-bot-go/internal/gateway"
 	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
 	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
@@ -362,6 +363,20 @@ func main() {
 	adminGroup.Use(middleware.RequireAuth(jwtVerifier), middleware.RequireAdmin(adminChecker))
 	knowledgeHandler.RegisterRoutes(adminGroup)
 	log.Println("✅ [KnowledgeOps] Rotas /api/v1/admin/knowledge/* registradas (autenticadas)")
+
+	// --- Gateway REST para o pmo-frontend (DT-59, fatia 3) ---
+	//
+	// Encaminha um allowlist fechado de RPCs (talhão/caderno/propriedade/PMO)
+	// com o JWT do PRODUTOR, não a chave de serviço — ver o comentário no
+	// topo de internal/gateway/rpc_proxy.go para o porquê. Qualquer usuário
+	// autenticado pode chamar; quem decide o que ele pode fazer com cada RPC
+	// continua sendo o auth.uid() dentro da função, como já era antes desta
+	// rota existir.
+	gatewayHandler := gateway.NewHandler(sbURL, sbKey)
+	producerGroup := r.Group("/api/v1")
+	producerGroup.Use(middleware.RequireAuth(jwtVerifier))
+	gatewayHandler.RegisterRoutes(producerGroup)
+	log.Println("✅ [Gateway] Rota /api/v1/rpc/:name registrada (autenticada, allowlist de 10 RPCs)")
 
 	// --- Initialize TTS Provider ---
 	// Único ponto do sistema que conhece um fornecedor concreto de TTS. Todo o

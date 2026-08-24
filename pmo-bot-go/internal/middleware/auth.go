@@ -55,6 +55,11 @@ const (
 	ContextUserRole = "auth_user_role"
 	// ContextUserEmail é o e-mail do token, quando presente.
 	ContextUserEmail = "auth_user_email"
+	// ContextRawToken guarda o JWT bruto (sem "Bearer "), para o gateway REST
+	// (DT-59, fatia 3) reencaminhar ao PostgREST — auth.uid() dentro das RPCs
+	// SECURITY DEFINER so resolve com o token de verdade do produtor, nunca
+	// com a chave de servico.
+	ContextRawToken = "auth_raw_token"
 
 	// jwksMinRefetchInterval evita que uma enxurrada de tokens com `kid`
 	// inválido vire uma enxurrada de requisições ao Supabase — um vetor de
@@ -283,7 +288,8 @@ func RequireAuth(v *JWKSVerifier) gin.HandlerFunc {
 			return
 		}
 
-		claims, err := v.Verify(strings.TrimSpace(header[len(prefixo):]))
+		rawToken := strings.TrimSpace(header[len(prefixo):])
+		claims, err := v.Verify(rawToken)
 		if err != nil {
 			// A mensagem detalhada fica no log do servidor; o cliente recebe
 			// só "token inválido". Detalhar ao cliente qual parte falhou
@@ -296,6 +302,7 @@ func RequireAuth(v *JWKSVerifier) gin.HandlerFunc {
 		c.Set(ContextUserID, claims.Subject)
 		c.Set(ContextUserRole, claims.Role)
 		c.Set(ContextUserEmail, claims.Email)
+		c.Set(ContextRawToken, rawToken)
 
 		c.Next()
 	}

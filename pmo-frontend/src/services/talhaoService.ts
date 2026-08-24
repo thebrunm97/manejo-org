@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { goApiRpc } from './goApiClient';
 import { GeoPoint, Talhao, GeoJSONGeometry } from '../domain/geo/geoTypes';
 
 export type { Talhao, GeoJSONGeometry };
@@ -106,8 +107,11 @@ export const talhaoService = {
         // Adiciona FK da propriedade apenas se definida
         if (talhao.propriedade_id) payload.propriedade_id = talhao.propriedade_id;
 
-        const { data, error } = await supabase.rpc('create_talhao', { 
-            p_payload: payload 
+        // DT-59, fatia 3: via gateway Go em vez de ir direto ao PostgREST —
+        // ver internal/gateway/rpc_proxy.go. Mesma RPC, mesmo auth.uid(),
+        // agora com log central da escrita.
+        const { data, error } = await goApiRpc<any>('create_talhao', {
+            p_payload: payload
         });
 
         if (error) throw new Error(error.message);
@@ -127,7 +131,7 @@ export const talhaoService = {
     },
 
     async delete(id: string): Promise<void> {
-        const { error } = await supabase.rpc('delete_talhao', { 
+        const { error } = await goApiRpc('delete_talhao', {
             p_id: parseInt(id, 10) 
         });
 
