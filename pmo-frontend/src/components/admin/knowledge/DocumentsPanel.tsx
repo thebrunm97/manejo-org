@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Upload, FileText, Loader2, AlertCircle, FilePlus, Trash2 } from 'lucide-react';
 import { supabase } from '../../../supabaseClient';
+import { goApiFetch } from '../../../services/goApiClient';
 import { ResponsiveModal } from '@/components/Common/ResponsiveModal';
 import { toast } from 'react-toastify';
 
@@ -94,14 +95,9 @@ export const DocumentsPanel: React.FC = () => {
             if (uploadError) throw uploadError;
 
             // 2. Call Go API to enqueue the ingestion job
-            // We use fetch directly to the local Go server
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-            const response = await fetch(`${apiUrl}/api/v1/admin/knowledge/ingest`, {
+            // goApiFetch anexa o JWT da sessão do Supabase (a rota é autenticada).
+            const response = await goApiFetch('/api/v1/admin/knowledge/ingest', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    // Note: In a real scenario, attach the JWT token here
-                },
                 body: JSON.stringify({
                     title: file.name,
                     source_type: file.type === 'application/pdf' ? 'PDF' : 'MARKDOWN',
@@ -134,8 +130,7 @@ export const DocumentsPanel: React.FC = () => {
 
     const handleDeleteDocument = async (id: string) => {
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-            const response = await fetch(`${apiUrl}/api/v1/admin/knowledge/documents/${id}`, {
+            const response = await goApiFetch(`/api/v1/admin/knowledge/documents/${id}`, {
                 method: 'DELETE',
             });
             if (!response.ok) {

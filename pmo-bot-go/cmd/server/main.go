@@ -323,8 +323,28 @@ func main() {
 		r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 	}
 
+	// --- Autenticação das rotas do painel (DT-59, fatia 1) ---
+	//
+	// Até aqui /admin/* e /api/v1/admin/* eram públicos: qualquer um que
+	// alcançasse a porta podia apagar documento da base de conhecimento ou
+	// disparar o playground de RAG (que gasta crédito de LLM). Só não vazou
+	// porque a stack roda em localhost — o corte para VPS (DT-38) acabaria
+	// com essa proteção acidental.
+	// sbURL já foi validada lá em cima (main.go aborta se estiver vazia), então
+	// aqui o verificador sempre nasce configurado. O RequireAuth ainda trata
+	// verificador nil recusando tudo — falha fechada, caso essa garantia mude.
+	jwtVerifier := middleware.NewJWKSVerifier(sbURL)
+	log.Println("🔐 [Auth] Verificador de JWT (JWKS/ES256) inicializado")
+
+	var adminChecker middleware.AdminChecker
+	if sbClient != nil {
+		adminChecker = sbClient.IsAdmin
+	}
+
 	// --- Admin Endpoints ---
-	r.POST("/admin/reload-knowledge", func(c *gin.Context) {
+	legacyAdmin := r.Group("/admin")
+	legacyAdmin.Use(middleware.RequireAuth(jwtVerifier), middleware.RequireAdmin(adminChecker))
+	legacyAdmin.POST("/reload-knowledge", func(c *gin.Context) {
 		if okf.GlobalLoader != nil {
 			if err := okf.GlobalLoader.Load(); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -339,8 +359,9 @@ func main() {
 	// --- Knowledge Ops Panel API ---
 	knowledgeHandler := knowledge.NewHandler(sbClient, cfg.OpenRouterKey, groqKey)
 	adminGroup := r.Group("/api/v1/admin")
+	adminGroup.Use(middleware.RequireAuth(jwtVerifier), middleware.RequireAdmin(adminChecker))
 	knowledgeHandler.RegisterRoutes(adminGroup)
-	log.Println("✅ [KnowledgeOps] Rotas /api/v1/admin/knowledge/* registradas")
+	log.Println("✅ [KnowledgeOps] Rotas /api/v1/admin/knowledge/* registradas (autenticadas)")
 
 	// --- Initialize TTS Provider ---
 	// Único ponto do sistema que conhece um fornecedor concreto de TTS. Todo o

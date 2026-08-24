@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { supabase } from '../../../supabaseClient';
+import { goApiFetch } from '../../../services/goApiClient';
 
 // Types corresponding to the Go Backend response
 interface RagExperimentEvaluation {
@@ -91,11 +92,7 @@ export const PlaygroundPanel: React.FC = () => {
     useEffect(() => {
         const fetchModels = async () => {
             try {
-                const token = localStorage.getItem('token');
-                const apiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8080';
-                const response = await fetch(`${apiUrl}/api/v1/admin/knowledge/playground/models`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const response = await goApiFetch('/api/v1/admin/knowledge/playground/models');
                 if (response.ok) {
                     const data: ArenaModel[] = await response.json();
                     setArenaModels(data);
@@ -212,14 +209,8 @@ export const PlaygroundPanel: React.FC = () => {
         });
 
         try {
-            const token = localStorage.getItem('token');
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8080';
-            const response = await fetch(`${apiUrl}/api/v1/admin/knowledge/playground/rag`, {
+            const response = await goApiFetch('/api/v1/admin/knowledge/playground/rag', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
                 body: JSON.stringify({
                     query: query.trim(),
                     configs: configs
@@ -273,12 +264,9 @@ export const PlaygroundPanel: React.FC = () => {
                                 type="button"
                                 onClick={async () => {
                                     try {
-                                        const token = localStorage.getItem('token');
-                                        const apiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8080';
                                         toast.info("Sincronizando modelos da OpenRouter...");
-                                        const response = await fetch(`${apiUrl}/api/v1/admin/knowledge/playground/models/sync`, {
+                                        const response = await goApiFetch('/api/v1/admin/knowledge/playground/models/sync', {
                                             method: 'POST',
-                                            headers: { 'Authorization': `Bearer ${token}` }
                                         });
                                         if (response.ok) {
                                             toast.success("Modelos sincronizados com sucesso!");
