@@ -242,3 +242,123 @@ func (c *Client) SetupInitialProfile(userID, nome, propriedadeNome string, areaH
 	log.Printf("✅ [Onboarding] Cadastro criado (user=%s propriedade=%d talhao=%d)", userID, res.PropriedadeID, res.TalhaoID)
 	return &res, nil
 }
+
+// SendEmailOTP dispara um código de 6 dígitos para o e-mail informado.
+func (c *Client) SendEmailOTP(email string) error {
+	email = strings.TrimSpace(email)
+	if email == "" {
+		return fmt.Errorf("SendEmailOTP: e-mail vazio")
+	}
+	payload := map[string]interface{}{
+		"email":       email,
+		"create_user": false, // Garante que não cria conta nova se errar o e-mail
+	}
+	corpo, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("SendEmailOTP: marshal: %w", err)
+	}
+
+	reqURL := fmt.Sprintf("%s/auth/v1/otp", c.config.URL)
+	req, err := http.NewRequest(http.MethodPost, reqURL, strings.NewReader(string(corpo)))
+	if err != nil {
+		return fmt.Errorf("SendEmailOTP: request: %w", err)
+	}
+	req.Header.Set("apikey", c.config.Key)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("SendEmailOTP: HTTP: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("SendEmailOTP: supabase (%d): %s", resp.StatusCode, string(respBody))
+	}
+	return nil
+}
+
+// VerifyEmailOTPResult representa o retorno parcial do endpoint de verificação.
+type VerifyEmailOTPResult struct {
+	User struct {
+		ID string `json:"id"`
+	} `json:"user"`
+}
+
+// VerifyEmailOTP valida o código recebido pelo e-mail e retorna o AuthUser.
+func (c *Client) VerifyEmailOTP(email, token string) (*AuthUser, error) {
+	payload := map[string]interface{}{
+		"type":  "email",
+		"email": email,
+		"token": token,
+	}
+	corpo, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("VerifyEmailOTP: marshal: %w", err)
+	}
+
+	reqURL := fmt.Sprintf("%s/auth/v1/verify", c.config.URL)
+	req, err := http.NewRequest(http.MethodPost, reqURL, strings.NewReader(string(corpo)))
+	if err != nil {
+		return nil, fmt.Errorf("VerifyEmailOTP: request: %w", err)
+	}
+	req.Header.Set("apikey", c.config.Key)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("VerifyEmailOTP: HTTP: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("VerifyEmailOTP: supabase (%d): %s", resp.StatusCode, string(respBody))
+	}
+
+	var res VerifyEmailOTPResult
+	if err := json.Unmarshal(respBody, &res); err != nil {
+		return nil, fmt.Errorf("VerifyEmailOTP: decode: %w", err)
+	}
+	if res.User.ID == "" {
+		return nil, fmt.Errorf("VerifyEmailOTP: supabase não retornou ID de usuário")
+	}
+	
+	return &AuthUser{ID: res.User.ID, Email: email}, nil
+}
+
+// LinkPhoneToUser vincula o número de telefone a um usuário já existente.
+func (c *Client) LinkPhoneToUser(userID, phone string) error {
+	payload := map[string]interface{}{
+		"phone":         phone,
+		"phone_confirm": true,
+	}
+	corpo, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("LinkPhoneToUser: marshal: %w", err)
+	}
+
+	reqURL := fmt.Sprintf("%s/auth/v1/admin/users/%s", c.config.URL, userID)
+	req, err := http.NewRequest(http.MethodPut, reqURL, strings.NewReader(string(corpo)))
+	if err != nil {
+		return fmt.Errorf("LinkPhoneToUser: request: %w", err)
+	}
+	req.Header.Set("apikey", c.config.Key)
+	req.Header.Set("Authorization", "Bearer "+c.config.Key)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("LinkPhoneToUser: HTTP: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("LinkPhoneToUser: supabase (%d): %s", resp.StatusCode, string(respBody))
+	}
+	
+	log.Printf("🔗 [Auth] Telefone %s vinculado com sucesso ao usuário %s", phone, userID)
+	return nil
+}

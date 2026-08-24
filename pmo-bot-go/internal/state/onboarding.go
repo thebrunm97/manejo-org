@@ -45,7 +45,13 @@ import (
 )
 
 const (
-	// StateAguardandoCadastro: o bot já se apresentou e espera os dados.
+	// StatePerguntaContaExistente: o bot pergunta se o usuário já tem conta.
+	StatePerguntaContaExistente = "pergunta_conta_existente"
+	// StateAguardandoEmail: o usuário disse que tem conta e o bot pediu o e-mail.
+	StateAguardandoEmail = "aguardando_email"
+	// StateAguardandoOTPEmail: o OTP foi enviado e o bot aguarda os 6 dígitos.
+	StateAguardandoOTPEmail = "aguardando_otp_email"
+	// StateAguardandoCadastro: o bot confirmou que é novo e espera os dados.
 	StateAguardandoCadastro = "aguardando_cadastro"
 	// StateConfirmandoCadastro: os dados foram extraídos e aguardam o SIM.
 	StateConfirmandoCadastro = "confirmando_cadastro"
@@ -77,11 +83,7 @@ func (d DadosCadastro) completo() bool { return len(d.faltantes()) == 0 }
 
 const msgBoasVindas = `👋 Olá! Sou o assistente do *ManejoORG*.
 
-Vi que este número ainda não tem cadastro. Posso criar o seu agora mesmo, por aqui — não precisa entrar em site nenhum.
-
-Me diz só o seu nome completo pra eu começar. Os dados da propriedade a gente ajusta depois, com calma.
-
-Se você já tem conta no site, é só mandar *CONECTAR* seguido do seu código.`
+Vi que este número ainda não está vinculado. Você já tem um cadastro feito por e-mail no nosso site? *(Responda Sim ou Não)*`
 
 const promptExtracaoCadastro = `Você extrai dados de cadastro de produtores rurais brasileiros a partir de mensagens de WhatsApp.
 
@@ -199,12 +201,80 @@ func HandleOnboarding(
 		// para a extração abaixo em vez de insistir no botão.
 	}
 
+	// ── Cancelamento Genérico ───────────────────────────────────────────────
+	if strings.ToUpper(strings.TrimSpace(body)) == "CANCELAR" {
+		historyManager.SetFSMState(phone, "", nil, nil)
+		sendFeedback(sbClient, wpClient, ttsClient, msg.From, "Operação cancelada. Mande um 'Oi' quando quiser recomeçar.", respondWithAudio)
+		return ProcessResult{Success: true, Reason: "cancelado"}, true
+	}
+
+	// ── OTP E-mail (Aguardando Código) ──────────────────────────────────────
+	if estado == StateAguardandoOTPEmail {
+		token := strings.TrimSpace(body)
+		email, _ := ctxFSM["email"].(string)
+
+		user, err := sbClient.VerifyEmailOTP(email, token)
+		if err != nil {
+			log.Printf("⚠️ [Onboarding] OTP inválido para %s: %v", email, err)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.From, "O código parece incorreto ou expirou. Tente novamente ou digite CANCELAR.", respondWithAudio)
+			return ProcessResult{Success: false, Reason: "otp_invalido"}, true
+		}
+
+		err = sbClient.LinkPhoneToUser(user.ID, phone)
+		if err != nil {
+			log.Printf("⚠️ [Onboarding] Erro ao vincular telefone %s: %v", phone, err)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.From, "Erro interno ao vincular conta. Tente de novo mais tarde.", respondWithAudio)
+			return ProcessResult{Success: false, Reason: "erro_vincular"}, true
+		}
+
+		historyManager.SetFSMState(phone, "", nil, nil)
+		sendFeedback(sbClient, wpClient, ttsClient, msg.From, "✅ Pronto! Seu WhatsApp foi vinculado à sua conta com sucesso. Pode começar a usar!", respondWithAudio)
+		return ProcessResult{Success: true, Reason: "conta_vinculada"}, true
+	}
+
+	// ── E-mail (Aguardando E-mail) ──────────────────────────────────────────
+	if estado == StateAguardandoEmail {
+		email := strings.ToLower(strings.TrimSpace(body))
+		if !strings.Contains(email, "@") {
+			sendFeedback(sbClient, wpClient, ttsClient, msg.From, "Isso não parece um e-mail válido. Por favor, digite seu e-mail do site:", respondWithAudio)
+			return ProcessResult{Success: false, Reason: "email_invalido"}, true
+		}
+		
+		err := sbClient.SendEmailOTP(email)
+		if err != nil {
+			log.Printf("⚠️ [Onboarding] Falha ao enviar OTP para %s: %v", email, err)
+		}
+		historyManager.SetFSMState(phone, StateAguardandoOTPEmail, map[string]interface{}{"email": email}, nil)
+		sendFeedback(sbClient, wpClient, ttsClient, msg.From, "Enviei um código de 6 dígitos para o seu e-mail (se ele existir no nosso sistema). Por favor, digite os 6 números aqui:", respondWithAudio)
+		return ProcessResult{Success: true, Reason: "otp_enviado"}, true
+	}
+
+	// ── Pergunta Conta Existente ────────────────────────────────────────────
+	if estado == StatePerguntaContaExistente {
+		if ehConfirmacao(body) {
+			historyManager.SetFSMState(phone, StateAguardandoEmail, nil, nil)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.From, "Legal! Me diga qual é o e-mail que você usou no site para eu te enviar um código de segurança.", respondWithAudio)
+			return ProcessResult{Success: true, Reason: "iniciou_vinculo"}, true
+		} else if ehNegacao(body) {
+			historyManager.SetFSMState(phone, StateAguardandoCadastro, nil, nil)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.From, "Perfeito, vou criar o seu agora mesmo. Me diz só o seu *nome completo* pra gente começar:", respondWithAudio)
+			return ProcessResult{Success: true, Reason: "iniciou_novo_cadastro"}, true
+		} else {
+			if pareceConterDados(body) {
+				historyManager.SetFSMState(phone, StateAguardandoCadastro, nil, nil)
+			} else {
+				sendFeedback(sbClient, wpClient, ttsClient, msg.From, "Você já tem um cadastro feito por e-mail no nosso site? (Responda SIM ou NÃO)", respondWithAudio)
+				return ProcessResult{Success: true, Reason: "pergunta_nao_respondida"}, true
+			}
+		}
+	}
+
 	// ── Primeiro contato ────────────────────────────────────────────────────
 	// Uma saudação curta não carrega dados de cadastro; gastar uma chamada de
 	// LLM nela seria desperdício. Só tenta extrair se a mensagem tiver
 	// substância ou se já estivermos no meio do cadastro.
-	if estado != StateAguardandoCadastro && estado != StateConfirmandoCadastro && !pareceConterDados(body) {
-		historyManager.SetFSMState(phone, StateAguardandoCadastro, nil, nil)
+	if estado == "" && !pareceConterDados(body) {
+		historyManager.SetFSMState(phone, StatePerguntaContaExistente, nil, nil)
 		sendFeedback(sbClient, wpClient, ttsClient, msg.From, msgBoasVindas, respondWithAudio)
 		return ProcessResult{Success: true, Reason: "onboarding_iniciado"}, true
 	}
