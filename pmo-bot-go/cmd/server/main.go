@@ -607,6 +607,17 @@ func main() {
 		log.Println("⚠️  [SelfHeal] SELF_HEAL_ENABLED=false — heartbeat continua só detectando e alertando (DT-53 Estágio 0), sem tentar reconectar sozinho")
 	}
 
+	// --- Ping periódico de uptime (DT-63) ---
+	// Confirma no canal de alerta que o processo segue de pé, mesmo sem
+	// incidente — sem isso, silêncio é ambíguo entre "tudo bem" e "ninguém
+	// saberia se caísse". Marcos crescentes (1h, 3h, 6h, 12h, 24h) para não
+	// virar spam logo na subida; depois do último marco, repete a cada 24h.
+	// Uma queda real ainda dispara ChaveWhatsAppCaiu a qualquer momento, fora
+	// deste cronograma — os dois mecanismos são independentes.
+	if temCanal {
+		go pingDeUptime(context.Background(), notificador, cfg.EvoInstance)
+	}
+
 	// --- Heartbeat goroutine ---
 	// Also checks if webhook is still registered after reconnections.
 	// evolution-go loses webhook config on disconnect/reconnect cycles.
@@ -716,6 +727,67 @@ func checkClockSync() {
 			}
 		}
 	}
+}
+
+// pingDeUptime manda uma confirmação de "estou de pé" pelo canal de alerta em
+// marcos crescentes de tempo de processo (DT-63): 1h, 3h, 6h, 12h, 24h e, dali
+// em diante, a cada 24h. Existe porque o self-heal (DT-53) só fala quando algo
+// dá errado — sem isto, um canal calado é ambíguo entre "tudo bem" e "ninguém
+// saberia se caísse". Roda até o contexto ser cancelado (processo encerrando).
+func pingDeUptime(ctx context.Context, notificador ports.Notifier, instance string) {
+	marcos := []time.Duration{1 * time.Hour, 3 * time.Hour, 6 * time.Hour, 12 * time.Hour, 24 * time.Hour}
+	inicio := time.Now()
+	decorrido := time.Duration(0)
+
+	for _, marco := range marcos {
+		espera := marco - decorrido
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(espera):
+		}
+		decorrido = marco
+		notify.Disparar(ctx, notificador, ports.Alerta{
+			Chave:      ports.ChavePingUptime,
+			Severidade: ports.SeveridadeRecuperado, // fura cooldown: confirmação de rotina, não deve ser suprimida
+			Titulo:     fmt.Sprintf("✅ %s online há %s", instance, formatarDuracaoPing(marco)),
+			Corpo:      fmt.Sprintf("pmo-bot-go segue no ar desde %s, sem interrupção detectada.", inicio.Format("02/01 15:04")),
+			Em:         time.Now(),
+		})
+	}
+
+	// Depois do último marco, repete a cada 24h enquanto o processo viver.
+	ticker := time.NewTicker(24 * time.Hour)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			decorrido += 24 * time.Hour
+			notify.Disparar(ctx, notificador, ports.Alerta{
+				Chave:      ports.ChavePingUptime,
+				Severidade: ports.SeveridadeRecuperado,
+				Titulo:     fmt.Sprintf("✅ %s online há %s", instance, formatarDuracaoPing(decorrido)),
+				Corpo:      fmt.Sprintf("pmo-bot-go segue no ar desde %s, sem interrupção detectada.", inicio.Format("02/01 15:04")),
+				Em:         time.Now(),
+			})
+		}
+	}
+}
+
+// formatarDuracaoPing traduz marcos de hora para um rótulo legível ("1h",
+// "24h") sem depender do formato default do Go (que escreveria "24h0m0s").
+func formatarDuracaoPing(d time.Duration) string {
+	horas := int(d.Hours())
+	if horas < 24 {
+		return fmt.Sprintf("%dh", horas)
+	}
+	dias := horas / 24
+	if dias == 1 {
+		return "24h (1 dia)"
+	}
+	return fmt.Sprintf("%dh (%d dias)", horas, dias)
 }
 
 // sendHeartbeat checks WhatsApp connection state and updates the bot status in Supabase.

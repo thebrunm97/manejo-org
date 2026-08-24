@@ -27,6 +27,10 @@ const (
 	ChaveNaoAutorizado     = "nao_autorizado"
 	ChaveQRDetectado       = "qr_detectado"
 	ChaveTeste             = "teste"
+	// ChavePingUptime identifica os pings periódicos de "estou vivo" (DT-63).
+	// Chave própria e distinta de ChaveWhatsAppCaiu: são pings de rotina, não
+	// incidentes, e não devem competir pelo mesmo cooldown/dedup de uma queda.
+	ChavePingUptime = "ping_uptime"
 )
 
 // Alerta é uma notificação destinada a um humano, por um canal que não seja o
