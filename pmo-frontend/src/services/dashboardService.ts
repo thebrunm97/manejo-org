@@ -1,6 +1,6 @@
 import { supabase } from '../supabaseClient';
+import { goApiRpc } from './goApiClient';
 export { supabase }; // Export standard instance for Realtime use
-import { PostgrestError } from '@supabase/supabase-js';
 
 // Types
 export interface HarvestSummaryItem {
@@ -239,7 +239,10 @@ export const dashboardService = {
     async saveRegistro(payload: any) {
         if (!payload.data_registro) throw new Error("Data é obrigatória.");
 
-        let error: PostgrestError | null = null;
+        // DT-59, fatia 3: via gateway Go — ver internal/gateway/rpc_proxy.go.
+        // goApiRpc devolve { message } em vez de PostgrestError completo; esta
+        // função só usa error.message, então o tipo mais estreito basta.
+        let error: { message: string } | null = null;
 
         if (payload.id) {
             const { id, ...updateData } = payload;
@@ -250,11 +253,11 @@ export const dashboardService = {
                 updateData.detalhes_tecnicos.justificativa_edicao = lastLog.motivo;
                 updateData.detalhes_tecnicos.data_edicao = lastLog.data;
             }
-            const result = await supabase.rpc('update_caderno_registro', { p_id: id, p_payload: updateData });
+            const result = await goApiRpc('update_caderno_registro', { p_id: id, p_payload: updateData });
             error = result.error;
         } else {
             const { id, ...insertData } = payload;
-            const result = await supabase.rpc('create_caderno_registro', { p_payload: insertData });
+            const result = await goApiRpc('create_caderno_registro', { p_payload: insertData });
             error = result.error;
         }
 
@@ -315,7 +318,7 @@ export const dashboardService = {
                 });
             }
 
-            const { error: updateError } = await supabase.rpc('update_pmo', { p_id: pmoId, p_payload: { form_data: formData } });
+            const { error: updateError } = await goApiRpc('update_pmo', { p_id: pmoId, p_payload: { form_data: formData } });
             if (updateError) throw updateError;
             return nome;
         } catch (error: any) {

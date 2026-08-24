@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { goApiRpc } from './goApiClient';
 import { Database } from '../types/supabase';
 
 type TalhaoRow = Database['public']['Tables']['talhoes']['Row'];
@@ -144,7 +145,8 @@ export const locationService = {
      * Atualiza dados de um talhão.
      */
     updateTalhao: async (id: number, data: Partial<TalhaoRow>): Promise<boolean> => {
-        const { error } = await supabase.rpc('update_talhao', { p_id: id, p_payload: data });
+        // DT-59, fatia 3: via gateway Go — ver internal/gateway/rpc_proxy.go.
+        const { error } = await goApiRpc('update_talhao', { p_id: id, p_payload: data });
 
         if (error) {
             console.error('Erro ao atualizar talhão:', error);
@@ -157,11 +159,14 @@ export const locationService = {
      * Cria um novo talhão.
      */
     createTalhao: async (talhaoData: TalhaoInsert): Promise<TalhaoRow> => {
-        const { data, error } = await supabase.rpc('create_talhao', { p_payload: talhaoData });
+        const { data, error } = await goApiRpc<TalhaoRow>('create_talhao', { p_payload: talhaoData });
 
         if (error) {
             console.error("Erro ao criar talhão:", error);
             throw error;
+        }
+        if (!data) {
+            throw new Error("create_talhao não devolveu o talhão criado.");
         }
         return data;
     },
@@ -170,7 +175,7 @@ export const locationService = {
      * Remove um talhão pelo ID.
      */
     deleteTalhao: async (id: string | number): Promise<boolean> => {
-        const { error } = await supabase.rpc('delete_talhao', { p_id: id });
+        const { error } = await goApiRpc('delete_talhao', { p_id: id });
 
         if (error) {
             console.error('Erro ao deletar talhão:', error);

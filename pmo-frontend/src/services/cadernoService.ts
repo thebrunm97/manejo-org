@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { goApiRpc } from './goApiClient';
 import {
     CadernoEntry,
     ActivityType,
@@ -130,7 +131,8 @@ export const addRegistro = async (registro: any): Promise<CadernoEntry> => {
 };
 
 export const deleteRegistro = async (id: string): Promise<void> => {
-    const { error } = await supabase.rpc('delete_caderno_registro', {
+    // DT-59, fatia 3: via gateway Go — ver internal/gateway/rpc_proxy.go.
+    const { error } = await goApiRpc('delete_caderno_registro', {
         p_id: id
     });
 

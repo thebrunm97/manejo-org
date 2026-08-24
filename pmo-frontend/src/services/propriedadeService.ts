@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { goApiRpc } from './goApiClient';
 import { Propriedade } from '../domain/pmo/pmoTypes';
 
 export const fetchPropriedade = async (id: number) => {
@@ -35,7 +36,11 @@ export const fetchAllPropriedades = async (userId?: string): Promise<Propriedade
 
 export const updatePropriedade = async (id: number, updates: Partial<Propriedade> & { car?: string, inscricao_estadual?: string, matricula?: string, endereco_cadastral?: string }) => {
     try {
-        const { data: result, error } = await supabase.rpc('rpc_update_propriedade', {
+        // DT-59, fatia 3: via gateway Go — ver internal/gateway/rpc_proxy.go.
+        // O contrato JSONB {status,message,code,data} continua vindo intacto
+        // no corpo, mesmo com status HTTP 200 — só error (goApiRpc) muda de
+        // fonte, para falha de rede/HTTP, não de negócio.
+        const { data: result, error } = await goApiRpc<any>('rpc_update_propriedade', {
             p_id: id,
             p_updates: updates
         });

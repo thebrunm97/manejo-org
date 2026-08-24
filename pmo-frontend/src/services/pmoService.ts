@@ -7,6 +7,7 @@
  */
 
 import { supabase } from '../supabaseClient';
+import { goApiRpc } from './goApiClient';
 import type {
     PmoPayload,
     PmoRecord,
@@ -234,7 +235,7 @@ export async function createPmo(
     payload: Omit<PmoPayload, 'id'>
 ): Promise<SaveResult> {
     try {
-        const { data, error } = await supabase.rpc('create_pmo', { p_payload: payload });
+        const { data, error } = await goApiRpc<any>('create_pmo', { p_payload: payload });
 
         if (error) {
             return { success: false, error: error.message };
@@ -265,9 +266,9 @@ export async function updatePmo(
         // Remove o id do payload para não conflitar com a condição eq()
         const { id, ...updateData } = payload as PmoPayload;
 
-        const { error } = await supabase.rpc('update_pmo', { 
-            p_id: pmoId, 
-            p_payload: updateData 
+        const { error } = await goApiRpc('update_pmo', {
+            p_id: pmoId,
+            p_payload: updateData
         });
 
         if (error) {
@@ -384,7 +385,7 @@ export async function fetchAllPmos(propriedadeId: number, userId?: string): Prom
  */
 export async function deletePmo(pmoId: string): Promise<SaveResult> {
     try {
-        const { error } = await supabase.rpc('delete_pmo', { p_id: pmoId });
+        const { error } = await goApiRpc('delete_pmo', { p_id: pmoId });
 
         if (error) {
             return { success: false, error: error.message };
