@@ -144,6 +144,19 @@ func (t *openRouterTransport) RoundTrip(req *http.Request) (*http.Response, erro
 					bodyMap["response_format"] = fmtReq
 				}
 
+				// 3. Cache breakpoint top-level implícito (DT-37/prompt caching).
+				//
+				// As definições de ferramentas e o histórico de sistema são o
+				// mesmo payload estático a cada turno — candidato natural a
+				// cache. A OpenRouter aceita este campo top-level para os
+				// fornecedores que suportam cache implícito (Anthropic, Google
+				// Vertex, Bedrock); para os que não suportam, o campo é
+				// ignorado sem erro. Só é enviado quando o corpo já tem
+				// mensagens (evita marcar payloads vazios/de erro).
+				if _, hasMessages := bodyMap["messages"]; hasMessages {
+					bodyMap["cache_control"] = map[string]interface{}{"type": "ephemeral"}
+				}
+
 				if enrichedBody, err := json.Marshal(bodyMap); err == nil {
 					req.Body = io.NopCloser(bytes.NewReader(enrichedBody))
 					req.ContentLength = int64(len(enrichedBody))
