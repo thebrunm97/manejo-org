@@ -157,6 +157,46 @@ func (c *Client) DeleteAuthUser(userID string) error {
 	return nil
 }
 
+// CreateBasicProfileResult espelha o retorno JSON da RPC create_basic_profile.
+type CreateBasicProfileResult struct {
+	Success bool   `json:"success"`
+	UserID  string `json:"user_id"`
+	Error   string `json:"error"`
+}
+
+// CreateBasicProfile chama a RPC que cria (ou atualiza) só o profile com o
+// nome do produtor — a etapa mínima do onboarding progressivo (DT-58,
+// Fatia 2). Propriedade, área e talhão ficam para a complementação futura,
+// que usa setup_initial_profile.
+func (c *Client) CreateBasicProfile(userID, nome string) (*CreateBasicProfileResult, error) {
+	payload := map[string]interface{}{
+		"p_user_id": userID,
+		"p_nome":    nome,
+	}
+
+	corpo, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("CreateBasicProfile: marshal: %w", err)
+	}
+
+	reqURL := fmt.Sprintf("%s/rest/v1/rpc/create_basic_profile", c.config.URL)
+	body, err := c.doRequest(http.MethodPost, reqURL, corpo)
+	if err != nil {
+		return nil, fmt.Errorf("CreateBasicProfile: RPC falhou: %w", err)
+	}
+
+	var res CreateBasicProfileResult
+	if err := json.Unmarshal(body, &res); err != nil {
+		return nil, fmt.Errorf("CreateBasicProfile: decode: %w", err)
+	}
+	if !res.Success {
+		return &res, fmt.Errorf("CreateBasicProfile: RPC recusou: %s", res.Error)
+	}
+
+	log.Printf("✅ [Onboarding] Profile básico criado (user=%s)", userID)
+	return &res, nil
+}
+
 // SetupInitialProfileResult espelha o retorno JSON da RPC setup_initial_profile.
 type SetupInitialProfileResult struct {
 	Success       bool   `json:"success"`

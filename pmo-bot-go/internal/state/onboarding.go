@@ -9,16 +9,22 @@ package state
 // público — precisava abrir um navegador, criar conta, achar um código de
 // vínculo e voltar. Esse era o atrito que o DT-58 existe para remover.
 //
+// PROGRESSIVE PROFILING (Fatia 2)
+//
+// A primeira versão deste fluxo exigia nome, propriedade, área e talhão antes
+// de liberar qualquer uso — quatro perguntas antes do produtor ver qualquer
+// valor. Agora o único dado obrigatório é o nome: ele já cria o profile
+// (`create_basic_profile`) e libera o uso do bot. Propriedade/área/talhão
+// ficam para uma etapa de complementação futura, que reaproveita a RPC
+// `setup_initial_profile` já existente — por isso ela não foi alterada aqui.
+//
 // ESTRATÉGIA: EXTRAÇÃO ONE-SHOT, NÃO SLOT-FILLING
 //
 // O estado da FSM vive em memória (history.Manager, TTL 45min, perdido em
-// restart). Um cadastro conduzido campo a campo, ao longo de muitos turnos,
-// perderia o progresso em qualquer deploy — e deploy no meio do cadastro de um
-// produtor é exatamente o tipo de coisa que acontece. Por isso o desenho aqui
-// tenta extrair os quatro campos de QUALQUER mensagem, a cada mensagem: se a
-// pessoa mandar tudo de uma vez, cadastra na hora; se mandar pela metade, o
-// bot pede só o que falta e tenta de novo. Perder o estado no meio custa, no
-// pior caso, uma pergunta repetida — nunca um cadastro pela metade.
+// restart). Por isso o desenho aqui tenta extrair o nome de QUALQUER
+// mensagem, a cada mensagem: se a pessoa já mandar o nome de cara, cadastra
+// na hora; perder o estado no meio, no pior caso, custa uma pergunta
+// repetida — nunca um cadastro pela metade.
 //
 // O único momento que realmente depende de estado é a confirmação (o "SIM"
 // precisa saber o que está sendo confirmado). Esse estado é curto, e se sumir
@@ -45,29 +51,24 @@ const (
 	StateConfirmandoCadastro = "confirmando_cadastro"
 )
 
-// DadosCadastro são os quatro campos que setup_initial_profile pede do
-// produtor (o quinto, p_user_id, o backend resolve sozinho).
+// DadosCadastro é o dado mínimo que create_basic_profile pede do produtor (o
+// segundo parâmetro, p_user_id, o backend resolve sozinho). Propriedade,
+// área e talhão ficam para a etapa de complementação futura — os campos
+// continuam aqui, opcionais, para essa etapa reaproveitar a mesma extração
+// sem precisar de um segundo schema.
 type DadosCadastro struct {
-	Nome            string  `json:"nome" jsonschema:"description=Nome completo do produtor rural"`
-	PropriedadeNome string  `json:"propriedade_nome" jsonschema:"description=Nome da propriedade ou sítio/fazenda"`
-	AreaHa          float64 `json:"area_ha" jsonschema:"description=Área total da propriedade em hectares (número). 0 se não informado"`
-	TalhaoNome      string  `json:"talhao_nome" jsonschema:"description=Nome do primeiro talhão/área de plantio"`
+	Nome            string  `json:"nome" jsonschema:"required,description=Nome completo do produtor rural"`
+	PropriedadeNome string  `json:"propriedade_nome,omitempty" jsonschema:"description=Nome da propriedade ou sítio/fazenda, se mencionado (opcional nesta etapa)"`
+	AreaHa          float64 `json:"area_ha,omitempty" jsonschema:"description=Área total da propriedade em hectares, se mencionada (opcional nesta etapa)"`
+	TalhaoNome      string  `json:"talhao_nome,omitempty" jsonschema:"description=Nome do primeiro talhão/área de plantio, se mencionado (opcional nesta etapa)"`
 }
 
-// faltantes lista, em português, os campos ainda não preenchidos.
+// faltantes lista, em português, os campos ainda não preenchidos. Nesta
+// etapa só o nome é exigido — o resto é preenchido depois, na complementação.
 func (d DadosCadastro) faltantes() []string {
 	var f []string
 	if strings.TrimSpace(d.Nome) == "" {
 		f = append(f, "seu nome completo")
-	}
-	if strings.TrimSpace(d.PropriedadeNome) == "" {
-		f = append(f, "o nome da sua propriedade")
-	}
-	if d.AreaHa <= 0 {
-		f = append(f, "o tamanho dela em hectares")
-	}
-	if strings.TrimSpace(d.TalhaoNome) == "" {
-		f = append(f, "o nome do primeiro talhão (a área onde você planta)")
 	}
 	return f
 }
@@ -78,25 +79,19 @@ const msgBoasVindas = `👋 Olá! Sou o assistente do *ManejoORG*.
 
 Vi que este número ainda não tem cadastro. Posso criar o seu agora mesmo, por aqui — não precisa entrar em site nenhum.
 
-Me manda numa mensagem só:
-• Seu nome completo
-• O nome da sua propriedade
-• O tamanho dela, em hectares
-• O nome do primeiro talhão (a área onde você planta)
-
-_Exemplo: "João da Silva, Sítio Boa Vista, 12 hectares, Talhão da Frente"_
+Me diz só o seu nome completo pra eu começar. Os dados da propriedade a gente ajusta depois, com calma.
 
 Se você já tem conta no site, é só mandar *CONECTAR* seguido do seu código.`
 
 const promptExtracaoCadastro = `Você extrai dados de cadastro de produtores rurais brasileiros a partir de mensagens de WhatsApp.
 
-Extraia APENAS o que estiver explicitamente na mensagem. Nunca invente, nunca complete com suposição:
+Nesta etapa só o nome é obrigatório. Extraia APENAS o que estiver explicitamente na mensagem. Nunca invente, nunca complete com suposição:
 - nome: nome completo da PESSOA. Não confunda com o nome da propriedade.
-- propriedade_nome: nome do sítio/fazenda/chácara. Não confunda com o nome da pessoa nem com o do talhão.
-- area_ha: área em HECTARES, como número. Converta se vier em alqueire (1 alqueire paulista = 2.42 ha) ou em m² (10000 m² = 1 ha). Use 0 se não houver área na mensagem.
-- talhao_nome: nome do talhão, lote, gleba ou área de plantio.
+- propriedade_nome: nome do sítio/fazenda/chácara, SE a mensagem mencionar. Não confunda com o nome da pessoa nem com o do talhão.
+- area_ha: área em HECTARES, como número, SE a mensagem mencionar. Converta se vier em alqueire (1 alqueire paulista = 2.42 ha) ou em m² (10000 m² = 1 ha).
+- talhao_nome: nome do talhão, lote, gleba ou área de plantio, SE a mensagem mencionar.
 
-Campo ausente na mensagem = string vazia (ou 0 para area_ha). É melhor devolver vazio e o sistema perguntar do que preencher errado: este dado vai virar o cadastro oficial do produtor.`
+Campo ausente na mensagem = deixe de fora. É melhor omitir do que preencher errado: o nome vai virar o cadastro oficial do produtor.`
 
 // extrairDadosCadastro roda a extração estruturada sobre a mensagem.
 func extrairDadosCadastro(ctx context.Context, llmClient llm.LLMProvider, texto string) (DadosCadastro, error) {
@@ -132,8 +127,8 @@ func extrairDadosCadastro(ctx context.Context, llmClient llm.LLMProvider, texto 
 // resumoCadastro monta o texto de conferência mostrado antes de gravar.
 func resumoCadastro(d DadosCadastro) string {
 	return fmt.Sprintf(
-		"Confere pra mim se está tudo certo:\n\n👤 *Nome:* %s\n🏡 *Propriedade:* %s\n📐 *Área:* %g hectares\n🌱 *Primeiro talhão:* %s\n\nPosso cadastrar assim?",
-		d.Nome, d.PropriedadeNome, d.AreaHa, d.TalhaoNome)
+		"Confere pra mim se está certo:\n\n👤 *Nome:* %s\n\nPosso cadastrar assim? Os dados da propriedade a gente completa depois.",
+		d.Nome)
 }
 
 // ehConfirmacao reconhece um "sim" — tanto pelo botão quanto digitado.
@@ -274,7 +269,7 @@ func finalizarCadastro(
 		return ProcessResult{Success: false, Reason: "onboarding_auth_falhou"}
 	}
 
-	_, err = sbClient.SetupInitialProfile(usuario.ID, dados.Nome, dados.PropriedadeNome, dados.AreaHa, dados.TalhaoNome)
+	_, err = sbClient.CreateBasicProfile(usuario.ID, dados.Nome)
 	if err != nil {
 		// Compensação: sem isto, o usuário fica órfão em auth.users e a
 		// próxima mensagem tentaria criar OUTRO, acumulando lixo a cada
@@ -292,8 +287,8 @@ func finalizarCadastro(
 	historyManager.ClearFSMState(phone)
 
 	sendFeedback(sbClient, wpClient, ttsClient, msg.From, fmt.Sprintf(
-		"✅ *Cadastro criado, %s!*\n\n🏡 %s (%g ha)\n🌱 Talhão: %s\n\nPode começar a registrar. Experimente mandar algo como _\"plantei alface no %s hoje\"_.",
-		primeiroNome(dados.Nome), dados.PropriedadeNome, dados.AreaHa, dados.TalhaoNome, dados.TalhaoNome), respondWithAudio)
+		"✅ *Cadastro criado, %s!* Pode começar a usar por aqui. Quando quiser, me conta o nome da sua propriedade que eu completo o resto do cadastro.",
+		primeiroNome(dados.Nome)), respondWithAudio)
 
 	log.Printf("🎉 [Onboarding] Produtor cadastrado pelo WhatsApp: phone=%s user=%s", phone, usuario.ID)
 	return ProcessResult{Success: true, Reason: "onboarding_concluido"}

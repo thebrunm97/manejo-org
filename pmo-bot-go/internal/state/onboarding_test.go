@@ -2,41 +2,26 @@ package state
 
 import "testing"
 
-// Os quatro campos são obrigatórios porque a RPC setup_initial_profile grava
-// os quatro. Deixar um vazio passar criaria propriedade sem nome ou talhão
-// fantasma — e este é o cadastro OFICIAL do produtor, não um rascunho.
-func TestCadastroSoEstaCompletoComOsQuatroCampos(t *testing.T) {
+// Progressive profiling (DT-58, Fatia 2): só o nome é obrigatório para
+// create_basic_profile. Propriedade/área/talhão ficam para a complementação
+// futura e não bloqueiam o cadastro inicial.
+func TestCadastroSoExigeNome(t *testing.T) {
+	soNome := DadosCadastro{Nome: "João da Silva"}
+	if !soNome.completo() {
+		t.Fatalf("cadastro só com nome deveria estar completo, faltantes=%v", soNome.faltantes())
+	}
+
 	completo := DadosCadastro{Nome: "João da Silva", PropriedadeNome: "Sítio Boa Vista", AreaHa: 12, TalhaoNome: "Talhão da Frente"}
 	if !completo.completo() {
-		t.Fatalf("cadastro com os 4 campos deveria estar completo, faltantes=%v", completo.faltantes())
+		t.Fatalf("cadastro com todos os campos deveria estar completo, faltantes=%v", completo.faltantes())
 	}
 
-	casos := map[string]DadosCadastro{
-		"sem nome":        {PropriedadeNome: "Sítio", AreaHa: 1, TalhaoNome: "T1"},
-		"sem propriedade": {Nome: "João", AreaHa: 1, TalhaoNome: "T1"},
-		"sem área":        {Nome: "João", PropriedadeNome: "Sítio", TalhaoNome: "T1"},
-		"sem talhão":      {Nome: "João", PropriedadeNome: "Sítio", AreaHa: 1},
+	semNome := DadosCadastro{PropriedadeNome: "Sítio", AreaHa: 1, TalhaoNome: "T1"}
+	if semNome.completo() {
+		t.Error("cadastro sem nome nunca pode estar completo, mesmo com os demais campos")
 	}
-	for nome, d := range casos {
-		t.Run(nome, func(t *testing.T) {
-			if d.completo() {
-				t.Error("deveria estar incompleto")
-			}
-			if len(d.faltantes()) != 1 {
-				t.Errorf("deveria faltar exatamente 1 campo, faltaram %d: %v", len(d.faltantes()), d.faltantes())
-			}
-		})
-	}
-}
-
-// Área zero ou negativa não é "informada": é ausência. Um cadastro com 0 ha
-// passaria pela RPC e criaria propriedade sem tamanho.
-func TestAreaZeroOuNegativaContaComoAusente(t *testing.T) {
-	for _, area := range []float64{0, -5} {
-		d := DadosCadastro{Nome: "João", PropriedadeNome: "Sítio", AreaHa: area, TalhaoNome: "T1"}
-		if d.completo() {
-			t.Errorf("área %g não deveria contar como informada", area)
-		}
+	if len(semNome.faltantes()) != 1 {
+		t.Errorf("deveria faltar exatamente o nome, faltaram %d: %v", len(semNome.faltantes()), semNome.faltantes())
 	}
 }
 
@@ -90,9 +75,9 @@ func TestContextoAusenteOuIncompletoNaoConfirma(t *testing.T) {
 		t.Error("contexto sem a chave 'cadastro' não pode devolver dados válidos")
 	}
 
-	parcial := DadosCadastro{Nome: "João"} // faltam 3 campos
-	if _, ok := dadosDoContexto(contextoDosDados(parcial)); ok {
-		t.Error("dados incompletos no contexto não podem ser tratados como confirmáveis")
+	semNome := DadosCadastro{PropriedadeNome: "Sítio"} // falta o único campo obrigatório
+	if _, ok := dadosDoContexto(contextoDosDados(semNome)); ok {
+		t.Error("dados sem nome no contexto não podem ser tratados como confirmáveis")
 	}
 }
 
