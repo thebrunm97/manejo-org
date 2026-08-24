@@ -20,16 +20,24 @@ import (
 	"time"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
-	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 )
+
+// ImageDescriber descreve tecnicamente uma imagem enviada pelo produtor.
+//
+// Interface segregada no consumidor (mesma convenção de
+// internal/ports/database.go): o Media Worker usa apenas esta capacidade
+// do provedor de IA, então não há motivo para depender do contrato inteiro.
+type ImageDescriber interface {
+	DescribeImage(ctx context.Context, imageBytes []byte, mimeType string) (string, string, error)
+}
 
 // MediaWorkerConfig contém as dependências do Media Worker.
 type MediaWorkerConfig struct {
 	Queue        *Manager
 	WhatsApp     ports.MessageSender
 	Groq         *groq.Client
-	LLM          llm.LLMProvider
+	LLM          ImageDescriber
 	PollInterval time.Duration // Default: 500ms
 }
 

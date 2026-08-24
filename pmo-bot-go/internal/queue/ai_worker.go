@@ -22,7 +22,6 @@ import (
 
 	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
-	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/state"
@@ -36,7 +35,7 @@ type AIWorkerConfig struct {
 	Queue        *Manager
 	Supabase     *supabase.Client
 	WhatsApp     ports.MessageSender
-	LLM          llm.LLMProvider
+	LLM          state.LLMClient
 	TTS          *tts.Orchestrator
 	MCP          *mcp.Server
 	History      *history.Manager
