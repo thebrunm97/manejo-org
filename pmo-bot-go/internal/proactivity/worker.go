@@ -6,21 +6,26 @@ import (
 	"log"
 
 	"github.com/robfig/cron/v3"
-	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 )
+
+// SimpleAsker define o contrato mínimo exigido pelo ProactiveEngine para
+// humanizar notificações via LLM: uma pergunta simples, sem ferramentas.
+type SimpleAsker interface {
+	AskSimple(ctx context.Context, question string, systemInstruction string) (string, string, error)
+}
 
 // ProactiveEngine gerencia as rotinas em background para automação proativa (PMO Autônomo)
 type ProactiveEngine struct {
 	cron     *cron.Cron
 	db       *supabase.Client
 	evoAPI   ports.MessageSender
-	llmAgent llm.LLMProvider
+	llmAgent SimpleAsker
 }
 
 // NewProactiveEngine inicializa o motor de proatividade
-func NewProactiveEngine(db *supabase.Client, evo ports.MessageSender, llmAgent llm.LLMProvider) *ProactiveEngine {
+func NewProactiveEngine(db *supabase.Client, evo ports.MessageSender, llmAgent SimpleAsker) *ProactiveEngine {
 	// Inicializa o cron usando o timezone local da aplicação
 	c := cron.New()
 	return &ProactiveEngine{
