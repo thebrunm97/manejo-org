@@ -59,7 +59,7 @@ func (m *PromptManager) BuildSystemInstruction(profile *supabase.Profile, basePr
 		intentContext += fmt.Sprintf("\n[ATENÇÃO HÍBRIDA]: O usuário também expressou intenção secundária (%s). Adapte a resposta para integrar as duas necessidades (ex: tirar a dúvida E preparar o registro).", *routerResult.SecondaryIntent)
 	}
 
-	// DT-59 — a ordem de concatenação importa para o cache implícito do
+	// DT-60 — a ordem de concatenação importa para o cache implícito do
 	// Gemini (2.5+): o provedor casa cache por PREFIXO comum entre chamadas
 	// consecutivas. Antes, intentContext/farmContext (variam por
 	// usuário/turno) e userMemories (varia até dentro da mesma conversa,
