@@ -71,7 +71,7 @@ func MetaRAGJudgePrompt() string {
 func ForIntent(intent llm.Intent, modality string, temProducaoParalela bool) string {
 	var p string
 	switch intent {
-	case llm.IntentRAG:
+	case llm.IntentRAG, "AGRONOMY", "WORKFLOW", "SCHEDULING":
 		p = systemPromptAgronomist
 	case llm.IntentDatabase:
 		p = systemPromptDBOperator

@@ -148,20 +148,26 @@ func (s *Server) GetToolsForIntent(intent string) []llm.FerramentaAgnostica {
 		include := false
 
 		switch intent {
-		case "RAG":
+		case "RAG", "AGRONOMY":
 			if t.Category == CategoryRAG || t.Category == CategoryDBWrite || t.Category == CategoryDBRead {
 				include = true
 			}
 
-		case "DATABASE", "REGISTRO_FINANCEIRO":
+		case "DATABASE", "REGISTRO_FINANCEIRO", "FINANCE":
 			if t.Category == CategoryDBWrite || t.Category == CategoryDBRead || t.Category == CategoryRAG {
 				include = true
 			}
 
-		case "CHAT":
+		case "CHAT", "CLARIFICATION", "SCHEDULING", "WORKFLOW":
 			// Allow Database tools in CHAT so that simple confirmations like "Sim" 
 			// (which route to CHAT) can still trigger the pending tool call.
 			if t.Category == CategoryDBWrite || t.Category == CategoryDBRead {
+				include = true
+			}
+		default:
+			// Fallback de segurança: expor ferramentas RAG se o intent for desconhecido
+			// para evitar que o agente fique completamente cego (ex: erro de clima).
+			if t.Category == CategoryRAG || t.Category == CategoryDBRead {
 				include = true
 			}
 		}
