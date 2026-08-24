@@ -8,14 +8,13 @@ import (
 	"time"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
-	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
 )
 
 // handleAssumirCota processes the intent where a producer commits to a cooperative demand.
-func handleAssumirCota(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, _ ports.MessageSender, llmClient llm.LLMProvider, _ *tts.Orchestrator, _ string, originalBody string, _ bool, startTime time.Time, modelConfigured string, _ string) (string, ProcessResult) {
+func handleAssumirCota(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, _ ports.MessageSender, llmClient LLMClient, _ *tts.Orchestrator, _ string, originalBody string, _ bool, startTime time.Time, modelConfigured string, _ string) (string, ProcessResult) {
 	log.Printf("🤝 [FSM-COLETIVO] Iniciando captação de cota: %s (%v)", ext.InsumoCultura, ext.QuantidadeAssumida)
 
 	// 1. Validate property
