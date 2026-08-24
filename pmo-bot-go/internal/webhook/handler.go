@@ -25,7 +25,6 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
 	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
-	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/state"
@@ -46,7 +45,7 @@ type Config struct {
 	GroqClient      *groq.Client
 	SupabaseClient  *supabase.Client
 	WhatsAppClient  ports.MessageSender
-	LLMClient       llm.LLMProvider
+	LLMClient       state.LLMClient
 	TtsClient       *tts.Orchestrator
 	MCPServer       *mcp.Server
 	HistoryManager  *history.Manager
