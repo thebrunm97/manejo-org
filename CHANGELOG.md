@@ -2,6 +2,14 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [0.19.0] - 2026-08-24 - "Monitoramento 24h: agora sabemos na hora se algo sai do ar 📡"
+
+Reforçamos os bastidores do assistente do WhatsApp para detectar e avisar a equipe imediatamente em caso de instabilidade — antes que o produtor precise perceber.
+
+### ✨ Melhorias (Improvements)
+* **Alerta Instantâneo:** A equipe técnica agora recebe um aviso automático assim que o assistente perde a conexão, permitindo uma resposta muito mais rápida a qualquer instabilidade.
+* **Verificação de Saúde Contínua:** O sistema confirma periodicamente que está tudo funcionando normalmente, reduzindo o tempo que uma eventual falha passaria despercebida.
+
 ## [0.18.0] - 2026-07-21 - "O Novo Cérebro do PMO Bot: Multi-Agentes, Zero-Trust e Gestão Financeira 🌐"
 
 Esta é uma das maiores atualizações já lançadas. Desde abril, focamos em reestruturar a arquitetura interna do PMO Bot para garantir mais resiliência, flexibilidade de provedores de IA e segurança absoluta nos dados (Zero-Trust). Além disso, o módulo financeiro recebeu sua expansão definitiva.

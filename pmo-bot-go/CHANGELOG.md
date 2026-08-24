@@ -6,6 +6,19 @@ O formato baseia-se no [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0
 
 ## [Unreleased]
 
+### 🩺 DT-63: Canal de alerta Telegram ativo + ping de uptime
+
+O self-heal (DT-53) já detectava quedas do WhatsApp desde 2026-08-23, mas o
+alerta não tinha para onde ir — `canal=nenhum` em produção. Confirmado por
+duas quedas reais em 2026-08-24 (instabilidade de DNS no Docker, ~19min)
+percebidas só por teste manual, nunca por notificação.
+
+- Canal Telegram configurado e testado ponta a ponta em produção.
+- `SELF_HEAL_ENABLED=true`; segue em `SELF_HEAL_DRY_RUN=true` (alerta real,
+  reconexão automática ainda represada por decisão deliberada — ver DT-53).
+- Novo ping periódico de uptime (1h/3h/6h/12h/24h, depois a cada 24h)
+  confirmando "online" mesmo sem incidente, independente do alerta de queda.
+
 ### 🚀 Épico Concluído: Arquitetura Híbrida Multi-Agente (OKF + Triador Llama-3)
 
 **Resumo Executivo**

@@ -11,6 +11,21 @@ export interface ChangelogEntry {
 
 export const changelogData: ChangelogEntry[] = [
     {
+        version: "0.19.0",
+        date: "2026-08-24",
+        title: "Monitoramento 24h: agora sabemos na hora se algo sai do ar 📡",
+        description: "Reforçamos os bastidores do assistente do WhatsApp para detectar e avisar a equipe imediatamente em caso de instabilidade — antes que você precise perceber.",
+        sections: [
+            {
+                type: "Improvements",
+                items: [
+                    "Alerta Instantâneo: A equipe técnica agora recebe um aviso automático assim que o assistente perde a conexão, permitindo uma resposta muito mais rápida a qualquer instabilidade.",
+                    "Verificação de Saúde Contínua: O sistema confirma periodicamente que está tudo funcionando normalmente, reduzindo o tempo que uma eventual falha passaria despercebida."
+                ]
+            }
+        ]
+    },
+    {
         version: "0.18.0",
         date: "2026-07-21",
         title: "O Novo Cérebro do PMO Bot: Multi-Agentes, Zero-Trust e Gestão Financeira 🌐",
