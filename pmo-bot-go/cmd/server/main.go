@@ -43,6 +43,27 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/webhook"
 )
 
+// aiProvider é o contrato da RAIZ DE COMPOSIÇÃO (DT-04).
+//
+// main.go é o único ponto que precisa segurar um valor capaz de atender a
+// TODOS os papéis de uma vez, porque é ele que escolhe o adapter concreto
+// (Gemini ou OpenAI-compatível) e o distribui. Cada consumidor, por sua vez,
+// recebe apenas a interface estreita que usa — state.LLMClient,
+// mcp.EvidenceEvaluator, queue.ImageDescriber, proactivity.SimpleAsker,
+// history.ContentGenerator, knowledge.RawChatter.
+//
+// Composto por embedding dos próprios papéis, seguindo a convenção de
+// ports.DatabaseRepository. Assim, acrescentar um método aqui exige que ele
+// exista em algum papel real — o composto não pode crescer sozinho, que foi
+// justamente como llm.LLMProvider virou uma interface de 9 métodos.
+type aiProvider interface {
+	state.LLMClient
+	mcp.EvidenceEvaluator
+
+	// Embedder é usado só na montagem do cache de embeddings do RAG.
+	Embedder() llm.Embedder
+}
+
 // parseEnvInt helper
 func parseEnvInt(key string, defaultVal int) int {
 	if valStr := os.Getenv(key); valStr != "" {
@@ -122,8 +143,8 @@ func main() {
 	//   "groq"                   — Groq via go-openai
 	//   "openai"                 — OpenAI via go-openai
 	//
-	// All downstream code receives the llm.LLMProvider interface — it never
-	// knows (or cares) which concrete adapter is running.
+	// Cada consumidor recebe apenas o PAPEL que usa (DT-04) — nenhum deles
+	// conhece (nem se importa com) qual adapter concreto está rodando.
 	activekind, factoryCfg := llm.NewProviderFromEnv()
 
 	// Build prompt config once here: main.go is the ONLY package that can
@@ -134,7 +155,7 @@ func main() {
 		MetaRAGJudgePrompt: prompt.MetaRAGJudgePrompt(),
 	}
 
-	var llmProvider llm.LLMProvider
+	var llmProvider aiProvider
 
 	if activekind == llm.ProviderGemini {
 		// ── Gemini path (default) ──────────────────────────────────────────────
