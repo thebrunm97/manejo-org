@@ -10,7 +10,7 @@ import (
 )
 
 // EvaluateWithLLM uses the LLM to classify the user's message using the strict Fast Router JSON schema.
-func EvaluateWithLLM(ctx context.Context, llmClient llm.LLMProvider, message string) (RouterResult, error) {
+func EvaluateWithLLM(ctx context.Context, llmClient LLMClient, message string) (RouterResult, error) {
 	systemInstruction := `Você é um Roteador de Intenções super rápido e defensivo de um sistema agronômico.
 Sua única função é ler a mensagem do usuário e responder EXATAMENTE neste schema JSON e nada mais.
 
