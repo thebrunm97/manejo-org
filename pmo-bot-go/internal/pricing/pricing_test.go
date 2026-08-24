@@ -92,6 +92,50 @@ func TestPrecosEmOrdemDeGrandezaPlausivel(t *testing.T) {
 	}
 }
 
+// Um token servido do cache deve custar menos que um token fresco — senão o
+// prompt caching (DT-37) não teria efeito nenhum na estimativa de custo.
+func TestCostWithCacheReadEhMaisBarataQueFresca(t *testing.T) {
+	semCache := CostWithCache("google/gemini-3.1-flash-lite", 10_000, 0, 0, 100)
+	comCache := CostWithCache("google/gemini-3.1-flash-lite", 10_000, 9_000, 0, 100)
+
+	if comCache.CostUSD >= semCache.CostUSD {
+		t.Errorf("chamada com 9.000/10.000 tokens de entrada cacheados (US$%.6f) deveria custar menos que sem cache (US$%.6f)",
+			comCache.CostUSD, semCache.CostUSD)
+	}
+}
+
+// inputTokens já inclui os tokens cacheados (mesma convenção da API de
+// usage). CostWithCache não pode contar esses tokens duas vezes.
+func TestCostWithCacheNaoContaTokensCacheadosDuasVezes(t *testing.T) {
+	// Todo o input veio do cache: só resta o custo do cache read + output.
+	todoCache := CostWithCache("google/gemini-3.1-flash-lite", 10_000, 10_000, 0, 0)
+	apenasCacheRead := CostWithCache("google/gemini-3.1-flash-lite", 0, 0, 0, 0)
+	if todoCache.CostUSD <= apenasCacheRead.CostUSD {
+		t.Errorf("custo com 100%% do input cacheado (US$%.6f) deveria ser maior que zero (US$%.6f)",
+			todoCache.CostUSD, apenasCacheRead.CostUSD)
+	}
+
+	// cachedReadTokens > inputTokens não deve gerar custo negativo (freshInputTokens
+	// nunca deve ficar abaixo de zero).
+	semEstourar := CostWithCache("google/gemini-3.1-flash-lite", 100, 999_999, 0, 0)
+	if semEstourar.CostUSD < 0 {
+		t.Errorf("custo negativo com cachedReadTokens > inputTokens: US$%.6f", semEstourar.CostUSD)
+	}
+}
+
+// Fornecedor sem multiplicador documentado (ex: Mistral) não pode fingir
+// desconto — mesma política de erro-para-cima do fallbackPrice.
+func TestCostWithCacheFornecedorSemMultiplicadorNaoDaDescontoFantasma(t *testing.T) {
+	semCache := CostWithCache("mistralai/mistral-large", 10_000, 0, 0, 100)
+	comSupostoCache := CostWithCache("mistralai/mistral-large", 10_000, 9_000, 0, 100)
+
+	const epsilon = 1e-9 // tolerância a erro de arredondamento de ponto flutuante
+	if diff := comSupostoCache.CostUSD - semCache.CostUSD; diff > epsilon || diff < -epsilon {
+		t.Errorf("fornecedor sem multiplicador documentado não deveria mudar de custo com cache: sem=%.9f com=%.9f",
+			semCache.CostUSD, comSupostoCache.CostUSD)
+	}
+}
+
 // A ordem de custo muda com o perfil de uso: modelos com saída cara podem ser
 // os mais baratos em classificação (muita entrada, pouca saída). Compare
 // precisa refletir isso, senão a escolha do roteador (DT-34) sai enviesada.

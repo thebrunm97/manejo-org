@@ -134,6 +134,87 @@ func Cost(model string, inputTokens, outputTokens int) Estimate {
 	return Estimate{CostUSD: cost, ModelFound: found, Exact: exact}
 }
 
+// CacheMultiplier descreve o preço de tokens de cache da OpenRouter em
+// relação ao preço normal de entrada do modelo (DT-37/prompt caching).
+//
+// Read é o multiplicador de um token servido do cache (barato — o provedor já
+// processou aquele prefixo antes). Write é o multiplicador do primeiro
+// armazenamento (a maioria dos fornecedores cobra um prêmio por isso; alguns
+// não cobram nada extra). Fonte: docs/PLAN-openrouter-prompt-caching.md,
+// capturado da documentação oficial da OpenRouter.
+type CacheMultiplier struct {
+	Read  float64
+	Write float64
+}
+
+// noCacheMultiplier é usado quando o fornecedor do modelo não tem
+// multiplicador documentado. Mesma política do fallbackPrice: não presumir
+// desconto que pode não existir — 1.0x equivale a tratar o token de cache como
+// um token de entrada normal, nunca mais barato que a realidade.
+var noCacheMultiplier = CacheMultiplier{Read: 1.0, Write: 1.0}
+
+// cacheMultipliers é indexado pelo prefixo de fornecedor da OpenRouter (a
+// parte antes da "/"). Os valores vêm da documentação capturada em
+// docs/PLAN-openrouter-prompt-caching.md (seção "Multiplicadores Base").
+//
+// Nota sobre a linha "Groq/Moonshot: 0.5x / 0.25x" da fonte: a documentação
+// não distingue explicitamente qual valor é leitura e qual é escrita para
+// cada um dos dois fornecedores nessa linha — interpretação conservadora
+// aplicada abaixo (0.5x leitura para Groq, 0.25x leitura para Moonshot,
+// escrita sem desconto documentado). Como Cost é só estimativa de relatório,
+// não faturamento real, o pior caso de um multiplicador impreciso aqui é uma
+// estimativa levemente errada — nunca uma cobrança real incorreta.
+var cacheMultipliers = map[string]CacheMultiplier{
+	"anthropic":  {Read: 0.1, Write: 1.25}, // TTL de 5min; 2.0x para TTL de 1h (não modelado)
+	"google":     {Read: 0.25, Write: 1.0}, // sem custo extra de escrita além do preço normal + armazenamento
+	"openai":     {Read: 0.25, Write: 1.25},
+	"x-ai":       {Read: 0.25, Write: 1.0}, // Grok
+	"deepseek":   {Read: 0.1, Write: 1.0},
+	"alibaba":    {Read: 0.1, Write: 1.25},
+	"qwen":       {Read: 0.1, Write: 1.25}, // mesmo fornecedor que "alibaba/" em alguns catálogos
+	"groq":       {Read: 0.5, Write: 1.0},
+	"moonshotai": {Read: 0.25, Write: 1.0},
+}
+
+// cacheMultiplierFor resolve o multiplicador de cache pelo prefixo de
+// fornecedor do id do modelo (formato OpenRouter: "fornecedor/modelo").
+func cacheMultiplierFor(model string) CacheMultiplier {
+	m := strings.ToLower(strings.TrimSpace(model))
+	if i := strings.Index(m, "/"); i >= 0 {
+		if cm, ok := cacheMultipliers[m[:i]]; ok {
+			return cm
+		}
+	}
+	return noCacheMultiplier
+}
+
+// CostWithCache calcula o custo em USD de uma chamada que usou prompt
+// caching, separando os tokens de entrada em não-cacheados, lidos do cache e
+// escritos no cache.
+//
+// cachedReadTokens e cacheWriteTokens devem vir da telemetria real da
+// resposta (ex: prompt_tokens_details.cached_tokens/cache_write_tokens da
+// OpenRouter) — nunca estimados, porque a hit rate do cache não é previsível
+// a priori. inputTokens deve ser o total de tokens de entrada da chamada,
+// INCLUINDO os que vieram do cache (mesma convenção da API: prompt_tokens já
+// conta os cached_tokens dentro do total).
+func CostWithCache(model string, inputTokens, cachedReadTokens, cacheWriteTokens, outputTokens int) Estimate {
+	p, found, exact := Lookup(model)
+	cm := cacheMultiplierFor(model)
+
+	freshInputTokens := inputTokens - cachedReadTokens
+	if freshInputTokens < 0 {
+		freshInputTokens = 0
+	}
+
+	cost := (float64(freshInputTokens)/1e6)*p.InputPerMillion +
+		(float64(cachedReadTokens)/1e6)*p.InputPerMillion*cm.Read +
+		(float64(cacheWriteTokens)/1e6)*p.InputPerMillion*cm.Write +
+		(float64(outputTokens)/1e6)*p.OutputPerMillion
+
+	return Estimate{CostUSD: cost, ModelFound: found, Exact: exact}
+}
+
 // Meta descreve a proveniência do catálogo, para o relatório poder informar
 // quão recente é o dado em que a decisão de custo se apoia.
 func Meta() (generatedAt, source string, models int) {
