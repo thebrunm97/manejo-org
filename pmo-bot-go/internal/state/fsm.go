@@ -195,13 +195,27 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 
 	// 3. Unauthenticated Flow
 	if profile == nil {
+		// O vínculo por código continua sendo o caminho de quem JÁ tem conta
+		// no portal web — é verificado primeiro justamente para que o
+		// onboarding não sequestre esse fluxo.
 		if strings.HasPrefix(strings.ToUpper(body), "CONECTAR ") {
 			code := strings.TrimSpace(body[9:])
 			if err := sbClient.LinkDeviceToWeb(phone, code); err == nil {
 				sendFeedback(sbClient, wpClient, ttsClient, msg.From, "✅ Aparelho vinculado com sucesso!", respondWithAudio)
 				return ProcessResult{Success: true, Reason: "device_linked"}
 			}
+			sendFeedback(sbClient, wpClient, ttsClient, msg.From, "❌ Código inválido ou expirado. Confira no portal e tente de novo.", respondWithAudio)
+			return ProcessResult{Success: false, Reason: "invalid_link_code"}
 		}
+
+		// DT-58 — cadastro pelo próprio WhatsApp. Antes daqui saía
+		// "Vincule via portal web" e o fluxo morria, obrigando quem só usa
+		// WhatsApp a abrir um navegador para existir no sistema.
+		if res, tratado := HandleOnboarding(ctx, msg, phone, body, respondWithAudio,
+			sbClient, wpClient, ttsClient, llmClient, historyManager); tratado {
+			return res
+		}
+
 		sendFeedback(sbClient, wpClient, ttsClient, msg.From, "❌ WhatsApp não vinculado. Vincule via portal web.", respondWithAudio)
 		return ProcessResult{Success: false, Reason: "profile_not_found"}
 	}
