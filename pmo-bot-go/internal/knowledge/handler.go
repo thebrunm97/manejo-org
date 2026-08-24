@@ -425,7 +425,7 @@ func (h *Handler) PlaygroundRAG(c *gin.Context) {
 				runStartTime := time.Now()
 
 				// Configure provider
-				var provider llm.LLMProvider
+				var provider RawChatter
 				var providerErr error
 
 				if cfg.ProviderName == "groq" && h.groqKey != "" {
