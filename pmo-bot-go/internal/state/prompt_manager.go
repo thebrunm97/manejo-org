@@ -59,13 +59,19 @@ func (m *PromptManager) BuildSystemInstruction(profile *supabase.Profile, basePr
 		intentContext += fmt.Sprintf("\n[ATENÇÃO HÍBRIDA]: O usuário também expressou intenção secundária (%s). Adapte a resposta para integrar as duas necessidades (ex: tirar a dúvida E preparar o registro).", *routerResult.SecondaryIntent)
 	}
 
-	baseContent := corePrompt + intentContext + "\n" + farmContext + "\nUse as ferramentas para consultar ou registrar dados. Se as informações críticas (como IDs de talhão ou PMO) já constam no contexto acima, use-as DIRETAMENTE sem perguntar ou consultar novamente." + toolCallGuardrail
+	// DT-59 — a ordem de concatenação importa para o cache implícito do
+	// Gemini (2.5+): o provedor casa cache por PREFIXO comum entre chamadas
+	// consecutivas. Antes, intentContext/farmContext (variam por
+	// usuário/turno) e userMemories (varia até dentro da mesma conversa,
+	// conforme a pergunta atual) vinham ANTES do prompt/OKF estáveis — o
+	// prefixo nunca se repetia entre chamadas, e o cache implícito não tinha
+	// chance de bater, mesmo sem nenhuma infraestrutura de cache explícito.
+	// Mesmo conteúdo e mesma lógica de montagem de cada string abaixo; só a
+	// ORDEM de concatenação final muda: estável (corePrompt/regras + OKF +
+	// RAG) primeiro, dinâmico (intent, contexto do usuário, memórias) depois.
+	stableCore := corePrompt + "\nUse as ferramentas para consultar ou registrar dados. Se as informações críticas (como IDs de talhão ou PMO) já constam no contexto acima, use-as DIRETAMENTE sem perguntar ou consultar novamente." + toolCallGuardrail
 
-	sysInst := "<IDENTIDADE_E_REGRAS_LLM>\n" + baseContent + "\n</IDENTIDADE_E_REGRAS_LLM>\n\n"
-
-	if userMemories != "" {
-		sysInst += "<MEMORIA_DO_PRODUTOR>\n" + userMemories + "\n</MEMORIA_DO_PRODUTOR>\n\n"
-	}
+	sysInst := "<IDENTIDADE_E_REGRAS_LLM>\n" + stableCore + "\n</IDENTIDADE_E_REGRAS_LLM>\n\n"
 
 	// Injeta a camada estática de OKF de forma segmentada
 	if okf.GlobalLoader != nil {
@@ -74,7 +80,15 @@ func (m *PromptManager) BuildSystemInstruction(profile *supabase.Profile, basePr
 
 	// Adiciona a instrução para balanceamento RAG vs OKF apenas para agronomia
 	if agentDomain == "agronomy" {
-		sysInst += "<INSTRUCAO_RAG>\nQuando invocares a ferramenta \"ConsultarBaseConhecimento\", os resultados fornecidos refletem o histórico dinâmico. As <REGRAS_NEGOCIO_OKF> têm precedência e são ABSOLUTAS. Se o RAG devolver informação que contradiga as regras estáticas, ignora a informação do RAG.\n</INSTRUCAO_RAG>"
+		sysInst += "<INSTRUCAO_RAG>\nQuando invocares a ferramenta \"ConsultarBaseConhecimento\", os resultados fornecidos refletem o histórico dinâmico. As <REGRAS_NEGOCIO_OKF> têm precedência e são ABSOLUTAS. Se o RAG devolver informação que contradiga as regras estáticas, ignora a informação do RAG.\n</INSTRUCAO_RAG>\n\n"
+	}
+
+	// Bloco dinâmico por último: intent do turno + contexto do usuário (mesma
+	// concatenação de antes, só relocada) e, ao final, as memórias top-3.
+	sysInst += intentContext + "\n" + farmContext
+
+	if userMemories != "" {
+		sysInst += "\n\n<MEMORIA_DO_PRODUTOR>\n" + userMemories + "\n</MEMORIA_DO_PRODUTOR>\n\n"
 	}
 
 	return sysInst
