@@ -39,4 +39,5 @@ docker-compose.override.yml
 scratch/
 *.pdf
 nemotron_monitoring.csv
-
+logs/
+tmp/
