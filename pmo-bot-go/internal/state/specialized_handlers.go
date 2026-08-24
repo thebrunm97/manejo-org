@@ -109,7 +109,7 @@ func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, _ *
 			log.Printf("⏸️ [FSM] HITL pendente. Salvando histórico e silenciando resposta conversacional.")
 			if historyManager != nil {
 				historyManager.AppendAgnosticHistory(phone, newHistory)
-				historyManager.TriggerAsyncCompression(phone, llmClient.(llm.LLMProvider), 1500) // 1500 tokens threshold
+				historyManager.TriggerAsyncCompression(phone, llmClient, 1500) // 1500 tokens threshold
 			}
 			recordLog(sbClient, profile, body, "[HITL PENDING]", llmClient.ModelName(), modelUsed, int(usage.PromptTokens), int(usage.CandidatesTokens), finalIntent, map[string]interface{}{"status": "hitl_pending"}, startTime, true, trace)
 			return "", ProcessResult{Success: false, Reason: "hitl_pending"}
@@ -164,7 +164,7 @@ func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, _ *
 
 	if historyManager != nil {
 		historyManager.AppendAgnosticHistory(phone, newHistory)
-		historyManager.TriggerAsyncCompression(phone, llmClient.(llm.LLMProvider), 1500) // 1500 tokens threshold
+		historyManager.TriggerAsyncCompression(phone, llmClient, 1500) // 1500 tokens threshold
 	}
 
 	return botResponse, ProcessResult{Success: true, Reason: "agent_responded"}
