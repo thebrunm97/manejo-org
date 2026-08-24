@@ -18,13 +18,18 @@ func TestPIIScrubber_NeverBlocks(t *testing.T) {
 }
 
 func TestPIIScrubber_RedactsCPF(t *testing.T) {
+	// 111.444.777-35 é um CPF de dígito verificador VÁLIDO (uso consagrado em
+	// testes). Desde a correção do DT-44, o scrubber valida o DV antes de
+	// redigir — um placeholder como "123.456.789-00" (DV inválido) deixou de
+	// ser tratado como CPF de propósito, então os fixtures precisam de um
+	// número que realmente passe na validação.
 	cases := []struct {
 		name  string
 		input string
 	}{
-		{"dotted", "CPF: 123.456.789-00"},
-		{"plain", "meu cpf eh 12345678900"},
-		{"mixed", "nr 123.456.789-00 aqui"}, // digit sequences adjacent to letters
+		{"dotted", "CPF: 111.444.777-35"},
+		{"plain", "meu cpf eh 11144477735"},
+		{"mixed", "nr 111.444.777-35 aqui"}, // digit sequences adjacent to letters
 	}
 
 	s := guardrails.PIIScrubber{}
@@ -33,12 +38,25 @@ func TestPIIScrubber_RedactsCPF(t *testing.T) {
 			v := s.Run(context.Background(), tc.input)
 			assert.False(t, v.Blocked)
 			assert.NotEmpty(t, v.Redacted)
-			assert.NotContains(t, v.Redacted, "12345678900",
+			assert.NotContains(t, v.Redacted, "11144477735",
 				"raw CPF digits must not appear in redacted output")
 			assert.Greater(t, v.RiskScore, 0.0)
 			require.NotEmpty(t, v.Violations, "CPF violation must be detected for: %q", tc.input)
 			assert.Equal(t, "pii_cpf", v.Violations[0].Rule)
 		})
+	}
+}
+
+// Regressão do DT-44: uma sequência numérica no formato de CPF mas com dígito
+// verificador inválido (ex: um código de lote/NF que por acaso bate o
+// formato) NÃO deve ser redigida como CPF — era exatamente esse falso
+// positivo que corrompia dados legítimos do produtor.
+func TestPIIScrubber_DoesNotRedactInvalidCPFChecksum(t *testing.T) {
+	s := guardrails.PIIScrubber{}
+	v := s.Run(context.Background(), "lote DT391787418354")
+	for _, violation := range v.Violations {
+		assert.NotEqual(t, "pii_cpf", violation.Rule,
+			"sequência com DV inválido não deveria ser marcada como CPF")
 	}
 }
 
