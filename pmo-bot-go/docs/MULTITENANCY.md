@@ -1,8 +1,10 @@
 # 🏢 Arquitetura Multi-Tenancy — Manejo.org Bot
 
-**Status:** ✅ Validado para 10+ PMOs em produção  
-**Última Auditoria:** 2026-07-30 (Phase 4)  
-**Idioma:** PT-BR  
+**Status:** Convenção de código em produção para 10+ PMOs — **sem teste automatizado de vazamento entre tenants** (ver DT-66)
+**Última Auditoria:** 2026-07-30 (Phase 4)
+**Idioma:** PT-BR
+
+> **Nota (2026-08-24):** este documento descreve isolamento **por PMO** (na prática, por produtor), garantido inteiramente por convenção no código Go — o banco não tem RLS para o bot, que autentica com `service_role` (ver DT-65). Não confundir com o conceito de **organização como tenant** (cooperativa, certificadora, consultoria), decidido em [ADR-010](../../docs/architecture/adr/010-multitenancy-por-organizacao.md), que propõe isolamento reforçado por RLS e migração do bot para JWT por usuário. A alegação "validado" acima se apoiava numa suíte de testes que não exercita vazamento real entre tenants — corrigido para refletir isso; ver DT-66.
 
 ---
 

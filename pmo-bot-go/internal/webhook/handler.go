@@ -307,8 +307,8 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 
 	// 9. Always Respond 200 OK
 	telemetry.WebhookRequestsTotal.WithLabelValues("success", "evolution").Inc()
-	slog.Info("Webhook 200 OK", 
-		slog.String("msg_id", payload.ID), 
+	slog.Info("Webhook 200 OK",
+		slog.String("msg_id", payload.ID),
 		slog.String("from", payload.From),
 	)
 	c.JSON(http.StatusOK, gin.H{
@@ -351,6 +351,16 @@ func (h *Handler) handleHITLResponse(phone string, verdict HITLVerdict) bool {
 			pmoID = int64(profile.PmoAtivoID)
 			userID = profile.ID
 		}
+	}
+
+	// Sem cadastro, não existe rascunho ou aprovação HITL possível — um
+	// "SIM"/"NÃO" nesse caso é resposta a uma pergunta de outro fluxo (ex.:
+	// onboarding perguntando "você já tem cadastro?"), não uma confirmação
+	// de rascunho. Sem este corte, esse handler sequestrava a resposta e
+	// respondia com "não encontrei rascunho pendente", impedindo o
+	// onboarding de avançar (visto em produção com número sem cadastro).
+	if userID == "" {
+		return false
 	}
 
 	// 2. Check for pending Two-Phase Commit mutation draft (Fase 2.2)
@@ -481,18 +491,8 @@ func (h *Handler) handleHITLResponse(phone string, verdict HITLVerdict) bool {
 		}
 	}
 
-	// 4. Se o usuário enviou comando explícito de confirmação/rejeição mas não há rascunho ativo:
-	if verdict == HITLVerdictApprove || verdict == HITLVerdictReject {
-		if h.cfg.WhatsAppClient != nil {
-			_ = h.cfg.WhatsAppClient.SendMessage(phone,
-				"⚠️ Não encontrei nenhum rascunho pendente para confirmação (ou o tempo limite de 45 minutos expirou). Por favor, envie novamente as informações da operação.")
-		}
-		return true
-	}
-
 	return false
 }
-
 
 // processLegacy executa o fluxo de processamento legado (goroutine direta, sem persistência).
 // Usado quando HARNESS_ENABLED=false ou como fallback automático se o Enqueue falhar.

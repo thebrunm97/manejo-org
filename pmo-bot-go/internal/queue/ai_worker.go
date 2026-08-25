@@ -159,7 +159,25 @@ func (w *AIWorker) processAIJob(ctx context.Context, job *Job, start time.Time) 
 	// Runs PIIScrubber (redact) → InjectionDetector (block-or-pass).
 	// Adds < 2ms overhead on typical messages.  Attacks are blocked here,
 	// BEFORE any quota is consumed or the LLM is contacted.
-	if w.cfg.GuardrailPipeline != nil {
+	//
+	// Exceção: nos estados em que o onboarding pediu explicitamente um e-mail
+	// ou um código OTP, o PIIScrubber troca o e-mail digitado por "[Email
+	// ocultado]" — sem o "@" — e a checagem de e-mail válido em
+	// HandleOnboarding falha sempre, quebrando o vínculo de conta por e-mail
+	// para todo mundo (visto em produção: usuária com cadastro respondia
+	// "Sim" e nunca conseguia linkar a conta). Nesses dois estados o texto é
+	// justamente o dado sensível que o próprio fluxo pediu, então a redação
+	// não faz sentido — pula o guardrail e usa o corpo original.
+	var pulaGuardrailPII bool
+	if w.cfg.History != nil && w.cfg.Supabase != nil {
+		// GetFSMState é indexado pelo telefone já resolvido (sem "@s.whatsapp.net",
+		// e com LID traduzido) — o mesmo formato usado por HandleOnboarding. Usar
+		// job.FromPhone (o JID cru) direto aqui nunca bateria com a chave salva.
+		phoneResolvido, _ := w.cfg.Supabase.ResolvePhone(job.FromPhone)
+		estadoAtual, _, _ := w.cfg.History.GetFSMState(phoneResolvido)
+		pulaGuardrailPII = estadoAtual == state.StateAguardandoEmail || estadoAtual == state.StateAguardandoOTPEmail
+	}
+	if w.cfg.GuardrailPipeline != nil && !pulaGuardrailPII {
 		startInputGuardrail := time.Now()
 		cleanInput, gr := w.cfg.GuardrailPipeline.Execute(ctx, msg.Body, job.FromPhone, job.ID)
 		log.Printf("⏱️ [TRACING] Sub-passo: Input Guardrail: %v", time.Since(startInputGuardrail))

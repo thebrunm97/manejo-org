@@ -91,7 +91,18 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 	defer mu.Unlock()
 
 	// 0. Ultra-Low Latency Greeting Guard (Immediate response for text greetings)
-	if !msg.IsAudio && !msg.IsImage && msg.Body != "" {
+	//
+	// Só dispara para quem já tem cadastro: para um número desconhecido, uma
+	// saudação pura ("oi", "boa tarde") é o primeiro contato e precisa cair no
+	// onboarding (HandleOnboarding manda a pergunta "você já tem cadastro?"),
+	// não numa resposta genérica que trava o produtor num loop sem nunca
+	// perguntar sobre o cadastro (incidente em produção, DT — onboarding
+	// nunca começava se a primeira mensagem fosse uma saudação).
+	var profileParaGuard *supabase.Profile
+	if sbClient != nil && phone != "" {
+		profileParaGuard, _ = sbClient.GetProfileByPhone(phone)
+	}
+	if profileParaGuard != nil && !msg.IsAudio && !msg.IsImage && msg.Body != "" {
 		cleanBody := strings.ToUpper(strings.TrimSpace(msg.Body))
 		greetings := map[string]bool{
 			"OI": true, "OLA": true, "OLÁ": true, "BOM DIA": true,
@@ -139,7 +150,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 	}
 
 	// 1. Context Resolution & Authentication
-	profile, _ := sbClient.GetProfileByPhone(phone)
+	profile := profileParaGuard
 
 	body := msg.Body
 
@@ -348,24 +359,24 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 				defer legacyCancel()
 				unifiedRes, routerModel, routerErr = llmClient.ClassifyIntent(legacyCtx, routerText)
 				legacyLatency := time.Since(startLegacy).Milliseconds()
-				
+
 				log.Printf("telemetry event=shadow_router_evaluated conversation_id=%s fast_latency_ms=%d legacy_latency_ms=%d", phone, fastLatency, legacyLatency)
-				
+
 				fastIntent := "unknown"
 				if fastRouterErr == nil {
 					fastIntent = string(fastRouterRes.PrimaryIntent)
 				}
-				
+
 				legacyIntent := "unknown"
 				if routerErr == nil && len(unifiedRes.Intents) > 0 {
 					legacyIntent = string(unifiedRes.Intents[0])
 				}
-				
+
 				diverged := (fastIntent != legacyIntent)
 				if diverged {
 					log.Printf("telemetry event=shadow_router_diverged conversation_id=%s fast_intent=%s legacy_intent=%s", phone, fastIntent, legacyIntent)
 				}
-				
+
 				log.Printf("telemetry event=router_decision_made router=legacy decision=%s shadow_enabled=true diverged=%t conversation_id=%s", legacyIntent, diverged, phone)
 
 				if routerErr != nil {
@@ -400,7 +411,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 			legacyCtx, legacyCancel := context.WithTimeout(gCtx, 30*time.Second)
 			defer legacyCancel()
 			unifiedRes, routerModel, routerErr = llmClient.ClassifyIntent(legacyCtx, routerText)
-			
+
 			legacyIntent := "unknown"
 			if routerErr == nil && len(unifiedRes.Intents) > 0 {
 				legacyIntent = string(unifiedRes.Intents[0])

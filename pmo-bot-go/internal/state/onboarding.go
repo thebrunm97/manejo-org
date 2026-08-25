@@ -42,6 +42,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/llm/schema"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
+	"os"
 )
 
 const (
@@ -87,7 +88,9 @@ Vi que este número ainda não está vinculado. Você já tem um cadastro feito 
 
 const promptExtracaoCadastro = `Você extrai dados de cadastro de produtores rurais brasileiros a partir de mensagens de WhatsApp.
 
-Nesta etapa só o nome é obrigatório. Extraia APENAS o que estiver explicitamente na mensagem. Nunca invente, nunca complete com suposição:
+Primeiro decida "eh_cadastro": a mensagem está de fato fornecendo dados pessoais para criar um cadastro (nome do produtor, propriedade, área, talhão)? Perguntas técnicas, dúvidas sobre produção/manejo, saudações, pedidos de ajuda ou qualquer assunto que não seja "aqui estão meus dados" NÃO são cadastro — marque eh_cadastro=false e deixe nome vazio, mesmo que a frase contenha palavras parecidas com nomes próprios.
+
+Só quando eh_cadastro=true extraia os campos abaixo. Extraia APENAS o que estiver explicitamente na mensagem. Nunca invente, nunca complete com suposição:
 - nome: nome completo da PESSOA. Não confunda com o nome da propriedade.
 - propriedade_nome: nome do sítio/fazenda/chácara, SE a mensagem mencionar. Não confunda com o nome da pessoa nem com o do talhão.
 - area_ha: área em HECTARES, como número, SE a mensagem mencionar. Converta se vier em alqueire (1 alqueire paulista = 2.42 ha) ou em m² (10000 m² = 1 ha).
@@ -95,17 +98,28 @@ Nesta etapa só o nome é obrigatório. Extraia APENAS o que estiver explicitame
 
 Campo ausente na mensagem = deixe de fora. É melhor omitir do que preencher errado: o nome vai virar o cadastro oficial do produtor.`
 
-// extrairDadosCadastro roda a extração estruturada sobre a mensagem.
-func extrairDadosCadastro(ctx context.Context, llmClient LLMClient, texto string) (DadosCadastro, error) {
+// extracaoOnboarding é o formato pedido ao LLM: além dos dados em si, carrega
+// a decisão de intenção (eh_cadastro) que impede uma pergunta de domínio
+// qualquer de ser tratada como se fosse dado de cadastro.
+type extracaoOnboarding struct {
+	EhCadastro bool `json:"eh_cadastro" jsonschema:"required,description=true somente se a mensagem está fornecendo dados pessoais para criar um cadastro; false se for pergunta, dúvida, saudação ou qualquer outro assunto"`
+	DadosCadastro
+}
+
+// extrairDadosCadastro roda a extração estruturada sobre a mensagem. O
+// segundo retorno indica se o LLM entendeu a mensagem como dado de cadastro
+// (ao contrário de uma pergunta de domínio, saudação etc.) — só nesse caso
+// os dados devem ser usados para avançar o cadastro.
+func extrairDadosCadastro(ctx context.Context, llmClient LLMClient, texto string) (DadosCadastro, bool, error) {
 	var vazio DadosCadastro
 
-	raw, err := schema.Reflect[DadosCadastro]()
+	raw, err := schema.Reflect[extracaoOnboarding]()
 	if err != nil {
-		return vazio, fmt.Errorf("onboarding: schema: %w", err)
+		return vazio, false, fmt.Errorf("onboarding: schema: %w", err)
 	}
 	esquema, err := schema.ForOpenRouter(raw, "dados_cadastro")
 	if err != nil {
-		return vazio, fmt.Errorf("onboarding: schema openrouter: %w", err)
+		return vazio, false, fmt.Errorf("onboarding: schema openrouter: %w", err)
 	}
 
 	resp, err := llmClient.GenerateContent(ctx, llm.ContentRequest{
@@ -116,14 +130,14 @@ func extrairDadosCadastro(ctx context.Context, llmClient LLMClient, texto string
 		Schema: esquema,
 	})
 	if err != nil {
-		return vazio, fmt.Errorf("onboarding: extração: %w", err)
+		return vazio, false, fmt.Errorf("onboarding: extração: %w", err)
 	}
 
-	dados, err := schema.DecodeAndValidate[DadosCadastro](resp.Texto)
+	dados, err := schema.DecodeAndValidate[extracaoOnboarding](resp.Texto)
 	if err != nil {
-		return vazio, fmt.Errorf("onboarding: decode: %w", err)
+		return vazio, false, fmt.Errorf("onboarding: decode: %w", err)
 	}
-	return dados, nil
+	return dados.DadosCadastro, dados.EhCadastro, nil
 }
 
 // resumoCadastro monta o texto de conferência mostrado antes de gravar.
@@ -239,7 +253,7 @@ func HandleOnboarding(
 			sendFeedback(sbClient, wpClient, ttsClient, msg.From, "Isso não parece um e-mail válido. Por favor, digite seu e-mail do site:", respondWithAudio)
 			return ProcessResult{Success: false, Reason: "email_invalido"}, true
 		}
-		
+
 		err := sbClient.SendEmailOTP(email)
 		if err != nil {
 			log.Printf("⚠️ [Onboarding] Falha ao enviar OTP para %s: %v", email, err)
@@ -280,13 +294,30 @@ func HandleOnboarding(
 	}
 
 	// ── Extração ────────────────────────────────────────────────────────────
-	dados, err := extrairDadosCadastro(ctx, llmClient, body)
+	dados, ehCadastro, err := extrairDadosCadastro(ctx, llmClient, body)
 	if err != nil {
 		log.Printf("⚠️ [Onboarding] Falha ao extrair dados de %s: %v", phone, err)
 		historyManager.SetFSMState(phone, StateAguardandoCadastro, nil, nil)
 		sendFeedback(sbClient, wpClient, ttsClient, msg.From,
 			"Não consegui entender os dados. Pode mandar de novo, com nome, propriedade, hectares e talhão?", respondWithAudio)
 		return ProcessResult{Success: false, Reason: "onboarding_extracao_falhou"}, true
+	}
+
+	if !ehCadastro {
+		if estado == StateAguardandoCadastro {
+			// Já pedimos o nome explicitamente; a mensagem não é dado de
+			// cadastro (pode ser uma dúvida, um desvio de assunto etc.).
+			sendFeedback(sbClient, wpClient, ttsClient, msg.From,
+				"Não consegui identificar seu nome nessa mensagem. Pode me mandar só o seu nome completo?", respondWithAudio)
+			return ProcessResult{Success: true, Reason: "onboarding_nao_e_cadastro"}, true
+		}
+		// Primeiro contato: a heurística achou que parecia cadastro, mas não
+		// era (ex.: uma pergunta técnica transcrita de áudio). Segue o fluxo
+		// normal perguntando se já existe conta por e-mail, em vez de tentar
+		// registrar dados que não foram de fato fornecidos.
+		historyManager.SetFSMState(phone, StatePerguntaContaExistente, nil, nil)
+		sendFeedback(sbClient, wpClient, ttsClient, msg.From, msgBoasVindas, respondWithAudio)
+		return ProcessResult{Success: true, Reason: "onboarding_pergunta_conta"}, true
 	}
 
 	if !dados.completo() {
@@ -356,9 +387,21 @@ func finalizarCadastro(
 
 	historyManager.ClearFSMState(phone)
 
+	tokenURL := ""
+	tokenString, errJwt := supabase.GenerateOnboardingJWT(usuario.ID, phone)
+	if errJwt != nil {
+		log.Printf("⚠️ [Onboarding] Falha ao gerar JWT para %s: %v", phone, errJwt)
+	} else {
+		baseURL := os.Getenv("FRONTEND_URL")
+		if baseURL == "" {
+			baseURL = "http://localhost:5173"
+		}
+		tokenURL = fmt.Sprintf("\n\nPara preencher os detalhes da sua propriedade no mapa, acesse o link seguro abaixo. Ele já está vinculado à sua conta:\n🔗 %s/onboarding?token=%s", baseURL, tokenString)
+	}
+
 	sendFeedback(sbClient, wpClient, ttsClient, msg.From, fmt.Sprintf(
-		"✅ *Cadastro criado, %s!* Pode começar a usar por aqui. Quando quiser, me conta o nome da sua propriedade que eu completo o resto do cadastro.",
-		primeiroNome(dados.Nome)), respondWithAudio)
+		"✅ *Cadastro criado, %s!* Pode começar a usar por aqui.%s",
+		primeiroNome(dados.Nome), tokenURL), respondWithAudio)
 
 	log.Printf("🎉 [Onboarding] Produtor cadastrado pelo WhatsApp: phone=%s user=%s", phone, usuario.ID)
 	return ProcessResult{Success: true, Reason: "onboarding_concluido"}
