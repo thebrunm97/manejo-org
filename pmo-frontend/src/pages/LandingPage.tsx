@@ -101,6 +101,8 @@ const HeroVisualStack: React.FC = () => {
                     setTimeout(() => setChatStep(2), 2200);
                     setTimeout(() => setChatStep(3), 3800);
                     setTimeout(() => setChatStep(4), 5400);
+                    setTimeout(() => setChatStep(5), 7200);
+                    setTimeout(() => setChatStep(6), 9000);
                 }
             },
             { threshold: 0.1 }
@@ -184,7 +186,7 @@ const HeroVisualStack: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="p-4 h-[500px] overflow-y-auto flex flex-col gap-4 scrollbar-none scroll-smooth">
+                <div className="p-4 h-[500px] overflow-y-auto flex flex-col gap-4 scrollbar-thin scrollbar-thumb-slate-300 scroll-smooth">
                     {chatStep >= 1 && (
                         <div className="self-end bg-[#d9fdd3] text-slate-800 text-xs p-3 rounded-2xl rounded-tr-none shadow-sm max-w-[85%] border border-[#cbd8cb]/30 animate-fade-in-up">
                             Posso aplicar calda bordalesa no tomateiro hoje?
@@ -212,14 +214,28 @@ const HeroVisualStack: React.FC = () => {
                             <div className="text-[9px] text-right mt-1.5 text-slate-400">10:43</div>
                         </div>
                     )}
+
+                    {chatStep >= 5 && (
+                        <div className="self-end bg-[#d9fdd3] text-slate-800 text-xs p-3 rounded-2xl rounded-tr-none shadow-sm max-w-[85%] border border-[#cbd8cb]/30 animate-fade-in-up">
+                            Me lembre do manejo do Talhão 2.
+                            <div className="text-[9px] text-right mt-1.5 text-slate-500 font-semibold">10:44</div>
+                        </div>
+                    )}
+
+                    {chatStep >= 6 && (
+                        <div className="self-start bg-white text-slate-800 text-xs leading-relaxed p-3 rounded-2xl rounded-tl-none shadow-sm max-w-[90%] border border-slate-200 animate-fade-in-up">
+                            🌿 <strong>Talhão 2:</strong> A aplicação de Bokashi está agendada. Recomendo 200kg/ha amanhã após a chuva umedecer o solo.
+                            <div className="text-[9px] text-right mt-1.5 text-slate-400">10:44</div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="bg-white p-3 flex items-center gap-3 border-t border-slate-200">
                     <div className="flex-grow bg-slate-100 rounded-full px-4 py-2 flex items-center text-xs text-slate-400">
                         Mensagem...
                     </div>
-                    <div className="w-10 h-10 rounded-full bg-[#075e54] text-white flex items-center justify-center cursor-pointer hover:bg-[#064e46] transition-colors">
-                        <Send size={16} className="ml-1" />
+                    <div className="w-10 h-10 rounded-full bg-[#075e54] text-white flex items-center justify-center cursor-pointer hover:bg-[#064e46] transition-colors shadow-sm">
+                        <Send size={18} className="-ml-1 mt-0.5" />
                     </div>
                 </div>
             </div>
