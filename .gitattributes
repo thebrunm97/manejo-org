@@ -1,1 +1,6 @@
 *.sh text eol=lf
+
+# Git hooks nao tem extensao .sh, entao a regra acima nao os cobre. Sem isto,
+# com core.autocrlf=true (padrao no Windows) um clone novo receberia o hook com
+# CRLF e ele morreria em `bad interpreter: bash^M`.
+.githooks/** text eol=lf
