@@ -15,6 +15,8 @@ Este diretório contém o registro das decisões arquiteturais significativas to
 | [**ADR-007**](./007-pdf-extraction-pymupdf.md) | Migração para PyMuPDF (regressão de encoding) | **Aceito** | Jul/2026 |
 | [**ADR-008**](./008-ponytail-orchestrator-cleanup.md) | Ponytail Orchestrator Cleanup | Aceito | Ago/2026 |
 | [**ADR-009**](./009-gateway-go-complementa-fat-database.md) | Gateway REST no Go — complementa o ADR-002, não substitui | Aceito | Ago/2026 |
+| [**ADR-010**](./010-multitenancy-por-organizacao.md) | Multitenancy por Organização — cooperativa, certificadora, consultoria e produtor | Proposto | Ago/2026 |
+| [**ADR-011**](./011-abstracao-de-canal-de-chat.md) | Abstração de Canal de Chat — WhatsApp e app como adaptadores | Proposto | Ago/2026 |
 
 ---
 
