@@ -36,6 +36,8 @@ const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 const CoopDashboardPage = lazy(() => import('./pages/coop/CoopDashboardPage'));
 const CoopDemandasPage = lazy(() => import('./pages/coop/CoopDemandasPage'));
 const MuralDemandas = lazy(() => import('./pages/MuralDemandas'));
+// Mockups e Testes
+// As páginas de mockup foram sintetizadas na LandingPage.
 
 
 const DiarioDeCampo = lazy(() => import('./components/DiarioDeCampo'));
@@ -61,6 +63,9 @@ const App: React.FC = () => {
 
                 {/* Rota de Debug (Visibilidade) - Acesso Livre (Híbrido) */}
                 <Route path="/lab" element={<DesignLab />} />
+                {/* Redirect old mockup URLs to the synthesized home */}
+                <Route path="/mockup-landing" element={<Navigate to="/home" replace />} />
+                <Route path="/agronomy-mockup" element={<Navigate to="/home" replace />} />
                 <Route path="/changelog" element={<ChangelogPage />} />
                 <Route path="/trace/:codigoLote" element={<TraceabilityPage />} />
                 <Route path="/t/:id" element={<PublicTraceabilityPage />} />

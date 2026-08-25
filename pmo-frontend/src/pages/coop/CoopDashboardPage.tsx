@@ -157,7 +157,7 @@ const CoopDashboardPage: React.FC = () => {
                     
                     <div className="h-72 w-full">
                         {chartData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" minWidth={1}>
                                 <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                     <XAxis 
@@ -208,7 +208,7 @@ const CoopDashboardPage: React.FC = () => {
 
                     <div className="h-64 w-full relative">
                         {pieData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" minWidth={1}>
                                 <PieChart>
                                     <Pie
                                         data={pieData}

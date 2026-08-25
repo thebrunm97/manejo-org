@@ -125,7 +125,7 @@ export const getOrganizacaoBySlug = async (slug: string) => {
         const { data, error } = await supabase
             .from('organizacoes')
             .select('*')
-            .eq('id', slug) // Workaround: tabela não tem slug, a rota usa ID
+            .eq('slug', slug)
             .single();
 
         if (error) throw error;

@@ -52,178 +52,198 @@ const LoginPage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden py-8 px-4">
-            {/* Background Image with Organic Theme */}
-            <div className="absolute inset-0 z-0 select-none pointer-events-none">
+        <div className="min-h-screen bg-agro-creme flex">
+            {/* Lado Esquerdo - Imagem Decorativa */}
+            <div className="hidden lg:flex lg:w-[45%] relative bg-slate-900 overflow-hidden">
                 <img
-                    src="https://images.unsplash.com/photo-1625246333195-58197bd47d26?q=80&w=2561&auto=format&fit=crop"
-                    alt="Background"
-                    className="w-full h-full object-cover"
+                    src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?q=80&w=2561&auto=format&fit=crop"
+                    alt="Manejo Orgânico"
+                    className="absolute inset-0 w-full h-full object-cover opacity-80 mix-blend-overlay"
                 />
-                {/* Dark overlay for contrast */}
-                <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px]" />
-                {/* Organic decorative gradients */}
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-900/90" />
-            </div>
-
-            {/* Glassmorphic Card */}
-            <div className="relative z-10 w-full max-w-[420px] bg-slate-900/40 backdrop-blur-3xl rounded-3xl p-8 border border-white/10 shadow-2xl">
-                {/* Header Section */}
-                <div className="flex flex-col items-center mb-10">
-                    <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-green-500/20 mb-4 tracking-tighter">
+                <div className="absolute inset-0 bg-agro-floresta/80 mix-blend-multiply" />
+                <div className="absolute inset-0 bg-gradient-to-t from-agro-floresta via-agro-floresta/50 to-transparent" />
+                
+                <div className="relative z-10 flex flex-col justify-between p-12 h-full text-white">
+                    <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-agro-floresta font-serif font-bold text-2xl shadow-xl">
                         MO
                     </div>
-                    <h1 className="text-2xl font-bold text-white tracking-tight">{t('login.title')}</h1>
-                    <p className="text-slate-400 mt-1.5 text-sm">Acesse sua gestão agrícola inteligente</p>
-                </div>
-
-                {/* Form Section */}
-                <form onSubmit={handleLogin} className="space-y-4">
-                    {/* Email Field */}
-                    <div className="space-y-1.5">
-                        <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 group-focus-within:text-green-500 transition-colors">
-                                <Mail size={20} />
-                            </div>                            <input
-                                required
-                                type="email"
-                                id="email"
-                                placeholder="Endereço de E-mail"
-                                autoComplete="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                className="block w-full pl-11 pr-4 py-3 bg-slate-900/80 border border-white/10 rounded-xl text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all text-sm"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Password Field */}
-                    <div className="space-y-1.5">
-                        <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 group-focus-within:text-green-500 transition-colors">
-                                <Lock size={20} />
-                            </div>
-                            <input
-                                required
-                                type={showPassword ? "text" : "password"}
-                                id="password"
-                                placeholder={t('login.passwordLabel')}
-                                autoComplete="current-password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="block w-full pl-11 pr-12 py-3 bg-slate-900/80 border border-white/10 rounded-xl text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all text-sm"
-                            />
-                            <button
-                                type="button"
-                                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-                                title={showPassword ? "Ocultar senha" : "Mostrar senha"}
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
-                            >
-                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Options Row */}
-                    <div className="flex items-center justify-between mt-2 mb-6">
-                        <label className="flex items-center gap-2 cursor-pointer group">
-                            <div className="relative flex items-center">
-                                <input
-                                    type="checkbox"
-                                    className="peer h-4 w-4 appearance-none rounded-md border border-white/20 bg-slate-900/80 checked:bg-green-600 checked:border-green-600 focus:outline-none transition-all cursor-pointer"
-                                />
-                                <CheckCircle className="absolute inset-0 h-4 w-4 text-white p-0.5 opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" />
-                            </div>
-                            <span className="text-sm text-slate-400 group-hover:text-slate-300 transition-colors">Lembrar-me</span>
-                        </label>
-                        <button 
-                            type="button" 
-                            onClick={() => toast.info('Caso tenha esquecido sua senha, contate o suporte da sua cooperativa.')}
-                            className="text-sm font-medium text-green-400 hover:text-green-300 transition-colors decoration-green-400/30 underline-offset-4"
-                        >
-                            Esqueceu a senha?
-                        </button>
-                    </div>
-
-                    {error && (
-                        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3 text-red-400 text-sm animate-shake">
-                            <AlertCircle size={18} className="shrink-0 mt-0.5" />
-                            <span>{error}</span>
-                        </div>
-                    )}
-
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full flex items-center justify-center h-12 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg shadow-green-600/30 hover:shadow-green-600/50 transition-all duration-300"
-                    >
-                        {loading ? <Loader2 className="animate-spin" size={20} /> : t('login.submit')}
-                    </button>
-
-                    <div className="flex items-center gap-4 my-8">
-                        <div className="h-[1px] flex-1 bg-white/10" />
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">ou continue com</span>
-                        <div className="h-[1px] flex-1 bg-white/10" />
-                    </div>
-
-                    {/* Social Login Buttons */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <button
-                            type="button"
-                            onClick={() => handleSocialLogin('google')}
-                            className="flex items-center justify-center gap-2.5 h-11 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-sm font-medium text-white transition-all"
-                        >
-                            <Chrome size={18} className="text-red-400" />
-                            Google
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => handleSocialLogin('facebook')}
-                            className="flex items-center justify-center gap-2.5 h-11 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-sm font-medium text-white transition-all"
-                        >
-                            <Facebook size={18} className="text-blue-500" />
-                            Facebook
-                        </button>
-                    </div>
-
-                    {/* Registration Link */}
-                    <div className="mt-8 pt-4 text-center">
-                        <p className="text-sm text-slate-400">
-                            Não tem uma conta?{' '}
-                            <button
-                                type="button"
-                                onClick={goToSignUp}
-                                className="text-green-400 font-bold hover:text-green-300 transition-colors"
-                            >
-                                Cadastre-se
-                            </button>
+                    
+                    <div className="mb-12">
+                        <h2 className="font-serif text-5xl font-bold mb-6 tracking-tight leading-tight">
+                            A sabedoria da terra<br/>na palma da mão.
+                        </h2>
+                        <p className="text-lg text-white/90 max-w-md font-medium">
+                            Gerencie sua certificação, safras e equipe em um único ambiente digital focado em agricultura orgânica.
                         </p>
                     </div>
-                </form>
+                </div>
             </div>
 
-            {/* Language Switcher Footer */}
-            <div className="absolute top-6 right-6 z-10">
-                <LanguageSwitcher />
-            </div>
+            {/* Lado Direito - Formulário */}
+            <div className="w-full lg:w-[55%] flex flex-col justify-center items-center p-6 sm:p-12 relative overflow-y-auto">
+                {/* Mobile Header / Logo */}
+                <div className="lg:hidden absolute top-8 left-8">
+                    <div className="w-12 h-12 bg-agro-floresta rounded-xl flex items-center justify-center text-white font-serif font-bold text-xl shadow-lg">
+                        MO
+                    </div>
+                </div>
 
-            {/* Footer */}
-            <footer className="relative z-10 mt-10 text-center">
-                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.2em]">
-                    {import.meta.env.VITE_APP_NAME} © {new Date().getFullYear()}
-                </p>
-            </footer>
+                {/* Top Controls */}
+                <div className="absolute top-8 right-8 flex items-center gap-4">
+                    <LanguageSwitcher />
+                </div>
 
-            {/* Lab Button (Secret Access) */}
-            <div className="fixed bottom-6 right-6 z-10">
-                <button
-                    onClick={goToLab}
-                    title="Design Lab"
-                    className="p-3 bg-white/5 hover:bg-green-500/20 text-slate-600 hover:text-green-500 border border-white/5 rounded-full backdrop-blur-md transition-all group"
-                >
-                    <FlaskConical size={20} className="group-hover:scale-110 transition-transform" />
-                </button>
+                <div className="w-full max-w-[400px] mt-16 lg:mt-0">
+                    <div className="mb-10 text-center lg:text-left">
+                        <h1 className="font-serif text-4xl font-bold text-agro-floresta tracking-tight mb-3">{t('login.title')}</h1>
+                        <p className="text-slate-500 font-medium">Acesse sua gestão agrícola inteligente</p>
+                    </div>
+
+                    <form onSubmit={handleLogin} className="space-y-5">
+                        {/* Email Field */}
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-bold text-slate-700 ml-1">E-mail</label>
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-agro-floresta transition-colors">
+                                    <Mail size={18} />
+                                </div>
+                                <input
+                                    required
+                                    type="email"
+                                    id="email"
+                                    placeholder="seu@email.com"
+                                    autoComplete="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="block w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-agro-floresta/20 focus:border-agro-floresta transition-all text-sm shadow-sm"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Password Field */}
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-bold text-slate-700 ml-1">{t('login.passwordLabel')}</label>
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-agro-floresta transition-colors">
+                                    <Lock size={18} />
+                                </div>
+                                <input
+                                    required
+                                    type={showPassword ? "text" : "password"}
+                                    id="password"
+                                    placeholder="••••••••"
+                                    autoComplete="current-password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="block w-full pl-10 pr-12 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-agro-floresta/20 focus:border-agro-floresta transition-all text-sm shadow-sm"
+                                />
+                                <button
+                                    type="button"
+                                    aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                                    title={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+                                >
+                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Options Row */}
+                        <div className="flex items-center justify-between mt-2 mb-6">
+                            <label className="flex items-center gap-2 cursor-pointer group">
+                                <div className="relative flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        className="peer h-4 w-4 appearance-none rounded border border-slate-300 bg-white checked:bg-agro-floresta checked:border-agro-floresta focus:outline-none focus:ring-2 focus:ring-agro-floresta/20 transition-all cursor-pointer"
+                                    />
+                                    <CheckCircle className="absolute inset-0 h-4 w-4 text-white p-0.5 opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" />
+                                </div>
+                                <span className="text-sm font-medium text-slate-600 group-hover:text-slate-800 transition-colors">Lembrar-me</span>
+                            </label>
+                            <button 
+                                type="button" 
+                                onClick={() => toast.info('Caso tenha esquecido sua senha, contate o suporte da sua cooperativa.')}
+                                className="text-sm font-bold text-agro-floresta hover:text-emerald-700 transition-colors decoration-agro-floresta/30 underline-offset-4"
+                            >
+                                Esqueceu a senha?
+                            </button>
+                        </div>
+
+                        {error && (
+                            <div className="p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3 text-red-600 text-sm animate-shake shadow-sm">
+                                <AlertCircle size={18} className="shrink-0 mt-0.5" />
+                                <span className="font-medium">{error}</span>
+                            </div>
+                        )}
+
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full flex items-center justify-center h-12 bg-agro-floresta hover:bg-emerald-900 disabled:opacity-70 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg shadow-agro-floresta/20 hover:shadow-agro-floresta/40 transition-all duration-300 active:scale-[0.98]"
+                        >
+                            {loading ? <Loader2 className="animate-spin" size={20} /> : t('login.submit')}
+                        </button>
+
+                        <div className="flex items-center gap-4 my-8 opacity-70">
+                            <div className="h-[1px] flex-1 bg-slate-200" />
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">ou continue com</span>
+                            <div className="h-[1px] flex-1 bg-slate-200" />
+                        </div>
+
+                        {/* Social Login Buttons */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <button
+                                type="button"
+                                onClick={() => handleSocialLogin('google')}
+                                className="flex items-center justify-center gap-2.5 h-11 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 shadow-sm hover:shadow transition-all active:scale-[0.98]"
+                            >
+                                <Chrome size={18} className="text-red-500" />
+                                Google
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleSocialLogin('facebook')}
+                                className="flex items-center justify-center gap-2.5 h-11 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 shadow-sm hover:shadow transition-all active:scale-[0.98]"
+                            >
+                                <Facebook size={18} className="text-blue-600" />
+                                Facebook
+                            </button>
+                        </div>
+
+                        {/* Registration Link */}
+                        <div className="mt-8 pt-6 text-center">
+                            <p className="text-sm font-medium text-slate-500">
+                                Não tem uma conta?{' '}
+                                <button
+                                    type="button"
+                                    onClick={goToSignUp}
+                                    className="text-agro-floresta font-bold hover:text-emerald-700 transition-colors underline underline-offset-4 decoration-agro-floresta/30"
+                                >
+                                    Cadastre-se grátis
+                                </button>
+                            </p>
+                        </div>
+                    </form>
+                </div>
+
+                {/* Footer */}
+                <footer className="absolute bottom-6 w-full text-center pointer-events-none">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+                        {import.meta.env.VITE_APP_NAME} © {new Date().getFullYear()}
+                    </p>
+                </footer>
+
+                {/* Lab Button (Secret Access) */}
+                <div className="fixed bottom-6 right-6 z-10">
+                    <button
+                        onClick={goToLab}
+                        title="Design Lab"
+                        className="p-3 bg-white hover:bg-agro-creme text-slate-400 hover:text-agro-floresta border border-slate-200 rounded-full shadow-sm hover:shadow transition-all group"
+                    >
+                        <FlaskConical size={20} className="group-hover:scale-110 transition-transform" />
+                    </button>
+                </div>
             </div>
         </div>
     );
