@@ -113,7 +113,7 @@ const HeroVisualStack: React.FC = () => {
     }, []);
 
     return (
-        <div ref={containerRef} className="relative flex flex-col lg:block items-center gap-10 lg:gap-0 w-full max-w-2xl mx-auto h-auto lg:h-[500px]">
+        <div ref={containerRef} className="relative flex flex-col lg:block items-center gap-10 lg:gap-0 w-full max-w-2xl mx-auto h-auto lg:h-[640px]">
             <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-[100px] -z-10 animate-pulse"></div>
 
             {/* MOCKUP 1: Dashboard da Aplicação */}
@@ -184,7 +184,7 @@ const HeroVisualStack: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="p-4 h-80 overflow-y-auto flex flex-col gap-4 scrollbar-none scroll-smooth">
+                <div className="p-4 h-[500px] overflow-y-auto flex flex-col gap-4 scrollbar-none scroll-smooth">
                     {chatStep >= 1 && (
                         <div className="self-end bg-[#d9fdd3] text-slate-800 text-xs p-3 rounded-2xl rounded-tr-none shadow-sm max-w-[85%] border border-[#cbd8cb]/30 animate-fade-in-up">
                             Posso aplicar calda bordalesa no tomateiro hoje?
