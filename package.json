@@ -3,7 +3,10 @@
     "dev": "npm run dev --prefix pmo-frontend",
     "start": "npm run build --prefix pmo-frontend && npm run preview --prefix pmo-frontend",
     "start:full": "powershell -ExecutionPolicy Bypass -File scripts/start-full.ps1",
-    "test:smoke": "powershell -ExecutionPolicy Bypass -File scripts/smoke-test.ps1"
+    "test:smoke": "powershell -ExecutionPolicy Bypass -File scripts/smoke-test.ps1",
+    "hooks:install": "bash scripts/install-git-hooks.sh",
+    "scan:secrets": "gitleaks dir . --config .gitleaks.toml --no-banner --redact",
+    "scan:secrets:history": "gitleaks git . --config .gitleaks.toml --no-banner --redact"
   },
   "devDependencies": {
     "@supabase/mcp-server-supabase": "^0.9.0",

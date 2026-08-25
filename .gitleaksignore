@@ -1,0 +1,43 @@
+# .gitleaksignore -- supressoes por fingerprint (achado unico, irrepetivel).
+#
+# Divisao de responsabilidade com o .gitleaks.toml -- respeite esta linha:
+#
+#   .gitleaks.toml [[allowlists]]  ->  CLASSES de valor que vao se repetir.
+#                                      Ex.: `secao_\d+_[a-z_]+`, JWT de demo do
+#                                      Supabase, placeholders `SEU_TOKEN`.
+#                                      Uma entrada resolve o caso para sempre.
+#
+#   .gitleaksignore (este arquivo) ->  UM achado especifico, preso a um
+#                                      commit/arquivo/linha. Nao generaliza:
+#                                      se a linha se mover, a supressao morre
+#                                      (e isso e proposital).
+#
+# Formato de fingerprint:
+#   scan de historia:  <commit-sha>:<caminho>:<rule-id>:<linha>
+#   scan de diretorio: <caminho>:<rule-id>:<linha>
+#
+# Pegue o fingerprint exato com:
+#   gitleaks git . --config .gitleaks.toml --report-format json --report-path - --redact
+#
+# REGRA DA CASA: toda entrada vem com um comentario explicando por que e
+# seguro. Uma linha de hash sem justificativa e indistinguivel de um segredo
+# real que alguem silenciou com pressa -- e ninguem depois tera coragem de
+# remove-la.
+
+# ---------------------------------------------------------------------------
+# Nenhuma supressao ativa.
+# ---------------------------------------------------------------------------
+#
+# Nota deliberada sobre o DT-45:
+#
+# A Evolution API key em pmo-bot-go/cmd/test_audio/main.go:20 e um segredo
+# REAL e continua sendo detectada -- de proposito. Ela NAO esta suprimida aqui.
+#
+# Isso nao trava o dia a dia, porque nem o hook nem o CI escaneiam a arvore
+# inteira: o hook olha so o que esta staged e o CI so o diff do PR. O achado
+# so reaparece se alguem tocar naquele arquivo -- que e exatamente o momento
+# em que a pessoa precisa ver o aviso.
+#
+# Quando a credencial for rotacionada e o literal removido do codigo (tarefa do
+# dono do repositorio, rastreada em DT-45), este achado desaparece sozinho e
+# nada precisa ser adicionado aqui.
