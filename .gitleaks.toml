@@ -1,0 +1,247 @@
+# Configuracao do gitleaks para o monorepo manejo-org.
+#
+# Motivacao (nao apague este bloco -- ele explica as escolhas abaixo):
+#   DT-01  Supabase `service_role` key e `SUPABASE_ACCESS_TOKEN` vazados.
+#   DT-45  Evolution API key hardcoded em pmo-bot-go/cmd/test_audio/main.go,
+#          publica de 2026-07-30 a 2026-08-23. Era um literal "pelado" de 64
+#          caracteres alfanumericos -- sem prefixo `eyJ`, `sk-` ou `ghp_`.
+#
+# Licao do DT-45: um scanner que so conhece prefixos famosos nao teria pego
+# nada. O que pega esse caso e a regra `generic-api-key` do ruleset padrao,
+# que casa "identificador suspeito + operador de atribuicao + string de alta
+# entropia". Por isso `useDefault = true` e obrigatorio aqui.
+#
+# Verificado empiricamente com gitleaks v8.30.1:
+#   apiKey := "SsU8y6..."       -> DETECTADO   (generic-api-key, entropia 5.00)
+#   chaveSecreta := "Qw8Er..."  -> DETECTADO   (generic-api-key, entropia 4.94)
+#   senha := "hZ3kQ..."         -> NAO DETECTADO pelo ruleset padrao
+#
+# A ultima linha e o buraco que as regras customizadas abaixo fecham: as
+# palavras-chave do gitleaks sao todas em ingles, e este projeto nomeia
+# variaveis em portugues.
+
+[extend]
+useDefault = true
+
+# ---------------------------------------------------------------------------
+# Regras customizadas
+# ---------------------------------------------------------------------------
+
+[[rules]]
+id = "ptbr-generic-credential"
+description = "Credencial de alta entropia atribuida a identificador em portugues (senha/segredo/credencial)"
+regex = '''(?i)[\w.\-]{0,40}(?:senha|senhas|segredo|credencial|credenciais|palavra[_\-]?passe)(?:[ \t\w.\-]{0,20})[\s'"]{0,3}(?:=|>|:{1,3}=|\|\||:|<=|=>|:=|\?=|,)[`'"\s=]{0,5}([\w.=\-+/]{12,150})(?:[`'"\s;,\)\]}]|$)'''
+secretGroup = 1
+entropy = 3.5
+keywords = [
+  "senha",
+  "segredo",
+  "credencial",
+  "credenciais",
+  "palavrapasse",
+  "palavra_passe",
+  "palavra-passe",
+]
+
+[[rules]]
+id = "ptbr-chave-credential"
+description = "Credencial de alta entropia atribuida a identificador `chave*` (chave_api, chaveSecreta, chave_de_acesso)"
+regex = '''(?i)[\w.\-]{0,40}chave[_\-]?(?:api|secreta|privada|publica|de[_\-]?acesso|acesso|token|servico)(?:[ \t\w.\-]{0,20})[\s'"]{0,3}(?:=|>|:{1,3}=|\|\||:|<=|=>|:=|\?=|,)[`'"\s=]{0,5}([\w.=\-+/]{12,150})(?:[`'"\s;,\)\]}]|$)'''
+secretGroup = 1
+entropy = 3.5
+keywords = ["chave"]
+
+[[rules]]
+id = "supabase-access-token"
+description = "Supabase personal access token (sbp_...) -- exatamente o vazamento do DT-01"
+regex = '''\b(sbp_[a-f0-9]{40})\b'''
+entropy = 3.0
+keywords = ["sbp_"]
+
+[[rules]]
+id = "supabase-secret-key"
+description = "Supabase secret/publishable key no formato novo (sb_secret_... / sb_publishable_...)"
+regex = '''\b(sb_(?:secret|publishable)_[A-Za-z0-9_\-]{20,})\b'''
+entropy = 3.0
+keywords = ["sb_secret_", "sb_publishable_"]
+
+[[rules]]
+id = "evolution-api-key"
+description = "Evolution API key: literal alfanumerico de 32-64 chars perto de um identificador de API -- o formato exato do DT-45"
+regex = '''(?i)(?:evolution|evo)[_\-]?(?:api)?[_\-]?(?:key|token|apikey)(?:[ \t\w.\-]{0,20})[\s'"]{0,3}(?:=|>|:{1,3}=|\|\||:|<=|=>|:=|\?=|,)[`'"\s=]{0,5}([A-Za-z0-9]{32,64})(?:[`'"\s;,\)\]}]|$)'''
+secretGroup = 1
+entropy = 4.0
+keywords = ["evolution", "evo_api", "evoapi"]
+
+[[rules]]
+id = "dotenv-high-entropy-value"
+description = "Valor de alta entropia atribuido a variavel *_KEY/_TOKEN/_SECRET/_PASSWORD em arquivo de ambiente"
+regex = '''(?i)^[ \t]*(?:export[ \t]+)?[A-Z0-9_]*(?:KEY|TOKEN|SECRET|PASSWORD|SENHA|PASSWD|CREDENTIAL)[A-Z0-9_]*[ \t]*=[ \t]*["']?([\w.=\-+/]{16,200})["']?[ \t]*$'''
+secretGroup = 1
+entropy = 3.7
+path = '''(?i)(^|/)\.env($|\.)'''
+keywords = ["key", "token", "secret", "password", "senha", "passwd", "credential"]
+
+# ---------------------------------------------------------------------------
+# Allowlists globais -- placeholders ja documentados no repositorio.
+#
+# Objetivo: o hook nao pode "gritar lobo" no primeiro dia. Um gate de seguranca
+# que da falso positivo constante e desativado pela equipe em uma semana.
+# ---------------------------------------------------------------------------
+
+[[allowlists]]
+description = "Arquivos gerados, vendorizados, binarios e dumps -- ruido puro"
+paths = [
+  '''(^|/)node_modules/''',
+  '''(^|/)vendor/''',
+  '''(^|/)dist/''',
+  '''(^|/)build/''',
+  '''(^|/)\.git/''',
+  '''(^|/)(package-lock\.json|pnpm-lock\.yaml|yarn\.lock|go\.sum)$''',
+  '''(^|/)repomix-output\.xml$''',
+  '''(^|/)test-results/''',
+  '''(?i)\.(png|jpe?g|gif|svg|ico|webp|mp3|wav|ogg|mp4|pdf|exe|dll|so|dylib|zip|tar|gz|7z|woff2?|ttf|eot)$''',
+]
+
+[[allowlists]]
+description = "Placeholders documentados: JWT truncado do pmo-frontend/README.md e cabecalho HS256 publico"
+regexTarget = "line"
+regexes = [
+  # pmo-frontend/README.md:50 -> VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+  '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.{2,}''',
+  # Cabecalho JWT HS256 -- constante publica, nao e segredo por si so.
+  '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9(?:["'\s,;)\]}]|$)''',
+]
+
+[[allowlists]]
+description = "Numeros de telefone de teste e fixtures de WhatsApp (5511999999999 e afins)"
+regexTarget = "line"
+regexes = [
+  '''55\d{2}9{6,}''',
+  '''\b\d{12,13}@s\.whatsapp\.net\b''',
+]
+
+[[allowlists]]
+description = "Valores obviamente falsos: placeholders, templates e variaveis de interpolacao"
+regexes = [
+  '''(?i)^(?:seu|sua|meu|minha|your|my)[_\-]''',
+  '''(?i)(?:coloque|insira|substitua|preencha|troque)[_\-]?(?:aqui|sua|seu)?''',
+  '''(?i)(?:change[_\-]?me|placeholder|redacted|dummy|f[o0]{2}bar|lorem)''',
+  '''^[Xx]{8,}$''',
+  '''^(?:\.{3}|\*{3,}|<.*>|\$\{.*\}|\{\{.*\}\}|%[A-Za-z_]+%)$''',
+  '''(?i)^(?:test|teste|fake|sample|exemplo|example|demo|localhost|postgres|password|senha)[_\-]?\d*$''',
+]
+stopwords = [
+  "example",
+  "exemplo",
+  "placeholder",
+  "changeme",
+  "change_me",
+  "your-",
+  "your_",
+  "seu_",
+  "sua_",
+  "redacted",
+  "xxxxxxxx",
+  "notarealkey",
+  "dummy",
+]
+
+[[allowlists]]
+description = "Arquivos .example / .sample / .template existem justamente para conter valores falsos"
+paths = [
+  '''(?i)\.(example|sample|template|dist)$''',
+  '''(?i)(^|/)\.env\.(example|sample|template)$''',
+]
+
+[[allowlists]]
+description = """
+Falsos positivos confirmados por varredura completa da arvore em 2026-08-24.
+Cada entrada abaixo foi inspecionada manualmente antes de ser liberada.
+"""
+regexes = [
+  # Chaves de secao do formulario PMO: `key: 'secao_13_producao_animal'`.
+  # 11 ocorrencias em pmo-frontend. Sao constantes de dominio, nao credenciais.
+  # O padrao cobre secoes futuras (secao_16_...) sem precisar reeditar isto.
+  '''^secao_\d+_[a-z0-9_]+$''',
+  # Chave do laboratorio de benchmark local (docker-compose.benchmark.yml +
+  # cmd/tester/evolution_lab). Literal inventado para uma instancia Evolution
+  # que so sobe em localhost; nao autentica nada remoto.
+  '''^coliseu-api-key-2026$''',
+]
+
+[[allowlists]]
+description = """
+JWTs de demonstracao do Supabase local (`supabase start`). O issuer e
+literalmente `supabase-demo` e a chave e publicada na documentacao oficial do
+Supabase -- e a mesma em todas as maquinas do mundo. Usada nos testes
+`*_real_postgres_test.go`.
+ATENCAO: isto NAO libera JWTs de producao. Chaves reais do projeto tem outro
+issuer (ref do projeto), entao continuam sendo bloqueadas pela regra `jwt`.
+"""
+regexes = [
+  '''^eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIi''',
+]
+
+# ---------------------------------------------------------------------------
+# Codigo de terceiros e checkouts aninhados.
+# Aferido em 2026-08-24 contra a branch `feature/onboarding-mockup`, que e bem
+# maior que a branch onde este gate nasceu: 126 achados brutos, sendo 42 em
+# arquivos versionados -- e os 42 eram falsos positivos, todos concentrados
+# nos diretorios abaixo.
+# ---------------------------------------------------------------------------
+
+[[allowlists]]
+description = """
+Worktrees aninhados do Claude Code. Sao checkouts do PROPRIO repositorio: sem
+isto, cada achado e contado uma vez por worktree ativo (6 copias do mesmo
+`test_audio/main.go` na ultima medicao).
+"""
+paths = ['''(^|/)\.claude/worktrees/''']
+
+[[allowlists]]
+description = """
+Documentacao e biblioteca vendorizadas do evolution-go (upstream).
+41 dos 42 falsos positivos versionados vinham daqui: exemplos de curl com
+`apikey: token-vendas`, a GLOBAL_API_KEY de demonstracao `df16caad-...` que
+esta na documentacao publica da Evolution, e a constante do WhatsApp Web
+embutida no whatsmeow (`AIzaSyDR5yfaG7...`, identica em toda copia da lib).
+
+Escopo restrito de proposito: SO `docs/wiki/` e `whatsmeow-lib/`. O codigo Go
+de `evolution-go-source/` que este projeto realmente edita (ver DT-53)
+continua sendo escaneado -- inclusive por causa do DT-57, que registra a API
+key de producao sendo impressa em log em texto puro.
+"""
+paths = [
+  '''(^|/)evolution-go-source/docs/wiki/''',
+  '''(^|/)evolution-go-source/whatsmeow-lib/''',
+]
+
+[[allowlists]]
+description = "Fonte vendorizada do Azure MCP (mcp/) e artefatos temporarios do Supabase CLI"
+paths = [
+  '''(^|/)mcp/''',
+  '''(^|/)supabase/\.temp/''',
+]
+
+[[allowlists]]
+description = """
+Fixture de teste de carga: `c3RyZXNzX3Rlc3Rfa2V5` e apenas base64 de
+`stress_test_key`.
+"""
+regexes = ['''^c3RyZXNzX3Rlc3Rfa2V5$''']
+
+# NOTA DELIBERADA -- o que NAO esta liberado aqui, e por que:
+#
+#   legacy_python/, os scripts .js soltos na raiz (test_rpc.js, query_docs.js,
+#   test_execute_sql*.js, check_*.js, cleanup_test.js), .vscode/mcp.json,
+#   .agent/mcp_config.json, pmo-frontend/.env.* e pmo-bot-go/scratch/
+#
+# contem credenciais REAIS e vivas (tokens `sbp_`, chaves `sb_secret_`, GROQ,
+# OpenRouter, Google). Hoje eles estao a salvo apenas porque o .gitignore os
+# cobre -- verificado com `git check-ignore` em 2026-08-24.
+#
+# Liberar esses caminhos aqui trocaria uma protecao por conveniencia: no dia em
+# que alguem alterar o .gitignore ou usar `git add -f`, o gate precisa gritar.
+# O ruido deles aparece so no `npm run scan:secrets` (varredura da arvore
+# inteira), nunca no hook de commit, que enxerga apenas o que esta staged.

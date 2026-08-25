@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+#
+# Gate de segredos -- roda antes de cada commit.
+#
+# Instalado por: scripts/install-git-hooks.sh  (define core.hooksPath=.githooks)
+# Configuracao das regras: .gitleaks.toml (na raiz do repositorio)
+#
+# Historico que justifica este hook:
+#   DT-01  service_role key do Supabase + SUPABASE_ACCESS_TOKEN vazados.
+#   DT-45  Evolution API key hardcoded, publica por 24 dias em repo publico.
+#
+# Este hook falha FECHADO: se o gitleaks nao estiver instalado, o commit e
+# bloqueado. Um gate que se desliga sozinho quando a ferramenta some nao e um
+# gate. Para pular conscientemente: SKIP_SECRET_SCAN=1 git commit ...
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+CONFIG="$REPO_ROOT/.gitleaks.toml"
+
+if [ "${SKIP_SECRET_SCAN:-0}" = "1" ]; then
+  printf '\033[33m[secret-scan] PULADO via SKIP_SECRET_SCAN=1.\033[0m\n' >&2
+  printf '\033[33m[secret-scan] Voce assumiu a responsabilidade por este commit.\033[0m\n' >&2
+  exit 0
+fi
+
+# --- localizar o binario -------------------------------------------------
+# Ordem: $GITLEAKS_BIN -> PATH -> GOPATH/bin (caso comum no Windows, onde
+# `go install` nao coloca nada no PATH automaticamente).
+find_gitleaks() {
+  if [ -n "${GITLEAKS_BIN:-}" ] && [ -x "$GITLEAKS_BIN" ]; then
+    printf '%s' "$GITLEAKS_BIN"; return 0
+  fi
+  if command -v gitleaks >/dev/null 2>&1; then
+    command -v gitleaks; return 0
+  fi
+  if command -v go >/dev/null 2>&1; then
+    local gobin
+    gobin="$(go env GOPATH 2>/dev/null)/bin"
+    for candidate in "$gobin/gitleaks" "$gobin/gitleaks.exe"; do
+      [ -x "$candidate" ] && { printf '%s' "$candidate"; return 0; }
+    done
+  fi
+  return 1
+}
+
+if ! GITLEAKS="$(find_gitleaks)"; then
+  cat >&2 <<'MSG'
+
+  [secret-scan] gitleaks nao encontrado -- commit BLOQUEADO.
+
+  Instale (o repositorio ja tem Go, entao esta e a rota mais curta):
+
+      go install github.com/zricethezav/gitleaks/v8@latest
+
+  Depois garanta que o GOPATH/bin esta no PATH:
+
+      export PATH="$PATH:$(go env GOPATH)/bin"      # bash / Git Bash
+      $env:PATH += ";$(go env GOPATH)\bin"          # PowerShell
+
+  Alternativas: `brew install gitleaks`, `winget install gitleaks`,
+  ou os binarios de https://github.com/gitleaks/gitleaks/releases
+
+  Se o binario estiver em um lugar exotico, aponte com GITLEAKS_BIN=/caminho/gitleaks
+
+MSG
+  exit 1
+fi
+
+if [ ! -f "$CONFIG" ]; then
+  printf '\033[31m[secret-scan] .gitleaks.toml nao encontrado em %s -- commit BLOQUEADO.\033[0m\n' "$REPO_ROOT" >&2
+  printf '\033[31m[secret-scan] Sem config, o scan rodaria com regras erradas. Restaure o arquivo.\033[0m\n' >&2
+  exit 1
+fi
+
+# Nada staged -> nada a escanear (ex.: `git commit --amend` sem mudancas).
+if git diff --staged --quiet 2>/dev/null; then
+  exit 0
+fi
+
+# --- escanear apenas o que esta staged -----------------------------------
+# NAO redigimos aqui de proposito: o segredo ja esta no disco do dev e ver o
+# valor acelera o diagnostico. Em CI o comportamento e o oposto (--redact),
+# porque os logs de Actions sao publicos neste repositorio.
+set +e
+"$GITLEAKS" git "$REPO_ROOT" \
+  --staged \
+  --config "$CONFIG" \
+  --no-banner \
+  --log-level warn \
+  --exit-code 2
+STATUS=$?
+set -e
+
+if [ "$STATUS" -eq 2 ]; then
+  cat >&2 <<'MSG'
+
+  [secret-scan] SEGREDO DETECTADO NAS MUDANCAS STAGED -- commit BLOQUEADO.
+
+  Este repositorio e PUBLICO. Um commit e um publish: assuma que qualquer
+  coisa commitada ja foi indexada, mesmo que voce reescreva a historia depois.
+
+  O que fazer:
+    1. Tire o valor do codigo. Leia de variavel de ambiente / .env (que ja
+       esta no .gitignore) ou de um cofre de segredos.
+    2. `git restore --staged <arquivo>` e corrija antes de recommitar.
+    3. Se a credencial JA foi usada em algum lugar real, ROTACIONE. Nao basta
+       apagar a linha -- o valor continua no reflog e nos clones alheios.
+
+  Se for um falso positivo:
+    - Valor de teste/placeholder que vai se repetir? Adicione um padrao em
+      `.gitleaks.toml` (secao `[[allowlists]]`), nao um fingerprint solto.
+    - Caso unico e irrepetivel? Adicione o fingerprint em `.gitleaksignore`.
+    - Linha isolada? Comentario `gitleaks:allow` no fim da linha.
+    Em qualquer caso: explique o porque junto da entrada. Allowlist sem
+    justificativa vira lixo que ninguem ousa remover depois.
+
+  Emergencia consciente: SKIP_SECRET_SCAN=1 git commit ...
+
+MSG
+  exit 1
+fi
+
+if [ "$STATUS" -ne 0 ]; then
+  printf '\033[31m[secret-scan] gitleaks falhou (exit %d) -- commit BLOQUEADO.\033[0m\n' "$STATUS" >&2
+  printf '\033[31m[secret-scan] Isso e erro de execucao, nao deteccao. Verifique .gitleaks.toml.\033[0m\n' >&2
+  exit 1
+fi
+
+exit 0
