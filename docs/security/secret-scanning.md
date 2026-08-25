@@ -116,8 +116,43 @@ liberados em `.gitleaks.toml`:
 - 2× JWT de demonstração do Supabase local (issuer `supabase-demo`), publicado
   na documentação oficial e idêntico em toda máquina do mundo.
 
-Resultado atual: **1 achado, 0 ruído.** Isso importa mais do que parece — um
-gate que grita lobo é desligado pela equipe em uma semana.
+Resultado nessa árvore: **1 achado, 0 ruído.**
+
+### Segunda calibragem — `feature/onboarding-mockup`
+
+A branch onde o trabalho ativo acontece é bem maior. Rodando o mesmo config
+contra ela: **126 achados brutos.** Separando por o que o git realmente
+versiona — que é o único recorte que importa, já que o hook só enxerga
+conteúdo *staged*:
+
+| | Antes do ajuste | Depois |
+|---|---|---|
+| Em arquivos **versionados** | 42 | **0** |
+| Em arquivos ignorados/locais | 84 | 65 |
+| Tempo de varredura | 18,4 s | 0,97 s |
+
+Os 42 versionados eram todos falsos positivos, concentrados em código de
+terceiros: documentação vendorizada do `evolution-go` (exemplos de `curl` com
+`apikey: token-vendas`, a `GLOBAL_API_KEY` de demonstração que está na doc
+pública da Evolution), a constante do WhatsApp Web embutida no `whatsmeow`, a
+fonte vendorizada do Azure MCP, e worktrees aninhados do Claude Code — que são
+cópias do próprio repositório, multiplicando cada achado por worktree ativo.
+
+### O que continua detectável de propósito
+
+Os 65 achados restantes são credenciais **reais e vivas** (tokens `sbp_`,
+chaves `sb_secret_`, GROQ, OpenRouter, Google) em `legacy_python/`, nos
+scripts `.js` soltos na raiz, em `.vscode/mcp.json`, `.agent/mcp_config.json`
+e nos vários `.env`. Verificado com `git check-ignore` em 2026-08-24: **todos
+estão cobertos pelo `.gitignore`**, e por isso nunca chegaram ao repositório.
+
+Eles **não** foram colocados na allowlist. Liberá-los trocaria proteção por
+silêncio: no dia em que alguém mexer no `.gitignore` ou usar `git add -f`, o
+gate precisa gritar. O ruído deles aparece apenas no `npm run scan:secrets`
+(varredura da árvore inteira), nunca no hook de commit.
+
+Isso importa mais do que parece — um gate que grita lobo é desligado pela
+equipe em uma semana.
 
 ### Como suprimir algo novo
 
