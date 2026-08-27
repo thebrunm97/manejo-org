@@ -98,6 +98,7 @@ export default defineConfig({
         chunkSizeWarningLimit: 600,
         commonjsOptions: {
             include: [/node_modules/],
+            exclude: [/react-map-gl/, /@vis\.gl/],
             transformMixedEsModules: true,
         },
         rollupOptions: {
