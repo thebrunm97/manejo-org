@@ -1,80 +1,85 @@
-# --- Ignorar recursivamente pastas de dependências e build (AI Session Manager) ---
+# ============================================
+# ManejoOrg Monorepo — .gitignore
+# ============================================
+
+# ── Dependencies ──────────────────────────────
 **/node_modules/
+**/vendor/
+
+# ── Build Outputs ─────────────────────────────
 **/.next/
 **/dist/
 **/build/
-**/.venv_p312/
+*.tmp
+*.temp
+*.swp
+*.bak
+
+# ── Python ────────────────────────────────────
 **/.venv/
+**/.venv_p312/
+**/venv/
 **/__pycache__/
 **/*.pyc
-**/.DS_Store
+**/*.pyo
 
-# --- ManejoOrg Base Dependencies ---
-node_modules/
-wppconnect-server/
-pmo_bot/wppconnect-data/
-wppconnect-data/
-**/wppconnect-data/
-
-# --- Python & Environments ---
-venv/
-.venv/
-.venv_p312/
-__pycache__/
-*.pyc
-*.pyo
-.skills_temp/
-
-# --- Secrets & Config ---
+# ── Environment & Secrets ─────────────────────
 .env
-.env.prod
 .env.*
 .env.*.local
-.vscode/mcp.json
+
+# ── OS Files ──────────────────────────────────
+**/.DS_Store
+Thumbs.db
+
+# ── IDE & AI Tools ────────────────────────────
 .vscode/
 .idea/
 .agent/
+.agents/
 .antigravity/
+.claude/
+.clinerules/
+.cursor/
+.kilo/
+.opencode/
+.skills_temp/
 
-# --- Session & Tokens ---
+# ── WhatsApp Sessions & Data ──────────────────
+wppconnect-server/
+**/wppconnect-data/
 pmo-bot-go/evo-instances/
 wppconnect_tokens/
+evolution_data/
 
-
-# --- RAG & Data Processing ---
+# ── RAG & Knowledge ──────────────────────────
 knowledge_repo/
 ingest_checkpoint.json
 temp_slices/
 scripts/temp_slices/
 knowledge_documents/
 
-# --- Database ---
+# ── Database ──────────────────────────────────
 *.sqlite3
 db.sqlite3
 
-# --- Go Backend ---
+# ── Go Backend ────────────────────────────────
 pmo-bot-go/bin/
-pmo-bot-go/vendor/
+pmo-bot-go/tmp_test_bin*
+pmo-bot-go/.telemetria_acumulada.log
+evolution-go-source/evolution-go
 
-# --- Logs & Auditoria ---
+# ── Logs & Reports ────────────────────────────
 *.log
 *_logs.txt
 *_log.txt
 bot_logs*.txt
-logs_bot.txt
-logs_wpp.txt
-branch_audit.txt
 tsc_output.txt
 security_report*.txt
 benchmark_runner_logs.txt
+lint_output.txt
 
-# --- Build & Temporary ---
-dist/
-build/
-*.tmp
-*.temp
-*.swp
-*.bak
+# ── Archives & Temp ───────────────────────────
 *.rar
 *.zip
 *.7z
@@ -83,249 +88,68 @@ latest_qrcode.html
 audios_recebidos/
 test_result*.txt
 
-# --- OS Files ---
-.DS_Store
-Thumbs.db
-
-# --- Private Plans ---
-*PLAN.md
-*ARCHITECTURE.md
-*.rules.md
-
-# --- Legacy Python Artifacts ---
-legacy_python/**/*.png
-legacy_python/**/*.log
-legacy_python/**/*.tmp
-legacy_python/**/*.bak
-legacy_python/**/*.swp
-legacy_python/qrcode.html
-legacy_python/latest_qrcode.html
-legacy_python/test_output.txt
-
-
-# --- Temporary & Legacy (Added for release) ---
-.opencode/
-design-system/
-legacy_python/
-evolution_data/
-
-# --- Rascunhos de testes locais ---
-test_*.js
-test_execute_sql*.js
-scripts/clear_whatsapp_session.py
-scripts/draw_qr.py
-scripts/migrate_farm_embeddings.py
-scripts/reset_checkpoint.py
-scripts/test_gemini_batch.py
-scripts/test_rag_query.py
-scripts/test_mcp.js
-
-# --- Todos os planos markdown ---
-PLAN-*.md
-PLAN_*.md
-*PLAN.md
-git-atomic-commits.md
-timeout-time-finance-fix.md
-
-.vercel
-node_modules
-
-# IDEs and AI Tools
-.agents/
-.clinerules/
-.cursor/
-# --- Ignorar recursivamente pastas de dependências e build (AI Session Manager) ---
-**/node_modules/
-**/.next/
-**/dist/
-**/build/
-**/.venv_p312/
-**/.venv/
-**/__pycache__/
-**/*.pyc
-**/.DS_Store
-
-# --- ManejoOrg Base Dependencies ---
-node_modules/
-wppconnect-server/
-pmo_bot/wppconnect-data/
-wppconnect-data/
-**/wppconnect-data/
-
-# --- Python & Environments ---
-venv/
-.venv/
-.venv_p312/
-__pycache__/
-*.pyc
-*.pyo
-.skills_temp/
-
-# --- Secrets & Config ---
-.env
-.env.prod
-.env.*
-.env.*.local
-.vscode/mcp.json
-.vscode/
-.idea/
-.agent/
-.antigravity/
-
-# --- Session & Tokens ---
-pmo-bot-go/evo-instances/
-wppconnect_tokens/
-
-
-# --- RAG & Data Processing ---
-knowledge_repo/
-ingest_checkpoint.json
-temp_slices/
-scripts/temp_slices/
-knowledge_documents/
-
-# --- Database ---
-*.sqlite3
-db.sqlite3
-
-# --- Go Backend ---
-pmo-bot-go/bin/
-pmo-bot-go/vendor/
-
-# --- Logs & Auditoria ---
-*.log
-*_logs.txt
-*_log.txt
-bot_logs*.txt
-logs_bot.txt
-logs_wpp.txt
-branch_audit.txt
-tsc_output.txt
-security_report*.txt
-benchmark_runner_logs.txt
-
-# --- Build & Temporary ---
-dist/
-build/
-*.tmp
-*.temp
-*.swp
-*.bak
-*.rar
-*.zip
-*.7z
-qrcode.html
-latest_qrcode.html
-audios_recebidos/
-test_result*.txt
-
-# --- OS Files ---
-.DS_Store
-Thumbs.db
-
-# --- Private Plans ---
-*PLAN.md
-*ARCHITECTURE.md
-*.rules.md
-
-# --- Legacy Python Artifacts ---
-legacy_python/**/*.png
-legacy_python/**/*.log
-legacy_python/**/*.tmp
-legacy_python/**/*.bak
-legacy_python/**/*.swp
-legacy_python/qrcode.html
-legacy_python/latest_qrcode.html
-legacy_python/test_output.txt
-
-
-# --- Temporary & Legacy (Added for release) ---
-.opencode/
-design-system/
-legacy_python/
-evolution_data/
-
-# --- Rascunhos de testes locais ---
-test_*.js
-test_execute_sql*.js
-scripts/clear_whatsapp_session.py
-scripts/draw_qr.py
-scripts/migrate_farm_embeddings.py
-scripts/reset_checkpoint.py
-scripts/test_gemini_batch.py
-scripts/test_rag_query.py
-scripts/test_mcp.js
-
-# --- Todos os planos markdown ---
-PLAN-*.md
-PLAN_*.md
-*PLAN.md
-git-atomic-commits.md
-timeout-time-finance-fix.md
-
-.vercel
-node_modules
- 
-# IDEs and AI Tools
-.agents/
-.clinerules/
-.cursor/
-thoughts/
-  
-# Benchmarks
+# ── Benchmarks ────────────────────────────────
 benchmark_results*
 temp_benchmark.exe
-  
- # Scratch, Dumps & Test Artifacts
+
+# ── Scratch, Dumps & Test Artifacts ───────────
 scratch/
 **/scratch/
 *.pdf
 nemotron_monitoring.csv
-  
-# Dumps & Scratch
 dump_*.json
 repomix-output.xml
-chat-presence.md
 test_webhook.json
-scratch/
-pmo-bot-go/thoughts/
-pmo-bot-go/tmp_test_bin*
-# --- Environment Variables ---
-.env
-.env.local
-.env.*
-check_*.js
-cleanup_*.js
-upload_*.js
-query_*.js
-scratch_*.py
-gen_*.py
-
-# Telemetria acumulada localmente (DT-33) — dado operacional, não versionado
-pmo-bot-go/.telemetria_acumulada.log
-
-# Documentacao privada (DT-42 / LGPD).
-# O repositorio e PUBLICO. Este diretorio contem inventario de lacunas de
-# privacidade e dados de risco — publicar equivale a divulgar um roteiro de
-# exploracao sobre dados de produtores reais. NUNCA versionar.
-docs-private/
-
-# Testes de carga do DT-38.
-# As copias versionadas vivem em pmo-bot-go/cmd/loadtest/ e cmd/loadtest_piper/,
-# cada uma no seu proprio package main. Os padroes abaixo sao ANCORADOS na raiz
-# (barra inicial) para ignorar so as copias soltas de scratch, sem afetar as de
-# cmd/. Na raiz elas seriam dois func main() no mesmo pacote e quebrariam o build.
-/loadtest*.go
-/payload_audio_stress.json
-
-# Audio de teste do loadtest: pode conter voz real (biometria vocal, dado
-# sensivel pela LGPD — ver DT-42). Cada maquina fornece o seu; ver
-# pmo-bot-go/cmd/loadtest/README.md.
 test_assets/
 **/test_assets/
 
-# evolution-go-source virou diretório normal deste repo (DT-30 — era um
-# gitlink quebrado, sem .gitmodules, código ficava fora de qualquer controle
-# de versão). Este binário compilado é build artifact local (`go build`),
-# não deve ser versionado.
-evolution-go-source/evolution-go
+# ── Test Scripts (root-level) ─────────────────
+/test_*.js
+/check_*.js
+/cleanup_*.js
+/upload_*.js
+/query_*.js
+/scratch_*.py
+/gen_*.py
+
+# ── Plans & Architecture (private) ────────────
+/PLAN-*.md
+/PLAN_*.md
+/*PLAN.md
+/*ARCHITECTURE.md
+/*.rules.md
+
+# ── Misc local-only docs ─────────────────────
+/chat-presence.md
+/git-atomic-commits.md
+/timeout-time-finance-fix.md
+
+# ── Deploy Config ─────────────────────────────
+.vercel
+
+# ── Thoughts & Research ───────────────────────
+thoughts/
+pmo-bot-go/thoughts/
+
+# ── Private Docs (LGPD — DT-42) ──────────────
+docs-private/
+
+# ── Legacy & Temporary (not tracked) ──────────
+design-system/
+legacy_python/
+
+# ── Archive (reorganization) ──────────────────
+_archive/
+
+# ── Load test scratch (root-anchored) ─────────
+/loadtest*.go
+/payload_audio_stress.json
+
+# ── Scripts (test-only, not tracked) ──────────
+scripts/clear_whatsapp_session.py
+scripts/draw_qr.py
+scripts/migrate_farm_embeddings.py
+scripts/reset_checkpoint.py
+scripts/test_gemini_batch.py
+scripts/test_rag_query.py
+scripts/test_mcp.js

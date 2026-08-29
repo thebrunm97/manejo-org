@@ -1,8 +1,0 @@
-[
-  {
-    "id": "a8230371-7b36-4769-bd26-3e6e7f7c1080",
-    "document_id": "d0238d2b-9df2-4b79-a437-4fdd988cf12f",
-    "status": "draft",
-    "content": "��# Regras de Compostagem\r\n"
-  }
-]
