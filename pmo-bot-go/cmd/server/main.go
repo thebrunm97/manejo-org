@@ -22,6 +22,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/adapter/auditvault"
 	"github.com/thebrunm97/pmo-bot-go/internal/adapter/embedcache"
 	"github.com/thebrunm97/pmo-bot-go/internal/adapter/evolution"
+	"github.com/thebrunm97/pmo-bot-go/internal/adapter/redisstore"
 	"github.com/thebrunm97/pmo-bot-go/internal/config"
 	"github.com/thebrunm97/pmo-bot-go/internal/domain"
 	"github.com/thebrunm97/pmo-bot-go/internal/gateway"
@@ -520,6 +521,25 @@ func main() {
 		log.Println("⚠️  [Harness] HARNESS_ENABLED=false — rodando em modo legado (goroutines diretas)")
 	}
 
+	// --- Redis: rate limiting de entrada ---
+	//
+	// O Redis já subia no docker-compose.prod.yml sem nenhum consumidor. Este é
+	// o primeiro uso real dele. Sem REDIS_URL, ou com o Redis fora do ar, o bot
+	// sobe assim mesmo com um limiter que permite tudo: a proteção contra abuso
+	// não vale interromper o recebimento de mensagens (ver ports.RateLimiter).
+	var inboundLimiter ports.RateLimiter = ports.NoopRateLimiter{}
+	if cfg.RedisURL == "" {
+		log.Println("⚠️  [RateLimit] REDIS_URL não definida — rate limiting de entrada DESLIGADO")
+	} else if redisClient, err := redisstore.New(context.Background(), cfg.RedisURL); err != nil {
+		log.Printf("⚠️  [RateLimit] Redis indisponível (%v) — rate limiting de entrada DESLIGADO", err)
+	} else {
+		defer redisClient.Close()
+
+		limitPerMin := parseEnvInt("RATE_LIMIT_PER_MINUTE", 20)
+		inboundLimiter = redisstore.NewRateLimiter(redisClient, "ratelimit:phone", limitPerMin, time.Minute)
+		log.Printf("✅ [RateLimit] Redis conectado — %d mensagens/min por telefone", limitPerMin)
+	}
+
 	// --- Register webhook routes ---
 	handler := webhook.NewHandler(webhook.Config{
 		Token:                  cfg.WebhookToken,
@@ -537,6 +557,7 @@ func main() {
 		EnableFastRouter:       os.Getenv("ENABLE_FAST_ROUTER") == "true",
 		EnableFastRouterShadow: os.Getenv("ENABLE_FAST_ROUTER_SHADOW") == "true",
 		FastRouterTimeoutMS:    parseEnvInt("FAST_ROUTER_TIMEOUT_MS", 3000),
+		InboundLimiter:         inboundLimiter,
 	})
 	handler.RegisterRoutes(r)
 

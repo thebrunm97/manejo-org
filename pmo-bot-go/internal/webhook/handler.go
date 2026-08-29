@@ -73,6 +73,14 @@ type Config struct {
 	// quando ligado. Se nil, esses eventos continuam sendo só ignorados, como
 	// sempre foram.
 	ConnectionEvents ports.ConnectionEventNotifier
+
+	// InboundLimiter limita mensagens por telefone na entrada. Diferente do
+	// 429 de fila cheia mais abaixo, que é uma proteção global do processo,
+	// este limite é por produtor: sem ele, um único telefone em loop consome a
+	// capacidade de todos os tenants.
+	//
+	// Se nil, NewHandler substitui por ports.NoopRateLimiter.
+	InboundLimiter ports.RateLimiter
 }
 
 // ---------------------------------------------------------------------------
@@ -90,6 +98,9 @@ type Handler struct {
 func NewHandler(cfg Config) *Handler {
 	if cfg.MaxMessageAge == 0 {
 		cfg.MaxMessageAge = 600
+	}
+	if cfg.InboundLimiter == nil {
+		cfg.InboundLimiter = ports.NoopRateLimiter{}
 	}
 	h := &Handler{
 		cfg:     cfg,
@@ -255,6 +266,38 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 			log.Printf("📥 [WEBHOOK] Payload bruto registrado com ID: %s", rawPayloadID)
 		}
 
+	}
+
+	// 9. Rate limiting por produtor
+	//
+	// Vem DEPOIS do dedup de propósito. Uma retentativa de webhook da Evolution
+	// é a mesma mensagem chegando de novo: se contasse cota, o produtor pagaria
+	// por um retry que é nosso, não dele. Depois do passo 8, o que chega aqui é
+	// mensagem nova.
+	//
+	// A chave é payload.From (a identidade do canal, LID ou telefone) e não o
+	// telefone resolvido: resolver exigiria ida ao banco, e o ponto deste
+	// limite é justamente cortar antes de gastar recurso.
+	if decision, err := h.cfg.InboundLimiter.Allow(c.Request.Context(), payload.From); err != nil {
+		// Degrada ABERTO — contrato de ports.RateLimiter. Redis fora do ar não
+		// pode parar o recebimento de mensagens; a métrica com outcome="error"
+		// é o que torna essa janela sem proteção visível.
+		telemetry.RateLimitDecisionsTotal.WithLabelValues("phone", "error").Inc()
+		slog.Warn("Rate limiter indisponível — deixando passar",
+			slog.String("from", payload.From),
+			slog.String("error", err.Error()))
+	} else if !decision.Allowed {
+		telemetry.RateLimitDecisionsTotal.WithLabelValues("phone", "throttled").Inc()
+		telemetry.WebhookRequestsTotal.WithLabelValues("rate_limited", "evolution").Inc()
+		log.Printf("🚦 [RATELIMIT] %s excedeu a cota — liberando em %s", payload.From, decision.RetryAfter.Round(time.Second))
+		c.Header("Retry-After", strconv.Itoa(int(decision.RetryAfter.Seconds())+1))
+		c.JSON(http.StatusTooManyRequests, gin.H{
+			"status":      "rate_limited",
+			"retry_after": decision.RetryAfter.Seconds(),
+		})
+		return
+	} else {
+		telemetry.RateLimitDecisionsTotal.WithLabelValues("phone", "allowed").Inc()
 	}
 
 	// ─── HITL: SIM/NÃO & Two-Phase Commit intercept (before harness dispatch) ──

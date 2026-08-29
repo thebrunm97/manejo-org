@@ -14,6 +14,19 @@ var (
 		[]string{"status", "source"},
 	)
 
+	// RateLimitDecisionsTotal conta os vereditos do rate limiter de entrada.
+	//
+	// O label 'outcome' tem três valores: allowed, throttled e error. 'error' é
+	// o mais importante de alertar: significa Redis fora do ar e, por contrato
+	// (ports.RateLimiter), tráfego passando sem proteção nenhuma.
+	RateLimitDecisionsTotal = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "rate_limit_decisions_total",
+			Help: "Count of inbound rate limiter decisions by scope and outcome",
+		},
+		[]string{"scope", "outcome"},
+	)
+
 	WorkerPoolQueueSize = promauto.NewGauge(
 		prometheus.GaugeOpts{
 			Name: "worker_pool_queue_size",

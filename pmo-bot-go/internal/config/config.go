@@ -20,6 +20,11 @@ type Config struct {
 	GeminiFallbackModel string
 	OpenRouterModel     string
 	OpenRouterKey       string
+
+	// RedisURL no formato redis://host:port/db. Vazia desliga o Redis: o bot
+	// sobe sem rate limiting (ports.NoopRateLimiter), o que é o comportamento
+	// esperado em dev local e em testes.
+	RedisURL string
 }
 
 // LoadConfig loads the settings from the .env file
@@ -41,5 +46,6 @@ func LoadConfig() *Config {
 		GeminiFallbackModel: os.Getenv("GEMINI_FALLBACK_MODEL"),
 		OpenRouterModel:     os.Getenv("OPENROUTER_MODEL"),
 		OpenRouterKey:       os.Getenv("OPENROUTER_API_KEY"),
+		RedisURL:            os.Getenv("REDIS_URL"),
 	}
 }

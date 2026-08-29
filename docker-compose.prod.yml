@@ -65,6 +65,12 @@ services:
     restart: always
     env_file:
       - .env.prod
+    environment:
+      # Endereço do Redis na rede interna do compose. Vive aqui, e não no
+      # .env.prod, porque é topologia da stack e não segredo.
+      # Sem esta variável o bot sobe com rate limiting DESLIGADO (ver
+      # internal/ports/ratelimit.go).
+      REDIS_URL: redis://redis:6379/0
     cap_add:
       - SYS_TIME
     volumes:
@@ -84,11 +90,19 @@ services:
           memory: 128M
     networks:
       - pmo_prod_net
+    # Forma de mapa (e não lista) por causa do redis: a conexão é feita UMA vez,
+    # na subida. Se o Redis ainda não aceitasse conexão nesse instante, o bot
+    # degradaria aberto e ficaria sem rate limiting até o próximo restart —
+    # esperar o healthcheck é o que fecha essa janela.
     depends_on:
-      - evolution-go
-      - redis
-      - clockwork
-      - piper
+      evolution-go:
+        condition: service_started
+      redis:
+        condition: service_healthy
+      clockwork:
+        condition: service_started
+      piper:
+        condition: service_started
 
   # Serviço do Motor de WhatsApp (evolution-go)
   # A versão em Go da Evolution API permite limites de RAM drasticaamente inferiores ao Node.js.
@@ -136,6 +150,12 @@ services:
     restart: unless-stopped
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
     networks:
       - pmo_prod_net
 
