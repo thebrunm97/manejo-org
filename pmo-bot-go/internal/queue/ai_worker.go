@@ -234,29 +234,41 @@ func (w *AIWorker) processAIJob(ctx context.Context, job *Job, start time.Time) 
 
 	latencyMs := time.Since(start).Milliseconds()
 
-	if result.Success || result.Reason == "hitl_pending" {
-		if err := w.cfg.Queue.MarkDone(aiCtx, job.ID, JobMeta{
-			Reason:    result.Reason,
+	w.finalizeJob(job, msg, result.Success, result.Reason, latencyMs)
+}
+
+func (w *AIWorker) finalizeJob(
+	job *Job,
+	msg ports.IncomingMessage,
+	success bool,
+	reason string,
+	latencyMs int64,
+) {
+	dbCtx, dbCancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer dbCancel()
+
+	if success || reason == "hitl_pending" {
+		if err := w.cfg.Queue.MarkDone(dbCtx, job.ID, JobMeta{
+			Reason:    reason,
 			LatencyMs: latencyMs,
 		}); err != nil {
 			log.Printf("⚠️  [AIWorker] Falha ao marcar job %s como done: %v", job.ID, err)
 		}
-		log.Printf("✅ [AIWorker] Job %s concluído (ou em HITL) em %dms (razão: %s)", job.ID, latencyMs, result.Reason)
+		log.Printf("✅ [AIWorker] Job %s concluído (ou em HITL) em %dms (razão: %s)", job.ID, latencyMs, reason)
 
 		if msg.RawPayloadID != "" {
-			if err := w.cfg.Supabase.UpdateRawPayloadStatus(aiCtx, msg.RawPayloadID, "PROCESSED", ""); err != nil {
+			if err := w.cfg.Supabase.UpdateRawPayloadStatus(dbCtx, msg.RawPayloadID, "PROCESSED", ""); err != nil {
 				log.Printf("⚠️  [AIWorker] Falha ao atualizar status do raw_payload %s para PROCESSED: %v", msg.RawPayloadID, err)
 			}
 		}
 	} else {
-		reason := result.Reason
-		if err := w.cfg.Queue.MarkFailed(aiCtx, job.ID, reason, job.AttemptCount); err != nil {
+		if err := w.cfg.Queue.MarkFailed(dbCtx, job.ID, reason, job.AttemptCount); err != nil {
 			log.Printf("⚠️  [AIWorker] Falha ao marcar job %s como failed: %v", job.ID, err)
 		}
 		log.Printf("❌ [AIWorker] Job %s falhou em %dms (razão: %s)", job.ID, latencyMs, reason)
 
 		if msg.RawPayloadID != "" {
-			if err := w.cfg.Supabase.UpdateRawPayloadStatus(aiCtx, msg.RawPayloadID, "FAILED", reason); err != nil {
+			if err := w.cfg.Supabase.UpdateRawPayloadStatus(dbCtx, msg.RawPayloadID, "FAILED", reason); err != nil {
 				log.Printf("⚠️  [AIWorker] Falha ao atualizar status do raw_payload %s para FAILED: %v", msg.RawPayloadID, err)
 			}
 		}

@@ -22,6 +22,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/adapter/auditvault"
 	"github.com/thebrunm97/pmo-bot-go/internal/adapter/embedcache"
 	"github.com/thebrunm97/pmo-bot-go/internal/adapter/evolution"
+	"github.com/thebrunm97/pmo-bot-go/internal/adapter/rabbitmq"
 	"github.com/thebrunm97/pmo-bot-go/internal/adapter/redisstore"
 	"github.com/thebrunm97/pmo-bot-go/internal/config"
 	"github.com/thebrunm97/pmo-bot-go/internal/domain"
@@ -528,6 +529,7 @@ func main() {
 	// sobe assim mesmo com um limiter que permite tudo: a proteção contra abuso
 	// não vale interromper o recebimento de mensagens (ver ports.RateLimiter).
 	var inboundLimiter ports.RateLimiter = ports.NoopRateLimiter{}
+	var warningLimiter ports.RateLimiter = ports.NoopRateLimiter{}
 	if cfg.RedisURL == "" {
 		log.Println("⚠️  [RateLimit] REDIS_URL não definida — rate limiting de entrada DESLIGADO")
 	} else if redisClient, err := redisstore.New(context.Background(), cfg.RedisURL); err != nil {
@@ -537,6 +539,7 @@ func main() {
 
 		limitPerMin := parseEnvInt("RATE_LIMIT_PER_MINUTE", 20)
 		inboundLimiter = redisstore.NewRateLimiter(redisClient, "ratelimit:phone", limitPerMin, time.Minute)
+		warningLimiter = redisstore.NewRateLimiter(redisClient, "ratelimit:warning", 1, 5*time.Minute)
 		log.Printf("✅ [RateLimit] Redis conectado — %d mensagens/min por telefone", limitPerMin)
 	}
 
@@ -558,8 +561,25 @@ func main() {
 		EnableFastRouterShadow: os.Getenv("ENABLE_FAST_ROUTER_SHADOW") == "true",
 		FastRouterTimeoutMS:    parseEnvInt("FAST_ROUTER_TIMEOUT_MS", 3000),
 		InboundLimiter:         inboundLimiter,
+		WarningLimiter:         warningLimiter,
 	})
 	handler.RegisterRoutes(r)
+
+	// --- Initialize RabbitMQ Consumer ---
+	var rabbitmqConsumer *rabbitmq.Consumer
+	rmqURL := os.Getenv("RABBITMQ_URL")
+	if rmqURL != "" {
+		rabbitmqConsumer = rabbitmq.NewConsumer(rmqURL, "evolution_events", "pmo_bot_events")
+		if err := rabbitmqConsumer.Connect(); err != nil {
+			log.Printf("⚠️ [RabbitMQ] Falha ao iniciar consumidor: %v", err)
+		} else {
+			if err := rabbitmqConsumer.Consume(handler.ProcessMessageFromQueue); err != nil {
+				log.Printf("⚠️ [RabbitMQ] Falha ao registrar fila: %v", err)
+			}
+		}
+	} else {
+		log.Println("⚠️ [RabbitMQ] RABBITMQ_URL não definida — operando apenas com webhooks HTTP")
+	}
 
 	// --- Canal de alerta fora de banda (DT-53) ---
 	// Fora de banda porque o primeiro uso é avisar que o WhatsApp caiu — avisar
@@ -719,6 +739,11 @@ func main() {
 
 	if err := handler.Shutdown(ctxShutdown); err != nil {
 		log.Printf("❌ Falha no desligamento do Handler/WorkerPool: %v", err)
+	}
+
+	if rabbitmqConsumer != nil {
+		rabbitmqConsumer.Close()
+		log.Println("✅ RabbitMQ consumidor encerrado.")
 	}
 
 	log.Println("✅ Servidor desligado com sucesso.")

@@ -346,6 +346,20 @@ const FarmMapInner: React.FC<FarmMapProps> = (props) => {
             } else {
                 commitSelection(map, null);
                 onBackgroundClick?.();
+
+                // ZOOM AO CLIQUE VAZIO:
+                // Quando o toque/clique não acerta nenhum talhão (ex.: talhões
+                // pequenos demais), aproximamos o mapa para o ponto tocado para
+                // facilitar a seleção em uma segunda tentativa.
+                try {
+                    const center = [e.lngLat.lng, e.lngLat.lat];
+                    const currentZoom = map.getZoom();
+                    const maxAllowedZoom = 24;
+                    const targetZoom = Math.min(currentZoom + 1.6, maxAllowedZoom);
+                    map.flyTo({ center: center as any, zoom: targetZoom, duration: 600, essential: true });
+                } catch {
+                    /* flyTo pode falhar se o mapa não estiver pronto; ignora silenciosamente */
+                }
             }
         };
 

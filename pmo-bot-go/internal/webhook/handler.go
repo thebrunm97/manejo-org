@@ -81,6 +81,11 @@ type Config struct {
 	//
 	// Se nil, NewHandler substitui por ports.NoopRateLimiter.
 	InboundLimiter ports.RateLimiter
+
+	// WarningLimiter é usado como debouncer para evitar spam de mensagens
+	// de aviso via WhatsApp quando o usuário excede a cota ou a fila enche.
+	// Se nil, avisos silenciosamente falham o limite (ou seja, não envia nada).
+	WarningLimiter ports.RateLimiter
 }
 
 // ---------------------------------------------------------------------------
@@ -101,6 +106,9 @@ func NewHandler(cfg Config) *Handler {
 	}
 	if cfg.InboundLimiter == nil {
 		cfg.InboundLimiter = ports.NoopRateLimiter{}
+	}
+	if cfg.WarningLimiter == nil {
+		cfg.WarningLimiter = ports.NoopRateLimiter{}
 	}
 	h := &Handler{
 		cfg:     cfg,
@@ -224,6 +232,7 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 	age := time.Since(payload.Timestamp).Seconds()
 	if age > h.cfg.MaxMessageAge {
 		log.Printf("⏳ TTL DROP: Mensagem de %.1fs atrás ignorada (Max: %.1fs)", age, h.cfg.MaxMessageAge)
+		h.sendDebouncedWarning(c.Request.Context(), payload.From)
 		c.JSON(http.StatusOK, gin.H{"status": "ignored_old", "age": age})
 		return
 	}
@@ -295,6 +304,7 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 			"status":      "rate_limited",
 			"retry_after": decision.RetryAfter.Seconds(),
 		})
+		h.sendDebouncedWarning(c.Request.Context(), payload.From)
 		return
 	} else {
 		telemetry.RateLimitDecisionsTotal.WithLabelValues("phone", "allowed").Inc()
@@ -328,6 +338,7 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 			if errPool := h.legacyPool.Enqueue(*payload); errPool != nil {
 				if errors.Is(errPool, ErrQueueFull) {
 					log.Printf("⚠️ [WEBHOOK] Fila do Worker Pool cheia! Retornando 429 para a mensagem %s", payload.ID)
+					h.sendDebouncedWarning(c.Request.Context(), payload.From)
 					c.JSON(http.StatusTooManyRequests, gin.H{"status": "queue_full"})
 					return
 				}
@@ -340,6 +351,7 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 		if errPool := h.legacyPool.Enqueue(*payload); errPool != nil {
 			if errors.Is(errPool, ErrQueueFull) {
 				log.Printf("⚠️ [WEBHOOK] Fila do Worker Pool cheia! Retornando 429 para a mensagem %s", payload.ID)
+				h.sendDebouncedWarning(c.Request.Context(), payload.From)
 				c.JSON(http.StatusTooManyRequests, gin.H{"status": "queue_full"})
 				return
 			}
@@ -832,4 +844,26 @@ func (h *Handler) verifyToken(received string) bool {
 		return false
 	}
 	return hmac.Equal([]byte(received), []byte(h.cfg.Token))
+}
+
+// sendDebouncedWarning envia uma mensagem de erro proativa via WhatsApp quando o 
+// produtor sofre um rate limit ou a fila enche. O debounce usa o WarningLimiter 
+// para garantir que o usuário receba no máximo 1 aviso a cada X minutos.
+func (h *Handler) sendDebouncedWarning(ctx context.Context, from string) {
+	if h.cfg.WhatsAppClient == nil {
+		return
+	}
+	decision, err := h.cfg.WarningLimiter.Allow(ctx, from)
+	if err != nil {
+		log.Printf("⚠️ [WarningLimiter] Falha ao checar debounce (error: %v), omitindo aviso para %s", err, from)
+		return
+	}
+	if decision.Allowed {
+		msg := "⚠️ Detectamos um alto volume de requisições ou uma pequena instabilidade momentânea. Por favor, aguarde alguns instantes e reenvie sua última mensagem. Agradecemos a compreensão."
+		if err := h.cfg.WhatsAppClient.SendMessage(from, msg); err != nil {
+			log.Printf("⚠️ [WarningLimiter] Falha ao enviar aviso para %s: %v", from, err)
+		} else {
+			log.Printf("📣 [WarningLimiter] Aviso de instabilidade/cota enviado para %s", from)
+		}
+	}
 }
