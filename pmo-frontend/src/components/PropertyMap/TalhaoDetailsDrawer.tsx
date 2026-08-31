@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { 
     X, Trash, Trash2, Sprout, Layers, FlaskConical, ChevronLeft, 
     Save, CheckCircle2, AlertCircle, LayoutGrid, 
-    Pencil, Droplets, TreePine, Loader2, Map
+    Pencil, Droplets, TreePine, Loader2, Map, Plus
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
@@ -104,7 +104,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                 
                 {/* Main Icons with layered opacities */}
                 <div className="absolute inset-0 flex items-center justify-center">
-                    <TreePine className="text-agro-floresta/10 w-16 h-16 -translate-x-6 translate-y-3" />
+                    <TreePine className="text-slate-900/10 w-16 h-16 -translate-x-6 translate-y-3" />
                     <Sprout className="text-emerald-600/50 w-22 h-22 -translate-y-4 relative z-10" />
                     <Droplets className="text-blue-400/20 w-12 h-12 translate-x-10 translate-y-8" />
                 </div>
@@ -112,7 +112,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
 
             {!talhao?.geometry ? (
                 <>
-                    <h4 className="font-outfit text-xl font-black text-agro-floresta mb-2">Falta demarcar a área</h4>
+                    <h4 className="font-outfit text-xl font-black text-slate-900 mb-2">Falta demarcar a área</h4>
                     <p className="font-sans text-sm text-slate-400 max-w-[260px] leading-relaxed mb-6">
                         O talhão "{talhao?.nome}" ainda não foi desenhado no mapa. Sem a área demarcada, não é possível criar estruturas.
                     </p>
@@ -129,7 +129,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                 </>
             ) : (
                 <>
-                    <h4 className="font-outfit text-xl font-black text-agro-floresta mb-2">Solo pronto para o plantio</h4>
+                    <h4 className="font-outfit text-xl font-black text-slate-900 mb-2">Solo pronto para o plantio</h4>
                     <p className="font-sans text-sm text-slate-400 max-w-[260px] leading-relaxed">
                         Este talhão ainda não possui estruturas definidas. Vamos começar a organizar sua produção?
                     </p>
@@ -259,20 +259,24 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
     if (!talhao) return null;
 
     return (
-        <div className="talhao-details-container font-sans text-agro-floresta">
+        <div className="talhao-details-container font-sans text-slate-900">
             {/* No desktop o painel fica à DIREITA. Tentamos a esquerda para acompanhar
                 o desenho, mas lá o espaço já é do menu lateral: o painel cobria os
                 cards do croqui e os controles de zoom. O lado livre é este — as
                 camadas do mapa é que foram para a esquerda. */}
             <div className={cn("fixed inset-x-0 bottom-0 md:inset-y-0 md:right-8 md:left-auto md:max-w-md z-[2000] pointer-events-none transition-all duration-500 flex items-start md:items-center p-3 pt-[4.75rem] md:p-0", open ? "visible" : "invisible")}>
                 <div className={cn(
-                    "relative bg-white/90 backdrop-blur-2xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] flex flex-col overflow-hidden transition-all duration-500 transform pointer-events-auto",
-                    "md:w-[28rem] md:rounded-[48px] md:max-h-[94vh] md:border md:border-white/40",
+                    // Passo 1 do alinhamento visual: branco sólido em vez de vidro,
+                    // cantos de 26px e sombra baixa e difusa — os mesmos valores do
+                    // painel de camadas e dos cards do croqui. O vidro com 48px de
+                    // raio era a única superfície do app com essa linguagem.
+                    "relative bg-white shadow-[0_30px_70px_-28px_rgba(15,23,42,0.6)] flex flex-col overflow-hidden transition-all duration-500 transform pointer-events-auto",
+                    "md:w-[28rem] md:rounded-[26px] md:max-h-[94vh] md:border md:border-slate-100",
                     // No celular o card começa logo abaixo do botão de camadas (4,75rem
                     // = os 16px do topo, os 44px do botão e um respiro) e vai até
                     // a margem de baixo. Centralizar deixava um vão grande no topo
                     // e, pior, espremia a altura a ponto de o conteúdo rolar.
-                    "relative w-full rounded-[36px]",
+                    "relative w-full rounded-[26px]",
                     // Resumo: altura pelo conteúdo, o mapa continua visível atrás.
                     // Detalhes: usa toda a altura disponível abaixo do botão de
                     // camadas, que é onde a rolagem faz sentido.
@@ -283,23 +287,24 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                     <div className="relative shrink-0">
                         {/* Mobile Handle Indicator */}
                         <div className="md:hidden w-full flex justify-center pt-4 pb-1">
-                            <div className="w-14 h-1.5 bg-agro-floresta/10 rounded-full" />
+                            <div className="w-14 h-1.5 bg-emerald-600/10 rounded-full" />
                         </div>
                         
-                        <div className="flex items-center gap-4 p-6 md:p-8 shrink-0 bg-transparent">
-                            <div className="w-16 h-16 rounded-3xl flex items-center justify-center shrink-0 shadow-[inset_0_2px_4px_rgba(255,255,255,0.4),0_8px_16px_-4px_rgba(16,185,129,0.2)] bg-emerald-500/10 border border-white/60 relative group overflow-hidden" style={{ backgroundColor: `${talhao.fill_color || '#10B981'}15` }}>
-                                <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
-                                {getIcon(talhao.nome, talhao.fill_color)}
+                        <div className="flex items-center gap-3 p-5 md:p-6 shrink-0 bg-transparent">
+                            <div
+                                className="w-[46px] h-[46px] rounded-full flex items-center justify-center shrink-0 shadow-[0_8px_20px_-8px_rgba(5,150,105,0.7)]"
+                                style={{ backgroundColor: talhao.fill_color || '#059669' }}
+                            >
+                                {getIcon(talhao.nome, '#ffffff')}
                             </div>
                             <div className="flex-1 overflow-hidden min-w-0 pt-1">
                                 {isEditingTalhao ? (
                                     <input autoFocus value={talhaoEditData.nome} onChange={e=>setTalhaoEditData({...talhaoEditData, nome: e.target.value})} className="w-full font-outfit text-xl font-black bg-white/50 border-b-2 border-emerald-500 outline-none px-1 py-0.5" />
                                 ) : (
                                     <>
-                                        <h3 className="font-outfit text-2xl font-black text-agro-floresta leading-tight truncate tracking-tight">{talhao.nome || "Talhão"}</h3>
-                                        <p className="font-sans text-xs font-bold text-slate-500/80 uppercase tracking-widest mt-0.5 flex items-center gap-1.5">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/50" />
-                                            {talhao.cultura || "Geral"} • {areaFormatada} ha
+                                        <h3 className="font-outfit text-[19px] font-extrabold text-slate-900 leading-tight truncate tracking-tight">{talhao.nome || "Talhão"}</h3>
+                                        <p className="font-sans text-[13px] font-semibold text-slate-400 mt-0.5 truncate">
+                                            {talhao.cultura || "Sem cultura definida"}
                                         </p>
                                     </>
                                 )}
@@ -311,22 +316,22 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                             onClick={() => {
                                                 if (onEditMap) onEditMap();
                                             }} 
-                                            className="h-10 px-3 flex items-center justify-center gap-2 text-emerald-600 font-bold text-xs uppercase tracking-widest bg-emerald-50 rounded-[18px] hover:bg-emerald-100 transition-all cursor-pointer border border-emerald-200/50"
-                                            title="Editar Área no Mapa"
+                                            className="w-9 h-9 flex items-center justify-center text-emerald-600 bg-emerald-50 rounded-full hover:bg-emerald-100 transition-all cursor-pointer"
+                                            title="Editar área no mapa"
+                                            aria-label="Editar área no mapa"
                                         >
                                             <Map size={16} strokeWidth={2.5} />
-                                            <span>Editar Área</span>
                                         </button>
                                         <button 
                                             onClick={() => setIsEditingTalhao(true)} 
-                                            className="w-10 h-10 flex items-center justify-center text-slate-400 bg-slate-100/50 rounded-[18px] hover:text-emerald-600 transition-all cursor-pointer border border-slate-200/30"
+                                            className="w-9 h-9 flex items-center justify-center text-slate-500 bg-slate-100 rounded-full hover:text-slate-900 hover:bg-slate-200 transition-all cursor-pointer"
                                             title="Editar"
                                         >
                                             <Pencil size={18} />
                                         </button>
                                         <button 
                                             onClick={() => setShowDeleteTalhaoConfirm(true)} 
-                                            className="w-10 h-10 flex items-center justify-center text-red-400 bg-red-50/50 rounded-[18px] hover:text-red-500 transition-all cursor-pointer border border-red-100/30"
+                                            className="w-9 h-9 flex items-center justify-center text-red-500 bg-red-50 rounded-full hover:bg-red-100 transition-all cursor-pointer"
                                             title="Excluir"
                                         >
                                             <Trash size={18} />
@@ -336,7 +341,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                     <button 
                                         onClick={handleSaveTalhaoHeader} 
                                         disabled={saving}
-                                        className="w-10 h-10 flex items-center justify-center text-white bg-agro-floresta rounded-[18px] shadow-lg hover:bg-agro-floresta/90 transition-all cursor-pointer disabled:opacity-50"
+                                        className="w-9 h-9 flex items-center justify-center text-white bg-emerald-600 rounded-full shadow-[0_8px_20px_-8px_rgba(5,150,105,0.8)] hover:bg-emerald-700 transition-all cursor-pointer disabled:opacity-50"
                                         title="Salvar"
                                     >
                                         {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
@@ -344,7 +349,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                 )}
                                 <button 
                                     onClick={onClose} 
-                                    className="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-agro-floresta transition-all cursor-pointer"
+                                    className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all cursor-pointer"
                                     title="Fechar"
                                 >
                                     <X size={26} strokeWidth={2.5} />
@@ -357,23 +362,23 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                         antes de decidir em qual aba entrar. */}
                     <div className="px-6 md:px-8 mb-5 shrink-0">
                         <div className="grid grid-cols-3 gap-2.5">
-                            <div className="bg-slate-50/80 border border-slate-100 rounded-[20px] px-4 py-3.5 flex flex-col gap-0.5">
-                                <span className="font-outfit text-xl font-black text-agro-floresta leading-none tracking-tight">
-                                    {areaFormatada}<span className="text-[11px] font-bold text-slate-400 ml-1">ha</span>
+                            <div className="border border-slate-200 rounded-[18px] px-4 py-3.5 flex flex-col gap-1">
+                                <span className="font-outfit text-[21px] font-extrabold text-slate-900 leading-none tracking-tight">
+                                    {areaFormatada}<span className="text-xs font-bold text-slate-400 ml-1">ha</span>
                                 </span>
-                                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Área</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Área</span>
                             </div>
-                            <div className="bg-slate-50/80 border border-slate-100 rounded-[20px] px-4 py-3.5 flex flex-col gap-0.5">
-                                <span className="font-outfit text-xl font-black text-agro-floresta leading-none tracking-tight">
+                            <div className="border border-slate-200 rounded-[18px] px-4 py-3.5 flex flex-col gap-1">
+                                <span className="font-outfit text-[21px] font-extrabold text-slate-900 leading-none tracking-tight">
                                     {talhao.canteiros?.length ?? 0}
                                 </span>
-                                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Estruturas</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Estruturas</span>
                             </div>
-                            <div className="bg-slate-50/80 border border-slate-100 rounded-[20px] px-4 py-3.5 flex flex-col gap-0.5">
-                                <span className="font-outfit text-xl font-black text-agro-floresta leading-none tracking-tight">
+                            <div className="border border-slate-200 rounded-[18px] px-4 py-3.5 flex flex-col gap-1">
+                                <span className="font-outfit text-[21px] font-extrabold text-slate-900 leading-none tracking-tight">
                                     {talhao.ph_solo ? String(talhao.ph_solo) : '—'}
                                 </span>
-                                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">pH solo</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">pH solo</span>
                             </div>
                         </div>
                     </div>
@@ -383,7 +388,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                         <div className="px-6 pb-6 shrink-0 md:hidden">
                             <button
                                 onClick={() => setVerDetalhes(true)}
-                                className="w-full py-4 rounded-[24px] bg-agro-floresta text-agro-creme font-outfit text-xs font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2.5 active:scale-[0.98] transition-transform"
+                                className="w-full py-4 rounded-[18px] bg-emerald-600 text-white font-outfit text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2.5 active:scale-[0.98] transition-transform"
                             >
                                 <LayoutGrid size={16} strokeWidth={2.5} />
                                 Ver estruturas e solo
@@ -396,7 +401,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                         <div className="px-6 pb-4 shrink-0 md:hidden">
                             <button
                                 onClick={() => setVerDetalhes(false)}
-                                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-slate-600 transition-colors"
+                                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors"
                             >
                                 <ChevronLeft size={14} strokeWidth={3} />
                                 Voltar ao resumo
@@ -406,36 +411,36 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
 
                     {/* Premium Segmented Control Tabs */}
                     <div className={cn("px-6 md:px-8 mb-6 shrink-0", verDetalhes ? "block" : "hidden md:block")}>
-                        <div className="flex bg-slate-100/40 p-1 rounded-[24px] border border-slate-200/50 relative overflow-hidden backdrop-blur-sm">
+                        <div className="flex bg-slate-100 p-1 rounded-full gap-1">
                             <button onClick={() => setTabIndex(0)} className={cn(
-                                "flex-1 py-3.5 text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2.5 rounded-[20px] transition-all relative z-10",
-                                tabIndex === 0 ? "bg-white shadow-[0_8px_24px_-4px_rgba(0,0,0,0.08)] text-agro-floresta" : "text-slate-400 hover:text-slate-500"
+                                "flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 rounded-full transition-all",
+                                tabIndex === 0 ? "bg-white text-slate-900 shadow-[0_6px_18px_-8px_rgba(15,23,42,0.35)]" : "text-slate-400 hover:text-slate-500"
                             )}>
-                                <LayoutGrid size={15} strokeWidth={2.5} /> Estrutura
+                                <LayoutGrid size={14} strokeWidth={2.5} /> Estrutura
                             </button>
                             <button onClick={() => setTabIndex(1)} className={cn(
-                                "flex-1 py-3.5 text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2.5 rounded-[20px] transition-all relative z-10",
-                                tabIndex === 1 ? "bg-white shadow-[0_8px_24px_-4px_rgba(0,0,0,0.08)] text-agro-floresta" : "text-slate-400 hover:text-slate-500"
+                                "flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 rounded-full transition-all",
+                                tabIndex === 1 ? "bg-white text-slate-900 shadow-[0_6px_18px_-8px_rgba(15,23,42,0.35)]" : "text-slate-400 hover:text-slate-500"
                             )}>
-                                <FlaskConical size={15} strokeWidth={2.5} /> Saúde Solo
+                                <FlaskConical size={14} strokeWidth={2.5} /> Saúde Solo
                             </button>
                         </div>
                     </div>
 
-                    <div className={cn("flex-1 overflow-y-auto px-6 md:px-8 pb-8 scrollbar-premium", verDetalhes ? "block" : "hidden md:block")}>
+                    <div className={cn("flex-1 overflow-y-auto px-6 md:px-8 pb-8 scrollbar-hidden", verDetalhes ? "block" : "hidden md:block")}>
                         {tabIndex === 0 && (
                             <div className="space-y-4 animate-in fade-in duration-300">
                                 {talhao.canteiros?.length === 0 ? (
                                     <EmptyStateIllustration />
                                 ) : (
                                     talhao.canteiros?.map((c: any) => (
-                                        <div key={c.id} className="p-5 bg-white border border-slate-200/60 rounded-[32px] flex items-center justify-between group transition-all duration-300 hover:border-emerald-200 hover:shadow-[0_12px_24px_-8px_rgba(16,185,129,0.1)] hover:-translate-y-0.5">
+                                        <div key={c.id} className="p-5 bg-white border border-slate-200/60 rounded-[18px] flex items-center justify-between group transition-all duration-300 hover:border-emerald-200 hover:shadow-[0_12px_24px_-8px_rgba(16,185,129,0.1)] hover:-translate-y-0.5">
                                             <div className="flex items-center gap-5">
-                                                <div className="w-14 h-14 bg-slate-50 rounded-[22px] flex items-center justify-center border border-slate-100 group-hover:bg-emerald-50 group-hover:border-emerald-100/50 transition-colors shadow-sm">
+                                                <div className="w-14 h-14 bg-slate-50 rounded-[14px] flex items-center justify-center border border-slate-100 group-hover:bg-emerald-50 group-hover:border-emerald-100/50 transition-colors shadow-sm">
                                                     {getIcon(c.nome)}
                                                 </div>
                                                 <div>
-                                                    <h4 className="font-outfit text-base font-black text-agro-floresta tracking-tight">{c.nome}</h4>
+                                                    <h4 className="font-outfit text-base font-black text-slate-900 tracking-tight">{c.nome}</h4>
                                                     <div className="flex items-center gap-2 mt-0.5">
                                                         <span className="font-sans text-[10px] text-slate-400 font-bold uppercase tracking-wider">{c.largura_metros}m <span className="text-slate-300">×</span> {c.comprimento_metros}m</span>
                                                         <span className="w-1 h-1 rounded-full bg-slate-200" />
@@ -449,7 +454,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                                         e.stopPropagation();
                                                         handleStartEditCanteiro(c);
                                                     }} 
-                                                    className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-agro-floresta bg-slate-50 hover:bg-white rounded-[14px] shadow-sm transform hover:scale-110 active:scale-95 transition-all border border-transparent hover:border-slate-100"
+                                                    className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-slate-900 bg-slate-50 hover:bg-white rounded-[14px] shadow-sm transform hover:scale-110 active:scale-95 transition-all border border-transparent hover:border-slate-100"
                                                 >
                                                     <Pencil size={16} />
                                                 </button>
@@ -468,17 +473,12 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                 )}
 
                                 {/* Forest-to-DeepSea CTA Button with Glow and Golden Accents */}
-                                <button 
-                                    onClick={()=>setCreateModalOpen(true)} 
-                                    className="w-full h-18 bg-gradient-to-br from-[#1A3C34] to-[#0A2F1F] hover:from-[#234d43] hover:to-[#0f3d2a] text-agro-ouro font-outfit font-black text-sm uppercase tracking-[0.2em] rounded-[32px] shadow-[0_20px_40px_-12px_rgba(10,47,31,0.3)] hover:shadow-[0_24px_48px_-12px_rgba(10,47,31,0.4)] flex items-center justify-center gap-3 active:scale-[0.98] transition-all group mt-6 relative overflow-hidden ring-1 ring-white/10"
+                                <button
+                                    onClick={()=>setCreateModalOpen(true)}
+                                    className="w-full py-4 mt-6 bg-emerald-600 hover:bg-emerald-700 text-white font-outfit font-extrabold text-xs uppercase tracking-widest rounded-[18px] shadow-[0_12px_28px_-12px_rgba(5,150,105,0.9)] flex items-center justify-center gap-2.5 active:scale-[0.98] transition-all"
                                 >
-                                    {/* Subtle Glow Effect */}
-                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                                    
-                                    <div className="w-9 h-9 rounded-full bg-agro-ouro/10 flex items-center justify-center group-hover:scale-110 transition-transform ring-1 ring-agro-ouro/20">
-                                        <Sprout size={18} className="text-agro-ouro" />
-                                    </div>
-                                    <span className="relative z-10 font-outfit">+ Nova Estrutura</span>
+                                    <Plus size={16} strokeWidth={3} />
+                                    Nova estrutura
                                 </button>
                             </div>
                         )}
@@ -486,18 +486,18 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                         {tabIndex === 1 && (
                             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
                                 {/* Physical Composition Card - Premium Glass */}
-                                <div className="bg-white border border-slate-200/60 rounded-[40px] p-8 shadow-soft relative overflow-hidden group">
+                                <div className="bg-white border border-slate-200/60 rounded-[26px] p-8 shadow-soft relative overflow-hidden group">
                                     <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.05] transition-opacity">
                                         <Layers size={80} strokeWidth={1} />
                                     </div>
                                     
                                     <div className="flex items-center gap-4 mb-8">
-                                        <div className="w-12 h-12 bg-emerald-500/10 rounded-[20px] flex items-center justify-center border border-emerald-500/20">
+                                        <div className="w-12 h-12 bg-emerald-500/10 rounded-[18px] flex items-center justify-center border border-emerald-500/20">
                                             <Layers size={22} className="text-emerald-700" />
                                         </div>
                                         <div>
-                                            <p className="font-sans text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-0.5">Composição Física</p>
-                                            <h4 className="font-outfit text-xl font-black text-agro-floresta">{classificacao || 'Analisando...'}</h4>
+                                            <p className="font-sans text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Composição Física</p>
+                                            <h4 className="font-outfit text-xl font-black text-slate-900">{classificacao || 'Analisando...'}</h4>
                                         </div>
                                     </div>
                                     
@@ -517,7 +517,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                             <div key={item.label} className="text-center bg-slate-50/50 py-3 rounded-2xl border border-slate-100/50">
                                                 <div className={cn("w-1.5 h-1.5 rounded-full mx-auto mb-1.5 shadow-sm", item.color)} />
                                                 <p className="font-sans text-[9px] font-black text-slate-400 uppercase tracking-widest">{item.label}</p>
-                                                <p className="font-outfit text-sm font-black text-agro-floresta">{item.val}%</p>
+                                                <p className="font-outfit text-sm font-black text-slate-900">{item.val}%</p>
                                             </div>
                                         ))}
                                     </div>
@@ -526,12 +526,12 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                 {/* CHEMICAL METRICS - BENTO GRID REFACTORED */}
                                 <div className="grid grid-cols-2 gap-4 pb-2">
                                     {[
-                                        { l: 'pH Solo', v: formData.ph_solo, u: 'CaCl2', i: <FlaskConical size={16} />, c: 'emerald', s: Number(formData.ph_solo) >= 6 && Number(formData.ph_solo) <= 7 ? 'Ideal' : 'Refinar' },
+                                        { l: 'pH Solo', v: formData.ph_solo, u: 'CaCl2', i: <FlaskConical size={16} />, c: 'emerald', s: Number(formData.ph_solo) >= 6 && Number(formData.ph_solo) <= 7 ? 'Ideal' : 'Corrigir' },
                                         { l: 'V % Sat.', v: formData.v_percent, u: '%', i: <Droplets size={16} />, c: 'sky', s: Number(formData.v_percent) >= 60 ? 'Ideal' : 'Baixo' },
                                         { l: 'Mat. Org.', v: formData.materia_organica, u: 'g/dm³', i: <Layers size={16} />, c: 'amber', s: Number(formData.materia_organica) >= 2.5 ? 'Ideal' : 'Baixo' },
                                         { l: 'Fósforo', v: formData.fosforo, u: 'mg', i: <Sprout size={16} />, c: 'emerald', s: Number(formData.fosforo) >= 20 ? 'Ideal' : 'Baixo' }
                                     ].map((m, i) => (
-                                        <div key={i} className="group relative bg-white border border-slate-200/60 p-6 rounded-[36px] transition-all duration-300 hover:shadow-[0_20px_40px_-16px_rgba(0,0,0,0.08)] hover:-translate-y-1 overflow-hidden">
+                                        <div key={i} className="group relative bg-white border border-slate-200/60 p-6 rounded-[26px] transition-all duration-300 hover:shadow-[0_20px_40px_-16px_rgba(0,0,0,0.08)] hover:-translate-y-1 overflow-hidden">
                                             <div className="absolute -top-4 -right-4 w-16 h-16 bg-slate-50 rounded-full group-hover:scale-150 transition-transform duration-500 opacity-20" />
                                             
                                             <div className="flex items-center justify-between mb-5 relative z-10">
@@ -542,13 +542,13 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                                     {m.i}
                                                 </div>
                                                 <span className={cn(
-                                                    "text-[9px] font-black uppercase tracking-[0.15em] px-2.5 py-1 rounded-full",
+                                                    "text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full",
                                                     m.s === 'Ideal' ? "bg-emerald-500/10 text-emerald-600" : "bg-amber-500/10 text-amber-600"
                                                 )}>{m.s}</span>
                                             </div>
                                             
                                             <div className="relative z-10">
-                                                <h5 className="font-outfit text-3xl font-black text-agro-floresta tracking-tight">
+                                                <h5 className="font-outfit text-[28px] font-extrabold text-slate-900 tracking-tight">
                                                     {m.v || '--'}
                                                 </h5>
                                                 <div className="flex items-center gap-1.5 mt-1">
@@ -560,7 +560,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                     ))}
                                 </div>
 
-                                <button onClick={()=>setIsEditing(true)} className="w-full py-4 bg-agro-floresta/5 hover:bg-agro-floresta/10 text-agro-floresta font-outfit font-black text-[11px] uppercase tracking-[0.25em] rounded-[24px] transition-all border border-agro-floresta/10 flex items-center justify-center gap-2 group">
+                                <button onClick={()=>setIsEditing(true)} className="w-full py-4 bg-slate-50 hover:bg-slate-100 text-slate-900 font-outfit font-black text-[11px] uppercase tracking-widest rounded-[18px] transition-all border border-slate-200 flex items-center justify-center gap-2 group">
                                     <Pencil size={14} className="group-hover:rotate-12 transition-transform" />
                                     Editar Análise Completa
                                 </button>
@@ -572,7 +572,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
 
             {isEditing && (
                 <div className="fixed inset-0 z-[3000] flex md:items-center items-end justify-center p-0 md:p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
-                    <div className="bg-white w-full max-w-lg md:rounded-[40px] rounded-t-[40px] p-6 md:p-8 shadow-2xl overflow-y-auto max-h-[90dvh] md:max-h-[90vh] [&::-webkit-scrollbar]:hidden animate-in slide-in-from-bottom-10 duration-500">
+                    <div className="bg-white w-full max-w-lg md:rounded-[26px] rounded-t-[40px] p-6 md:p-8 shadow-2xl overflow-y-auto max-h-[90dvh] md:max-h-[90vh] [&::-webkit-scrollbar]:hidden animate-in slide-in-from-bottom-10 duration-500">
                         {/* Mobile Handle */}
                         <div className="md:hidden w-full flex justify-center pb-6">
                             <div className="w-12 h-1.5 bg-slate-200 rounded-full" />
@@ -606,7 +606,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
 
             {editingCanteiroId && (
                 <div className="fixed inset-0 z-[3000] flex md:items-center items-end justify-center p-0 md:p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
-                    <div className="bg-white w-full max-w-md md:rounded-[40px] rounded-t-[40px] p-6 md:p-8 shadow-2xl animate-in slide-in-from-bottom-10 duration-500">
+                    <div className="bg-white w-full max-w-md md:rounded-[26px] rounded-t-[40px] p-6 md:p-8 shadow-2xl animate-in slide-in-from-bottom-10 duration-500">
                         {/* Mobile Handle */}
                         <div className="md:hidden w-full flex justify-center pb-6">
                             <div className="w-12 h-1.5 bg-slate-200 rounded-full" />
@@ -650,12 +650,12 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
 
             {showDeleteTalhaoConfirm && (
                 <div className="fixed inset-0 z-[3000] flex md:items-center items-end justify-center p-0 md:p-4 bg-slate-900/60 backdrop-blur-md animate-in zoom-in duration-300">
-                    <div className="bg-white w-full max-w-sm md:rounded-[40px] rounded-t-[40px] p-6 md:p-8 shadow-2xl text-center animate-in slide-in-from-bottom-10 duration-500">
+                    <div className="bg-white w-full max-w-sm md:rounded-[26px] rounded-t-[40px] p-6 md:p-8 shadow-2xl text-center animate-in slide-in-from-bottom-10 duration-500">
                         {/* Mobile Handle */}
                         <div className="md:hidden w-full flex justify-center pb-6">
                             <div className="w-12 h-1.5 bg-slate-100 rounded-full" />
                         </div>
-                        <div className="w-20 h-20 bg-red-50 rounded-[30px] flex items-center justify-center mx-auto mb-6">
+                        <div className="w-20 h-20 bg-red-50 rounded-[18px] flex items-center justify-center mx-auto mb-6">
                             <AlertCircle size={40} className="text-red-500 underline-offset-4" />
                         </div>
                         <h3 className="text-xl font-black text-slate-900 mb-2">Excluir Talhão?</h3>
@@ -678,7 +678,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
 
             {createModalOpen && (
                 <div className="fixed inset-0 z-[3000] flex md:items-center items-end justify-center p-0 md:p-4 bg-slate-900/60 backdrop-blur-md">
-                    <div className="bg-white w-full max-w-md md:rounded-[40px] rounded-t-[40px] p-6 md:p-8 shadow-2xl animate-in slide-in-from-bottom-10 duration-500">
+                    <div className="bg-white w-full max-w-md md:rounded-[26px] rounded-t-[40px] p-6 md:p-8 shadow-2xl animate-in slide-in-from-bottom-10 duration-500">
                         {/* Mobile Handle */}
                         <div className="md:hidden w-full flex justify-center pb-6">
                             <div className="w-12 h-1.5 bg-slate-200 rounded-full" />
