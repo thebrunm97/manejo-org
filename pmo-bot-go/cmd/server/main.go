@@ -24,10 +24,12 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/adapter/evolution"
 	"github.com/thebrunm97/pmo-bot-go/internal/adapter/rabbitmq"
 	"github.com/thebrunm97/pmo-bot-go/internal/adapter/redisstore"
+	"github.com/thebrunm97/pmo-bot-go/internal/api"
 	"github.com/thebrunm97/pmo-bot-go/internal/config"
 	"github.com/thebrunm97/pmo-bot-go/internal/domain"
 	"github.com/thebrunm97/pmo-bot-go/internal/gateway"
 	"github.com/thebrunm97/pmo-bot-go/internal/gemini"
+	"github.com/thebrunm97/pmo-bot-go/internal/geo"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
 	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
@@ -366,6 +368,22 @@ func main() {
 	knowledgeHandler.RegisterRoutes(adminGroup)
 	log.Println("✅ [KnowledgeOps] Rotas /api/v1/admin/knowledge/* registradas (autenticadas)")
 
+	// --- Earth Engine Auth & API ---
+	var mapHandler *api.MapHandler
+	geeCredPath := os.Getenv("GEE_CREDENTIALS_PATH")
+	geeAuth, err := geo.NewGEEAuth(context.Background(), geeCredPath)
+	if err != nil {
+		log.Printf("⚠️ [GEE] Falha ao inicializar autenticação Earth Engine: %v", err)
+	} else {
+		log.Printf("✅ [GEE] Autenticado com sucesso no projeto: %s", geeAuth.ProjectID)
+		geeClient := geo.NewGEEClient(geeAuth)
+		mapHandler = api.NewMapHandler(geeClient)
+
+		// Rota para diagnóstico do GEE
+		adminGroup.GET("/maps/diagnostics", mapHandler.DiagnosticsHandler)
+		log.Println("✅ [GEE] Rota /api/v1/admin/maps/diagnostics registrada")
+	}
+
 	// --- Gateway REST para o pmo-frontend (DT-59, fatia 3) ---
 	//
 	// Encaminha um allowlist fechado de RPCs (talhão/caderno/propriedade/PMO)
@@ -378,7 +396,14 @@ func main() {
 	producerGroup := r.Group("/api/v1")
 	producerGroup.Use(middleware.RequireAuth(jwtVerifier))
 	gatewayHandler.RegisterRoutes(producerGroup)
-	log.Println("✅ [Gateway] Rota /api/v1/rpc/:name registrada (autenticada, allowlist de 10 RPCs)")
+
+	// Rota para tiles do GEE (Fase 3 - acessível pelo produtor no app)
+	if mapHandler != nil {
+		producerGroup.GET("/maps/tiles", mapHandler.GenerateTiles)
+		producerGroup.POST("/maps/zonal", mapHandler.ZonalStats)
+	}
+
+	log.Println("✅ [Gateway] Rotas /api/v1/* registradas (autenticadas)")
 
 	// --- Initialize TTS Provider ---
 	// Único ponto do sistema que conhece um fornecedor concreto de TTS. Todo o
@@ -532,6 +557,7 @@ func main() {
 	var warningLimiter ports.RateLimiter = ports.NoopRateLimiter{}
 	if cfg.RedisURL == "" {
 		log.Println("⚠️  [RateLimit] REDIS_URL não definida — rate limiting de entrada DESLIGADO")
+		log.Println("⚠️  [RateLimit] Sem Redis, as rotas de satélite ficam SEM teto de cota do Earth Engine")
 	} else if redisClient, err := redisstore.New(context.Background(), cfg.RedisURL); err != nil {
 		log.Printf("⚠️  [RateLimit] Redis indisponível (%v) — rate limiting de entrada DESLIGADO", err)
 	} else {
@@ -541,6 +567,16 @@ func main() {
 		inboundLimiter = redisstore.NewRateLimiter(redisClient, "ratelimit:phone", limitPerMin, time.Minute)
 		warningLimiter = redisstore.NewRateLimiter(redisClient, "ratelimit:warning", 1, 5*time.Minute)
 		log.Printf("✅ [RateLimit] Redis conectado — %d mensagens/min por telefone", limitPerMin)
+
+		// Cota do Earth Engine: teto baixo de propósito. Uma chamada zonal
+		// custa uma consulta POR TALHÃO, então o limite é por usuário e conta
+		// chamadas, não talhões — o teto de talhões por chamada fica no
+		// próprio handler.
+		if mapHandler != nil {
+			geeLimitPerMin := parseEnvInt("GEE_RATE_LIMIT_PER_MINUTE", 6)
+			mapHandler.SetRateLimiter(redisstore.NewRateLimiter(redisClient, "ratelimit:gee", geeLimitPerMin, time.Minute))
+			log.Printf("✅ [RateLimit] Earth Engine protegido — %d consultas/min por usuário", geeLimitPerMin)
+		}
 	}
 
 	// --- Register webhook routes ---
