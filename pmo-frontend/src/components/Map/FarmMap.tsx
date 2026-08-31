@@ -7,7 +7,7 @@ import React, {
 } from 'react';
 import { Sprout } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { getSatelliteTiles, SatelliteTileResponse } from '../../services/mapService';
+import { getSatelliteTiles, SatelliteTileResponse, getZonalNDVI, ZonalTalhaoResult } from '../../services/mapService';
 import Map, {
     Source,
     Layer,
@@ -272,6 +272,10 @@ const FarmMapInner: React.FC<FarmMapProps> = (props) => {
     // GEE Layers State
     const [layerType, setLayerType] = useState<'base' | 'sentinel_rgb' | 'sentinel_ndvi'>('base');
     const [layersPanelOpen, setLayersPanelOpen] = useState(false);
+    // NDVI medio por talhao, calculado sob demanda quando a camada NDVI e escolhida.
+    const [zonalNDVI, setZonalNDVI] = useState<Record<string, ZonalTalhaoResult>>({});
+    const [zonalLoading, setZonalLoading] = useState(false);
+    const [zonalError, setZonalError] = useState<string | null>(null);
     const [period, setPeriod] = useState<string>(() => {
         const d = new Date();
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -363,6 +367,67 @@ const FarmMapInner: React.FC<FarmMapProps> = (props) => {
     const pointerDownRef = useRef<{ x: number; y: number } | null>(null);
     const lastTouchTsRef = useRef(0);
 
+    // Busca o NDVI medio por talhao apenas quando a camada NDVI esta ativa.
+    // Cada talhao e uma consulta ao Earth Engine, entao isso nunca roda no
+    // carregamento do mapa nem para as outras camadas.
+    // Entradas do calculo zonal, memoizadas: o pai recria o array de talhoes a
+    // cada render, e sem isso o efeito refazia a chamada varias vezes seguidas
+    // — cada uma custando uma consulta ao Earth Engine POR TALHAO.
+    const entradasZonais = useMemo(() => {
+        return talhoes
+            .map((t) => {
+                if (!t.geometry) return null;
+                try {
+                    const geometry = typeof t.geometry === 'string' ? JSON.parse(t.geometry) : t.geometry;
+                    if (!geometry?.coordinates?.length) return null;
+                    return { id: String(t.id), geometry };
+                } catch {
+                    return null;
+                }
+            })
+            .filter((e): e is { id: string; geometry: any } => e !== null);
+    }, [talhoes]);
+
+    // Assinatura do conjunto: muda quando entra, sai ou se redesenha um talhao,
+    // e nao quando o pai simplesmente rerenderiza.
+    const assinaturaZonal = useMemo(
+        () => entradasZonais.map((e) => `${e.id}:${JSON.stringify(e.geometry.coordinates)}`).join('|'),
+        [entradasZonais],
+    );
+
+    useEffect(() => {
+        if (layerType !== 'sentinel_ndvi') {
+            setZonalError(null);
+            return;
+        }
+
+        const entradas = entradasZonais;
+
+        if (entradas.length === 0) return;
+
+        let cancelado = false;
+        setZonalLoading(true);
+        setZonalError(null);
+
+        getZonalNDVI(entradas, period)
+            .then((resposta) => {
+                if (cancelado) return;
+                const porId: Record<string, ZonalTalhaoResult> = {};
+                resposta.results.forEach((r) => { porId[r.id] = r; });
+                setZonalNDVI(porId);
+            })
+            .catch((err) => {
+                if (cancelado) return;
+                setZonalError(err instanceof Error ? err.message : 'Falha ao calcular NDVI por talhao.');
+            })
+            .finally(() => {
+                if (!cancelado) setZonalLoading(false);
+            });
+
+        return () => { cancelado = true; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [layerType, period, assinaturaZonal]);
+
     const geojsonData = useMemo<GeoJSONData>(() => {
         const features = talhoes
             .map((t) => {
@@ -383,6 +448,9 @@ const FarmMapInner: React.FC<FarmMapProps> = (props) => {
                             fillColor: t.fillColor || undefined,
                             borderColor: t.borderColor || undefined,
                             color: t.cor || getCropColor(t.cultura),
+                            // -2 e um sentinela fora da faixa real do NDVI (-1 a 1):
+                            // marca "sem valor" sem se confundir com solo exposto.
+                            ndvi: zonalNDVI[String(t.id)]?.ndvi ?? -2,
                         },
                         geometry,
                     };
@@ -392,12 +460,34 @@ const FarmMapInner: React.FC<FarmMapProps> = (props) => {
             })
             .filter((f): f is any => f !== null);
         return { type: 'FeatureCollection', features };
-    }, [talhoes]);
+    }, [talhoes, isEditingMode, selectedTalhaoId, zonalNDVI]);
+
+    // Na camada NDVI o talhao e pintado pelo proprio vigor medido, e nao pela
+    // cor da cultura. Quem nao tem medida (nuvem, erro, talhao novo) fica cinza
+    // em vez de assumir a ponta baixa da escala.
+    const ndviFillColor = useMemo(
+        () =>
+            ([
+                'case',
+                ['<', ['get', 'ndvi'], -1], '#94a3b8',
+                [
+                    'interpolate', ['linear'], ['get', 'ndvi'],
+                    0.0, '#b45309',
+                    0.3, '#f59e0b',
+                    0.5, '#facc15',
+                    0.7, '#4ade80',
+                    0.9, '#15803d',
+                ],
+            ]) as any,
+        [],
+    );
 
     const fillPaint = useMemo(
         () =>
             ({
-                'fill-color': ['coalesce', ['get', 'fillColor'], ['get', 'color'], '#3bb444'],
+                'fill-color': layerType === 'sentinel_ndvi'
+                    ? ndviFillColor
+                    : ['coalesce', ['get', 'fillColor'], ['get', 'color'], '#3bb444'],
                 'fill-opacity': [
                     'case',
                     ['boolean', ['feature-state', 'selected'], false], FILL_OPACITY.selected,
@@ -405,7 +495,7 @@ const FarmMapInner: React.FC<FarmMapProps> = (props) => {
                     FILL_OPACITY.base,
                 ],
             }) as any,
-        [],
+        [layerType, ndviFillColor],
     );
     const linePaint = useMemo(
         () =>
@@ -819,6 +909,9 @@ const FarmMapInner: React.FC<FarmMapProps> = (props) => {
                             tileLoading={tileLoading}
                             tileError={tileError}
                             tileData={tileData}
+                            zonalLoading={zonalLoading}
+                            zonalError={zonalError}
+                            zonalSemImagem={Object.values(zonalNDVI).filter((r) => r.status === 'sem_imagem').length}
                         />
                     </div>
                 </div>

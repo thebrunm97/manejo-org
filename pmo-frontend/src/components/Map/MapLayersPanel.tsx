@@ -23,6 +23,11 @@ interface MapLayersPanelProps {
     tileLoading: boolean;
     tileError: string | null;
     tileData: SatelliteTileResponse | null;
+    /** Estado do calculo de NDVI medio por talhao (sob demanda). */
+    zonalLoading?: boolean;
+    zonalError?: string | null;
+    /** Quantos talhoes ficaram sem medida por nuvem/ausencia de cena. */
+    zonalSemImagem?: number;
 }
 
 const LAYER_OPTIONS: { value: MapLayerType; label: string; preview: React.ReactNode }[] = [
@@ -64,6 +69,7 @@ const LAYER_OPTIONS: { value: MapLayerType; label: string; preview: React.ReactN
 const MapLayersPanel: React.FC<MapLayersPanelProps> = ({
     open, onToggle, layerType, onLayerTypeChange, period, onPeriodChange,
     opacity, onOpacityChange, tileLoading, tileError, tileData,
+    zonalLoading = false, zonalError = null, zonalSemImagem = 0,
 }) => {
     const isSentinel = layerType !== 'base';
     const isMock = import.meta.env.VITE_USE_GEE_MOCK === 'true';
@@ -188,6 +194,31 @@ const MapLayersPanel: React.FC<MapLayersPanelProps> = ({
                                     )}
                                 </div>
                             ) : null}
+
+                            {layerType === 'sentinel_ndvi' && (
+                                <div className="mt-3">
+                                    {zonalLoading ? (
+                                        <div className="flex items-center gap-2.5 bg-slate-50 rounded-2xl px-4 py-3 text-slate-600">
+                                            <Loader2 className="animate-spin shrink-0" size={16} />
+                                            <span className="text-[12px] font-bold">Medindo NDVI por talhão…</span>
+                                        </div>
+                                    ) : zonalError ? (
+                                        <div className="flex items-start gap-2.5 bg-amber-50 rounded-2xl px-4 py-3 text-amber-700">
+                                            <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+                                            <span className="text-[12px] font-bold leading-snug">{zonalError}</span>
+                                        </div>
+                                    ) : zonalSemImagem > 0 ? (
+                                        <div className="flex items-start gap-2.5 bg-slate-50 rounded-2xl px-4 py-3 text-slate-600">
+                                            <Info size={16} className="shrink-0 mt-0.5 text-slate-400" />
+                                            <span className="text-[12px] font-bold leading-snug">
+                                                {zonalSemImagem === 1
+                                                    ? '1 talhão ficou em cinza: sem imagem sem nuvem no período.'
+                                                    : `${zonalSemImagem} talhões ficaram em cinza: sem imagem sem nuvem no período.`}
+                                            </span>
+                                        </div>
+                                    ) : null}
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
