@@ -1,6 +1,6 @@
 // src/pages/MapaPropriedade.tsx
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AlertTriangle, Loader2, LayoutGrid, Map as MapIcon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import PropertyMap from '../components/PropertyMap/PropertyMap';
@@ -16,7 +16,14 @@ const MapaPropriedade: React.FC = () => {
     const [talhoes, setTalhoes] = useState<Talhao[]>([]);
     const [selectedTalhao, setSelectedTalhao] = useState<Talhao | null>(null);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [isEditingPolygon, setIsEditingPolygon] = useState(false);
     const [loading, setLoading] = useState(true);
+    // O spinner de tela cheia é só da PRIMEIRA carga. Antes, toda recarga da
+    // lista (depois de editar um talhão, criar um canteiro, excluir algo) ligava
+    // o loading e o retorno antecipado lá embaixo trocava o mapa inteiro pela
+    // tela de carregamento — o mapa desmontava, perdia posição e zoom, e a
+    // edição parecia um recarregamento de página.
+    const primeiraCarga = useRef(true);
     const isMobile = useIsMobile();
 
     const loadTalhoes = useCallback(async () => {
@@ -25,12 +32,13 @@ const MapaPropriedade: React.FC = () => {
             return;
         }
         try {
-            setLoading(true);
+            if (primeiraCarga.current) setLoading(true);
             const data = await locationService.getTalhoes(currentPropriedade.id);
             setTalhoes((data || []) as unknown as Talhao[]);
         } catch (error) {
             console.error("Erro ao buscar talhões", error);
         } finally {
+            primeiraCarga.current = false;
             setLoading(false);
         }
     }, [currentPropriedade?.id]);
@@ -62,6 +70,12 @@ const MapaPropriedade: React.FC = () => {
         setSelectedTalhao(null);
     };
 
+    const handleHideDrawer = () => {
+        setIsDrawerOpen(false);
+        setIsEditingPolygon(true);
+        setViewMode('mapa');
+    };
+
     const handleDeleteTalhao = async (id: number | string) => {
         try {
             await locationService.deleteTalhao(id);
@@ -74,11 +88,19 @@ const MapaPropriedade: React.FC = () => {
     };
 
     const handleUpdateTalhao = async (id: string | number, data: any) => {
+        // Aplica na tela antes de ir ao servidor: quem editou já sabe o que
+        // digitou, e esperar a ida e volta da rede para ver o próprio texto é o
+        // que fazia a edição parecer travada.
+        const anterior = talhoes;
+        setTalhoes((atual) => atual.map((t) => (String(t.id) === String(id) ? { ...t, ...data } : t)));
+        setSelectedTalhao((atual) => (atual && String(atual.id) === String(id) ? { ...atual, ...data } : atual));
+
         try {
             await locationService.updateTalhao(Number(id), data);
             await loadTalhoes();
         } catch (error) {
             console.error("Erro ao atualizar talhão:", error);
+            setTalhoes(anterior); // desfaz o otimismo se o servidor recusou
             throw error;
         }
     };
@@ -187,15 +209,22 @@ const MapaPropriedade: React.FC = () => {
                     loadTalhoes={loadTalhoes}
                     loading={loading}
                     isDrawerOpen={isDrawerOpen}
+                    isEditingPolygon={isEditingPolygon}
+                    setIsEditingPolygon={setIsEditingPolygon}
                     pmoId={profile?.pmo_ativo_id}
+                    centerCoords={currentPropriedade?.latitude && currentPropriedade?.longitude ? {
+                        latitude: Number(currentPropriedade.latitude),
+                        longitude: Number(currentPropriedade.longitude)
+                    } : null}
                 />
             </div>
 
             {/* DRAWER FLUTUANTE SOLTO (Renderizado apenas se houver talhão para evitar pílula fantasma) */}
-            {viewMode === 'mapa' && selectedTalhao && (
+            {selectedTalhao && (
                 <TalhaoDetailsDrawer
                     open={isDrawerOpen}
                     onClose={handleCloseDrawer}
+                    onEditMap={handleHideDrawer}
                     talhao={selectedTalhao}
                     onDeleteCanteiro={handleDeleteCanteiro}
                     onUpdateCanteiro={handleUpdateCanteiro}
