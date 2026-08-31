@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-    X, Trash, Trash2, Sprout, Layers, FlaskConical, 
+    X, Trash, Trash2, Sprout, Layers, FlaskConical, ChevronLeft, 
     Save, CheckCircle2, AlertCircle, LayoutGrid, 
     Pencil, Droplets, TreePine, Loader2, Map
 } from 'lucide-react';
@@ -50,6 +50,11 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
     open, onClose, talhao, onDeleteCanteiro, onUpdateCanteiro, onCreateCanteiros, onDeleteTalhao, onUpdateTalhao, onEditMap
 }) => {
     const [tabIndex, setTabIndex] = useState(0);
+    // No celular o card mostra resumo e ação; abas e conteúdo abrem sob demanda.
+    // Enquanto tudo vivia dentro do card, sempre havia um talhão que estourava a
+    // altura da tela e o painel voltava a rolar. No desktop não existe: lá o
+    // conteúdo é sempre inline.
+    const [verDetalhes, setVerDetalhes] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [saving, setSaving] = useState(false);
     const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -70,6 +75,10 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
     });
 
     useEffect(() => {
+        setVerDetalhes(false);
+    }, [talhao?.id]);
+
+    useEffect(() => {
         if (talhao) {
             setFormData({
                 ph_solo: String(talhao.ph_solo ?? ''), v_percent: String(talhao.v_percent ?? ''), materia_organica: String(talhao.materia_organica ?? ''),
@@ -86,8 +95,8 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
 
     // --- Specialized Empty State Illustration ---
     const EmptyStateIllustration = () => (
-        <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
-            <div className="relative w-32 h-32 mb-8">
+        <div className="flex flex-col items-center justify-center py-5 md:py-10 px-4 text-center">
+            <div className="relative w-20 h-20 md:w-32 md:h-32 mb-4 md:mb-8">
                 {/* Background minimalist elements */}
                 <div className="absolute inset-0 bg-emerald-500/5 rounded-full scale-150 blur-3xl animate-pulse" />
                 <div className="absolute top-0 left-0 w-full h-full border border-emerald-500/10 rounded-[35%] rotate-12 scale-110" />
@@ -251,14 +260,24 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
 
     return (
         <div className="talhao-details-container font-sans text-agro-floresta">
-            {/* No desktop o painel fica à ESQUERDA: o canto direito passou a ser do
-                rail de camadas do mapa, e os dois disputavam o mesmo espaço. */}
-            <div className={cn("fixed inset-x-0 bottom-0 md:inset-y-0 md:left-8 md:right-auto md:max-w-md z-[2000] pointer-events-none transition-all duration-500 flex md:items-center", open ? "visible" : "invisible")}>
+            {/* No desktop o painel fica à DIREITA. Tentamos a esquerda para acompanhar
+                o desenho, mas lá o espaço já é do menu lateral: o painel cobria os
+                cards do croqui e os controles de zoom. O lado livre é este — as
+                camadas do mapa é que foram para a esquerda. */}
+            <div className={cn("fixed inset-x-0 bottom-0 md:inset-y-0 md:right-8 md:left-auto md:max-w-md z-[2000] pointer-events-none transition-all duration-500 flex items-start md:items-center p-3 pt-[4.75rem] md:p-0", open ? "visible" : "invisible")}>
                 <div className={cn(
                     "relative bg-white/90 backdrop-blur-2xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] flex flex-col overflow-hidden transition-all duration-500 transform pointer-events-auto",
                     "md:w-[28rem] md:rounded-[48px] md:max-h-[94vh] md:border md:border-white/40",
-                    "top-auto left-0 right-0 bottom-0 w-full h-[88vh] rounded-t-[48px] pb-safe",
-                    open ? "translate-y-0 md:translate-x-0 opacity-100" : "translate-y-full md:-translate-x-12 opacity-0"
+                    // No celular o card começa logo abaixo do botão de camadas (4,75rem
+                    // = os 16px do topo, os 44px do botão e um respiro) e vai até
+                    // a margem de baixo. Centralizar deixava um vão grande no topo
+                    // e, pior, espremia a altura a ponto de o conteúdo rolar.
+                    "relative w-full rounded-[36px]",
+                    // Resumo: altura pelo conteúdo, o mapa continua visível atrás.
+                    // Detalhes: usa toda a altura disponível abaixo do botão de
+                    // camadas, que é onde a rolagem faz sentido.
+                    verDetalhes ? "h-[calc(100vh-5.75rem)]" : "h-auto max-h-[calc(100vh-5.75rem)]",
+                    open ? "translate-y-0 md:translate-x-0 opacity-100" : "translate-y-8 md:translate-x-12 opacity-0"
                 )}>
                     {/* Glass Header */}
                     <div className="relative shrink-0">
@@ -359,8 +378,34 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                         </div>
                     </div>
 
+                    {/* Ação principal do celular: abre abas e conteúdo. */}
+                    {!verDetalhes && (
+                        <div className="px-6 pb-6 shrink-0 md:hidden">
+                            <button
+                                onClick={() => setVerDetalhes(true)}
+                                className="w-full py-4 rounded-[24px] bg-agro-floresta text-agro-creme font-outfit text-xs font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2.5 active:scale-[0.98] transition-transform"
+                            >
+                                <LayoutGrid size={16} strokeWidth={2.5} />
+                                Ver estruturas e solo
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Voltar ao resumo, no celular. */}
+                    {verDetalhes && (
+                        <div className="px-6 pb-4 shrink-0 md:hidden">
+                            <button
+                                onClick={() => setVerDetalhes(false)}
+                                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-slate-600 transition-colors"
+                            >
+                                <ChevronLeft size={14} strokeWidth={3} />
+                                Voltar ao resumo
+                            </button>
+                        </div>
+                    )}
+
                     {/* Premium Segmented Control Tabs */}
-                    <div className="px-6 md:px-8 mb-6 shrink-0">
+                    <div className={cn("px-6 md:px-8 mb-6 shrink-0", verDetalhes ? "block" : "hidden md:block")}>
                         <div className="flex bg-slate-100/40 p-1 rounded-[24px] border border-slate-200/50 relative overflow-hidden backdrop-blur-sm">
                             <button onClick={() => setTabIndex(0)} className={cn(
                                 "flex-1 py-3.5 text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2.5 rounded-[20px] transition-all relative z-10",
@@ -377,7 +422,7 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto px-6 md:px-8 pb-8 scrollbar-premium">
+                    <div className={cn("flex-1 overflow-y-auto px-6 md:px-8 pb-8 scrollbar-premium", verDetalhes ? "block" : "hidden md:block")}>
                         {tabIndex === 0 && (
                             <div className="space-y-4 animate-in fade-in duration-300">
                                 {talhao.canteiros?.length === 0 ? (
