@@ -90,7 +90,7 @@ const MapLayersPanel: React.FC<MapLayersPanelProps> = ({
             </button>
 
             {open && (
-                <div className="absolute right-[62px] top-0 w-[300px] max-w-[calc(100vw-5rem)] bg-white rounded-3xl p-5 shadow-[0_30px_60px_-24px_rgba(15,23,42,0.55)] pointer-events-auto animate-in fade-in slide-in-from-right-2 duration-200">
+                <div className="absolute left-[62px] top-0 w-[300px] max-w-[calc(100vw-5rem)] bg-white rounded-3xl p-5 shadow-[0_30px_60px_-24px_rgba(15,23,42,0.55)] pointer-events-auto animate-in fade-in slide-in-from-left-2 duration-200">
                     <div className="flex items-center justify-between mb-4">
                         <span className="text-base font-extrabold text-slate-900 tracking-tight">Camadas do mapa</span>
                         <button onClick={onToggle} aria-label="Fechar" className="text-slate-400 hover:text-slate-600">

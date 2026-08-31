@@ -5,7 +5,7 @@ import React, {
     useRef,
     useCallback,
 } from 'react';
-import { Sprout } from 'lucide-react';
+import { Sprout, Loader2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { getSatelliteTiles, SatelliteTileResponse, getZonalNDVI, ZonalTalhaoResult } from '../../services/mapService';
 import Map, {
@@ -35,6 +35,7 @@ import { Talhao, GeoJSONGeometry } from '../../domain/geo/geoTypes';
 import { useSatelliteMapStyle, maxZoomForProvider } from './useSatelliteMapStyle';
 import MapDrawControl from './MapDrawControl';
 import MapLayersPanel from './MapLayersPanel';
+import { cn } from '../../utils/cn';
 
 interface GeoJSONData {
     type: 'FeatureCollection';
@@ -784,6 +785,18 @@ const FarmMapInner: React.FC<FarmMapProps> = (props) => {
         [setCursorSafe],
     );
 
+    // Só monta o mapa com o provedor de satélite já resolvido. Montando antes,
+    // o estilo troca de ESRI para Google no meio do carregamento e o MapLibre
+    // avisa "Style is not done loading. Rebuilding the style from scratch" —
+    // ele joga fora o estilo e reconstrói, desperdiçando o primeiro carregamento.
+    if (satelliteProvider === 'loading') {
+        return (
+            <div className="w-full h-full flex items-center justify-center bg-slate-200">
+                <Loader2 className="animate-spin text-emerald-600" size={28} />
+            </div>
+        );
+    }
+
     return (
         <Map
             ref={mapRef}
@@ -893,9 +906,15 @@ const FarmMapInner: React.FC<FarmMapProps> = (props) => {
 
             <NavigationControl position="bottom-left" />
 
-            {/* Painel de camadas (rail a direita) */}
+            {/* Painel de camadas (rail a esquerda: a direita e do painel do talhao) */}
             {!isDrawingMode && (
-                <div className="absolute top-4 right-4 z-10 pointer-events-none">
+                <div className={cn(
+                    "absolute top-4 left-4 z-10 pointer-events-none",
+                    // O painel do talhão agora é um card centralizado com teto de
+                    // altura, então sobra faixa livre no topo e este botão continua
+                    // alcançável mesmo com ele aberto.
+                    "block",
+                )}>
                     <div className="relative flex flex-col gap-2 p-2 rounded-full bg-slate-900/30 backdrop-blur-md pointer-events-auto">
                         <MapLayersPanel
                             open={layersPanelOpen}
