@@ -505,7 +505,14 @@ const FarmMapInner: React.FC<FarmMapProps> = (props) => {
     const linePaint = useMemo(
         () =>
             ({
-                'line-color': ['coalesce', ['get', 'borderColor'], ['get', 'color'], '#228b22'],
+                // Selecionado ganha contorno BRANCO: sobre imagem de satélite o
+                // branco é a única cor que se destaca de qualquer cultura e de
+                // qualquer solo. A cor própria do talhão segue no preenchimento.
+                'line-color': [
+                    'case',
+                    ['boolean', ['feature-state', 'selected'], false], '#ffffff',
+                    ['coalesce', ['get', 'borderColor'], ['get', 'color'], '#228b22'],
+                ],
                 'line-width': [
                     'case',
                     ['boolean', ['feature-state', 'selected'], false], LINE_WIDTH.selected,
@@ -893,6 +900,51 @@ const FarmMapInner: React.FC<FarmMapProps> = (props) => {
                     </div>
                 </Popup>
             )}
+
+            {/* Pinos por talhão: o selecionado vira uma etiqueta com nome e área,
+                os demais ficam como marca discreta. Some no modo de desenho,
+                onde o que importa são os vértices. */}
+            {!isDrawingMode && !isEditingMode && centroids.map((c: any) => {
+                const selecionado = String(c.id) === String(selectedTalhaoId);
+                const cor = c.talhao.fillColor || c.talhao.cor || getCropColor(c.talhao.cultura);
+                const area = c.talhao.area_total_m2 || c.talhao.area_m2 || 0;
+
+                return (
+                    <Marker
+                        key={`pino-${c.id}`}
+                        longitude={c.lng}
+                        latitude={c.lat}
+                        anchor="center"
+                        onClick={() => onTalhaoClick?.(c.talhao)}
+                    >
+                        {selecionado ? (
+                            <div className="flex items-center gap-2.5 bg-white rounded-full pl-1.5 pr-4 py-1.5 shadow-[0_12px_28px_-8px_rgba(15,23,42,0.55)] whitespace-nowrap cursor-pointer select-none animate-in fade-in zoom-in-95 duration-200">
+                                <span
+                                    className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                                    style={{ backgroundColor: cor }}
+                                >
+                                    <Sprout size={16} className="text-white" />
+                                </span>
+                                <span className="flex flex-col leading-tight">
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
+                                        {area >= 10000 ? `${(area / 10000).toFixed(2)} ha` : `${Math.round(area)} m²`}
+                                    </span>
+                                    <span className="text-[13px] font-extrabold text-slate-900">
+                                        {c.talhao.nome || 'Talhão'}
+                                    </span>
+                                </span>
+                            </div>
+                        ) : (
+                            <span className="w-8 h-8 rounded-full bg-white/25 border border-white/50 backdrop-blur-sm flex items-center justify-center cursor-pointer hover:scale-110 transition-transform">
+                                <span
+                                    className="w-5 h-5 rounded-full border-2 border-white/70"
+                                    style={{ backgroundColor: cor }}
+                                />
+                            </span>
+                        )}
+                    </Marker>
+                );
+            })}
 
             {centerCoords && Number.isFinite(centerCoords.latitude) && Number.isFinite(centerCoords.longitude) && centroids.length === 0 && (
                 <Marker longitude={centerCoords.longitude} latitude={centerCoords.latitude} anchor="bottom">
