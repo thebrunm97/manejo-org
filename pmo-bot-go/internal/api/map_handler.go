@@ -144,6 +144,16 @@ func (h *MapHandler) GenerateTiles(c *gin.Context) {
 	ctx := c.Request.Context()
 	urlFormat, err := h.geeClient.GenerateTilesURL(ctx, astJSON)
 	if err != nil {
+		// Permissão negada não é falha de comunicação: virar 502 genérico
+		// esconde que o problema está na conta de serviço, e o usuário fica
+		// vendo "sem imagens" achando que é falta de cena no período.
+		if strings.Contains(err.Error(), "PERMISSION_DENIED") {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error":   "A conta de serviço não tem permissão para gerar mapas no Earth Engine.",
+				"details": err.Error(),
+			})
+			return
+		}
 		c.JSON(http.StatusBadGateway, gin.H{"error": "Falha na comunicação com Google Earth Engine", "details": err.Error()})
 		return
 	}
