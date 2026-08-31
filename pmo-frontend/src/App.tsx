@@ -4,12 +4,15 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { RouteGuard } from './routes/RouteGuard';
 import DebugErrorBoundary from './components/DebugErrorBoundary';
-import { useSyncEngine } from './hooks/offline/useSyncEngine';
 import { Suspense, lazy } from 'react';
+import { useAuth } from './context/AuthContext';
 
 // Layout
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+
+// Sync engine carregado sob demanda (lazy) para não pesar no primeiro load
+const OfflineSyncEngine = lazy(() => import('./components/OfflineSyncEngine'));
 
 // Páginas (Lazy Loaded)
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
@@ -23,6 +26,7 @@ const PlanosManejoList = lazy(() => import('./pages/PlanosManejoList'));
 const MapaPropriedade = lazy(() => import('./pages/MapaPropriedade'));
 const MinhasCulturas = lazy(() => import('./pages/MinhasCulturas'));
 const DesignLab = lazy(() => import('./pages/DesignLab'));
+const TesteMapa = lazy(() => import('./pages/TesteMapa'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const LiveChatMonitor = lazy(() => import('./pages/admin/LiveChatMonitor'));
 const PropertyProfilePage = lazy(() => import('./pages/PropertyProfilePage'));
@@ -54,15 +58,22 @@ const LoadingFallback = () => (
 );
 
 const App: React.FC = () => {
-    // Global Sync Hook - Runs in background
-    useSyncEngine();
+    const { user } = useAuth();
 
     return (
+        <>
+        {user ? (
+            <Suspense fallback={null}>
+                <OfflineSyncEngine />
+            </Suspense>
+        ) : null}
         <Suspense fallback={<LoadingFallback />}>
             <Routes>
 
                 {/* Rota de Debug (Visibilidade) - Acesso Livre (Híbrido) */}
                 <Route path="/lab" element={<DesignLab />} />
+                {/* Teste de layout do mapa (satelite real, talhoes ficticios) */}
+                <Route path="/teste-mapa" element={<TesteMapa />} />
                 {/* Redirect old mockup URLs to the synthesized home */}
                 <Route path="/mockup-landing" element={<Navigate to="/home" replace />} />
                 <Route path="/agronomy-mockup" element={<Navigate to="/home" replace />} />
@@ -284,6 +295,7 @@ const App: React.FC = () => {
             <ToastContainer position="bottom-right" theme="colored" pauseOnHover />
             <ReloadPrompt />
         </Suspense>
+        </>
     );
 };
 
