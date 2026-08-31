@@ -44,10 +44,12 @@ interface TalhaoDetailsDrawerProps {
     onDeleteTalhao?: (id: string | number) => void;
     onUpdateTalhao?: (id: string | number, data: any) => void;
     onEditMap?: () => void;
+    /** NDVI médio medido para este talhão, quando a camada NDVI foi consultada. */
+    ndvi?: { ndvi: number | null; status: string };
 }
 
 const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
-    open, onClose, talhao, onDeleteCanteiro, onUpdateCanteiro, onCreateCanteiros, onDeleteTalhao, onUpdateTalhao, onEditMap
+    open, onClose, talhao, onDeleteCanteiro, onUpdateCanteiro, onCreateCanteiros, onDeleteTalhao, onUpdateTalhao, onEditMap, ndvi
 }) => {
     const [tabIndex, setTabIndex] = useState(0);
     // No celular o card mostra resumo e ação; abas e conteúdo abrem sob demanda.
@@ -374,12 +376,28 @@ const TalhaoDetailsDrawer: React.FC<TalhaoDetailsDrawerProps> = ({
                                 </span>
                                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Estruturas</span>
                             </div>
-                            <div className="border border-slate-200 rounded-[18px] px-4 py-3.5 flex flex-col gap-1">
-                                <span className="font-outfit text-[21px] font-extrabold text-slate-900 leading-none tracking-tight">
-                                    {talhao.ph_solo ? String(talhao.ph_solo) : '—'}
-                                </span>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">pH solo</span>
-                            </div>
+                            {/* Mostra o NDVI quando o mapa mediu; senão o pH. O rótulo
+                                diz qual é, então não há ambiguidade. Um NDVI sem pixel
+                                válido aparece como travessão, nunca como zero. */}
+                            {ndvi ? (
+                                <div className="border border-slate-200 rounded-[18px] px-4 py-3.5 flex flex-col gap-1">
+                                    <span className="font-outfit text-[21px] font-extrabold text-slate-900 leading-none tracking-tight">
+                                        {ndvi.ndvi !== null && ndvi.ndvi !== undefined
+                                            ? ndvi.ndvi.toFixed(2).replace('.', ',')
+                                            : '—'}
+                                    </span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                        {ndvi.status === 'ok' ? 'NDVI médio' : 'Sem imagem'}
+                                    </span>
+                                </div>
+                            ) : (
+                                <div className="border border-slate-200 rounded-[18px] px-4 py-3.5 flex flex-col gap-1">
+                                    <span className="font-outfit text-[21px] font-extrabold text-slate-900 leading-none tracking-tight">
+                                        {talhao.ph_solo ? String(talhao.ph_solo) : '—'}
+                                    </span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">pH solo</span>
+                                </div>
+                            )}
                         </div>
                     </div>
 

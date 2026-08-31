@@ -57,6 +57,8 @@ interface FarmMapProps {
     finishDrawingTrigger?: number;
     trashDrawingTrigger?: number;
     centerCoords?: { latitude: number; longitude: number } | null;
+    /** Entrega o NDVI médio por talhão a quem estiver acima (o painel usa). */
+    onZonalNDVI?: (resultados: Record<string, ZonalTalhaoResult>) => void;
 }
 
 const SOURCE_ID = 'talhoes-source';
@@ -255,6 +257,7 @@ const FarmMapInner: React.FC<FarmMapProps> = (props) => {
         finishDrawingTrigger = 0,
         trashDrawingTrigger = 0,
         centerCoords,
+    onZonalNDVI,
     } = props;
 
     const isMobile = useIsMobile();
@@ -416,6 +419,7 @@ const FarmMapInner: React.FC<FarmMapProps> = (props) => {
                 const porId: Record<string, ZonalTalhaoResult> = {};
                 resposta.results.forEach((r) => { porId[r.id] = r; });
                 setZonalNDVI(porId);
+                onZonalNDVI?.(porId);
             })
             .catch((err) => {
                 if (cancelado) return;

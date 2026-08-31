@@ -24,6 +24,10 @@ const MapaPropriedade: React.FC = () => {
     // tela de carregamento — o mapa desmontava, perdia posição e zoom, e a
     // edição parecia um recarregamento de página.
     const primeiraCarga = useRef(true);
+    // NDVI médio por talhão, medido pelo mapa quando a camada NDVI está ativa.
+    // Vive aqui porque quem calcula é o FarmMap e quem mostra é o painel, e os
+    // dois são irmãos — não há caminho direto entre eles.
+    const [ndviPorTalhao, setNdviPorTalhao] = useState<Record<string, { ndvi: number | null; status: string }>>({});
     const isMobile = useIsMobile();
 
     const loadTalhoes = useCallback(async () => {
@@ -212,6 +216,7 @@ const MapaPropriedade: React.FC = () => {
                     isEditingPolygon={isEditingPolygon}
                     setIsEditingPolygon={setIsEditingPolygon}
                     pmoId={profile?.pmo_ativo_id}
+                    onZonalNDVI={setNdviPorTalhao}
                     centerCoords={currentPropriedade?.latitude && currentPropriedade?.longitude ? {
                         latitude: Number(currentPropriedade.latitude),
                         longitude: Number(currentPropriedade.longitude)
@@ -231,6 +236,7 @@ const MapaPropriedade: React.FC = () => {
                     onCreateCanteiros={handleCreateCanteiros}
                     onDeleteTalhao={handleDeleteTalhao}
                     onUpdateTalhao={handleUpdateTalhao}
+                    ndvi={ndviPorTalhao[String(selectedTalhao.id)]}
                 />
             )}
         </div>

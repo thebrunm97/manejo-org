@@ -44,7 +44,11 @@ interface PropertyMapProps {
     loadTalhoes: () => Promise<void>;
     loading?: boolean;
     isDrawerOpen?: boolean;
+    isEditingPolygon?: boolean;
+    setIsEditingPolygon?: (val: boolean) => void;
     pmoId?: string | number | null;
+    centerCoords?: { latitude: number; longitude: number } | null;
+    onZonalNDVI?: (resultados: Record<string, any>) => void;
 }
 
 const PropertyMap: React.FC<PropertyMapProps> = ({ 
@@ -59,7 +63,11 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
     loadTalhoes,
     loading = false,
     isDrawerOpen,
-    pmoId
+    isEditingPolygon = false,
+    setIsEditingPolygon,
+    pmoId,
+    centerCoords,
+    onZonalNDVI
 }) => {
     const { user, profile } = useAuth();
 
@@ -107,11 +115,21 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
     const handleViewOnMap = (talhao: Talhao) => {
         setSelectedTalhao(talhao);
         setViewMode('mapa');
+        onOpenDrawer(talhao);
+        if (!talhao.geometry) {
+            toast.info(`O talhão "${talhao.nome}" ainda não possui área demarcada no mapa. Toque no botão "+" para desenhá-lo.`);
+        }
     };
 
 
     // --- CRIAÇÃO DE TALHÃO ---
     const handleStartDrawing = () => {
+        if (selectedTalhao && !selectedTalhao.geometry) {
+            // Desenhar para talhão existente
+            setIsDrawingMode(true);
+            return;
+        }
+
         const { can, message } = podeCriarTalhao(profile, talhoes.length);
         if (!can) {
             toast.warn(message || 'Limite de talhões atingido.');
@@ -120,12 +138,47 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
         setIsDrawingMode(true);
     };
 
-    const handleDrawCreate = (e: any) => {
+    const handleStartEditingPolygon = () => {
+        if (!selectedTalhao || !selectedTalhao.geometry) return;
+        if (setIsEditingPolygon) setIsEditingPolygon(true);
+        setViewMode('mapa');
+    };
+
+    const handleDrawCreate = async (e: any) => {
         const feature = e.features[0];
         if (!feature) return;
 
         // Calcula área usando turf (mapbox draw output is GeoJSON)
         const areaM2 = area(feature);
+
+        if (selectedTalhao && !selectedTalhao.geometry) {
+            const newGeometry = JSON.stringify(feature.geometry);
+            const areaHa = areaM2 / 10000;
+            
+            try {
+                await locationService.updateTalhao(Number(selectedTalhao.id), {
+                    geometry: newGeometry as any,
+                    area_total_m2: parseFloat(areaM2.toFixed(2)),
+                    area_ha: parseFloat(areaHa.toFixed(2))
+                });
+                
+                setSelectedTalhao({
+                    ...selectedTalhao,
+                    geometry: newGeometry,
+                    area_total_m2: parseFloat(areaM2.toFixed(2)),
+                    area_ha: parseFloat(areaHa.toFixed(2))
+                });
+                
+                toast.success('Área do talhão demarcada com sucesso!');
+                loadTalhoes?.().catch(console.error);
+            } catch (error) {
+                console.error("Erro ao demarcar área", error);
+                toast.error('Erro ao salvar área do talhão.');
+            }
+            
+            setIsDrawingMode(false);
+            return;
+        }
 
         setPendingTalhao({
             layer: null, // No longer used in MapLibre version
@@ -146,6 +199,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
         setCreateModalOpen(false);
         setPendingTalhao(null);
         setIsDrawingMode(false);
+        setIsEditingPolygon(false);
     };
 
     const handleSaveNewTalhao = async () => {
@@ -204,41 +258,32 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
         if (!feature || !selectedTalhao) return;
 
         // Otimização: Evitar recálculos e re-renders excessivos se a geometria for idêntica (raro no update, mas preventivo)
-        const newGeometry = feature.geometry;
+        const newGeometry = JSON.stringify(feature.geometry);
+        const areaM2 = area(feature);
+        const areaHa = areaM2 / 10000;
         
         try {
-            const newAreaM2 = area(feature);
-            const areaHa = newAreaM2 / 10000;
-
-            // 1. ATUALIZAÇÃO OTIMISTA (Feedback Instantâneo no Drawer)
-            // Usamos um Check para evitar loops de estados se os valores forem os mesmos
-            if (setSelectedTalhao) {
-                setSelectedTalhao({
-                    ...selectedTalhao,
-                    geometry: newGeometry,
-                    area_total_m2: parseFloat(newAreaM2.toFixed(2)),
-                    area_ha: parseFloat(areaHa.toFixed(2))
-                });
-            }
-
-            // 2. PERSISTÊNCIA NO BANCO
-            // A chamada ao locationService já é assíncrona, não bloqueia o main thread, 
-            // mas o excesso de chamadas pode ser ruim. Mapbox Draw 'draw.update' 
-            // costuma disparar apenas no DROP do vértice ou fim da manipulação.
             await locationService.updateTalhao(Number(selectedTalhao.id), {
                 geometry: newGeometry as any,
-                area_total_m2: parseFloat(newAreaM2.toFixed(2)),
+                area_total_m2: parseFloat(areaM2.toFixed(2)),
                 area_ha: parseFloat(areaHa.toFixed(2))
             });
-
-            // 3. SINCRONIA FINAL (Recarrega a lista global sem bloquear)
-            loadTalhoes?.().catch(console.error);
             
-            toast.success('Geometria e métricas atualizadas!');
+            setSelectedTalhao({
+                ...selectedTalhao,
+                geometry: newGeometry,
+                area_total_m2: parseFloat(areaM2.toFixed(2)),
+                area_ha: parseFloat(areaHa.toFixed(2))
+            });
+            
+            toast.success('Área do talhão atualizada com sucesso!');
+            loadTalhoes?.().catch(console.error);
         } catch (error) {
-            console.error("Erro ao atualizar geometria:", error);
-            toast.error('Falha ao salvar mudanças.');
+            console.error("Erro ao atualizar área", error);
+            toast.error('Erro ao salvar atualização da área.');
         }
+
+        // NO DO NOT EXIT EDIT MODE HERE! Let the user continue editing until they click Finalizar.
     };
 
     const handleDrawDelete = (e: any) => {
@@ -259,7 +304,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
 
                 {/* MODO CROQUI (grid com scroll) */}
                 {viewMode === 'croqui' && (
-                    <div className="h-full overflow-y-auto p-4 md:p-8 pt-28 pb-24">
+                    <div className="h-full overflow-y-auto px-4 md:px-8 pt-24 md:pt-28 pb-24">
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                             {/* Botão de Adicionar */}
                             <button
@@ -357,6 +402,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
                                     focusTarget={selectedTalhao}
                                     selectedTalhaoId={selectedTalhao?.id}
                                     isDrawingMode={isDrawingMode}
+                                    isEditingMode={isEditingPolygon}
                                     finishDrawingTrigger={finishDrawingTrigger}
                                     trashDrawingTrigger={trashDrawingTrigger}
                                     onDrawCreate={handleDrawCreate}
@@ -372,15 +418,20 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
                                         if (setSelectedTalhao) setSelectedTalhao(null);
                                     }}
                                     isDrawerOpen={isDrawerOpen}
+                                    centerCoords={centerCoords}
+                                    onZonalNDVI={onZonalNDVI}
                                 />
                         </div>
 
                         {/* --- MAP FLOATING INTERFACE (Pointer Events Container) --- */}
                         <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
+                            {/* O botão oculto foi removido. Agora o estado é controlado via MapaPropriedade */}
+
                             {/* Minimalist FAB: Circular & Elegant */}
-                            {!isDrawingMode && !createModalOpen && !selectedTalhao && (
+                            {!isDrawingMode && !isEditingPolygon && !createModalOpen && (!selectedTalhao || !selectedTalhao.geometry) && (
                                 <div className="absolute bottom-24 right-6">
                                     <button
+                                        id="btn-draw-talhao"
                                         onClick={handleStartDrawing}
                                         className="w-14 h-14 bg-emerald-600 text-white rounded-full shadow-[0_8px_30px_rgb(16,185,129,0.3)] border border-emerald-400/40 flex items-center justify-center hover:bg-emerald-500 hover:scale-110 active:scale-90 transition-all outline-none pointer-events-auto"
                                         title="Novo Talhão"
@@ -392,7 +443,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
 
 
                             {/* UI MODO DESENHO (Barra de Controle Profissional & Minimalista) */}
-                            {isDrawingMode && (
+                            {(isDrawingMode || isEditingPolygon) && (
                                 <div className="absolute inset-0 pointer-events-none flex flex-col items-center">
                                     {/* Toolbar Flutuante Inferior (Thumb Zone) */}
                                     <div className="mt-auto mb-10 px-6 animate-in slide-in-from-bottom-12 duration-700 ease-out pointer-events-auto">
@@ -401,14 +452,19 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
                                             <div className="px-4 py-2 bg-slate-900/40 backdrop-blur-md border border-white/10 rounded-2xl shadow-xl animate-bounce">
                                                 <div className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
                                                     <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />
-                                                    Toque no mapa para definir {talhoes.length === 0 ? 'os vértices' : 'a área'}
+                                                    {isEditingPolygon ? 'Arraste os pontos para editar a área' : (talhoes.length === 0 ? 'Toque no mapa para definir os vértices' : 'Toque no mapa para definir a área')}
                                                 </div>
                                             </div>
 
                                             {/* Action Toolbar */}
                                             <div className="p-2 bg-white/90 backdrop-blur-2xl rounded-[2rem] border border-white/50 shadow-[0_20px_50px_rgba(0,0,0,0.2)] flex items-center gap-2">
                                                 <button
-                                                    onClick={handleCancelNewTalhao}
+                                                    onClick={() => {
+                                                        handleCancelNewTalhao();
+                                                        if (isEditingPolygon && selectedTalhao && onOpenDrawer) {
+                                                            onOpenDrawer(selectedTalhao);
+                                                        }
+                                                    }}
                                                     className="w-12 h-12 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-all active:scale-90"
                                                     title="Cancelar Desenho"
                                                 >
@@ -426,7 +482,15 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
                                                 <div className="w-[1px] h-8 bg-slate-200/50 mx-1" />
 
                                                 <button
-                                                    onClick={() => setFinishDrawingTrigger(prev => prev + 1)}
+                                                    onClick={() => {
+                                                        setFinishDrawingTrigger(prev => prev + 1);
+                                                        if (isEditingPolygon && setIsEditingPolygon) {
+                                                            setIsEditingPolygon(false);
+                                                            if (selectedTalhao && onOpenDrawer) {
+                                                                onOpenDrawer(selectedTalhao);
+                                                            }
+                                                        }
+                                                    }}
                                                     className="pl-4 pr-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full flex items-center gap-3 transition-all active:scale-95 shadow-lg shadow-emerald-500/30 group"
                                                 >
                                                     <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center group-hover:rotate-12 transition-transform">
