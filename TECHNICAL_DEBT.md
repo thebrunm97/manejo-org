@@ -1,5 +1,9 @@
 # Technical Debt & Backlog
 
+> Os débitos do backend Go vivem em `pmo-bot-go/docs/debitos_tecnicos.md` (IDs `DT-XX`), que
+> se declara fonte única de verdade para aquele serviço — itens novos do bot entram lá, não aqui.
+> Este arquivo guarda o que ainda não foi absorvido por aquele registro.
+
 ## [PMO Knowledge Ops] RAG Específico do Usuário Final
 **Data:** 21/07/2026
 **Status:** 📌 Pendente
