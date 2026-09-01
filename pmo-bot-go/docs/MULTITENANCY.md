@@ -1,10 +1,10 @@
 # 🏢 Arquitetura Multi-Tenancy — Manejo.org Bot
 
-**Status:** Convenção de código em produção para 10+ PMOs — **sem teste automatizado de vazamento entre tenants** (ver DT-66)
-**Última Auditoria:** 2026-07-30 (Phase 4)
+**Status:** Isolamento por tipo (`TenantCtx`, DT-67) em produção para 10+ PMOs, com teste de vazamento real entre tenants (DT-66)
+**Última Auditoria:** 2026-09-01 (DT-66/DT-67)
 **Idioma:** PT-BR
 
-> **Nota (2026-08-24):** este documento descreve isolamento **por PMO** (na prática, por produtor), garantido inteiramente por convenção no código Go — o banco não tem RLS para o bot, que autentica com `service_role` (ver DT-65). Não confundir com o conceito de **organização como tenant** (cooperativa, certificadora, consultoria), decidido em [ADR-010](../../docs/architecture/adr/010-multitenancy-por-organizacao.md), que propõe isolamento reforçado por RLS e migração do bot para JWT por usuário. A alegação "validado" acima se apoiava numa suíte de testes que não exercita vazamento real entre tenants — corrigido para refletir isso; ver DT-66.
+> **Nota (2026-08-24, atualizada em 2026-09-01):** este documento descreve isolamento **por PMO** (na prática, por produtor), garantido pelo tipo `TenantCtx` no código Go — o banco não tem RLS para o bot, que autentica com `service_role` (ver DT-65). Não confundir com o conceito de **organização como tenant** (cooperativa, certificadora, consultoria), decidido em [ADR-010](../../docs/architecture/adr/010-multitenancy-por-organizacao.md), que propõe isolamento reforçado por RLS e migração do bot para JWT por usuário. A alegação "validado" apoiava-se numa suíte que nunca lia/escrevia um dado real de um tenant para verificar se vazava para outro (DT-66) — corrigido: `TestFinanceiroBalanco_CrossTenantIsolation_RealPostgreSQL` (`internal/mcp/cross_tenancy_real_postgres_test.go`) registra uma despesa real sob uma propriedade e confirma, pelo handler de produção, que outra propriedade não a enxerga. Corrigido também: `ToolHandler` trocou `*supabase.Profile` por `TenantCtx` (DT-67), tornando estruturalmente impossível um handler ler um id de tenant de outro lugar que não seja a sessão validada — os exemplos de código abaixo foram atualizados para refletir isso.
 
 ---
 
@@ -25,11 +25,11 @@ WhatsApp Usuário (PMO A)
         ↓
     LoadProfile(phone) → supabase.Profile{PmoAtivoID: A}
         ↓
-    Handler recebe: ctx, args, profile
+    buildTenantCtx(profile) → bloqueia nil / PmoAtivoID=0, constrói TenantCtx
         ↓
-    validateProfile(profile) → bloqueia nil / PmoAtivoID=0
+    Handler recebe: ctx, args, tenant TenantCtx   ← nunca *Profile
         ↓
-    pmoID := profile.PmoAtivoID   ← NUNCA de args
+    pmoID := tenant.PmoID   ← NUNCA de args, e não há mais outro campo de onde ler
         ↓
     RPC("registrar_colheita", {pmo_id_arg: A, ...})
         ↓
@@ -44,37 +44,39 @@ WhatsApp Usuário (PMO A)
 
 ## 3. Camadas de Proteção
 
-### Camada 1 — `validateProfile()` (Go)
+### Camada 1 — `buildTenantCtx()` (Go)
 
 ```go
-func (s *Server) validateProfile(profile *supabase.Profile) error {
+func buildTenantCtx(profile *supabase.Profile) (TenantCtx, error) {
     if profile == nil {
-        return fmt.Errorf("unauthorized: sessão expirada ou inválida")
+        return TenantCtx{}, fmt.Errorf("unauthorized: sessão expirada ou inválida")
     }
     if profile.PmoAtivoID == 0 {
-        return fmt.Errorf("validation: usuário não tem PMO ativa selecionada")
+        return TenantCtx{}, fmt.Errorf("validation: usuário não tem PMO ativa selecionada")
     }
-    return nil
+    return TenantCtx{
+        PmoID:         profile.PmoAtivoID,
+        UserID:        profile.ID,
+        PropriedadeID: profile.PropriedadeAtivaID,
+        Telefone:      profile.Telefone,
+    }, nil
 }
 ```
 
-Chamada automaticamente em `CallToolWithGuard` antes de qualquer execução de ferramenta.
+Chamada automaticamente em `CallTool`/`CallToolWithGuard` antes de qualquer execução de ferramenta — é o único lugar do pacote que ainda toca `*supabase.Profile` para fins de tenant.
 
-### Camada 2 — Extração segura no handler
+### Camada 2 — Assinatura do handler (DT-67)
 
 ```go
-func (s *Server) handleRegistrarColheita(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
-    // ✅ Camada 2: verificação local (redundância de segurança)
-    if profile == nil {
-        return nil, fmt.Errorf("unauthorized: missing profile")
-    }
-    
-    // ✅ Extração SEMPRE do profile, NUNCA dos args
-    pmoID := profile.PmoAtivoID   // Do contexto de sessão
-    userID := profile.ID          // Do contexto de sessão
-    propID := profile.PropriedadeAtivaID  // Do contexto de sessão
-    
-    // ❌ PROIBIDO: pmoID := args["pmo_id"].(int64)
+func (s *Server) handleRegistrarColheita(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
+    // ✅ tenant já chegou validado e resolvido — não há *Profile aqui para
+    // checar nil, e não há como ler um id de tenant de outro lugar.
+    pmoID := tenant.PmoID           // Do contexto de sessão
+    userID := tenant.UserID         // Do contexto de sessão
+    propID := tenant.PropriedadeID  // Do contexto de sessão
+
+    // ❌ IMPOSSÍVEL: não existe args["pmo_id"] a ser lido — tenant.PmoID é o
+    // único valor com esse nome no escopo do handler.
     ...
 }
 ```
@@ -104,20 +106,17 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 ### ✅ Padrão Obrigatório
 
 ```go
-func (s *Server) handleMeuHandler(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
-    // REGRA 1: Validar profile antes de TUDO
-    if profile == nil {
-        return nil, fmt.Errorf("unauthorized: missing profile")
-    }
-    
-    // REGRA 2: Extrair IDs do profile, NUNCA dos args
-    pmoID := profile.PmoAtivoID         // ← perfil autenticado
-    userID := profile.ID                 // ← perfil autenticado
-    propID := profile.PropriedadeAtivaID // ← perfil autenticado
-    
-    // REGRA 3: Passar para RPC como argumentos nomeados
+func (s *Server) handleMeuHandler(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
+    // REGRA 1: Extrair IDs do TenantCtx, NUNCA dos args — não há mais um
+    // profile a validar aqui, buildTenantCtx já fez isso antes do handler
+    // rodar (ver Camada 1).
+    pmoID := tenant.PmoID         // ← sessão autenticada
+    userID := tenant.UserID       // ← sessão autenticada
+    propID := tenant.PropriedadeID // ← sessão autenticada
+
+    // REGRA 2: Passar para RPC como argumentos nomeados
     result, err := s.supabase.MinhaRPC(ctx, map[string]interface{}{
-        "pmo_id_arg":         pmoID,   // ← Do profile, nunca de args
+        "pmo_id_arg":         pmoID,   // ← Do tenant, nunca de args
         "propriedade_id_arg": propID,
         "user_id_arg":        userID,
         "dados_arg":          args["dados"], // ← Dados do usuário são OK
@@ -130,15 +129,19 @@ func (s *Server) handleMeuHandler(ctx context.Context, args map[string]interface
 ### ❌ Anti-Padrões Proibidos
 
 ```go
-// ❌ LER pmo_id dos args (vulnerabilidade OWASP A01)
+// ❌ LER pmo_id dos args (vulnerabilidade OWASP A01) — e hoje nem compila:
+// não existe args["pmo_id"] retornando um id de tenant válido, só o que o
+// LLM escreveu; TestNoHandlerReadsTenantIDsFromArgs (tenant_guard_test.go)
+// varre estaticamente todo tools_*.go proibindo este padrão.
 pmoID := args["pmo_id"].(int64)
 
 // ❌ LER user_id dos args (vulnerabilidade OWASP A07)
 userID := args["user_id"].(string)
 
-// ❌ Handler sem profile nil check
-func (s *Server) handler(ctx context.Context, args, profile) (interface{}, error) {
-    pmoID := profile.PmoAtivoID // panic se profile==nil!
+// ❌ Aceitar *supabase.Profile na assinatura do handler — ToolHandler exige
+// TenantCtx desde o DT-67, então isto nem compila mais.
+func (s *Server) handler(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
+    pmoID := profile.PmoAtivoID
 }
 
 // ❌ Passar pmo_id hardcoded
@@ -151,12 +154,13 @@ result, _ := s.supabase.RPC(ctx, "rpc", {"pmo_id_arg": 42})
 
 Para **CADA novo handler**, o revisor deve verificar:
 
-- [ ] `if profile == nil { return nil, fmt.Errorf("unauthorized: ...") }` na primeira linha?
-- [ ] `pmoID := profile.PmoAtivoID` (não `args["pmo_id"]`)?
-- [ ] `userID := profile.ID` (não `args["user_id"]`)?
+- [ ] Assinatura do handler recebe `tenant TenantCtx` (não `*supabase.Profile`)? Se receber `*supabase.Profile`, o código não compila — mas confirme que ninguém "resolveu" isso plugando um `TenantCtx{}` vazio ou fabricado.
+- [ ] `pmoID := tenant.PmoID` (não `args["pmo_id"]`)?
+- [ ] `userID := tenant.UserID` (não `args["user_id"]`)?
 - [ ] RPC call passa `"pmo_id_arg": pmoID`?
 - [ ] RPC SQL tem `WHERE pmo_id = pmo_id_arg` ou usa `pmo_id_arg` no INSERT?
-- [ ] Teste de isolamento existe em `multitenancy_test.go` ou equivalente?
+- [ ] `go test ./internal/mcp/... -run TestNoHandlerReadsTenantIDsFromArgs` continua verde depois da mudança?
+- [ ] Se o handler tem um par leitura/escrita novo (não só reaproveita uma tool existente), existe um teste real (`*_real_postgres_test.go`) que escreve como um tenant e confirma que outro não enxerga?
 
 ---
 
@@ -169,14 +173,19 @@ go test ./internal/mcp -run "TestIsolation" -v
 # Testes de segregação Read (sem BD necessário)
 go test ./internal/mcp -run "TestRead" -v
 
-# Todos os testes multi-tenancy
-go test ./internal/mcp -run "TestIsolation|TestRead" -v
+# Guarda estática: nenhum handler pode ler id de tenant de args (DT-67)
+go test ./internal/mcp -run "TestNoHandlerReadsTenantIDsFromArgs|TestAllRegisteredToolsAreWellFormed" -v
 
-# Com BD real (integração completa)
-DATABASE_URL="postgresql://..." go test ./internal/mcp -run "TestIsolation|TestRead" -v
+# Prova real de isolamento (DT-66) — requer `supabase start` local
+# (127.0.0.1:54321) ou SUPABASE_TEST_URL/SUPABASE_TEST_SERVICE_KEY para
+# staging; FALHA (não pula) sem um Postgres real disponível
+go test ./internal/mcp -run "RealPostgreSQL" -v
+
+# Todos os testes multi-tenancy
+go test ./internal/mcp -run "TestIsolation|TestRead|RealPostgreSQL" -v
 ```
 
-### Resultado Esperado (sem BD)
+### Resultado Esperado
 
 ```
 --- PASS: TestIsolation_NilProfileRejected
@@ -189,6 +198,9 @@ DATABASE_URL="postgresql://..." go test ./internal/mcp -run "TestIsolation|TestR
 --- PASS: TestRead_PMO_A_CannotSeePMO_B_Boundary
 --- PASS: TestRead_ValidateProfile_BlocksAllReadBeforeDB
 --- PASS: TestRead_FinancialBalance_RequiresProfile
+--- PASS: TestNoHandlerReadsTenantIDsFromArgs
+--- PASS: TestAllRegisteredToolsAreWellFormed
+--- PASS: TestFinanceiroBalanco_CrossTenantIsolation_RealPostgreSQL   (requer Postgres real)
 ```
 
 ---
@@ -196,7 +208,7 @@ DATABASE_URL="postgresql://..." go test ./internal/mcp -run "TestIsolation|TestR
 ## 7. FAQ de Segurança
 
 **P: Posso confiar que as 10+ PMOs nunca vão se misturar?**  
-R: SIM. O isolamento é garantido em 3 camadas: Go handler → RPC args → SQL WHERE.
+R: SIM, com uma prova real por trás desde 2026-09-01: `TestFinanceiroBalanco_CrossTenantIsolation_RealPostgreSQL` registra uma despesa de verdade sob uma propriedade e confirma, pelo handler de produção, que outra propriedade não a enxerga — antes do DT-66, a suíte só comparava dois IDs entre si, sem nunca ler/escrever um dado real. O isolamento em si é garantido em 3 camadas: Go handler (`TenantCtx`, tipo que torna impossível ler tenant de `args`) → RPC args → SQL WHERE.
 
 **P: E se o LLM alucinar e passar `pmo_id` nos args?**  
 R: O handler ignora completamente. Usa sempre `profile.PmoAtivoID`. Verificado nos testes `TestIsolation_CrossPMOWrite_ArgsInjectionIgnored`.
@@ -220,3 +232,6 @@ R: Criar o registro no banco. O isolamento é automático via `pmo_id` — sem c
 | 2026-07-30 | `handleRegistrarLote` — sem profile check | ✅ Corrigido |
 | 2026-07-30 | `handleAdicionarInsumoPMO` — lendo pmo_id de args | ✅ Corrigido |
 | 2026-07-30 | `handleSalvarMemoria` — lendo pmo_id de args | ✅ Corrigido |
+| 2026-09-01 | DT-67 — `handleConsultarBalancoFinanceiro` lendo `propriedade_id` de `args`; `ToolHandler` trocou `*supabase.Profile` por `TenantCtx` em todos os handlers | ✅ Corrigido |
+| 2026-09-01 | DT-66 — suíte de multitenancy nunca lia/escrevia dado real para provar isolamento; adicionado `TestFinanceiroBalanco_CrossTenantIsolation_RealPostgreSQL` | ✅ Corrigido |
+| 2026-09-01 | DT-69 — achado ao escrever o teste do DT-66: `rpc_get_balanco_ia` comparava `tipo` em maiúsculo, mas a escrita normaliza para minúsculo desde 2026-08-16 — balanço financeiro retornava sempre zero em produção | ✅ Corrigido |
