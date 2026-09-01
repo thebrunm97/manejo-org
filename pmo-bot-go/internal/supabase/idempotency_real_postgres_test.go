@@ -274,9 +274,11 @@ func TestIdempotency_RealPostgreSQL_Integration(t *testing.T) {
 	t.Run("Validar_Deduplicacao_Real_PostgreSQL_CotasProdutores", func(t *testing.T) {
 		// 1. Criar organização cooperativa para a demanda
 		coopURL := localURL + "/rest/v1/organizacoes"
+		coopSlugSuffix := time.Now().UnixNano()
 		coopBody, _ := json.Marshal(map[string]interface{}{
-			"nome": fmt.Sprintf("Cooperativa Teste %d", time.Now().UnixNano()),
+			"nome": fmt.Sprintf("Cooperativa Teste %d", coopSlugSuffix),
 			"tipo": "cooperativa",
+			"slug": fmt.Sprintf("cooperativa-teste-%d", coopSlugSuffix),
 		})
 		coopReq, _ := http.NewRequestWithContext(ctx, http.MethodPost, coopURL, bytes.NewReader(coopBody))
 		coopReq.Header.Set("apikey", serviceRoleKey)
