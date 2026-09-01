@@ -455,6 +455,15 @@ func main() {
 		queueManager := queue.NewManager(sbURL, sbKey)
 		harnessQueue = queueManager
 
+		// Coalescência de mensagens picotadas (DT-68): agrupa fragmentos do
+		// mesmo produtor num único turno de IA. MESSAGE_BUFFER_WINDOW=0 desliga
+		// por completo (kill-switch), preservando o comportamento anterior ao
+		// DT-68 sem exigir redeploy de código, só a env var.
+		queueManager.SetBufferConfig(
+			parseEnvDuration("MESSAGE_BUFFER_WINDOW", queue.DefaultMessageBufferWindow),
+			parseEnvDuration("MESSAGE_BUFFER_MAX", queue.DefaultMessageBufferMax),
+		)
+
 		// Reaper de jobs presos.
 		//
 		// `claim_next_message_job` marca o job como em processamento e so o

@@ -111,4 +111,37 @@ var (
 			Help: "Count of incidents where self-heal exhausted its attempt budget",
 		},
 	)
+
+	// MessageBufferMergedTotal conta fragmentos absorvidos pelo dreno de
+	// claim_next_message_job (DT-68) — não conta o job pai, só os irmãos
+	// fundidos nele. Zero permanente com MESSAGE_BUFFER_WINDOW=0 é esperado
+	// (kill-switch) e não indica bug.
+	MessageBufferMergedTotal = promauto.NewCounter(
+		prometheus.CounterOpts{
+			Name: "message_buffer_merged_total",
+			Help: "Count of message_queue jobs absorbed by buffer coalescing (DT-68)",
+		},
+	)
+
+	// MessageBufferPartsPerTurn mede quantos fragmentos compõem cada turno de
+	// IA. A métrica que valida o recurso: cauda > 1 significativa confirma que
+	// mensagens picotadas de fato estão sendo agrupadas.
+	MessageBufferPartsPerTurn = promauto.NewHistogram(
+		prometheus.HistogramOpts{
+			Name:    "message_buffer_parts_per_turn",
+			Help:    "Number of message fragments coalesced into a single AI turn (DT-68)",
+			Buckets: []float64{1, 2, 3, 4, 5, 8, 12},
+		},
+	)
+
+	// MessageBufferAddedLatencySeconds mede, só para turnos com parts_count > 1,
+	// o tempo entre o primeiro fragmento chegar (created_at) e o turno
+	// combinado ser reivindicado — a espera real que a coalescência introduziu.
+	MessageBufferAddedLatencySeconds = promauto.NewHistogram(
+		prometheus.HistogramOpts{
+			Name:    "message_buffer_added_latency_seconds",
+			Help:    "Wait introduced by buffer coalescing before a merged turn was claimed (DT-68)",
+			Buckets: []float64{1, 2, 4, 6, 8, 12, 16},
+		},
+	)
 )

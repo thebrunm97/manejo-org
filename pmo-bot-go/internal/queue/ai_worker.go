@@ -27,6 +27,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/state"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
+	"github.com/thebrunm97/pmo-bot-go/internal/telemetry"
 	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 )
 
@@ -110,7 +111,16 @@ func (w *AIWorker) tick(ctx context.Context, workerID string) (bool, error) {
 		return false, nil
 	}
 
-	log.Printf("🤖 [AIWorker-%s] Processando job %s (text: %.80s...)", workerID, job.ID, job.BodyText)
+	log.Printf("🤖 [AIWorker-%s] Processando job %s (parts=%d, text: %.80s...)", workerID, job.ID, job.PartsCount, job.BodyText)
+
+	// DT-68: observabilidade da coalescência. PartsCount==1 (turno de mensagem
+	// única) entra no histograma de distribuição, mas não na de latência
+	// adicionada — sem fusão não há espera extra atribuível ao buffer.
+	telemetry.MessageBufferPartsPerTurn.Observe(float64(job.PartsCount))
+	if job.PartsCount > 1 {
+		telemetry.MessageBufferMergedTotal.Add(float64(job.PartsCount - 1))
+		telemetry.MessageBufferAddedLatencySeconds.Observe(time.Since(job.CreatedAt).Seconds())
+	}
 
 	start := time.Now()
 	w.processAIJob(ctx, job, start)

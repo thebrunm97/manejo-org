@@ -150,10 +150,18 @@ func (w *MediaWorker) tick(ctx context.Context, workerID string) (bool, error) {
 		return true, nil
 	}
 
-	if err := w.cfg.Queue.MarkAIPending(ctx, job.ID, bodyText, respondAudio); err != nil {
+	if err := w.cfg.Queue.MarkAIPending(ctx, job.ID, bodyText, respondAudio, job.CreatedAt); err != nil {
 		log.Printf("❌ [MediaWorker-%s] Falha ao avançar job %s para ai_pending: %v", workerID, job.ID, err)
 		_ = w.cfg.Queue.MarkFailed(ctx, job.ID, "mark_ai_pending_failed: "+err.Error(), job.AttemptCount)
 		return true, nil
+	}
+
+	// DT-68: sinaliza "digitando..." já na entrada em ai_pending, não só quando
+	// o AI Worker reivindicar o job — sem isto o produtor vê silêncio durante
+	// toda a janela de coalescência (MESSAGE_BUFFER_WINDOW). Best-effort: falha
+	// de presence nunca deve derrubar o avanço do job.
+	if w.cfg.WhatsApp != nil {
+		go w.cfg.WhatsApp.SendPresence(context.Background(), job.FromPhone, "composing")
 	}
 
 	log.Printf("✅ [MediaWorker-%s] Job %s → ai_pending em %dms (texto: %d chars)",
