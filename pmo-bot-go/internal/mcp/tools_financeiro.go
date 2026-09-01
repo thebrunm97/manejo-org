@@ -13,20 +13,16 @@ func (s *Server) handleConsultarBalancoFinanceiro(ctx context.Context, args map[
 	if profile == nil {
 		return nil, fmt.Errorf("unauthorized: missing profile")
 	}
-	pmoID := profile.PmoAtivoID
-	userID := profile.ID
-	propID := profile.PropriedadeAtivaID
-	_ = pmoID
-	_ = userID
-	_ = propID
+
+	// A propriedade SEMPRE vem da sessão, nunca dos args do LLM (DT-67): o schema desta
+	// tool nem declara "propriedade_id" como parâmetro, então um valor aqui só chegaria
+	// por alucinação do modelo — e a query correria com a service_role key, que ignora RLS.
+	if profile.PropriedadeAtivaID == 0 {
+		return nil, fmt.Errorf("usuário não tem propriedade ativa selecionada")
+	}
+	propriedadeID := int(profile.PropriedadeAtivaID)
 
 	log.Printf("🛠️ [MCP] Executando get_dre_mensal")
-
-	propriedadeIDFloat, err := parseArgToFloat(args["propriedade_id"])
-	if err != nil {
-		return nil, fmt.Errorf("argumento 'propriedade_id' é obrigatório e deve ser numérico")
-	}
-	propriedadeID := int(propriedadeIDFloat)
 
 	anoFloat, err := parseArgToFloat(args["ano"])
 	if err != nil {
