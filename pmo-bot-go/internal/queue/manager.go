@@ -117,13 +117,14 @@ func (m *Manager) Enqueue(ctx context.Context, msg ports.IncomingMessage) error 
 		return fmt.Errorf("queue.Enqueue: falha ao serializar record: %w", err)
 	}
 
-	reqURL := fmt.Sprintf("%s/rest/v1/message_queue", m.cfg.url)
+	reqURL := fmt.Sprintf("%s/rest/v1/message_queue?on_conflict=msg_id", m.cfg.url)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewReader(payload))
 	if err != nil {
 		return fmt.Errorf("queue.Enqueue: falha ao criar request: %w", err)
 	}
 	m.setHeaders(req)
-	// onConflict=msg_id: ignora silenciosamente duplicatas (dedup por WhatsApp msgID)
+	// on_conflict=msg_id: sem esse parâmetro o PostgREST usa a PK (id, sempre um UUID novo)
+	// como alvo do ON CONFLICT e a deduplicação nunca dispara (DT-67).
 	req.Header.Set("Prefer", "resolution=ignore-duplicates,return=minimal")
 
 	resp, err := m.httpClient.Do(req)
