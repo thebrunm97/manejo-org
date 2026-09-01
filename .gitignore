@@ -153,3 +153,6 @@ scripts/reset_checkpoint.py
 scripts/test_gemini_batch.py
 scripts/test_rag_query.py
 scripts/test_mcp.js
+
+# ── Obsidian vault config (preferências locais) ──
+wiki/.obsidian/
