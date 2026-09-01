@@ -3,15 +3,13 @@ package mcp
 import (
 	"log"
 	"context"
-	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"fmt"
 )
 
-func (s *Server) handleCriarNovoTalhao(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
-	if profile == nil { return nil, fmt.Errorf("unauthorized: missing profile") }
-	pmoID := profile.PmoAtivoID
-	userID := profile.ID
-	propID := profile.PropriedadeAtivaID
+func (s *Server) handleCriarNovoTalhao(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
+	pmoID := tenant.PmoID
+	userID := tenant.UserID
+	propID := tenant.PropriedadeID
 	_ = pmoID
 	_ = userID
 	_ = propID
@@ -46,11 +44,10 @@ func (s *Server) handleCriarNovoTalhao(ctx context.Context, args map[string]inte
 	return fmt.Sprintf("Talhão '%s' criado com sucesso com ID %d. Você já pode visualizar e desenhar o polígono no painel web.", nome, id), nil
 }
 
-func (s *Server) handleCriarNovosCanteiros(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
-	if profile == nil { return nil, fmt.Errorf("unauthorized: missing profile") }
-	pmoID := profile.PmoAtivoID
-	userID := profile.ID
-	propID := profile.PropriedadeAtivaID
+func (s *Server) handleCriarNovosCanteiros(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
+	pmoID := tenant.PmoID
+	userID := tenant.UserID
+	propID := tenant.PropriedadeID
 	_ = pmoID
 	_ = userID
 	_ = propID
@@ -79,11 +76,10 @@ func (s *Server) handleCriarNovosCanteiros(ctx context.Context, args map[string]
 	return fmt.Sprintf("%d canteiros criados com sucesso para o talhão ID %d.", int(quantidadeFloat), int64(talhaoIDFloat)), nil
 }
 
-func (s *Server) handleCriarInfraestruturaFazenda(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
-	if profile == nil { return nil, fmt.Errorf("unauthorized: missing profile") }
-	pmoID := profile.PmoAtivoID
-	userID := profile.ID
-	propID := profile.PropriedadeAtivaID
+func (s *Server) handleCriarInfraestruturaFazenda(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
+	pmoID := tenant.PmoID
+	userID := tenant.UserID
+	propID := tenant.PropriedadeID
 	_ = pmoID
 	_ = userID
 	_ = propID
@@ -118,11 +114,10 @@ func (s *Server) handleCriarInfraestruturaFazenda(ctx context.Context, args map[
 	return res, nil
 }
 
-func (s *Server) handleSelecionarFazenda(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
-	if profile == nil { return nil, fmt.Errorf("unauthorized: missing profile") }
-	pmoID := profile.PmoAtivoID
-	userID := profile.ID
-	propID := profile.PropriedadeAtivaID
+func (s *Server) handleSelecionarFazenda(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
+	pmoID := tenant.PmoID
+	userID := tenant.UserID
+	propID := tenant.PropriedadeID
 	_ = pmoID
 	_ = userID
 	_ = propID
@@ -159,11 +154,10 @@ func (s *Server) handleSelecionarFazenda(ctx context.Context, args map[string]in
 	return fmt.Sprintf("Fazenda '%s'%s selecionada com sucesso. Agora todas as suas atividades serão registradas nesta propriedade.", nome, feedbackExtra), nil
 }
 
-func (s *Server) handleSelecionarPMO(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
-	if profile == nil { return nil, fmt.Errorf("unauthorized: missing profile") }
-	pmoID := profile.PmoAtivoID
-	userID := profile.ID
-	propID := profile.PropriedadeAtivaID
+func (s *Server) handleSelecionarPMO(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
+	pmoID := tenant.PmoID
+	userID := tenant.UserID
+	propID := tenant.PropriedadeID
 	_ = pmoID
 	_ = userID
 	_ = propID

@@ -1,26 +1,20 @@
 package mcp
 
 import (
-	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"context"
 	"fmt"
 	"log"
 )
 
 // handleConsultarBalancoFinanceiro processes the tool call to get financial reports.
-func (s *Server) handleConsultarBalancoFinanceiro(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
-	// SECURE SESSION INJECTION
-	if profile == nil {
-		return nil, fmt.Errorf("unauthorized: missing profile")
-	}
-
+func (s *Server) handleConsultarBalancoFinanceiro(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
 	// A propriedade SEMPRE vem da sessão, nunca dos args do LLM (DT-67): o schema desta
 	// tool nem declara "propriedade_id" como parâmetro, então um valor aqui só chegaria
 	// por alucinação do modelo — e a query correria com a service_role key, que ignora RLS.
-	if profile.PropriedadeAtivaID == 0 {
+	if tenant.PropriedadeID == 0 {
 		return nil, fmt.Errorf("usuário não tem propriedade ativa selecionada")
 	}
-	propriedadeID := int(profile.PropriedadeAtivaID)
+	propriedadeID := int(tenant.PropriedadeID)
 
 	log.Printf("🛠️ [MCP] Executando get_dre_mensal")
 
@@ -49,11 +43,7 @@ func (s *Server) handleConsultarBalancoFinanceiro(ctx context.Context, args map[
 }
 
 // handleRegistrarDespesa processes the tool call to register a financial expense.
-func (s *Server) handleRegistrarDespesa(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
-	if profile == nil {
-		return nil, fmt.Errorf("unauthorized: missing profile")
-	}
-
+func (s *Server) handleRegistrarDespesa(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
 	valorTotalFloat, err := parseArgToFloat(args["valor_total"])
 	if err != nil || valorTotalFloat <= 0 {
 		return nil, fmt.Errorf("O valor da despesa não foi informado. Pergunte ao utilizador.")
@@ -80,13 +70,13 @@ func (s *Server) handleRegistrarDespesa(ctx context.Context, args map[string]int
 	}
 
 	payload := map[string]interface{}{
-		"propriedade_id":     profile.PropriedadeAtivaID,
+		"propriedade_id":     tenant.PropriedadeID,
 		"categoria_id":       categoriaID,
 		"tipo":               "DESPESA",
 		"valor_total":        valorTotalFloat,
 		"fornecedor_cliente": descricao,
-		"user_id":            profile.ID,
-		"pmo_id":             profile.PmoAtivoID,
+		"user_id":            tenant.UserID,
+		"pmo_id":             tenant.PmoID,
 	}
 
 	if data, ok := args["data"].(string); ok && data != "" {

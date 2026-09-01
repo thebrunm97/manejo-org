@@ -12,14 +12,10 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 )
 
-func (s *Server) handleConsultarDadosFazenda(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
-	// SECURE SESSION INJECTION
-	if profile == nil {
-		return nil, fmt.Errorf("unauthorized: missing profile")
-	}
-	pmoID := profile.PmoAtivoID
-	userID := profile.ID
-	propID := profile.PropriedadeAtivaID
+func (s *Server) handleConsultarDadosFazenda(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
+	pmoID := tenant.PmoID
+	userID := tenant.UserID
+	propID := tenant.PropriedadeID
 	_ = pmoID
 	_ = userID
 	_ = propID
@@ -61,14 +57,10 @@ func (s *Server) handleConsultarDadosFazenda(ctx context.Context, args map[strin
 	return string(jsonBytes), nil
 }
 
-func (s *Server) handleConsultarBaseConhecimento(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
-	// SECURE SESSION INJECTION
-	if profile == nil {
-		return nil, fmt.Errorf("unauthorized: missing profile")
-	}
-	pmoID := profile.PmoAtivoID
-	userID := profile.ID
-	propID := profile.PropriedadeAtivaID
+func (s *Server) handleConsultarBaseConhecimento(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
+	pmoID := tenant.PmoID
+	userID := tenant.UserID
+	propID := tenant.PropriedadeID
 	_ = pmoID
 	_ = userID
 	_ = propID
@@ -220,14 +212,10 @@ func (s *Server) handleConsultarBaseConhecimento(ctx context.Context, args map[s
 	return result, nil
 }
 
-func (s *Server) handleConsultarLeiOrganica(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
-	// SECURE SESSION INJECTION
-	if profile == nil {
-		return nil, fmt.Errorf("unauthorized: missing profile")
-	}
-	pmoID := profile.PmoAtivoID
-	userID := profile.ID
-	propID := profile.PropriedadeAtivaID
+func (s *Server) handleConsultarLeiOrganica(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
+	pmoID := tenant.PmoID
+	userID := tenant.UserID
+	propID := tenant.PropriedadeID
 	_ = pmoID
 	_ = userID
 	_ = propID
@@ -244,5 +232,5 @@ func (s *Server) handleConsultarLeiOrganica(ctx context.Context, args map[string
 		"categoria_fonte": "institucional",
 	}
 
-	return s.handleConsultarBaseConhecimento(ctx, mappedArgs, profile)
+	return s.handleConsultarBaseConhecimento(ctx, mappedArgs, tenant)
 }

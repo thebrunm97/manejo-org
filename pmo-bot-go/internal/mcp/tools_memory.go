@@ -1,7 +1,6 @@
 package mcp
 
 import (
-	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"context"
 	"fmt"
 
@@ -14,14 +13,10 @@ var SalvarMemoriaProdutorDef = llm.FerramentaAgnostica{
 	Parameters: map[string]interface{}{
 		"type": "object",
 		"properties": map[string]interface{}{
-			"pmo_id": map[string]interface{}{
-				"type":        "string",
-				"description": "UUID do PMO injetado no contexto.",
-			},
-			"phone_number": map[string]interface{}{
-				"type":        "string",
-				"description": "Telefone do produtor injetado no contexto.",
-			},
+			// pmo_id/phone_number removidos do schema (DT-67): o handler
+			// sempre usou o TenantCtx da sessão para esses dois valores,
+			// nunca os args — declará-los como obrigatórios aqui só fazia o
+			// LLM gastar esforço preenchendo algo que era descartado.
 			"fato": map[string]interface{}{
 				"type":        "string",
 				"description": "O fato a ser salvo na memória.",
@@ -31,18 +26,14 @@ var SalvarMemoriaProdutorDef = llm.FerramentaAgnostica{
 				"description": "Categoria do fato (ex: cultura, infraestrutura, alerta_climatico, comportamento).",
 			},
 		},
-		"required": []string{"pmo_id", "phone_number", "fato", "categoria"},
+		"required": []string{"fato", "categoria"},
 	},
 }
 
-func (s *Server) handleSalvarMemoria(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
-	// SECURE SESSION INJECTION — pmo_id from profile ONLY, never from args
-	if profile == nil {
-		return nil, fmt.Errorf("unauthorized: missing profile")
-	}
-	// SECURITY: use profile values directly, args["pmo_id"] is ignored
-	pmoIDStr := fmt.Sprintf("%d", profile.PmoAtivoID)
-	phone := profile.Telefone
+func (s *Server) handleSalvarMemoria(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
+	// SECURITY: pmo_id e telefone sempre do TenantCtx, nunca dos args (DT-67)
+	pmoIDStr := fmt.Sprintf("%d", tenant.PmoID)
+	phone := tenant.Telefone
 
 	fato, ok := args["fato"].(string)
 	if !ok {

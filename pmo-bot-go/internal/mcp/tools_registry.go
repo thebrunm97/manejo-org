@@ -8,7 +8,6 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/domain"
 	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
-	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 )
 
 // CalcularAdubacaoDef is the agnostic definition for the agronomic calculation tool.
@@ -829,16 +828,10 @@ var RegistrarLoteOperacoesDef = llm.FerramentaAgnostica{
 	},
 }
 
-func (s *Server) handleRegistrarLote(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
-	// SECURE SESSION INJECTION — pmo_id/user_id from profile ONLY, never from args
-	if profile == nil {
-		return nil, fmt.Errorf("unauthorized: missing profile")
-	}
-	if profile.PmoAtivoID == 0 {
-		return nil, fmt.Errorf("validation: usuário não tem PMO ativa selecionada")
-	}
-	pmoID := int(profile.PmoAtivoID)
-	userID := profile.ID
+func (s *Server) handleRegistrarLote(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
+	// SECURE SESSION INJECTION — pmo_id/user_id do TenantCtx, nunca dos args (DT-67)
+	pmoID := int(tenant.PmoID)
+	userID := tenant.UserID
 
 	var payload RegistrarLoteOperacoesSchema
 	payloadBytes, _ := json.Marshal(args)
@@ -893,16 +886,10 @@ var ProposeBatchMutationsDef = llm.FerramentaAgnostica{
 	},
 }
 
-func (s *Server) handleProposeBatchMutations(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
-	if profile == nil {
-		return nil, fmt.Errorf("unauthorized: missing profile")
-	}
-	if profile.PmoAtivoID == 0 {
-		return nil, fmt.Errorf("validation: usuário não possui PMO ativa selecionada")
-	}
-	pmoID := int64(profile.PmoAtivoID)
-	userID := profile.ID
-	phone := profile.Telefone
+func (s *Server) handleProposeBatchMutations(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
+	pmoID := tenant.PmoID
+	userID := tenant.UserID
+	phone := tenant.Telefone
 
 	var payload domain.ProposeBatchMutationsPayload
 	payloadBytes, _ := json.Marshal(args)

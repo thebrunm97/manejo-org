@@ -33,12 +33,11 @@ func TestRead_PMO_A_CannotSeePMO_B_Boundary(t *testing.T) {
 
 // =============================================================================
 // TestRead_ValidateProfile_BlocksAllReadBeforeDB
-// Valida que validateProfile intercepta ANTES de qualquer query ao BD.
-// Qualquer handler que chame validateProfile primeiro está protegido.
+// Valida que buildTenantCtx intercepta ANTES de qualquer query ao BD — desde
+// o DT-67, é o único portão: nenhum handler recebe mais *supabase.Profile
+// para checar por conta própria, só o TenantCtx já validado.
 // =============================================================================
 func TestRead_ValidateProfile_BlocksAllReadBeforeDB(t *testing.T) {
-	server := &Server{}
-
 	testCases := []struct {
 		name    string
 		profile *supabase.Profile
@@ -53,7 +52,7 @@ func TestRead_ValidateProfile_BlocksAllReadBeforeDB(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := server.validateProfile(tc.profile)
+			_, err := buildTenantCtx(tc.profile)
 			if tc.wantErr {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tc.errMsg)
@@ -65,18 +64,14 @@ func TestRead_ValidateProfile_BlocksAllReadBeforeDB(t *testing.T) {
 }
 
 // =============================================================================
-// TestRead_FinancialBalance_RequiresProfile (Integration — requer DATABASE_URL)
-// Valida que consultar_balanco_financeiro está amarrado ao profile da sessão.
+// TestRead_FinancialBalance_RequiresProfile
+// Valida que consultar_balanco_financeiro está amarrado ao profile da sessão:
+// um profile nulo é rejeitado por buildTenantCtx ANTES de handleConsultarBalancoFinanceiro
+// sequer ser chamado — o handler, desde o DT-67, nem tem mais como receber
+// um TenantCtx inválido, então é buildTenantCtx quem este teste exercita.
 // =============================================================================
 func TestRead_FinancialBalance_RequiresProfile(t *testing.T) {
-	ctx := context.Background()
-	server := &Server{}
-
-	// Testa que nil profile é rejeitado antes de qualquer leitura
-	_, err := server.handleConsultarBalancoFinanceiro(ctx, map[string]interface{}{
-		"propriedade_id": 1.0,
-		"ano":            2026.0,
-	}, nil)
+	_, err := buildTenantCtx(nil)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "unauthorized")
@@ -100,9 +95,12 @@ func TestRead_WithRealDB_PMOACannotSeePMOBData(t *testing.T) {
 
 	server := &Server{supabase: sbClient}
 
+	tenantB, err := buildTenantCtx(profileB)
+	require.NoError(t, err)
+
 	// PMO B registra colheita
 	argsB := mockColheitaArgs()
-	resultB, errB := server.handleRegistrarColheita(ctx, argsB, profileB)
+	resultB, errB := server.handleRegistrarColheita(ctx, argsB, tenantB)
 	require.NoError(t, errB)
 	assert.NotNil(t, resultB, "PMO B deve registrar com sucesso")
 
