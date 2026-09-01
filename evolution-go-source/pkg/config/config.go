@@ -3,6 +3,7 @@ package config
 import (
 	"database/sql"
 	"fmt"
+	stdlog "log"
 	"net/url"
 	"os"
 	"strconv"
@@ -13,9 +14,31 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	gormlogger "gorm.io/gorm/logger"
 
 	config_env "github.com/EvolutionAPI/evolution-go/pkg/config/env"
 )
+
+// newSafeGormLogger evita que o GORM imprima a instrução SQL inteira (com os
+// parâmetros interpolados, incluindo o token de autenticação em claro) quando
+// uma consulta simplesmente não encontra registro. O logger padrão do GORM
+// (LogLevel Warn, usado antes desta correção via &gorm.Config{}) loga a query
+// completa também em "record not found" por padrão — e o fallback de
+// auto-cura de token em GetInstanceByToken (instance_service.go) dispara
+// exatamente esse caso a cada chave rotacionada, vazando o token novo direto
+// no `docker logs`. Mantém o log de queries lentas e de erros genuínos —
+// só "não encontrado" deixa de imprimir a query. Ver DT-57.
+func newSafeGormLogger() gormlogger.Interface {
+	return gormlogger.New(
+		stdlog.New(os.Stdout, "\r\n", stdlog.LstdFlags),
+		gormlogger.Config{
+			SlowThreshold:             200 * time.Millisecond,
+			LogLevel:                  gormlogger.Warn,
+			IgnoreRecordNotFoundError: true,
+			Colorful:                  false,
+		},
+	)
+}
 
 type Config struct {
 	PostgresAuthDB       string
@@ -161,7 +184,7 @@ func (c *Config) CreateUsersDB() (*gorm.DB, error) {
 	if strings.Contains(dbDSN, ".db") || strings.HasPrefix(dbDSN, "file:") {
 		db, err = gorm.Open(
 			sqlite.Open(dbDSN),
-			&gorm.Config{},
+			&gorm.Config{Logger: newSafeGormLogger()},
 		)
 	} else {
 		if err := ensureDBExists(dbDSN); err != nil {
@@ -170,7 +193,7 @@ func (c *Config) CreateUsersDB() (*gorm.DB, error) {
 
 		db, err = gorm.Open(
 			postgres.Open(dbDSN),
-			&gorm.Config{},
+			&gorm.Config{Logger: newSafeGormLogger()},
 		)
 	}
 	if err != nil {
