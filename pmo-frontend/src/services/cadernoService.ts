@@ -117,10 +117,12 @@ export const addRegistro = async (registro: any): Promise<CadernoEntry> => {
         delete payload.is_pmo_limpeza;
     }
 
-    const rpcName = isLimpeza ? 'create_limpeza_registro' : 'create_caderno_registro';
-    const { data, error } = await supabase.rpc(rpcName, { 
-        p_payload: payload 
-    });
+    // create_limpeza_registro não está no allowlist do gateway (DT-59) — só
+    // create_caderno_registro passa pelo Go; pmo_limpeza segue direto ao
+    // PostgREST, como sempre foi.
+    const { data, error } = isLimpeza
+        ? await supabase.rpc('create_limpeza_registro', { p_payload: payload })
+        : await goApiRpc<CadernoEntry>('create_caderno_registro', { p_payload: payload });
 
     if (error) {
         console.error('Error adding registro:', error.message);
@@ -154,11 +156,12 @@ export const updateRegistro = async (id: string, updates: any): Promise<CadernoE
         delete payload.is_pmo_limpeza;
     }
 
-    const rpcName = isLimpeza ? 'update_limpeza_registro' : 'update_caderno_registro';
-    const { data, error } = await supabase.rpc(rpcName, {
-        p_id: id,
-        p_payload: payload
-    });
+    // update_limpeza_registro não está no allowlist do gateway (DT-59) — só
+    // update_caderno_registro passa pelo Go; pmo_limpeza segue direto ao
+    // PostgREST, como sempre foi.
+    const { data, error } = isLimpeza
+        ? await supabase.rpc('update_limpeza_registro', { p_id: id, p_payload: payload })
+        : await goApiRpc<CadernoEntry>('update_caderno_registro', { p_id: id, p_payload: payload });
 
     if (error) {
         console.error('Error updating registro:', error.message);
