@@ -1,5 +1,14 @@
 # RAG Ingestion Pipeline: Lições Aprendidas e Conhecimento Acumulado
 
+> **Nota histórica (2026-09-02, DT-07):** este documento registra o pipeline Docling/gatekeeper
+> descrito abaixo, que já não existe mais no repositório — foi removido como código morto
+> junto de `pmo-bot-go/cmd/ingestor/`. O pipeline atual é o descrito em
+> [ADR-007](../architecture/adr/007-pdf-extraction-pymupdf.md) (PyMuPDF puro, sem Docling e
+> sem OCR automático) e em [`PLAN-rag-ingestion-unification.md`](../../pmo-bot-go/docs/PLAN-rag-ingestion-unification.md),
+> gravando em `farm_documents` com embeddings OpenRouter/bge-m3. As lições sobre VRAM e
+> Docling abaixo continuam válidas como registro histórico de por que Docling foi abandonado,
+> mas não descrevem o código em produção hoje.
+
 Este documento serve como um **checkpoint de conhecimento** consolidando todos os aprendizados, decisões arquiteturais e armadilhas descobertas durante a construção da esteira de ingestão de PDFs para o sistema de RAG.
 
 ## 1. O Desafio do Hardware (O Limite de 6GB de VRAM)

@@ -7,6 +7,29 @@
 
 ---
 
+> **Addendum — 2026-09-02 (DT-07):** a decisão de extrator (PyMuPDF) descrita nesta ADR
+> continua válida e é a que está em produção. O que mudou foi o **destino** dos chunks: até
+> esta data, `rag_ingest.py` gravava em `knowledge_chunks` com embeddings Gemini (3072d) —
+> uma tabela que nenhuma tool do bot consulta. A tool `consultar_base_conhecimento` sempre
+> leu `farm_documents.embedding_1024` (OpenRouter `baai/bge-m3`, 1024d), então nenhum dos 17
+> PDFs reais da base de conhecimento era pesquisável pelo bot, apesar da extração estar
+> correta. `rag_ingest.py` foi adaptado para gerar embeddings via OpenRouter/bge-m3 e
+> gravar direto em `farm_documents` (upsert por `chunk_hash`) — mesmo extrator desta ADR,
+> espaço vetorial correto. Ver [`PLAN-rag-ingestion-unification.md`](../../../pmo-bot-go/docs/PLAN-rag-ingestion-unification.md)
+> para o diagnóstico completo. Como consequência, `pmo-bot-go/scripts/rag_ingest.py`
+> (uma cópia antiga, ainda em Docling, nunca removida desde 2026-07-24) e
+> `pmo-bot-go/cmd/ingestor/` (ingestor Go para `knowledge_chunks`, sem chamador) foram
+> deletados como código morto.
+>
+> No mesmo dia, o cenário previsto em "Quando reconsiderar" abaixo (PDF escaneado sem
+> camada de texto) apareceu de fato num arquivo real do corpus (`L10831.pdf`). Em vez de
+> reverter a decisão desta ADR, foi adicionado um fallback pontual: `rag_ingest.py` roda
+> `ocrmypdf`/Tesseract (idioma Português) via Docker (`jbarlow83/ocrmypdf`) só quando
+> `page.get_text()` volta vazio para o documento inteiro, e extrai o texto resultante com o
+> mesmo PyMuPDF de sempre. Não é a pipeline híbrida Tesseract/Docling cogitada originalmente
+> — PyMuPDF continua sendo o único extrator para PDFs digitais, o OCR só entra como último
+> recurso para PDFs sem nenhuma camada de texto.
+
 ## Contexto
 
 O [ADR-006](./006-pdf-extraction-engine.md) estabeleceu o **Docling** como motor oficial de

@@ -1,20 +1,27 @@
 # PLAN-rag-ingestion-unification
 
-> **Status:** 🔴 **NÃO INICIADO** — investigação e plano escritos em 2026-09-02, nenhuma
-> linha de código ou dado alterada. A pergunta original do **DT-07** ("aposentar
+> **Status:** 🟢 **CONCLUÍDO (2026-09-02)** — Fases 1-5 implementadas e verificadas: script
+> adaptado, validado em Postgres local, ingestão real dos 17 PDFs rodada contra produção,
+> retrieval real confirmado via `match_documents_with_context`, pipeline antigo removido como
+> código morto. `L10831.pdf` (PDF puramente escaneado) inicialmente ficou de fora por falta de
+> camada de texto; um fallback automático de OCR (`ocrmypdf`/Tesseract via Docker) foi
+> adicionado ao script no mesmo dia, cobrindo esse caso e qualquer PDF escaneado futuro —
+> **total final: 17 de 17 documentos, 847 chunks em produção.** Fase 6 (fate de
+> `knowledge_chunks`/`match_farm_documents`) deliberadamente não executada — ver nota ao final
+> do documento. A pergunta original do **DT-07** ("aposentar
 > `rag_ingest.py` (Docling) em favor do `cmd/ingestor`, ou manter os dois?") partia de uma
-> premissa errada — os dois nunca foram alternativas, são estágios de um único pipeline. A
-> investigação revelou um problema bem maior, registrado aqui. · **Data:** 2026-09-02 ·
-> **Rastreio:** DT-07 · **Componentes:** `scripts/rag_ingest.py`, `pmo-bot-go/scripts/rag_ingest.py`,
-> `pmo-bot-go/cmd/ingestor/`, tabela `farm_documents`, tabela `knowledge_chunks`,
+> premissa errada — os dois nunca foram alternativas, eram estágios de um único pipeline
+> morto. A investigação revelou um problema bem maior, registrado aqui. · **Data:** 2026-09-02 ·
+> **Rastreio:** DT-07 · **Componentes:** `scripts/rag_ingest.py`, ~~`pmo-bot-go/scripts/rag_ingest.py`~~,
+> ~~`pmo-bot-go/cmd/ingestor/`~~ (removidos), tabela `farm_documents`, tabela `knowledge_chunks`,
 > `internal/supabase/client.go` (`GetEmbedding`, `UpsertFarmDocumentChunks`)
 
 ## 🎯 Objetivo
 
 Ter **um** pipeline de ingestão de RAG, escrevendo na **única** tabela que a ferramenta
 `consultar_base_conhecimento` de fato consulta, com o extrator de PDF que não corrompe
-acentuação em Português — e fechar a lacuna de conteúdo que isso expõe: hoje **15 dos 17
-PDFs da base de conhecimento não são pesquisáveis pelo bot**.
+acentuação em Português — e fechar a lacuna de conteúdo que isso expõe: hoje **nenhum dos 17
+PDFs da base de conhecimento é pesquisável pelo bot**.
 
 ## 🛑 Problema
 
@@ -42,8 +49,10 @@ match_documents_with_context (RPC) ← chamada por handleConsultarBaseConhecimen
 Esta é a linha **ativa de verdade**: `match_documents_with_context` (a RPC que a tool
 `consultar_base_conhecimento` chama) faz `SELECT ... FROM farm_documents WHERE 1 -
 (fd.embedding_1024 <=> query_embedding) > match_threshold` — só olha para
-`farm_documents.embedding_1024`. Confirmado ao vivo em produção: **33 linhas, 2 documentos
-indexados.**
+`farm_documents.embedding_1024`. **Correção (verificado em 2026-09-02, ao começar a
+implementação):** as 33 linhas/2 documentos que a auditoria inicial contou como "indexados"
+são **dados de teste** (`integration_test_doc.pdf`, `obs_test.pdf`) — nenhum PDF real da base
+de conhecimento está lá. A lacuna real é **0 de 17 documentos**, não 15 de 17.
 
 O extrator (Docling) tem o bug documentado no
 [ADR-007](../../docs/architecture/adr/007-pdf-extraction-pymupdf.md): PDFs com fontes CID
@@ -78,10 +87,11 @@ sem que se soubesse, no momento da remoção, que ela era a outra metade deste p
 
 `pmo-bot-go/docs/knowledge_base/` tem **17 PDFs reais** — normas do MAPA (IN, INI, INC,
 Decreto, Portaria), guias técnicos de manejo de pragas/doenças. `farm_documents` (a tabela
-que o bot consulta) só tem **2 documentos indexados**. Os outros 15 nunca foram processados
-pela linha A (não há `_chunks.json` para eles) nem pela linha B (que aponta para outra
-tabela). Um produtor perguntando sobre qualquer norma fora desses 2 documentos recebe uma
-resposta que não usa o conteúdo real — o bot não tem como saber que a informação existe.
+que o bot consulta) só tem `integration_test_doc.pdf`/`obs_test.pdf` — **dados de teste**,
+não conteúdo real. Nenhum dos 17 foi processado pela linha A (não há `_chunks.json` para
+eles) nem pela linha B (que aponta para outra tabela). Um produtor perguntando sobre
+qualquer norma da base de conhecimento recebe uma resposta que não usa o conteúdo real — o
+bot não tem como saber que a informação existe.
 
 ## 🧭 Decisão de arquitetura
 
@@ -122,7 +132,7 @@ LangChain, checkpoint por hash de arquivo, metadados via Gemini com fallback Ope
    contrato de `internal/supabase/client.go:GetEmbedding` (`model: "baai/bge-m3"`, `provider:
    {order: [EMBEDDING_PINNED_PROVIDER ou "DeepInfra"], allow_fallbacks: false}`, header
    `Authorization: Bearer $OPENROUTER_API_KEY`). Isso garante que os embeddings novos caiam
-   no **mesmo espaço vetorial** dos 33 chunks já existentes — misturar dois modelos de
+   no **mesmo espaço vetorial** que o bot já usa para consultar `farm_documents` — misturar dois modelos de
    embedding na mesma coluna quebraria a similaridade de cosseno de forma silenciosa (chunks
    de modelos diferentes não são comparáveis, mesmo com a mesma dimensão).
 
@@ -165,15 +175,16 @@ extrator, na limpeza de texto, no chunking ou no checkpoint — só a ponta fina
 `match_documents_with_context` (mesma RPC que o bot usa) de fato encontra os chunks novos.
 Zero risco para produção nesta fase.
 
-**Fase 3 — Reingerir os 15 PDFs faltantes.** Com o script validado, apontar
+**Fase 3 — Ingerir os 17 PDFs reais.** Com o script validado, apontar
 `INPUT_DIR`/`knowledge_repo` para `pmo-bot-go/docs/knowledge_base/` (ou copiar os 17 PDFs
 para lá) e rodar contra produção. Decisão do responsável antes de disparar — grava dado real
-em produção. Confirmar ao final: `SELECT count(DISTINCT document_name) FROM farm_documents`
-deve ir de 2 para (até) 17, dependendo de quantos já não têm conteúdo extraível (páginas sem
-camada de texto — improvável nesses documentos, mas o script já loga e pula).
+em produção. Confirmar ao final: `SELECT count(DISTINCT document_name) FROM farm_documents
+WHERE document_name NOT LIKE '%test%'` deve ir de 0 para (até) 17, dependendo de quantos já
+não têm conteúdo extraível (páginas sem camada de texto — improvável nesses documentos, mas
+o script já loga e pula).
 
 **Fase 4 — Teste de retrieval real.** Perguntar ao bot, via WhatsApp ou o *playground* de RAG
-do painel admin, sobre um tema coberto por um dos 15 documentos recém-indexados (ex: uma
+do painel admin, sobre um tema coberto por um dos 17 documentos recém-indexados (ex: uma
 instrução normativa específica) e confirmar que a resposta cita conteúdo real do documento —
 não só que a ingestão rodou sem erro. Mesma lição do DT-31 e do DT-59: build/insert limpo não
 prova que a experiência funciona.
@@ -191,23 +202,17 @@ do DT-47) — mas isso é uma migration de schema à parte, não bloqueia nem de
 
 ## ⚠️ Riscos e mitigações
 
-- **Aspas/formatação do texto mudam o `chunk_hash` de documentos já indexados.** Os 2
-  documentos já em `farm_documents` foram processados pela linha A (Docling); reingeri-los
-  pela linha B (PyMuPDF) produzirá `content` ligeiramente diferente (sem os artefatos do
-  Docling) e portanto um `chunk_hash` novo — o upsert por `on_conflict=chunk_hash` não vai
-  encontrar conflito, vai **duplicar** essas 33 linhas antigas ao lado das novas, mais
-  corretas. Mitigação: antes da Fase 3, decidir explicitamente se os 2 documentos já
-  indexados também devem ser reprocessados (recomendado, para tirar o bug de acentuação de
-  todo o corpus) e, se sim, apagar as linhas antigas desses 2 `document_name` antes de rodar
-  — não deixar as duas versões convivendo.
-- **Custo de embedding.** 15 documentos novos, ordem de centenas de chunks — múltiplas
-  chamadas a OpenRouter/bge-m3. Custo baixo por chamada, mas medir antes de rodar contra
-  produção (a Fase 2 já usa PDFs de teste pequenos justamente para isso).
-- **Rate limit do Gemini** (metadados) e da **OpenRouter** (embeddings) durante uma
-  reingestão de 15 documentos de uma vez — o script já tem retry com backoff para embeddings
-  (`get_embeddings`); vale confirmar que o mesmo existe para a chamada de metadados
-  (`extrair_metadados`) antes de rodar o lote inteiro, ou aceitar o fallback
-  `"Desconhecido"` que já existe ali.
+- **As 33 linhas de teste existentes (`integration_test_doc.pdf`, `obs_test.pdf`) não
+  colidem com a reingestão real.** `document_name` diferente de qualquer um dos 17 PDFs
+  reais, então o upsert por `on_conflict=chunk_hash` nunca as toca. Ficam soltas na tabela —
+  limpeza opcional, não bloqueia nada aqui.
+- **Custo de embedding.** 17 documentos, ordem de centenas de chunks — múltiplas chamadas a
+  OpenRouter/bge-m3. Custo baixo por chamada, mas medir antes de rodar contra produção (a
+  Fase 2 já usa PDFs de teste pequenos justamente para isso).
+- **Rate limit da OpenRouter** durante uma reingestão de 17 documentos de uma vez — o script
+  já tem retry com backoff para embeddings (`get_embeddings`); a extração de metadados via
+  Gemini foi removida do pipeline nesta implementação (nada persiste esse dado depois da
+  unificação — ver Mecanismo), então esse risco de rate-limit específico não se aplica mais.
 
 ## 🔗 Relacionados
 
@@ -223,3 +228,25 @@ do DT-47) — mas isso é uma migration de schema à parte, não bloqueia nem de
 - **ADR-006** (Docling, supersedido) e **ADR-007** (PyMuPDF, aceito) — a decisão de extrator
   já está tomada e validada; este plano só termina de conectar essa decisão à tabela que o
   bot realmente consulta.
+
+## ✅ Resultado da execução (2026-09-02)
+
+Fases 1-5 executadas nesta mesma sessão. Primeira passada de ingestão real contra produção:
+**16 de 17 documentos, 840 chunks** gravados em `farm_documents`. `L10831.pdf` gerou 0 chunks
+— é um PDF puramente escaneado (sem camada de texto), e o pipeline PyMuPDF puro não tem OCR
+de fallback, gap já previsto na ADR-007 original ("Quando reconsiderar").
+
+**Fechado no mesmo dia:** adicionado `ocr_pdf_to_text()` ao script — quando
+`extract_pdf_text()` volta vazio, roda `ocrmypdf`/Tesseract (idioma Português) via Docker
+(`jbarlow83/ocrmypdf`) numa cópia temporária do arquivo antes de desistir, extraindo o texto
+resultante com o mesmo `extract_pdf_text()`. Sem Docker disponível, o arquivo é pulado com
+aviso claro em vez de falhar silenciosamente. Rodado contra `L10831.pdf`: OCR extraiu 7.353
+caracteres, 7 chunks gravados. **Total final: 17 de 17 documentos, 847 chunks em produção.**
+Retrieval real confirmado via `match_documents_with_context` tanto em Postgres local (2 PDFs
+de teste, extração direta) quanto em produção (extração direta e via OCR, ambos com
+similaridade 1.0 no próprio chunk). `pmo-bot-go/scripts/rag_ingest.py` (Docling) e
+`pmo-bot-go/cmd/ingestor/` removidos; `go build ./...` limpo.
+
+**Fase 6 (fate de `knowledge_chunks`/`match_farm_documents`) deliberadamente não executada** —
+escopo separado, de menor urgência (tabela/RPC órfãs mas inofensivas, sem exposição de
+segurança conhecida), fica para uma sessão futura se o responsável decidir que vale a pena.
