@@ -1,3 +1,10 @@
+//go:build real_postgres
+
+// Requer Postgres/PostgREST real (supabase start local ou SUPABASE_TEST_URL/
+// SUPABASE_TEST_SERVICE_KEY) — não roda em CI (DT-30). Local:
+//
+//	go test -tags=real_postgres ./internal/guardrails/...
+
 package guardrails_test
 
 import (

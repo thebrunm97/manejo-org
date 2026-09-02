@@ -1,3 +1,9 @@
+//go:build real_postgres
+
+// Requer Postgres/PostgREST real — não roda em CI (DT-30). Local:
+//
+//	go test -tags=real_postgres ./internal/queue/... -run RealPostgreSQL
+
 package queue
 
 // Fase 5 do PLAN-message-buffer-coalescing.md (DT-68): valida o dreno de

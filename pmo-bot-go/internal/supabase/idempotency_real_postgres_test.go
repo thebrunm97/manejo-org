@@ -1,3 +1,9 @@
+//go:build real_postgres
+
+// Requer Postgres/PostgREST real — não roda em CI (DT-30). Local:
+//
+//	go test -tags=real_postgres ./internal/supabase/...
+
 package supabase_test
 
 import (

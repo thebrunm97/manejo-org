@@ -1,3 +1,9 @@
+//go:build real_postgres
+
+// Requer Postgres/PostgREST real — não roda em CI (DT-30). Local:
+//
+//	go test -tags=real_postgres ./internal/mcp/... -run RealPostgreSQL
+
 package mcp
 
 // DT-66: prova real de isolamento entre tenants no módulo financeiro.
