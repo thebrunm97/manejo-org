@@ -168,10 +168,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 		}
 
 		log.Printf("[AUDIO-DEBUG] Áudio baixado com %d bytes, mime: %s", len(audioBytes), audioMimeType)
-		// TODO(fase-5-ou-switchover): usar audioMimeType para derivar FileName dinamicamente,
-		// igual ao groq_audio_adapter.go, quando este caminho for substituído por domain.ProcessAudioMessage.
-		// Enquanto isso, audioMimeType é capturado (garante compilação e telemetria) mas NÃO altera o comportamento.
-		transcription, err := groqClient.Transcribe(ctx, groq.AudioTranscriptionRequest{FileData: audioBytes, FileName: "audio.ogg", Language: "pt"})
+		transcription, err := groqClient.Transcribe(ctx, groq.AudioTranscriptionRequest{FileData: audioBytes, FileName: groq.DeriveFileName(audioMimeType), Language: "pt"})
 		if err != nil {
 			log.Printf("[AUDIO-DEBUG] Falha na transcrição Groq/Whisper: %v", err)
 			sendFeedback(sbClient, wpClient, ttsClient, msg.From, "Desculpe, não consegui ouvir o seu áudio. Pode repetir ou digitar?", false)

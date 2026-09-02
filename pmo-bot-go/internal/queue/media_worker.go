@@ -209,12 +209,9 @@ func (w *MediaWorker) processAudio(ctx context.Context, msg ports.IncomingMessag
 	}
 
 	log.Printf("🎙️ [MediaWorker] Áudio baixado, enviando para Whisper (ID: %s) mime: %s", msg.ID, audioMimeType)
-	// TODO(fase-5-ou-switchover): usar audioMimeType para derivar FileName dinamicamente,
-	// igual ao groq_audio_adapter.go, quando este caminho for substituído por domain.ProcessAudioMessage.
-	// Enquanto isso, audioMimeType é capturado (garante compilação e telemetria) mas NÃO altera o comportamento.
 	transcription, err := w.cfg.Groq.Transcribe(audioCtx, groq.AudioTranscriptionRequest{
 		FileData: audioData,
-		FileName: "audio.ogg",
+		FileName: groq.DeriveFileName(audioMimeType),
 		Language: "pt",
 	})
 	if err != nil {

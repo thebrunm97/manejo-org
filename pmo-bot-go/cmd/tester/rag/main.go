@@ -116,7 +116,7 @@ func main() {
 		FallbackModel: os.Getenv("GEMINI_FALLBACK_MODEL"),
 	}
 	if geminiCfg.Model == "" {
-		geminiCfg.Model = "gemini-2.0-flash"
+		geminiCfg.Model = "gemini-3.1-flash-lite"
 	}
 	
 	geminiClient, err := gemini.NewClient(geminiCfg)

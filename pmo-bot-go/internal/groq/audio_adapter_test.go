@@ -26,40 +26,40 @@ var _ ports.AudioTranscriber = (*AudioTranscriberAdapter)(nil)
 func TestDeriveFileName_WithCodecs(t *testing.T) {
 	t.Parallel()
 	// Formato mais comum do WhatsApp: OGG com codec Opus
-	got := deriveFileName("audio/ogg; codecs=opus")
+	got := DeriveFileName("audio/ogg; codecs=opus")
 	want := "audio.ogg"
 	if got != want {
-		t.Errorf("deriveFileName(%q) = %q, quero %q", "audio/ogg; codecs=opus", got, want)
+		t.Errorf("DeriveFileName(%q) = %q, quero %q", "audio/ogg; codecs=opus", got, want)
 	}
 }
 
 func TestDeriveFileName_WithoutCodecs(t *testing.T) {
 	t.Parallel()
 	// Formato simples sem parâmetros adicionais
-	got := deriveFileName("audio/mp4")
+	got := DeriveFileName("audio/mp4")
 	want := "audio.mp4"
 	if got != want {
-		t.Errorf("deriveFileName(%q) = %q, quero %q", "audio/mp4", got, want)
+		t.Errorf("DeriveFileName(%q) = %q, quero %q", "audio/mp4", got, want)
 	}
 }
 
 func TestDeriveFileName_EmptyMimeType(t *testing.T) {
 	t.Parallel()
 	// String vazia → default ogg (path do handler legado com TODO pendente)
-	got := deriveFileName("")
+	got := DeriveFileName("")
 	want := "audio.ogg"
 	if got != want {
-		t.Errorf("deriveFileName(%q) = %q, quero %q", "", got, want)
+		t.Errorf("DeriveFileName(%q) = %q, quero %q", "", got, want)
 	}
 }
 
 func TestDeriveFileName_AtypicalFormat_NoAudioPrefix(t *testing.T) {
 	t.Parallel()
 	// Formato que não bate com "audio/" → default ogg (não pânica, não altera comportamento)
-	got := deriveFileName("application/octet-stream")
+	got := DeriveFileName("application/octet-stream")
 	want := "audio.ogg"
 	if got != want {
-		t.Errorf("deriveFileName(%q) = %q, quero %q", "application/octet-stream", got, want)
+		t.Errorf("DeriveFileName(%q) = %q, quero %q", "application/octet-stream", got, want)
 	}
 }
 
@@ -68,10 +68,10 @@ func TestDeriveFileName_WithSpaceBeforeSemicolon(t *testing.T) {
 	// Variação defensiva: espaço antes do ponto-e-vírgula
 	// ex: "audio/ogg ;codecs=opus"
 	// Isso garante que não temos um bug de string malformada como "audio.ogg "
-	got := deriveFileName("audio/ogg ;codecs=opus")
+	got := DeriveFileName("audio/ogg ;codecs=opus")
 	want := "audio.ogg"
 	if got != want {
-		t.Errorf("deriveFileName(%q) = %q, quero %q", "audio/ogg ;codecs=opus", got, want)
+		t.Errorf("DeriveFileName(%q) = %q, quero %q", "audio/ogg ;codecs=opus", got, want)
 	}
 }
 

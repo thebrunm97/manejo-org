@@ -34,9 +34,9 @@ func NewAudioTranscriberAdapter(c *Client, language string) *AudioTranscriberAda
 	}
 }
 
-// deriveFileName extracts a sensible extension from the audioMimeType
+// DeriveFileName extracts a sensible extension from the audioMimeType
 // and returns a file name for the Whisper API.
-func deriveFileName(audioMimeType string) string {
+func DeriveFileName(audioMimeType string) string {
 	ext := ".ogg"
 	if audioMimeType != "" {
 		cleanMime := audioMimeType
@@ -57,7 +57,7 @@ func deriveFileName(audioMimeType string) string {
 func (a *AudioTranscriberAdapter) Transcribe(ctx context.Context, audio []byte, audioMimeType string) (string, error) {
 	req := AudioTranscriptionRequest{
 		FileData: audio,
-		FileName: deriveFileName(audioMimeType),
+		FileName: DeriveFileName(audioMimeType),
 		Model:    audioModel,
 		Language: a.language,
 	}

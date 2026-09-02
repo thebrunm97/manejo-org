@@ -3,8 +3,6 @@ package supabase
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -968,36 +966,6 @@ func (c *Client) InsertLogTreinamento(logData LogTreinamentoInsert) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.doRequest(http.MethodPost, reqURL, payload)
-	return err
-}
-
-// InsertFarmDocument inserts a text chunk and its embedding into farm_documents table
-// If pmoID is 0, it is treated as NULL (Global document)
-func (c *Client) InsertFarmDocument(pmoID int64, docName, content string, embedding []float32) error {
-	reqURL := fmt.Sprintf("%s/rest/v1/farm_documents", c.config.URL)
-
-	var pmoPtr *int64
-	if pmoID > 0 {
-		pmoPtr = &pmoID
-	}
-
-	hashBytes := sha256.Sum256([]byte(content + docName))
-	chunkHash := hex.EncodeToString(hashBytes[:])
-
-	doc := FarmDocument{
-		PmoID:        pmoPtr,
-		DocumentName: docName,
-		Content:      content,
-		Embedding:    embedding,
-		ChunkHash:    chunkHash,
-	}
-
-	payload, err := json.Marshal(doc)
-	if err != nil {
-		return err
-	}
-
 	_, err = c.doRequest(http.MethodPost, reqURL, payload)
 	return err
 }
