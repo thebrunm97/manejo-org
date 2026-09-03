@@ -827,12 +827,19 @@ func (h *Handler) processKnowledgePDF(path string, originalName string, pmoID in
 	wg.Wait()
 
 	if jobID != "" {
+		failed := atomic.LoadInt64(&failedCount)
+		succeeded := int64(totalChunks) - failed
+
 		status := "completed"
-		if int(atomic.LoadInt64(&processedCount)) < totalChunks {
-			// Optional: mark as partial or completed if most chunks succeeded
-			log.Printf("⚠️ [ASYNC-RAG] Processamento concluído com lacunas: %d/%d", processedCount, totalChunks)
+		errMsg := ""
+		if failed > 0 {
+			log.Printf("⚠️ [ASYNC-RAG] Processamento concluído com lacunas: %d/%d chunks falharam", failed, totalChunks)
+			errMsg = fmt.Sprintf("%d/%d chunks falharam ao gerar embedding ou salvar", failed, totalChunks)
+			if succeeded <= 0 {
+				status = "failed"
+			}
 		}
-		h.cfg.SupabaseClient.FinishJob(jobID, status, "")
+		h.cfg.SupabaseClient.FinishJob(jobID, status, errMsg)
 	}
 
 	log.Printf("✅ [ASYNC-RAG] Documento %s processado (Total Chunks: %d)", originalName, totalChunks)

@@ -18,6 +18,17 @@ type Conversation struct {
 	FSMState        string
 	FSMContext      map[string]interface{}
 	PendingEntities []llm.AcaoEstruturada
+	// PrefixGen aumenta toda vez que o PREFIXO de Messages (tudo antes do
+	// fim do slice) pode ter mudado: truncamento por maxMessages cortando
+	// pela frente, ou AppendAgnosticHistory reconstruindo o histórico do
+	// zero via Semantic Pruning. NÃO aumenta em um simples append no fim
+	// (AddMessage/InjectSystemNote sem truncar), porque nesse caso os
+	// índices mais antigos continuam válidos. É usado por
+	// TriggerAsyncCompression para detectar, após reobter o lock, se o
+	// splitIndex calculado antes de chamar o LLM ainda é confiável — se o
+	// prefixo mudou, fatiar às cegas cortaria no meio de um turno ou
+	// descartaria mensagens reais, então a fusão é abortada.
+	PrefixGen int64
 }
 
 // Manager handles in-memory conversation history with TTL
@@ -82,6 +93,7 @@ func (m *Manager) AddMessage(phone string, role, content string) {
 
 	if len(conv.Messages) > m.maxMessages {
 		conv.Messages = conv.Messages[len(conv.Messages)-m.maxMessages:]
+		conv.PrefixGen++
 	}
 }
 
@@ -184,6 +196,9 @@ func (m *Manager) AppendAgnosticHistory(phone string, fullHistory []llm.Mensagem
 
 	conv.Messages = prunedHistory
 	conv.LastUpdate = time.Now()
+	// Reconstrução completa a partir de fullHistory (Semantic Pruning pode
+	// colapsar turnos inteiros em índices diferentes) — sempre invalida o prefixo.
+	conv.PrefixGen++
 
 	if len(conv.Messages) > m.maxMessages {
 		conv.Messages = conv.Messages[len(conv.Messages)-m.maxMessages:]
@@ -211,6 +226,7 @@ func (m *Manager) InjectSystemNote(phone string, note string) {
 
 	if len(conv.Messages) > m.maxMessages {
 		conv.Messages = conv.Messages[len(conv.Messages)-m.maxMessages:]
+		conv.PrefixGen++
 	}
 }
 
@@ -272,6 +288,7 @@ func (m *Manager) TriggerAsyncCompression(phone string, llmClient ContentGenerat
 		}
 
 		splitIndex := len(conv.Messages) - preserveCount
+		prefixGenAtSnapshot := conv.PrefixGen
 		oldMessages := make([]llm.MensagemAgnostica, splitIndex)
 		copy(oldMessages, conv.Messages[:splitIndex])
 		m.mu.RUnlock()
@@ -304,13 +321,20 @@ func (m *Manager) TriggerAsyncCompression(phone string, llmClient ContentGenerat
 			return
 		}
 
-		// We need to carefully merge. In the meantime, the user could have sent MORE messages.
-		// So `conv.Messages` might be longer than it was.
-		// We replace exactly the old prefix that we summarized with our new summary.
-		// To do this safely without breaking references, we can check if the prefix still matches.
-		// Actually, simpler: we just preserve the last N messages where N is what accumulated since we unlocked,
-		// plus the preserved messages.
-		
+		// Se PrefixGen mudou desde o snapshot, o PREFIXO de conv.Messages
+		// (tudo abaixo de splitIndex) pode ter sido reescrito enquanto o LLM
+		// sumarizava — ex: AppendAgnosticHistory rodou de novo e aplicou
+		// Semantic Pruning, ou maxMessages truncou pela frente. splitIndex
+		// não corresponde mais aos mesmos limites lógicos de mensagens —
+		// fatiar às cegas aqui cortaria no meio de um turno ou descartaria
+		// mensagens reais. Mais seguro abortar esta compressão e deixar a
+		// próxima chamada tentar de novo. Um simples append no fim (sem
+		// truncar) não mexe no prefixo, então continua seguro de mesclar.
+		if conv.PrefixGen != prefixGenAtSnapshot {
+			log.Printf("🧹 [MemoryManager] %s: prefixo do histórico mudou durante a sumarização assíncrona (gen %d -> %d). Descartando compressão para evitar corrupção.", phone, prefixGenAtSnapshot, conv.PrefixGen)
+			return
+		}
+
 		var newMessages []llm.MensagemAgnostica
 		newMessages = append(newMessages, llm.MensagemAgnostica{
 			Role:    llm.PapelAssistant,
@@ -328,6 +352,7 @@ func (m *Manager) TriggerAsyncCompression(phone string, llmClient ContentGenerat
 		}
 
 		conv.Messages = newMessages
+		conv.PrefixGen++
 		conv.LastUpdate = time.Now()
 
 		log.Printf("✅ [MemoryManager] %s compressão finalizada. Novo tamanho do histórico: %d mensagens.", phone, len(conv.Messages))
