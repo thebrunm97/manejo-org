@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+#
+# Aviso de notas desatualizadas do Cartographer -- roda antes de cada push.
+#
+# Instalado por: scripts/install-git-hooks.sh (define core.hooksPath=.githooks)
+# Ver: wiki/.cartographer-notes/README.md
+#
+# NAO bloqueia o push -- e so um aviso. Diferente do pre-commit (gate de
+# segredos, falha fechado por design), uma nota da wiki desatualizada nao e
+# um risco de seguranca: e so um lembrete de revisar. Falha aberto em
+# qualquer cenario (script ausente, python ausente, erro de execucao) para
+# nunca travar quem so quer dar push.
+set -uo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+SCRIPT="$REPO_ROOT/wiki/.cartographer-notes/refresh_and_audit.py"
+
+[ -f "$SCRIPT" ] || exit 0
+
+PYTHON=""
+command -v python >/dev/null 2>&1 && PYTHON=python
+[ -z "$PYTHON" ] && command -v python3 >/dev/null 2>&1 && PYTHON=python3
+[ -z "$PYTHON" ] && exit 0
+
+OUTPUT="$("$PYTHON" "$SCRIPT" 2>&1)"
+STATUS=$?
+
+if [ "$STATUS" -eq 1 ]; then
+  printf '\033[33m\n[cartographer] notas da wiki desatualizadas -- aviso, nao bloqueia o push:\033[0m\n\n' >&2
+  printf '%s\n' "$OUTPUT" >&2
+  printf '\n'
+elif [ "$STATUS" -gt 1 ]; then
+  printf '\033[33m[cartographer] refresh_and_audit.py falhou (exit %d) -- ignorado, push segue normalmente.\033[0m\n' "$STATUS" >&2
+fi
+
+exit 0
