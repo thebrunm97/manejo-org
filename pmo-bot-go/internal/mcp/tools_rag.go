@@ -126,6 +126,7 @@ func (s *Server) handleConsultarBaseConhecimento(ctx context.Context, args map[s
 
 	log.Printf("[META-RAG] Evaluating %d evidence chunks against query: %q", len(chunks), pergunta)
 	evalCtx, evalCancel := context.WithTimeout(ctx, 20*time.Second)
+	evalCtx = context.WithValue(evalCtx, "retrieved_chunks", len(matches))
 
 	var evalResult llm.MetaRAGResult
 	var evalErr error

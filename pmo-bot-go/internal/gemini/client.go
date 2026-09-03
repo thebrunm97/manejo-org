@@ -20,6 +20,7 @@ import (
 
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/llm/schema"
+	"github.com/thebrunm97/pmo-bot-go/internal/pricing"
 	"github.com/thebrunm97/pmo-bot-go/internal/prompt"
 	"github.com/thebrunm97/pmo-bot-go/internal/telemetry"
 	"github.com/thebrunm97/pmo-bot-go/internal/utils"
@@ -491,6 +492,12 @@ func truncateStr(s string, max int) string {
 //   - Retry is only attempted when isOverloadedError(err) is true.
 //   - Non-overload errors (e.g. bad request) skip retries and go straight to fallback.
 //   - Fallback model is tried once after primary retries are exhausted.
+//
+// NOTA DE LIMITAÇÃO (DT-33): withFallback opera sobre fn func(model string) (any, error)
+// e não recebe context.Context nem o número da tentativa como argumento.
+// Reestruturar withFallback para injetar "retry_attempt" no context exigiria alterar a interface
+// llmExecutor (usada em audio_provider.go e testes associados) e todas as closures que a invocam.
+// Por isso, RetryCount na telemetria permanece 0 a menos que previamente injetado no context pai.
 func (c *Client) withFallback(fn func(model string) (any, error)) (any, string, error) {
 	const (
 		maxAttempts = 3 // 1 initial attempt + 2 retries (total 3 attempts)
@@ -747,16 +754,39 @@ func (c *Client) CallOpenRouter(ctx context.Context, sysInst string, history []l
 		reqIDStr = fmt.Sprintf("%v", requestID)
 	}
 
+	retryCount := 0
+	if n, ok := ctx.Value("retry_attempt").(int); ok {
+		retryCount = n
+	}
+
+	retrievedChunks := 0
+	if n, ok := ctx.Value("retrieved_chunks").(int); ok {
+		retrievedChunks = n
+	}
+
+	// PromptVersion: atualmente vazio (""), pois ainda não há convenção ou fonte de verdade de versionamento de prompts no repositório.
+	promptVersion := ""
+	if v, ok := ctx.Value("prompt_version").(string); ok {
+		promptVersion = v
+	}
+
+	inputTokens := int(agnosticResp.Usage.PromptTokens)
+	outputTokens := int(agnosticResp.Usage.CandidatesTokens)
+	costEst := pricing.Cost(agnosticResp.Model, inputTokens, outputTokens).CostUSD
+
 	telemetry.LogLLMCall(telemetry.LLMCallTelemetry{
 		RequestID:        reqIDStr,
 		Model:            agnosticResp.Model,
-		InputTokens:      int(agnosticResp.Usage.PromptTokens),
-		OutputTokens:     int(agnosticResp.Usage.CandidatesTokens),
+		InputTokens:      inputTokens,
+		OutputTokens:     outputTokens,
 		LatencyMS:        time.Since(start).Milliseconds(),
 		TimeToFirstToken: -1,
 		StatusCode:       statusCode,
 		TimeoutStage:     "", // O timeout_stage será preenchido no withFallback/caller se err != nil
-		RetryCount:       0,
+		RetryCount:       retryCount,
+		RetrievedChunks:  retrievedChunks,
+		PromptVersion:    promptVersion,
+		CostEstimate:     costEst,
 	})
 
 	return agnosticResp, nil
@@ -814,6 +844,22 @@ func (c *Client) CallGoogle(ctx context.Context, modelName string, sysInst strin
 		reqIDStr = fmt.Sprintf("%v", requestID)
 	}
 
+	retryCount := 0
+	if n, ok := ctx.Value("retry_attempt").(int); ok {
+		retryCount = n
+	}
+
+	retrievedChunks := 0
+	if n, ok := ctx.Value("retrieved_chunks").(int); ok {
+		retrievedChunks = n
+	}
+
+	// PromptVersion: atualmente vazio (""), pois ainda não há convenção ou fonte de verdade de versionamento de prompts no repositório.
+	promptVersion := ""
+	if v, ok := ctx.Value("prompt_version").(string); ok {
+		promptVersion = v
+	}
+
 	if err != nil {
 		log.Printf("telemetry event=llm_provider_call provider=google status=erro modelo=%s latency_ms=%d ferramentas=%d msgs_historico=%d motivo=%s",
 			modelName, providerLatency.Milliseconds(), len(tools), len(googleHistory), classifyFallbackReason(err))
@@ -828,6 +874,8 @@ func (c *Client) CallGoogle(ctx context.Context, modelName string, sysInst strin
 				timeoutStage = stage
 			}
 		}
+
+		costEst := pricing.Cost(modelName, 0, 0).CostUSD
 		
 		telemetry.LogLLMCall(telemetry.LLMCallTelemetry{
 			RequestID:        reqIDStr,
@@ -838,6 +886,10 @@ func (c *Client) CallGoogle(ctx context.Context, modelName string, sysInst strin
 			TimeToFirstToken: -1,
 			StatusCode:       500, // representação genérica de erro
 			TimeoutStage:     timeoutStage,
+			RetryCount:       retryCount,
+			RetrievedChunks:  retrievedChunks,
+			PromptVersion:    promptVersion,
+			CostEstimate:     costEst,
 		})
 
 		return llm.RespostaAgnostica{}, err
@@ -847,13 +899,20 @@ func (c *Client) CallGoogle(ctx context.Context, modelName string, sysInst strin
 		modelName, providerLatency.Milliseconds(), len(tools), len(googleHistory))
 
 	if len(resp.Candidates) == 0 {
+		costEst := pricing.Cost(modelName, 0, 0).CostUSD
 		telemetry.LogLLMCall(telemetry.LLMCallTelemetry{
 			RequestID:        reqIDStr,
 			Model:            modelName,
+			InputTokens:      0,
+			OutputTokens:     0,
 			LatencyMS:        providerLatency.Milliseconds(),
 			TimeToFirstToken: -1,
 			StatusCode:       500,
 			TimeoutStage:     "empty_candidates",
+			RetryCount:       retryCount,
+			RetrievedChunks:  retrievedChunks,
+			PromptVersion:    promptVersion,
+			CostEstimate:     costEst,
 		})
 		return llm.RespostaAgnostica{}, fmt.Errorf("no candidates in google response")
 	}
@@ -864,6 +923,8 @@ func (c *Client) CallGoogle(ctx context.Context, modelName string, sysInst strin
 		outputTokens = resp.UsageMetadata.CandidatesTokenCount
 	}
 
+	costEst := pricing.Cost(modelName, int(inputTokens), int(outputTokens)).CostUSD
+
 	telemetry.LogLLMCall(telemetry.LLMCallTelemetry{
 		RequestID:        reqIDStr,
 		Model:            modelName,
@@ -873,6 +934,10 @@ func (c *Client) CallGoogle(ctx context.Context, modelName string, sysInst strin
 		TimeToFirstToken: -1,
 		StatusCode:       200,
 		TimeoutStage:     "",
+		RetryCount:       retryCount,
+		RetrievedChunks:  retrievedChunks,
+		PromptVersion:    promptVersion,
+		CostEstimate:     costEst,
 	})
 
 	candidate := resp.Candidates[0]
