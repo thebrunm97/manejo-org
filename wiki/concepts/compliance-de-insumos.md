@@ -13,7 +13,7 @@ execução pelo [[pmo-bot-go]] via PostgREST:
 ```
 GET {SUPABASE_URL}/rest/v1/insumos_proibidos?select=nome
 ```
-(`pmo-bot-go/internal/supabase/client.go:420`)
+(`pmo-bot-go/internal/supabase/client.go:418`)
 
 Atualizar a regulação é um `INSERT`, não um deploy.
 

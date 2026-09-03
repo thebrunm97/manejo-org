@@ -1,0 +1,41 @@
+{
+  "target": "wiki-divergencias",
+  "claims": [
+    {
+      "kind": "risk",
+      "summary": "O webhook do WhatsApp NÃO verifica assinatura HMAC do corpo da requisição, apesar do README descrever \"POST + HMAC\". handleWebhook compara um token compartilhado com hmac.Equal (comparação em tempo constante), o que protege contra ataque de temporização mas não detecta adulteração do payload. Ver wiki/components/gateway-whatsapp.md.",
+      "target": "pmo-bot-go/internal/webhook/handler.go",
+      "evidence": [
+        { "path": "pmo-bot-go/internal/webhook/handler.go", "startLine": 149, "endLine": 150 },
+        { "path": "pmo-bot-go/internal/webhook/handler.go", "startLine": 846, "endLine": 846 }
+      ]
+    },
+    {
+      "kind": "risk",
+      "summary": "Schema drift em caderno_campo_canteiros: o DDL original criou a tabela de junção com as colunas de lotes_rastreabilidade em vez das colunas de junção esperadas. A coluna canteiro_id e sua FK só foram adicionadas depois, numa migration corretiva cujo próprio comentário declara \"Fix Schema Drift\". As colunas órfãs do DDL original permanecem na tabela em produção. Ver wiki/entities/canteiro.md.",
+      "target": "supabase/migrations/20260402000000_create_core_app_tables.sql",
+      "evidence": [
+        { "path": "supabase/migrations/20260402000000_create_core_app_tables.sql", "startLine": 215, "endLine": 226 },
+        { "path": "supabase/migrations/20260817214500_fix_caderno_canteiros_fk.sql", "startLine": 1, "endLine": 10 },
+        { "path": "pmo-frontend/src/services/cadernoService.ts", "startLine": 14, "endLine": 14 }
+      ]
+    },
+    {
+      "kind": "risk",
+      "summary": "Duas migrations declaram a tabela transacoes_financeiras com CHECK divergente no valor de 'tipo': a primeira (que roda antes) usa minúsculas ('receita','despesa'); a segunda usa maiúsculas ('RECEITA','DESPESA') mas emprega CREATE TABLE IF NOT EXISTS, portanto é no-op em banco já migrado. A constraint efetiva em produção é a minúscula. Ver wiki/entities/transacao-financeira.md.",
+      "target": "supabase/migrations/20260402120000_create_operational_tables.sql",
+      "evidence": [
+        { "path": "supabase/migrations/20260402120000_create_operational_tables.sql", "startLine": 30, "endLine": 30 },
+        { "path": "supabase/migrations/20260525_create_financial_ledger.sql", "startLine": 18, "endLine": 18 }
+      ]
+    },
+    {
+      "kind": "purpose",
+      "summary": "Não existe backend Python ativo neste repositório. legacy_python/pmo_bot/ contém apenas artefatos de execução da versão antiga do bot (logs, QR code, .env não versionado) — nenhum código-fonte. A migração para Go está registrada no ADR-001. O backend ativo é pmo-bot-go. Ver wiki/components/legado-python.md.",
+      "target": "docs/architecture/adr/001-go-over-python.md",
+      "evidence": [
+        { "path": "docs/architecture/adr/001-go-over-python.md", "startLine": 1, "endLine": 1 }
+      ]
+    }
+  ]
+}
