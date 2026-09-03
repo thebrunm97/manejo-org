@@ -65,7 +65,7 @@ const DiarioDeCampo: React.FC = () => {
     try {
       const originalObs = recordToDelete.observacao_original || '';
       const cancelObs = `[CANCELADO em ${new Date().toLocaleDateString()}] Motivo: ${deleteReason} | Obs Original: ${originalObs}`;
-      await cadernoService.updateRegistro(recordToDelete.id, { tipo_atividade: ActivityType.CANCELADO, observacao_original: cancelObs });
+      await cadernoService.updateRegistro(recordToDelete.id, { tipo_atividade: ActivityType.CANCELADO, observacao_original: cancelObs, is_pmo_limpeza: recordToDelete.is_pmo_limpeza, is_pmo_compostagem: recordToDelete.is_pmo_compostagem });
       setDeleteDialogOpen(false);
       setRecordToDelete(null);
       await refresh();

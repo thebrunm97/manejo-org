@@ -15,20 +15,26 @@ export const analiseService = {
      */
     async saveAnalise(dados: AnaliseDados): Promise<AnaliseSoloRow> {
         try {
+            const toNumberOrNull = (v: any): number | null => {
+                if (v === null || v === undefined || v === '') return null;
+                const n = parseFloat(String(v).replace(',', '.'));
+                return Number.isNaN(n) ? null : n;
+            };
+
             // Validate numeric fields to ensure they are actually numbers or null
             const payload: AnaliseSoloInsert = {
                 talhao_id: dados.talhao_id!,
                 data_analise: dados.data_analise,
-                ph_agua: dados.ph ? parseFloat(dados.ph.toString()) : (dados.ph_agua || null),
-                fosforo: dados.fosforo ? parseFloat(dados.fosforo.toString()) : null,
-                potassio: dados.potassio ? parseFloat(dados.potassio.toString()) : null,
-                calcio: dados.calcio ? parseFloat(dados.calcio.toString()) : null,
-                magnesio: dados.magnesio ? parseFloat(dados.magnesio.toString()) : null,
-                saturacao_bases: dados.saturacao_bases ? parseFloat(dados.saturacao_bases.toString()) : null,
-                materia_organica: dados.materia_organica ? parseFloat(dados.materia_organica.toString()) : null,
-                argila: dados.argila ? parseFloat(dados.argila.toString()) : null,
-                areia: dados.areia ? parseFloat(dados.areia.toString()) : null,
-                silte: dados.silte ? parseFloat(dados.silte.toString()) : null,
+                ph_agua: dados.ph != null && dados.ph !== '' ? toNumberOrNull(dados.ph) : toNumberOrNull(dados.ph_agua),
+                fosforo: toNumberOrNull(dados.fosforo),
+                potassio: toNumberOrNull(dados.potassio),
+                calcio: toNumberOrNull(dados.calcio),
+                magnesio: toNumberOrNull(dados.magnesio),
+                saturacao_bases: toNumberOrNull(dados.saturacao_bases),
+                materia_organica: toNumberOrNull(dados.materia_organica),
+                argila: toNumberOrNull(dados.argila),
+                areia: toNumberOrNull(dados.areia),
+                silte: toNumberOrNull(dados.silte),
             };
 
             const result = await supabase.rpc('upsert_analise_solo', { p_payload: payload });

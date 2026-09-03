@@ -175,6 +175,10 @@ export interface BaseRegistro {
 
     // Financial Ledger Integration (Hybrid Cost Tracking)
     valor_total?: number;
+
+    // Table routing flags (set by cadernoService.getRegistros for pmo_limpeza rows)
+    is_pmo_limpeza?: boolean;
+    is_pmo_compostagem?: boolean;
 }
 
 export interface RegistroLimpeza extends BaseRegistro {
