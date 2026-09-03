@@ -138,12 +138,6 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
         setIsDrawingMode(true);
     };
 
-    const handleStartEditingPolygon = () => {
-        if (!selectedTalhao || !selectedTalhao.geometry) return;
-        if (setIsEditingPolygon) setIsEditingPolygon(true);
-        setViewMode('mapa');
-    };
-
     const handleDrawCreate = async (e: any) => {
         const feature = e.features[0];
         if (!feature) return;
@@ -199,7 +193,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
         setCreateModalOpen(false);
         setPendingTalhao(null);
         setIsDrawingMode(false);
-        setIsEditingPolygon(false);
+        if (setIsEditingPolygon) setIsEditingPolygon(false);
     };
 
     const handleSaveNewTalhao = async () => {

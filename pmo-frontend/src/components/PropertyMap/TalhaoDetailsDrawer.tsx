@@ -32,6 +32,7 @@ interface Talhao {
     areia?: string | number;
     canteiros?: Canteiro[];
     tipo?: string;
+    geometry?: string | { type: string; coordinates: number[][][] };
 }
 
 interface TalhaoDetailsDrawerProps {

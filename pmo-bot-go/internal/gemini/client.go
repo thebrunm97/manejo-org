@@ -21,6 +21,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/llm/schema"
 	"github.com/thebrunm97/pmo-bot-go/internal/prompt"
+	"github.com/thebrunm97/pmo-bot-go/internal/telemetry"
 	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 )
 
@@ -651,7 +652,8 @@ func (c *Client) DescribeAgronomicImage(ctx context.Context, imageBytes []byte, 
 // It converts agnostic history and tools to the OpenAI format before calling and returns an agnostic response.
 // Se agnosticSchema for fornecido, ele será injetado como response_format no payload.
 func (c *Client) CallOpenRouter(ctx context.Context, sysInst string, history []llm.MensagemAgnostica, agnosticTools []llm.FerramentaAgnostica, agnosticSchema map[string]interface{}) (llm.RespostaAgnostica, error) {
-	defer utils.TraceLatency("OpenRouter API", time.Now())
+	start := time.Now()
+	defer utils.TraceLatency("OpenRouter API", start)
 	if c.OpenAI == nil {
 		return llm.RespostaAgnostica{}, fmt.Errorf("OpenRouter client not initialized (check API Key)")
 	}
@@ -738,6 +740,25 @@ func (c *Client) CallOpenRouter(ctx context.Context, sysInst string, history []l
 		})
 	}
 
+	statusCode := 200 // default OK se não houver erro
+	requestID := ctx.Value("raw_payload_id")
+	reqIDStr := ""
+	if requestID != nil {
+		reqIDStr = fmt.Sprintf("%v", requestID)
+	}
+
+	telemetry.LogLLMCall(telemetry.LLMCallTelemetry{
+		RequestID:        reqIDStr,
+		Model:            agnosticResp.Model,
+		InputTokens:      int(agnosticResp.Usage.PromptTokens),
+		OutputTokens:     int(agnosticResp.Usage.CandidatesTokens),
+		LatencyMS:        time.Since(start).Milliseconds(),
+		TimeToFirstToken: -1,
+		StatusCode:       statusCode,
+		TimeoutStage:     "", // O timeout_stage será preenchido no withFallback/caller se err != nil
+		RetryCount:       0,
+	})
+
 	return agnosticResp, nil
 }
 
@@ -787,9 +808,38 @@ func (c *Client) CallGoogle(ctx context.Context, modelName string, sysInst strin
 	resp, err := c.Client.Models.GenerateContent(ctx, modelName, googleHistory, config)
 	providerLatency := time.Since(startProvider)
 
+	requestID := ctx.Value("raw_payload_id")
+	reqIDStr := ""
+	if requestID != nil {
+		reqIDStr = fmt.Sprintf("%v", requestID)
+	}
+
 	if err != nil {
 		log.Printf("telemetry event=llm_provider_call provider=google status=erro modelo=%s latency_ms=%d ferramentas=%d msgs_historico=%d motivo=%s",
 			modelName, providerLatency.Milliseconds(), len(tools), len(googleHistory), classifyFallbackReason(err))
+		
+		timeoutStage := ""
+		if errors.Is(err, context.DeadlineExceeded) || strings.Contains(strings.ToLower(err.Error()), "deadline exceeded") {
+			// Não temos como saber se foi retrieval/router/geração aqui apenas pelo context,
+			// mas o caller logará o timeoutStage se souber. Deixamos vazio para err=timeout genérico e 
+			// injetaremos a inteligência da etapa onde o timeout foi criado.
+			timeoutStage = "timeout_provider"
+			if stage, ok := ctx.Value("timeout_stage").(string); ok {
+				timeoutStage = stage
+			}
+		}
+		
+		telemetry.LogLLMCall(telemetry.LLMCallTelemetry{
+			RequestID:        reqIDStr,
+			Model:            modelName,
+			InputTokens:      0,
+			OutputTokens:     0,
+			LatencyMS:        providerLatency.Milliseconds(),
+			TimeToFirstToken: -1,
+			StatusCode:       500, // representação genérica de erro
+			TimeoutStage:     timeoutStage,
+		})
+
 		return llm.RespostaAgnostica{}, err
 	}
 
@@ -797,8 +847,33 @@ func (c *Client) CallGoogle(ctx context.Context, modelName string, sysInst strin
 		modelName, providerLatency.Milliseconds(), len(tools), len(googleHistory))
 
 	if len(resp.Candidates) == 0 {
+		telemetry.LogLLMCall(telemetry.LLMCallTelemetry{
+			RequestID:        reqIDStr,
+			Model:            modelName,
+			LatencyMS:        providerLatency.Milliseconds(),
+			TimeToFirstToken: -1,
+			StatusCode:       500,
+			TimeoutStage:     "empty_candidates",
+		})
 		return llm.RespostaAgnostica{}, fmt.Errorf("no candidates in google response")
 	}
+
+	var inputTokens, outputTokens int32
+	if resp.UsageMetadata != nil {
+		inputTokens = resp.UsageMetadata.PromptTokenCount
+		outputTokens = resp.UsageMetadata.CandidatesTokenCount
+	}
+
+	telemetry.LogLLMCall(telemetry.LLMCallTelemetry{
+		RequestID:        reqIDStr,
+		Model:            modelName,
+		InputTokens:      int(inputTokens),
+		OutputTokens:     int(outputTokens),
+		LatencyMS:        providerLatency.Milliseconds(),
+		TimeToFirstToken: -1,
+		StatusCode:       200,
+		TimeoutStage:     "",
+	})
 
 	candidate := resp.Candidates[0]
 	agnosticResp := llm.RespostaAgnostica{

@@ -36,7 +36,7 @@ export async function fetchUserProfile(
  * @returns SaveResult indicando sucesso ou erro
  */
 export async function setActivePmo(
-    userId: string,
+    _userId: string,
     pmoId: string
 ): Promise<SaveResult> {
     try {
@@ -87,7 +87,7 @@ export async function fetchUserProperties(userId: string): Promise<FetchResult<a
  * @returns SaveResult indicando sucesso ou erro
  */
 export async function updateUserProfile(
-    userId: string,
+    _userId: string,
     data: { nome?: string; telefone?: string; avatar_url?: string }
 ): Promise<SaveResult> {
     try {

@@ -335,7 +335,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 
 	g.Go(func() error {
 		var routerErr error
-		fastRouterTimeoutMS := 3000
+		fastRouterTimeoutMS := 5000
 		if routerCfg.FastRouterTimeoutMS > 0 {
 			fastRouterTimeoutMS = routerCfg.FastRouterTimeoutMS
 		}
@@ -343,6 +343,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 		if routerCfg.EnableFastRouter {
 			routerCtx, routerCancel := context.WithTimeout(gCtx, time.Duration(fastRouterTimeoutMS)*time.Millisecond)
 			defer routerCancel()
+			routerCtx = context.WithValue(routerCtx, "timeout_stage", "classificacao_fast")
 			log.Printf("🚀 [FSM] Usando Fast Router para classificação (Timeout: %dms)", fastRouterTimeoutMS)
 			startFast := time.Now()
 			fastRouterRes, fastRouterErr = EvaluateWithLLM(routerCtx, llmClient, routerText)
@@ -354,6 +355,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 				startLegacy := time.Now()
 				legacyCtx, legacyCancel := context.WithTimeout(gCtx, 30*time.Second)
 				defer legacyCancel()
+				legacyCtx = context.WithValue(legacyCtx, "timeout_stage", "classificacao_legacy")
 				unifiedRes, routerModel, routerErr = llmClient.ClassifyIntent(legacyCtx, routerText)
 				legacyLatency := time.Since(startLegacy).Milliseconds()
 
@@ -407,6 +409,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 			startLegacy := time.Now()
 			legacyCtx, legacyCancel := context.WithTimeout(gCtx, 30*time.Second)
 			defer legacyCancel()
+			legacyCtx = context.WithValue(legacyCtx, "timeout_stage", "classificacao_legacy")
 			unifiedRes, routerModel, routerErr = llmClient.ClassifyIntent(legacyCtx, routerText)
 
 			legacyIntent := "unknown"

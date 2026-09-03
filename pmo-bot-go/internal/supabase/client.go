@@ -1078,9 +1078,49 @@ func (c *Client) MatchFarmDocumentsContext(pmoID int64, embedding []float32, thr
 			Message string `json:"message"`
 		}
 		if errJSON := json.Unmarshal(body, &apiError); errJSON == nil && apiError.Message != "" {
-			return nil, fmt.Errorf("supabase RPC error: %s (code: %s)", apiError.Message, apiError.Code)
+			return nil, fmt.Errorf("supabase API error: [%s] %s", apiError.Code, apiError.Message)
 		}
-		return nil, fmt.Errorf("failed to decode match context results: %w\nBody: %s", err, string(body))
+		return nil, fmt.Errorf("failed to decode match results: %w\nBody: %s", err, string(body))
+	}
+
+	return results, nil
+}
+
+// MatchFarmDocumentsContextWithContext calls the match_documents_with_context_1024 RPC to find similar chunks + neighbors with a context
+func (c *Client) MatchFarmDocumentsContextWithContext(ctx context.Context, pmoID int64, embedding []float32, threshold float32, count int, windowSize int) ([]DocumentMatchContext, error) {
+	// Point to the new 1024-dimensional RPC for BGE-m3
+	reqURL := fmt.Sprintf("%s/rest/v1/rpc/match_documents_with_context_1024", c.config.URL)
+
+	params := map[string]interface{}{
+		"query_embedding": embedding,
+		"match_pmo_id":    pmoID,
+		"match_threshold": threshold,
+		"match_count":     count,
+		"window_size":     windowSize,
+	}
+
+	payload, err := json.Marshal(params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal match context params: %w", err)
+	}
+
+	body, err := c.doRequestWithContext(ctx, http.MethodPost, reqURL, payload)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Printf("📡 [Supabase RPC] Raw Result (match_documents_with_context): %s", string(body))
+
+	var results []DocumentMatchContext
+	if err := json.Unmarshal(body, &results); err != nil {
+		var apiError struct {
+			Code    string `json:"code"`
+			Message string `json:"message"`
+		}
+		if errJSON := json.Unmarshal(body, &apiError); errJSON == nil && apiError.Message != "" {
+			return nil, fmt.Errorf("supabase API error: [%s] %s", apiError.Code, apiError.Message)
+		}
+		return nil, fmt.Errorf("failed to decode match results: %w\nBody: %s", err, string(body))
 	}
 
 	return results, nil

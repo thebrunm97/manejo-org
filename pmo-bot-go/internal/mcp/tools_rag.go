@@ -82,8 +82,19 @@ func (s *Server) handleConsultarBaseConhecimento(ctx context.Context, args map[s
 
 	// 2. Vector search in Supabase with Contextual Windowing (threshold 0.55, top-K 3, window 1)
 	// Reduzido para 3 como mitigação de tokens para prevenir "Lost in the Middle"
-	matches, err := s.supabase.MatchFarmDocumentsContext(pmoID, embedding, 0.55, 3, 1)
+	
+	startRetrieval := time.Now()
+	retrievalCtx, retrievalCancel := context.WithTimeout(ctx, 2*time.Second)
+	matches, err := s.supabase.MatchFarmDocumentsContextWithContext(retrievalCtx, pmoID, embedding, 0.55, 3, 1)
+	retrievalCancel()
+	
+	retrievalLatency := time.Since(startRetrieval).Milliseconds()
+	log.Printf("⏱️ [META-RAG] Busca vetorial (retrieval) concluída em %d ms", retrievalLatency)
+	
 	if err != nil {
+		if strings.Contains(strings.ToLower(err.Error()), "deadline exceeded") {
+			return nil, fmt.Errorf("timeout na busca vetorial (retrieval estourou 2s): %w", err)
+		}
 		return nil, fmt.Errorf("erro na busca vetorial: %w", err)
 	}
 

@@ -9,7 +9,6 @@ import {
   LogOut,
   Menu as MenuIcon,
   User as UserIcon,
-  Database,
   Sparkles,
   Home,
   ChevronDown,

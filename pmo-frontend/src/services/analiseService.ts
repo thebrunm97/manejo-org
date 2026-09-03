@@ -31,8 +31,6 @@ export const analiseService = {
                 silte: dados.silte ? parseFloat(dados.silte.toString()) : null,
             };
 
-            let result;
-
             const result = await supabase.rpc('upsert_analise_solo', { p_payload: payload });
 
             const { data, error } = result;

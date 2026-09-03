@@ -106,7 +106,6 @@ export const getRegistros = async (pmoId?: number | null, propriedadeId?: number
 
 export const addRegistro = async (registro: any): Promise<CadernoEntry> => {
     const isLimpeza = !!registro.is_pmo_limpeza;
-    const table = isLimpeza ? 'pmo_limpeza' : 'caderno_campo';
     
     // Preparar payload para pmo_limpeza (remover campos virtuais do frontend)
     const payload = { ...registro };
@@ -146,7 +145,6 @@ export const deleteRegistro = async (id: string): Promise<void> => {
 
 export const updateRegistro = async (id: string, updates: any): Promise<CadernoEntry> => {
     const isLimpeza = !!updates.is_pmo_limpeza;
-    const table = isLimpeza ? 'pmo_limpeza' : 'caderno_campo';
 
     const payload = { ...updates };
     if (isLimpeza) {
