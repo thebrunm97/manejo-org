@@ -120,7 +120,7 @@ func (s *Server) handleRegistrarLimpeza(ctx context.Context, args map[string]int
 	}, dataArg)
 
 	if err != nil {
-		return fmt.Errorf("erro ao registrar limpeza: %w", err), nil
+		return nil, fmt.Errorf("erro ao registrar limpeza: %w", err)
 	}
 
 	if status, ok := res["status"].(string); ok && status == "error" {
@@ -174,7 +174,7 @@ func (s *Server) handleRegistrarPropagacaoVegetal(ctx context.Context, args map[
 	}, dataArg)
 
 	if err != nil {
-		return fmt.Errorf("erro ao registrar propagação: %w", err), nil
+		return nil, fmt.Errorf("erro ao registrar propagação: %w", err)
 	}
 
 	if status, ok := res["status"].(string); ok && status == "error" {
@@ -225,7 +225,7 @@ func (s *Server) handleRegistrarCompostagem(ctx context.Context, args map[string
 	}, dataArg)
 
 	if err != nil {
-		return fmt.Errorf("erro ao processar ação de compostagem: %w", err), nil
+		return nil, fmt.Errorf("erro ao processar ação de compostagem: %w", err)
 	}
 
 	if status, ok := res["status"].(string); ok && status == "error" {
@@ -309,7 +309,7 @@ func (s *Server) handleRegistrarCompraInsumo(ctx context.Context, args map[strin
 
 	resp, err := s.supabase.RegistrarCompraInsumoRPC(ctx, rpcArgs)
 	if err != nil {
-		return fmt.Errorf("erro ao registrar compra via RPC: %w", err), nil
+		return nil, fmt.Errorf("erro ao registrar compra via RPC: %w", err)
 	}
 
 	if status, ok := resp["status"].(string); ok && status == "error" {
