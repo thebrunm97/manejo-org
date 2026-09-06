@@ -135,9 +135,14 @@ var piiRules = []piiRule{
 	},
 	{
 		// Phone: +55 11 99999-9999, (11) 9999-9999, 11999999999, etc.
-		// \b ensures we don't match inside CPF/CNPJ digit sequences.
+		// DDD digitado junto com o número (11999998888) exige consumir o DDD
+		// como parte do match, por isso a âncora fica ANTES do DDD opcional
+		// (nunca no meio) e aceita o "(" quando o DDD vem entre parênteses.
+		// Cobre também lotes/CNPJ longos: o padrão só casa um trecho se o final
+		// bater em limite de palavra, então sequências longas inválidas como
+		// CPF/CNPJ não são tocadas aqui.
 		name:        "pii_phone",
-		re:          regexp.MustCompile(`(?:\+?55\s?)?(?:\(?\d{2}\)?\s?)?\b\d{4,5}-?\d{4}\b`),
+		re:          regexp.MustCompile(`(?:\+?55\s?|\b|\()(?:\(?\d{2}\)?\s?)?\d{4,5}-?\d{4}\b`),
 		replacement: "[Telefone ocultado]",
 	},
 	{
