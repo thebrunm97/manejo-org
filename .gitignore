@@ -66,6 +66,9 @@ db.sqlite3
 # ── Go Backend ────────────────────────────────
 pmo-bot-go/bin/
 pmo-bot-go/tmp_test_bin*
+pmo-bot-go/tmp_server
+pmo-bot-go/tmp_bot
+pmo-bot-go/cmd/server/seu-bot
 pmo-bot-go/.telemetria_acumulada.log
 evolution-go-source/evolution-go
 
