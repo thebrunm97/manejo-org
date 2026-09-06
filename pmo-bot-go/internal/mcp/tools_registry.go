@@ -1,12 +1,14 @@
 package mcp
 
 import (
-	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"context"
 	"encoding/json"
 	"fmt"
 
+	"github.com/thebrunm97/pmo-bot-go/internal/domain"
+	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
+	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 )
 
 // CalcularAdubacaoDef is the agnostic definition for the agronomic calculation tool.
@@ -73,7 +75,20 @@ var RegistrarPlantioDef = llm.FerramentaAgnostica{
 // InitializeTools registers the initial set of tools to the MCP server.
 func (s *Server) InitializeTools() {
 	s.RegisterTool(Tool{
+		Definition: ProposeBatchMutationsDef,
+		Category:   CategoryDBWrite,
+		Handler:    s.handleProposeBatchMutations,
+	})
+
+	s.RegisterTool(Tool{
 		Definition: RegistrarLoteOperacoesDef,
+		Category:   CategoryDBWrite,
+		Handler:    s.handleRegistrarLote,
+	})
+	regLoteSnake := RegistrarLoteOperacoesDef
+	regLoteSnake.Name = "registrar_lote_operacoes"
+	s.RegisterTool(Tool{
+		Definition: regLoteSnake,
 		Category:   CategoryDBWrite,
 		Handler:    s.handleRegistrarLote,
 	})
@@ -86,6 +101,13 @@ func (s *Server) InitializeTools() {
 
 	s.RegisterTool(Tool{
 		Definition: RegistrarPlantioDef,
+		Category:   CategoryDBWrite,
+		Handler:    s.handleRegistrarPlantio,
+	})
+	regPlantioSnake := RegistrarPlantioDef
+	regPlantioSnake.Name = "registrar_plantio"
+	s.RegisterTool(Tool{
+		Definition: regPlantioSnake,
 		Category:   CategoryDBWrite,
 		Handler:    s.handleRegistrarPlantio,
 	})
@@ -603,7 +625,7 @@ func (s *Server) InitializeTools() {
 				"required": []string{},
 			},
 		},
-		Category: CategoryDBWrite,
+		Category: CategoryDBRead,
 		Handler:  s.handleConsultarDemandasCooperativa,
 	})
 
@@ -626,7 +648,7 @@ func (s *Server) InitializeTools() {
 				"required": []string{"ano"},
 			},
 		},
-		Category: CategoryDBWrite,
+		Category: CategoryDBRead,
 		Handler:  s.handleConsultarBalancoFinanceiro,
 	})
 
@@ -651,6 +673,123 @@ func (s *Server) InitializeTools() {
 		},
 		Category: CategoryRAG, // RAG is used for knowledge/read-only info
 		Handler:  s.handleConsultarPrevisaoTempo,
+	})
+
+	s.RegisterTool(Tool{
+		Definition: llm.FerramentaAgnostica{
+			Name:        "cadastrar_propriedade",
+			Description: "Cadastra uma nova propriedade rural (fazenda/sítio) e cria automaticamente o PMO inicial para ela. Seleciona a nova propriedade como ativa para o produtor.",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"nome": map[string]interface{}{
+						"type":        "string",
+						"description": "Nome da fazenda ou propriedade rural (Ex: Sítio Vista Alegre).",
+					},
+					"area_total_ha": map[string]interface{}{
+						"type":        "number",
+						"description": "Área total da propriedade em hectares.",
+					},
+					"municipio": map[string]interface{}{
+						"type":        "string",
+						"description": "Cidade / Município da propriedade.",
+					},
+					"uf": map[string]interface{}{
+						"type":        "string",
+						"description": "Estado (UF) com 2 letras (Ex: SP, MG, PR).",
+					},
+					"modalidade_predominante": map[string]interface{}{
+						"type":        "string",
+						"description": "Modalidade de produção (Ex: Organico, Agroecologico, Permacultura).",
+					},
+				},
+				"required": []string{"nome"},
+			},
+		},
+		Category: CategoryDBWrite,
+		Handler:  s.handleCadastrarPropriedade,
+	})
+
+	s.RegisterTool(Tool{
+		Definition: llm.FerramentaAgnostica{
+			Name:        "registrar_manejo_campo",
+			Description: "Registra operações gerais de manejo no campo (adubação orgânica, biofertilizantes, caldas, poda, capina, controle biológico, irrigação) no caderno de campo.",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"tipo_manejo": map[string]interface{}{
+						"type":        "string",
+						"description": "Tipo de manejo realizado (Ex: Adubação Orgânica, Calda Bordalesa, Poda, Irrigação, Capina Manual).",
+					},
+					"talhao_nome": map[string]interface{}{
+						"type":        "string",
+						"description": "Nome do talhão onde a atividade foi realizada (Ex: Talhão 01, Horta).",
+					},
+					"canteiro_numero": map[string]interface{}{
+						"type":        "integer",
+						"description": "Número do canteiro específico (opcional).",
+					},
+					"produto_utilizado": map[string]interface{}{
+						"type":        "string",
+						"description": "Produto, insumo ou calda aplicada (Ex: Esterco bovino curtido, Calda bordalesa 1%, Biofertilizante Supermagro).",
+					},
+					"dosagem_valor": map[string]interface{}{
+						"type":        "number",
+						"description": "Quantidade ou dosagem aplicada.",
+					},
+					"dosagem_unidade": map[string]interface{}{
+						"type":        "string",
+						"description": "Unidade de dosagem (Ex: kg/ha, L/bomba, kg/canteiro).",
+					},
+					"data": map[string]interface{}{
+						"type":        "string",
+						"description": "Data da operação no formato YYYY-MM-DD. Opcional.",
+					},
+					"observacoes": map[string]interface{}{
+						"type":        "string",
+						"description": "Observações agronômicas ou notas adicionais.",
+					},
+				},
+				"required": []string{"tipo_manejo", "talhao_nome"},
+			},
+		},
+		Category: CategoryDBWrite,
+		Handler:  s.handleRegistrarManejoCampo,
+	})
+
+	s.RegisterTool(Tool{
+		Definition: llm.FerramentaAgnostica{
+			Name:        "registrar_cota_cooperativa",
+			Description: "Registra o compromisso formal de entrega de uma cota de produção para atender a uma demanda coletiva aberta da cooperativa/associação.",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"demanda_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID ou código da demanda coletiva à qual a cota está vinculada.",
+					},
+					"quantidade_comprometida": map[string]interface{}{
+						"type":        "number",
+						"description": "Quantidade física que o produtor se compromete a entregar.",
+					},
+					"unidade": map[string]interface{}{
+						"type":        "string",
+						"description": "Unidade de medida (Ex: kg, caixas, maços).",
+					},
+					"data_prevista_entrega": map[string]interface{}{
+						"type":        "string",
+						"description": "Data estimada para entrega no formato YYYY-MM-DD.",
+					},
+					"observacoes": map[string]interface{}{
+						"type":        "string",
+						"description": "Observações adicionais sobre o compromisso.",
+					},
+				},
+				"required": []string{"demanda_id", "quantidade_comprometida"},
+			},
+		},
+		Category: CategoryDBWrite,
+		Handler:  s.handleRegistrarCotaCooperativa,
 	})
 }
 
@@ -709,4 +848,82 @@ func (s *Server) handleRegistrarLote(ctx context.Context, args map[string]interf
 
 	return result, nil
 }
+
+// ProposeBatchMutationsDef defines the tool for proposing batch mutations in Two-Phase Commit HITL.
+var ProposeBatchMutationsDef = llm.FerramentaAgnostica{
+	Name:        "propose_batch_mutations",
+	Description: "Propõe uma ou mais operações de mutação (caderno_campo, compra_insumo, transacoes_com_rateio, cotas_produtores) em lote para aprovação humana do produtor (Two-Phase Commit HITL). Utilize esta ferramenta sempre que o produtor relatar ações concluídas como compras, plantios, colheitas, manejos ou despesas para criar um rascunho seguro para confirmação.",
+	Parameters: map[string]interface{}{
+		"type": "object",
+		"properties": map[string]interface{}{
+			"operacoes": map[string]interface{}{
+				"type":        "array",
+				"description": "Lista de operações a serem validadas e propostas.",
+				"items": map[string]interface{}{
+					"type": "object",
+					"properties": map[string]interface{}{
+						"type": map[string]interface{}{
+							"type":        "string",
+							"enum":        []string{"caderno_campo", "compra_insumo", "transacoes_com_rateio", "cotas_produtores"},
+							"description": "Tipo de mutação no banco de dados.",
+						},
+						"tipo_operacao": map[string]interface{}{
+							"type":        "string",
+							"description": "Subtipo para caderno_campo (ex: plantio, colheita, manejo, limpeza, compostagem).",
+						},
+						"payload": map[string]interface{}{
+							"type":        "object",
+							"description": "Dados da operação (ex: produto, quantidade_valor, quantidade_unidade, talhao_nome, valor_total, etc.).",
+						},
+					},
+					"required": []string{"type", "payload"},
+				},
+			},
+			"resumo_amigavel": map[string]interface{}{
+				"type":        "string",
+				"description": "Resumo curto em português das operações propostas (opcional).",
+			},
+		},
+		"required": []string{"operacoes"},
+	},
+}
+
+func (s *Server) handleProposeBatchMutations(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
+	if profile == nil {
+		return nil, fmt.Errorf("unauthorized: missing profile")
+	}
+	if profile.PmoAtivoID == 0 {
+		return nil, fmt.Errorf("validation: usuário não possui PMO ativa selecionada")
+	}
+	pmoID := int64(profile.PmoAtivoID)
+	userID := profile.ID
+	phone := profile.Telefone
+
+	var payload domain.ProposeBatchMutationsPayload
+	payloadBytes, _ := json.Marshal(args)
+	if err := json.Unmarshal(payloadBytes, &payload); err != nil {
+		return nil, fmt.Errorf("formato inválido para propose_batch_mutations: %w", err)
+	}
+
+	if len(payload.Operacoes) == 0 {
+		return nil, fmt.Errorf("lista de operações não pode ser vazia")
+	}
+
+	res, err := s.supabase.CreateOrSupersedeMutationDraftRPC(ctx, pmoID, userID, phone, payload.Operacoes, payload.ResumoAmigavel, 45)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao criar rascunho de mutação: %w", err)
+	}
+
+	draftID, _ := res["draft_id"].(string)
+	confirmationMsg := guardrails.BuildBatchConfirmationMessage(payload.ResumoAmigavel, payload.Operacoes)
+
+	return map[string]interface{}{
+		"status":          "pending_approval",
+		"draft_id":        draftID,
+		"mensagem":        confirmationMsg,
+		"operacoes_count": len(payload.Operacoes),
+		"message":         confirmationMsg,
+	}, nil
+}
+
 

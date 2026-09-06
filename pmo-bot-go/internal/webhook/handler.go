@@ -233,24 +233,15 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 
 	}
 
-	// ─── HITL: SIM/NÃO intercept (before harness dispatch) ───────────────────
-	// Check if this is a producer response to a pending HITL approval.
-	// Pure text messages containing SIM/NÃO (or 1/2 from fallback text) are matched against hitl_pending
-	// by phone number. If matched, execute the stored tool and short-circuit.
+	// ─── HITL: SIM/NÃO & Two-Phase Commit intercept (before harness dispatch) ──
+	// Check if this is a producer response to a pending HITL approval or mutation draft.
 	if h.cfg.HITLController != nil && !payload.IsAudio && !payload.IsImage {
-		bodyNorm := strings.ToUpper(strings.TrimSpace(payload.Body))
-		if bodyNorm == "SIM" || bodyNorm == "NAO" || bodyNorm == "NÃO" || bodyNorm == "1" || bodyNorm == "2" {
-			resolvedResponse := bodyNorm
-			if bodyNorm == "1" {
-				resolvedResponse = "SIM"
-			} else if bodyNorm == "2" {
-				resolvedResponse = "NÃO"
-			}
-			if h.handleHITLResponse(payload.From, resolvedResponse) {
+		verdict := ClassifyHITLResponse(payload.Body)
+		if verdict != HITLVerdictAmbiguous {
+			if h.handleHITLResponse(payload.From, verdict) {
 				c.JSON(http.StatusOK, gin.H{"status": "hitl_processed"})
 				return
 			}
-			// No pending HITL found — fall through to normal processing
 		}
 	}
 	// ─────────────────────────────────────────────────────────────────────────
@@ -316,85 +307,168 @@ func (h *Handler) handleHealth(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
 
-// handleHITLResponse processes a SIM/NÃO reply from a producer.
-// Returns true if a pending HITL record was found and resolved (short-circuit the webhook).
-// Returns false if no pending record exists (caller should fall through to normal processing).
-func (h *Handler) handleHITLResponse(phone, response string) bool {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+// handleHITLResponse processes a normalized APPROVE/REJECT reply from a producer.
+// It checks first for pending Two-Phase Commit mutation drafts (Fase 2.2),
+// then falls back to legacy single-tool HITL records.
+// If an affirmative/rejection response was explicit but no draft exists or is expired,
+// it informs the user and returns true to short-circuit.
+func (h *Handler) handleHITLResponse(phone string, verdict HITLVerdict) bool {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	phone = utils.SanitizePhone(phone)
 
-	// 1. Look up the most recent waiting HITL approval for this phone
+	// 1. Resolve active profile to obtain PMO ID
+	var pmoID int64
+	var userID string
+	if h.cfg.SupabaseClient != nil {
+		profile, err := h.cfg.SupabaseClient.GetProfileByPhone(phone)
+		if err == nil && profile != nil {
+			pmoID = int64(profile.PmoAtivoID)
+			userID = profile.ID
+		}
+	}
+
+	// 2. Check for pending Two-Phase Commit mutation draft (Fase 2.2)
+	if pmoID > 0 {
+		draft, err := h.cfg.HITLController.FindPendingDraft(ctx, phone, pmoID)
+		if err != nil {
+			log.Printf("⚠️ [HITL] Erro ao buscar rascunho pendente para %s (PMO %d): %v", phone, pmoID, err)
+		} else if draft != nil {
+			log.Printf("🔔 [HITL] Rascunho encontrado: draft_id=%s phone=%s verdict=%s", draft.ID, phone, verdict)
+
+			if verdict == HITLVerdictReject {
+				if err := h.cfg.HITLController.RejectDraft(ctx, draft.ID); err != nil {
+					log.Printf("⚠️ [HITL] Erro ao rejeitar rascunho: %v", err)
+				}
+				if h.cfg.WhatsAppClient != nil {
+					_ = h.cfg.WhatsAppClient.SendMessage(phone,
+						"✅ Rascunho de operações cancelado. Nenhuma alteração foi salva no sistema.")
+				}
+				return true
+			}
+
+			if verdict == HITLVerdictApprove {
+				commitRes, err := h.cfg.HITLController.CommitDraft(ctx, draft.ID, userID, pmoID)
+				if err != nil {
+					log.Printf("❌ [HITL] Erro técnico no commit do rascunho %s: %v", draft.ID, err)
+					if h.cfg.WhatsAppClient != nil {
+						_ = h.cfg.WhatsAppClient.SendMessage(phone,
+							"⚠️ Ocorreu um erro técnico ao registrar as operações. Por favor, tente novamente.")
+					}
+					return true
+				}
+
+				if commitRes.Status == "failed" {
+					log.Printf("⚠️ [HITL] Commit falhou para rascunho %s: %s", draft.ID, commitRes.ErrorDetail)
+					if h.cfg.WhatsAppClient != nil {
+						errMsg := fmt.Sprintf("⚠️ Não foi possível salvar o lote de operações: %s\n\nPor favor, envie novamente com os dados ajustados.", commitRes.ErrorDetail)
+						_ = h.cfg.WhatsAppClient.SendMessage(phone, errMsg)
+					}
+					return true
+				}
+
+				if commitRes.Status == "expired" {
+					log.Printf("⚠️ [HITL] Rascunho %s expirou antes da confirmação", draft.ID)
+					if h.cfg.WhatsAppClient != nil {
+						_ = h.cfg.WhatsAppClient.SendMessage(phone,
+							"⚠️ O tempo limite para confirmação deste rascunho (45 minutos) expirou. Por favor, envie novamente as informações da operação.")
+					}
+					return true
+				}
+
+				// Sucesso
+				log.Printf("✅ [HITL] Rascunho %s aprovado e comitado com sucesso", draft.ID)
+				if h.cfg.WhatsAppClient != nil {
+					_ = h.cfg.WhatsAppClient.SendMessage(phone,
+						"✅ *Operações confirmadas e registradas com sucesso!*\n\n🌱 Seu caderno de campo e registros foram atualizados.")
+				}
+				return true
+			}
+		}
+	}
+
+	// 3. Fallback: check legacy single-tool HITL records (hitl_pending)
 	rec, err := h.cfg.HITLController.FindPendingByPhone(ctx, phone)
 	if err != nil {
-		log.Printf("⚠️ [HITL] Erro ao buscar aprovação pendente para %s: %v", phone, err)
+		log.Printf("⚠️ [HITL] Erro ao buscar aprovação legada para %s: %v", phone, err)
 		return false
 	}
-	if rec == nil {
-		return false // No pending approval — not a HITL response
-	}
 
-	log.Printf("🔔 [HITL] Resposta recebida: phone=%s answer=%s tool=%s token=%s",
-		phone, response, rec.ToolName, rec.ID)
-
-	// 2. Handle REJECTION
-	isRejection := response == "NÃO" || response == "NAO"
-	if isRejection {
-		if err := h.cfg.HITLController.Reject(ctx, rec.ID); err != nil {
-			log.Printf("⚠️ [HITL] Erro ao rejeitar: %v", err)
+	if rec != nil {
+		log.Printf("🔔 [HITL] Registro legado encontrado: token=%s tool=%s phone=%s verdict=%s", rec.ID, rec.ToolName, phone, verdict)
+		if verdict == HITLVerdictReject {
+			if err := h.cfg.HITLController.Reject(ctx, rec.ID); err != nil {
+				log.Printf("⚠️ [HITL] Erro ao rejeitar: %v", err)
+			}
+			if h.cfg.WhatsAppClient != nil {
+				_ = h.cfg.WhatsAppClient.SendMessage(phone,
+					"✅ Operação cancelada conforme solicitado. Nenhuma alteração foi registrada no sistema.")
+			}
+			return true
 		}
-		_ = h.cfg.WhatsAppClient.SendMessage(phone,
-			"✅ Operação cancelada conforme solicitado. Nenhuma alteração foi registrada no sistema.")
-		return true
-	}
 
-	// 3. Handle APPROVAL — execute the stored tool args via MCP
-	toolName, toolArgs, err := h.cfg.HITLController.Approve(ctx, rec.ID)
-	if err != nil {
-		log.Printf("❌ [HITL] Erro ao aprovar registro: %v", err)
-		_ = h.cfg.WhatsAppClient.SendMessage(phone,
-			"⚠️ Ocorreu um erro ao processar sua confirmação. Por favor, tente registrar novamente.")
-		return true
-	}
+		if verdict == HITLVerdictApprove {
+			toolName, toolArgs, err := h.cfg.HITLController.Approve(ctx, rec.ID)
+			if err != nil {
+				log.Printf("❌ [HITL] Erro ao aprovar registro legado: %v", err)
+				if h.cfg.WhatsAppClient != nil {
+					_ = h.cfg.WhatsAppClient.SendMessage(phone,
+						"⚠️ Ocorreu um erro ao processar sua confirmação. Por favor, tente registrar novamente.")
+				}
+				return true
+			}
 
-	// Execute via MCP server
-	toolCtx, toolCancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer toolCancel()
+			toolCtx, toolCancel := context.WithTimeout(context.Background(), 20*time.Second)
+			defer toolCancel()
 
-	pmoID := int64(0)
-	if rec.PmoID != nil {
-		pmoID = *rec.PmoID
-	}
-	profile := &supabase.Profile{
-		ID:         rec.UserID,
-		PmoAtivoID: pmoID,
-	}
+			recPmoID := int64(0)
+			if rec.PmoID != nil {
+				recPmoID = *rec.PmoID
+			}
+			profile := &supabase.Profile{
+				ID:         rec.UserID,
+				PmoAtivoID: recPmoID,
+			}
 
-	guard := mcp.NewLoopGuard(3) // single-tool execution, 3 max to be safe
-	result, toolErr := h.cfg.MCPServer.CallToolWithGuard(toolCtx, guard, toolName, toolArgs, profile)
+			guard := mcp.NewLoopGuard(3)
+			result, toolErr := h.cfg.MCPServer.CallToolWithGuard(toolCtx, guard, toolName, toolArgs, profile)
+			_ = result
 
-	_ = result
+			if toolErr != nil {
+				log.Printf("❌ [HITL] Execução da ferramenta legada %s falhou: %v", toolName, toolErr)
+				if h.cfg.WhatsAppClient != nil {
+					_ = h.cfg.WhatsAppClient.SendMessage(phone,
+						fmt.Sprintf("❌ Ocorreu um erro ao executar o registro aprovado: %v\nPor favor, tente novamente.", toolErr))
+				}
+				return true
+			}
 
-	if toolErr != nil {
-		log.Printf("❌ [HITL] Execução da ferramenta %s falhou: %v", toolName, toolErr)
-		_ = h.cfg.WhatsAppClient.SendMessage(phone,
-			fmt.Sprintf("❌ Ocorreu um erro ao executar o registro aprovado: %v\nPor favor, tente novamente.", toolErr))
-		return true
-	}
-
-	// Build success message
-	msg := "✅ *Operação confirmada e registrada com sucesso!*\n\n🌱 Seu caderno de campo foi atualizado."
-	if resMap, ok := result.(map[string]interface{}); ok {
-		if successMsg, ok := resMap["message"].(string); ok && successMsg != "" {
-			msg = "✅ " + successMsg
+			msg := "✅ *Operação confirmada e registrada com sucesso!*\n\n🌱 Seu caderno de campo foi atualizado."
+			if resMap, ok := result.(map[string]interface{}); ok {
+				if successMsg, ok := resMap["message"].(string); ok && successMsg != "" {
+					msg = "✅ " + successMsg
+				}
+			}
+			if h.cfg.WhatsAppClient != nil {
+				_ = h.cfg.WhatsAppClient.SendMessage(phone, msg)
+			}
+			return true
 		}
 	}
 
-	_ = h.cfg.WhatsAppClient.SendMessage(phone, msg)
-	log.Printf("✅ [HITL] Operação executada após aprovação: tool=%s phone=%s", toolName, phone)
-	return true
+	// 4. Se o usuário enviou comando explícito de confirmação/rejeição mas não há rascunho ativo:
+	if verdict == HITLVerdictApprove || verdict == HITLVerdictReject {
+		if h.cfg.WhatsAppClient != nil {
+			_ = h.cfg.WhatsAppClient.SendMessage(phone,
+				"⚠️ Não encontrei nenhum rascunho pendente para confirmação (ou o tempo limite de 45 minutos expirou). Por favor, envie novamente as informações da operação.")
+		}
+		return true
+	}
+
+	return false
 }
+
 
 // processLegacy executa o fluxo de processamento legado (goroutine direta, sem persistência).
 // Usado quando HARNESS_ENABLED=false ou como fallback automático se o Enqueue falhar.
@@ -569,7 +643,6 @@ func (h *Handler) processKnowledgePDF(path string, originalName string, pmoID in
 	}
 
 	jobs := make(chan job, totalChunks)
-	results := make(chan supabase.FarmDocument, totalChunks)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -652,7 +725,13 @@ func (h *Handler) processKnowledgePDF(path string, originalName string, pmoID in
 							ChunkIndex:    j.index,
 						}
 
-						results <- doc
+						// Insert directly into DB via upsert (dedup by chunk_hash)
+						if err := h.cfg.SupabaseClient.UpsertFarmDocumentChunks([]supabase.FarmDocument{doc}); err != nil {
+							log.Printf("⚠️ [Worker-%d] Erro ao inserir chunk %d no Supabase: %v", workerID, j.index, err)
+							atomic.AddInt64(&failedCount, 1)
+						} else {
+							log.Printf("✅ [Worker-%d] Chunk %d inserido com sucesso", workerID, j.index)
+						}
 					}()
 				}
 			}

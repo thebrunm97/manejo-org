@@ -28,10 +28,9 @@ function generateRandomCode(): string {
 export async function generateWhatsappCode(userId: string): Promise<string> {
     const code = generateRandomCode();
 
-    const { error } = await supabase
-        .from('profiles')
-        .update({ codigo_vinculo: code })
-        .eq('id', userId);
+    const { error } = await supabase.rpc('update_profile', { 
+        p_updates: { codigo_vinculo: code } 
+    });
 
     if (error) {
         console.error('[whatsappService] Error saving codigo_vinculo:', error);
@@ -58,10 +57,9 @@ export function getWhatsappBotNumber(): string | null {
  * @throws Error if the database update fails
  */
 export async function unlinkWhatsapp(userId: string): Promise<{ success: boolean }> {
-    const { error } = await supabase
-        .from('profiles')
-        .update({ telefone: null, codigo_vinculo: null })
-        .eq('id', userId);
+    const { error } = await supabase.rpc('update_profile', { 
+        p_updates: { telefone: null, codigo_vinculo: null } 
+    });
 
     if (error) {
         console.error('[whatsappService] Error unlinking WhatsApp:', error);

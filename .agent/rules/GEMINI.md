@@ -130,6 +130,12 @@ When user's prompt is NOT in English:
 - Skills: `.agent/skills/` (Project)
 - Runtime Scripts: `.agent/skills/<skill>/scripts/`
 
+### 📝 Controle de Estado de Planejamento (Planning Gatekeeper)
+- Toda escrita em `*plan*.md`, `*task*.md`, `debitos_tecnicos.md` ou `GEMINI.md` **deve ser precedida por um bloco de diff** ou resumo no chat e está estritamente **BLOQUEADA** até receber resposta afirmativa do usuário na mesma thread.
+- **MANDATÓRIO:** Mesmo alterações de único caractere (ex: `[ ]` → `[x]`) em resultado de teste já validado exigem o mesmo fluxo de diff e aprovação prévia. A racionalização de que "é só uma rotina" ou "atualização menor de estado" **NÃO** é uma exceção válida. A trava é absoluta.
+- Sempre que um desses arquivos for alterado com sucesso, emita um resumo explícito da alteração salva.
+- Dúvidas de regra de negócio devem sempre adotar o template estruturado: `Pergunta | Trade-off Técnico | Arquivos Impactados`.
+
 ### 🧠 Read → Understand → Apply
 
 ```

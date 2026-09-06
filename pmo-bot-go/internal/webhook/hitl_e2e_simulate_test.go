@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/thebrunm97/pmo-bot-go/internal/domain"
 	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
 )
 
@@ -53,6 +54,27 @@ func (m *MockHITLController) Reject(ctx context.Context, id string) error {
 	return nil
 }
 
+func (m *MockHITLController) CreateOrSupersedeDraft(ctx context.Context, pmoID int64, userID, phone string, operations []domain.BatchMutationItem, summaryText string, ttlMinutes int) (string, *string, error) {
+	return "mock-draft-123", nil, nil
+}
+
+func (m *MockHITLController) FindPendingDraft(ctx context.Context, phone string, pmoID int64) (*domain.MutationDraftRecord, error) {
+	return nil, nil
+}
+
+func (m *MockHITLController) CommitDraft(ctx context.Context, draftID string, userID string, pmoID int64) (domain.CommitMutationResult, error) {
+	return domain.CommitMutationResult{
+		Status:  "approved",
+		DraftID: draftID,
+		Message: "Success",
+	}, nil
+}
+
+func (m *MockHITLController) RejectDraft(ctx context.Context, draftID string) error {
+	return nil
+}
+
+
 // MockWhatsApp simula envio de mensagens
 type MockWhatsApp struct {
 	LastSentMessage string
@@ -72,23 +94,24 @@ func TestE2EHITLFlow(t *testing.T) {
 	mockHITL := &MockHITLController{Pending: make(map[string]guardrails.HITLRecord)}
 	mockWP := &MockWhatsApp{}
 
-	// Simular Orchestrator pausando a tool
-	fmt.Println("\n[Passo 1] Orchestrator tenta invocar 'registrar_operacao_campo'")
-	needsHITL, label := guardrails.RequiresHITL("registrar_operacao_campo")
-	if !needsHITL {
-		t.Fatal("Esperava que registrar_operacao_campo exigisse HITL")
-	}
-
 	toolArgs := map[string]interface{}{
 		"talhao_nome": "Lote A",
 		"insumo":      "Composto Orgânico",
+		"valor_total": 850.0,
 		"data_arg":    "2026-04-26",
+	}
+
+	// Simular Orchestrator pausando a tool
+	fmt.Println("\n[Passo 1] Orchestrator tenta invocar 'registrar_despesa'")
+	needsHITL, label := guardrails.RequiresHITL("registrar_despesa", toolArgs)
+	if !needsHITL {
+		t.Fatal("Esperava que registrar_despesa com valor > 500 exigisse HITL")
 	}
 
 	// Orchestrator chama o RequestApproval e pausa
 	_, err := mockHITL.RequestApproval(context.Background(), guardrails.HITLRecord{
 		FromPhone:   phone,
-		ToolName:    "registrar_operacao_campo",
+		ToolName:    "registrar_despesa",
 		ToolArgs:    toolArgs,
 		ActionLabel: label,
 	})

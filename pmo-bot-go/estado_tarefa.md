@@ -1,14 +1,13 @@
-# Estado Tarefa: Integração TTS (Voice Notes)
-task_id: TTS-001
-objetivo_atual: Implementar client_test.go e client.go do TTS seguindo os contratos de erros e magic bytes (MP3/ID3).
+# Estado Tarefa: Fase 2 do Agentic Loop (Mutações, Idempotência e HITL)
+task_id: AGENTIC-MUTATIONS-001
+objetivo_atual: Concluir validação da Fase 2.1 com histórico de migrations alinhado e testes reais no PostgreSQL (Docker Staging).
 hipotese_de_falha: N/A
-evidencia: Loop TDD finalizado com sucesso. Testes passando (RED -> GREEN). Refatoração Client -> Orchestrator aplicada globalmente sem quebrar build.
+evidencia: 
+  - Migração SQL 20260816000000_add_idempotency_to_mutations.sql criada e validada contra PostgreSQL 17.6 Docker real.
+  - Testes reais (TestIdempotency_RealPostgreSQL_Integration) cobrindo as 4 operações de escrita (caderno_campo, compra_insumo, transacoes_com_rateio, cotas_produtores) e invariância de NULLs passando 100%.
+  - Reversão mínima dos arquivos de migração históricos no Git aplicada com sucesso.
+  - Suíte completa do repositório (go test ./...) 100% verde.
 tentativas_restantes: 4
-proxima_acao: Informar o usuário que a Fase 3 (Execute) foi concluída e o contrato PTT/MP3 validado via testes.
-criterio_de_escalonamento: Esgotar tentativas ou o provedor falhar de forma não mapeada.
-Status: CONCLUÍDO
-
-## Pendências (Bug Tracking)
-- **RAG Integration**: O teste `TestIngestionObservability` (em `tests/integration_obs_test.go`) e dependentes falham intermitentemente com o erro Supabase `PGRST204: Could not find the 'file_name' column of 'ingestion_jobs'`.
-  - **Motivo provável**: Falha de cache do PostgREST ou schema `migrations/20240305_create_ingestion_jobs.sql` desatualizado/não rodou no ambiente do teste.
-  - **Status**: Anotado para investigação em ciclo independente, já que não pertence ao escopo de Voice Notes e antecede essa implementação.
+proxima_acao: Aguardar confirmação da query de leitura do schema_migrations pelo usuário para iniciar a Fase 2.2.
+criterio_de_escalonamento: N/A
+Status: FASE_2_1_VALIDADA

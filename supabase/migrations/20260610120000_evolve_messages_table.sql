@@ -28,12 +28,26 @@ BEGIN
     END IF;
 END $$;
 
+-- 3.5. Criar função is_admin auxiliar se não existir
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean AS $$
+BEGIN
+    RETURN (
+        auth.role() = 'service_role' OR 
+        EXISTS (
+            SELECT 1 FROM public.profiles 
+            WHERE id = auth.uid() AND (role = 'admin' OR role = 'cooperativa')
+        )
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- 4. Habilitar RLS e criar políticas de acesso para administradores
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Admins select all messages" ON public.messages;
 CREATE POLICY "Admins select all messages" ON public.messages
-    FOR SELECT USING (is_admin());
+    FOR SELECT USING (public.is_admin());
 
 DROP POLICY IF EXISTS "Admins insert messages" ON public.messages;
 CREATE POLICY "Admins insert messages" ON public.messages

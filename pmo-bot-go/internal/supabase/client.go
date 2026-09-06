@@ -384,15 +384,16 @@ type DemandaColetiva struct {
 }
 
 type CotaProdutorInsert struct {
-	DemandaID     string  `json:"demanda_id"`
-	PropriedadeID int64   `json:"propriedade_id"`
-	UsuarioID     string  `json:"usuario_id"`
-	Quantidade    float64 `json:"quantidade"`
+	DemandaID      string  `json:"demanda_id"`
+	PropriedadeID  int64   `json:"propriedade_id"`
+	UsuarioID      string  `json:"user_id"`
+	Quantidade     float64 `json:"quantidade_assumida"`
+	IdempotencyKey string  `json:"idempotency_key,omitempty"`
 }
 
 type CronogramaPlantioInsert struct {
 	CotaID      string `json:"cota_id"`
-	DataPlantio string `json:"data_plantio"`
+	DataPlantio string `json:"data_plantio_recomendada"`
 	Observacao  string `json:"observacao_ia,omitempty"`
 }
 
@@ -606,7 +607,29 @@ func (c *Client) RegistrarAtividadeRPC(ctx context.Context, args map[string]inte
 func (c *Client) RegistrarTransacaoComRateioRPC(ctx context.Context, args map[string]interface{}) (map[string]interface{}, error) {
 	reqURL := fmt.Sprintf("%s/rest/v1/rpc/rpc_registrar_transacao_com_rateio", c.config.URL)
 
-	payload, err := json.Marshal(args)
+	if args == nil {
+		args = make(map[string]interface{})
+	}
+	idempKey, _ := ctx.Value("idempotency_key").(string)
+	if idempKey == "" {
+		if k, ok := args["idempotency_key"].(string); ok {
+			idempKey = k
+		}
+	}
+	if idempKey != "" && args["idempotency_key_arg"] == nil {
+		args["idempotency_key_arg"] = idempKey
+	}
+
+	var rpcBody map[string]interface{}
+	if _, ok := args["p_payload"]; ok {
+		rpcBody = args
+	} else {
+		rpcBody = map[string]interface{}{
+			"p_payload": args,
+		}
+	}
+
+	payload, err := json.Marshal(rpcBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal RPC payload: %w", err)
 	}
@@ -619,6 +642,9 @@ func (c *Client) RegistrarTransacaoComRateioRPC(ctx context.Context, args map[st
 	req.Header.Set("apikey", c.config.Key)
 	req.Header.Set("Authorization", "Bearer "+c.config.Key)
 	req.Header.Set("Content-Type", "application/json")
+	if idempKey != "" {
+		req.Header.Set("Idempotency-Key", idempKey)
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -680,6 +706,15 @@ func (c *Client) RegistrarCompraInsumoRPC(ctx context.Context, args map[string]i
 			args["raw_payload_id_arg"] = rawPayloadID
 		}
 	}
+	idempKey, _ := ctx.Value("idempotency_key").(string)
+	if idempKey == "" {
+		if k, ok := args["idempotency_key"].(string); ok {
+			idempKey = k
+		}
+	}
+	if idempKey != "" && args["idempotency_key_arg"] == nil {
+		args["idempotency_key_arg"] = idempKey
+	}
 
 	payload, err := json.Marshal(args)
 	if err != nil {
@@ -694,6 +729,9 @@ func (c *Client) RegistrarCompraInsumoRPC(ctx context.Context, args map[string]i
 	req.Header.Set("apikey", c.config.Key)
 	req.Header.Set("Authorization", "Bearer "+c.config.Key)
 	req.Header.Set("Content-Type", "application/json")
+	if idempKey != "" {
+		req.Header.Set("Idempotency-Key", idempKey)
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -718,21 +756,48 @@ func (c *Client) RegistrarCompraInsumoRPC(ctx context.Context, args map[string]i
 	return result, nil
 }
 
-// RegistrarOperacaoCampoRPC uses the 'registrar_operacao_campo' RPC to save a activity.
+// RegistrarOperacaoCampoRPC uses the 'rpc_registrar_operacao_campo' RPC to save an activity.
 func (c *Client) RegistrarOperacaoCampoRPC(ctx context.Context, args map[string]interface{}, dataArg string) (map[string]interface{}, error) {
 	reqURL := fmt.Sprintf("%s/rest/v1/rpc/rpc_registrar_operacao_campo", c.config.URL)
 	if args == nil {
 		args = make(map[string]interface{})
 	}
-	args["data_arg"] = dataArg
+
+	payloadArg, ok := args["payload_arg"].(map[string]interface{})
+	if !ok || payloadArg == nil {
+		payloadArg = make(map[string]interface{})
+	}
+
+	if dataArg != "" && payloadArg["data"] == nil {
+		payloadArg["data"] = dataArg
+	}
+
 	if rawPayloadID, ok := ctx.Value("raw_payload_id").(string); ok && rawPayloadID != "" {
-		if payloadArg, exists := args["payload_arg"].(map[string]interface{}); exists {
-			if payloadArg["raw_payload_id"] == nil {
-				payloadArg["raw_payload_id"] = rawPayloadID
-			}
+		if payloadArg["raw_payload_id"] == nil {
+			payloadArg["raw_payload_id"] = rawPayloadID
 		}
 	}
-	payload, err := json.Marshal(args)
+
+	idempKey, _ := ctx.Value("idempotency_key").(string)
+	if idempKey == "" {
+		if k, ok := args["idempotency_key"].(string); ok {
+			idempKey = k
+		}
+	}
+	if idempKey != "" {
+		if payloadArg["idempotency_key"] == nil {
+			payloadArg["idempotency_key"] = idempKey
+		}
+	}
+
+	rpcArgs := map[string]interface{}{
+		"pmo_id_arg":  args["pmo_id_arg"],
+		"user_id_arg": args["user_id_arg"],
+		"tipo_arg":    args["tipo_arg"],
+		"payload_arg": payloadArg,
+	}
+
+	payload, err := json.Marshal(rpcArgs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal RPC payload: %w", err)
 	}
@@ -1743,7 +1808,7 @@ func (c *Client) GetDemandaAtivaPorCultura(ctx context.Context, cultura string) 
 	return &demands[0], nil
 }
 
-// RegistrarCotaComCronograma performs a coordinated insertion into quotas and schedules.
+// RegistrarCotaComCronograma performs a coordinated insertion into quotas and schedules with idempotency support.
 func (c *Client) RegistrarCotaComCronograma(ctx context.Context, payload map[string]interface{}) error {
 	// Extraction from generic payload
 	demandaID, _ := payload["demanda_id"].(string)
@@ -1753,12 +1818,20 @@ func (c *Client) RegistrarCotaComCronograma(ctx context.Context, payload map[str
 	dataPlantio, _ := payload["data_plantio"].(string)
 	observacao, _ := payload["observacao_ia"].(string)
 
+	idempKey, _ := ctx.Value("idempotency_key").(string)
+	if idempKey == "" {
+		if k, ok := payload["idempotency_key"].(string); ok {
+			idempKey = k
+		}
+	}
+
 	// 1. Insert into cotas_produtores
 	cotaRecord := CotaProdutorInsert{
-		DemandaID:     demandaID,
-		PropriedadeID: propriedadeID,
-		UsuarioID:     usuarioID,
-		Quantidade:    quantidade,
+		DemandaID:      demandaID,
+		PropriedadeID:  propriedadeID,
+		UsuarioID:      usuarioID,
+		Quantidade:     quantidade,
+		IdempotencyKey: idempKey,
 	}
 
 	cotaJSON, _ := json.Marshal(cotaRecord)
@@ -1769,6 +1842,9 @@ func (c *Client) RegistrarCotaComCronograma(ctx context.Context, payload map[str
 	req.Header.Set("Authorization", "Bearer "+c.config.Key)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Prefer", "return=representation")
+	if idempKey != "" {
+		req.Header.Set("Idempotency-Key", idempKey)
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -1777,6 +1853,11 @@ func (c *Client) RegistrarCotaComCronograma(ctx context.Context, payload map[str
 	defer resp.Body.Close()
 
 	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode == http.StatusConflict || (resp.StatusCode >= 400 && strings.Contains(string(body), "idx_cotas_produtores_idempotency_key")) {
+		// Deduplicação disparada pela constraint UNIQUE
+		log.Printf("ℹ️ [Supabase] Cota já registrada anteriormente para a chave de idempotência: %s", idempKey)
+		return nil
+	}
 	if resp.StatusCode >= 400 {
 		return fmt.Errorf("quota insert error (%d): %s", resp.StatusCode, string(body))
 	}
@@ -2049,3 +2130,225 @@ func (c *Client) GetPropriedadesDoUsuario(userID string) ([]Propriedade, error) 
 
 	return propriedades, nil
 }
+
+// CriarPropriedadeComPMO creates a new property, initial PMO, and links to the user profile.
+func (c *Client) CriarPropriedadeComPMO(ctx context.Context, userID, nome string, areaTotalHa float64, cidade, estado, modalidade string) (int64, int64, error) {
+	// 1. Insert into propriedades
+	propRecord := map[string]interface{}{
+		"user_id":                 userID,
+		"nome":                    nome,
+		"area_total_ha":           areaTotalHa,
+		"cidade":                  cidade,
+		"uf":                      estado,
+		"modalidade_predominante": modalidade,
+	}
+	propJSON, _ := json.Marshal(propRecord)
+	reqURL := fmt.Sprintf("%s/rest/v1/propriedades", c.config.URL)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewReader(propJSON))
+	if err != nil {
+		return 0, 0, fmt.Errorf("failed to build create property request: %w", err)
+	}
+	req.Header.Set("apikey", c.config.Key)
+	req.Header.Set("Authorization", "Bearer "+c.config.Key)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Prefer", "return=representation")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return 0, 0, fmt.Errorf("failed to create property HTTP: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode >= 400 {
+		return 0, 0, fmt.Errorf("property create error (%d): %s", resp.StatusCode, string(body))
+	}
+
+	var createdProp []struct {
+		ID int64 `json:"id"`
+	}
+	if err := json.Unmarshal(body, &createdProp); err != nil || len(createdProp) == 0 {
+		return 0, 0, fmt.Errorf("failed to parse created property response: %w", err)
+	}
+	propID := createdProp[0].ID
+
+	// 2. Insert initial PMO
+	anoAtual := fmt.Sprintf("%d", time.Now().Year())
+	pmoRecord := map[string]interface{}{
+		"propriedade_id":      propID,
+		"user_id":             userID,
+		"nome_identificador":  fmt.Sprintf("PMO %s - %s", nome, anoAtual),
+		"status":              "ativo",
+		"cultura":             "Geral / Diversificada",
+		"produtividade_kg_ha": 0,
+		"version":             1,
+		"form_data": map[string]interface{}{
+			"ano_safra":               anoAtual,
+			"modalidade_predominante": modalidade,
+		},
+	}
+	pmoJSON, _ := json.Marshal(pmoRecord)
+	reqURLPMO := fmt.Sprintf("%s/rest/v1/pmos", c.config.URL)
+
+	reqPMO, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURLPMO, bytes.NewReader(pmoJSON))
+	if err != nil {
+		return propID, 0, fmt.Errorf("failed to build create PMO request: %w", err)
+	}
+	reqPMO.Header.Set("apikey", c.config.Key)
+	reqPMO.Header.Set("Authorization", "Bearer "+c.config.Key)
+	reqPMO.Header.Set("Content-Type", "application/json")
+	reqPMO.Header.Set("Prefer", "return=representation")
+
+	respPMO, err := c.httpClient.Do(reqPMO)
+	if err != nil {
+		return propID, 0, fmt.Errorf("failed to create PMO HTTP: %w", err)
+	}
+	defer respPMO.Body.Close()
+
+	bodyPMO, _ := io.ReadAll(respPMO.Body)
+	var pmoID int64
+	if respPMO.StatusCode < 400 {
+		var createdPMO []struct {
+			ID int64 `json:"id"`
+		}
+		if err := json.Unmarshal(bodyPMO, &createdPMO); err == nil && len(createdPMO) > 0 {
+			pmoID = createdPMO[0].ID
+		}
+	}
+
+	// 3. Update User Profile active property and PMO
+	_ = c.SetPropriedadeAtiva(ctx, userID, propID, pmoID)
+
+	return propID, pmoID, nil
+}
+
+// SetPropriedadeAtiva updates the active property and PMO in profiles.
+func (c *Client) SetPropriedadeAtiva(ctx context.Context, userID string, propID, pmoID int64) error {
+	updatePayload := map[string]interface{}{
+		"propriedade_ativa_id": propID,
+	}
+	if pmoID > 0 {
+		updatePayload["pmo_ativo_id"] = pmoID
+	}
+	jsonBytes, _ := json.Marshal(updatePayload)
+
+	reqURL := fmt.Sprintf("%s/rest/v1/profiles?id=eq.%s", c.config.URL, userID)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, reqURL, bytes.NewReader(jsonBytes))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("apikey", c.config.Key)
+	req.Header.Set("Authorization", "Bearer "+c.config.Key)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Prefer", "return=minimal")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return nil
+}
+
+// CreateOrSupersedeMutationDraftRPC calls public.create_or_supersede_mutation_draft RPC.
+func (c *Client) CreateOrSupersedeMutationDraftRPC(ctx context.Context, pmoID int64, userID, phone string, operations interface{}, summaryText string, ttlMinutes int) (map[string]interface{}, error) {
+	reqURL := fmt.Sprintf("%s/rest/v1/rpc/create_or_supersede_mutation_draft", c.config.URL)
+
+	if ttlMinutes <= 0 {
+		ttlMinutes = 45
+	}
+
+	payload := map[string]interface{}{
+		"p_pmo_id":       pmoID,
+		"p_user_id":      userID,
+		"p_from_phone":   phone,
+		"p_operations":   operations,
+		"p_summary_text": summaryText,
+		"p_ttl_minutes":  ttlMinutes,
+	}
+
+	bodyBytes, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal mutation draft payload: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewReader(bodyBytes))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("apikey", c.config.Key)
+	req.Header.Set("Authorization", "Bearer "+c.config.Key)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute HTTP request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+
+	if resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("Supabase RPC error (%d): %s", resp.StatusCode, string(respBody))
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse RPC response: %w", err)
+	}
+
+	return result, nil
+}
+
+// CommitMutationDraftRPC calls public.commit_mutation_draft RPC.
+func (c *Client) CommitMutationDraftRPC(ctx context.Context, draftID, userID string, pmoID int64) (map[string]interface{}, error) {
+	reqURL := fmt.Sprintf("%s/rest/v1/rpc/commit_mutation_draft", c.config.URL)
+
+	payload := map[string]interface{}{
+		"p_draft_id": draftID,
+		"p_user_id":  userID,
+		"p_pmo_id":   pmoID,
+	}
+
+	bodyBytes, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal commit payload: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewReader(bodyBytes))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("apikey", c.config.Key)
+	req.Header.Set("Authorization", "Bearer "+c.config.Key)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute HTTP request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+
+	if resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("Supabase RPC error (%d): %s", resp.StatusCode, string(respBody))
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse RPC response: %w", err)
+	}
+
+	return result, nil
+}
+
