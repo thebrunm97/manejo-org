@@ -131,7 +131,7 @@ services:
       WHATSAPP_VERSION_MAJOR: "2"
       WHATSAPP_VERSION_MINOR: "3000"
       WHATSAPP_VERSION_PATCH: "1044142122"
-      AMQP_URL: "amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672/default"
+      AMQP_URL: "amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672/"
       RABBITMQ_ENABLED: "true"
       RABBITMQ_GLOBAL_ENABLED: "true"
       AMQP_SPECIFIC_EVENTS: "messages.upsert,messages.update"
