@@ -71,16 +71,24 @@ services:
       # Sem esta variável o bot sobe com rate limiting DESLIGADO (ver
       # internal/ports/ratelimit.go).
       REDIS_URL: redis://redis:6379/0
-      RABBITMQ_URL: "amqp://admin:admin_password@rabbitmq:5672/"
+      RABBITMQ_URL: "amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672/"
     cap_add:
       - SYS_TIME
     volumes:
       - /etc/localtime:/etc/localtime:ro
+      - ./pmo-bot-go/.secrets:/.secrets:ro
     dns:
       - 8.8.8.8
       - 1.1.1.1
     ports:
-      - "8080:8080"
+      # Só localhost: o único consumidor externo é o túnel ngrok, que roda
+      # como agente na própria máquina e fala com 127.0.0.1:8080 — não
+      # precisa (e não deve) da porta publicada em 0.0.0.0, onde qualquer
+      # outro dispositivo da rede local também alcançaria a API crua sem
+      # passar pelo túnel. Isso é camada extra: quem protege de fato o
+      # webhook contra a internet, que o ngrok expõe sem distinguir rota, é
+      # o token no header Authorization (ver internal/webhook/handler.go).
+      - "127.0.0.1:8080:8080"
     deploy:
       resources:
         limits:
@@ -123,12 +131,12 @@ services:
       WHATSAPP_VERSION_MAJOR: "2"
       WHATSAPP_VERSION_MINOR: "3000"
       WHATSAPP_VERSION_PATCH: "1044142122"
-      AMQP_URL: "amqp://admin:admin_password@rabbitmq:5672/default"
+      AMQP_URL: "amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672/default"
       RABBITMQ_ENABLED: "true"
       RABBITMQ_GLOBAL_ENABLED: "true"
       AMQP_SPECIFIC_EVENTS: "messages.upsert,messages.update"
     ports:
-      - "8082:8082"
+      - "127.0.0.1:8082:8082"
     volumes:
       # Bind-mount to host directory: session survives container rebuilds
       - ./evolution_data:/data
@@ -155,6 +163,14 @@ services:
     restart: unless-stopped
     volumes:
       - redis_data:/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 256M
+        reservations:
+          cpus: '0.05'
+          memory: 32M
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -169,13 +185,24 @@ services:
     image: rabbitmq:3.13-management-alpine
     restart: unless-stopped
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      # Só localhost: nada externo precisa falar AMQP/management diretamente;
+      # os consumidores (pmo-bot-go, evolution-go) estão na rede interna do
+      # compose. Evita expor o broker (e seu painel de admin) para a internet.
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
     environment:
-      - RABBITMQ_DEFAULT_USER=admin
-      - RABBITMQ_DEFAULT_PASS=admin_password
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.05'
+          memory: 64M
     healthcheck:
       test: rabbitmq-diagnostics -q ping
       interval: 10s
@@ -185,6 +212,27 @@ services:
     networks:
       - pmo_prod_net
 
+
+  # Fase 3 — proxy reverso publico com TLS automatico (Let's Encrypt).
+  # Unico servico com portas realmente publicas (80/443); tudo o resto na
+  # rede pmo_prod_net so fala 127.0.0.1 no host. Ver deploy/Caddyfile.
+  caddy:
+    image: caddy:2-alpine
+    restart: always
+    env_file:
+      - .env.prod
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - pmo_prod_net
+    depends_on:
+      - pmo-bot-go
+
 networks:
   pmo_prod_net:
     driver: bridge
@@ -192,6 +240,8 @@ networks:
 volumes:
   redis_data:
   rabbitmq_data:
+  caddy_data:
+  caddy_config:
   # Cache das vozes do Piper baixadas do HuggingFace — evita rebaixar a cada
   # restart do container (a voz pt-BR tem alguns dezenas de MB).
   piper_data:
