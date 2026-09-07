@@ -11,7 +11,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 )
 
-// Conversation holds the history and FSM state for a specific phone number
+// Conversation holds the history and FSM state for a specific conversationID number
 type Conversation struct {
 	Messages        []llm.MensagemAgnostica
 	LastUpdate      time.Time
@@ -53,12 +53,12 @@ func NewManager(ttl time.Duration, maxMessages int) *Manager {
 	return m
 }
 
-// GetHistory retrieves the last messages for a phone number
-func (m *Manager) GetHistory(phone string) []llm.MensagemAgnostica {
+// GetHistory retrieves the last messages for a conversationID number
+func (m *Manager) GetHistory(conversationID string) []llm.MensagemAgnostica {
 	m.mu.Lock() // Full lock because we mutate conv.LastUpdate
 	defer m.mu.Unlock()
 
-	conv, ok := m.conversations[phone]
+	conv, ok := m.conversations[conversationID]
 	if !ok {
 		return nil
 	}
@@ -72,7 +72,7 @@ func (m *Manager) GetHistory(phone string) []llm.MensagemAgnostica {
 }
 
 // AddMessage is a legacy helper to append simple messages (user/model) without tools
-func (m *Manager) AddMessage(phone string, role, content string) {
+func (m *Manager) AddMessage(conversationID string, role, content string) {
 	msg := llm.MensagemAgnostica{
 		Role:    llm.Papel(role),
 		Content: content,
@@ -80,12 +80,12 @@ func (m *Manager) AddMessage(phone string, role, content string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	conv, ok := m.conversations[phone]
+	conv, ok := m.conversations[conversationID]
 	if !ok {
 		conv = &Conversation{
 			Messages: make([]llm.MensagemAgnostica, 0),
 		}
-		m.conversations[phone] = conv
+		m.conversations[conversationID] = conv
 	}
 
 	conv.Messages = append(conv.Messages, msg)
@@ -98,16 +98,16 @@ func (m *Manager) AddMessage(phone string, role, content string) {
 }
 
 // AppendAgnosticHistory replaces the user's history with the new slice, applying Semantic Pruning.
-func (m *Manager) AppendAgnosticHistory(phone string, fullHistory []llm.MensagemAgnostica) {
+func (m *Manager) AppendAgnosticHistory(conversationID string, fullHistory []llm.MensagemAgnostica) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	conv, ok := m.conversations[phone]
+	conv, ok := m.conversations[conversationID]
 	if !ok {
 		conv = &Conversation{
 			Messages: make([]llm.MensagemAgnostica, 0),
 		}
-		m.conversations[phone] = conv
+		m.conversations[conversationID] = conv
 	}
 
 	// Semantic Pruning logic:
@@ -206,16 +206,16 @@ func (m *Manager) AppendAgnosticHistory(phone string, fullHistory []llm.Mensagem
 }
 
 // InjectSystemNote inserts a specialized "observation" message into the history as a model response.
-func (m *Manager) InjectSystemNote(phone string, note string) {
+func (m *Manager) InjectSystemNote(conversationID string, note string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	conv, ok := m.conversations[phone]
+	conv, ok := m.conversations[conversationID]
 	if !ok {
 		conv = &Conversation{
 			Messages: make([]llm.MensagemAgnostica, 0),
 		}
-		m.conversations[phone] = conv
+		m.conversations[conversationID] = conv
 	}
 
 	conv.Messages = append(conv.Messages, llm.MensagemAgnostica{
@@ -253,9 +253,9 @@ func estimateTokens(messages []llm.MensagemAgnostica) int {
 }
 
 // TriggerAsyncCompression starts a background worker that measures context length and summarizes it via LLM if needed
-func (m *Manager) TriggerAsyncCompression(phone string, llmClient ContentGenerator, thresholdTokens int) {
+func (m *Manager) TriggerAsyncCompression(conversationID string, llmClient ContentGenerator, thresholdTokens int) {
 	m.mu.RLock()
-	conv, ok := m.conversations[phone]
+	conv, ok := m.conversations[conversationID]
 	if !ok || len(conv.Messages) == 0 {
 		m.mu.RUnlock()
 		return
@@ -271,10 +271,10 @@ func (m *Manager) TriggerAsyncCompression(phone string, llmClient ContentGenerat
 
 	// Above threshold! Fire the background worker
 	go func() {
-		log.Printf("🧹 [MemoryManager] %s ultrapassou %d tokens (~%d). Iniciando compressão assíncrona...", phone, thresholdTokens, approxTokens)
+		log.Printf("🧹 [MemoryManager] %s ultrapassou %d tokens (~%d). Iniciando compressão assíncrona...", conversationID, thresholdTokens, approxTokens)
 
 		m.mu.RLock()
-		conv, ok := m.conversations[phone]
+		conv, ok := m.conversations[conversationID]
 		if !ok || len(conv.Messages) < 4 {
 			m.mu.RUnlock()
 			return
@@ -306,7 +306,7 @@ func (m *Manager) TriggerAsyncCompression(phone string, llmClient ContentGenerat
 
 		resp, err := llmClient.GenerateContent(ctx, req)
 		if err != nil {
-			log.Printf("⚠️ [MemoryManager] Falha ao sumarizar histórico de %s: %v", phone, err)
+			log.Printf("⚠️ [MemoryManager] Falha ao sumarizar histórico de %s: %v", conversationID, err)
 			return
 		}
 
@@ -316,7 +316,7 @@ func (m *Manager) TriggerAsyncCompression(phone string, llmClient ContentGenerat
 		m.mu.Lock()
 		defer m.mu.Unlock()
 
-		conv, ok = m.conversations[phone]
+		conv, ok = m.conversations[conversationID]
 		if !ok {
 			return
 		}
@@ -331,7 +331,7 @@ func (m *Manager) TriggerAsyncCompression(phone string, llmClient ContentGenerat
 		// próxima chamada tentar de novo. Um simples append no fim (sem
 		// truncar) não mexe no prefixo, então continua seguro de mesclar.
 		if conv.PrefixGen != prefixGenAtSnapshot {
-			log.Printf("🧹 [MemoryManager] %s: prefixo do histórico mudou durante a sumarização assíncrona (gen %d -> %d). Descartando compressão para evitar corrupção.", phone, prefixGenAtSnapshot, conv.PrefixGen)
+			log.Printf("🧹 [MemoryManager] %s: prefixo do histórico mudou durante a sumarização assíncrona (gen %d -> %d). Descartando compressão para evitar corrupção.", conversationID, prefixGenAtSnapshot, conv.PrefixGen)
 			return
 		}
 
@@ -355,7 +355,7 @@ func (m *Manager) TriggerAsyncCompression(phone string, llmClient ContentGenerat
 		conv.PrefixGen++
 		conv.LastUpdate = time.Now()
 
-		log.Printf("✅ [MemoryManager] %s compressão finalizada. Novo tamanho do histórico: %d mensagens.", phone, len(conv.Messages))
+		log.Printf("✅ [MemoryManager] %s compressão finalizada. Novo tamanho do histórico: %d mensagens.", conversationID, len(conv.Messages))
 	}()
 }
 
@@ -366,12 +366,12 @@ func (m *Manager) startCleanup() {
 	}
 }
 
-// GetFSMState returns the current state, context, and pending entities for a phone number
-func (m *Manager) GetFSMState(phone string) (string, map[string]interface{}, []llm.AcaoEstruturada) {
+// GetFSMState returns the current state, context, and pending entities for a conversationID number
+func (m *Manager) GetFSMState(conversationID string) (string, map[string]interface{}, []llm.AcaoEstruturada) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	conv, ok := m.conversations[phone]
+	conv, ok := m.conversations[conversationID]
 	if !ok {
 		return "", nil, nil
 	}
@@ -395,27 +395,27 @@ func (m *Manager) GetFSMState(phone string) (string, map[string]interface{}, []l
 	return conv.FSMState, ctxClone, pendingClone
 }
 
-// SetFSMState updates the state, context, and pending entities for a phone number
-func (m *Manager) SetFSMState(phone string, state string, ctx map[string]interface{}, pending []llm.AcaoEstruturada) {
+// SetFSMState updates the state, context, and pending entities for a conversationID number
+func (m *Manager) SetFSMState(conversationID string, state string, ctx map[string]interface{}, pending []llm.AcaoEstruturada) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	conv, ok := m.conversations[phone]
+	conv, ok := m.conversations[conversationID]
 	if !ok {
 		conv = &Conversation{
 			Messages: make([]llm.MensagemAgnostica, 0),
 		}
-		m.conversations[phone] = conv
+		m.conversations[conversationID] = conv
 	}
 	
 	oldState := conv.FSMState
 	if oldState != state {
-		log.Printf("telemetry event=fsm_state_changed from=%s to=%s reason=state_update conversation_id=%s turn_id=N/A", oldState, state, phone)
+		log.Printf("telemetry event=fsm_state_changed from=%s to=%s reason=state_update conversation_id=%s turn_id=N/A", oldState, state, conversationID)
 	}
 	
 	// fsm_pending_enter: se estivermos entrando em um estado de "aguardando" (pending) e não for o mesmo de antes
 	if state != "" && state != oldState && (len(pending) > 0 || state == "StateAguardandoQuantidade" || state == "StateAguardandoFazenda") {
-		log.Printf("telemetry event=fsm_pending_enter from=%s to=%s reason=state_update conversation_id=%s turn_id=N/A", oldState, state, phone)
+		log.Printf("telemetry event=fsm_pending_enter from=%s to=%s reason=state_update conversation_id=%s turn_id=N/A", oldState, state, conversationID)
 	}
 
 	conv.FSMState = state
@@ -424,19 +424,19 @@ func (m *Manager) SetFSMState(phone string, state string, ctx map[string]interfa
 	conv.LastUpdate = time.Now()
 }
 
-// ClearFSMState resets the FSM state for a phone number
-func (m *Manager) ClearFSMState(phone string) {
+// ClearFSMState resets the FSM state for a conversationID number
+func (m *Manager) ClearFSMState(conversationID string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	conv, ok := m.conversations[phone]
+	conv, ok := m.conversations[conversationID]
 	if ok {
 		oldState := conv.FSMState
 		if oldState != "" {
-			log.Printf("telemetry event=fsm_state_changed from=%s to= reason=clear conversation_id=%s turn_id=N/A", oldState, phone)
+			log.Printf("telemetry event=fsm_state_changed from=%s to= reason=clear conversation_id=%s turn_id=N/A", oldState, conversationID)
 			
 			// fsm_pending_exit: Se o state não for vazio, consideramos que o pending foi resolvido (exit)
-			log.Printf("telemetry event=fsm_pending_exit from=%s to= reason=clear conversation_id=%s turn_id=N/A", oldState, phone)
+			log.Printf("telemetry event=fsm_pending_exit from=%s to= reason=clear conversation_id=%s turn_id=N/A", oldState, conversationID)
 		}
 
 		conv.FSMState = ""
@@ -452,12 +452,12 @@ func (m *Manager) Cleanup() {
 	defer m.mu.Unlock()
 
 	now := time.Now()
-	for phone, conv := range m.conversations {
+	for conversationID, conv := range m.conversations {
 		if now.Sub(conv.LastUpdate) > m.ttl {
 			if conv.FSMState != "" {
-				log.Printf("telemetry event=fsm_pending_timeout from=%s to= reason=timeout conversation_id=%s turn_id=N/A duration_ms=%d", conv.FSMState, phone, m.ttl.Milliseconds())
+				log.Printf("telemetry event=fsm_pending_timeout from=%s to= reason=timeout conversation_id=%s turn_id=N/A duration_ms=%d", conv.FSMState, conversationID, m.ttl.Milliseconds())
 			}
-			delete(m.conversations, phone)
+			delete(m.conversations, conversationID)
 		}
 	}
 }

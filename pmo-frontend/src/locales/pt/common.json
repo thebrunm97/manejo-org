@@ -4,7 +4,20 @@
     "properties": "Propriedades",
     "reports": "Relatórios",
     "settings": "Configurações",
-    "logout": "Sair"
+    "logout": "Sair",
+    "pmoList": "Planos de Manejo",
+    "notebook": "Caderno de Campo",
+    "finance": "Financeiro / DRE",
+    "map": "Mapa da Propriedade",
+    "crops": "Minhas Culturas",
+    "changelog": "Novidades",
+    "propertyData": "Dados da Propriedade",
+    "profile": "Meu Perfil",
+    "mural": "Mural de Demandas",
+    "coop": "Painel Cooperativa",
+    "admin": "Administração",
+    "liveMonitor": "Monitor ao Vivo",
+    "section": "Gestão"
   },
   "language": {
     "pt": "Português",

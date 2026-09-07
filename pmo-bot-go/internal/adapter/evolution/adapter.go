@@ -191,8 +191,32 @@ func (a *EvolutionAdapter) SendReply(to, message, replyToMessageID string) error
 	return errors.New("SendReply not implemented yet for Evolution API")
 }
 
+// Send implements ports.ChannelSender.
+func (a *EvolutionAdapter) Send(ctx context.Context, env ports.OutboundEnvelope) error {
+	switch env.Type {
+	case ports.OutboundTypeAudio:
+		return a.SendVoice(env.To, env.Base64Audio, env.IsVoiceNote)
+	case ports.OutboundTypeButtons:
+		buttons := env.Buttons
+		if len(buttons) == 0 {
+			return a.SendMessage(env.To, env.Text)
+		}
+		return a.SendButton(env.To, env.Title, env.Description, env.Footer, buttons)
+	default: // OutboundTypeText
+		if env.ReplyToMessageID != "" {
+			return a.SendReply(env.To, env.Text, env.ReplyToMessageID)
+		}
+		return a.SendMessage(env.To, env.Text)
+	}
+}
+
+// SendTyping implements ports.ChannelSender — sends composing presence.
+func (a *EvolutionAdapter) SendTyping(ctx context.Context, _ ports.ChannelType, to string) error {
+	return a.SendPresence(ctx, to, "composing")
+}
+
 // DownloadAudio fetches the audio file from Evolution API and decodes it.
-func (a *EvolutionAdapter) DownloadAudio(messageID string, rawPayload []byte) ([]byte, string, error) {
+func (a *EvolutionAdapter) DownloadMedia(ctx context.Context, messageID string, rawPayload []byte) ([]byte, string, error) {
 	fullURL := fmt.Sprintf("%s/message/downloadmedia", a.BaseURL)
 	log.Printf("📥 [Evolution-Go] Solicitando download de áudio. URL: %s | MessageID: %s", fullURL, messageID)
 
@@ -265,7 +289,7 @@ func (a *EvolutionAdapter) DownloadAudio(messageID string, rawPayload []byte) ([
 }
 
 // DownloadImage fetches the image file from Evolution API and decodes it.
-func (a *EvolutionAdapter) DownloadImage(messageID string, rawPayload []byte) ([]byte, string, error) {
+func (a *EvolutionAdapter) _unused_DownloadImage(ctx context.Context, messageID string, rawPayload []byte) ([]byte, string, error) {
 	fullURL := fmt.Sprintf("%s/message/downloadmedia", a.BaseURL)
 	log.Printf("📥 [Evolution-Go] Solicitando download de imagem. URL: %s", fullURL)
 
@@ -681,8 +705,8 @@ func ExtractEventType(rawBody []byte) string {
 	return envelope.Event
 }
 
-// ParseWebhook converts an Evolution API webhook payload into a ports.IncomingMessage.
-func ParseWebhook(rawBody []byte) (*ports.IncomingMessage, error) {
+// ParseWebhook converts an Evolution API webhook payload into a ports.IncomingEnvelope.
+func ParseWebhook(rawBody []byte) (*ports.IncomingEnvelope, error) {
 	var payload EvolutionWebhook
 	if err := json.Unmarshal(rawBody, &payload); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal webhook: %w", err)
@@ -714,11 +738,10 @@ func ParseWebhook(rawBody []byte) (*ports.IncomingMessage, error) {
 			body = btnPayload.Data.ButtonId
 		}
 
-		return &ports.IncomingMessage{
+		return &ports.IncomingEnvelope{
 			ID:         btnPayload.Data.Key.Id,
 			From:       btnPayload.Data.Key.RemoteJid,
 			Body:       body,
-			IsFromMe:   btnPayload.Data.Key.FromMe,
 			Timestamp:  time.Now(),
 			Type:       "button_click",
 			IsAudio:    false,
@@ -775,11 +798,10 @@ func ParseWebhook(rawBody []byte) (*ports.IncomingMessage, error) {
 		}
 	}
 
-	return &ports.IncomingMessage{
+	return &ports.IncomingEnvelope{
 		ID:                      payload.Data.Info.ID,
 		From:                    from,
 		Body:                    body,
-		IsFromMe:                payload.Data.Info.IsFromMe,
 		Timestamp:               ts,
 		Type:                    msgType,
 		IsAudio:                 isAudio,

@@ -429,10 +429,10 @@ export async function fetchPlanningSuggestions(userId: string): Promise<FetchRes
  */
 export async function markSuggestionAsProcessed(logId: string): Promise<SaveResult> {
     try {
-        const { error } = await supabase
-            .from('logs_treinamento')
-            .update({ processado: true })
-            .eq('id', logId);
+        const { error } = await supabase.rpc('update_log_treinamento', {
+            p_id: logId,
+            p_payload: { processado: true }
+        });
 
         if (error) return { success: false, error: error.message };
         return { success: true, pmoId: logId };
@@ -460,10 +460,10 @@ export async function logFeedback(
             processado: true // Garante que saiu da lista de pendentes
         };
 
-        const { error } = await supabase
-            .from('logs_treinamento')
-            .update(updatePayload)
-            .eq('id', logId);
+        const { error } = await supabase.rpc('update_log_treinamento', {
+            p_id: logId,
+            p_payload: updatePayload
+        });
 
         if (error) {
             console.error('[ML-Loop] Erro ao salvar feedback:', error);
@@ -489,15 +489,17 @@ export async function saveRefinedSuggestion(
     try {
         console.log(`[PMO-Bot] Salvando refinamento para log ${logId}`);
 
-        const { error } = await supabase
-            .from('logs_treinamento')
-            .update({
-                processado: true,
-                json_final: finalData,
-                feedback_usuario: 'Aceito com refinamento',
-                status_validacao: 'corrigido_humano' // Manter consistência com ML loop
-            })
-            .eq('id', logId);
+        const updatePayload = {
+            processado: true,
+            json_corrigido: finalData,
+            foi_editado: true,
+            status_validacao: 'corrigido_humano' // Manter consistência com ML loop
+        };
+
+        const { error } = await supabase.rpc('update_log_treinamento', {
+            p_id: logId,
+            p_payload: updatePayload
+        });
 
         if (error) {
             console.error('[PMO-Bot] Erro ao salvar refinamento:', error);

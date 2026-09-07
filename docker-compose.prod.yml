@@ -76,6 +76,7 @@ services:
       - SYS_TIME
     volumes:
       - /etc/localtime:/etc/localtime:ro
+      - ./pmo-bot-go/.secrets:/.secrets:ro
     dns:
       - 8.8.8.8
       - 1.1.1.1

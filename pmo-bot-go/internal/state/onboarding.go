@@ -36,12 +36,14 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"unicode"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/llm/schema"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
+	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 	"os"
 )
 
@@ -86,7 +88,9 @@ const msgBoasVindas = `👋 Olá! Sou o assistente do *ManejoORG*.
 
 Vi que este número ainda não está vinculado. Você já tem um cadastro feito por e-mail no nosso site? *(Responda Sim ou Não)*`
 
-const promptExtracaoCadastro = `Você extrai dados de cadastro de produtores rurais brasileiros a partir de mensagens de WhatsApp.
+const promptExtracaoCadastro = `Você extrai dados de cadastro de produtores rurais a partir de mensagens de WhatsApp.
+
+Nomes de pessoas podem ser de qualquer origem — brasileira, árabe, japonesa, europeia, indígena. Não descarte um nome por ele não "soar brasileiro".
 
 Primeiro decida "eh_cadastro": a mensagem está de fato fornecendo dados pessoais para criar um cadastro (nome do produtor, propriedade, área, talhão)? Perguntas técnicas, dúvidas sobre produção/manejo, saudações, pedidos de ajuda ou qualquer assunto que não seja "aqui estão meus dados" NÃO são cadastro — marque eh_cadastro=false e deixe nome vazio, mesmo que a frase contenha palavras parecidas com nomes próprios.
 
@@ -97,6 +101,34 @@ Só quando eh_cadastro=true extraia os campos abaixo. Extraia APENAS o que estiv
 - talhao_nome: nome do talhão, lote, gleba ou área de plantio, SE a mensagem mencionar.
 
 Campo ausente na mensagem = deixe de fora. É melhor omitir do que preencher errado: o nome vai virar o cadastro oficial do produtor.`
+
+// promptExtracaoNomeDirecionado vale para o momento em que o bot ACABOU de
+// pedir o nome completo — e só para ele.
+//
+// O prompt genérico acima é enviesado contra o falso positivo de propósito:
+// no primeiro contato, uma dúvida técnica jamais pode virar cadastro. Aqui o
+// contexto é o oposto. A pergunta foi feita, a resposta esperada é um nome, e
+// nada é gravado sem o SIM da tela de conferência. Manter o viés genérico
+// nesta etapa foi o que prendeu um produtor em loop (ver comentário do
+// fast-path em HandleOnboarding), então aqui a dúvida se resolve a favor de
+// aceitar.
+const promptExtracaoNomeDirecionado = `Você extrai o nome de um produtor rural a partir da resposta dele no WhatsApp.
+
+CONTEXTO IMPORTANTE: o assistente acabou de perguntar "me diz só o seu nome completo". A mensagem que você recebe é a resposta direta a essa pergunta.
+
+Portanto, marque eh_cadastro=true e extraia o nome sempre que a mensagem contiver algo que possa ser um nome de pessoa. Nomes podem ser de qualquer origem — brasileira, árabe, japonesa, europeia, indígena — e podem vir sem sobrenome, com sobrenome repetido, tudo minúsculo ou tudo junto. Nada disso desqualifica um nome.
+
+Marque eh_cadastro=false APENAS se a mensagem for claramente uma dessas coisas:
+- uma pergunta (sobre preço, funcionamento, manejo, qualquer assunto);
+- uma recusa explícita em informar o nome;
+- uma mudança de assunto sem nenhum nome junto.
+
+Além do nome, extraia também, SE a mensagem mencionar explicitamente:
+- propriedade_nome: nome do sítio/fazenda/chácara. Não confunda com o nome da pessoa.
+- area_ha: área em HECTARES, como número. Converta se vier em alqueire (1 alqueire paulista = 2.42 ha) ou em m² (10000 m² = 1 ha).
+- talhao_nome: nome do talhão, lote, gleba ou área de plantio.
+
+Nunca invente esses campos extras: campo ausente na mensagem = deixe de fora.`
 
 // extracaoOnboarding é o formato pedido ao LLM: além dos dados em si, carrega
 // a decisão de intenção (eh_cadastro) que impede uma pergunta de domínio
@@ -110,8 +142,19 @@ type extracaoOnboarding struct {
 // segundo retorno indica se o LLM entendeu a mensagem como dado de cadastro
 // (ao contrário de uma pergunta de domínio, saudação etc.) — só nesse caso
 // os dados devem ser usados para avançar o cadastro.
-func extrairDadosCadastro(ctx context.Context, llmClient LLMClient, texto string) (DadosCadastro, bool, error) {
+//
+// nomeJaSolicitado diz se o bot já pediu o nome explicitamente. A extração é
+// stateless — recebe só o texto da mensagem —, então sem esse sinal o modelo
+// vê "Ahmed Mesalam" como duas palavras soltas, sem saber que são a resposta
+// a uma pergunta. É essa cegueira que o parâmetro corrige, trocando o prompt
+// por um que espera um nome.
+func extrairDadosCadastro(ctx context.Context, llmClient LLMClient, texto string, nomeJaSolicitado bool) (DadosCadastro, bool, error) {
 	var vazio DadosCadastro
+
+	prompt := promptExtracaoCadastro
+	if nomeJaSolicitado {
+		prompt = promptExtracaoNomeDirecionado
+	}
 
 	raw, err := schema.Reflect[extracaoOnboarding]()
 	if err != nil {
@@ -123,7 +166,7 @@ func extrairDadosCadastro(ctx context.Context, llmClient LLMClient, texto string
 	}
 
 	resp, err := llmClient.GenerateContent(ctx, llm.ContentRequest{
-		SystemInstruction: promptExtracaoCadastro,
+		SystemInstruction: prompt,
 		History: []llm.MensagemAgnostica{
 			{Role: llm.PapelUser, Content: texto},
 		},
@@ -173,12 +216,12 @@ func ehNegacao(texto string) bool {
 // exemplo o comando CONECTAR), deixando o chamador seguir com o que fazia.
 func HandleOnboarding(
 	ctx context.Context,
-	msg ports.IncomingMessage,
+	msg ports.IncomingEnvelope,
 	phone string,
 	body string,
 	respondWithAudio bool,
 	sbClient *supabase.Client,
-	wpClient ports.MessageSender,
+	wpClient ports.ChannelSender,
 	ttsClient ports.Synthesizer,
 	llmClient LLMClient,
 	historyManager *history.Manager,
@@ -193,7 +236,7 @@ func HandleOnboarding(
 	if estado == StateConfirmandoCadastro {
 		if ehNegacao(body) {
 			historyManager.SetFSMState(phone, StateAguardandoCadastro, nil, nil)
-			sendFeedback(sbClient, wpClient, ttsClient, msg.From,
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From,
 				"Sem problema! Me manda os dados de novo, do jeito certo desta vez. 🙂", respondWithAudio)
 			return ProcessResult{Success: true, Reason: "onboarding_corrigir"}, true
 		}
@@ -204,7 +247,7 @@ func HandleOnboarding(
 				// Estado perdido (restart) ou corrompido: reextrai em vez de
 				// gravar algo que não foi conferido.
 				historyManager.SetFSMState(phone, StateAguardandoCadastro, nil, nil)
-				sendFeedback(sbClient, wpClient, ttsClient, msg.From,
+				sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From,
 					"Desculpa, perdi os dados que você tinha mandado. Pode reenviar?", respondWithAudio)
 				return ProcessResult{Success: false, Reason: "onboarding_estado_perdido"}, true
 			}
@@ -218,7 +261,7 @@ func HandleOnboarding(
 	// ── Cancelamento Genérico ───────────────────────────────────────────────
 	if strings.ToUpper(strings.TrimSpace(body)) == "CANCELAR" {
 		historyManager.SetFSMState(phone, "", nil, nil)
-		sendFeedback(sbClient, wpClient, ttsClient, msg.From, "Operação cancelada. Mande um 'Oi' quando quiser recomeçar.", respondWithAudio)
+		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "Operação cancelada. Mande um 'Oi' quando quiser recomeçar.", respondWithAudio)
 		return ProcessResult{Success: true, Reason: "cancelado"}, true
 	}
 
@@ -230,19 +273,32 @@ func HandleOnboarding(
 		user, err := sbClient.VerifyEmailOTP(email, token)
 		if err != nil {
 			log.Printf("⚠️ [Onboarding] OTP inválido para %s: %v", email, err)
-			sendFeedback(sbClient, wpClient, ttsClient, msg.From, "O código parece incorreto ou expirou. Tente novamente ou digite CANCELAR.", respondWithAudio)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "O código parece incorreto ou expirou. Tente novamente ou digite CANCELAR.", respondWithAudio)
 			return ProcessResult{Success: false, Reason: "otp_invalido"}, true
 		}
 
 		err = sbClient.LinkPhoneToUser(user.ID, phone)
 		if err != nil {
 			log.Printf("⚠️ [Onboarding] Erro ao vincular telefone %s: %v", phone, err)
-			sendFeedback(sbClient, wpClient, ttsClient, msg.From, "Erro interno ao vincular conta. Tente de novo mais tarde.", respondWithAudio)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "Erro interno ao vincular conta. Tente de novo mais tarde.", respondWithAudio)
 			return ProcessResult{Success: false, Reason: "erro_vincular"}, true
 		}
 
+		// Garante que a tabela 'profiles' também reflita a mudança, pois o roteador a utiliza
+		err = sbClient.UpdateProfilePhone(user.ID, phone)
+		if err != nil {
+			if strings.Contains(err.Error(), "telefone_em_uso") {
+				log.Printf("⚠️ [Onboarding] Colisão de perfil no OTP para %s: %v", phone, err)
+				sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "Este número de WhatsApp já está vinculado a outro perfil. Desvincule a conta anterior ou contate o suporte.", respondWithAudio)
+				return ProcessResult{Success: false, Reason: "telefone_em_uso"}, true
+			}
+			log.Printf("⚠️ [Onboarding] Erro ao atualizar perfil para %s: %v", phone, err)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "Erro interno ao completar o vínculo. Tente de novo mais tarde.", respondWithAudio)
+			return ProcessResult{Success: false, Reason: "erro_vincular_perfil"}, true
+		}
+
 		historyManager.SetFSMState(phone, "", nil, nil)
-		sendFeedback(sbClient, wpClient, ttsClient, msg.From, "✅ Pronto! Seu WhatsApp foi vinculado à sua conta com sucesso. Pode começar a usar!", respondWithAudio)
+		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "✅ Pronto! Seu WhatsApp foi vinculado à sua conta com sucesso. Pode começar a usar!", respondWithAudio)
 		return ProcessResult{Success: true, Reason: "conta_vinculada"}, true
 	}
 
@@ -250,7 +306,7 @@ func HandleOnboarding(
 	if estado == StateAguardandoEmail {
 		email := strings.ToLower(strings.TrimSpace(body))
 		if !strings.Contains(email, "@") {
-			sendFeedback(sbClient, wpClient, ttsClient, msg.From, "Isso não parece um e-mail válido. Por favor, digite seu e-mail do site:", respondWithAudio)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "Isso não parece um e-mail válido. Por favor, digite seu e-mail do site:", respondWithAudio)
 			return ProcessResult{Success: false, Reason: "email_invalido"}, true
 		}
 
@@ -259,7 +315,7 @@ func HandleOnboarding(
 			log.Printf("⚠️ [Onboarding] Falha ao enviar OTP para %s: %v", email, err)
 		}
 		historyManager.SetFSMState(phone, StateAguardandoOTPEmail, map[string]interface{}{"email": email}, nil)
-		sendFeedback(sbClient, wpClient, ttsClient, msg.From, "Enviei um código de 6 dígitos para o seu e-mail (se ele existir no nosso sistema). Por favor, digite os 6 números aqui:", respondWithAudio)
+		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "Enviei um código de 6 dígitos para o seu e-mail (se ele existir no nosso sistema). Por favor, digite os 6 números aqui:", respondWithAudio)
 		return ProcessResult{Success: true, Reason: "otp_enviado"}, true
 	}
 
@@ -267,17 +323,17 @@ func HandleOnboarding(
 	if estado == StatePerguntaContaExistente {
 		if ehConfirmacao(body) {
 			historyManager.SetFSMState(phone, StateAguardandoEmail, nil, nil)
-			sendFeedback(sbClient, wpClient, ttsClient, msg.From, "Legal! Me diga qual é o e-mail que você usou no site para eu te enviar um código de segurança.", respondWithAudio)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "Legal! Me diga qual é o e-mail que você usou no site para eu te enviar um código de segurança.", respondWithAudio)
 			return ProcessResult{Success: true, Reason: "iniciou_vinculo"}, true
 		} else if ehNegacao(body) {
 			historyManager.SetFSMState(phone, StateAguardandoCadastro, nil, nil)
-			sendFeedback(sbClient, wpClient, ttsClient, msg.From, "Perfeito, vou criar o seu agora mesmo. Me diz só o seu *nome completo* pra gente começar:", respondWithAudio)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "Perfeito, vou criar o seu agora mesmo. Me diz só o seu *nome completo* pra gente começar:", respondWithAudio)
 			return ProcessResult{Success: true, Reason: "iniciou_novo_cadastro"}, true
 		} else {
 			if pareceConterDados(body) {
 				historyManager.SetFSMState(phone, StateAguardandoCadastro, nil, nil)
 			} else {
-				sendFeedback(sbClient, wpClient, ttsClient, msg.From, "Você já tem um cadastro feito por e-mail no nosso site? (Responda SIM ou NÃO)", respondWithAudio)
+				sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "Você já tem um cadastro feito por e-mail no nosso site? (Responda SIM ou NÃO)", respondWithAudio)
 				return ProcessResult{Success: true, Reason: "pergunta_nao_respondida"}, true
 			}
 		}
@@ -289,16 +345,34 @@ func HandleOnboarding(
 	// substância ou se já estivermos no meio do cadastro.
 	if estado == "" && !pareceConterDados(body) {
 		historyManager.SetFSMState(phone, StatePerguntaContaExistente, nil, nil)
-		sendFeedback(sbClient, wpClient, ttsClient, msg.From, msgBoasVindas, respondWithAudio)
+		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, msgBoasVindas, respondWithAudio)
 		return ProcessResult{Success: true, Reason: "onboarding_iniciado"}, true
 	}
 
+	// ── Fast-path: resposta direta à pergunta do nome ───────────────────────
+	//
+	// Incidente em produção (6/9): o bot perguntou "me diz só o seu nome
+	// completo", o produtor respondeu "Ahmed Mesalam" e o classificador
+	// eh_cadastro devolveu false. Ele tentou mais duas vezes, variando a
+	// grafia, e recebeu a mesma recusa — um loop sem saída, porque toda
+	// tentativa correta produzia a mesma classificação errada.
+	//
+	// Uma mensagem com cara de nome puro, nesta etapa, nem chega ao LLM:
+	// responde na hora, não gasta cota e não depende de o modelo achar que o
+	// nome "parece" de produtor rural brasileiro. O risco de aceitar demais é
+	// baixo porque a gravação ainda depende do SIM de conferência.
+	if estado == StateAguardandoCadastro && pareceNomeProprio(body) {
+		dados := DadosCadastro{Nome: strings.TrimSpace(body)}
+		return pedirConfirmacao(phone, msg, dados, resumoCadastro(dados), "onboarding_nome_direto",
+			respondWithAudio, sbClient, wpClient, ttsClient, historyManager), true
+	}
+
 	// ── Extração ────────────────────────────────────────────────────────────
-	dados, ehCadastro, err := extrairDadosCadastro(ctx, llmClient, body)
+	dados, ehCadastro, err := extrairDadosCadastro(ctx, llmClient, body, estado == StateAguardandoCadastro)
 	if err != nil {
 		log.Printf("⚠️ [Onboarding] Falha ao extrair dados de %s: %v", phone, err)
 		historyManager.SetFSMState(phone, StateAguardandoCadastro, nil, nil)
-		sendFeedback(sbClient, wpClient, ttsClient, msg.From,
+		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From,
 			"Não consegui entender os dados. Pode mandar de novo, com nome, propriedade, hectares e talhão?", respondWithAudio)
 		return ProcessResult{Success: false, Reason: "onboarding_extracao_falhou"}, true
 	}
@@ -307,7 +381,26 @@ func HandleOnboarding(
 		if estado == StateAguardandoCadastro {
 			// Já pedimos o nome explicitamente; a mensagem não é dado de
 			// cadastro (pode ser uma dúvida, um desvio de assunto etc.).
-			sendFeedback(sbClient, wpClient, ttsClient, msg.From,
+			tentativas := tentativasDoContexto(ctxFSM) + 1
+
+			// Escape hatch. Repetir a mesma frase indefinidamente foi
+			// exatamente o que travou um produtor em produção: ele não tinha
+			// como saber o que mudar, porque não havia nada de errado com a
+			// resposta dele. Na segunda recusa seguida, paramos de insistir e
+			// oferecemos o texto cru como proposta de nome — quem decide é o
+			// produtor, no SIM/NÃO, e nada é gravado sem esse aceite.
+			if tentativas >= 2 && strings.TrimSpace(body) != "" {
+				log.Printf("⚠️ [Onboarding] Extração recusou %d vezes seguidas para %s; oferecendo o texto cru como nome", tentativas, phone)
+				dados := DadosCadastro{Nome: strings.TrimSpace(body)}
+				resumo := fmt.Sprintf(
+					"Só pra eu não errar: quer que eu cadastre o seu nome exatamente como *%s*?",
+					dados.Nome)
+				return pedirConfirmacao(phone, msg, dados, resumo, "onboarding_nome_ultima_tentativa",
+					respondWithAudio, sbClient, wpClient, ttsClient, historyManager), true
+			}
+
+			historyManager.SetFSMState(phone, StateAguardandoCadastro, contextoDeTentativas(tentativas), nil)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From,
 				"Não consegui identificar seu nome nessa mensagem. Pode me mandar só o seu nome completo?", respondWithAudio)
 			return ProcessResult{Success: true, Reason: "onboarding_nao_e_cadastro"}, true
 		}
@@ -316,46 +409,80 @@ func HandleOnboarding(
 		// normal perguntando se já existe conta por e-mail, em vez de tentar
 		// registrar dados que não foram de fato fornecidos.
 		historyManager.SetFSMState(phone, StatePerguntaContaExistente, nil, nil)
-		sendFeedback(sbClient, wpClient, ttsClient, msg.From, msgBoasVindas, respondWithAudio)
+		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, msgBoasVindas, respondWithAudio)
 		return ProcessResult{Success: true, Reason: "onboarding_pergunta_conta"}, true
 	}
 
 	if !dados.completo() {
 		historyManager.SetFSMState(phone, StateAguardandoCadastro, contextoDosDados(dados), nil)
 		faltam := dados.faltantes()
-		sendFeedback(sbClient, wpClient, ttsClient, msg.From,
+		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From,
 			fmt.Sprintf("Quase lá! Ainda preciso de: %s.", strings.Join(faltam, ", ")), respondWithAudio)
 		return ProcessResult{Success: true, Reason: "onboarding_incompleto"}, true
 	}
 
 	// ── Conferência ─────────────────────────────────────────────────────────
+	return pedirConfirmacao(phone, msg, dados, resumoCadastro(dados), "onboarding_aguardando_confirmacao",
+		respondWithAudio, sbClient, wpClient, ttsClient, historyManager), true
+}
+
+// pedirConfirmacao guarda os dados extraídos e manda a tela de conferência.
+//
+// O texto do resumo vem de fora porque nem todo caminho até aqui tem a mesma
+// confiança no que extraiu: o fluxo normal afirma ("confere pra mim"), e o
+// escape hatch pergunta ("quer que eu cadastre exatamente assim?"). O que os
+// dois compartilham — e o que torna seguro ser permissivo antes deste ponto —
+// é que nada é gravado sem o SIM.
+func pedirConfirmacao(
+	phone string,
+	msg ports.IncomingEnvelope,
+	dados DadosCadastro,
+	resumo string,
+	reason string,
+	respondWithAudio bool,
+	sbClient *supabase.Client,
+	wpClient ports.ChannelSender,
+	ttsClient ports.Synthesizer,
+	historyManager *history.Manager,
+) ProcessResult {
 	historyManager.SetFSMState(phone, StateConfirmandoCadastro, contextoDosDados(dados), nil)
 
-	resumo := resumoCadastro(dados)
 	if wpClient != nil {
-		botoes := []map[string]string{
-			{"type": "reply", "displayText": "SIM", "id": "SIM"},
-			{"type": "reply", "displayText": "NÃO", "id": "NÃO"},
+		// Título/Descrição/Rodapé são o trio que OutboundEnvelope reserva para
+		// botões; o corpo da conferência vai em Description, não em Text.
+		env := ports.OutboundEnvelope{
+			ConversationID: msg.ConversationID,
+			To:             msg.From,
+			Type:           ports.OutboundTypeButtons,
+			Title:          "Confirmar cadastro",
+			Description:    resumo,
+			Footer:         "É só tocar em SIM ou NÃO",
+			Buttons: []map[string]string{
+				{"id": "SIM", "title": "SIM"},
+				{"id": "NÃO", "title": "NÃO"},
+			},
 		}
-		if err := wpClient.SendButton(msg.From, "Confirmar cadastro", resumo, "É só tocar em SIM ou NÃO", botoes); err != nil {
+
+
+		if err := wpClient.Send(context.Background(), env); err != nil {
 			// Botão é enfeite, não requisito: se o provedor recusar, o texto
 			// sozinho já permite responder "sim".
 			log.Printf("⚠️ [Onboarding] Botões indisponíveis, seguindo em texto: %v", err)
-			sendFeedback(sbClient, wpClient, ttsClient, msg.From, resumo+"\n\nResponda *SIM* ou *NÃO*.", respondWithAudio)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, resumo+"\n\nResponda *SIM* ou *NÃO*.", respondWithAudio)
 		}
 	}
 
-	return ProcessResult{Success: true, Reason: "onboarding_aguardando_confirmacao"}, true
+	return ProcessResult{Success: true, Reason: reason}
 }
 
 // finalizarCadastro cria o usuário e grava o cadastro.
 func finalizarCadastro(
 	phone string,
-	msg ports.IncomingMessage,
+	msg ports.IncomingEnvelope,
 	dados DadosCadastro,
 	respondWithAudio bool,
 	sbClient *supabase.Client,
-	wpClient ports.MessageSender,
+	wpClient ports.ChannelSender,
 	ttsClient ports.Synthesizer,
 	historyManager *history.Manager,
 ) ProcessResult {
@@ -365,7 +492,7 @@ func finalizarCadastro(
 	})
 	if err != nil {
 		log.Printf("❌ [Onboarding] Falha ao criar usuário para %s: %v", phone, err)
-		sendFeedback(sbClient, wpClient, ttsClient, msg.From,
+		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From,
 			"Tive um problema para criar seu cadastro. Pode tentar de novo daqui a pouco?", respondWithAudio)
 		return ProcessResult{Success: false, Reason: "onboarding_auth_falhou"}
 	}
@@ -380,7 +507,7 @@ func finalizarCadastro(
 		if errDel := sbClient.DeleteAuthUser(usuario.ID); errDel != nil {
 			log.Printf("🔥 [Onboarding] Usuário %s ficou órfão em auth.users — limpeza manual necessária: %v", usuario.ID, errDel)
 		}
-		sendFeedback(sbClient, wpClient, ttsClient, msg.From,
+		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From,
 			"Tive um problema para salvar seu cadastro. Pode tentar de novo daqui a pouco?", respondWithAudio)
 		return ProcessResult{Success: false, Reason: "onboarding_rpc_falhou"}
 	}
@@ -388,18 +515,18 @@ func finalizarCadastro(
 	historyManager.ClearFSMState(phone)
 
 	tokenURL := ""
-	tokenString, errJwt := supabase.GenerateOnboardingJWT(usuario.ID, phone)
-	if errJwt != nil {
-		log.Printf("⚠️ [Onboarding] Falha ao gerar JWT para %s: %v", phone, errJwt)
+	tokenString, errOpaque := sbClient.GenerateOpaqueToken(usuario.ID)
+	if errOpaque != nil {
+		log.Printf("⚠️ [Onboarding] Falha ao gerar Opaque Token para %s: %v", phone, errOpaque)
 	} else {
 		baseURL := os.Getenv("FRONTEND_URL")
 		if baseURL == "" {
 			baseURL = "http://localhost:5173"
 		}
-		tokenURL = fmt.Sprintf("\n\nPara preencher os detalhes da sua propriedade no mapa, acesse o link seguro abaixo. Ele já está vinculado à sua conta:\n🔗 %s/onboarding?token=%s", baseURL, tokenString)
+		tokenURL = fmt.Sprintf("\n\nPara preencher os detalhes da sua propriedade no mapa, acesse o link seguro abaixo. Ele já está vinculado à sua conta:\n🔗 %s/auth/callback?code=%s", baseURL, tokenString)
 	}
 
-	sendFeedback(sbClient, wpClient, ttsClient, msg.From, fmt.Sprintf(
+	sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, fmt.Sprintf(
 		"✅ *Cadastro criado, %s!* Pode começar a usar por aqui.%s",
 		primeiroNome(dados.Nome), tokenURL), respondWithAudio)
 
@@ -423,6 +550,99 @@ func pareceConterDados(texto string) bool {
 		return false
 	}
 	return strings.ContainsAny(t, "0123456789") || strings.Contains(t, ",") || len(strings.Fields(t)) >= 5
+}
+
+// saudacoesOnboarding espelha a lista do greeting guard em fsm.go. Duplicar
+// oito palavras é mais barato do que acoplar os dois arquivos: o guard existe
+// para não gastar LLM com "oi", e esta lista para não cadastrar ninguém
+// chamado "Bom dia".
+var saudacoesOnboarding = map[string]bool{
+	"oi": true, "ola": true, "bom dia": true, "boa tarde": true,
+	"boa noite": true, "eai": true, "hello": true, "hi": true,
+	"tudo bem": true, "obrigado": true, "obrigada": true, "valeu": true,
+}
+
+// palavrasQueNaoIniciamNome corta as recusas óbvias que passariam pelo filtro
+// de formato por serem só letras — "quanto custa", "nao sei", "quero ajuda".
+var palavrasQueNaoIniciamNome = map[string]bool{
+	"quanto": true, "quando": true, "onde": true, "como": true, "qual": true,
+	"quem": true, "porque": true, "por": true, "quero": true, "preciso": true,
+	"tenho": true, "sou": true, "voce": true, "vc": true, "ajuda": true,
+	"nao": true, "sim": true, "ainda": true, "esqueci": true, "cadastro": true,
+}
+
+// pareceNomeProprio diz se a mensagem tem forma de nome de pessoa, para o bot
+// aceitá-la sem consultar o LLM quando acabou de pedir o nome.
+//
+// Erra deliberadamente para o lado de aceitar, e pode: o passo seguinte é a
+// tela de conferência, então um falso positivo custa um "NÃO" do produtor,
+// enquanto um falso negativo o devolve ao loop que este código existe para
+// eliminar. O teste é de FORMATO, nunca de plausibilidade cultural — foi
+// justamente julgar plausibilidade que rejeitou "Ahmed Mesalam" três vezes.
+func pareceNomeProprio(texto string) bool {
+	t := strings.TrimSpace(texto)
+	if t == "" {
+		return false
+	}
+
+	runas := []rune(t)
+	if len(runas) < 2 || len(runas) > 60 {
+		return false
+	}
+
+	campos := strings.Fields(t)
+	if len(campos) > 5 {
+		return false
+	}
+
+	// Só letras e os separadores que aparecem em nomes reais. Qualquer dígito,
+	// vírgula ou pontuação de pergunta indica outra coisa — dados de
+	// propriedade, uma dúvida, um endereço.
+	for _, r := range runas {
+		if unicode.IsLetter(r) || unicode.IsSpace(r) || r == '-' || r == '\'' || r == '’' {
+			continue
+		}
+		return false
+	}
+
+	if ehConfirmacao(t) || ehNegacao(t) {
+		return false
+	}
+
+	normalizado := utils.Normalize(t)
+	if saudacoesOnboarding[normalizado] {
+		return false
+	}
+	if palavrasQueNaoIniciamNome[utils.Normalize(campos[0])] {
+		return false
+	}
+
+	return true
+}
+
+// tentativasDoContexto lê o contador de recusas seguidas na etapa do nome.
+// Estado ausente ou corrompido conta como zero: perder o contador só custa
+// uma repetição a mais, nunca um cadastro errado.
+func tentativasDoContexto(ctxFSM map[string]interface{}) int {
+	if ctxFSM == nil {
+		return 0
+	}
+	// O contexto da FSM passa por JSON, então o número volta como float64.
+	switch v := ctxFSM["tentativas_nome"].(type) {
+	case float64:
+		return int(v)
+	case int:
+		return v
+	}
+	return 0
+}
+
+// contextoDeTentativas monta o contexto que preserva o contador entre
+// mensagens. Qualquer avanço do fluxo grava outro contexto e, com isso, zera
+// a contagem — que é o comportamento desejado: o contador mede recusas
+// *consecutivas*.
+func contextoDeTentativas(n int) map[string]interface{} {
+	return map[string]interface{}{"tentativas_nome": n}
 }
 
 // contextoDosDados serializa os dados para o contexto da FSM.
@@ -457,3 +677,4 @@ func dadosDoContexto(ctxFSM map[string]interface{}) (DadosCadastro, bool) {
 	}
 	return d, d.completo()
 }
+

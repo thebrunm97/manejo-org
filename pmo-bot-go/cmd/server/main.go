@@ -39,6 +39,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
 	"github.com/thebrunm97/pmo-bot-go/internal/middleware"
 	"github.com/thebrunm97/pmo-bot-go/internal/notify"
+	"github.com/thebrunm97/pmo-bot-go/internal/memory"
 	"github.com/thebrunm97/pmo-bot-go/internal/okf"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/proactivity"
@@ -241,6 +242,16 @@ func main() {
 	)
 	log.Println("✅ Cliente Evolution API (Go) inicializado")
 
+	// deliveryManager é o ChannelSender que de fato circula pelo resto do
+	// processo. wpClient continua existindo só para as duas chamadas abaixo
+	// que são específicas do adapter Evolution (configuração de webhook) e
+	// não fazem parte da interface ChannelSender — todo o resto do código
+	// deve depender de deliveryManager, nunca de wpClient diretamente, para
+	// que registrar um segundo canal no futuro não exija tocar em cada
+	// call site de novo.
+	deliveryManager := ports.NewDeliveryManager()
+	deliveryManager.RegisterAdapter(ports.ChannelWhatsApp, wpClient)
+
 	// --- Configure Evolution Webhooks (async with retry) ---
 	// Runs in a goroutine to avoid blocking server startup if Evolution API is not yet ready.
 	if cfg.WebhookURL != "" {
@@ -368,6 +379,11 @@ func main() {
 	knowledgeHandler.RegisterRoutes(adminGroup)
 	log.Println("✅ [KnowledgeOps] Rotas /api/v1/admin/knowledge/* registradas (autenticadas)")
 
+	// --- Chat Admin API ---
+	chatAdminHandler := api.NewChatAdminHandler(sbClient, deliveryManager)
+	adminGroup.POST("/chat/send", chatAdminHandler.SendMessage)
+	log.Println("✅ [ChatAdmin] Rota /api/v1/admin/chat/send registrada")
+
 	// --- Earth Engine Auth & API ---
 	var mapHandler *api.MapHandler
 	geeCredPath := os.Getenv("GEE_CREDENTIALS_PATH")
@@ -392,6 +408,8 @@ func main() {
 	// autenticado pode chamar; quem decide o que ele pode fazer com cada RPC
 	// continua sendo o auth.uid() dentro da função, como já era antes desta
 	// rota existir.
+
+
 	gatewayHandler := gateway.NewHandler(sbURL, sbKey)
 	producerGroup := r.Group("/api/v1")
 	producerGroup.Use(middleware.RequireAuth(jwtVerifier))
@@ -423,6 +441,73 @@ func main() {
 		ttsClient = tts.NewRouter(nil, localLimited, nil)
 	}
 
+	// --- Redis: rate limiting de entrada e Memory Cache ---
+	//
+	// O Redis já subia no docker-compose.prod.yml sem nenhum consumidor. Este é
+	// o primeiro uso real dele. Sem REDIS_URL, ou com o Redis fora do ar, o bot
+	// sobe assim mesmo com um limiter que permite tudo: a proteção contra abuso
+	// não vale interromper o recebimento de mensagens (ver ports.RateLimiter).
+	var inboundLimiter ports.RateLimiter = ports.NoopRateLimiter{}
+	var warningLimiter ports.RateLimiter = ports.NoopRateLimiter{}
+	var authLimiter ports.RateLimiter = ports.NoopRateLimiter{}
+	var memorySvc ports.MemoryCacheService
+	memoryCacheEnabled := os.Getenv("MEMORY_CACHE_ENABLED") != "false"
+
+	// Contexto base para goroutines e workers de background
+	appCtx, appCancel := context.WithCancel(context.Background())
+	defer appCancel() // Garante limpeza se a função panicar
+
+	if cfg.RedisURL == "" {
+		log.Println("⚠️  [RateLimit] REDIS_URL não definida — rate limiting de entrada DESLIGADO")
+		log.Println("⚠️  [RateLimit] Sem Redis, as rotas de satélite ficam SEM teto de cota do Earth Engine")
+		if memoryCacheEnabled {
+			log.Println("⚠️  [MemoryCache] Degradado: Redis indisponível, usando NoopMemoryCacheService")
+			memorySvc = ports.NoopMemoryCacheService{}
+		} else {
+			memorySvc = ports.NoopMemoryCacheService{}
+		}
+	} else if redisClient, err := redisstore.New(context.Background(), cfg.RedisURL); err != nil {
+		log.Printf("⚠️  [RateLimit] Redis indisponível (%v) — rate limiting de entrada DESLIGADO", err)
+		if memoryCacheEnabled {
+			log.Printf("⚠️  [MemoryCache] Degradado: Redis indisponível (%v), usando NoopMemoryCacheService", err)
+			memorySvc = ports.NoopMemoryCacheService{}
+		} else {
+			memorySvc = ports.NoopMemoryCacheService{}
+		}
+	} else {
+		defer redisClient.Close()
+
+		if memoryCacheEnabled {
+			memorySvc = memory.NewService(redisClient.RDB(), sbClient)
+			log.Println("✅ [MemoryCache] Serviço inicializado com Redis + Supabase")
+		} else {
+			log.Println("ℹ️  [MemoryCache] Serviço desabilitado via MEMORY_CACHE_ENABLED=false")
+			memorySvc = ports.NoopMemoryCacheService{}
+		}
+
+		limitPerMin := parseEnvInt("RATE_LIMIT_PER_MINUTE", 20)
+		inboundLimiter = redisstore.NewRateLimiter(redisClient, "ratelimit:phone", limitPerMin, time.Minute)
+		warningLimiter = redisstore.NewRateLimiter(redisClient, "ratelimit:warning", 1, 5*time.Minute)
+		authLimiter = redisstore.NewRateLimiter(redisClient, "ratelimit:auth", 5, time.Minute)
+		log.Printf("✅ [RateLimit] Redis conectado — %d mensagens/min por telefone", limitPerMin)
+
+		// Cota do Earth Engine: teto baixo de propósito. Uma chamada zonal
+		// custa uma consulta POR TALHÃO, então o limite é por usuário e conta
+		// chamadas, não talhões — o teto de talhões por chamada fica no
+		// próprio handler.
+		if mapHandler != nil {
+			geeLimitPerMin := parseEnvInt("GEE_RATE_LIMIT_PER_MINUTE", 6)
+			mapHandler.SetRateLimiter(redisstore.NewRateLimiter(redisClient, "ratelimit:gee", geeLimitPerMin, time.Minute))
+			log.Printf("✅ [RateLimit] Earth Engine protegido — %d consultas/min por usuário", geeLimitPerMin)
+		}
+	}
+
+	// Rotas de Autenticação Públicas (agora pode usar authLimiter)
+	authGroup := r.Group("/api/v1/auth")
+	authGroup.Use(middleware.CORS())
+	authHandler := api.NewAuthHandler(sbClient, authLimiter)
+	authGroup.POST("/exchange", authHandler.Exchange)
+
 	// --- Harness de Produção (Feature Flag: HARNESS_ENABLED) ---
 	// HARNESS_ENABLED=true  → PostgreSQL queue + 3 Media Workers + 2 AI Workers
 	// HARNESS_ENABLED=false → comportamento legado (goroutines diretas, sem persistência)
@@ -431,7 +516,7 @@ func main() {
 	harnessEnabled := os.Getenv("HARNESS_ENABLED") == "true"
 
 	var harnessQueue interface {
-		Enqueue(ctx context.Context, msg ports.IncomingMessage) error
+		Enqueue(ctx context.Context, msg ports.IncomingEnvelope) error
 	}
 
 	// ── HITL Controller (independente do Harness) ─────────────────────────
@@ -513,9 +598,6 @@ func main() {
 		log.Println("✅ [Guardrails] Pipeline de Entrada + Output Judge + HITL ativados")
 		// ─────────────────────────────────────────────────────────────────────
 
-		harnessCtx, harnessCancel := context.WithCancel(context.Background())
-		_ = harnessCancel // O shutdown ocorre quando o processo termina (SIGINT → Gin.Run retorna)
-
 		h := queue.NewHarness(queue.HarnessConfig{
 			Concurrency: queue.HarnessConcurrency{
 				MediaWorkers: 3,
@@ -524,7 +606,7 @@ func main() {
 			},
 			Media: queue.MediaWorkerConfig{
 				Queue:    queueManager,
-				WhatsApp: wpClient,
+				WhatsApp: deliveryManager,
 				Groq:     groqClient,
 				LLM:      llmProvider,
 				// Cofre de Auditoria Efêmero (DT-42): guarda a gravação por 90
@@ -537,12 +619,13 @@ func main() {
 			AI: queue.AIWorkerConfig{
 				Queue:             queueManager,
 				Supabase:          sbClient,
-				WhatsApp:          wpClient,
+				WhatsApp:          deliveryManager,
 				LLM:               llmProvider,
 				TTS:               ttsClient,
 				MCP:               mcpServer,
 				History:           historyManager,
 				GuardrailPipeline: guardrailPipeline,
+				MemoryCache:       memorySvc,
 				RouterConfig: state.RouterConfig{
 					EnableFastRouter:       os.Getenv("ENABLE_FAST_ROUTER") == "true",
 					EnableFastRouterShadow: os.Getenv("ENABLE_FAST_ROUTER_SHADOW") == "true",
@@ -550,43 +633,23 @@ func main() {
 				},
 			},
 		})
-		go h.Start(harnessCtx)
-		log.Printf("✅ [Harness] 3 Media Workers + 2 AI Workers iniciados")
+		go h.Start(appCtx)
+		log.Println("✅ [Workers] AI & Media Workers Iniciados")
+
+		// Inicia o job de retentativa de embeddings do MemoryCache, atrelado ao ciclo de vida do harness
+		if memorySvc != nil {
+			if svc, ok := memorySvc.(*memory.Service); ok {
+				go svc.StartRetryJob(appCtx)
+				log.Println("✅ [MemoryCache] Background Retry Job (Cron) iniciado")
+			} else {
+				log.Println("ℹ️  [MemoryCache] Serviço em modo Noop — Retry Job não iniciado")
+			}
+		}
 	} else {
 		log.Println("⚠️  [Harness] HARNESS_ENABLED=false — rodando em modo legado (goroutines diretas)")
 	}
 
-	// --- Redis: rate limiting de entrada ---
-	//
-	// O Redis já subia no docker-compose.prod.yml sem nenhum consumidor. Este é
-	// o primeiro uso real dele. Sem REDIS_URL, ou com o Redis fora do ar, o bot
-	// sobe assim mesmo com um limiter que permite tudo: a proteção contra abuso
-	// não vale interromper o recebimento de mensagens (ver ports.RateLimiter).
-	var inboundLimiter ports.RateLimiter = ports.NoopRateLimiter{}
-	var warningLimiter ports.RateLimiter = ports.NoopRateLimiter{}
-	if cfg.RedisURL == "" {
-		log.Println("⚠️  [RateLimit] REDIS_URL não definida — rate limiting de entrada DESLIGADO")
-		log.Println("⚠️  [RateLimit] Sem Redis, as rotas de satélite ficam SEM teto de cota do Earth Engine")
-	} else if redisClient, err := redisstore.New(context.Background(), cfg.RedisURL); err != nil {
-		log.Printf("⚠️  [RateLimit] Redis indisponível (%v) — rate limiting de entrada DESLIGADO", err)
-	} else {
-		defer redisClient.Close()
 
-		limitPerMin := parseEnvInt("RATE_LIMIT_PER_MINUTE", 20)
-		inboundLimiter = redisstore.NewRateLimiter(redisClient, "ratelimit:phone", limitPerMin, time.Minute)
-		warningLimiter = redisstore.NewRateLimiter(redisClient, "ratelimit:warning", 1, 5*time.Minute)
-		log.Printf("✅ [RateLimit] Redis conectado — %d mensagens/min por telefone", limitPerMin)
-
-		// Cota do Earth Engine: teto baixo de propósito. Uma chamada zonal
-		// custa uma consulta POR TALHÃO, então o limite é por usuário e conta
-		// chamadas, não talhões — o teto de talhões por chamada fica no
-		// próprio handler.
-		if mapHandler != nil {
-			geeLimitPerMin := parseEnvInt("GEE_RATE_LIMIT_PER_MINUTE", 6)
-			mapHandler.SetRateLimiter(redisstore.NewRateLimiter(redisClient, "ratelimit:gee", geeLimitPerMin, time.Minute))
-			log.Printf("✅ [RateLimit] Earth Engine protegido — %d consultas/min por usuário", geeLimitPerMin)
-		}
-	}
 
 	// --- Register webhook routes ---
 	handler := webhook.NewHandler(webhook.Config{
@@ -594,7 +657,7 @@ func main() {
 		MaxMessageAge:          600,
 		GroqClient:             groqClient,
 		SupabaseClient:         sbClient,
-		WhatsAppClient:         wpClient,
+		WhatsAppClient:         deliveryManager,
 		LLMClient:              llmProvider,
 		TtsClient:              ttsClient,
 		MCPServer:              mcpServer,
@@ -607,6 +670,7 @@ func main() {
 		FastRouterTimeoutMS:    parseEnvInt("FAST_ROUTER_TIMEOUT_MS", 3000),
 		InboundLimiter:         inboundLimiter,
 		WarningLimiter:         warningLimiter,
+		MemoryCache:            memorySvc,
 	})
 	handler.RegisterRoutes(r)
 
@@ -660,6 +724,9 @@ func main() {
 	selfHealEnabled := os.Getenv("SELF_HEAL_ENABLED") == "true"
 	if selfHealEnabled {
 		dryRun := os.Getenv("SELF_HEAL_DRY_RUN") != "false" // default true
+		// selfheal.Gateway exige FetchStatus/FetchInfo/ForceReconnect — métodos
+		// específicos do Evolution que não fazem parte de ChannelSender, então
+		// aqui (diferente do resto do arquivo) o consumidor certo é wpClient.
 		healer := selfheal.NewHealer(wpClient, notificador, selfheal.Options{
 			Instance:      cfg.EvoInstance,
 			Interval:      parseEnvDuration("SELF_HEAL_INTERVAL", 60*time.Second),
@@ -709,7 +776,7 @@ func main() {
 	// evolution-go loses webhook config on disconnect/reconnect cycles.
 	go func() {
 		bater := func() {
-			isConnected := sendHeartbeat(cfg.EvoInstance, wpClient, sbClient, notificador, rastreador)
+			isConnected := sendHeartbeat(cfg.EvoInstance, deliveryManager, sbClient, notificador, rastreador)
 			if isConnected && cfg.WebhookURL != "" {
 				if err := wpClient.ConfigureWebhooks(cfg.WebhookURL); err != nil {
 					log.Printf("⚠️ [Heartbeat] Falha ao reconfigurar webhook: %v", err)
@@ -740,19 +807,17 @@ func main() {
 	}
 
 	// --- Planting Reminders Job ---
-	go jobs.StartPlantioReminderJob(sbClient, wpClient)
+	go jobs.StartPlantioReminderJob(sbClient, deliveryManager)
 
 	// --- Knowledge Worker Pool (async ingestion pipeline) ---
 	// Concurrency is configurable via KNOWLEDGE_WORKER_CONCURRENCY (default: 2).
 	knowledgeWorkerConcurrency := parseEnvInt("KNOWLEDGE_WORKER_CONCURRENCY", 2)
 	knowledgeWorker := knowledge.NewWorkerPool(sbClient, knowledgeWorkerConcurrency)
-	knowledgeWorkerCtx, knowledgeWorkerCancel := context.WithCancel(context.Background())
-	_ = knowledgeWorkerCancel // cancelled implicitly when main exits
-	go knowledgeWorker.Start(knowledgeWorkerCtx)
+	go knowledgeWorker.Start(appCtx)
 	log.Printf("✅ [KnowledgeWorker] Worker pool iniciado (%d workers)", knowledgeWorkerConcurrency)
 
 	// --- Motor Proativo (PMO Autônomo) ---
-	proactiveEngine := proactivity.NewProactiveEngine(sbClient, wpClient, llmProvider)
+	proactiveEngine := proactivity.NewProactiveEngine(sbClient, deliveryManager, llmProvider)
 	proactiveEngine.Start()
 
 	// --- Start ---
@@ -773,6 +838,9 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	log.Println("⚠️ Recebido sinal de parada. Iniciando desligamento gracioso...")
+
+	// 1. Cancela contextos de background (harness, workers, crons, jobs)
+	appCancel()
 
 	// Timeout de 60 segundos para processar requisições ativas e workers
 	ctxShutdown, cancel := context.WithTimeout(context.Background(), 60*time.Second)
@@ -889,7 +957,7 @@ func formatarDuracaoPing(d time.Duration) string {
 // (DT-52) e por 36 minutos em 2026-08-23 sem que ninguém soubesse. Agora ela
 // continua só detectando — a ação corretiva é o Estágio 1 —, mas o silêncio
 // acabou.
-func sendHeartbeat(instance string, wp ports.MessageSender, sb *supabase.Client, notificador ports.Notifier, rastreador *selfheal.Rastreador) bool {
+func sendHeartbeat(instance string, wp ports.ChannelSender, sb *supabase.Client, notificador ports.Notifier, rastreador *selfheal.Rastreador) bool {
 	checkClockSync()
 
 	obs := selfheal.Observacao{}
@@ -967,3 +1035,4 @@ func sendHeartbeat(instance string, wp ports.MessageSender, sb *supabase.Client,
 	}
 	return isConnected
 }
+

@@ -110,3 +110,77 @@ func TestPrimeiroNome(t *testing.T) {
 		t.Errorf("primeiroNome = %q, queria \"Maria\"", got)
 	}
 }
+
+// ── Novos testes — fast-path e escape hatch (incidente 6/9) ──────────────────
+
+// TestPareceNomeProprio_Aceita cobre os três casos do incidente mais nomes
+// comuns de origens diversas. Todos devem passar pelo fast-path sem LLM.
+func TestPareceNomeProprio_Aceita(t *testing.T) {
+	aceitar := []string{
+		// exatamente os três do incidente de produção
+		"Ahmed Mesalam",
+		"AhmedMesalam",
+		"Ahmed ahmed mesalam",
+		// outros casos que devem funcionar
+		"José da Silva",
+		"Maria D'Ávila",
+		"Jean-Pierre Dubois",
+		"Beatriz",
+		"Ana Lúcia",
+		"Muhamad Al-Rashid",
+	}
+	for _, s := range aceitar {
+		if !pareceNomeProprio(s) {
+			t.Errorf("pareceNomeProprio(%q) = false, queria true", s)
+		}
+	}
+}
+
+// TestPareceNomeProprio_Rejeita garante que saudações, confirmações, negações,
+// perguntas, frases com dígitos ou com mais de 5 palavras não viram nomes.
+func TestPareceNomeProprio_Rejeita(t *testing.T) {
+	rejeitar := []string{
+		// saudações
+		"oi", "Bom dia", "boa tarde", "hello", "hi",
+		// confirmações e negações
+		"sim", "não", "nao", "ok",
+		// perguntas e outros
+		"quanto custa?", "tenho 3 talhões", "Sítio Boa Vista, 12 ha",
+		"quero ajuda", "como funciona",
+		// string vazia e espaço
+		"", "   ",
+		// mais de 5 palavras
+		"meu nome é João da Silva Pereira Neto",
+		// com dígito
+		"João 2",
+	}
+	for _, s := range rejeitar {
+		if pareceNomeProprio(s) {
+			t.Errorf("pareceNomeProprio(%q) = true, queria false", s)
+		}
+	}
+}
+
+// TestTentativasDoContexto_IdaEVolta garante que o contador sobrevive à
+// serialização JSON da FSM (os numbers voltam como float64 do JSON).
+func TestTentativasDoContexto_IdaEVolta(t *testing.T) {
+	for _, n := range []int{0, 1, 2, 5} {
+		ctx := contextoDeTentativas(n)
+		got := tentativasDoContexto(ctx)
+		if got != n {
+			t.Errorf("tentativas=%d, guardou=%d na ida e volta", n, got)
+		}
+	}
+}
+
+// TestTentativasDoContexto_AusenteEhZero: contexto ausente ou nil não pode
+// disparar o escape hatch por acidente.
+func TestTentativasDoContexto_AusenteEhZero(t *testing.T) {
+	if got := tentativasDoContexto(nil); got != 0 {
+		t.Errorf("tentativasDoContexto(nil) = %d, queria 0", got)
+	}
+	if got := tentativasDoContexto(map[string]interface{}{}); got != 0 {
+		t.Errorf("tentativasDoContexto({}) = %d, queria 0", got)
+	}
+}
+

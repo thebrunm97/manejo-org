@@ -41,3 +41,6 @@ scratch/
 nemotron_monitoring.csv
 logs/
 tmp/
+
+# Secrets
+.secrets/

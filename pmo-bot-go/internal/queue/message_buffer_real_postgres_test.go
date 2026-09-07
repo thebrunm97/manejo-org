@@ -250,13 +250,13 @@ func insertJob(t *testing.T, baseURL, key, phone, msgID, bodyText, status string
 	createdAt := time.Now().Add(createdOffset)
 	nextRetryAt := time.Now().Add(nextRetryOffset)
 
-	// Marshal de um ports.IncomingMessage de verdade, não JSON escrito à mão:
-	// IncomingMessage não tem tags json (o marshal usa os nomes de campo Go
+	// Marshal de um ports.IncomingEnvelope de verdade, não JSON escrito à mão:
+	// IncomingEnvelope não tem tags json (o marshal usa os nomes de campo Go
 	// tal qual, ex: "ID" maiúsculo), e claimByStatus faz
 	// json.Unmarshal(row.RawPayload, &msg) — um raw_payload mal formado faz o
 	// job ser silenciosamente marcado failed (ver claimByStatus), mascarando
 	// o teste.
-	rawMsg := ports.IncomingMessage{
+	rawMsg := ports.IncomingEnvelope{
 		ID:        msgID,
 		From:      phone,
 		Body:      bodyText,
@@ -457,7 +457,7 @@ func insertRawJobForMarkAIPending(t *testing.T, baseURL, key, phone, msgID strin
 	t.Helper()
 	jobID := uuid.NewString()
 
-	rawMsg := ports.IncomingMessage{ID: msgID, From: phone, Body: "", Type: "text"}
+	rawMsg := ports.IncomingEnvelope{ID: msgID, From: phone, Body: "", Type: "text"}
 	rawPayload, err := json.Marshal(rawMsg)
 	if err != nil {
 		t.Fatalf("falha ao serializar raw_payload: %v", err)

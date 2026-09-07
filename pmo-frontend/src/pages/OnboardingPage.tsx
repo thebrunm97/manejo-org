@@ -8,8 +8,9 @@ import { toast } from 'react-toastify';
 
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
-import { ESRI_SATELLITE_STYLE } from '../components/Map/mapStyles';
+import { useSatelliteMapStyle } from '../components/Map/useSatelliteMapStyle';
 import { podeCriarPropriedade } from '../utils/limitesCultivo';
+import { storageService } from '../services/storage';
 
 const STEPS = {
   PROFILE: 1,
@@ -35,28 +36,8 @@ const OnboardingPage: React.FC = () => {
   const desktopMapRef = useRef<MapRef>(null);
   const mobileMapRef = useRef<MapRef>(null);
   const isMapStep = step === STEPS.LOCATION;
+  const { style: satelliteStyle } = useSatelliteMapStyle();
 
-  // Intercept ?token=XYZ
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('token');
-    
-    if (token) {
-      console.log('Token de onboarding detectado, configurando sessão efêmera...');
-      supabase.auth.setSession({ access_token: token, refresh_token: '' })
-        .then(({ error }) => {
-          if (error) {
-            console.error('Erro ao configurar sessão via token:', error);
-            toast.error('Token de acesso inválido ou expirado.');
-          } else {
-            toast.info('Sessão segura iniciada.');
-          }
-        });
-      
-      // Limpa a URL para não deixar o token visível
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, []);
 
   // Security Check
   useEffect(() => {
@@ -100,7 +81,31 @@ const OnboardingPage: React.FC = () => {
       return;
     }
 
-    // 3. Fallback Nominatim
+    // 3. Coordenadas DMS (Google Maps: 19°01'29.5"S 48°32'43.8"W)
+    const dmsMatch = query.match(/(\d+)°(\d+)'([\d\.]+)"([NSns])[\s,]+(\d+)°(\d+)'([\d\.]+)"([EWew])/);
+    if (dmsMatch) {
+      const latD = parseInt(dmsMatch[1], 10);
+      const latM = parseInt(dmsMatch[2], 10);
+      const latS = parseFloat(dmsMatch[3]);
+      const latDir = dmsMatch[4].toUpperCase();
+      let lat = latD + (latM / 60) + (latS / 3600);
+      if (latDir === 'S') lat = -lat;
+
+      const lonD = parseInt(dmsMatch[5], 10);
+      const lonM = parseInt(dmsMatch[6], 10);
+      const lonS = parseFloat(dmsMatch[7]);
+      const lonDir = dmsMatch[8].toUpperCase();
+      let lon = lonD + (lonM / 60) + (lonS / 3600);
+      if (lonDir === 'W') lon = -lon;
+
+      desktopMapRef.current?.flyTo({ center: [lon, lat], zoom: 15, duration: 2000 });
+      mobileMapRef.current?.flyTo({ center: [lon, lat], zoom: 15, duration: 2000 });
+      setSelectedLocation({ lat, lng: lon });
+      setSearchQuery("");
+      return;
+    }
+
+    // 4. Fallback Nominatim
     setIsSearching(true);
     try {
       const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`);
@@ -180,53 +185,30 @@ const OnboardingPage: React.FC = () => {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       if (!currentUser) throw new Error("Sessão não encontrada ou expirada. Use o link mais recente enviado pelo bot.");
 
-      // 1. Atualizar Profile
-      const { error: profileErr } = await supabase
-        .from('profiles')
-        .update({
-          tipo_perfil: selectedRole,
-          culturas_interesse: selectedCrops
-        })
-        .eq('id', currentUser.id);
-
-      if (profileErr) throw new Error("Falha ao salvar perfil: " + profileErr.message);
-
-      // 2. Inserir Propriedade
-      const { data: prop, error: propErr } = await supabase
-        .from('propriedades')
-        .insert({
-          nome: 'Sítio / Fazenda',
-          latitude: selectedLocation?.lat,
-          longitude: selectedLocation?.lng,
-          user_id: currentUser.id
-        })
-        .select()
-        .single();
-        
-      if (propErr) throw new Error("Falha ao criar propriedade: " + propErr.message);
-
-      // 3. Atualizar Propriedade Ativa
-      await supabase
-        .from('profiles')
-        .update({ propriedade_ativa_id: prop.id })
-        .eq('id', currentUser.id);
-
-      // 4. Inserir Talhão Default
+      // Mapear modalidade para o Enum do banco
       const modalidadeEnum = selectedModality === 'organico' ? 'ORGANICO' : 
-                             selectedModality === 'conversao' ? 'EM_CONVERSAO' : 'CONVENCIONAL';
-                             
-      const { error: talhaoErr } = await supabase
-        .from('talhoes')
-        .insert({
-          nome: 'Sede',
-          propriedade_id: prop.id,
-          user_id: currentUser.id,
-          modalidade_producao: modalidadeEnum,
-          area_ha: 0 // Valor placeholder
-        });
-        
-      if (talhaoErr) throw new Error("Falha ao criar talhão inicial: " + talhaoErr.message);
+                             selectedModality === 'conversao' ? 'TRANSICAO' : 'CONVENCIONAL';
 
+      const { data: result, error: rpcErr } = await supabase.rpc('complete_onboarding', {
+        p_tipo_perfil: selectedRole,
+        p_culturas_interesse: selectedCrops,
+        p_latitude: selectedLocation?.lat,
+        p_longitude: selectedLocation?.lng,
+        p_modalidade_producao: modalidadeEnum
+      });
+
+      if (rpcErr) throw new Error("Falha ao salvar dados de onboarding: " + rpcErr.message);
+      if (!result?.success) throw new Error("Erro no onboarding: " + result?.error);
+        
+      // Salva no AsyncStorage para o modo offline (usando result.propriedade_id e result.talhao_id se necessário)
+      const onboardingData = {
+        role: selectedRole,
+        crops: selectedCrops,
+        modality: selectedModality,
+        location: selectedLocation
+      };
+      await storageService.setItem('user_onboarding', JSON.stringify(onboardingData));
+      
       toast.success("Tudo certo! Redirecionando para seu painel...");
       await refreshProfile();
       navigate('/home');
@@ -273,9 +255,10 @@ const OnboardingPage: React.FC = () => {
             <Map
               ref={desktopMapRef}
               initialViewState={{ longitude: -50.0, latitude: -15.0, zoom: 3 }}
-              mapStyle={ESRI_SATELLITE_STYLE as any}
+              mapStyle={satelliteStyle as any}
               onClick={(e) => setSelectedLocation({ lng: e.lngLat.lng, lat: e.lngLat.lat })}
               cursor="crosshair"
+              maxZoom={18}
             >
               <GeolocateControl position="bottom-right" trackUserLocation={false} />
               {selectedLocation && (
@@ -452,9 +435,10 @@ const OnboardingPage: React.FC = () => {
                 <Map
                   ref={mobileMapRef}
                   initialViewState={{ longitude: -50.0, latitude: -15.0, zoom: 3 }}
-                  mapStyle={ESRI_SATELLITE_STYLE as any}
+                  mapStyle={satelliteStyle as any}
                   onClick={(e) => setSelectedLocation({ lng: e.lngLat.lng, lat: e.lngLat.lat })}
                   cursor="crosshair"
+                  maxZoom={18}
                 >
                   <GeolocateControl position="top-right" trackUserLocation={false} />
                   {selectedLocation && (

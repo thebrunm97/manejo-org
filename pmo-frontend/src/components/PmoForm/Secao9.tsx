@@ -133,7 +133,12 @@ const Secao9: React.FC<Secao9Props> = ({ data, onSectionChange }) => {
             const l = (sd[dItem.lk] as PropagacaoItem[]) || []; 
             const item = l.find(i => i._id === dItem.id);
             if (item && item.id) {
-                await supabase.from('pmo_propagacao').delete().eq('id', item.id);
+                const { error: delErr } = await supabase.rpc('delete_propagacao_item', { p_id: item.id });
+                if (delErr) {
+                    console.error('Erro ao deletar item de propagação:', delErr);
+                    alert('Erro ao excluir item de propagação.');
+                    return;
+                }
             }
             onSectionChange({ ...sd, [dItem.lk]: l.filter(i => i._id !== dItem.id) }); 
         } 
@@ -146,6 +151,7 @@ const Secao9: React.FC<Secao9Props> = ({ data, onSectionChange }) => {
     const saveModal = async () => {
         if (!ei?.especies) { alert('Informe a espécie/cultivar.'); return; }
         if (!listKey) return;
+        if (!pmoId) { alert('PMO ativo não encontrado no perfil.'); return; }
         setLoading(true);
 
         try {
@@ -162,11 +168,18 @@ const Secao9: React.FC<Secao9Props> = ({ data, onSectionChange }) => {
             let insertedId = ei.id;
 
             if (ei.id) {
-                await supabase.from('pmo_propagacao').update(rowTarget).eq('id', ei.id);
+                const { error: updErr } = await supabase.rpc('update_propagacao_item', {
+                    p_id: ei.id,
+                    p_payload: rowTarget
+                });
+                if (updErr) throw updErr;
             } else {
-                const { data: newRow, error: insErr } = await supabase.from('pmo_propagacao').insert(rowTarget).select().single();
+                const { data: newRow, error: insErr } = await supabase.rpc('create_propagacao_item', {
+                    p_pmo_id: Number(pmoId),
+                    p_payload: rowTarget
+                });
                 if (insErr) throw insErr;
-                if (newRow) insertedId = newRow.id;
+                if (newRow) insertedId = (newRow as any).id;
             }
 
             if (pendingSuggestionRemove) {

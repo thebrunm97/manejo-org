@@ -70,16 +70,16 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
 
   const allMenuItems: { name: string; icon: any; path: RouteName; pmoOnly?: boolean; mapOnly?: boolean }[] = [
     { name: t('nav.dashboard'), icon: <LayoutDashboard size={22} />, path: SCREENS.HOME },
-    { name: 'Planos de Manejo', icon: <ClipboardList size={22} />, path: SCREENS.PMO_LIST, pmoOnly: true },
-    { name: 'Caderno de Campo', icon: <MenuIcon size={22} />, path: SCREENS.NOTEBOOK },
-    { name: 'Financeiro / DRE', icon: <CircleDollarSign size={22} />, path: SCREENS.FINANCEIRO },
-    { name: 'Mapa da Propriedade', icon: <MapIcon size={22} />, path: SCREENS.MAP, mapOnly: true },
-    { name: 'Minhas Culturas', icon: <Sprout size={22} />, path: SCREENS.CROPS },
-    { name: 'Novidades', icon: <Sparkles size={22} />, path: SCREENS.CHANGELOG },
-    { name: 'Dados da Propriedade', icon: <Home size={22} />, path: SCREENS.PROPERTY_PROFILE },
-    { name: 'Meu Perfil', icon: <UserIcon size={22} />, path: SCREENS.PROFILE },
-    { name: 'Mural de Demandas', icon: <HandHelping size={22} />, path: SCREENS.MURAL },
-    { name: 'Painel Cooperativa', icon: <Building size={22} />, path: SCREENS.COOP_ORGANIZACOES },
+    { name: t('nav.pmoList'), icon: <ClipboardList size={22} />, path: SCREENS.PMO_LIST, pmoOnly: true },
+    { name: t('nav.notebook'), icon: <MenuIcon size={22} />, path: SCREENS.NOTEBOOK },
+    { name: t('nav.finance'), icon: <CircleDollarSign size={22} />, path: SCREENS.FINANCEIRO },
+    { name: t('nav.map'), icon: <MapIcon size={22} />, path: SCREENS.MAP, mapOnly: true },
+    { name: t('nav.crops'), icon: <Sprout size={22} />, path: SCREENS.CROPS },
+    { name: t('nav.changelog'), icon: <Sparkles size={22} />, path: SCREENS.CHANGELOG },
+    { name: t('nav.propertyData'), icon: <Home size={22} />, path: SCREENS.PROPERTY_PROFILE },
+    { name: t('nav.profile'), icon: <UserIcon size={22} />, path: SCREENS.PROFILE },
+    { name: t('nav.mural'), icon: <HandHelping size={22} />, path: SCREENS.MURAL },
+    { name: t('nav.coop'), icon: <Building size={22} />, path: SCREENS.COOP_ORGANIZACOES },
   ];
 
   const menuItems = allMenuItems.filter(item => {
@@ -89,8 +89,8 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
   });
 
   if (isAdmin || isLoadingRole) {
-    menuItems.push({ name: 'Administração', icon: <LayoutDashboard size={22} />, path: SCREENS.ADMIN });
-    menuItems.push({ name: 'Monitor ao Vivo', icon: <MessageSquare size={22} />, path: SCREENS.LIVE_CHAT_MONITOR });
+    menuItems.push({ name: t('nav.admin'), icon: <LayoutDashboard size={22} />, path: SCREENS.ADMIN });
+    menuItems.push({ name: t('nav.liveMonitor'), icon: <MessageSquare size={22} />, path: SCREENS.LIVE_CHAT_MONITOR });
   }
 
   const handleLogout = async () => {
@@ -127,14 +127,14 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
       {/* 1. Logo */}
       <div className="h-16 flex items-center px-6 border-b border-white/5 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-agro-ouro rounded-lg flex items-center justify-center text-agro-floresta font-black shadow-lg shadow-agro-ouro/20">
+          <div className="w-8 h-8 bg-agro-ouro rounded-lg flex items-center justify-center text-agro-floresta font-extrabold">
             {appInitials}
           </div>
-          <span className="font-black text-lg tracking-tight text-agro-creme uppercase">
+          <span className="font-extrabold text-lg tracking-tight text-agro-creme uppercase">
             {appName.toLowerCase().endsWith('org') ? (
               <>
                 {appName.substring(0, appName.length - 3)}
-                <span className="text-agro-ouro group-hover:drop-shadow-[0_0_8px_rgba(197,160,89,0.4)] transition-all">ORG</span>
+                <span className="text-agro-ouro">ORG</span>
               </>
             ) : (
               appName
@@ -156,22 +156,12 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
             title={allPropriedades.length > 1 ? "Trocar fazenda" : currentPropriedade.nome}
             disabled={allPropriedades.length <= 1}
           >
-            <div className="w-7 h-7 bg-agro-ouro/20 rounded-lg flex items-center justify-center shrink-0">
-              <Home size={14} className="text-agro-ouro" />
-            </div>
-            <div className="flex-1 min-w-0 text-left">
-              <p className="text-xs font-black text-agro-creme truncate leading-tight uppercase tracking-wide">{currentPropriedade.nome}</p>
-              <p className="text-[10px] text-agro-creme/80 font-bold leading-tight capitalize">
-                {(currentPropriedade?.modalidade_predominante?.toLowerCase() ?? 'orgânico')}
-              </p>
-            </div>
+            <Home size={16} className="text-agro-ouro shrink-0" />
+            <span className="flex-1 min-w-0 text-left text-sm font-semibold text-agro-creme truncate">
+              {currentPropriedade.nome}
+            </span>
             {allPropriedades.length > 1 && (
-              <div className="flex items-center gap-1 shrink-0">
-                <span className="text-[10px] font-bold text-agro-creme/60 bg-white/5 rounded-md px-1.5 py-0.5 border border-white/5">
-                  {allPropriedades.length}
-                </span>
-                <ChevronDown size={13} className="text-agro-creme/60 group-hover:text-agro-ouro transition-colors" />
-              </div>
+              <ChevronDown size={14} className="text-agro-creme/60 shrink-0" />
             )}
           </button>
         </div>
@@ -179,8 +169,8 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
 
       {/* 2. Menu */}
       <div className="flex-1 overflow-y-auto py-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        <div className="px-6 mb-2 text-[10px] font-black text-agro-creme/40 uppercase tracking-[0.2em]">
-          GESTÃO
+        <div className="px-6 mb-2 text-[10px] font-bold text-agro-creme/50 uppercase tracking-widest">
+          {t('nav.section')}
         </div>
         <nav className="space-y-1">
           {menuItems.map((item) => {
@@ -202,13 +192,13 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
                 id={(isDesktop && item.path === SCREENS.MAP) ? "tour-sidebar-map" : undefined}
                 onClick={() => handleNavigate(item.path)}
                 className={cn(
-                  "w-full flex items-center px-4 py-3 text-[13px] font-bold rounded-[0.9rem] mx-2 mb-1 transition-all relative max-w-[calc(100%-16px)] group",
+                  "w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-xl mx-2 mb-0.5 transition-colors relative max-w-[calc(100%-16px)] group",
                   active
-                    ? "bg-agro-ouro text-agro-floresta shadow-lg shadow-agro-ouro/10"
-                    : "text-agro-creme/85 hover:bg-white/5 hover:text-agro-creme"
+                    ? "bg-agro-ouro text-agro-floresta font-semibold"
+                    : "text-agro-creme/70 hover:bg-white/10 hover:text-agro-creme"
                 )}
               >
-                <span className={cn("mr-3 transition-colors", active ? "text-agro-floresta" : "text-agro-creme/60 group-hover:text-agro-creme")}>
+                <span className={cn("mr-3", active ? "text-agro-floresta" : "text-agro-creme/70 group-hover:text-agro-creme")}>
                   {item.icon}
                 </span>
                 {item.name}
@@ -222,18 +212,18 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
       <div className="p-4 border-t border-white/5 shrink-0">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center px-4 py-2.5 text-sm font-bold text-agro-creme/60 rounded-xl hover:text-rose-400 hover:bg-rose-500/10 transition-colors group"
+          className="w-full flex items-center px-4 py-2.5 text-sm font-medium text-agro-creme/70 rounded-xl hover:text-rose-400 hover:bg-rose-500/10 transition-colors group"
         >
-          <LogOut size={20} className="mr-3 text-agro-creme/50 group-hover:text-rose-400" />
+          <LogOut size={18} className="mr-3 text-agro-creme/70 group-hover:text-rose-400" />
           {t('nav.logout')}
         </button>
 
-        <div className="mt-4 px-2">
-            <LanguageSwitcher />
+        <div className="mt-2 px-4">
+            <LanguageSwitcher className="text-agro-creme/70" />
         </div>
 
-        <div className="mt-4 p-3 bg-white/5 rounded-2xl flex items-center gap-3 border border-white/5">
-          <div className="w-8 h-8 rounded-full bg-agro-ouro/20 border border-agro-ouro/30 flex items-center justify-center text-agro-ouro font-black text-xs shrink-0 overflow-hidden">
+        <div className="mt-4 px-4 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-agro-ouro/20 flex items-center justify-center text-agro-ouro font-semibold text-xs shrink-0 overflow-hidden">
             {profile?.avatar_url ? (
               <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
             ) : user?.email ? (
@@ -243,10 +233,10 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
             )}
           </div>
           <div className="overflow-hidden">
-            <div className="text-sm font-black text-agro-creme truncate uppercase tracking-wide">
+            <div className="text-sm font-semibold text-agro-creme truncate">
               {displayName}
             </div>
-            <div className="text-[10px] text-agro-creme/50 font-black uppercase tracking-widest">
+            <div className="text-xs text-agro-creme/70 font-medium">
               {profile?.plan_tier ? `Plano ${profile.plan_tier.toLowerCase() === 'premium' ? 'Pro' : profile.plan_tier.charAt(0).toUpperCase() + profile.plan_tier.slice(1).toLowerCase()}` : 'Plano Pro'}
             </div>
           </div>

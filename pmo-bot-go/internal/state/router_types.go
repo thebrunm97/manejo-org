@@ -65,3 +65,4 @@ func (r RouterResult) Validate() error {
 	}
 	return nil
 }
+

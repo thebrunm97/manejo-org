@@ -37,6 +37,7 @@ const OrganizacoesPage = lazy(() => import('./pages/coop/OrganizacoesPage'));
 const OrganizacaoDetailsPage = lazy(() => import('./pages/coop/OrganizacaoDetailsPage'));
 const FinanceiroPage = lazy(() => import('./pages/FinanceiroPage'));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
+const AuthCallback = lazy(() => import('./pages/AuthCallback'));
 const CoopDashboardPage = lazy(() => import('./pages/coop/CoopDashboardPage'));
 const CoopDemandasPage = lazy(() => import('./pages/coop/CoopDemandasPage'));
 const MuralDemandas = lazy(() => import('./pages/MuralDemandas'));
@@ -85,6 +86,9 @@ const App: React.FC = () => {
                 {/* Landing Page - Acesso Híbrido (Logado ou Não) */}
                 <Route path="/home" element={<LandingPage />} />
                 <Route path="/" element={<Navigate to="/home" replace />} />
+
+                {/* Autenticação Híbrida / Callback Seguro */}
+                <Route path="/auth/callback" element={<AuthCallback />} />
 
                 {/* Rotas Públicas (Apenas Usuários NÃO Logados) */}
                 <Route element={<RouteGuard isPrivate={false} />}>

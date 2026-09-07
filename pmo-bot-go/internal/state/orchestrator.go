@@ -40,7 +40,7 @@ type Orchestrator struct {
 	// Phone is the producer's WhatsApp number — required for HITL confirmation messages.
 	Phone string
 	// WhatsApp is the message sender port to deliver confirmation prompts.
-	WhatsApp ports.MessageSender
+	WhatsApp ports.ChannelSender
 	// BusinessEvaluator validates business rules and limits deterministically before tool execution.
 	BusinessEvaluator guardrails.BusinessEvaluator
 }
@@ -58,9 +58,9 @@ func NewOrchestrator(provider LLMClient, sb *supabase.Client, mcpServer *mcp.Ser
 }
 
 // ExecuteAgenticLoop runs the agentic loop with manual tool calling and automatic fallback between providers.
-func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase.Profile, systemPrompt string, userMessage string, tools []llm.FerramentaAgnostica, history []llm.MensagemAgnostica, guard *mcp.LoopGuard, agentDomain string, userMemories string, routerResult RouterResult) (string, []llm.MensagemAgnostica, []TraceEvent, llm.UsoMetadados, string, error) {
+func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase.Profile, systemPrompt string, userMessage string, tools []llm.FerramentaAgnostica, history []llm.MensagemAgnostica, guard *mcp.LoopGuard, agentDomain string, userMemories string, activeContextBlock string, routerResult RouterResult) (string, []llm.MensagemAgnostica, []TraceEvent, llm.UsoMetadados, string, error) {
 	promptManager := NewPromptManager()
-	sysInst := promptManager.BuildSystemInstruction(profile, systemPrompt, agentDomain, userMemories, routerResult)
+	sysInst := promptManager.BuildSystemInstruction(profile, systemPrompt, agentDomain, userMemories, activeContextBlock, routerResult)
 
 	var trace []TraceEvent
 	var usage llm.UsoMetadados
@@ -117,7 +117,7 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 	}
 
 	if o.WhatsApp != nil {
-		defer o.WhatsApp.SendPresence(context.Background(), o.Phone, "paused")
+		// No generic "paused" presence supported yet
 	}
 
 	mcpHandler := &MCPExecutionHandler{MCPServer: o.MCP, Guard: guard, Profile: profile}
@@ -145,7 +145,7 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 
 	for i := 0; i < 3; i++ {
 		if o.WhatsApp != nil {
-			go o.WhatsApp.SendPresence(ctx, o.Phone, "composing")
+			go o.WhatsApp.SendTyping(ctx, "", o.Phone)
 		}
 
 		turnCtx, turnCancel := context.WithTimeout(ctx, 30*time.Second)
@@ -549,3 +549,4 @@ func intentFromSystemPrompt(systemPrompt string) string {
 		return intentDesconhecido
 	}
 }
+

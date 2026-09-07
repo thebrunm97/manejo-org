@@ -15,12 +15,12 @@ var ErrQueueFull = errors.New("worker pool queue is full")
 
 // MessageProcessor defines the interface for processing a message in the legacy flow.
 type MessageProcessor interface {
-	processLegacy(msg ports.IncomingMessage)
+	processLegacy(msg ports.IncomingEnvelope)
 }
 
 // MemoryWorkerPool manages a pool of workers for processing webhook messages asynchronously.
 type MemoryWorkerPool struct {
-	queue      chan ports.IncomingMessage
+	queue      chan ports.IncomingEnvelope
 	processor  MessageProcessor
 	workers    int
 	wg         sync.WaitGroup
@@ -37,7 +37,7 @@ func NewMemoryWorkerPool(workers int, queueSize int, p MessageProcessor) *Memory
 		queueSize = 1000 // Default
 	}
 	return &MemoryWorkerPool{
-		queue:     make(chan ports.IncomingMessage, queueSize),
+		queue:     make(chan ports.IncomingEnvelope, queueSize),
 		processor: p,
 		workers:   workers,
 		quit:      make(chan struct{}),
@@ -82,7 +82,7 @@ func (p *MemoryWorkerPool) workerLoop(id int) {
 }
 
 // Enqueue adds a message to the worker pool queue. Returns ErrQueueFull if the queue is full.
-func (p *MemoryWorkerPool) Enqueue(msg ports.IncomingMessage) error {
+func (p *MemoryWorkerPool) Enqueue(msg ports.IncomingEnvelope) error {
 	if atomic.LoadInt32(&p.isStopping) == 1 {
 		return errors.New("worker pool is shutting down")
 	}

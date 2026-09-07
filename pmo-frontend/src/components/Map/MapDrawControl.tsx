@@ -20,8 +20,8 @@ export default function MapDrawControl(props: DrawControlProps) {
     controls: props.controls || { polygon: true, trash: true },
     defaultMode: props.defaultMode || 'simple_select',
     styles: mapLibreDrawStyle,
-    touchBuffer: 2,
-    clickBuffer: 2
+    touchBuffer: 25,
+    clickBuffer: 12
   }), []);
 
   useEffect(() => {

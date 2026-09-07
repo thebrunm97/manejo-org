@@ -35,11 +35,12 @@ import (
 type AIWorkerConfig struct {
 	Queue        *Manager
 	Supabase     *supabase.Client
-	WhatsApp     ports.MessageSender
+	WhatsApp     ports.ChannelSender
 	LLM          llm.LLMProvider
 	TTS          ports.Synthesizer
 	MCP          *mcp.Server
 	History      *history.Manager
+	MemoryCache  ports.MemoryCacheService
 	PollInterval time.Duration // Default: 200ms (polling mais rápido pois é downstream do media worker)
 	RouterConfig state.RouterConfig
 
@@ -131,7 +132,7 @@ func (w *AIWorker) tick(ctx context.Context, workerID string) (bool, error) {
 // Reutiliza o state.ProcessMessage existente, passando o bodyText já extraído.
 func (w *AIWorker) processAIJob(ctx context.Context, job *Job, start time.Time) {
 	defer utils.TraceLatency("Queue: processAIJob", start)
-	// Reconstrói o IncomingMessage com o texto já processado
+	// Reconstrói o IncomingEnvelope com o texto já processado
 	// O BodyText substitui o Body original (que pode ser vazio para áudios)
 	msg := job.RawPayload
 	msg.Body = job.BodyText
@@ -196,9 +197,8 @@ func (w *AIWorker) processAIJob(ctx context.Context, job *Job, start time.Time) 
 				job.FromPhone, job.ID, gr.BlockReason)
 
 			// Notify the user with a clear, non-alarming message
-			_ = w.cfg.WhatsApp.SendMessage(msg.From,
-				"⚠️ Sua mensagem não pôde ser processada por violar políticas de segurança.\n"+
-					"Por favor, reformule sua pergunta e tente novamente.")
+			_ = w.cfg.WhatsApp.Send(context.Background(), ports.OutboundEnvelope{To: msg.From, Type: ports.OutboundTypeText, Text: "⚠️ Sua mensagem não pôde ser processada por violar políticas de segurança.\n"+
+					"Por favor, reformule sua pergunta e tente novamente."})
 
 			// Mark Done (not Failed) — blocked attacks should NOT be retried
 			_ = w.cfg.Queue.MarkDone(ctx, job.ID, JobMeta{Reason: "guardrail_input_blocked"})
@@ -221,8 +221,7 @@ func (w *AIWorker) processAIJob(ctx context.Context, job *Job, start time.Time) 
 		aiCtx = context.WithValue(aiCtx, "raw_payload_id", msg.RawPayloadID)
 	}
 
-	go w.cfg.WhatsApp.SetPresence(msg.From, "composing")
-	defer w.cfg.WhatsApp.SetPresence(msg.From, "available")
+	go w.cfg.WhatsApp.SendTyping(context.Background(), "", msg.From)
 
 	startProcessMessage := time.Now()
 	// Delega para o ProcessMessage existente (reuso total do fluxo atual)
@@ -239,6 +238,7 @@ func (w *AIWorker) processAIJob(ctx context.Context, job *Job, start time.Time) 
 		w.cfg.History,
 		nil, // flagsmithClient: não necessário no worker (usado apenas pela sessão HTTP)
 		w.cfg.RouterConfig,
+		w.cfg.MemoryCache,
 	)
 	log.Printf("⏱️ [TRACING] Sub-passo: ProcessMessage: %v", time.Since(startProcessMessage))
 
@@ -249,7 +249,7 @@ func (w *AIWorker) processAIJob(ctx context.Context, job *Job, start time.Time) 
 
 func (w *AIWorker) finalizeJob(
 	job *Job,
-	msg ports.IncomingMessage,
+	msg ports.IncomingEnvelope,
 	success bool,
 	reason string,
 	latencyMs int64,

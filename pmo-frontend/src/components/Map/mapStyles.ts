@@ -14,7 +14,7 @@ export const ESRI_SATELLITE_STYLE = {
       type: 'raster',
       source: 'esri-satellite',
       minzoom: 0,
-      maxzoom: 20
+      maxzoom: 19
     }
   ]
 };

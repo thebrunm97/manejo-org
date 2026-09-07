@@ -7,6 +7,7 @@ package supabase
 // pelo WhatsApp, sem nunca ter passado pelo portal web.
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -361,4 +362,106 @@ func (c *Client) LinkPhoneToUser(userID, phone string) error {
 	
 	log.Printf("🔗 [Auth] Telefone %s vinculado com sucesso ao usuário %s", phone, userID)
 	return nil
+}
+
+// AuthSession representa os tokens retornados por um login de sucesso.
+type AuthSession struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	ExpiresIn    int    `json:"expires_in"`
+}
+
+// UpdateUserPasswordAndLogin muda a senha de um usuário usando a Admin API e loga imediatamente.
+// O backend não precisa conhecer o email/telefone a priori, pois a Admin API o retorna.
+func (c *Client) UpdateUserPasswordAndLogin(userID string, newPassword string) (*AuthSession, error) {
+	// Passo 1: Atualizar a senha
+	reqURL := fmt.Sprintf("%s/auth/v1/admin/users/%s", c.config.URL, userID)
+
+	payload := map[string]interface{}{
+		"password": newPassword,
+	}
+	bodyBytes, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateUserPasswordAndLogin: marshal: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPut, reqURL, bytes.NewReader(bodyBytes))
+	if err != nil {
+		return nil, fmt.Errorf("UpdateUserPasswordAndLogin: request: %w", err)
+	}
+
+	req.Header.Set("apikey", c.config.Key)
+	req.Header.Set("Authorization", "Bearer "+c.config.Key)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateUserPasswordAndLogin: HTTP update falhou: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("UpdateUserPasswordAndLogin: update supabase erro (%d): %s", resp.StatusCode, string(respBody))
+	}
+
+	// Ler o usuário retornado para saber o telefone/email
+	var authUser AuthUser
+	if err := json.NewDecoder(resp.Body).Decode(&authUser); err != nil {
+		return nil, fmt.Errorf("UpdateUserPasswordAndLogin: falha ao decodificar usuario: %w", err)
+	}
+
+	// Passo 2: Login com Retry (mitiga timeouts de rede intermitentes)
+	loginURL := fmt.Sprintf("%s/auth/v1/token?grant_type=password", c.config.URL)
+	loginPayload := map[string]interface{}{
+		"password": newPassword,
+	}
+	
+	// Tentamos telefone primeiro, depois email
+	if authUser.Phone != "" {
+		loginPayload["phone"] = authUser.Phone
+	} else if authUser.Email != "" {
+		loginPayload["email"] = authUser.Email
+	} else {
+		return nil, fmt.Errorf("UpdateUserPasswordAndLogin: usuario nao tem email nem telefone para login")
+	}
+
+	loginBodyBytes, _ := json.Marshal(loginPayload)
+
+	var respLogin *http.Response
+	var errLogin error
+	maxRetries := 2
+	for i := 0; i <= maxRetries; i++ {
+		reqLogin, _ := http.NewRequest(http.MethodPost, loginURL, bytes.NewReader(loginBodyBytes))
+		reqLogin.Header.Set("apikey", c.config.Key)
+		reqLogin.Header.Set("Content-Type", "application/json")
+	
+		respLogin, errLogin = c.httpClient.Do(reqLogin)
+		if errLogin == nil && respLogin.StatusCode < 500 {
+			break // Sucesso ou erro de cliente (4xx) que não deve ser retentado
+		}
+		if respLogin != nil {
+			respLogin.Body.Close()
+		}
+		if i < maxRetries {
+			log.Printf("⚠️ [Auth] Falha no login após atualizar senha (tentativa %d/%d). Retentando...", i+1, maxRetries)
+		}
+	}
+
+	if errLogin != nil {
+		return nil, fmt.Errorf("UpdateUserPasswordAndLogin: HTTP login falhou após retries: %w", errLogin)
+	}
+	defer respLogin.Body.Close()
+
+	if respLogin.StatusCode >= 400 {
+		loginRespBody, _ := io.ReadAll(respLogin.Body)
+		return nil, fmt.Errorf("UpdateUserPasswordAndLogin: login supabase erro (%d): %s", respLogin.StatusCode, string(loginRespBody))
+	}
+
+	var session AuthSession
+	if err := json.NewDecoder(respLogin.Body).Decode(&session); err != nil {
+		return nil, fmt.Errorf("UpdateUserPasswordAndLogin: falha ao decodificar sessao: %w", err)
+	}
+
+	return &session, nil
 }
