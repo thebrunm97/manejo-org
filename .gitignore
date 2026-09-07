@@ -9,6 +9,11 @@
 # ── Build Outputs ─────────────────────────────
 **/.next/
 **/dist/
+# Excecao: build estatico da UI do manager do evolution-go. Nao e gerado
+# pelo Dockerfile (nao ha etapa de build do frontend nele) -- precisa estar
+# versionado ou o build de producao quebra em qualquer clone limpo.
+!evolution-go-source/manager/dist/
+!evolution-go-source/manager/dist/**
 **/build/
 *.tmp
 *.temp
