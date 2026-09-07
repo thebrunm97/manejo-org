@@ -24,8 +24,7 @@ pmo_bot/
 │   └── records.py          # PlantioRecord, ManejoRecord, ColheitaRecord
 ├── services/               # 🆕 Abstração de serviços
 │   ├── __init__.py         # Factory get_notification_service()
-│   ├── notification_service.py  # ABC NotificationService
-│   └── wppconnect_adapter.py    # Implementação WPPConnect
+│   └── notification_service.py  # ABC NotificationService
 ├── docs/                   # Documentação
 └── tests/                  # Testes (206 testes)
 ```

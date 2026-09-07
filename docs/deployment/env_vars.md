@@ -14,9 +14,7 @@ Localização: `pmo-bot-go/.env`
 | `GROQ_API_KEY` | Chave para modelos Llama 3 (Whisper/STT) | `gsk_...` |
 | `GEMINI_API_KEY` | Chave para o motor de IA principal | `AIza...` |
 | `GEMINI_MODEL` | Versão do modelo Gemini | `gemini-2.0-flash` |
-| `WPPCONNECT_URL` | URL do serviço gateway de WhatsApp | `http://wppconnect:21465` |
-| `WPPCONNECT_TOKEN` | Secret compartilhado com o WPPConnect | `MY_SECRET_TOKEN` |
-| `WPP_SESSION` | Nome da sessão no WhatsApp Web | `pmo-session` |
+| `GLOBAL_API_KEY` | Token admin do evolution-go | `your-secure-api-key-here` |
 | `WEBHOOK_URL` | URL onde o bot receberá mensagens | `https://seu-dominio.com/webhook` |
 | `GIN_MODE` | Modo do framework Gin | `release` ou `debug` |
 | `WEATHER_API_KEY` | Chave para WeatherAPI (Legado/Fallback) | `12345...` |
@@ -26,7 +24,6 @@ Localização: `pmo-bot-go/.env`
 > Coordenadas lat/lng são obrigatórias para cada PMO (preenchidas via Dashboard ou Talhões).
 | `GEMINI_API_VERSION` | Versão da API (padrão v1beta) | `v1beta` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Key de serviço usada no knowledge_loader | Mesma que `SUPABASE_KEY` |
-| `MOCK_WHATSAPP` | Ativa simulação do WhatsApp (testes) | `true` ou `false` |
 
 ---
 
@@ -68,12 +65,6 @@ GEMINI_API_KEY=your-gemini-key
 GEMINI_MODEL=gemini-2.0-flash
 GEMINI_API_VERSION=v1beta
 GROQ_API_KEY=your-groq-key
-
-# WHATSAPP GATEWAY
-WPPCONNECT_URL=http://localhost:21465
-WPPCONNECT_TOKEN=your-secret-token
-WPP_SESSION=pmo-bot
-MOCK_WHATSAPP=false
 
 # APP CONFIG
 PORT=8080

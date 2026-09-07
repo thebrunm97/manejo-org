@@ -37,8 +37,8 @@ temporização.
 
 ## Adaptadores
 
-`internal/adapter/evolution/` (atual) e `internal/adapter/wppconnect/`
-(legado). A abstração de canal está registrada em
+`internal/adapter/evolution/` é o único adaptador de canal. A abstração de
+canal está registrada em
 `docs/architecture/adr/011-abstracao-de-canal-de-chat.md`.
 
 ## Entrega assíncrona e resiliência

@@ -26,7 +26,7 @@ func TestRAGIntegration(t *testing.T) {
 	sbURL := os.Getenv("SUPABASE_URL")
 	sbKey := os.Getenv("SUPABASE_KEY")
 	geminiKey := os.Getenv("GEMINI_API_KEY")
-	token := os.Getenv("WPPCONNECT_TOKEN")
+	token := os.Getenv("WEBHOOK_TOKEN")
 
 	if sbURL == "" || sbKey == "" || geminiKey == "" {
 		t.Skip("Skipping integration test: missing environment variables")

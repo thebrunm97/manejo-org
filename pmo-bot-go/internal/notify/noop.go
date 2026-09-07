@@ -9,9 +9,9 @@ import (
 // Noop descarta alertas silenciosamente.
 //
 // Existe para que NENHUM call site precise checar nil antes de alertar. O laço
-// de reconexão legado (internal/adapter/wppconnect/adapter.go) engole erros
-// justamente porque ninguém quis lidar com verificações desse tipo espalhadas
-// pelo código; um objeto nulo custa menos que um nil-check esquecido.
+// de reconexão legado engolia erros justamente porque ninguém quis lidar com
+// verificações desse tipo espalhadas pelo código; um objeto nulo custa menos
+// que um nil-check esquecido.
 //
 // Devolvido por NewFromEnv quando nenhum canal está configurado.
 type Noop struct{}
