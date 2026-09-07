@@ -15,13 +15,13 @@ func TestShouldRespondWithAudioFor_Precedencia(t *testing.T) {
 	}{
 		{
 			nome: "preferencia texto silencia entrada de audio",
-			job:  &Job{RawPayload: ports.IncomingMessage{IsAudio: true}},
+			job:  &Job{RawPayload: ports.IncomingEnvelope{IsAudio: true}},
 			pref: ports.PreferenceText,
 			quer: false,
 		},
 		{
 			nome: "preferencia audio ativa audio em entrada de texto",
-			job:  &Job{RawPayload: ports.IncomingMessage{IsAudio: false}},
+			job:  &Job{RawPayload: ports.IncomingEnvelope{IsAudio: false}},
 			pref: ports.PreferenceAudio,
 			quer: true,
 		},
@@ -33,7 +33,7 @@ func TestShouldRespondWithAudioFor_Precedencia(t *testing.T) {
 		},
 		{
 			nome: "sem preferencia, espelha a entrada",
-			job:  &Job{RawPayload: ports.IncomingMessage{IsAudio: true}},
+			job:  &Job{RawPayload: ports.IncomingEnvelope{IsAudio: true}},
 			pref: ports.PreferenceAuto,
 			quer: true,
 		},
@@ -63,7 +63,7 @@ func TestShouldRespondWithAudioFor_PreferenciaVenceJobLegado(t *testing.T) {
 	legado := &Job{
 		RespondAudio:     true, // campo legado
 		RespondWithAudio: true, // campo legado
-		RawPayload:       ports.IncomingMessage{IsAudio: true},
+		RawPayload:       ports.IncomingEnvelope{IsAudio: true},
 	}
 
 	if legado.ShouldRespondWithAudioFor(ports.PreferenceText) {
@@ -81,7 +81,7 @@ func TestShouldRespondWithAudio_CompatibilidadePreservada(t *testing.T) {
 		{"explicito true", &Job{HasExplicitResponseMode: true, RespondWithAudio: true}, true},
 		{"explicito false", &Job{HasExplicitResponseMode: true, RespondWithAudio: false}, false},
 		{"legado RespondAudio", &Job{RespondAudio: true}, true},
-		{"payload de audio", &Job{RawPayload: ports.IncomingMessage{IsAudio: true}}, true},
+		{"payload de audio", &Job{RawPayload: ports.IncomingEnvelope{IsAudio: true}}, true},
 		{"texto puro", &Job{}, false},
 		{"nil", nil, false},
 	}
@@ -101,16 +101,16 @@ func TestShouldRespondWithAudio_CompatibilidadePreservada(t *testing.T) {
 func TestResponseModeSource_EspelhaAPrecedencia(t *testing.T) {
 	casos := []struct {
 		nome string
-		msg  ports.IncomingMessage
+		msg  ports.IncomingEnvelope
 		pref ports.ResponsePreference
 		quer string
 	}{
-		{"explicito", ports.IncomingMessage{HasExplicitResponseMode: true}, ports.PreferenceAudio, "explicit"},
-		{"preferencia texto", ports.IncomingMessage{IsAudio: true}, ports.PreferenceText, "preference_text"},
-		{"preferencia audio", ports.IncomingMessage{}, ports.PreferenceAudio, "preference_audio"},
-		{"payload legado", ports.IncomingMessage{RespondWithAudio: true}, ports.PreferenceAuto, "legacy_payload"},
-		{"audio legado", ports.IncomingMessage{IsAudio: true}, ports.PreferenceAuto, "legacy_audio"},
-		{"default", ports.IncomingMessage{}, ports.PreferenceAuto, "default"},
+		{"explicito", ports.IncomingEnvelope{HasExplicitResponseMode: true}, ports.PreferenceAudio, "explicit"},
+		{"preferencia texto", ports.IncomingEnvelope{IsAudio: true}, ports.PreferenceText, "preference_text"},
+		{"preferencia audio", ports.IncomingEnvelope{}, ports.PreferenceAudio, "preference_audio"},
+		{"payload legado", ports.IncomingEnvelope{RespondWithAudio: true}, ports.PreferenceAuto, "legacy_payload"},
+		{"audio legado", ports.IncomingEnvelope{IsAudio: true}, ports.PreferenceAuto, "legacy_audio"},
+		{"default", ports.IncomingEnvelope{}, ports.PreferenceAuto, "default"},
 	}
 
 	for _, c := range casos {

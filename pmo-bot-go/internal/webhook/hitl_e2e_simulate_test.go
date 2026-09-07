@@ -7,6 +7,7 @@ import (
 
 	"github.com/thebrunm97/pmo-bot-go/internal/domain"
 	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
+	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 )
 
 // MockHITLController simula o Supabase para testes locais
@@ -75,15 +76,25 @@ func (m *MockHITLController) RejectDraft(ctx context.Context, draftID string) er
 }
 
 
-// MockWhatsApp simula envio de mensagens
+// MockWhatsApp simula envio de mensagens. Migrado de MessageSender
+// (SendMessage) para ChannelSender (Send com OutboundEnvelope) junto com a
+// Fase B do multicanal.
 type MockWhatsApp struct {
 	LastSentMessage string
 }
 
-func (m *MockWhatsApp) SendMessage(to, body string) error {
-	fmt.Printf("📱 [WhatsApp] Enviando para %s:\n%s\n", to, body)
-	m.LastSentMessage = body
+func (m *MockWhatsApp) Send(ctx context.Context, env ports.OutboundEnvelope) error {
+	fmt.Printf("📱 [WhatsApp] Enviando para %s:\n%s\n", env.To, env.Text)
+	m.LastSentMessage = env.Text
 	return nil
+}
+
+func (m *MockWhatsApp) SendTyping(ctx context.Context, channel ports.ChannelType, to string) error {
+	return nil
+}
+
+func (m *MockWhatsApp) DownloadMedia(ctx context.Context, mediaID string, rawPayload []byte) ([]byte, string, error) {
+	return nil, "", nil
 }
 
 func TestE2EHITLFlow(t *testing.T) {
@@ -119,7 +130,7 @@ func TestE2EHITLFlow(t *testing.T) {
 		t.Fatalf("Erro ao solicitar HITL: %v", err)
 	}
 
-	mockWP.SendMessage(phone, guardrails.BuildConfirmationMessage(label, toolArgs))
+	mockWP.Send(context.Background(), ports.OutboundEnvelope{To: phone, Type: ports.OutboundTypeText, Text: guardrails.BuildConfirmationMessage(label, toolArgs)})
 
 	// 2. Webhook recebe a string "SIM"
 	fmt.Println("\n[Passo 2] Usuário responde 'SIM' via WhatsApp")
@@ -143,7 +154,7 @@ func TestE2EHITLFlow(t *testing.T) {
 	resMap := map[string]interface{}{"message": "Operação Agronômica Registrada com Sucesso"}
 
 	fmt.Printf("✅ [Resultado Webhook] Tool retornou: %v\n", resMap["message"])
-	mockWP.SendMessage(phone, "✅ *Operação confirmada e registrada com sucesso!*\n\n🌱 Seu caderno de campo foi atualizado.")
+	mockWP.Send(context.Background(), ports.OutboundEnvelope{To: phone, Type: ports.OutboundTypeText, Text: "✅ *Operação confirmada e registrada com sucesso!*\n\n🌱 Seu caderno de campo foi atualizado."})
 
 	if mockHITL.Pending["simulated-token-1234"].Status != "approved" {
 		t.Errorf("Status não foi atualizado para 'approved'")

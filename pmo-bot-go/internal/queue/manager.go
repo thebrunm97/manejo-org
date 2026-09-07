@@ -35,7 +35,7 @@ type Job struct {
 	ID                      string
 	MsgID                   string
 	FromPhone               string
-	RawPayload              ports.IncomingMessage
+	RawPayload              ports.IncomingEnvelope
 	BodyText                string // Vazio até a Camada 3 (Media Worker) preencher
 	RespondAudio            bool   // Legacy field kept for compatibility with older jobs
 	RespondWithAudio        bool   // Explicit response mode; source of truth for output
@@ -121,7 +121,7 @@ func (m *Manager) SetBufferConfig(window, max time.Duration) {
 // Enqueue insere uma nova mensagem na fila.
 // Usa upsert por msg_id para garantir idempotência (dedup automático).
 // Retorna nil se a mensagem já estava na fila (duplicata ignorada com segurança).
-func (m *Manager) Enqueue(ctx context.Context, msg ports.IncomingMessage) error {
+func (m *Manager) Enqueue(ctx context.Context, msg ports.IncomingEnvelope) error {
 	rawPayload, err := json.Marshal(msg)
 	if err != nil {
 		return fmt.Errorf("queue.Enqueue: falha ao serializar payload: %w", err)
@@ -241,8 +241,8 @@ func (m *Manager) claimByStatus(ctx context.Context, workerID, fromStatus string
 		}
 	}
 
-	// Desserializa o raw_payload de volta para IncomingMessage
-	var msg ports.IncomingMessage
+	// Desserializa o raw_payload de volta para IncomingEnvelope
+	var msg ports.IncomingEnvelope
 	if err := json.Unmarshal(row.RawPayload, &msg); err != nil {
 		// Não bloqueia — marca o job como falho e continua
 		_ = m.MarkFailed(ctx, row.ID, fmt.Sprintf("payload_parse_error: %v", err), 0)

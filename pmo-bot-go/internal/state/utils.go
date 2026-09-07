@@ -36,11 +36,19 @@ const (
 // Consequência importante: uma falha no TTS deixou de ser um caminho de erro.
 // Antes exigia um fallback explícito para texto; agora o texto já está garantido
 // e a falha apenas degrada a experiência, sem perder a resposta.
-func sendFeedback(sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient ports.Synthesizer, from string, message string, respondWithAudio bool) error {
+func sendFeedback(sbClient *supabase.Client, wpClient ports.ChannelSender, ttsClient ports.Synthesizer, convID string, to string, message string, respondWithAudio bool) error {
 	// O texto é o canal garantido e vai primeiro: a síntese leva dezenas de
 	// segundos, e mandar o áudio antes deixaria o produtor sem resposta nesse
 	// intervalo — ou sem nenhuma, se o TTS falhasse.
-	err := wpClient.SendMessage(from, message)
+
+	env := ports.OutboundEnvelope{
+		ConversationID: convID,
+		To:             to,
+		Type:           ports.OutboundTypeText,
+		Text:           message,
+	}
+	
+	err := wpClient.Send(context.Background(), env)
 
 	if respondWithAudio && ttsClient != nil {
 		// Sem sanitizar, o motor lê a formatação ("asterisco asterisco Consulta
@@ -71,13 +79,22 @@ func sendFeedback(sbClient *supabase.Client, wpClient ports.MessageSender, ttsCl
 		if errSpeech != nil {
 			if errors.Is(errSpeech, ports.ErrSynthesizerSaturated) {
 				telemetry.TTSFallbackStarvationTotal.Inc()
-				log.Printf("⚠️ [FSM] TTS Fallback triggered due to starvation — to=%s", from)
+				log.Printf("⚠️ [FSM] TTS Fallback triggered due to starvation — to=%s", to)
 			} else {
 				log.Printf("⚠️ [FSM] Falha no TTS, texto já foi entregue: %v", errSpeech)
 			}
 		} else {
 			b64 := base64.StdEncoding.EncodeToString(art.Data)
-			if errVoice := wpClient.SendVoice(from, b64, true); errVoice != nil {
+			
+			audioEnv := ports.OutboundEnvelope{
+				ConversationID: convID,
+				To:             to,
+				Type:           ports.OutboundTypeAudio,
+				Base64Audio:    b64,
+				IsVoiceNote:    true,
+			}
+			
+			if errVoice := wpClient.Send(context.Background(), audioEnv); errVoice != nil {
 				log.Printf("⚠️ [FSM] Falha ao enviar áudio, texto já foi entregue: %v", errVoice)
 			} else {
 				log.Printf("✅ [FSM] Áudio enviado (%s, %s, %d bytes)", art.Source, art.Format, len(art.Data))
@@ -88,16 +105,17 @@ func sendFeedback(sbClient *supabase.Client, wpClient ports.MessageSender, ttsCl
 	// Persist outgoing assistant message in a non-blocking goroutine
 	if sbClient != nil && message != "" {
 		go func() {
-			phone, _ := sbClient.ResolvePhone(from)
-			if phone != "" {
-				dbCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-				defer cancel()
-				_ = sbClient.InsertMessage(dbCtx, supabase.MessageInsert{
-					Phone:   phone,
-					Content: message,
-					Role:    "assistant",
-				})
-			}
+			dbCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			
+			// We should be passing the ConversationID, but InsertMessage 
+			// still uses 'phone' inside supabase client. We will leave it as is or update it later.
+			// Currently, we just fallback to the legacy 'to' field.
+			_ = sbClient.InsertMessage(dbCtx, supabase.MessageInsert{
+				Phone:   to,
+				Content: message,
+				Role:    "assistant",
+			})
 		}()
 	}
 
@@ -246,3 +264,4 @@ func isProibidoEscancarado(input string) bool {
 	}
 	return false
 }
+

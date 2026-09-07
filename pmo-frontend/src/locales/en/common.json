@@ -4,7 +4,20 @@
     "properties": "Properties",
     "reports": "Reports",
     "settings": "Settings",
-    "logout": "Log Out"
+    "logout": "Log Out",
+    "pmoList": "Management Plans",
+    "notebook": "Field Notebook",
+    "finance": "Finance / P&L",
+    "map": "Property Map",
+    "crops": "My Crops",
+    "changelog": "What’s New",
+    "propertyData": "Property Data",
+    "profile": "My Profile",
+    "mural": "Requests Board",
+    "coop": "Cooperative Panel",
+    "admin": "Administration",
+    "liveMonitor": "Live Monitor",
+    "section": "Management"
   },
   "language": {
     "pt": "Português",

@@ -14,7 +14,7 @@ func TestMediaWorker_ProcessAudio_WrongMediaType(t *testing.T) {
 	// Simulate a job that is NOT audio, NOT image, but has empty body (e.g. video, document)
 	job := &Job{
 		ID: "job-1",
-		RawPayload: ports.IncomingMessage{
+		RawPayload: ports.IncomingEnvelope{
 			IsAudio: false,
 			IsImage: false,
 			Body:    "", // Empty body for a media message

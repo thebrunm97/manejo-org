@@ -52,3 +52,4 @@ func (r *RegexPreRouter) Evaluate(message string) (RouterResult, bool) {
 
 	return RouterResult{}, false
 }
+

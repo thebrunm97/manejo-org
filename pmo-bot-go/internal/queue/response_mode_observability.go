@@ -10,7 +10,7 @@ import (
 // LogResponseModeDecision emits structured logs and metrics for auditability.
 //
 // Mantida por compatibilidade: equivale a registrar sem preferência conhecida.
-func LogResponseModeDecision(jobID string, msg ports.IncomingMessage, resolved bool, fallbackUsed bool) {
+func LogResponseModeDecision(jobID string, msg ports.IncomingEnvelope, resolved bool, fallbackUsed bool) {
 	LogResponseModeDecisionFor(jobID, msg, ports.PreferenceAuto, resolved, fallbackUsed)
 }
 
@@ -24,7 +24,7 @@ func LogResponseModeDecision(jobID string, msg ports.IncomingMessage, resolved b
 // A origem é o que permite responder "quantos produtores de fato escolheram
 // texto?", número que falta para dimensionar a VPS (DT-38) e que é o retorno
 // medível do DT-29.
-func LogResponseModeDecisionFor(jobID string, msg ports.IncomingMessage, pref ports.ResponsePreference, resolved bool, fallbackUsed bool) {
+func LogResponseModeDecisionFor(jobID string, msg ports.IncomingEnvelope, pref ports.ResponsePreference, resolved bool, fallbackUsed bool) {
 	source := responseModeSource(msg, pref)
 
 	resolvedMode := "text"
@@ -52,7 +52,7 @@ func LogResponseModeDecisionFor(jobID string, msg ports.IncomingMessage, pref po
 // responseModeSource espelha a precedência de ShouldRespondWithAudioFor.
 // Se uma das duas mudar, a outra precisa mudar junto — caso contrário a
 // métrica passa a atribuir a decisão à causa errada, em silêncio.
-func responseModeSource(msg ports.IncomingMessage, pref ports.ResponsePreference) string {
+func responseModeSource(msg ports.IncomingEnvelope, pref ports.ResponsePreference) string {
 	switch {
 	case msg.HasExplicitResponseMode:
 		return "explicit"

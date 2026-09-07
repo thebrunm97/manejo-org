@@ -22,6 +22,10 @@ Bem-vindo ao Índice Maestro do conhecimento do projeto **ManejoORG**. Este arqu
 ## ⚖️ Comparações e Análises
 - *Ainda não há comparações processadas.*
 
+## 🔀 Multicanal (WhatsApp + Telegram + Web/PWA)
+- [[docs/FEATURE-multicanal.md]] — Documentação da feature: estado atual, decisões, desafios por canal, arquitetura-alvo.
+- [[docs/PLAN-feature-multicanal.md]] — Plano de implementação aprovado (v2): 5 fases, ~33 tarefas, modelo de dados, RLS, verificação.
+
 ## 🛠️ Infraestrutura e Ferramentas
 - *Ainda não há ferramentas processadas.*
 

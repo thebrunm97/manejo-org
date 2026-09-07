@@ -40,7 +40,7 @@ type AudioArchiver interface {
 
 type MediaWorkerConfig struct {
 	Queue        *Manager
-	WhatsApp     ports.MessageSender
+	WhatsApp     ports.ChannelSender
 	Groq         *groq.Client
 	LLM          llm.LLMProvider
 	PollInterval time.Duration // Default: 500ms
@@ -139,7 +139,7 @@ func (w *MediaWorker) tick(ctx context.Context, workerID string) (bool, error) {
 		if IsDeadLetter(job.AttemptCount+1) && w.cfg.WhatsApp != nil {
 			aviso := "Não consegui ouvir esse áudio — ele pode ter expirado no WhatsApp. " +
 				"Pode gravar de novo ou me escrever o que precisa registrar?"
-			if errAviso := w.cfg.WhatsApp.SendMessage(job.FromPhone, aviso); errAviso != nil {
+			if errAviso := w.cfg.WhatsApp.Send(context.Background(), ports.OutboundEnvelope{To: job.FromPhone, Type: ports.OutboundTypeText, Text: aviso}); errAviso != nil {
 				log.Printf("⚠️ [MediaWorker-%s] Job %s morreu e o aviso ao produtor tambem falhou: %v",
 					workerID, job.ID, errAviso)
 			} else {
@@ -161,7 +161,7 @@ func (w *MediaWorker) tick(ctx context.Context, workerID string) (bool, error) {
 	// toda a janela de coalescência (MESSAGE_BUFFER_WINDOW). Best-effort: falha
 	// de presence nunca deve derrubar o avanço do job.
 	if w.cfg.WhatsApp != nil {
-		go w.cfg.WhatsApp.SendPresence(context.Background(), job.FromPhone, "composing")
+		go w.cfg.WhatsApp.SendTyping(context.Background(), "", job.FromPhone)
 	}
 
 	log.Printf("✅ [MediaWorker-%s] Job %s → ai_pending em %dms (texto: %d chars)",
@@ -198,11 +198,11 @@ func (w *MediaWorker) processMedia(ctx context.Context, job *Job) (string, bool,
 }
 
 // processAudio baixa o áudio e transcreve via Groq Whisper.
-func (w *MediaWorker) processAudio(ctx context.Context, msg ports.IncomingMessage) (string, bool, error) {
+func (w *MediaWorker) processAudio(ctx context.Context, msg ports.IncomingEnvelope) (string, bool, error) {
 	audioCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	audioData, audioMimeType, err := w.cfg.WhatsApp.DownloadAudio(msg.ID, msg.RawPayload)
+	audioData, audioMimeType, err := w.cfg.WhatsApp.DownloadMedia(audioCtx, msg.ChannelMsgID, msg.RawPayload)
 	if err != nil {
 		log.Printf("❌ [MediaWorker] Erro ao baixar áudio %s: %v", msg.ID, err)
 		return "", false, fmt.Errorf("audio download failed: %w", err)
@@ -256,11 +256,11 @@ func (w *MediaWorker) processAudio(ctx context.Context, msg ports.IncomingMessag
 }
 
 // processImage baixa a imagem e gera descrição agronômica via Gemini.
-func (w *MediaWorker) processImage(ctx context.Context, msg ports.IncomingMessage) (string, bool, error) {
+func (w *MediaWorker) processImage(ctx context.Context, msg ports.IncomingEnvelope) (string, bool, error) {
 	imageCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 
-	imageBytes, mimeType, err := w.cfg.WhatsApp.DownloadImage(msg.ID, msg.RawPayload)
+	imageBytes, mimeType, err := w.cfg.WhatsApp.DownloadMedia(imageCtx, msg.ChannelMsgID, msg.RawPayload)
 	if err != nil {
 		return "", false, fmt.Errorf("image_download_failed: %w", err)
 	}

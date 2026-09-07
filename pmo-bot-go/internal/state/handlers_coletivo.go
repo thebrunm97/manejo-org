@@ -13,7 +13,7 @@ import (
 )
 
 // handleAssumirCota processes the intent where a producer commits to a cooperative demand.
-func handleAssumirCota(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, _ ports.MessageSender, llmClient LLMClient, _ ports.Synthesizer, _ string, originalBody string, _ bool, startTime time.Time, modelConfigured string, _ string) (string, ProcessResult) {
+func handleAssumirCota(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, _ ports.ChannelSender, llmClient LLMClient, _ ports.Synthesizer, _ string, originalBody string, _ bool, startTime time.Time, modelConfigured string, _ string) (string, ProcessResult) {
 	log.Printf("🤝 [FSM-COLETIVO] Iniciando captação de cota: %s (%v)", ext.InsumoCultura, ext.QuantidadeAssumida)
 
 	// 1. Validate property
@@ -83,3 +83,4 @@ Responda de forma extremamente curta e direta, apenas a data ou um pequeno inter
 
 	return botResponse, ProcessResult{Success: true, Reason: "quota_assumed"}
 }
+

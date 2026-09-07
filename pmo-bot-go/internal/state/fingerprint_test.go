@@ -35,3 +35,4 @@ func TestJSONMarshalStability(t *testing.T) {
 		t.Logf("Stability confirmed: %s", string(b1))
 	}
 }
+

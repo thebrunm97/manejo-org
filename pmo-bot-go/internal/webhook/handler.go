@@ -44,12 +44,13 @@ type Config struct {
 	MaxMessageAge   float64
 	GroqClient      *groq.Client
 	SupabaseClient  *supabase.Client
-	WhatsAppClient  ports.MessageSender
+	WhatsAppClient  ports.ChannelSender
 	LLMClient       llm.LLMProvider
 	TtsClient       ports.Synthesizer
 	MCPServer       *mcp.Server
 	HistoryManager  *history.Manager
 	FlagsmithClient *flagsmith.Client
+	MemoryCache     ports.MemoryCacheService
 
 	// HITLController handles SIM/NÃO producer responses for high-risk tool approvals.
 	// If nil, HITL interception is disabled.
@@ -58,7 +59,7 @@ type Config struct {
 	// HarnessQueue é a fila PostgreSQL durável (Harness de Produção).
 	// Se nil, o handler opera em modo legado (goroutine direta).
 	HarnessQueue interface {
-		Enqueue(ctx context.Context, msg ports.IncomingMessage) error
+		Enqueue(ctx context.Context, msg ports.IncomingEnvelope) error
 	}
 
 	EnableFastRouter       bool
@@ -154,7 +155,7 @@ func (h *Handler) RegisterRoutes(r *gin.Engine) {
 }
 
 // SetWhatsAppClient updates the WhatsApp client (used for lazy reconnection).
-func (h *Handler) SetWhatsAppClient(c ports.MessageSender) {
+func (h *Handler) SetWhatsAppClient(c ports.ChannelSender) {
 	h.cfg.WhatsAppClient = c
 }
 
@@ -215,18 +216,6 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 		return
 	}
 
-	// 3. Broadcast filter
-	if payload.IsBroadcast {
-		c.JSON(http.StatusOK, gin.H{"status": "ignored_broadcast"})
-		return
-	}
-
-	// 4. Self-message filter (simplified in port)
-	if payload.IsFromMe {
-		log.Printf("⏭️  Mensagem enviada pelo bot — ignorando")
-		c.JSON(http.StatusOK, gin.H{"status": "ignored", "reason": "isFromMe"})
-		return
-	}
 
 	// 5. TTL check
 	age := time.Since(payload.Timestamp).Seconds()
@@ -240,6 +229,26 @@ func (h *Handler) handleWebhook(c *gin.Context) {
 	// 6. Log receipt
 	log.Printf("📨 Recebida De: %s | Tipo: %s | Body: %.100s",
 		payload.From, payload.Type, payload.Body)
+
+	// 6.5. Check Admin Pause Status
+	if h.cfg.SupabaseClient != nil {
+		isPaused, err := h.cfg.SupabaseClient.IsBotPaused(c.Request.Context(), payload.From)
+		if err != nil {
+			log.Printf("⚠️ Erro ao checar status de pausa do bot para %s: %v", payload.From, err)
+		} else if isPaused {
+			log.Printf("⏸️ Bot pausado para %s. Inserindo mensagem e ignorando processamento.", payload.From)
+			
+			// Insert the message manually since it won't hit the FSM / worker
+			_ = h.cfg.SupabaseClient.InsertMessage(c.Request.Context(), supabase.MessageInsert{
+				Phone:   payload.From,
+				Content: payload.Body,
+				Role:    "user",
+			})
+
+			c.JSON(http.StatusOK, gin.H{"status": "ignored_bot_paused"})
+			return
+		}
+	}
 
 	if payload.IsAudio {
 		log.Printf("[AUDIO-DEBUG] Recebida mensagem de áudio de %s (ID: %s)", payload.From, payload.ID)
@@ -431,8 +440,7 @@ func (h *Handler) handleHITLResponse(phone string, verdict HITLVerdict) bool {
 					log.Printf("⚠️ [HITL] Erro ao rejeitar rascunho: %v", err)
 				}
 				if h.cfg.WhatsAppClient != nil {
-					_ = h.cfg.WhatsAppClient.SendMessage(phone,
-						"✅ Rascunho de operações cancelado. Nenhuma alteração foi salva no sistema.")
+					_ = h.cfg.WhatsAppClient.Send(context.Background(), ports.OutboundEnvelope{To: phone, Type: ports.OutboundTypeText, Text: "✅ Rascunho de operações cancelado. Nenhuma alteração foi salva no sistema."})
 				}
 				return true
 			}
@@ -442,8 +450,7 @@ func (h *Handler) handleHITLResponse(phone string, verdict HITLVerdict) bool {
 				if err != nil {
 					log.Printf("❌ [HITL] Erro técnico no commit do rascunho %s: %v", draft.ID, err)
 					if h.cfg.WhatsAppClient != nil {
-						_ = h.cfg.WhatsAppClient.SendMessage(phone,
-							"⚠️ Ocorreu um erro técnico ao registrar as operações. Por favor, tente novamente.")
+						_ = h.cfg.WhatsAppClient.Send(context.Background(), ports.OutboundEnvelope{To: phone, Type: ports.OutboundTypeText, Text: "⚠️ Ocorreu um erro técnico ao registrar as operações. Por favor, tente novamente."})
 					}
 					return true
 				}
@@ -452,7 +459,7 @@ func (h *Handler) handleHITLResponse(phone string, verdict HITLVerdict) bool {
 					log.Printf("⚠️ [HITL] Commit falhou para rascunho %s: %s", draft.ID, commitRes.ErrorDetail)
 					if h.cfg.WhatsAppClient != nil {
 						errMsg := fmt.Sprintf("⚠️ Não foi possível salvar o lote de operações: %s\n\nPor favor, envie novamente com os dados ajustados.", commitRes.ErrorDetail)
-						_ = h.cfg.WhatsAppClient.SendMessage(phone, errMsg)
+						_ = h.cfg.WhatsAppClient.Send(context.Background(), ports.OutboundEnvelope{To: phone, Type: ports.OutboundTypeText, Text: errMsg})
 					}
 					return true
 				}
@@ -460,8 +467,7 @@ func (h *Handler) handleHITLResponse(phone string, verdict HITLVerdict) bool {
 				if commitRes.Status == "expired" {
 					log.Printf("⚠️ [HITL] Rascunho %s expirou antes da confirmação", draft.ID)
 					if h.cfg.WhatsAppClient != nil {
-						_ = h.cfg.WhatsAppClient.SendMessage(phone,
-							"⚠️ O tempo limite para confirmação deste rascunho (45 minutos) expirou. Por favor, envie novamente as informações da operação.")
+						_ = h.cfg.WhatsAppClient.Send(context.Background(), ports.OutboundEnvelope{To: phone, Type: ports.OutboundTypeText, Text: "⚠️ O tempo limite para confirmação deste rascunho (45 minutos) expirou. Por favor, envie novamente as informações da operação."})
 					}
 					return true
 				}
@@ -469,8 +475,7 @@ func (h *Handler) handleHITLResponse(phone string, verdict HITLVerdict) bool {
 				// Sucesso
 				log.Printf("✅ [HITL] Rascunho %s aprovado e comitado com sucesso", draft.ID)
 				if h.cfg.WhatsAppClient != nil {
-					_ = h.cfg.WhatsAppClient.SendMessage(phone,
-						"✅ *Operações confirmadas e registradas com sucesso!*\n\n🌱 Seu caderno de campo e registros foram atualizados.")
+					_ = h.cfg.WhatsAppClient.Send(context.Background(), ports.OutboundEnvelope{To: phone, Type: ports.OutboundTypeText, Text: "✅ *Operações confirmadas e registradas com sucesso!*\n\n🌱 Seu caderno de campo e registros foram atualizados."})
 				}
 				return true
 			}
@@ -491,8 +496,7 @@ func (h *Handler) handleHITLResponse(phone string, verdict HITLVerdict) bool {
 				log.Printf("⚠️ [HITL] Erro ao rejeitar: %v", err)
 			}
 			if h.cfg.WhatsAppClient != nil {
-				_ = h.cfg.WhatsAppClient.SendMessage(phone,
-					"✅ Operação cancelada conforme solicitado. Nenhuma alteração foi registrada no sistema.")
+				_ = h.cfg.WhatsAppClient.Send(context.Background(), ports.OutboundEnvelope{To: phone, Type: ports.OutboundTypeText, Text: "✅ Operação cancelada conforme solicitado. Nenhuma alteração foi registrada no sistema."})
 			}
 			return true
 		}
@@ -502,8 +506,7 @@ func (h *Handler) handleHITLResponse(phone string, verdict HITLVerdict) bool {
 			if err != nil {
 				log.Printf("❌ [HITL] Erro ao aprovar registro legado: %v", err)
 				if h.cfg.WhatsAppClient != nil {
-					_ = h.cfg.WhatsAppClient.SendMessage(phone,
-						"⚠️ Ocorreu um erro ao processar sua confirmação. Por favor, tente registrar novamente.")
+					_ = h.cfg.WhatsAppClient.Send(context.Background(), ports.OutboundEnvelope{To: phone, Type: ports.OutboundTypeText, Text: "⚠️ Ocorreu um erro ao processar sua confirmação. Por favor, tente registrar novamente."})
 				}
 				return true
 			}
@@ -527,8 +530,7 @@ func (h *Handler) handleHITLResponse(phone string, verdict HITLVerdict) bool {
 			if toolErr != nil {
 				log.Printf("❌ [HITL] Execução da ferramenta legada %s falhou: %v", toolName, toolErr)
 				if h.cfg.WhatsAppClient != nil {
-					_ = h.cfg.WhatsAppClient.SendMessage(phone,
-						fmt.Sprintf("❌ Ocorreu um erro ao executar o registro aprovado: %v\nPor favor, tente novamente.", toolErr))
+					_ = h.cfg.WhatsAppClient.Send(context.Background(), ports.OutboundEnvelope{To: phone, Type: ports.OutboundTypeText, Text: fmt.Sprintf("❌ Ocorreu um erro ao executar o registro aprovado: %v\nPor favor, tente novamente.", toolErr)})
 				}
 				return true
 			}
@@ -540,7 +542,7 @@ func (h *Handler) handleHITLResponse(phone string, verdict HITLVerdict) bool {
 				}
 			}
 			if h.cfg.WhatsAppClient != nil {
-				_ = h.cfg.WhatsAppClient.SendMessage(phone, msg)
+				_ = h.cfg.WhatsAppClient.Send(context.Background(), ports.OutboundEnvelope{To: phone, Type: ports.OutboundTypeText, Text: msg})
 			}
 			return true
 		}
@@ -552,15 +554,14 @@ func (h *Handler) handleHITLResponse(phone string, verdict HITLVerdict) bool {
 // processLegacy executa o fluxo de processamento legado (goroutine direta, sem persistência).
 // Usado quando HARNESS_ENABLED=false ou como fallback automático se o Enqueue falhar.
 // O comportamento é idêntico ao que existia antes do Harness.
-func (h *Handler) processLegacy(msg ports.IncomingMessage) {
+func (h *Handler) processLegacy(msg ports.IncomingEnvelope) {
 	log.Printf("[ASYNC] Iniciando Agentic Loop em background...")
-	go h.cfg.WhatsAppClient.SetPresence(msg.From, "composing")
-	defer h.cfg.WhatsAppClient.SetPresence(msg.From, "available")
+	go h.cfg.WhatsAppClient.SendTyping(context.Background(), "", msg.From)
 
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("🔥 [CRITICAL] Panic no processamento legado: %v", r)
-			h.cfg.WhatsAppClient.SendMessage(msg.From, "⚠️ Ocorreu um erro crítico inesperado. Minha equipe foi avisada.")
+			h.cfg.WhatsAppClient.Send(context.Background(), ports.OutboundEnvelope{To: msg.From, Type: ports.OutboundTypeText, Text: "⚠️ Ocorreu um erro crítico inesperado. Minha equipe foi avisada."})
 			if msg.RawPayloadID != "" {
 				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 				defer cancel()
@@ -582,7 +583,7 @@ func (h *Handler) processLegacy(msg ports.IncomingMessage) {
 		FastRouterTimeoutMS:    h.cfg.FastRouterTimeoutMS,
 	}
 
-	result := state.ProcessMessage(ctx, msg, h.cfg.SupabaseClient, h.cfg.GroqClient, h.cfg.WhatsAppClient, h.cfg.LLMClient, h.cfg.TtsClient, h.cfg.MCPServer, h.cfg.HistoryManager, h.cfg.FlagsmithClient, routerCfg)
+	result := state.ProcessMessage(ctx, msg, h.cfg.SupabaseClient, h.cfg.GroqClient, h.cfg.WhatsAppClient, h.cfg.LLMClient, h.cfg.TtsClient, h.cfg.MCPServer, h.cfg.HistoryManager, h.cfg.FlagsmithClient, routerCfg, h.cfg.MemoryCache)
 	if msg.RawPayloadID != "" {
 		if !result.Success {
 			log.Printf("⚠️ [LEGACY] Processing completed with issues: %s", result.Reason)
@@ -867,7 +868,7 @@ func (h *Handler) sendDebouncedWarning(ctx context.Context, from string) {
 	}
 	if decision.Allowed {
 		msg := "⚠️ Detectamos um alto volume de requisições ou uma pequena instabilidade momentânea. Por favor, aguarde alguns instantes e reenvie sua última mensagem. Agradecemos a compreensão."
-		if err := h.cfg.WhatsAppClient.SendMessage(from, msg); err != nil {
+		if err := h.cfg.WhatsAppClient.Send(context.Background(), ports.OutboundEnvelope{To: from, Type: ports.OutboundTypeText, Text: msg}); err != nil {
 			log.Printf("⚠️ [WarningLimiter] Falha ao enviar aviso para %s: %v", from, err)
 		} else {
 			log.Printf("📣 [WarningLimiter] Aviso de instabilidade/cota enviado para %s", from)

@@ -112,7 +112,8 @@ func TestAgenticShootout(t *testing.T) {
 				nil, // Sem histórico anterior
 				guard,
 				"general",
-				"",
+				"", // userMemories
+				"", // activeContextBlock
 				state.RouterResult{},
 			)
 
@@ -137,3 +138,4 @@ func TestAgenticShootout(t *testing.T) {
 	}
 	fmt.Println("=========================================================================================")
 }
+

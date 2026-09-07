@@ -145,7 +145,8 @@ func TestAgenticMutationShootout(t *testing.T) {
 				nil,
 				guard,
 				"general",
-				"",
+				"", // userMemories
+				"", // activeContextBlock
 				state.RouterResult{},
 			)
 
@@ -168,3 +169,4 @@ func TestAgenticMutationShootout(t *testing.T) {
 	}
 	fmt.Println("=========================================================================================")
 }
+

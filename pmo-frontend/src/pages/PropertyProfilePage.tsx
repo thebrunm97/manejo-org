@@ -163,14 +163,14 @@ const PropertyProfilePage: React.FC = () => {
                     return;
                 }
 
-                const { error: upsertError } = await supabase
-                    .from('limites_seguranca')
-                    .upsert({
-                        propriedade_id: currentPropriedade.id,
-                        pmo_id: parsedPmoId,
+                const { error: upsertError } = await supabase.rpc('upsert_limites_seguranca', {
+                    p_propriedade_id: currentPropriedade.id,
+                    p_pmo_id: parsedPmoId,
+                    p_payload: {
                         limite_transacao: limiteTransacao,
                         limite_manejo: limiteManejo,
-                    }, { onConflict: 'propriedade_id,pmo_id' });
+                    }
+                });
 
                 if (upsertError) {
                     console.error('Erro ao salvar limites de segurança:', upsertError);

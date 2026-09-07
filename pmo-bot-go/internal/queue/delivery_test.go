@@ -11,18 +11,29 @@ import (
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
+// fakeSender migrado de MessageSender (SendMessage/SendVoice) para
+// ChannelSender (Send único, roteado por env.Type) junto com a Fase B do
+// multicanal. Os campos e a semântica de textErrs/voiceErr continuam os
+// mesmos — sendWithConfig manda texto e áudio pelo mesmo método agora, então
+// quem decide qual contador incrementar é o Type do envelope.
 type fakeSender struct {
 	texts     []string
 	voices    int
-	textErrs  []error // erro a devolver na n-ésima chamada de SendMessage
+	textErrs  []error // erro a devolver na n-ésima chamada de texto
 	voiceErr  error
 	textCalls int
 	order     []string // ordem real das chamadas ("texto"/"audio")
 }
 
-func (f *fakeSender) SendMessage(to, text string) error {
+func (f *fakeSender) Send(ctx context.Context, env ports.OutboundEnvelope) error {
+	if env.Type == ports.OutboundTypeAudio {
+		f.voices++
+		f.order = append(f.order, "audio")
+		return f.voiceErr
+	}
+
 	f.textCalls++
-	f.texts = append(f.texts, text)
+	f.texts = append(f.texts, env.Text)
 	f.order = append(f.order, "texto")
 	if len(f.textErrs) >= f.textCalls {
 		return f.textErrs[f.textCalls-1]
@@ -30,25 +41,11 @@ func (f *fakeSender) SendMessage(to, text string) error {
 	return nil
 }
 
-func (f *fakeSender) SendVoice(to, base64Audio string, isPtt bool) error {
-	f.voices++
-	f.order = append(f.order, "audio")
-	return f.voiceErr
-}
-
-func (f *fakeSender) SendReply(to, message, replyToMessageID string) error { return nil }
-func (f *fakeSender) DownloadAudio(id string, raw []byte) ([]byte, string, error) {
-	return nil, "", nil
-}
-func (f *fakeSender) DownloadImage(id string, raw []byte) ([]byte, string, error) {
-	return nil, "", nil
-}
-func (f *fakeSender) SetPresence(to, presence string) error { return nil }
-func (f *fakeSender) SendPresence(ctx context.Context, to, state string) error {
+func (f *fakeSender) SendTyping(ctx context.Context, channel ports.ChannelType, to string) error {
 	return nil
 }
-func (f *fakeSender) SendButton(to, title, desc, footer string, btn []map[string]string) error {
-	return nil
+func (f *fakeSender) DownloadMedia(ctx context.Context, mediaID string, rawPayload []byte) ([]byte, string, error) {
+	return nil, "", nil
 }
 
 type fakeTTS struct {

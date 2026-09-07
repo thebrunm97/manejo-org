@@ -6,7 +6,9 @@ import (
 
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/okf"
+	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
+	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 )
 
 // PromptManager handles the construction and contextualization of prompts for the LLM.
@@ -18,7 +20,7 @@ func NewPromptManager() *PromptManager {
 }
 
 // BuildSystemInstruction composes the final system prompt with farm context and output guardrails.
-func (m *PromptManager) BuildSystemInstruction(profile *supabase.Profile, basePrompt string, agentDomain string, userMemories string, routerResult RouterResult) string {
+func (m *PromptManager) BuildSystemInstruction(profile *supabase.Profile, basePrompt string, agentDomain string, userMemories string, activeContextBlock string, routerResult RouterResult) string {
 	farmContext := ""
 	if profile != nil && profile.ID != "" {
 		farmContext = fmt.Sprintf("\n[CONTEXTO DO USUÁRIO]:\n- user_id: %s\n", profile.ID)
@@ -91,8 +93,66 @@ func (m *PromptManager) BuildSystemInstruction(profile *supabase.Profile, basePr
 		sysInst += "\n\n<MEMORIA_DO_PRODUTOR>\n" + userMemories + "\n</MEMORIA_DO_PRODUTOR>\n\n"
 	}
 
+	if activeContextBlock != "" {
+		sysInst += "\n\n<CONTEXTO_ATIVO_RECENTE>\n" + activeContextBlock + "</CONTEXTO_ATIVO_RECENTE>\n\n"
+	}
+
 	return sysInst
 }
+
+// BuildActiveContextBlock formata fragmentos ativos em um bloco organizado e com limites por categoria.
+func (m *PromptManager) BuildActiveContextBlock(frags []ports.MemoryFragment) string {
+	if len(frags) == 0 {
+		return ""
+	}
+
+	maxPerCategory := map[string]int{
+		"regulation":   2,
+		"agronomy":     3,
+		"farm_context": 3,
+		"finance":      2,
+	}
+
+	const maxTotal = 5
+	const maxChars = 800
+
+	var bldr strings.Builder
+	catCount := map[string]int{}
+	totalFrags := 0
+	totalChars := 0
+
+	for _, f := range frags {
+		if totalFrags >= maxTotal {
+			break
+		}
+
+		limit, ok := maxPerCategory[f.Category]
+		if !ok {
+			limit = 2
+		}
+		if catCount[f.Category] >= limit {
+			continue
+		}
+
+		age := utils.RelativeTime(f.CreatedAt)
+		line := fmt.Sprintf("[%s | Score: %.2f | %s]:\n%s\n\n",
+			f.Category, f.ImportanceScore, age, f.Fragment)
+
+		if totalChars+len(line) > maxChars {
+			break
+		}
+		bldr.WriteString(line)
+		totalChars += len(line)
+		catCount[f.Category]++
+		totalFrags++
+	}
+
+	if bldr.Len() == 0 {
+		return ""
+	}
+	return bldr.String()
+}
+
 
 // BuildTurnHistory injects summary rules for multi-turn loops, specially handling pending HITL.
 func (m *PromptManager) BuildTurnHistory(baseHistory []llm.MensagemAgnostica) []llm.MensagemAgnostica {
@@ -118,3 +178,4 @@ func (m *PromptManager) BuildTurnHistory(baseHistory []llm.MensagemAgnostica) []
 
 	return currentHistory
 }
+

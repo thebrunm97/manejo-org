@@ -633,7 +633,7 @@ func (c *Client) GenerateContentWithTools(ctx context.Context, question string, 
 		}
 
 		log.Printf("📡 [GEMINI SDK] Chamada (%s) com Tools e Memória (%d msgs) para: %s", modelName, len(history), question)
-		resp, err := session.SendMessage(ctx, genai.Part{Text: question})
+		resp, err := session.Send(ctx, &genai.Part{Text: question})
 		if err != nil {
 			return nil, err
 		}

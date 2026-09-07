@@ -4,10 +4,10 @@
 ```mermaid
 graph LR
     subgraph pmo-net [Rede Docker: pmo-net]
-        WPP[wppconnect-server<br/>Node.js + Puppeteer<br/>:21465]
+        EVO[evolution-go<br/>Gateway WhatsApp<br/>:8082]
         GO[pmo-bot-go<br/>Go 1.23 Multi-stage<br/>:8080]
     end
-    WPP <-->|REST| GO
+    EVO <-->|REST| GO
     GO <-->|HTTPS| SUPA[(Supabase Cloud)]
     GO <-->|HTTPS| GROQ[Groq API]
     GO <-->|HTTPS| GEMINI[Gemini API]
@@ -17,21 +17,19 @@ graph LR
 
 O ecossistema é orquestrado via Docker Compose, garantindo que o gateway de WhatsApp e o motor de IA subam em sincronia.
 
-### Serviço: `wppconnect`
+### Serviço: `evolution-go`
 O core da comunicação via WhatsApp.
-- **Imagem base:** Custom baseada em Node.js com Chromium.
-- **Portas expostas:** `21465` (API REST).
-- **Volumes:** 
-  - `./wpp-data:/data/wppconnect`: Persistência das sessões do navegador.
-  - `./tokens:/usr/src/wpp-server/tokens`: Tokens de autenticação.
-- **Healthcheck:** Utiliza `wget` para verificar se a documentação Swagger (`/api-docs/`) está online.
-- **Notas Técnicas:** Puppeteer/Chromium é necessário para emular o WhatsApp Web em ambiente headless. Alocou-se `shm_size: '1gb'` para evitar crashes do browser.
+- **Build:** Contexto `./evolution-go-source`.
+- **Portas expostas:** `8082` (API).
+- **Volumes:**
+  - `./evolution_data:/data`: Persistência das sessões (sobrevive a rebuilds).
+- **Dependência:** `depends_on: clockwork`.
 
 ### Serviço: `pmo-bot-go`
 O cérebro do sistema (GoLang).
 - **Build:** Multi-stage Dockerfile para gerar uma imagem final minimalista (Builder -> Scratch).
 - **Portas expostas:** `8080`.
-- **Dependência:** `depends_on: wppconnect (service_healthy)`. Só inicia após o gateway estar pronto.
+- **Dependência:** `depends_on: evolution-go`.
 - **Performance:** A imagem final tem ~20-30MB, otimizada para deploy rápido.
 
 ---
@@ -44,7 +42,7 @@ docker-compose up -d --build
 
 # Ver logs em tempo real
 docker-compose logs -f pmo-bot-go
-docker-compose logs -f wppconnect
+docker-compose logs -f evolution-go
 
 # Restart individual do cérebro
 docker-compose restart pmo-bot-go
@@ -62,8 +60,8 @@ docker-compose build --no-cache
 
 | Problema | Causa Provável | Solução |
 |---|---|---|
-| **WPPConnect não conecta** | QR Code expirado ou IP bloqueado | Verificar logs, re-escanear QR via dashboard WPP. |
+| **Evolution não conecta** | QR Code expirado ou IP bloqueado | Verificar logs, re-escanear QR na API/manager do evolution-go. |
 | **Go container reinicia** | `.env` incompleto ou erro de conexão Supabase | Verificar variáveis obrigatórias em `pmo-bot-go/.env`. |
-| **Porta 21465 ocupada** | Outra instância ou container órfão | `docker-compose down` seguido de `docker ps` para limpar. |
+| **Porta 8082 ocupada** | Outra instância ou container órfão | `docker-compose down` seguido de `docker ps` para limpar. |
 | **Chromium crash / Out of Memory** | Memória insuficiente no host/docker | Aumentar RAM disponível para o Docker (mín 2GB recomendado). |
 | **Build falha no Go** | Rede ou Proxy | Tentar `docker-compose build --no-cache`. |

@@ -283,3 +283,4 @@ func (h *MapHandler) ZonalStats(c *gin.Context) {
 		"results": results,
 	})
 }
+

@@ -629,6 +629,39 @@ func (c *Client) GetProfileByPhone(phone string) (*Profile, error) {
 	return nil, fmt.Errorf("profile not found for phone %s", phone)
 }
 
+// UpdateProfilePhone vincula o telefone também na tabela profiles.
+// Valida se o telefone já está vinculado a outro perfil para evitar colisões.
+func (c *Client) UpdateProfilePhone(userID, phone string) error {
+	phone = utils.SanitizePhone(phone)
+
+	// Validação de unicidade
+	existing, err := c.GetProfileByPhone(phone)
+	if err == nil && existing != nil {
+		if existing.ID != userID {
+			return fmt.Errorf("telefone_em_uso")
+		}
+		// Já está com este telefone
+		return nil
+	}
+
+	payload, err := json.Marshal(map[string]interface{}{
+		"telefone": phone,
+	})
+	if err != nil {
+		return fmt.Errorf("UpdateProfilePhone: marshal: %w", err)
+	}
+
+	// Faz update no profile correspondente ao auth.users
+	reqURL := fmt.Sprintf("%s/rest/v1/profiles?id=eq.%s", c.config.URL, userID)
+	_, err = c.doRequest(http.MethodPatch, reqURL, payload)
+	if err != nil {
+		return fmt.Errorf("UpdateProfilePhone: PATCH falhou: %w", err)
+	}
+
+	log.Printf("🔗 [Profile] Telefone %s persistido na tabela profiles para o usuário %s", phone, userID)
+	return nil
+}
+
 // RegistrarAtividadeRPC calls the 'registrar_atividade_pmo' Postgres function in Supabase.
 // This is the new declarative way to register activities, replacing several imperative steps.
 func (c *Client) RegistrarAtividadeRPC(ctx context.Context, args map[string]interface{}) (map[string]interface{}, error) {
@@ -1135,6 +1168,30 @@ func (c *Client) InsertLogConsumo(logData LogConsumoInsert) error {
 	}
 	_, err = c.doRequest(http.MethodPost, reqURL, payload)
 	return err
+}
+
+// IsBotPaused checks if the bot is paused for a specific phone number.
+func (c *Client) IsBotPaused(ctx context.Context, phone string) (bool, error) {
+	reqURL := fmt.Sprintf("%s/rest/v1/rpc/get_bot_pause_status", c.config.URL)
+	payload := map[string]string{
+		"p_phone": phone,
+	}
+	bodyBytes, err := json.Marshal(payload)
+	if err != nil {
+		return false, err
+	}
+
+	respBody, err := c.doRequestWithContext(ctx, http.MethodPost, reqURL, bodyBytes)
+	if err != nil {
+		return false, err
+	}
+
+	var isPaused bool
+	if err := json.Unmarshal(respBody, &isPaused); err != nil {
+		return false, err
+	}
+
+	return isPaused, nil
 }
 
 // InsertMessage saves a message interaction to the messages table.
@@ -2439,3 +2496,36 @@ func (c *Client) CommitMutationDraftRPC(ctx context.Context, draftID, userID str
 	return result, nil
 }
 
+// doRequestWithPrefer performs an HTTP request and allows injecting a Prefer header
+func (c *Client) doRequestWithPrefer(method, reqURL string, body io.Reader, prefer string) ([]byte, error) {
+	req, err := http.NewRequest(method, reqURL, body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("apikey", c.config.Key)
+	req.Header.Set("Authorization", "Bearer "+c.config.Key)
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	if prefer != "" {
+		req.Header.Set("Prefer", prefer)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("http request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+
+	if resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("supabase api error (%d): %s", resp.StatusCode, string(respBody))
+	}
+
+	return respBody, nil
+}

@@ -60,3 +60,8 @@ func New(ctx context.Context, url string) (*Client, error) {
 func (c *Client) Close() error {
 	return c.rdb.Close()
 }
+
+// RDB retorna a instância subjacente do go-redis
+func (c *Client) RDB() *redis.Client {
+	return c.rdb
+}

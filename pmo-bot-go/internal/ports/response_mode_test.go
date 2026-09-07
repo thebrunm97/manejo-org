@@ -29,43 +29,43 @@ func TestParseResponsePreference(t *testing.T) {
 func TestResolveResponseModeFor_PrecedenciaDaPreferencia(t *testing.T) {
 	casos := []struct {
 		nome string
-		msg  IncomingMessage
+		msg  IncomingEnvelope
 		pref ResponsePreference
 		quer bool
 	}{
 		{
 			nome: "preferencia texto vence o espelhamento de audio",
-			msg:  IncomingMessage{IsAudio: true},
+			msg:  IncomingEnvelope{IsAudio: true},
 			pref: PreferenceText,
 			quer: false,
 		},
 		{
 			nome: "preferencia audio vence entrada de texto",
-			msg:  IncomingMessage{IsAudio: false},
+			msg:  IncomingEnvelope{IsAudio: false},
 			pref: PreferenceAudio,
 			quer: true,
 		},
 		{
 			nome: "preferencia texto vence campo legado RespondWithAudio",
-			msg:  IncomingMessage{RespondWithAudio: true},
+			msg:  IncomingEnvelope{RespondWithAudio: true},
 			pref: PreferenceText,
 			quer: false,
 		},
 		{
 			nome: "modo ja resolvido a montante vence ate a preferencia",
-			msg:  IncomingMessage{HasExplicitResponseMode: true, RespondWithAudio: false},
+			msg:  IncomingEnvelope{HasExplicitResponseMode: true, RespondWithAudio: false},
 			pref: PreferenceAudio,
 			quer: false,
 		},
 		{
 			nome: "sem preferencia, espelha audio",
-			msg:  IncomingMessage{IsAudio: true},
+			msg:  IncomingEnvelope{IsAudio: true},
 			pref: PreferenceAuto,
 			quer: true,
 		},
 		{
 			nome: "sem preferencia, espelha texto",
-			msg:  IncomingMessage{IsAudio: false},
+			msg:  IncomingEnvelope{IsAudio: false},
 			pref: PreferenceAuto,
 			quer: false,
 		},
@@ -84,14 +84,14 @@ func TestResolveResponseModeFor_PrecedenciaDaPreferencia(t *testing.T) {
 // DT-29 muda o comportamento de quem nunca escolheu nada.
 func TestResolveResponseMode_CompatibilidadePreservada(t *testing.T) {
 	casos := []struct {
-		msg  IncomingMessage
+		msg  IncomingEnvelope
 		quer bool
 	}{
-		{IncomingMessage{HasExplicitResponseMode: true, RespondWithAudio: true}, true},
-		{IncomingMessage{HasExplicitResponseMode: true, RespondWithAudio: false}, false},
-		{IncomingMessage{RespondWithAudio: true}, true},
-		{IncomingMessage{IsAudio: true}, true},
-		{IncomingMessage{}, false},
+		{IncomingEnvelope{HasExplicitResponseMode: true, RespondWithAudio: true}, true},
+		{IncomingEnvelope{HasExplicitResponseMode: true, RespondWithAudio: false}, false},
+		{IncomingEnvelope{RespondWithAudio: true}, true},
+		{IncomingEnvelope{IsAudio: true}, true},
+		{IncomingEnvelope{}, false},
 	}
 
 	for _, c := range casos {

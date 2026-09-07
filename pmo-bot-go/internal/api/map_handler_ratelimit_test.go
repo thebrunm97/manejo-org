@@ -108,3 +108,4 @@ func TestNewMapHandler_PermiteSemLimiterConfigurado(t *testing.T) {
 		t.Fatalf("handler sem Redis não deveria negar, veio %d", rec.Code)
 	}
 }
+

@@ -48,7 +48,7 @@ type ToolHandler interface {
 type HITLMiddleware struct {
 	Controller    guardrails.HITLHandler
 	Phone         string
-	WhatsApp      ports.MessageSender
+	WhatsApp      ports.ChannelSender
 	Profile       *supabase.Profile
 	HitlRequested map[string]bool
 }
@@ -93,7 +93,18 @@ func (m *HITLMiddleware) Process(ctx context.Context, req *ToolRequest) (ToolRes
 					{"type": "reply", "displayText": "SIM", "id": "SIM"},
 					{"type": "reply", "displayText": "NÃO", "id": "NÃO"},
 				}
-				if err := m.WhatsApp.SendButton(m.Phone, "Confirmação Necessária", confirmMsg, "Esta confirmação expira em 10 minutos", buttons); err != nil {
+				
+				env := ports.OutboundEnvelope{
+					ConversationID: "", // Legacy orchestrator doesn't have convID yet
+					To:             m.Phone,
+					Type:           ports.OutboundTypeButtons,
+					Text:           confirmMsg,
+					Title:          "Confirmação Necessária",
+					Footer:         "Esta confirmação expira em 10 minutos",
+					Buttons:        buttons,
+				}
+				
+				if err := m.WhatsApp.Send(context.Background(), env); err != nil {
 					log.Printf("⚠️ [HITL] Falha ao enviar botões de confirmação: %v", err)
 				}
 			}
@@ -222,3 +233,4 @@ func (h *MCPExecutionHandler) Execute(ctx context.Context, req *ToolRequest) (To
 	}
 	return ToolResponse{Result: result}, nil
 }
+

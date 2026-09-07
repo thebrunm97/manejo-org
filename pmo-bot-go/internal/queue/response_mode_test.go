@@ -15,7 +15,7 @@ func TestJobShouldRespondWithAudioUsesExplicitFlag(t *testing.T) {
 }
 
 func TestJobShouldRespondWithAudioFallsBackToLegacyAudioInput(t *testing.T) {
-	job := &Job{RawPayload: ports.IncomingMessage{IsAudio: true}}
+	job := &Job{RawPayload: ports.IncomingEnvelope{IsAudio: true}}
 
 	if !job.ShouldRespondWithAudio() {
 		t.Fatalf("expected legacy audio input to preserve audio response preference")
@@ -26,7 +26,7 @@ func TestJobShouldRespondWithAudioPrefersExplicitFalseOverLegacyAudio(t *testing
 	job := &Job{
 		RespondWithAudio:        false,
 		HasExplicitResponseMode: true,
-		RawPayload: ports.IncomingMessage{
+		RawPayload: ports.IncomingEnvelope{
 			IsAudio:                 true,
 			HasExplicitResponseMode: true,
 			RespondWithAudio:        false,

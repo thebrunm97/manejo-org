@@ -23,6 +23,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
+	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/testutil"
 )
@@ -44,30 +45,36 @@ func newFailingSupabaseClient(t *testing.T) *supabase.Client {
 	return client
 }
 
-// ─── Mock: MessageSender ──────────────────────────────────────────────────────
-
+// ─── Mock: ChannelSender ───────────────────────────────────────────────────────
+//
+// Migrado de MessageSender (SendMessage/SendButton) para ChannelSender
+// (Send com OutboundEnvelope) junto com a Fase B do multicanal. LastMessage e
+// Sent continuam guardando o texto visível ao produtor: para texto puro é
+// env.Text, para botões (ex.: tela de conferência do onboarding) é
+// env.Description — é ali que pedirConfirmacao põe o corpo da mensagem.
 type mockSender struct {
 	LastMessage string
 	Sent        []string
 }
 
-func (m *mockSender) SendMessage(to, message string) error {
-	m.LastMessage = message
-	m.Sent = append(m.Sent, message)
+func (m *mockSender) registrar(texto string) {
+	m.LastMessage = texto
+	m.Sent = append(m.Sent, texto)
+}
+
+func (m *mockSender) Send(ctx context.Context, env ports.OutboundEnvelope) error {
+	texto := env.Text
+	if env.Type == ports.OutboundTypeButtons {
+		texto = env.Description
+	}
+	m.registrar(texto)
 	return nil
 }
-func (m *mockSender) SendVoice(to, audio string, isPtt bool) error                    { return nil }
-func (m *mockSender) SendReply(to, msg, replyTo string) error                         { return nil }
-func (m *mockSender) SendPresence(ctx context.Context, to string, state string) error { return nil }
-func (m *mockSender) DownloadAudio(id string, raw []byte) ([]byte, string, error)     { return nil, "", nil }
-func (m *mockSender) DownloadImage(id string, raw []byte) ([]byte, string, error) {
+func (m *mockSender) SendTyping(ctx context.Context, channel ports.ChannelType, to string) error {
+	return nil
+}
+func (m *mockSender) DownloadMedia(ctx context.Context, mediaID string, rawPayload []byte) ([]byte, string, error) {
 	return nil, "", nil
-}
-func (m *mockSender) SetPresence(to, presence string) error { return nil }
-func (m *mockSender) SendButton(to string, title, description, footer string, buttons []map[string]string) error {
-	m.LastMessage = description
-	m.Sent = append(m.Sent, description)
-	return nil
 }
 
 // ─── Profile builders ─────────────────────────────────────────────────────────
@@ -411,3 +418,4 @@ func TestFinalizeRegistration_MockSuccess(t *testing.T) {
 	// Verifica se todas as expectativas do mock foram atendidas
 	mockDB.AssertExpectations(t)
 }
+
