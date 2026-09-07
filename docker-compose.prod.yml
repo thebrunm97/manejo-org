@@ -155,7 +155,14 @@ services:
     networks:
       - pmo_prod_net
     depends_on:
-      - clockwork
+      clockwork:
+        condition: service_started
+      # Sem isso o evolution-go tenta abrir a conexao AMQP na largada e, se o
+      # rabbitmq ainda nao estiver pronto, falha uma vez e nao tenta de novo
+      # sozinho (confirmado em producao: log unico as 09:51:16, sem retry
+      # depois disso, apesar do rabbitmq ficar healthy segundos depois).
+      rabbitmq:
+        condition: service_healthy
 
   # Serviço de Cache (Redis)
   redis:
