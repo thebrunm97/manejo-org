@@ -5,9 +5,11 @@
 # e encaminha internamente para pmo-bot-go:8080 (que continua só em
 # 127.0.0.1:8080 na rede docker interna — não expor o Go direto).
 #
-# SITE_DOMAIN = bot.manejo.org (webhook/API do pmo-bot-go).
-# app.manejo.org e admin.manejo.org continuam na Vercel por enquanto — não
-# usar esses dois aqui.
+# SITE_DOMAIN = bot.fyto.io (webhook/API do pmo-bot-go). O domínio
+# manejo.org citado nas versões anteriores deste comentário nunca existiu de
+# fato -- era um placeholder que ficou. fyto.io é o domínio real, já
+# registrado na Hostinger, então SITE_DOMAIN e FRONTEND_DOMAIN vivem como
+# subdomínios dele (bot.fyto.io e manejo.fyto.io).
 #
 # SITE_DOMAIN, FRONTEND_DOMAIN e ACME_EMAIL vêm do .env.prod (injetados no
 # serviço caddy via env_file no docker-compose.prod.yml).
