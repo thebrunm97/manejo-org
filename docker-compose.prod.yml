@@ -72,6 +72,10 @@ services:
       # internal/ports/ratelimit.go).
       REDIS_URL: redis://redis:6379/0
       RABBITMQ_URL: "amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672/"
+      # Dominio do frontend (ver pmo-frontend/ mais abaixo). Nao e segredo --
+      # e so a lista de origens que o navegador tem permissao de chamar essa
+      # API com credenciais (ver internal/middleware/cors.go).
+      ALLOWED_ORIGINS: "https://${FRONTEND_DOMAIN}"
     cap_add:
       - SYS_TIME
     volumes:
@@ -223,6 +227,30 @@ services:
   # Fase 3 — proxy reverso publico com TLS automatico (Let's Encrypt).
   # Unico servico com portas realmente publicas (80/443); tudo o resto na
   # rede pmo_prod_net so fala 127.0.0.1 no host. Ver deploy/Caddyfile.
+  # Frontend (SPA React/Vite) -- build estatico, servido por um Caddy
+  # proprio dentro do container (ver pmo-frontend/Dockerfile). As VITE_*
+  # sao "queimadas" no bundle em build-time, entao precisam estar no
+  # .env.prod ANTES do primeiro `docker compose build`.
+  pmo-frontend:
+    build:
+      context: ./pmo-frontend
+      args:
+        VITE_API_URL: "https://${SITE_DOMAIN}"
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
+        VITE_GOOGLE_MAPS_TILES_KEY: ${VITE_GOOGLE_MAPS_TILES_KEY}
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 128M
+        reservations:
+          cpus: '0.05'
+          memory: 32M
+    networks:
+      - pmo_prod_net
+
   caddy:
     image: caddy:2-alpine
     restart: always
@@ -239,6 +267,7 @@ services:
       - pmo_prod_net
     depends_on:
       - pmo-bot-go
+      - pmo-frontend
 
 networks:
   pmo_prod_net:

@@ -1,18 +1,16 @@
 # Fase 3 — proxy reverso com TLS automático (Let's Encrypt) via Caddy.
 #
-# Substitui o túnel ngrok que hoje encaminha para 127.0.0.1:8080. O Caddy
-# assume esse papel na VPS: recebe HTTPS na porta 443/80 publicamente e
-# encaminha internamente para pmo-bot-go:8080 (que continua só em
+# Substitui o túnel ngrok que antes encaminhava para 127.0.0.1:8080. O
+# Caddy assume esse papel na VPS: recebe HTTPS na porta 443/80 publicamente
+# e encaminha internamente para pmo-bot-go:8080 (que continua só em
 # 127.0.0.1:8080 na rede docker interna — não expor o Go direto).
 #
-# TODO (Bruno): confirmar o domínio definitivo antes de subir. O DNS já foi
-# apontado pro IP da VPS (Fase 3, item 1) — falta só saber qual subdomínio
-# usar aqui (ex.: bot.manejo.org, webhook.manejo.org, api.manejo.org...).
-# app.manejo.org e admin.manejo.org já existem e apontam pro frontend
-# (Vercel) — não usar esses dois aqui.
+# SITE_DOMAIN = bot.manejo.org (webhook/API do pmo-bot-go).
+# app.manejo.org e admin.manejo.org continuam na Vercel por enquanto — não
+# usar esses dois aqui.
 #
-# SITE_DOMAIN e ACME_EMAIL vêm do .env.prod (adicionados abaixo no
-# docker-compose.prod.yml via variável de ambiente do serviço caddy).
+# SITE_DOMAIN, FRONTEND_DOMAIN e ACME_EMAIL vêm do .env.prod (injetados no
+# serviço caddy via env_file no docker-compose.prod.yml).
 
 {$SITE_DOMAIN} {
 	# Encaminha tudo pro pmo-bot-go. Se no futuro for preciso expor o
@@ -26,6 +24,23 @@
 
 	log {
 		output file /data/access.log {
+			roll_size 10mb
+			roll_keep 5
+		}
+	}
+}
+
+# Frontend (SPA React/Vite) migrando da Vercel pra cá. Serve o build
+# estático já pronto dentro do container pmo-frontend (ver
+# pmo-frontend/Dockerfile e pmo-frontend/Caddyfile para o fallback de SPA
+# routing e os headers de cache do service worker).
+{$FRONTEND_DOMAIN} {
+	reverse_proxy pmo-frontend:80
+
+	tls {$ACME_EMAIL}
+
+	log {
+		output file /data/access-frontend.log {
 			roll_size 10mb
 			roll_keep 5
 		}

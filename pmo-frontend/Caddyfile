@@ -1,0 +1,19 @@
+# Serve o build estatico (dist/) do SPA, replicando o comportamento que o
+# vercel.json ja definia na Vercel: fallback de rota para index.html (SPA
+# client-side routing) e cache-busting em /sw.js e /manifest.webmanifest
+# (service worker do PWA -- sem isso o navegador pode ficar preso numa
+# versao antiga do app depois de um deploy).
+
+:80 {
+	root * /srv
+	encode gzip zstd
+
+	@sw path /sw.js
+	header @sw Cache-Control "public, max-age=0, must-revalidate"
+
+	@manifest path /manifest.webmanifest
+	header @manifest Cache-Control "public, max-age=0, must-revalidate"
+
+	try_files {path} /index.html
+	file_server
+}
