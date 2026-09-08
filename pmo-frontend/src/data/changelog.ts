@@ -11,6 +11,31 @@ export interface ChangelogEntry {
 
 export const changelogData: ChangelogEntry[] = [
     {
+        version: "0.20.0",
+        date: "2026-09-08",
+        title: "Mapa por Satélite, Novos Canais de Conversa e Dados Mais Protegidos 🛰️",
+        description: "Um mês inteiro de melhorias nos bastidores: o mapa da sua propriedade ganhou visão por satélite com a saúde da lavoura em cada talhão, você já pode conversar com o assistente pelo Telegram e pelo Chat Web, e reforçamos a proteção dos seus dados de ponta a ponta.",
+        sections: [
+            {
+                type: "New",
+                items: [
+                    "Mapa por Satélite com Saúde da Lavoura: Novo painel de camadas no mapa mostra imagens de satélite da sua propriedade e um indicador de vigor (NDVI) calculado talhão por talhão.",
+                    "Janela Ideal de Plantio: Nova consulta que cruza sua cultura, cidade e safra com os dados oficiais do MAPA (ZARC) para indicar o período mais seguro de plantio, reduzindo o risco climático.",
+                    "Converse Onde Preferir: Além do WhatsApp, o assistente agora também atende pelo Telegram e por um Chat Web direto no navegador.",
+                    "Cadastro Simplificado: Login e vínculo de conta agora podem ser feitos com um link mágico enviado por e-mail, sem precisar criar ou lembrar senha."
+                ]
+            },
+            {
+                type: "Improvements",
+                items: [
+                    "Segurança de Dados Reforçada: Fechamos diversas brechas que, em situações específicas, poderiam permitir acesso a dados de outra conta ou organização — seus dados agora ficam ainda mais isolados e protegidos.",
+                    "Assistente Mais Estável: O robô do WhatsApp agora se reconecta sozinho de verdade quando cai, e as respostas da IA chegam mais rápido graças a um novo modo de streaming.",
+                    "Registros Offline Mais Confiáveis: Corrigidos erros ao registrar limpeza, compostagem, análise de solo com valor zero e no reconhecimento de áudio em conexões instáveis."
+                ]
+            }
+        ]
+    },
+    {
         version: "0.19.0",
         date: "2026-08-24",
         title: "Monitoramento 24h: agora sabemos na hora se algo sai do ar 📡",

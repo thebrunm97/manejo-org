@@ -2,6 +2,36 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [0.20.0] - 2026-09-08 - "Mapa por satélite, novos canais de atendimento e blindagem de dados 🛰️"
+
+Um mês inteiro de trabalho de bastidor: o mapa da propriedade ganhou visão de satélite com saúde da lavoura por talhão, o assistente passou a atender também por Telegram e Chat Web (além do WhatsApp), e a plataforma migrou para infraestrutura própria com uma varredura de segurança que fechou uma série de brechas de isolamento entre contas. Também entra a primeira consulta de janela de plantio usando dados oficiais do MAPA (ZARC).
+
+### ✨ Funcionalidades (Features)
+* **Mapa por Satélite com NDVI:** Novo painel de camadas no mapa da propriedade, com imagens de satélite (Google Tiles, com fallback Esri) via Google Earth Engine e cálculo do NDVI médio dentro do polígono de cada talhão — um indicador visual de vigor da lavoura direto no mapa.
+* **Janela de Plantio (ZARC/MAPA):** Nova consulta que cruza cultura, cidade/UF e safra com a tábua de risco climático do Zoneamento Agrícola de Risco Climático do MAPA, indicando a janela recomendada de plantio.
+* **Atendimento Multicanal:** O assistente deixa de depender só do WhatsApp — a arquitetura de envio/entrega de mensagens (`ChannelSender`/`DeliveryManager`) agora suporta Telegram e Chat Web/PWA como canais adicionais.
+* **Onboarding por Link Mágico:** Cadastro e login simplificados com vínculo de conta existente via código enviado por e-mail (OTP), sem precisar criar senha nem duplicar perfil.
+* **Fila e Rate Limiting no Redis:** Novo limitador de taxa integrado ao Redis (com modo "degradar aberto" para não travar o atendimento se o Redis cair) e integração com RabbitMQ para desacoplar o processamento de mensagens.
+* **Sincronização Offline:** Motor inicial de sincronização para produtores logados, preparando o app para uso em campo com conexão instável.
+
+### 🛡 Segurança (Zero-Trust Hardening)
+* **Fechamento de Brechas de Isolamento entre Contas (IDOR/RLS):** Corrigidas múltiplas falhas que, em cenários específicos, permitiam bypass de Row Level Security e vazamento de dados entre organizações/tenants — incluindo a view de conversas recentes, RPCs sem checagem de argumento e funções `SECURITY DEFINER` órfãs.
+* **Validação de CPF/CNPJ:** O bot agora valida o dígito verificador antes de gravar CPF/CNPJ, rejeitando documentos inválidos na origem.
+* **Sem Vazamento de Token em Log:** Corrigida uma falha que expunha o token de autenticação da Evolution API em texto plano nos logs.
+* **Deduplicação de Mensagens:** Proteção contra reprocessamento do mesmo `msg_id` recebido mais de uma vez pelo webhook.
+
+### 🛠 Infraestrutura e Deploy
+* **Migração para VPS Própria:** Backend, frontend e serviços de suporte (RabbitMQ, banco local) migraram da Vercel/infraestrutura anterior para uma VPS dedicada (Hostinger), com hardening de rede e scripts de migração documentados.
+* **Streaming e Auto-Recuperação:** As chamadas ao Gemini passaram a usar streaming com detecção de travamento por tempo até o primeiro token (TTFT); o self-heal de reconexão do WhatsApp deixou de rodar em modo simulado (dry-run) e agora reconecta de verdade em produção.
+* **RAG Unificado:** Pipeline de ingestão de documentos consolidado em uma única tabela (`farm_documents`), com fallback de OCR para documentos sem texto extraível.
+
+### 🐛 Correções de Bugs (Bug Fixes)
+* **Onboarding:** Corrigido travamento em saudações iniciais e em fluxos de aprovação humana (HITL) sem cadastro prévio.
+* **Registros Offline:** Corrigidos bugs de registro de limpeza/compostagem, cancelamento de limpeza, análise de solo com valor zero e retry de reconhecimento de voz (STT).
+* **Compressão de Histórico:** Corrigida corrupção de histórico de conversa durante compressão assíncrona e status incorreto de job de ingestão de documentos.
+* **Webhook:** O bot deixa de processar como mensagem de usuário os próprios eventos de status, grupo e eco enviados por ele mesmo.
+* **Mapa:** Diversos ajustes de estabilidade — edição de talhão não recarrega mais a tela inteira, painel do talhão reposicionado e resumido no celular, e distinção entre permissão negada e falha de comunicação com o Earth Engine.
+
 ## [0.19.0] - 2026-08-24 - "Monitoramento 24h: agora sabemos na hora se algo sai do ar 📡"
 
 Reforçamos os bastidores do assistente do WhatsApp para detectar e avisar a equipe imediatamente em caso de instabilidade — antes que o produtor precise perceber.
