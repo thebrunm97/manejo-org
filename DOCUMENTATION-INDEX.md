@@ -177,6 +177,7 @@ Mapa central de todos os arquivos de documentação do projeto. Gerado em 06/09/
 |---|---|
 | [**tools/ponytail-mcp/README.md**](./tools/ponytail-mcp/README.md) | Orquestrador Ponytail (MCP). |
 | [**deploy/load-test/README.md**](./deploy/load-test/README.md) | Testes de carga / deploy. |
+| [**deploy/zarc/README.md**](./deploy/zarc/README.md) | Base local do ZARC (janela de plantio): build, atualização de safra, backup. |
 | [**RAW/README.md**](./RAW/README.md) | Materiais brutos. |
 | [**design-system/manejoorg-changelog/**](./design-system/manejoorg-changelog/) | Changelog do design system. |
 | [**thoughts/plans/**](./thoughts/plans/) e [**thoughts/research/**](./thoughts/research/) | Planos e pesquisas em andamento. |
