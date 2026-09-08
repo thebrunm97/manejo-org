@@ -146,6 +146,9 @@ legacy_python/
 # ── Archive (reorganization) ──────────────────
 _archive/
 
+# ── Vendored 3rd-party repo, accidentally committed as broken gitlink (DT-30) ──
+/mcp/
+
 # ── Load test scratch (root-anchored) ─────────
 /loadtest*.go
 /payload_audio_stress.json
