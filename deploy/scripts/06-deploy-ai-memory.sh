@@ -30,6 +30,17 @@ if ! grep -q "^MEMORIA_DOMAIN=" .env.prod; then
   exit 1
 fi
 
+if ! grep -q "^AI_MEMORY_ALLOWED_HOSTS=" .env.prod; then
+  MEMORIA_DOMAIN_VALUE=$(grep "^MEMORIA_DOMAIN=" .env.prod | cut -d= -f2)
+  echo "ERRO: AI_MEMORY_ALLOWED_HOSTS nao esta definido em .env.prod."
+  echo "  O ai-memory recusa qualquer Host header fora dessa lista (defesa"
+  echo "  contra DNS-rebinding) -- sem isso, o Caddy encaminha a requisicao"
+  echo "  mas o ai-memory responde 'forbidden host'."
+  echo "  Adicione uma linha tipo:"
+  echo "  AI_MEMORY_ALLOWED_HOSTS=$MEMORIA_DOMAIN_VALUE,localhost,127.0.0.1"
+  exit 1
+fi
+
 if ! grep -q "^AI_MEMORY_AUTH_TOKEN=" .env.prod || grep -q "^AI_MEMORY_AUTH_TOKEN=$" .env.prod; then
   echo "AI_MEMORY_AUTH_TOKEN ainda nao esta definido em .env.prod."
   echo ""
@@ -45,14 +56,14 @@ if ! grep -q "^AI_MEMORY_AUTH_TOKEN=" .env.prod || grep -q "^AI_MEMORY_AUTH_TOKE
 fi
 
 echo "==> Subindo o ai-memory (mesclado ao compose principal, mesma network pmo_prod_net)"
-docker compose -f docker-compose.prod.yml -f deploy/docker-compose.ai-memory.yml up -d ai-memory
+docker compose --env-file .env.prod -f docker-compose.prod.yml -f deploy/docker-compose.ai-memory.yml up -d --force-recreate ai-memory
 
-echo "==> Recarregando o Caddy para pegar o bloco novo do Caddyfile (memoria.fyto.io)"
-docker compose -f docker-compose.prod.yml restart caddy
+echo "==> Recriando o Caddy para ele enxergar o MEMORIA_DOMAIN novo (restart sozinho nao releria o .env.prod)"
+docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --force-recreate caddy
 
 echo "==> Aguardando o ai-memory ficar saudavel..."
 sleep 5
-docker compose -f docker-compose.prod.yml -f deploy/docker-compose.ai-memory.yml ps ai-memory
+docker compose --env-file .env.prod -f docker-compose.prod.yml -f deploy/docker-compose.ai-memory.yml ps ai-memory
 
 echo ""
 echo "==> Checklist manual desta fase:"

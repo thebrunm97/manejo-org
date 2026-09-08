@@ -25,8 +25,12 @@
    desatualizado — verifique com `grep MEMORIA .env.prod` antes):
    ```
    MEMORIA_DOMAIN=memoria.fyto.io
+   AI_MEMORY_ALLOWED_HOSTS=memoria.fyto.io,localhost,127.0.0.1
    AI_MEMORY_AUTH_TOKEN=
    ```
+   `AI_MEMORY_ALLOWED_HOSTS` é obrigatório — sem ele o ai-memory recusa
+   qualquer requisição vinda do Caddy com `forbidden host` (defesa contra
+   DNS-rebinding, não é opcional para deploy atrás de proxy reverso).
    Deixe `AI_MEMORY_AUTH_TOKEN` vazio por enquanto — o script do passo 3
    detecta que está faltando e te dá o comando pra gerar.
 
