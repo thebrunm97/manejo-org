@@ -44,6 +44,7 @@ contra o código na data indicada no rodapé da nota.
 - [[motor-de-sincronizacao-offline]] — fila IndexedDB e reconciliação.
 - [[mapa-e-geoprocessamento]] — MapLibre, desenho de talhões e Earth Engine.
 - [[legado-python]] — o que sobrou do bot original.
+- [[ai-memory]] — memória de longo prazo cross-agent/cross-máquina.
 
 ## Convenções
 
