@@ -36,6 +36,22 @@ WHERE channel IS NULL;
 -- ║ 3. Popular tenant_id em conversations                            ║
 -- ╚══════════════════════════════════════════════════════════════════╝
 
+-- pmos.organizacao_id também não existe em nenhuma migration anterior nem em
+-- produção (mesmo gap de profiles.tenant_id, ver A.6) — ADR-010 ainda não
+-- fechado. Nullable, mesmo padrão do resto da coluna de tenant nesta feature.
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'pmos'
+          AND column_name = 'organizacao_id'
+    ) THEN
+        ALTER TABLE public.pmos
+            ADD COLUMN organizacao_id BIGINT REFERENCES public.organizacoes(id) ON DELETE SET NULL;
+    END IF;
+END $$;
+
 -- Derivar tenant_id da organização ligada ao PMO ativo do perfil
 UPDATE public.conversations c
 SET tenant_id = pmo.organizacao_id
