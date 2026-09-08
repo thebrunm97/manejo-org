@@ -179,3 +179,9 @@ wiki/.obsidian/
 # internal/mcp) — quebrava o checkout do CI ("No url found for submodule
 # path 'mcp'"). Removido do controle de versão; ignorado para não voltar.
 /mcp/
+
+# ZARC — artefato e cache de build (reconstrutíveis por scripts/ingestion/zarc_build.py)
+.cache/
+data/*.sqlite
+# Regerado a cada build; acompanha o .sqlite no backup do Drive, nao o repo.
+data/*.MANIFEST.txt

@@ -76,11 +76,28 @@ services:
       # e so a lista de origens que o navegador tem permissao de chamar essa
       # API com credenciais (ver internal/middleware/cors.go).
       ALLOWED_ORIGINS: "https://${FRONTEND_DOMAIN}"
+      # Caminho da base do ZARC dentro do contêiner. Fica aqui, e não no
+      # .env.prod, pelo mesmo motivo do REDIS_URL acima: é topologia da stack,
+      # não segredo.
+      ZARC_DB_PATH: /data/zarc.sqlite
     cap_add:
       - SYS_TIME
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ./pmo-bot-go/.secrets:/.secrets:ro
+      # Base do ZARC (Zoneamento Agrícola de Risco Climático, MAPA).
+      #
+      # É um asset estático, não um banco: dado público, somente-leitura,
+      # imutável entre safras, construído fora daqui por
+      # scripts/ingestion/zarc_build.py e trazido pronto por scp. Atualizar de
+      # safra é trocar o arquivo e reiniciar; rollback é restaurar o anterior.
+      #
+      # O :ro não é decoração — é a garantia de que nenhum código vai passar a
+      # escrever nele por descuido. Ver deploy/zarc/README.md.
+      #
+      # Ausência do arquivo NÃO derruba o bot: a ferramenta
+      # consultar_janela_plantio responde "unavailable" (ver cmd/server/main.go).
+      - ./data/zarc.sqlite:/data/zarc.sqlite:ro
     dns:
       - 8.8.8.8
       - 1.1.1.1

@@ -9,6 +9,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
+	"github.com/thebrunm97/pmo-bot-go/internal/zarc"
 )
 
 // Embedder defines the contract for generating text embeddings,
@@ -62,7 +63,19 @@ type Server struct {
 	embedder    Embedder
 	llmProvider EvidenceEvaluator
 	tools       map[string]Tool
+
+	// zarc é a base local do Zoneamento Agrícola de Risco Climático. Fica fora
+	// de NewServer de propósito: são 11 call sites, vários deles testes que
+	// passam nil,nil,nil,nil, e nenhum deles precisa do ZARC. Quem tem o
+	// arquivo chama SetZarcStore — ver cmd/server/main.go.
+	zarc *zarc.Store
 }
+
+// SetZarcStore liga a base do ZARC ao servidor. Chamar com nil (ou não chamar)
+// deixa a ferramenta consultar_janela_plantio respondendo "unavailable", que é
+// o comportamento correto em staging e na máquina do desenvolvedor, onde o
+// arquivo de ~400 MB normalmente não existe.
+func (s *Server) SetZarcStore(st *zarc.Store) { s.zarc = st }
 
 // ToolCategory defines if a tool is for knowledge (RAG) or farm records (DATABASE)
 type ToolCategory string

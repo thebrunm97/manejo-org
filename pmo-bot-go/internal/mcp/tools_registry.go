@@ -681,6 +681,29 @@ func (s *Server) InitializeTools() {
 
 	s.RegisterTool(Tool{
 		Definition: llm.FerramentaAgnostica{
+			Name: "consultar_janela_plantio",
+			Description: "Consulta a janela oficial de plantio (ZARC/MAPA) de uma cultura no municipio da propriedade: em quais periodos do ano o plantio tem risco climatico de 20%, 30% ou 40%. Use sempre que o produtor perguntar se pode plantar algo agora, qual a melhor epoca de plantio, se esta atrasado, ou ate quando da para plantar.",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"cultura": map[string]interface{}{
+						"type":        "string",
+						"description": "Nome da cultura (ex: Cebola, Batata, Mandioca, Banana).",
+					},
+					"cidade_informada": map[string]interface{}{
+						"type":        "string",
+						"description": "Cidade e estado informados na mesma frase, com a UF (ex: 'Uberlandia, MG'). Apenas se o produtor perguntar explicitamente sobre outro municipio; senao omita.",
+					},
+				},
+				"required": []string{"cultura"},
+			},
+		},
+		Category: CategoryRAG, // dado oficial de referencia, somente leitura
+		Handler:  s.handleConsultarJanelaPlantio,
+	})
+
+	s.RegisterTool(Tool{
+		Definition: llm.FerramentaAgnostica{
 			Name:        "cadastrar_propriedade",
 			Description: "Cadastra uma nova propriedade rural (fazenda/sítio) e cria automaticamente o PMO inicial para ela. Seleciona a nova propriedade como ativa para o produtor.",
 			Parameters: map[string]interface{}{
