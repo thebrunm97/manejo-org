@@ -51,29 +51,60 @@
 
 ## Fase 3 — Conectar os agentes locais
 
-Em cada máquina (desktop, laptop):
+Verificado e funcionando (2026-09-08, Windows nativo, sem WSL2). Em cada
+máquina:
 
-1. Adicionar ao `.mcp.json` do projeto (ou config equivalente do
-   cliente) — **não commitar o token**, `.mcp.json` já está no
-   `.gitignore` deste repo:
-   ```json
-   "ai-memory-remote": {
-     "url": "https://memoria.fyto.io/mcp",
-     "headers": { "Authorization": "Bearer <TOKEN_AQUI>" }
-   }
+1. Baixar `ai-memory-windows-x86_64.zip` da [release mais recente](https://github.com/akitaonrails/ai-memory/releases/latest),
+   conferir o `.sha256` correspondente, e extrair. Copiar `ai-memory.exe`
+   **e a pasta `hooks/` inteira** para o mesmo diretório (ex.:
+   `~/.local/bin/`) — sem a pasta `hooks/` ao lado do exe, o passo 3
+   falha com "could not locate hooks directory". Adicionar esse
+   diretório ao PATH do usuário (persistente):
+   ```powershell
+   $dir = "C:\Users\<usuario>\.local\bin"
+   $current = [Environment]::GetEnvironmentVariable("Path", "User")
+   [Environment]::SetEnvironmentVariable("Path", "$current;$dir", "User")
    ```
+   (reiniciar terminais/Claude Code depois, pra herdar o PATH novo)
 
-2. Instalar os hooks locais (captura automática de sessão). Confirme o
-   comando exato com `ai-memory --help` na sua máquina antes — o release
-   v2.0 documenta `install-mcp`; hooks de lifecycle podem estar sob um
-   subcomando diferente dependendo da versão instalada:
+2. Registrar o MCP server **no escopo global** do Claude Code
+   (`~/.claude.json`, vale pra todos os projetos — não usar `.mcp.json`
+   por projeto pra isso, a menos que você queira memória isolada por
+   repositório):
    ```bash
-   ai-memory install-mcp --client claude-code --server https://memoria.fyto.io --auth-token <TOKEN_AQUI>
+   ai-memory install-mcp --client claude-code --apply --session-aware \
+     --server-url "https://memoria.fyto.io/mcp" \
+     --auth-token "<TOKEN_AQUI>"
    ```
+   `--session-aware` registra um bridge `stdio` local (`ai-memory
+   mcp-bridge`) em vez de uma URL HTTP direta — é o que permite múltiplas
+   sessões concorrentes do Claude Code terem contexto de projeto
+   separado. `--apply` já escreve direto em `~/.claude.json` com backup
+   automático.
 
-3. Repetir para outros projetos em `DEV/` se quiser memória compartilhada
-   entre eles (mesmo servidor, mesmo token — o ai-memory separa por
-   projeto internamente via o nome do diretório do checkout).
+3. Instalar os hooks de lifecycle (captura automática — sem isso você
+   precisaria chamar as ferramentas `memory_*` manualmente):
+   ```bash
+   ai-memory install-hooks --agent claude-code --apply \
+     --server-url "https://memoria.fyto.io" \
+     --auth-token "<TOKEN_AQUI>" \
+     --project-strategy repo-root
+   ```
+   `--project-strategy repo-root` faz cada sessão resolver o projeto pela
+   raiz do repo git (bom para monorepos com subpastas/worktrees, evita
+   fragmentar a memória por subdiretório). Isso escreve em
+   `~/.claude/settings.json` (com backup automático) usando o binário
+   nativo (`ai-memory.exe hook --event ...`), sem depender dos `.ps1`.
+
+4. Reiniciar o Claude Code pra carregar o MCP server novo. Testar com uma
+   chamada real (ex.: pedir pra IA rodar `memory_status` ou
+   `memory_briefing`).
+
+5. Repetir os passos 1-3 em cada máquina (desktop, laptop). Como o
+   registro é global (`~/.claude.json`), memória fica automaticamente
+   compartilhada entre todos os projetos em `DEV/` que você abrir — o
+   ai-memory separa por projeto internamente (nome do diretório/repo,
+   não precisa reconfigurar nada por projeto).
 
 ## Notas de segurança
 
