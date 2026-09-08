@@ -167,6 +167,16 @@
 
 ## 🎯 Próxima Frente Ativa
 
+> **Atualização 2026-09-08:** frente ativa agora é o **sprint de segurança
+> pré-viagem** (~2 dias) — plano completo, sequenciado e com checklist em
+> [`PLAN-sprint-pre-viagem-2026-09-08.md`](./PLAN-sprint-pre-viagem-2026-09-08.md).
+> Foco: RPCs/RLS abertas a `anon` (DT-93/94/95/96/106/107/108/111), auth
+> sem rate-limit (DT-109/126), integridade de dados no onboarding
+> (DT-74/75/77/88), hardening básico do servidor Go (DT-79/80) e
+> credenciais/portas do RabbitMQ (DT-122). O restante deste documento
+> abaixo desta nota é histórico de frentes anteriores (VPS, DT-58/59) —
+> mantido por registro, não é mais a prioridade corrente.
+
 > **Mudança de prioridade decidida em 2026-08-24:** **DT-58** (cadastro 100% via WhatsApp) e **DT-59** (centralização do backend em Go) assumiram a frente ativa, a pedido do responsável. A cadeia da VPS descrita abaixo (`DT-45` → `DT-38`, prazo ~2026-09-05) foi **conscientemente despriorizada** — não esquecida. Registrado aqui de propósito: o prazo de 2026-09-05 continua de pé no calendário e ninguém o cancelou; o que mudou foi a ordem de ataque. Se a data se aproximar sem o corte para VPS, a decisão a rever é esta.
 >
 > **Ordem de execução acordada para a nova frente:**
