@@ -33,6 +33,15 @@ O Motor Proativo cria "skills" baseadas nas interações. Se ele resolve um prob
 * 📊 **Effort:** High
 
 ### Option B: Three-Tier Persistent Memory (Cross-Session Recall)
+
+> **✅ Implementado** (verificado 2026-09-08) — ver a seção "5.1 —
+> Memória Persistente" em
+> [`architecture/MULTI_AGENT_ARCHITECTURE.md`](architecture/MULTI_AGENT_ARCHITECTURE.md)
+> para a arquitetura real, que evoluiu de forma mais sofisticada do que
+> o desenho abaixo (scoring automático de importância, Redis como hot
+> tier, retry de embeddings). Texto original mantido abaixo como
+> histórico do brainstorm que motivou a decisão.
+
 O Motor Proativo tem uma memória de curto prazo, longo prazo (FTS5) e modelo do usuário (Honcho). Atualmente, nossa arquitetura (Fase 4) só tem injeção de memória de *curtíssimo* prazo.
 * **Como no ManejoORG:** Usar o Supabase (PostgreSQL + pgvector) para manter uma `SessionDB`. Sempre que o usuário falar no WhatsApp, o bot faz um RAG não só nas cartilhas, mas nas **conversas anteriores do próprio produtor**.
 * ✅ **Pros:** O produtor não precisa repetir que "tem canteiros de tomate" ou "está em transição orgânica".
@@ -49,6 +58,12 @@ O Motor Proativo tem um cron embutido que interage ativamente.
 ---
 
 ## 💡 Recommendation (Recomendação do Orquestrador)
+
+> **Atualização (2026-09-08):** a Option B já está implementada (ver
+> banner na seção acima). O texto original da recomendação fica
+> abaixo como histórico; o próximo passo natural, se/quando decidido,
+> é a **Option C (Scheduled Automations)** — que segue sem
+> implementação.
 
 Recomendo iniciarmos pela **Option B (Three-Tier Persistent Memory via Supabase)** e, em seguida, a **Option C (Scheduled Automations)**.
 

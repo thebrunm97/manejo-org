@@ -463,12 +463,68 @@ if err == nil && historyManager != nil {
 
 ### 5.1 — Memória Persistente (Three-Tier Memory)
 
-Inspirado no Hermes Agent, implementaremos uma memória de longo prazo vetorial no Supabase (`@mcp:supabase-local:`) para manter um perfil contínuo da fazenda e das necessidades do produtor. Isso evitará que o usuário tenha que repetir contexto entre diferentes sessões do WhatsApp.
+> **Status: ✅ Implementado** (verificado 2026-09-08). A arquitetura
+> abaixo substitui a descrição original — o sistema evoluiu de forma
+> mais sofisticada do que o desenho inicial previa (scoring automático
+> de importância, locks distribuídos, retry de embeddings, telemetria
+> Prometheus), então esta seção documenta o que existe de fato, não
+> mais um plano.
 
-**Tabela `user_memory_profiles`:**
-- Armazenará fatos processados a partir das conversas (ex: "Transição orgânica iniciada em 2025", "Solo com deficiência de boro").
-- Campo `embedding` para busca semântica via `pgvector`.
-- O bot fará um RAG neste perfil antes de consultar a base de cartilhas.
+Inspirado no Hermes Agent (NousResearch), o bot mantém memória em três
+camadas reais, cada uma com TTL e propósito diferentes:
+
+1. **Curtíssimo prazo (in-process)** — `internal/history/manager.go`.
+   Mapa em memória por `conversationID`, com TTL e "Semantic Pruning"
+   (`PrefixGen`/`TriggerAsyncCompression`) para truncar sem cortar um
+   turno no meio. Não persiste — some no restart do processo.
+
+2. **Curto/médio prazo (Redis + Supabase cache)** —
+   `internal/memory/service.go` (`Service.WriteFragmentAsync` /
+   `Service.GetActiveContext`). Toda mensagem passa por
+   `EvaluateImportance`: score < 0.4 é descartado, só score ≥ 0.7 gera
+   embedding. Redis guarda o hot path sem custo de embedding — lista
+   "recent" (últimos 3, TTL 4h) + ZSET "scored" por importância (poda
+   automática acima de 50 membros, TTL 2h/4h). Quando o Redis não
+   resolve, cai para busca semântica na tabela `pmo_memory_cache`
+   (`supabase/migrations/20260905150600_a_create_pmo_memory_cache_table.sql`,
+   RPCs `save_pmo_memory_cache`/`match_pmo_memory_cache` em
+   `20260905153000_b_...`), com TTL de 3 dias (score 0.70–0.84) ou 7
+   dias (score ≥ 0.85) e retry job para embeddings que falharam
+   (`StartRetryJob`).
+
+3. **Longo prazo (perfil durável, sem TTL)** — tabela
+   `user_memory_profiles` (`pmo-bot-go/migrations/008_create_user_memory.sql`)
+   + RPC `match_user_memory`
+   (`pmo-bot-go/migrations/009_match_user_memory_rpc.sql`) + cliente Go
+   `internal/supabase/memory.go` (`SaveUserMemory`/`MatchUserMemory`).
+   Armazena fatos curados e permanentes (ex: "Transição orgânica
+   iniciada em 2025", "Solo com deficiência de boro"), buscados por
+   `pgvector` e injetados no prompt antes da resposta — chamado de
+   `internal/mcp/tools_memory.go:58` (escrita) e
+   `internal/state/specialized_handlers.go:104` (leitura).
+
+**Comparação com o Hermes Agent** (nota, não item de trabalho):
+- O Hermes separa mais claramente "sempre no contexto" (snapshot
+  pequeno, sem embedding, `MEMORY.md`/`USER.md`) de "busca sob demanda"
+  (FTS5 sobre a transcrição bruta completa, sem limite). O nosso
+  sistema não tem equivalente ao segundo — `pmo_memory_cache` só guarda
+  fragmentos que já passaram o filtro de importância, nunca a conversa
+  bruta inteira. É uma escolha deliberada de custo, não uma lacuna a
+  fechar às pressas, mas vale ter documentado.
+- O Hermes força consolidação com erro explícito quando o snapshot
+  estoura o limite de caracteres, em vez de auto-compactar em
+  silêncio; o `EvaluateImportance` daqui resolve um problema parecido
+  por outro ângulo (gate na escrita, não revisão quando cheio).
+- O Hermes tem um contrato de "provider plugável"
+  (`memory_provider.py`) para trocar de backend sem reescrever o core;
+  aqui a lógica das 3 camadas está direto no `Service`. Não é um
+  problema hoje (só existe um backend), só uma diferença estrutural.
+
+> ⚠️ Débito técnico conhecido, fora do escopo desta seção: as RPCs
+> `save_pmo_memory_cache`/`match_pmo_memory_cache`/`match_user_memory`
+> ainda não checam `auth.uid()` e têm `EXECUTE` liberado além do
+> necessário — rastreado como DT-93/DT-106 em
+> `pmo-bot-go/docs/debitos_tecnicos.md`.
 
 ### 5.2 — Automação Proativa (Cron Worker)
 
@@ -483,4 +539,4 @@ O PMO Bot deixará de ser apenas reativo. Usando um scheduler em Go (`robfig/cro
 ---
 
 *Documento gerado pelo Arquiteto de Software Backend Sênior — ManejoORG Multi-Agent Migration.*
-*Aguardando aprovação para início da implementação das Fases 1 a 5.*
+*Fase 5.1 (Memória Persistente) confirmada implementada em 2026-09-08 — ver nota de status na seção acima. Status das demais fases não foi reverificado nesta rodada; não assumir pelo texto acima sem checar o código.*
