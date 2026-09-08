@@ -17,19 +17,27 @@
 -- As policies de substituição replicam exatamente o que já está ativo e correto no
 -- Postgres local (mesmo nome e mesma definição), fechando também a divergência.
 
+-- DROP IF EXISTS também no nome-alvo, não só na policy permissiva: em qualquer
+-- ambiente onde 20260402000000_create_core_app_tables.sql tenha efetivamente
+-- criado a policy original com o mesmo nome (ex.: uma réplica local/CI aplicada
+-- do zero, fora do drift real de produção descrito acima), o CREATE POLICY sem
+-- essa guarda falharia com "policy already exists" (SQLSTATE 42710).
 DROP POLICY IF EXISTS "Permitir tudo para autenticados" ON public.canteiros;
+DROP POLICY IF EXISTS "Acesso via talhão do usuário" ON public.canteiros;
 CREATE POLICY "Acesso via talhão do usuário" ON public.canteiros
   FOR ALL
   TO authenticated
   USING (talhao_id IN (SELECT id FROM public.talhoes WHERE user_id = auth.uid()));
 
 DROP POLICY IF EXISTS "Permitir logados" ON public.analises_solo;
+DROP POLICY IF EXISTS "Acesso via talhão do usuário" ON public.analises_solo;
 CREATE POLICY "Acesso via talhão do usuário" ON public.analises_solo
   FOR ALL
   TO authenticated
   USING (talhao_id IN (SELECT id FROM public.talhoes WHERE user_id = auth.uid()));
 
 DROP POLICY IF EXISTS "Permitir tudo para autenticados" ON public.culturas_anuais;
+DROP POLICY IF EXISTS "Acesso via PMO do usuário" ON public.culturas_anuais;
 CREATE POLICY "Acesso via PMO do usuário" ON public.culturas_anuais
   FOR ALL
   TO authenticated
