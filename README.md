@@ -41,7 +41,7 @@ O sistema utiliza uma abordagem de **Thin Backend** em Go, delegando a lógica p
 ```mermaid
 graph TD
     User([Produtor]) <-->|WhatsApp| WPP[Evolution API Gateway]
-    WPP <-->|Webhook POST + HMAC| BE[Backend Go - Gin]
+    WPP <-->|Webhook POST + Token| BE[Backend Go - Gin]
     BE -->|Intent Classification| ROUTER{AI Router}
     ROUTER -->|Registro| DB_OP[DB Operator - Gemini 2.0 Flash]
     ROUTER -->|Agrônomo| AGRO[Agronomist - Digital Engine]
@@ -68,7 +68,7 @@ sequenceDiagram
     participant S as Supabase
 
     P->>W: Mensagem/Áudio WhatsApp
-    W-->>G: POST /webhook/evolution (HMAC)
+    W-->>G: POST /webhook/evolution (Bearer token)
     G->>G: Deduplica + Transcreve (se áudio)
     G->>R: Classifica intenção
     R->>A: Roteia para agente especialista
@@ -229,7 +229,7 @@ Inspirado em arquiteturas cognitivas avançadas (modelo Hermes), o PMO Bot evolu
 ---
 
 ## 🔒 Segurança
-- **HMAC Validation:** Assinatura de payloads nos webhooks para evitar requisições forjadas.
+- **Token Validation:** Comparação em tempo constante (`hmac.Equal`) do token compartilhado do webhook contra ataques de temporização — não é assinatura HMAC do corpo da requisição, então não detecta adulteração do payload.
 - **LoopGuard:** Proteção no nível da aplicação contra loops infinitos de ferramentas de IA.
 - **RLS (Row Level Security):** Políticas granulares no banco de dados para isolamento de usuários/PMOs.
 - **Attack Surface:** Imagens Docker minimalistas e isolamento de rede interna.
