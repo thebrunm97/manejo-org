@@ -50,8 +50,14 @@ BEGIN
           AND table_name = 'conversations'
           AND column_name = 'tenant_id'
     ) THEN
+        -- organizacoes.id é BIGINT (IDENTITY), não UUID — corrigido aqui porque
+        -- um replay do zero (CI, staging novo) falha com "incompatible types:
+        -- uuid and bigint" (SQLSTATE 42804); em produção o guard IF NOT EXISTS
+        -- acima provavelmente já achava a coluna criada por fora de banda antes
+        -- desta migration rodar, então o ADD COLUMN com o tipo errado nunca
+        -- chegou a ser executado ali (mesmo padrão de drift do DT-22/DT-70).
         ALTER TABLE public.conversations
-            ADD COLUMN tenant_id UUID REFERENCES public.organizacoes(id) ON DELETE SET NULL;
+            ADD COLUMN tenant_id BIGINT REFERENCES public.organizacoes(id) ON DELETE SET NULL;
     END IF;
 END $$;
 
