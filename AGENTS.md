@@ -19,6 +19,10 @@ mapa abaixo por assunto.
   (pmo-frontend), `supabase.md` (migrations), `adr-protocol.md` (decisões
   arquiteturais), `security-hardening.md` (auth/RLS/secrets),
   `llm-wiki.md` (como manter o `wiki/`).
+- **Não sabe em qual doc procurar** (specs, ADRs, planos, runbooks,
+  auditorias) → `DOCUMENTATION-INDEX.md` — catch-all com todos os `.md`
+  do repo por área. Comece por ele antes de abrir arquivos individuais
+  "por garantia".
 
 ## Convenções do projeto
 

@@ -17,6 +17,7 @@
 | Protocolo de ADR | [`.agent/rules/adr-protocol.md`](.agent/rules/adr-protocol.md) | Antes de propor uma decisão arquitetural nova. |
 | Hardening de segurança | [`.agent/rules/security-hardening.md`](.agent/rules/security-hardening.md) | Ao tocar auth, RLS, secrets, superfície de rede. |
 | Protocolo do LLM Wiki (como ler/escrever `wiki/`) | [`.agent/rules/llm-wiki.md`](.agent/rules/llm-wiki.md) | Antes de criar ou editar uma página do `wiki/`. |
+| Não sei em qual doc procurar algo específico (specs, ADRs, planos, runbooks, auditorias) | [`DOCUMENTATION-INDEX.md`](DOCUMENTATION-INDEX.md) | Catch-all: índice de todos os `.md` do repo por área (`docs/`, `pmo-bot-go/docs/`, `pmo-frontend/docs/`). Use como ponto de partida quando as linhas acima não cobrirem o assunto — não abra os `.md` individuais "por garantia" antes de checar aqui. |
 
 ## Notas
 
