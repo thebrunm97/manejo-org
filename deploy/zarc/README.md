@@ -92,9 +92,24 @@ todo `riscos` tem 36 bytes, que São Paulo/SP resolve para 3550308, que não há
 de município, e confere uma linha de controle conhecida. Sai com código ≠ 0 se algo
 falhar, e regrava o `MANIFEST.txt`.
 
+## Primeira instalação
+
+Diferente da troca de safra: aqui o **binário do bot muda** (pacote `internal/zarc`,
+driver do SQLite, `ZARC_DB_PATH` no compose), então um `restart` não basta — o contêiner
+precisa ser reconstruído.
+
+```bash
+ssh "$VPS_HOST" 'cd ~/manejo-org-app-clean && git pull && docker compose -f docker-compose.prod.yml up -d --build pmo-bot-go'
+```
+
+O `scp` do arquivo tem de vir **antes**: o volume é um bind mount de um arquivo, e o
+Docker cria um diretório vazio no lugar se o caminho não existir no host — o bot subiria
+com `unavailable` sem dizer por quê.
+
 ## Como atualizar em produção
 
-Sai portaria nova de safra, tipicamente 1–2 vezes por ano:
+Sai portaria nova de safra, tipicamente 1–2 vezes por ano. Aqui só o arquivo muda, então
+`restart` basta:
 
 ```bash
 python scripts/ingestion/zarc_build.py --validate
