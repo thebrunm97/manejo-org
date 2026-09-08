@@ -228,8 +228,10 @@ export const dashboardService = {
                 });
             if (uploadError) throw uploadError;
 
-            const { data } = supabase.storage.from('comprovantes').getPublicUrl(filePath);
-            return data.publicUrl;
+            // Bucket privado desde o DT-111: retorna o path do objeto, não mais
+            // a URL pública. Quem for exibir o comprovante precisa assinar a
+            // URL sob demanda (supabase.storage.from('comprovantes').createSignedUrl).
+            return filePath;
         } catch (error) {
             console.error('Falha no upload do comprovante:', error);
             throw new Error("Não foi possível salvar o comprovante.");
