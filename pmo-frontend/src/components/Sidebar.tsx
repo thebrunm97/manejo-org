@@ -20,6 +20,7 @@ import {
 import { useAppNavigation } from '../hooks/navigation/useAppNavigation';
 import { SCREENS, RouteName } from '../routes/routeNames';
 import { useAuth } from '../context/AuthContext';
+import { obterUrlAssinadaAvatar } from '../services/profileService';
 import { cn } from '../utils/cn';
 import PropertySelectorModal from './Common/PropertySelectorModal';
 import { useTranslation } from 'react-i18next';
@@ -36,6 +37,7 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
   const { navigateTo, goToLogin, currentPath } = useAppNavigation();
   const { profile, isAdmin, isLoadingRole, currentPropriedade, allPropriedades } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
+  const [avatarSrc, setAvatarSrc] = useState<string | null>(null);
   const { t } = useTranslation('common');
 
   useEffect(() => {
@@ -47,6 +49,17 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [mobileOpen, onClose]);
+
+  useEffect(() => {
+    let active = true;
+    setAvatarSrc(null);
+    obterUrlAssinadaAvatar(profile?.avatar_url).then(src => {
+      if (active) setAvatarSrc(src);
+    });
+    return () => {
+      active = false;
+    };
+  }, [profile?.avatar_url]);
 
   const getDisplayName = () => {
     if (profile?.nome) {
@@ -225,7 +238,7 @@ const Sidebar = ({ mobileOpen = false, onClose, user, logout }: SidebarProps) =>
         <div className="mt-4 px-4 flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-agro-ouro/20 flex items-center justify-center text-agro-ouro font-semibold text-xs shrink-0 overflow-hidden">
             {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+              avatarSrc ? <img src={avatarSrc} alt="Avatar" className="w-full h-full object-cover" /> : (user?.email ? user.email.charAt(0).toUpperCase() : <UserIcon size={14} />)
             ) : user?.email ? (
               user.email.charAt(0).toUpperCase()
             ) : (
