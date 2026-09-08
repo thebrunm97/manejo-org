@@ -221,7 +221,10 @@ func (w *AIWorker) processAIJob(ctx context.Context, job *Job, start time.Time) 
 		aiCtx = context.WithValue(aiCtx, "raw_payload_id", msg.RawPayloadID)
 	}
 
-	go w.cfg.WhatsApp.SendTyping(context.Background(), "", msg.From)
+	// Mantém "digitando..." vivo durante todo o processamento — um único tiro
+	// aqui expirava aos 15s (delay do Evolution) e deixava o produtor sem
+	// feedback pelo resto de uma chamada de LLM/RAG que costuma levar bem mais.
+	stopTyping := ports.KeepTyping(aiCtx, w.cfg.WhatsApp, "", msg.From)
 
 	startProcessMessage := time.Now()
 	// Delega para o ProcessMessage existente (reuso total do fluxo atual)
@@ -240,6 +243,7 @@ func (w *AIWorker) processAIJob(ctx context.Context, job *Job, start time.Time) 
 		w.cfg.RouterConfig,
 		w.cfg.MemoryCache,
 	)
+	stopTyping()
 	log.Printf("⏱️ [TRACING] Sub-passo: ProcessMessage: %v", time.Since(startProcessMessage))
 
 	latencyMs := time.Since(start).Milliseconds()

@@ -705,6 +705,21 @@ func ExtractEventType(rawBody []byte) string {
 	return envelope.Event
 }
 
+// deveIgnorarChat decide se um Chat/JID nunca deveria virar uma mensagem
+// processada pelo bot.
+//
+// "@g.us" é grupo (o bot não atende grupo pelo onboarding/FSM atual);
+// "@broadcast" cobre listas de transmissão E o JID reservado
+// "status@broadcast" — é assim que o WhatsApp representa o Status de um
+// contato. Sem este filtro, o Status de alguém chegava aqui como se fosse
+// mensagem de um número desconhecido, o onboarding respondia normalmente, e a
+// resposta ia "para" status@broadcast — que para o WhatsApp não é responder a
+// ninguém, é publicar no PRÓPRIO Status da conta do bot (foi exatamente o que
+// aconteceu em produção: ver captura de 2026-09-08).
+func deveIgnorarChat(jid string) bool {
+	return strings.HasSuffix(jid, "@g.us") || strings.HasSuffix(jid, "@broadcast")
+}
+
 // ParseWebhook converts an Evolution API webhook payload into a ports.IncomingEnvelope.
 func ParseWebhook(rawBody []byte) (*ports.IncomingEnvelope, error) {
 	var payload EvolutionWebhook
@@ -731,6 +746,10 @@ func ParseWebhook(rawBody []byte) (*ports.IncomingEnvelope, error) {
 		}
 		if err := json.Unmarshal(rawBody, &btnPayload); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal button click webhook: %w", err)
+		}
+
+		if btnPayload.Data.Key.FromMe || deveIgnorarChat(btnPayload.Data.Key.RemoteJid) {
+			return nil, nil // Eco do próprio bot, grupo ou Status — nunca é uma resposta real de produtor.
 		}
 
 		body := btnPayload.Data.ButtonText
@@ -772,6 +791,10 @@ func ParseWebhook(rawBody []byte) (*ports.IncomingEnvelope, error) {
 	from := payload.Data.Info.Chat
 	if from == "" {
 		from = payload.Data.Info.Sender
+	}
+
+	if payload.Data.Info.IsFromMe || deveIgnorarChat(from) {
+		return nil, nil // Eco do próprio bot, grupo ou Status — nunca é uma mensagem real de produtor.
 	}
 
 	// Parse Timestamp

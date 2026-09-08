@@ -566,7 +566,6 @@ func (h *Handler) handleHITLResponse(phone string, verdict HITLVerdict) bool {
 // O comportamento é idêntico ao que existia antes do Harness.
 func (h *Handler) processLegacy(msg ports.IncomingEnvelope) {
 	log.Printf("[ASYNC] Iniciando Agentic Loop em background...")
-	go h.cfg.WhatsAppClient.SendTyping(context.Background(), "", msg.From)
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -593,7 +592,12 @@ func (h *Handler) processLegacy(msg ports.IncomingEnvelope) {
 		FastRouterTimeoutMS:    h.cfg.FastRouterTimeoutMS,
 	}
 
+	// Mantém "digitando..." vivo durante todo o processamento — um único tiro
+	// aqui expirava aos 15s (delay do Evolution) e deixava o produtor sem
+	// feedback pelo resto de uma chamada de LLM/RAG que costuma levar bem mais.
+	stopTyping := ports.KeepTyping(ctx, h.cfg.WhatsAppClient, "", msg.From)
 	result := state.ProcessMessage(ctx, msg, h.cfg.SupabaseClient, h.cfg.GroqClient, h.cfg.WhatsAppClient, h.cfg.LLMClient, h.cfg.TtsClient, h.cfg.MCPServer, h.cfg.HistoryManager, h.cfg.FlagsmithClient, routerCfg, h.cfg.MemoryCache)
+	stopTyping()
 	if msg.RawPayloadID != "" {
 		if !result.Success {
 			log.Printf("⚠️ [LEGACY] Processing completed with issues: %s", result.Reason)
