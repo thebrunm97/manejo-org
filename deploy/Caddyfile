@@ -48,3 +48,21 @@
 		}
 	}
 }
+
+# ai-memory (memória de longo prazo cross-agent/cross-máquina). Sem porta
+# publicada no host (ver deploy/docker-compose.ai-memory.yml) -- só alcançável
+# via este domínio, com Bearer token obrigatório checado pelo próprio
+# ai-memory (AI_MEMORY_AUTH_TOKEN). MEMORIA_DOMAIN vem do .env.prod, mesmo
+# padrão de SITE_DOMAIN/FRONTEND_DOMAIN acima.
+{$MEMORIA_DOMAIN} {
+	reverse_proxy ai-memory:49374
+
+	tls {$ACME_EMAIL}
+
+	log {
+		output file /data/access-memoria.log {
+			roll_size 10mb
+			roll_keep 5
+		}
+	}
+}

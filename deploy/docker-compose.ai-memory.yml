@@ -1,0 +1,38 @@
+# Overlay de compose para o ai-memory (memória de longo prazo cross-agent),
+# feito para ser mesclado com o docker-compose.prod.yml existente, não para
+# rodar sozinho -- assim reaproveita a network pmo_prod_net e o Caddy que já
+# rodam a stack do pmo-bot-go, em vez de subir um segundo proxy reverso.
+#
+# Uso na VPS (dentro do diretório do repo):
+#   docker compose -f docker-compose.prod.yml -f deploy/docker-compose.ai-memory.yml up -d ai-memory
+#
+# Referência oficial usada para montar este arquivo:
+# https://github.com/akitaonrails/ai-memory/blob/main/docker/compose.tls.caddy.yml
+# (aqui só o serviço ai-memory; o Caddy é o que já existe no compose principal)
+
+services:
+  ai-memory:
+    image: akitaonrails/ai-memory:latest
+    container_name: ai-memory
+    restart: unless-stopped
+    # Sem porta publicada no host -- só o Caddy alcança pela rede interna
+    # (mesmo padrão do pmo-bot-go: "127.0.0.1 no host" via deploy/Caddyfile).
+    expose:
+      - "49374"
+    volumes:
+      - ai_memory_data:/data
+    env_file:
+      - .env.prod
+    environment:
+      - RUST_LOG=ai_memory=info,ai_memory_store=info,ai_memory_wiki=info,ai_memory_mcp=info,tracing_appender=warn
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/ai-memory", "status"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - pmo_prod_net
+
+volumes:
+  ai_memory_data:
