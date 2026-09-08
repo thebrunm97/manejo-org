@@ -26,6 +26,7 @@ contra o código na data indicada no rodapé da nota.
 - [[compliance-de-insumos]] — validação dinâmica do que pode entrar na lavoura.
 - [[offline-first]] — por que o campo não tem sinal.
 - [[rag-e-base-de-conhecimento]] — como a IA responde com base na norma.
+- [[zarc-janela-de-plantio]] — a janela oficial de plantio e o que ela nao cobre.
 
 ## Entidades
 

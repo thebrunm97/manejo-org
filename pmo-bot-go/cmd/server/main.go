@@ -48,6 +48,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/selfheal"
 	"github.com/thebrunm97/pmo-bot-go/internal/state"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
+	"github.com/thebrunm97/pmo-bot-go/internal/zarc"
 	"github.com/thebrunm97/pmo-bot-go/internal/telemetry"
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
 	"github.com/thebrunm97/pmo-bot-go/internal/weather"
@@ -282,6 +283,28 @@ func main() {
 	agriRepo := agriculture.NewSupabaseAgriculturalRepository(sbClient)
 	cachedEmbedder := embedcache.NewCachedEmbedder(llmProvider.Embedder(), 15*time.Minute)
 	mcpServer := mcp.NewServer(sbClient, agriRepo, cachedEmbedder, llmProvider)
+
+	// --- Base ZARC (Zoneamento Agrícola de Risco Climático) ---
+	//
+	// Arquivo SQLite somente-leitura, montado como volume :ro. Não é um serviço:
+	// é dado público do MAPA, imutável entre safras, construído fora daqui por
+	// scripts/ingestion/zarc_build.py e trocado 1–2x por ano.
+	//
+	// Ausência do arquivo NÃO derruba o bot — a ferramenta consultar_janela_plantio
+	// passa a responder "unavailable". É o caso normal em staging e na máquina do
+	// desenvolvedor, onde ninguém quer os ~400 MB.
+	if caminhoZarc := os.Getenv("ZARC_DB_PATH"); caminhoZarc != "" {
+		if zarcStore, err := zarc.Open(caminhoZarc); err != nil {
+			log.Printf("⚠️ [ZARC] Base indisponível (%s): %v — janela de plantio desativada", caminhoZarc, err)
+		} else {
+			mcpServer.SetZarcStore(zarcStore)
+			defer zarcStore.Close()
+			log.Printf("🌱 [ZARC] Base carregada: %s (safra %d, sha256=%.12s…)",
+				caminhoZarc, zarcStore.SafraVigente(), zarcStore.SHA())
+		}
+	} else {
+		log.Println("⚠️ ZARC_DB_PATH não definida. Consulta de janela de plantio desativada.")
+	}
 
 	// --- Cofre de Auditoria Efêmero (DT-42) ---
 	//
