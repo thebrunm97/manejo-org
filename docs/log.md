@@ -13,6 +13,11 @@ Registro cronológico de todas as operações de ingestão, consultas complexas 
 - **Arquivos**: 4 fontes brutas (Research) e 3 conceitos (PRD, Sync, RPI).
 - **Status**: Concluído.
 
+## [2026-09-08] Ingest | DT-127 — Autenticação do webhook evolution-go
+- **Ação**: Criada página de conceito `[[webhook-auth-evolution]]` documentando a migração da autenticação do webhook (evolution-go → pmo-bot-go) de `?token=` na query para header `Authorization: Bearer`, e a armadilha de produção rodando um binário desatualizado que mascarou o bug por um tempo.
+- **Fonte**: Investigação ao vivo na VPS de produção (SSH + `docker logs`) na mesma sessão que fechou o `DT-127` em `pmo-bot-go/docs/debitos_tecnicos.md`.
+- **Status**: Concluído.
+
 ---
 > [!TIP]
 > Use `grep "^## [" log.md | tail -5` para ver as últimas 5 atividades.

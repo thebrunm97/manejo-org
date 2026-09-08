@@ -6,6 +6,7 @@ Bem-vindo ao Índice Maestro do conhecimento do projeto **ManejoORG**. Este arqu
 - [[offline-sync]] — Estratégia de sincronização offline para o PWA.
 - [[prd-agrovivo]] — PRD Principal da versão Agrovivo V2.
 - [[rpi-optimizations]] — Notas sobre otimizações para Raspberry Pi (RPI).
+- [[webhook-auth-evolution]] — Autenticação do webhook evolution-go → pmo-bot-go via header Authorization (DT-127).
 
 ## 🏢 Entidades e Organizações
 - *Ainda não há entidades processadas.*
