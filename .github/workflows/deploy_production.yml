@@ -49,12 +49,5 @@ jobs:
       - name: Link Production Project
         run: supabase link --project-ref $SUPABASE_PROJECT_ID
 
-      # --include-all é temporário: existe uma migration (20260825020000) com
-      # timestamp anterior à última já registrada como aplicada, resultado de
-      # ter corrigido um registro fantasma no histórico (ver commit da
-      # migration 20260906210000_multicanal_a1_channel_links.sql). Sem a
-      # flag, a CLI recusa por segurança migrations "fora de ordem". Depois
-      # deste catch-up passar, REMOVER a flag num commit seguinte — deixá-la
-      # permanente esconderia futuros casos reais de migration fora de ordem.
       - name: Push Migrations
-        run: supabase db push --include-all
+        run: supabase db push
