@@ -171,18 +171,28 @@ func (h *Handler) SetConnectionEventNotifier(n ports.ConnectionEventNotifier) {
 func (h *Handler) handleWebhook(c *gin.Context) {
 	log.Println("🔍 [DEBUG] handleWebhook ENTERED")
 
-	// 1. Token validation
-	token := c.Query("token")
-	if token == "" {
-		auth := c.GetHeader("Authorization")
-		if len(auth) > 7 && auth[:7] == "Bearer " {
-			token = auth[7:]
-		}
+	// 1. Token validation — só via header Authorization: Bearer <token>.
+	//
+	// Antes também aceitava ?token=... na query string. Isso expunha o
+	// segredo em logs de proxy/acesso, histórico e na própria URL registrada
+	// em texto plano no banco da Evolution — e o token nunca era mais que
+	// isso, uma comparação de string, sem nenhuma amarra criptográfica ao
+	// corpo da requisição. Mover para header não resolve essa segunda parte
+	// (para isso seria preciso uma assinatura real sobre o corpo, que a
+	// Evolution ainda não calcula na entrega de webhook — só nas próprias
+	// chamadas de licença), mas fecha o vazamento por URL, que é o vetor de
+	// exposição mais barato de explorar sem querer.
+	token := ""
+	if auth := c.GetHeader("Authorization"); len(auth) > 7 && auth[:7] == "Bearer " {
+		token = auth[7:]
 	}
 
 	if !h.verifyToken(token) {
 		telemetry.WebhookRequestsTotal.WithLabelValues("unauthorized", "evolution").Inc()
-		slog.Warn("Token inválido — acesso negado", slog.String("token", token))
+		// Nunca logar o valor do token recebido, nem em falha — evita que uma
+		// tentativa quase-certa (ex.: erro de digitação de quem configura)
+		// vaze o segredo real em texto plano nos logs estruturados.
+		slog.Warn("Token inválido — acesso negado")
 		c.JSON(http.StatusOK, gin.H{"status": "token_invalid", "error": "Access Denied"})
 		return
 	}

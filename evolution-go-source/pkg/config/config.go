@@ -37,6 +37,7 @@ type Config struct {
 	AmqpUrl              string
 	AmqpGlobalEnabled    bool
 	WebhookUrl           string
+	WebhookToken         string
 	ClientName           string
 	ApiAudioConverter    string
 	ApiAudioConverterKey string
@@ -285,6 +286,11 @@ func Load() *Config {
 	amqpGlobalEnabled := os.Getenv(config_env.AMQP_GLOBAL_ENABLED)
 
 	webhookUrl := os.Getenv(config_env.WEBHOOK_URL)
+	// WEBHOOK_TOKEN autentica a ENTREGA do webhook via header Authorization,
+	// em vez do token embutido na própria URL (que pmo-bot-go usava antes).
+	// Vazio é um contrato válido: nenhum header extra é enviado, e o
+	// destinatário decide se aceita ou não a ausência de autenticação.
+	webhookToken := os.Getenv(config_env.WEBHOOK_TOKEN)
 
 	apiAudioConverter := os.Getenv(config_env.API_AUDIO_CONVERTER)
 	apiAudioConverterKey := os.Getenv(config_env.API_AUDIO_CONVERTER_KEY)
@@ -383,6 +389,7 @@ func Load() *Config {
 		AmqpUrl:              amqpUrl,
 		AmqpGlobalEnabled:    amqpGlobalEnabled == "true",
 		WebhookUrl:           webhookUrl,
+		WebhookToken:         webhookToken,
 		ClientName:           clientName,
 		ApiAudioConverter:    apiAudioConverter,
 		ApiAudioConverterKey: apiAudioConverterKey,

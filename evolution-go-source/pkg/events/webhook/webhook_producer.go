@@ -13,17 +13,29 @@ import (
 )
 
 type webhookProducer struct {
-	url           string
-	loggerWrapper *logger_wrapper.LoggerManager
+	url             string
+	authHeaderValue string
+	loggerWrapper   *logger_wrapper.LoggerManager
 }
 
+// NewWebhookProducer recebe authHeaderValue já pronto para uso em
+// `Authorization: <valor>` (ex.: "Bearer <token>"). Vazio significa "sem
+// autenticação" — mantém compatibilidade com quem ainda não configurou
+// WEBHOOK_TOKEN. O header é aplicado a TODA entrega, tanto a global (p.url,
+// de WEBHOOK_URL) quanto a por instância (webhookUrl, de SetWebhook) — as
+// duas passam pelo mesmo sendWebhook abaixo. Isso substitui o padrão antigo
+// de embutir o token na própria URL (?token=...), que expunha o segredo em
+// logs de proxy, histórico e no `SetWebhook` gravado em texto plano no
+// banco.
 func NewWebhookProducer(
 	url string,
+	authHeaderValue string,
 	loggerWrapper *logger_wrapper.LoggerManager,
 ) producer_interfaces.Producer {
 	return &webhookProducer{
-		url:           url,
-		loggerWrapper: loggerWrapper,
+		url:             url,
+		authHeaderValue: authHeaderValue,
+		loggerWrapper:   loggerWrapper,
 	}
 }
 
@@ -70,6 +82,9 @@ func (p *webhookProducer) sendWebhook(url string, body []byte, userID string) (e
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+	if p.authHeaderValue != "" {
+		req.Header.Set("Authorization", p.authHeaderValue)
+	}
 
 	// Configuração do timeout para evitar hang infinito (Goroutine leak)
 	client := &http.Client{

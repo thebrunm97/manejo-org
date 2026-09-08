@@ -128,7 +128,13 @@ func setupRouter(db *gorm.DB, authDB *sql.DB, sqliteDB *sql.DB, config *config.C
 		)
 	}
 
-	webhookProducer := webhook_producer.NewWebhookProducer(config.WebhookUrl, loggerWrapper)
+	// Authorization header, não token na URL — ver comentário em
+	// webhook_producer.NewWebhookProducer.
+	webhookAuthHeader := ""
+	if config.WebhookToken != "" {
+		webhookAuthHeader = "Bearer " + config.WebhookToken
+	}
+	webhookProducer := webhook_producer.NewWebhookProducer(config.WebhookUrl, webhookAuthHeader, loggerWrapper)
 	websocketProducer := websocket_producer.NewWebsocketProducer(loggerWrapper)
 
 	// Cria filas globais se o RabbitMQ global estiver habilitado
