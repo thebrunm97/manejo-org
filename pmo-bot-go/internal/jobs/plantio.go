@@ -11,7 +11,7 @@ import (
 )
 
 // StartPlantioReminderJob kicks off a ticker to scan for pending planting alerts.
-func StartPlantioReminderJob(sbClient *supabase.Client, wpClient ports.MessageSender) {
+func StartPlantioReminderJob(sbClient *supabase.Client, wpClient ports.ChannelSender) {
 	log.Println("🌱 [Job-Plantio] Background worker started")
 
 	// Usually daily, but let's use 12 hours to be safer for close deadlines
@@ -26,7 +26,7 @@ func StartPlantioReminderJob(sbClient *supabase.Client, wpClient ports.MessageSe
 	}
 }
 
-func runPlantioCheck(sbClient *supabase.Client, wpClient ports.MessageSender) {
+func runPlantioCheck(sbClient *supabase.Client, wpClient ports.ChannelSender) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
@@ -62,7 +62,7 @@ func runPlantioCheck(sbClient *supabase.Client, wpClient ports.MessageSender) {
 		message := fmt.Sprintf("🌱 Olá! O seu Assistente Agrônomo passando para lembrar: Chegou a época ideal para iniciar o plantio dos seus *%.0fkg de %s* da cota da Cooperativa! Bom trabalho! 🚜",
 			quantidade, cultura)
 
-		err := wpClient.SendMessage(telefone, message)
+		err := wpClient.Send(context.Background(), ports.OutboundEnvelope{To: telefone, Type: ports.OutboundTypeText, Text: message})
 		if err != nil {
 			log.Printf("❌ [Job-Plantio] Failed to send message to %s: %v", telefone, err)
 			continue
@@ -76,3 +76,4 @@ func runPlantioCheck(sbClient *supabase.Client, wpClient ports.MessageSender) {
 		}
 	}
 }
+

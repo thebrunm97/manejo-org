@@ -7,18 +7,37 @@ import './i18n'; // Configuração do i18next
 import './index.css';
 import { BrowserRouter } from 'react-router-dom';
 import * as Sentry from "@sentry/react";
+import { addIntegration } from "@sentry/browser";
 
 Sentry.init({
   dsn: import.meta.env.VITE_SENTRY_DSN,
   integrations: [
     Sentry.browserTracingIntegration(),
-    Sentry.replayIntegration(),
   ],
-  // Performance Monitoring
-  tracesSampleRate: 1.0, //  Capture 100% of the transactions
-  // Session Replay
-  replaysSessionSampleRate: 0.1, // This sets the sample rate at 10%. You may want to change it to 100% while in development and then sample at a lower rate in production.
-  replaysOnErrorSampleRate: 1.0, // If you're not already sampling the entire session, change the sample rate to 100% when sampling sessions where errors occur.
+  // Performance Monitoring — 10% em produção reduz overhead do tracing sem perder visibilidade
+  tracesSampleRate: import.meta.env.PROD ? 0.1 : 1.0,
+  // Session Replay config (carregado sob demanda em `loadReplayLazy`)
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1.0,
+});
+
+/**
+ * Session Replay (rrweb) é carregado sob demanda (lazy) para não pesar no
+ * primeiro load. Sobe apenas após a primeira interação do usuário, mantendo
+ * a funcionalidade de gravação de sessão (inclusive em erros).
+ */
+const loadReplayLazy = () => {
+  import('@sentry/replay').then(({ replayIntegration }) => {
+    if (import.meta.env.VITE_SENTRY_DSN) {
+      addIntegration(replayIntegration());
+    }
+  }).catch(() => {
+    // Replay é best-effort: falha silenciosa não deve impactar o app
+  });
+};
+
+['pointerdown', 'keydown', 'touchstart'].forEach((eventName) => {
+  window.addEventListener(eventName, loadReplayLazy, { once: true });
 });
 
 // Import do Provedor de Autenticação

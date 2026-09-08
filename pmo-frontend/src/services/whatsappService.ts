@@ -25,7 +25,7 @@ function generateRandomCode(): string {
  * @returns The generated 6-character uppercase code
  * @throws Error if the database update fails
  */
-export async function generateWhatsappCode(userId: string): Promise<string> {
+export async function generateWhatsappCode(_userId: string): Promise<string> {
     const code = generateRandomCode();
 
     const { error } = await supabase.rpc('update_profile', { 
@@ -56,7 +56,7 @@ export function getWhatsappBotNumber(): string | null {
  * @returns Object with success status
  * @throws Error if the database update fails
  */
-export async function unlinkWhatsapp(userId: string): Promise<{ success: boolean }> {
+export async function unlinkWhatsapp(_userId: string): Promise<{ success: boolean }> {
     const { error } = await supabase.rpc('update_profile', { 
         p_updates: { telefone: null, codigo_vinculo: null } 
     });

@@ -1,3 +1,10 @@
+//go:build real_postgres
+
+// Requer Postgres/PostgREST real (supabase start local ou SUPABASE_TEST_URL/
+// SUPABASE_TEST_SERVICE_KEY) — não roda em CI (DT-30). Local:
+//
+//	go test -tags=real_postgres ./internal/guardrails/...
+
 package guardrails_test
 
 import (
@@ -186,9 +193,11 @@ func TestMutationDrafts_RealPostgreSQL_Integration(t *testing.T) {
 	t.Run("3_AtomicExecution_4_Operations_HappyPath", func(t *testing.T) {
 		// Criar organização cooperativa e demanda coletiva para testar cota
 		coopURL := localURL + "/rest/v1/organizacoes"
+		coopSlugSuffix := time.Now().UnixNano()
 		coopBody, _ := json.Marshal(map[string]interface{}{
-			"nome": fmt.Sprintf("Cooperativa Teste %d", time.Now().UnixNano()),
+			"nome": fmt.Sprintf("Cooperativa Teste %d", coopSlugSuffix),
 			"tipo": "cooperativa",
+			"slug": fmt.Sprintf("cooperativa-teste-%d", coopSlugSuffix),
 		})
 		coopReq, _ := http.NewRequestWithContext(ctx, http.MethodPost, coopURL, bytes.NewReader(coopBody))
 		coopReq.Header.Set("apikey", serviceRoleKey)

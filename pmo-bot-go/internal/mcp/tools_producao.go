@@ -1,21 +1,16 @@
 package mcp
 
 import (
-	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"context"
 	"fmt"
 	"log"
 	"time"
 )
 
-func (s *Server) handleRegistrarColheita(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
-	// SECURE SESSION INJECTION
-	if profile == nil {
-		return nil, fmt.Errorf("unauthorized: missing profile")
-	}
-	pmoID := profile.PmoAtivoID
-	userID := profile.ID
-	propID := profile.PropriedadeAtivaID
+func (s *Server) handleRegistrarColheita(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
+	pmoID := tenant.PmoID
+	userID := tenant.UserID
+	propID := tenant.PropriedadeID
 	_ = pmoID
 	_ = userID
 	_ = propID
@@ -70,14 +65,10 @@ func (s *Server) handleRegistrarColheita(ctx context.Context, args map[string]in
 	return fmt.Sprintf("Colheita de %v %s de %s registrada com sucesso (Lote: %v).", qtd, unidade, cultura, lote), nil
 }
 
-func (s *Server) handleRegistrarVenda(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
-	// SECURE SESSION INJECTION
-	if profile == nil {
-		return nil, fmt.Errorf("unauthorized: missing profile")
-	}
-	pmoID := profile.PmoAtivoID
-	userID := profile.ID
-	propID := profile.PropriedadeAtivaID
+func (s *Server) handleRegistrarVenda(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
+	pmoID := tenant.PmoID
+	userID := tenant.UserID
+	propID := tenant.PropriedadeID
 	_ = pmoID
 	_ = userID
 	_ = propID
@@ -132,14 +123,10 @@ func (s *Server) handleRegistrarVenda(ctx context.Context, args map[string]inter
 	return fmt.Sprintf("Venda de %s (%v %s) para '%s' salva com sucesso.", produto, qtd, unidade, cliente), nil
 }
 
-func (s *Server) handleConsultarDemandasCooperativa(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
-	// SECURE SESSION INJECTION
-	if profile == nil {
-		return nil, fmt.Errorf("unauthorized: missing profile")
-	}
-	pmoID := profile.PmoAtivoID
-	userID := profile.ID
-	propID := profile.PropriedadeAtivaID
+func (s *Server) handleConsultarDemandasCooperativa(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
+	pmoID := tenant.PmoID
+	userID := tenant.UserID
+	propID := tenant.PropriedadeID
 	_ = pmoID
 	_ = userID
 	_ = propID

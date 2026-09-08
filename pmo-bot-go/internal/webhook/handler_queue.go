@@ -15,11 +15,7 @@ import (
 
 // ProcessMessageFromQueue implements the same logic as handleWebhook but for messages
 // pulled directly from a message queue (like RabbitMQ) rather than an HTTP webhook.
-func (h *Handler) ProcessMessageFromQueue(ctx context.Context, payload *ports.IncomingMessage, rawBody []byte) error {
-	// 4. Self-message filter
-	if payload.IsFromMe {
-		return nil
-	}
+func (h *Handler) ProcessMessageFromQueue(ctx context.Context, payload *ports.IncomingEnvelope, rawBody []byte) error {
 
 	// 5. TTL check
 	age := time.Since(payload.Timestamp).Seconds()

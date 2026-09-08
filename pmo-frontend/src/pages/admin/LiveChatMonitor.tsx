@@ -8,10 +8,14 @@ import {
     Radio, 
     Clock, 
     Search,
-    RefreshCw
+    RefreshCw,
+    Send,
+    BotOff,
+    Bot
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { formatarDataRelativa, formatarHoraMensagem } from '../../utils/formatters';
+import { goApiFetch } from '../../services/goApiClient';
 
 // --- Interfaces ---
 interface Message {
@@ -43,6 +47,9 @@ export const LiveChatMonitor: React.FC = () => {
     const [loadingMessages, setLoadingMessages] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [realtimeConnected, setRealtimeConnected] = useState(false);
+    const [isPaused, setIsPaused] = useState(false);
+    const [newMessage, setNewMessage] = useState('');
+    const [sending, setSending] = useState(false);
     
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -110,6 +117,51 @@ export const LiveChatMonitor: React.FC = () => {
         }
     };
 
+    const fetchPauseStatus = async (phone: string) => {
+        const { data, error } = await supabase.rpc('get_bot_pause_status', { p_phone: phone });
+        if (!error && data !== null) {
+            setIsPaused(data as boolean);
+        } else {
+            setIsPaused(false);
+        }
+    };
+
+    const handleTogglePause = async () => {
+        if (!selectedPhone) return;
+        const newStatus = !isPaused;
+        setIsPaused(newStatus); // optimistic update
+        const { error } = await supabase.rpc('toggle_bot_pause', { p_phone: selectedPhone, p_paused: newStatus });
+        if (error) {
+            console.error('Failed to toggle pause:', error);
+            setIsPaused(!newStatus); // revert
+        }
+    };
+
+    const handleSendMessage = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedPhone || !newMessage.trim() || sending) return;
+
+        setSending(true);
+        try {
+            const res = await goApiFetch('/api/v1/admin/chat/send', {
+                method: 'POST',
+                body: JSON.stringify({ phone: selectedPhone, message: newMessage.trim() })
+            });
+            if (res.ok) {
+                setNewMessage('');
+            } else {
+                const text = await res.text();
+                console.error('Failed to send message:', text);
+                alert('Erro ao enviar mensagem.');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Erro de conexão ao enviar mensagem.');
+        } finally {
+            setSending(false);
+        }
+    };
+
     // Carregar conversas ao montar o componente
     useEffect(() => {
         fetchConversations();
@@ -119,8 +171,10 @@ export const LiveChatMonitor: React.FC = () => {
     useEffect(() => {
         if (selectedPhone) {
             fetchMessages(selectedPhone);
+            fetchPauseStatus(selectedPhone);
         } else {
             setMessages([]);
+            setIsPaused(false);
         }
     }, [selectedPhone]);
 
@@ -388,8 +442,21 @@ export const LiveChatMonitor: React.FC = () => {
                                 </div>
 
                                 <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={handleTogglePause}
+                                        className={cn(
+                                            "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all border shadow-sm",
+                                            isPaused 
+                                                ? "bg-amber-500 text-white border-amber-600 hover:bg-amber-600" 
+                                                : "bg-white text-agro-floresta border-agro-ouro/20 hover:bg-slate-50"
+                                        )}
+                                        title={isPaused ? "Retomar Bot" : "Pausar Bot"}
+                                    >
+                                        {isPaused ? <BotOff size={14} /> : <Bot size={14} />}
+                                        {isPaused ? 'Bot Pausado' : 'Pausar Bot'}
+                                    </button>
                                     <Radio size={14} className="text-agro-ouro animate-pulse" />
-                                    <span className="text-[10px] font-black uppercase text-agro-floresta/40 tracking-wider">Histórico Sincronizado</span>
+                                    <span className="text-[10px] font-black uppercase text-agro-floresta/40 tracking-wider hidden sm:inline">Histórico Sincronizado</span>
                                 </div>
                             </div>
 
@@ -446,6 +513,28 @@ export const LiveChatMonitor: React.FC = () => {
                                     })
                                )}
                                 <div ref={messagesEndRef} />
+                            </div>
+
+                            {/* Chat Input */}
+                            <div className="p-4 bg-white border-t border-agro-ouro/10 shrink-0">
+                                <form onSubmit={handleSendMessage} className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={newMessage}
+                                        onChange={(e) => setNewMessage(e.target.value)}
+                                        placeholder={isPaused ? "Digite sua mensagem..." : "Pause o robô para assumir o controle"}
+                                        disabled={!isPaused || sending}
+                                        className="flex-1 px-4 py-3 rounded-xl border border-agro-ouro/20 focus:outline-none focus:ring-2 focus:ring-agro-ouro/50 bg-slate-50 disabled:opacity-50 text-sm"
+                                    />
+                                    <button
+                                        type="submit"
+                                        disabled={!isPaused || !newMessage.trim() || sending}
+                                        className="px-5 py-3 bg-agro-floresta hover:bg-agro-floresta-dark text-white rounded-xl font-bold text-sm shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                    >
+                                        {sending ? '...' : <Send size={16} />}
+                                        <span className="hidden sm:inline">{sending ? '' : 'Enviar'}</span>
+                                    </button>
+                                </form>
                             </div>
                         </>
                     ) : (

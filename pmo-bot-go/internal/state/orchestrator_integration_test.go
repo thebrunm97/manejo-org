@@ -33,7 +33,7 @@ func TestOrchestratorColheitaFlow(t *testing.T) {
 	orchestrator := NewOrchestrator(nil, supabaseClient, mcpServer)
 
 	// Act
-	response, _, _, _, _, err := orchestrator.ExecuteAgenticLoop(ctx, profile, "", userMessage, nil, nil, nil, "", "", RouterResult{})
+	response, _, _, _, _, err := orchestrator.ExecuteAgenticLoop(ctx, profile, "", userMessage, nil, nil, nil, "", "", "", RouterResult{})
 
 	// Assert
 	assert.NoError(t, err, "orquestrador não deve retornar erro")
@@ -64,9 +64,10 @@ func TestOrchestratorSlotFilling(t *testing.T) {
 	orchestrator := NewOrchestrator(nil, supabaseClient, mcpServer)
 
 	// Act
-	response, _, _, _, _, err := orchestrator.ExecuteAgenticLoop(ctx, profile, "", userMessage, nil, nil, nil, "", "", RouterResult{})
+	response, _, _, _, _, err := orchestrator.ExecuteAgenticLoop(ctx, profile, "", userMessage, nil, nil, nil, "", "", "", RouterResult{})
 
 	// Assert: Pode ser erro ou LLM pedindo dados
 	// A crítico é que NÃO falhe silenciosamente
 	assert.True(t, err != nil || response != "", "deve retornar erro ou resposta")
 }
+

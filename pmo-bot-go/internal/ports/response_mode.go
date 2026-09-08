@@ -49,7 +49,7 @@ func ParseResponsePreference(raw string) ResponsePreference {
 //
 // Mantida por compatibilidade: equivale a resolver sem preferência conhecida.
 // Chamadas novas devem preferir ResolveResponseModeFor, que considera o DT-29.
-func ResolveResponseMode(msg IncomingMessage) bool {
+func ResolveResponseMode(msg IncomingEnvelope) bool {
 	return ResolveResponseModeFor(msg, PreferenceAuto)
 }
 
@@ -66,7 +66,7 @@ func ResolveResponseMode(msg IncomingMessage) bool {
 //
 // RespondWithAudio sem flag explícita é tratado no nível 2 por compatibilidade
 // com jobs legados enfileirados antes do DT-29.
-func ResolveResponseModeFor(msg IncomingMessage, pref ResponsePreference) bool {
+func ResolveResponseModeFor(msg IncomingEnvelope, pref ResponsePreference) bool {
 	if msg.HasExplicitResponseMode {
 		return msg.RespondWithAudio
 	}

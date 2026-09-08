@@ -12,14 +12,10 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 )
 
-func (s *Server) handleConsultarDadosFazenda(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
-	// SECURE SESSION INJECTION
-	if profile == nil {
-		return nil, fmt.Errorf("unauthorized: missing profile")
-	}
-	pmoID := profile.PmoAtivoID
-	userID := profile.ID
-	propID := profile.PropriedadeAtivaID
+func (s *Server) handleConsultarDadosFazenda(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
+	pmoID := tenant.PmoID
+	userID := tenant.UserID
+	propID := tenant.PropriedadeID
 	_ = pmoID
 	_ = userID
 	_ = propID
@@ -61,14 +57,10 @@ func (s *Server) handleConsultarDadosFazenda(ctx context.Context, args map[strin
 	return string(jsonBytes), nil
 }
 
-func (s *Server) handleConsultarBaseConhecimento(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
-	// SECURE SESSION INJECTION
-	if profile == nil {
-		return nil, fmt.Errorf("unauthorized: missing profile")
-	}
-	pmoID := profile.PmoAtivoID
-	userID := profile.ID
-	propID := profile.PropriedadeAtivaID
+func (s *Server) handleConsultarBaseConhecimento(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
+	pmoID := tenant.PmoID
+	userID := tenant.UserID
+	propID := tenant.PropriedadeID
 	_ = pmoID
 	_ = userID
 	_ = propID
@@ -90,8 +82,19 @@ func (s *Server) handleConsultarBaseConhecimento(ctx context.Context, args map[s
 
 	// 2. Vector search in Supabase with Contextual Windowing (threshold 0.55, top-K 3, window 1)
 	// Reduzido para 3 como mitigação de tokens para prevenir "Lost in the Middle"
-	matches, err := s.supabase.MatchFarmDocumentsContext(pmoID, embedding, 0.55, 3, 1)
+	
+	startRetrieval := time.Now()
+	retrievalCtx, retrievalCancel := context.WithTimeout(ctx, 2*time.Second)
+	matches, err := s.supabase.MatchFarmDocumentsContextWithContext(retrievalCtx, pmoID, embedding, 0.55, 3, 1)
+	retrievalCancel()
+	
+	retrievalLatency := time.Since(startRetrieval).Milliseconds()
+	log.Printf("⏱️ [META-RAG] Busca vetorial (retrieval) concluída em %d ms", retrievalLatency)
+	
 	if err != nil {
+		if strings.Contains(strings.ToLower(err.Error()), "deadline exceeded") {
+			return nil, fmt.Errorf("timeout na busca vetorial (retrieval estourou 2s): %w", err)
+		}
 		return nil, fmt.Errorf("erro na busca vetorial: %w", err)
 	}
 
@@ -123,6 +126,7 @@ func (s *Server) handleConsultarBaseConhecimento(ctx context.Context, args map[s
 
 	log.Printf("[META-RAG] Evaluating %d evidence chunks against query: %q", len(chunks), pergunta)
 	evalCtx, evalCancel := context.WithTimeout(ctx, 20*time.Second)
+	evalCtx = context.WithValue(evalCtx, "retrieved_chunks", len(matches))
 
 	var evalResult llm.MetaRAGResult
 	var evalErr error
@@ -220,14 +224,10 @@ func (s *Server) handleConsultarBaseConhecimento(ctx context.Context, args map[s
 	return result, nil
 }
 
-func (s *Server) handleConsultarLeiOrganica(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
-	// SECURE SESSION INJECTION
-	if profile == nil {
-		return nil, fmt.Errorf("unauthorized: missing profile")
-	}
-	pmoID := profile.PmoAtivoID
-	userID := profile.ID
-	propID := profile.PropriedadeAtivaID
+func (s *Server) handleConsultarLeiOrganica(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
+	pmoID := tenant.PmoID
+	userID := tenant.UserID
+	propID := tenant.PropriedadeID
 	_ = pmoID
 	_ = userID
 	_ = propID
@@ -244,5 +244,5 @@ func (s *Server) handleConsultarLeiOrganica(ctx context.Context, args map[string
 		"categoria_fonte": "institucional",
 	}
 
-	return s.handleConsultarBaseConhecimento(ctx, mappedArgs, profile)
+	return s.handleConsultarBaseConhecimento(ctx, mappedArgs, tenant)
 }

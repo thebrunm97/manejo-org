@@ -30,12 +30,11 @@ export const mapLibreDrawStyle = [
       'type': 'line',
       'filter': ['all', ['==', 'active', 'true'], ['==', '$type', 'Polygon']],
       'layout': {
-        'line-cap': 'round',
-        'line-join': 'round'
+        'line-cap': 'butt',
+        'line-join': 'miter'
       },
       'paint': {
         'line-color': '#fbb03b',
-        'line-dasharray': ['literal', [0.2, 2]], // O FIX ESTÁ AQUI: ['literal', [0.2, 2]] ao invés de [0.2, 2]
         'line-width': 2
       }
     },
@@ -44,12 +43,11 @@ export const mapLibreDrawStyle = [
       'type': 'line',
       'filter': ['all', ['==', '$type', 'LineString'], ['==', 'active', 'true']],
       'layout': {
-        'line-cap': 'round',
-        'line-join': 'round'
+        'line-cap': 'butt',
+        'line-join': 'miter'
       },
       'paint': {
         'line-color': '#fbb03b',
-        'line-dasharray': ['literal', [0.2, 2]],
         'line-width': 2
       }
     },

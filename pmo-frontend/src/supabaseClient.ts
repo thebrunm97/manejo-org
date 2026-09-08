@@ -17,8 +17,42 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error(errMsg);
 }
 
-// Cria e exporta o nosso cliente Supabase
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Custom storage adapter that falls back to memory if localStorage is blocked
+const memoryStorage = new Map<string, string>();
+
+const safeStorage = {
+  getItem: (key: string) => {
+    try {
+      return window.localStorage.getItem(key);
+    } catch (e) {
+      return memoryStorage.get(key) || null;
+    }
+  },
+  setItem: (key: string, value: string) => {
+    try {
+      window.localStorage.setItem(key, value);
+    } catch (e) {
+      memoryStorage.set(key, value);
+    }
+  },
+  removeItem: (key: string) => {
+    try {
+      window.localStorage.removeItem(key);
+    } catch (e) {
+      memoryStorage.delete(key);
+    }
+  },
+};
+
+// Cria e exporta o nosso cliente Supabase com storage customizado
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    storage: safeStorage,
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true
+  }
+});
 console.log('[SupabaseClient] Client created:', !!supabase);
 
 

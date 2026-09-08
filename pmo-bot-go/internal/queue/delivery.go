@@ -46,13 +46,13 @@ func defaultDeliveryConfig() DeliveryConfig {
 // resposta principal e o texto logo em seguida, para quem não pode ouvir. Uma
 // falha no TTS ou no envio do áudio degrada a experiência mas não a entrega —
 // o texto continua garantido.
-func SendWithRetry(ctx context.Context, wp ports.MessageSender, ttsClient ports.Synthesizer, to, msg string, asAudio bool) error {
+func SendWithRetry(ctx context.Context, wp ports.ChannelSender, ttsClient ports.Synthesizer, to, msg string, asAudio bool) error {
 	cfg := defaultDeliveryConfig()
 	return sendWithConfig(ctx, wp, ttsClient, to, msg, asAudio, cfg)
 }
 
 // sendWithConfig é a implementação interna testável.
-func sendWithConfig(ctx context.Context, wp ports.MessageSender, ttsClient ports.Synthesizer, to, msg string, asAudio bool, cfg DeliveryConfig) error {
+func sendWithConfig(ctx context.Context, wp ports.ChannelSender, ttsClient ports.Synthesizer, to, msg string, asAudio bool, cfg DeliveryConfig) error {
 	var lastErr error
 	currentAsAudio := asAudio
 
@@ -68,7 +68,7 @@ func sendWithConfig(ctx context.Context, wp ports.MessageSender, ttsClient ports
 		// resposta nenhuma nesse intervalo — e sem nada caso o TTS falhasse.
 		// Com o texto na frente, a resposta chega imediatamente e o áudio é um
 		// complemento que chega depois.
-		err := wp.SendMessage(to, msg)
+		err := wp.Send(context.Background(), ports.OutboundEnvelope{To: to, Type: ports.OutboundTypeText, Text: msg})
 
 		if err == nil {
 			if attempt > 0 {
@@ -113,7 +113,7 @@ func sendWithConfig(ctx context.Context, wp ports.MessageSender, ttsClient ports
 }
 
 // sendAsAudio tenta enviar a resposta como áudio via TTS.
-func sendAsAudio(ctx context.Context, wp ports.MessageSender, ttsClient ports.Synthesizer, to, text string) error {
+func sendAsAudio(ctx context.Context, wp ports.ChannelSender, ttsClient ports.Synthesizer, to, text string) error {
 	if ttsClient == nil {
 		return fmt.Errorf("tts_client_nil")
 	}
@@ -154,8 +154,13 @@ func sendAsAudio(ctx context.Context, wp ports.MessageSender, ttsClient ports.Sy
 
 	audioBase64 := base64.StdEncoding.EncodeToString(art.Data)
 
-	// Força `ptt: true` para garantir que o cliente leia como voice note (microfone azul)
-	if err := wp.SendVoice(to, audioBase64, true); err != nil {
+	audioEnv := ports.OutboundEnvelope{
+		To:          to,
+		Type:        ports.OutboundTypeAudio,
+		Base64Audio: audioBase64,
+		IsVoiceNote: true,
+	}
+	if err := wp.Send(context.Background(), audioEnv); err != nil {
 		return fmt.Errorf("send_voice_failed: %w", err)
 	}
 	return nil

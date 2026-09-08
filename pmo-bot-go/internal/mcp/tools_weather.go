@@ -1,7 +1,6 @@
 package mcp
 
 import (
-	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"context"
 	"fmt"
 	"log"
@@ -12,17 +11,8 @@ import (
 
 // handleConsultarPrevisaoTempo processa a requisição de previsão do tempo.
 // Recebe a localidade (ex: "São Paulo" ou "lat,lng") e consulta a API.
-func (s *Server) handleConsultarPrevisaoTempo(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
-	// SECURE SESSION INJECTION
-	if profile == nil {
-		return nil, fmt.Errorf("unauthorized: missing profile")
-	}
-	pmoID := profile.PmoAtivoID
-	userID := profile.ID
-	propID := profile.PropriedadeAtivaID
-	_ = pmoID
-	_ = userID
-	_ = propID
+func (s *Server) handleConsultarPrevisaoTempo(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
+	propID := tenant.PropriedadeID
 
 	log.Printf("🌦️ [MCP] handleConsultarPrevisaoTempo executado com args: %v", args)
 

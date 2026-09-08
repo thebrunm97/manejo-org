@@ -60,7 +60,8 @@ func TestClassifySpeechSensitivity_Motivo(t *testing.T) {
 	}{
 		{"", false, "vazio"},
 		{"Ola, tudo bem?", false, "nao_sensivel"},
-		{"Meu CPF e 123.456.789-00", true, "identificador_direto"},
+		{"Meu CPF e 529.982.247-25", true, "identificador_direto"},
+		{"O lote DT391787418354", false, "nao_sensivel"},
 		{"Vendi por R$ 200", true, "termo:r$"},
 	}
 

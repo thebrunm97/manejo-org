@@ -35,7 +35,7 @@ type Job struct {
 	ID                      string
 	MsgID                   string
 	FromPhone               string
-	RawPayload              ports.IncomingMessage
+	RawPayload              ports.IncomingEnvelope
 	BodyText                string // Vazio até a Camada 3 (Media Worker) preencher
 	RespondAudio            bool   // Legacy field kept for compatibility with older jobs
 	RespondWithAudio        bool   // Explicit response mode; source of truth for output
@@ -43,6 +43,8 @@ type Job struct {
 	Status                  string
 	AttemptCount            int
 	MaxAttempts             int
+	CreatedAt               time.Time // DT-68: usado por MarkAIPending para calcular o teto MESSAGE_BUFFER_MAX
+	PartsCount              int       // DT-68: fragmentos combinados pelo dreno de claim_next_message_job. 1 = turno de mensagem única.
 }
 
 // JobMeta contém metadados de conclusão para audit trail.
@@ -64,6 +66,8 @@ type jobRow struct {
 	Status       string          `json:"status"`
 	AttemptCount int             `json:"attempt_count"`
 	MaxAttempts  int             `json:"max_attempts"`
+	CreatedAt    time.Time       `json:"created_at"`
+	PartsCount   int             `json:"parts_count"`
 }
 
 // supabaseConfig armazena as credenciais para chamadas diretas via HTTP.
@@ -77,9 +81,19 @@ type supabaseConfig struct {
 // Usa SELECT FOR UPDATE SKIP LOCKED para garantir que múltiplos workers
 // não processem o mesmo job simultaneamente.
 type Manager struct {
-	cfg        supabaseConfig
-	httpClient *http.Client
+	cfg          supabaseConfig
+	httpClient   *http.Client
+	bufferWindow time.Duration // DT-68: MESSAGE_BUFFER_WINDOW
+	bufferMax    time.Duration // DT-68: MESSAGE_BUFFER_MAX
 }
+
+// Defaults de coalescência de mensagens (DT-68), usados quando SetBufferConfig
+// não é chamado (ex: testes) ou recebe zero. bufferWindow=0 é o kill-switch
+// explícito (MESSAGE_BUFFER_WINDOW=0): ver comentário em MarkAIPending.
+const (
+	DefaultMessageBufferWindow = 4 * time.Second
+	DefaultMessageBufferMax    = 12 * time.Second
+)
 
 // NewManager cria um novo Manager de fila.
 func NewManager(supabaseURL, supabaseKey string) *Manager {
@@ -88,14 +102,26 @@ func NewManager(supabaseURL, supabaseKey string) *Manager {
 			url: supabaseURL,
 			key: supabaseKey,
 		},
-		httpClient: &http.Client{Timeout: 10 * time.Second},
+		httpClient:   &http.Client{Timeout: 10 * time.Second},
+		bufferWindow: DefaultMessageBufferWindow,
+		bufferMax:    DefaultMessageBufferMax,
 	}
+}
+
+// SetBufferConfig ajusta a janela de coalescência de mensagens picotadas
+// (DT-68). Chamado no startup a partir de MESSAGE_BUFFER_WINDOW/
+// MESSAGE_BUFFER_MAX; sem a chamada, valem os defaults de NewManager.
+// window=0 desativa a coalescência por completo (todo job elegível de
+// imediato, comportamento idêntico ao anterior ao DT-68).
+func (m *Manager) SetBufferConfig(window, max time.Duration) {
+	m.bufferWindow = window
+	m.bufferMax = max
 }
 
 // Enqueue insere uma nova mensagem na fila.
 // Usa upsert por msg_id para garantir idempotência (dedup automático).
 // Retorna nil se a mensagem já estava na fila (duplicata ignorada com segurança).
-func (m *Manager) Enqueue(ctx context.Context, msg ports.IncomingMessage) error {
+func (m *Manager) Enqueue(ctx context.Context, msg ports.IncomingEnvelope) error {
 	rawPayload, err := json.Marshal(msg)
 	if err != nil {
 		return fmt.Errorf("queue.Enqueue: falha ao serializar payload: %w", err)
@@ -117,13 +143,14 @@ func (m *Manager) Enqueue(ctx context.Context, msg ports.IncomingMessage) error 
 		return fmt.Errorf("queue.Enqueue: falha ao serializar record: %w", err)
 	}
 
-	reqURL := fmt.Sprintf("%s/rest/v1/message_queue", m.cfg.url)
+	reqURL := fmt.Sprintf("%s/rest/v1/message_queue?on_conflict=msg_id", m.cfg.url)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewReader(payload))
 	if err != nil {
 		return fmt.Errorf("queue.Enqueue: falha ao criar request: %w", err)
 	}
 	m.setHeaders(req)
-	// onConflict=msg_id: ignora silenciosamente duplicatas (dedup por WhatsApp msgID)
+	// on_conflict=msg_id: sem esse parâmetro o PostgREST usa a PK (id, sempre um UUID novo)
+	// como alvo do ON CONFLICT e a deduplicação nunca dispara (DT-67).
 	req.Header.Set("Prefer", "resolution=ignore-duplicates,return=minimal")
 
 	resp, err := m.httpClient.Do(req)
@@ -214,8 +241,8 @@ func (m *Manager) claimByStatus(ctx context.Context, workerID, fromStatus string
 		}
 	}
 
-	// Desserializa o raw_payload de volta para IncomingMessage
-	var msg ports.IncomingMessage
+	// Desserializa o raw_payload de volta para IncomingEnvelope
+	var msg ports.IncomingEnvelope
 	if err := json.Unmarshal(row.RawPayload, &msg); err != nil {
 		// Não bloqueia — marca o job como falho e continua
 		_ = m.MarkFailed(ctx, row.ID, fmt.Sprintf("payload_parse_error: %v", err), 0)
@@ -244,17 +271,33 @@ func (m *Manager) claimByStatus(ctx context.Context, workerID, fromStatus string
 		Status:                  row.Status,
 		AttemptCount:            row.AttemptCount,
 		MaxAttempts:             row.MaxAttempts,
+		CreatedAt:               row.CreatedAt,
+		PartsCount:              row.PartsCount,
 	}, nil
 }
 
 // MarkAIPending atualiza o job com o texto processado e avança para ai_pending.
 // Chamado pelo Media Worker após transcrição/extração bem-sucedida.
-func (m *Manager) MarkAIPending(ctx context.Context, jobID, bodyText string, respondAudio bool) error {
+// createdAt é o created_at do próprio job (não do turno) — usado só para
+// aplicar o teto MESSAGE_BUFFER_MAX. Job.CreatedAt vazio (zero value) faz o
+// teto cair no passado e desativa a coalescência para ESTE job apenas,
+// nunca para os demais — fallback seguro, não um travamento.
+func (m *Manager) MarkAIPending(ctx context.Context, jobID, bodyText string, respondAudio bool, createdAt time.Time) error {
+	nextRetryAt := time.Now().Add(m.bufferWindow)
+	if maxCutoff := createdAt.Add(m.bufferMax); maxCutoff.Before(nextRetryAt) {
+		nextRetryAt = maxCutoff
+	}
+
 	update := map[string]interface{}{
 		"status":        "ai_pending",
 		"body_text":     bodyText,
 		"respond_audio": respondAudio,
 		"claimed_at":    nil,
+		// DT-68: portão de coalescência já respeitado por claim_next_message_job
+		// (WHERE next_retry_at <= NOW()). bufferWindow=0 (MESSAGE_BUFFER_WINDOW=0)
+		// resulta em nextRetryAt=now(), ou seja, elegível de imediato — kill-switch
+		// sem exigir nenhum caminho de código separado.
+		"next_retry_at": nextRetryAt.UTC().Format(time.RFC3339),
 	}
 	return m.updateJob(ctx, jobID, update)
 }

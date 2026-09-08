@@ -101,7 +101,7 @@ func TestAgenticMutationShootout(t *testing.T) {
 			mcpServer.RegisterTool(mcp.Tool{
 				Definition: defRegistrarCompra,
 				Category:   mcp.CategoryDBWrite,
-				Handler: func(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
+				Handler: func(ctx context.Context, args map[string]interface{}, tenant mcp.TenantCtx) (interface{}, error) {
 					toolCalled = true
 					// Validar se o LLM extraiu o produto e o valor corretamente
 					produto, _ := args["produto"].(string)
@@ -145,7 +145,8 @@ func TestAgenticMutationShootout(t *testing.T) {
 				nil,
 				guard,
 				"general",
-				"",
+				"", // userMemories
+				"", // activeContextBlock
 				state.RouterResult{},
 			)
 
@@ -168,3 +169,4 @@ func TestAgenticMutationShootout(t *testing.T) {
 	}
 	fmt.Println("=========================================================================================")
 }
+

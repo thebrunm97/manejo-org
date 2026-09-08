@@ -1,7 +1,6 @@
 package mcp
 
 import (
-	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"context"
 	"fmt"
 	"strings"
@@ -31,7 +30,7 @@ var validate = validator.New()
 
 // wrapWithMiddleware wraps a tool's base handler with validation, dry-run, and confirmation checks.
 func wrapWithMiddleware(opts ToolOptions, baseHandler ToolHandler) ToolHandler {
-	return func(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
+	return func(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
 		
 		// 1. Schema Check
 		if opts.Schema != nil {
@@ -90,7 +89,7 @@ func wrapWithMiddleware(opts ToolOptions, baseHandler ToolHandler) ToolHandler {
 		}
 
 		// All checks passed, execute the real handler
-		return baseHandler(ctx, args, profile)
+		return baseHandler(ctx, args, tenant)
 	}
 }
 

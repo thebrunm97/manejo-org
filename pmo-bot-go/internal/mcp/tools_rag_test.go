@@ -103,7 +103,11 @@ func TestMetaRAGFiltering(t *testing.T) {
 	}
 
 	mockProfile := &supabase.Profile{PmoAtivoID: 6, ID: "test-user"}
-	res, err := server.handleConsultarBaseConhecimento(context.Background(), args, mockProfile)
+	tenant, err := buildTenantCtx(mockProfile)
+	if err != nil {
+		t.Fatalf("buildTenantCtx failed: %v", err)
+	}
+	res, err := server.handleConsultarBaseConhecimento(context.Background(), args, tenant)
 	if err != nil {
 		t.Fatalf("handleConsultarBaseConhecimento failed: %v", err)
 	}
@@ -178,7 +182,11 @@ func TestMetaRAGFailOpen(t *testing.T) {
 	}
 
 	mockProfile := &supabase.Profile{PmoAtivoID: 6, ID: "test-user"}
-	res, err := server.handleConsultarBaseConhecimento(context.Background(), args, mockProfile)
+	tenant, err := buildTenantCtx(mockProfile)
+	if err != nil {
+		t.Fatalf("buildTenantCtx failed: %v", err)
+	}
+	res, err := server.handleConsultarBaseConhecimento(context.Background(), args, tenant)
 	if err != nil {
 		t.Fatalf("handleConsultarBaseConhecimento failed on fail-open: %v", err)
 	}

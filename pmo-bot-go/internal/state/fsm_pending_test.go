@@ -106,8 +106,9 @@ func TestFSMPendingEntitiesIntegration(t *testing.T) {
 		historyManager,
 		time.Now(),
 		"test-model",
-		nil, // gemClient not needed for registration
+		nil, // llmClient not needed for registration
 		nil, // mcpServer not needed for registration
+		nil, // memoryCache not needed for registration
 	)
 
 	// Assert process result is false since we suspended on Batata
@@ -158,3 +159,4 @@ func TestFSMPendingEntitiesIntegration(t *testing.T) {
 		t.Errorf("expected Cebola to be preserved in the pending queue, got: %v", pending)
 	}
 }
+

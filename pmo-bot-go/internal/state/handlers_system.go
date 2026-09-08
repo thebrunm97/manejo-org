@@ -12,28 +12,28 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 )
 
-func handleAguardandoFazenda(_ context.Context, body string, _ string, phone string, profile *supabase.Profile, _ bool, sbClient *supabase.Client, _ ports.MessageSender, _ ports.Synthesizer, historyManager *history.Manager, extraction map[string]interface{}, _ time.Time, _ string) (string, ProcessResult) {
+func handleAguardandoFazenda(_ context.Context, body string, _ string, phone string, profile *supabase.Profile, _ bool, sbClient *supabase.Client, _ ports.ChannelSender, _ ports.Synthesizer, historyManager *history.Manager, extraction map[string]interface{}, _ time.Time, _ string) (string, ProcessResult) {
 	bodyTrim := strings.TrimSpace(body)
 
-	optionsIface, ok := extraction["options"].([]interface{})
+	options, ok := extraction["options"].([]map[string]interface{})
 	if !ok {
 		historyManager.ClearFSMState(phone)
 		return "❌ Erro ao ler as opções de fazenda. Tente novamente.", ProcessResult{Success: false, Reason: "invalid_options"}
 	}
 
 	index, err := strconv.Atoi(bodyTrim)
-	if err != nil || index < 1 || index > len(optionsIface) {
+	if err != nil || index < 1 || index > len(options) {
 		return "❌ Por favor, responda apenas com o número da fazenda desejada.", ProcessResult{Success: false, Reason: "invalid_selection"}
 	}
 
-	selectedOption := optionsIface[index-1].(map[string]interface{})
-	selectedID := int64(selectedOption["id"].(float64)) // JSON decodes numbers as float64
+	selectedOption := options[index-1]
+	selectedID := int64(selectedOption["id"].(int64))
 	selectedNome := selectedOption["nome"].(string)
 
 	// We might also have propriedade_id
 	var propID int64
-	if p, ok := selectedOption["propriedade_id"].(float64); ok {
-		propID = int64(p)
+	if p, ok := selectedOption["propriedade_id"].(int64); ok {
+		propID = p
 	}
 
 	// Update active PMO in DB
@@ -49,3 +49,4 @@ func handleAguardandoFazenda(_ context.Context, body string, _ string, phone str
 	historyManager.ClearFSMState(phone)
 	return fmt.Sprintf("✅ Fazenda alterada para: *%s*.", selectedNome), ProcessResult{Success: true, Reason: "fazenda_changed"}
 }
+

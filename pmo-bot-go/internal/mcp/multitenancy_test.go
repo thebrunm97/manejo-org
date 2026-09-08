@@ -34,36 +34,29 @@ func mockColheitaArgs() map[string]interface{} {
 
 // =============================================================================
 // TestIsolation_NilProfileRejected
-// Valida que handler rejeita profile nulo com erro "unauthorized"
+// Valida que a validação rejeita profile nulo com erro "unauthorized".
+//
+// Premissa original deste teste ficou obsoleta pelo DT-67: handleRegistrarColheita
+// não recebe mais *supabase.Profile (recebe TenantCtx, construído e validado
+// ANTES do handler rodar), então "handler rejeita nil" não é mais um caminho
+// de código que existe — buildTenantCtx é o portão agora, e é ele que este
+// teste passa a exercitar.
 // =============================================================================
 func TestIsolation_NilProfileRejected(t *testing.T) {
-	ctx := context.Background()
-	args := mockColheitaArgs()
-
-	server := &Server{}
-
-	result, err := server.handleRegistrarColheita(ctx, args, nil)
+	_, err := buildTenantCtx(nil)
 
 	assert.Error(t, err, "deve retornar erro para profile nulo")
-	assert.Nil(t, result)
 	assert.Contains(t, err.Error(), "unauthorized")
 }
 
 // =============================================================================
 // TestIsolation_ZeroPmoRejected
-// Valida que PmoAtivoID=0 é bloqueado pelo validateProfile antes de qualquer RPC
+// Valida que PmoAtivoID=0 é bloqueado por buildTenantCtx antes de qualquer RPC
 // =============================================================================
 func TestIsolation_ZeroPmoRejected(t *testing.T) {
 	profileZero := mockProfileForIsolation(0)
 
-	// validateProfile é chamado via CallToolWithGuard, mas handleRegistrarColheita
-	// também faz o check inline. Testamos o comportamento do handler direto.
-	server := &Server{}
-
-	// handleRegistrarColheita tem: if profile == nil { ... }
-	// mas PmoAtivoID=0 é bloqueado pelo validateProfile no CallToolWithGuard.
-	// Aqui testamos que validateProfile retorna o erro correto.
-	err := server.validateProfile(profileZero)
+	_, err := buildTenantCtx(profileZero)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "validation")
@@ -73,8 +66,7 @@ func TestIsolation_ZeroPmoRejected(t *testing.T) {
 // TestIsolation_ValidateProfile_NilReturnsUnauthorized
 // =============================================================================
 func TestIsolation_ValidateProfile_NilReturnsUnauthorized(t *testing.T) {
-	server := &Server{}
-	err := server.validateProfile(nil)
+	_, err := buildTenantCtx(nil)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "unauthorized")
@@ -84,11 +76,11 @@ func TestIsolation_ValidateProfile_NilReturnsUnauthorized(t *testing.T) {
 // TestIsolation_ValidateProfile_ValidPasses
 // =============================================================================
 func TestIsolation_ValidateProfile_ValidPasses(t *testing.T) {
-	server := &Server{}
 	profile := mockProfileForIsolation(42)
-	err := server.validateProfile(profile)
+	tenant, err := buildTenantCtx(profile)
 
 	assert.NoError(t, err)
+	assert.Equal(t, int64(42), tenant.PmoID, "TenantCtx deve carregar o PmoID do profile")
 }
 
 // =============================================================================
@@ -110,15 +102,17 @@ func TestIsolation_CrossPMOWrite_ArgsInjectionIgnored(t *testing.T) {
 		"user_id":    "hacker-user-uuid",
 	}
 
-	// Verificação estática: o handler extrai cultura de args mas pmo_id SEMPRE do profile
-	// Não há path de código que leia args["pmo_id"] em handleRegistrarColheita
+	// Verificação estática: o handler recebe TenantCtx, não *Profile nem args —
+	// não há NENHUM parâmetro pelo qual args["pmo_id"] poderia chegar a virar
+	// o pmoID usado na RPC (DT-67). O teste de guarda genérico em
+	// tenant_guard_test.go varre isso automaticamente para todo handler
+	// registrado; aqui só documentamos o contrato com o profile de origem.
 	assert.Equal(t, int64(1), profileA.PmoAtivoID, "profile deve ter PMO 1")
 	assert.Equal(t, 999, argsWithInjection["pmo_id"], "args tentam injetar PMO 999")
 
-	// O handler chamaria: pmoID := profile.PmoAtivoID → sempre 1, nunca 999.
-	// Esta verificação documenta o contrato de segurança sem precisar de BD.
-	capturedPmoID := profileA.PmoAtivoID
-	assert.Equal(t, int64(1), capturedPmoID, "pmoID capturado deve ser do profile (1), não dos args (999)")
+	tenant, err := buildTenantCtx(profileA)
+	require.NoError(t, err)
+	assert.Equal(t, int64(1), tenant.PmoID, "tenant.PmoID deve vir do profile (1), não dos args (999)")
 }
 
 // =============================================================================
@@ -130,8 +124,6 @@ func TestIsolation_CrossPMOWrite_ArgsInjectionIgnored(t *testing.T) {
 func TestIsolation_TenPMOs_Concurrent(t *testing.T) {
 	numPMOs := 10
 
-	server := &Server{}
-
 	var wg sync.WaitGroup
 	errors := make(chan error, numPMOs)
 	profiles := make(chan *supabase.Profile, numPMOs)
@@ -142,8 +134,8 @@ func TestIsolation_TenPMOs_Concurrent(t *testing.T) {
 			defer wg.Done()
 			profile := mockProfileForIsolation(pmoID)
 
-			// Testa apenas validateProfile (sem acesso ao BD)
-			err := server.validateProfile(profile)
+			// Testa apenas buildTenantCtx (sem acesso ao BD)
+			_, err := buildTenantCtx(profile)
 			if err != nil {
 				errors <- err
 			} else {
@@ -210,7 +202,10 @@ func TestIsolation_WithRealDB_PmoAUsesOwnID(t *testing.T) {
 
 	server := &Server{supabase: sbClient}
 
-	result, err := server.handleRegistrarColheita(ctx, args, profileA)
+	tenant, err := buildTenantCtx(profileA)
+	require.NoError(t, err)
+
+	result, err := server.handleRegistrarColheita(ctx, args, tenant)
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 }

@@ -1,0 +1,113 @@
+{
+  "target": "wiki-citations",
+  "claims": [
+    {
+      "kind": "purpose",
+      "summary": "[Gateway WhatsApp] (wiki/components/gateway-whatsapp.md) referencia pmo-bot-go/internal/webhook/handler.go nas linhas 149. Contexto: pmo-bot-go/internal/webhook/handler.go:149",
+      "target": "pmo-bot-go/internal/webhook/handler.go",
+      "evidence": [
+        {
+          "path": "pmo-bot-go/internal/webhook/handler.go",
+          "startLine": 149,
+          "endLine": 149
+        }
+      ]
+    },
+    {
+      "kind": "workflow",
+      "summary": "[Compliance de insumos] (wiki/concepts/compliance-de-insumos.md) referencia pmo-bot-go/internal/supabase/client.go nas linhas 418. Contexto: (pmo-bot-go/internal/supabase/client.go:418)",
+      "target": "pmo-bot-go/internal/supabase/client.go",
+      "evidence": [
+        {
+          "path": "pmo-bot-go/internal/supabase/client.go",
+          "startLine": 418,
+          "endLine": 418
+        }
+      ]
+    },
+    {
+      "kind": "purpose",
+      "summary": "[Canteiro] (wiki/entities/canteiro.md) referencia supabase/migrations/20260402000000_create_core_app_tables.sql nas linhas 87. Contexto: supabase/migrations/20260402000000_create_core_app_tables.sql:87",
+      "target": "supabase/migrations/20260402000000_create_core_app_tables.sql",
+      "evidence": [
+        {
+          "path": "supabase/migrations/20260402000000_create_core_app_tables.sql",
+          "startLine": 87,
+          "endLine": 87
+        }
+      ]
+    },
+    {
+      "kind": "purpose",
+      "summary": "[Ciclo de cultivo] (wiki/entities/ciclo-de-cultivo.md) referencia supabase/migrations/20260402000000_create_core_app_tables.sql nas linhas 114. Contexto: supabase/migrations/20260402000000_create_core_app_tables.sql:114",
+      "target": "supabase/migrations/20260402000000_create_core_app_tables.sql",
+      "evidence": [
+        {
+          "path": "supabase/migrations/20260402000000_create_core_app_tables.sql",
+          "startLine": 114,
+          "endLine": 114
+        }
+      ]
+    },
+    {
+      "kind": "purpose",
+      "summary": "[Lote de rastreabilidade] (wiki/entities/lote-de-rastreabilidade.md) referencia supabase/migrations/20260402000000_create_core_app_tables.sql nas linhas 278. Contexto: supabase/migrations/20260402000000_create_core_app_tables.sql:278",
+      "target": "supabase/migrations/20260402000000_create_core_app_tables.sql",
+      "evidence": [
+        {
+          "path": "supabase/migrations/20260402000000_create_core_app_tables.sql",
+          "startLine": 278,
+          "endLine": 278
+        }
+      ]
+    },
+    {
+      "kind": "purpose",
+      "summary": "[PMO (entidade)] (wiki/entities/pmo.md) referencia supabase/migrations/20260402000000_create_core_app_tables.sql nas linhas 30. Contexto: supabase/migrations/20260402000000_create_core_app_tables.sql:30",
+      "target": "supabase/migrations/20260402000000_create_core_app_tables.sql",
+      "evidence": [
+        {
+          "path": "supabase/migrations/20260402000000_create_core_app_tables.sql",
+          "startLine": 30,
+          "endLine": 30
+        }
+      ]
+    },
+    {
+      "kind": "purpose",
+      "summary": "[Propriedade] (wiki/entities/propriedade.md) referencia supabase/migrations/20260402000000_create_core_app_tables.sql nas linhas 7. Contexto: supabase/migrations/20260402000000_create_core_app_tables.sql:7",
+      "target": "supabase/migrations/20260402000000_create_core_app_tables.sql",
+      "evidence": [
+        {
+          "path": "supabase/migrations/20260402000000_create_core_app_tables.sql",
+          "startLine": 7,
+          "endLine": 7
+        }
+      ]
+    },
+    {
+      "kind": "purpose",
+      "summary": "[Registro de caderno] (wiki/entities/registro-de-caderno.md) referencia supabase/migrations/20260402000000_create_core_app_tables.sql nas linhas 169. Contexto: supabase/migrations/20260402000000_create_core_app_tables.sql:169",
+      "target": "supabase/migrations/20260402000000_create_core_app_tables.sql",
+      "evidence": [
+        {
+          "path": "supabase/migrations/20260402000000_create_core_app_tables.sql",
+          "startLine": 169,
+          "endLine": 169
+        }
+      ]
+    },
+    {
+      "kind": "purpose",
+      "summary": "[Talhão] (wiki/entities/talhao.md) referencia supabase/migrations/20260402000000_create_core_app_tables.sql nas linhas 50. Contexto: supabase/migrations/20260402000000_create_core_app_tables.sql:50",
+      "target": "supabase/migrations/20260402000000_create_core_app_tables.sql",
+      "evidence": [
+        {
+          "path": "supabase/migrations/20260402000000_create_core_app_tables.sql",
+          "startLine": 50,
+          "endLine": 50
+        }
+      ]
+    }
+  ]
+}

@@ -12,7 +12,7 @@ import (
 )
 
 // TestHandleRegistrarColheita_Success
-// Testa o fluxo completo: profile → handler → RPC → Sucesso
+// Testa o fluxo completo: profile → TenantCtx → handler → RPC → Sucesso
 func TestHandleRegistrarColheita_Success(t *testing.T) {
 	// Skip se não tem BD de teste
 	if os.Getenv("DATABASE_URL") == "" {
@@ -23,6 +23,9 @@ func TestHandleRegistrarColheita_Success(t *testing.T) {
 	ctx := context.Background()
 	profile := test.MockProfile()
 	args := test.MockArgsForColheita()
+
+	tenant, err := buildTenantCtx(profile)
+	require.NoError(t, err)
 
 	// Inicializa Server com Supabase real
 	supabaseClient, err := supabase.NewClient(supabase.Config{URL: os.Getenv("DATABASE_URL")})
@@ -35,12 +38,12 @@ func TestHandleRegistrarColheita_Success(t *testing.T) {
 	}
 
 	// Act
-	result, err := server.handleRegistrarColheita(ctx, args, profile)
+	result, err := server.handleRegistrarColheita(ctx, args, tenant)
 
 	// Assert
 	assert.NoError(t, err, "handler deve retornar sem erro")
 	assert.NotNil(t, result)
-	
+
 	resultMap := result.(map[string]interface{})
 	assert.True(t, resultMap["success"].(bool), "sucesso deve ser true")
 	assert.Contains(t, resultMap["message"].(string), "tomate")
@@ -57,8 +60,10 @@ func TestHandleRegistrarColheita_MultiTenancy(t *testing.T) {
 	args := test.MockArgsForColheita()
 
 	// Arrange: Dois perfis de PMOs diferentes
-	profilePMOA := test.MockProfileForPMO(1001) // mock ID
-	profilePMOB := test.MockProfileForPMO(1002)
+	tenantA, err := buildTenantCtx(test.MockProfileForPMO(1001)) // mock ID
+	require.NoError(t, err)
+	tenantB, err := buildTenantCtx(test.MockProfileForPMO(1002))
+	require.NoError(t, err)
 
 	supabaseClient, err := supabase.NewClient(supabase.Config{URL: os.Getenv("DATABASE_URL")})
 	require.NoError(t, err)
@@ -68,11 +73,11 @@ func TestHandleRegistrarColheita_MultiTenancy(t *testing.T) {
 	}
 
 	// Act: PMO A registra
-	resultA, errA := server.handleRegistrarColheita(ctx, args, profilePMOA)
+	resultA, errA := server.handleRegistrarColheita(ctx, args, tenantA)
 	assert.NoError(t, errA)
 
 	// Act: PMO B registra os mesmos dados
-	resultB, errB := server.handleRegistrarColheita(ctx, args, profilePMOB)
+	resultB, errB := server.handleRegistrarColheita(ctx, args, tenantB)
 	assert.NoError(t, errB)
 
 	// Assert: Ambos funcionam, mas em PMOs diferentes
@@ -84,37 +89,32 @@ func TestHandleRegistrarColheita_MultiTenancy(t *testing.T) {
 }
 
 // TestHandleRegistrarColheita_MissingProfile
-// Valida que sem profile, handler falha
+// Valida que sem profile, buildTenantCtx falha ANTES de qualquer handler
+// rodar — desde o DT-67 esse é o único portão; handleRegistrarColheita não
+// tem mais como ser chamado sem um TenantCtx já validado.
 func TestHandleRegistrarColheita_MissingProfile(t *testing.T) {
-	ctx := context.Background()
-	args := test.MockArgsForColheita()
+	_, err := buildTenantCtx(nil)
 
-	server := &Server{}
-
-	// Act
-	result, err := server.handleRegistrarColheita(ctx, args, nil)
-
-	// Assert
 	assert.Error(t, err, "deve falhar sem profile")
-	assert.Nil(t, result)
 }
 
 // TestHandleRegistrarColheita_MissingProduto
 // Valida que sem "produto" no args, handler falha
 func TestHandleRegistrarColheita_MissingProduto(t *testing.T) {
 	ctx := context.Background()
-	profile := test.MockProfile()
+	tenant, err := buildTenantCtx(test.MockProfile())
+	require.NoError(t, err)
 	args := map[string]interface{}{
 		// Falta "produto"
 		"quantidade_valor":   30.0,
 		"quantidade_unidade": "caixas",
-		"talhao_nome":       "principal",
+		"talhao_nome":        "principal",
 	}
 
 	server := &Server{}
 
 	// Act
-	_, err := server.handleRegistrarColheita(ctx, args, profile)
+	_, err = server.handleRegistrarColheita(ctx, args, tenant)
 
 	// Assert
 	assert.Error(t, err)

@@ -98,14 +98,7 @@ O frontend implementa o formulário completo do PMO dividido em seções:
 
 ## 🐛 Resolução de Problemas Comuns
 
-### 1. "WPPConnect desconectado (404)"
-**Causa:** Sessão caiu ou QR Code não foi lido.
-**Solução:**
-1. Reinicie o container `wppconnect-server`.
-2. Acesse `http://localhost:21465/api/my-session/start-session` para gerar novo QR Code.
-3. Escaneie com o app do WhatsApp.
-
-### 2. "Erro de validação Pydantic"
+### 1. "Erro de validação Pydantic"
 **Erro:** `ValidationError: 1 validation error for AtividadeItem...`
 **Solução:** Verifique se os tipos de dados enviados correspondem aos definidos em `models/records.py`. O sistema exige tipagem estrita (ex: float para quantidades).
 

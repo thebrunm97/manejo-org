@@ -16,7 +16,6 @@ import {
     TrendingUp,
     Box
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
 import { useAppNavigation } from '../../hooks/navigation/useAppNavigation';
 import { toast } from 'react-toastify';
 import { DemandaColetiva, DemandaStatus } from '../../domain/coletivo/coletivoTypes';
@@ -24,7 +23,6 @@ import { getOrganizacaoBySlug } from '../../services/organizacaoService';
 
 const CoopDemandasPage: React.FC = () => {
     const { slug } = useParams<{ slug: string }>();
-    const { profile } = useAuth();
     const { goBack } = useAppNavigation();
     
     const [organizacao, setOrganizacao] = useState<any>(null);

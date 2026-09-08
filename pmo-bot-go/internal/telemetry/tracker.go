@@ -68,3 +68,38 @@ func (r *RAGTelemetry) PrintReport() {
 	RagLatencyMS.WithLabelValues("window").Observe(float64(r.WindowMS))
 	RagLatencyMS.WithLabelValues("llm").Observe(float64(r.LLMMS))
 }
+
+// LLMCallTelemetry armazena métricas detalhadas de cada chamada ao LLM (DT-33).
+type LLMCallTelemetry struct {
+	RequestID        string
+	Model            string
+	InputTokens      int
+	OutputTokens     int
+	LatencyMS        int64
+	TimeToFirstToken int64 // Use -1 para não medido
+	StatusCode       int
+	TimeoutStage     string // "retrieval", "classificacao", "geracao", etc., ou vazio se OK
+	RetryCount       int
+	RetrievedChunks  int
+	PromptVersion    string
+	CostEstimate     float64
+}
+
+// LogLLMCall emite as métricas de chamada do LLM em formato que pode ser indexado.
+func LogLLMCall(t LLMCallTelemetry) {
+	slog.Info("LLM Call Detailed",
+		slog.String("event", "llm_call_detailed"),
+		slog.String("request_id", t.RequestID),
+		slog.String("model", t.Model),
+		slog.Int("input_tokens", t.InputTokens),
+		slog.Int("output_tokens", t.OutputTokens),
+		slog.Int64("latency_ms", t.LatencyMS),
+		slog.Int64("time_to_first_token", t.TimeToFirstToken),
+		slog.Int("status_code", t.StatusCode),
+		slog.String("timeout_stage", t.TimeoutStage),
+		slog.Int("retry_count", t.RetryCount),
+		slog.Int("retrieved_chunks", t.RetrievedChunks),
+		slog.String("prompt_version", t.PromptVersion),
+		slog.Float64("cost_estimate", t.CostEstimate),
+	)
+}

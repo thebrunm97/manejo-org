@@ -71,7 +71,7 @@ export function useSyncEngine() {
                 try {
                     await localDb.set({ ...item, syncing: true, lastAttempt: new Date().toISOString() }, SYNC_QUEUE_STORE);
 
-                    if (item.type === 'CADERNO_SAVE') {
+                    if (item.type === 'CADERNO_SAVE' || item.type === 'LIMPEZA_SAVE' || item.type === 'COMPOSTAGEM_SAVE') {
                         const record = item.payload;
                         const isNew = String(record.id).startsWith('offline_');
 

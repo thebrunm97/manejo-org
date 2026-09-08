@@ -57,7 +57,7 @@ func getSessionMutex(phone string) *sync.Mutex {
 
 // ProcessMessage orchestrates the flow:
 // LID -> Phone -> Profile -> Media Handling -> State Logic -> Extraction -> Intent Routing
-func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *supabase.Client, groqClient *groq.Client, wpClient ports.MessageSender, llmClient LLMClient, ttsClient ports.Synthesizer, mcpServer *mcp.Server, historyManager *history.Manager, flgClient *flagsmith.Client, routerCfg RouterConfig) (res ProcessResult) {
+func ProcessMessage(ctx context.Context, msg ports.IncomingEnvelope, sbClient *supabase.Client, groqClient *groq.Client, wpClient ports.ChannelSender, llmClient LLMClient, ttsClient ports.Synthesizer, mcpServer *mcp.Server, historyManager *history.Manager, flgClient *flagsmith.Client, routerCfg RouterConfig, memoryCache ports.MemoryCacheService) (res ProcessResult) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("🔥 [FSM-PANIC] Erro interno catastrófico: %v", r)
@@ -81,10 +81,10 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 	}
 
 	// 0. Mutex Locking for Concurrency Safety (State-Level Lock)
-	// We lock based on the resolved phone, or fallback to msg.From.
-	lockKey := msg.From
-	if phone != "" {
-		lockKey = phone
+	// We lock based on the ConversationID.
+	lockKey := msg.ConversationID
+	if lockKey == "" {
+		lockKey = msg.From
 	}
 	mu := getSessionMutex(lockKey)
 	mu.Lock()
@@ -102,6 +102,21 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 	if sbClient != nil && phone != "" {
 		profileParaGuard, _ = sbClient.GetProfileByPhone(phone)
 	}
+
+	// Popula ConversationID assim que há perfil para vincular a conversa.
+	// tenantID vazio de propósito: tenant por conversa depende do ADR-010
+	// (multitenancy), ainda "Proposto" — ver comentário em
+	// GetOrCreateConversation. Best-effort: uma falha aqui não pode travar o
+	// atendimento, e o restante do fluxo já sabe cair para msg.From quando
+	// ConversationID vem vazio (era o comportamento de sempre).
+	if profileParaGuard != nil && sbClient != nil {
+		if convID, errConv := sbClient.GetOrCreateConversation(ctx, "", profileParaGuard.ID, "whatsapp", phone); errConv == nil {
+			msg.ConversationID = convID
+		} else {
+			log.Printf("⚠️ [FSM] Falha ao resolver conversationID para %s: %v", phone, errConv)
+		}
+	}
+
 	if profileParaGuard != nil && !msg.IsAudio && !msg.IsImage && msg.Body != "" {
 		cleanBody := strings.ToUpper(strings.TrimSpace(msg.Body))
 		greetings := map[string]bool{
@@ -113,7 +128,15 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 		base := strings.TrimRight(cleanBody, "!.")
 		if greetings[base] {
 			log.Printf("⚡ [FSM] Ultra-Fast Greeting Guard: intercepted '%s'", cleanBody)
-			wpClient.SendMessage(msg.From, "Olá! Sou o assistente do ManejoORG. Como posso ajudar com seu registro ou dúvida hoje?")
+			
+			env := ports.OutboundEnvelope{
+				ConversationID: msg.ConversationID,
+				To:             msg.From,
+				Type:           ports.OutboundTypeText,
+				Text:           "Olá! Sou o assistente do ManejoORG. Como posso ajudar com seu registro ou dúvida hoje?",
+			}
+			wpClient.Send(context.Background(), env)
+			
 			if sbClient != nil && phone != "" {
 				go func() {
 					dbCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -160,28 +183,25 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 	// 2a. Media Processing (Audio/Image)
 	if msg.IsAudio {
 		log.Printf("[AUDIO-DEBUG] Iniciando processamento de áudio (ID: %s)", msg.ID)
-		audioBytes, audioMimeType, err := wpClient.DownloadAudio(msg.ID, msg.RawPayload)
+		audioBytes, audioMimeType, err := wpClient.DownloadMedia(ctx, msg.ID, msg.RawPayload)
 		if err != nil {
 			log.Printf("[AUDIO-DEBUG] Falha ao baixar áudio: %v", err)
-			sendFeedback(sbClient, wpClient, ttsClient, msg.From, "Desculpe, não consegui ouvir o seu áudio. Pode repetir ou digitar?", false)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "Desculpe, não consegui ouvir o seu áudio. Pode repetir ou digitar?", false)
 			return ProcessResult{Success: false, Reason: "audio_download_failed"}
 		}
 
 		log.Printf("[AUDIO-DEBUG] Áudio baixado com %d bytes, mime: %s", len(audioBytes), audioMimeType)
-		// TODO(fase-5-ou-switchover): usar audioMimeType para derivar FileName dinamicamente,
-		// igual ao groq_audio_adapter.go, quando este caminho for substituído por domain.ProcessAudioMessage.
-		// Enquanto isso, audioMimeType é capturado (garante compilação e telemetria) mas NÃO altera o comportamento.
-		transcription, err := groqClient.Transcribe(ctx, groq.AudioTranscriptionRequest{FileData: audioBytes, FileName: "audio.ogg", Language: "pt"})
+		transcription, err := groqClient.Transcribe(ctx, groq.AudioTranscriptionRequest{FileData: audioBytes, FileName: groq.DeriveFileName(audioMimeType), Language: "pt"})
 		if err != nil {
 			log.Printf("[AUDIO-DEBUG] Falha na transcrição Groq/Whisper: %v", err)
-			sendFeedback(sbClient, wpClient, ttsClient, msg.From, "Desculpe, não consegui ouvir o seu áudio. Pode repetir ou digitar?", false)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "Desculpe, não consegui ouvir o seu áudio. Pode repetir ou digitar?", false)
 			return ProcessResult{Success: false, Reason: "audio_transcription_failed"}
 		}
 
 		cleanText := strings.TrimSpace(transcription.Text)
 		if cleanText == "" {
 			log.Printf("[AUDIO-DEBUG] Transcrição vazia recebida do Whisper")
-			sendFeedback(sbClient, wpClient, ttsClient, msg.From, "Desculpe, não consegui ouvir o seu áudio. Pode repetir ou digitar?", false)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "Desculpe, não consegui ouvir o seu áudio. Pode repetir ou digitar?", false)
 			return ProcessResult{Success: false, Reason: "empty_audio_content"}
 		}
 
@@ -190,7 +210,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 		body = cleanText
 		respondWithAudio = true
 	} else if msg.IsImage {
-		imageBytes, mimeType, err := wpClient.DownloadImage(msg.ID, msg.RawPayload)
+		imageBytes, mimeType, err := wpClient.DownloadMedia(ctx, msg.ID, msg.RawPayload)
 		if err == nil {
 			// Keep legacy description for NER compatibility
 			description, _, err := llmClient.DescribeImage(ctx, imageBytes, mimeType)
@@ -206,6 +226,17 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 		}
 	} else if body != "" {
 		routerText = body
+	}
+
+	// [NOVO] Cache assíncrono — não bloqueia o fluxo de resposta
+	if memoryCache != nil && profile != nil && profile.PmoAtivoID > 0 && routerText != "" {
+		source := "text_message"
+		if msg.IsAudio {
+			source = "audio_transcription"
+		} else if msg.IsImage {
+			source = "image_description"
+		}
+		memoryCache.WriteFragmentAsync(ctx, int64(profile.PmoAtivoID), profile.ID, routerText, source)
 	}
 
 	// Persist incoming user message to database
@@ -227,10 +258,10 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 		if strings.HasPrefix(strings.ToUpper(body), "CONECTAR ") {
 			code := strings.TrimSpace(body[9:])
 			if err := sbClient.LinkDeviceToWeb(phone, code); err == nil {
-				sendFeedback(sbClient, wpClient, ttsClient, msg.From, "✅ Aparelho vinculado com sucesso!", respondWithAudio)
+				sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "✅ Aparelho vinculado com sucesso!", respondWithAudio)
 				return ProcessResult{Success: true, Reason: "device_linked"}
 			}
-			sendFeedback(sbClient, wpClient, ttsClient, msg.From, "❌ Código inválido ou expirado. Confira no portal e tente de novo.", respondWithAudio)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "❌ Código inválido ou expirado. Confira no portal e tente de novo.", respondWithAudio)
 			return ProcessResult{Success: false, Reason: "invalid_link_code"}
 		}
 
@@ -242,7 +273,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 			return res
 		}
 
-		sendFeedback(sbClient, wpClient, ttsClient, msg.From, "❌ WhatsApp não vinculado. Vincule via portal web.", respondWithAudio)
+		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "❌ WhatsApp não vinculado. Vincule via portal web.", respondWithAudio)
 		return ProcessResult{Success: false, Reason: "profile_not_found"}
 	}
 
@@ -273,14 +304,14 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 	if historyManager != nil {
 		state, ctxState, _ := historyManager.GetFSMState(phone)
 		if state != StateInitial {
-			return handleActiveState(state, ctxState, body, msg.From, phone, profile, respondWithAudio, sbClient, wpClient, ttsClient, historyManager, startTime, llmClient.ModelName(), llmClient, mcpServer)
+			return handleActiveState(state, ctxState, body, msg.From, phone, profile, respondWithAudio, sbClient, wpClient, ttsClient, historyManager, startTime, llmClient.ModelName(), llmClient, mcpServer, memoryCache)
 		}
 	}
 
 	// 5. Direct Commands (Quota, Status)
 	if isSaldoQuery(body) {
 		u, l, _ := sbClient.CheckSaldo(profile.ID)
-		sendFeedback(sbClient, wpClient, ttsClient, msg.From, fmt.Sprintf("🪙 Créditos: %d/%d", u, l), respondWithAudio)
+		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, fmt.Sprintf("🪙 Créditos: %d/%d", u, l), respondWithAudio)
 		return ProcessResult{Success: true, Reason: "status_checked"}
 	}
 
@@ -288,12 +319,12 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 	if bodyLower == "/trocar" || bodyLower == "/fazenda" {
 		propriedades, err := sbClient.GetPropriedadesDoUsuario(profile.ID)
 		if err != nil || len(propriedades) == 0 {
-			sendFeedback(sbClient, wpClient, ttsClient, msg.From, "❌ Não encontrei nenhuma propriedade associada ao seu número. Por favor, contate o suporte.", respondWithAudio)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "❌ Não encontrei nenhuma propriedade associada ao seu número. Por favor, contate o suporte.", respondWithAudio)
 			return ProcessResult{Success: false, Reason: "no_properties_found"}
 		}
 
 		if len(propriedades) == 1 {
-			sendFeedback(sbClient, wpClient, ttsClient, msg.From, fmt.Sprintf("🌱 Você possui apenas uma propriedade cadastrada: *%s*. Ela já está selecionada automaticamente para você!", propriedades[0].Nome), respondWithAudio)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, fmt.Sprintf("🌱 Você possui apenas uma propriedade cadastrada: *%s*. Ela já está selecionada automaticamente para você!", propriedades[0].Nome), respondWithAudio)
 			return ProcessResult{Success: true, Reason: "single_property_auto_selected"}
 		}
 
@@ -314,7 +345,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 		if historyManager != nil {
 			historyManager.SetFSMState(phone, StateAguardandoFazenda, map[string]interface{}{"options": pmoOptions}, nil)
 		}
-		sendFeedback(sbClient, wpClient, ttsClient, msg.From, menuBuilder.String(), respondWithAudio)
+		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, menuBuilder.String(), respondWithAudio)
 		return ProcessResult{Success: true, Reason: "fazenda_menu_sent"}
 	}
 	// 6. Intent Extraction (NER) & Intent Classification (Router) - Parallelized via errgroup
@@ -338,7 +369,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 
 	g.Go(func() error {
 		var routerErr error
-		fastRouterTimeoutMS := 3000
+		fastRouterTimeoutMS := 5000
 		if routerCfg.FastRouterTimeoutMS > 0 {
 			fastRouterTimeoutMS = routerCfg.FastRouterTimeoutMS
 		}
@@ -346,6 +377,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 		if routerCfg.EnableFastRouter {
 			routerCtx, routerCancel := context.WithTimeout(gCtx, time.Duration(fastRouterTimeoutMS)*time.Millisecond)
 			defer routerCancel()
+			routerCtx = context.WithValue(routerCtx, "timeout_stage", "classificacao_fast")
 			log.Printf("🚀 [FSM] Usando Fast Router para classificação (Timeout: %dms)", fastRouterTimeoutMS)
 			startFast := time.Now()
 			fastRouterRes, fastRouterErr = EvaluateWithLLM(routerCtx, llmClient, routerText)
@@ -357,6 +389,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 				startLegacy := time.Now()
 				legacyCtx, legacyCancel := context.WithTimeout(gCtx, 30*time.Second)
 				defer legacyCancel()
+				legacyCtx = context.WithValue(legacyCtx, "timeout_stage", "classificacao_legacy")
 				unifiedRes, routerModel, routerErr = llmClient.ClassifyIntent(legacyCtx, routerText)
 				legacyLatency := time.Since(startLegacy).Milliseconds()
 
@@ -410,6 +443,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingMessage, sbClient *su
 			startLegacy := time.Now()
 			legacyCtx, legacyCancel := context.WithTimeout(gCtx, 30*time.Second)
 			defer legacyCancel()
+			legacyCtx = context.WithValue(legacyCtx, "timeout_stage", "classificacao_legacy")
 			unifiedRes, routerModel, routerErr = llmClient.ClassifyIntent(legacyCtx, routerText)
 
 			legacyIntent := "unknown"
@@ -484,7 +518,7 @@ Você DEVE retornar EXCLUSIVAMENTE um objeto JSON válido, sem markdown, sem jus
 	log.Printf("⏱️ [TRACING] Sub-passo: Setup Inicial: %v", time.Since(startTime))
 
 	if !authQuota {
-		sendFeedback(sbClient, wpClient, ttsClient, msg.From, "🪙 Limite esgotado.", false)
+		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "🪙 Limite esgotado.", false)
 		return ProcessResult{Success: false, Reason: "quota_exceeded"}
 	}
 
@@ -524,15 +558,15 @@ Você DEVE retornar EXCLUSIVAMENTE um objeto JSON válido, sem markdown, sem jus
 		if isApprovalWord {
 			log.Printf("⚡ [FSM] Fast-Track: Palavra de aprovação sem HITL pendente — redirecionando ao Orchestrator para resposta contextual.")
 			filteredTools := mcpServer.GetToolsForIntent("CHAT")
-			resMsg, res := handleDuvidaFallback(ctx, wpClient, ttsClient, phone, llmClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, "CHAT", filteredTools, guard, historyManager, mcpServer, agentDomain, fastRouterRes)
+			resMsg, res := handleDuvidaFallback(ctx, wpClient, ttsClient, phone, llmClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, "CHAT", filteredTools, guard, historyManager, mcpServer, agentDomain, fastRouterRes, memoryCache)
 			if resMsg != "" {
-				sendFeedback(sbClient, wpClient, ttsClient, msg.From, resMsg, respondWithAudio)
+				sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, resMsg, respondWithAudio)
 			}
 			return res
 		}
 
 		botResponse := "Olá! Sou o assistente do ManejoORG. Como posso ajudar você hoje?"
-		sendFeedback(sbClient, wpClient, ttsClient, msg.From, botResponse, respondWithAudio)
+		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, botResponse, respondWithAudio)
 		recordLog(sbClient, profile, body, botResponse, string(routerModel), string(routerModel), 0, 0, 0, 0, "chat_fast", nil, startTime, true, nil)
 		return ProcessResult{Success: true, Reason: "chat_fast"}
 	}
@@ -547,8 +581,15 @@ Você DEVE retornar EXCLUSIVAMENTE um objeto JSON válido, sem markdown, sem jus
 	}
 
 	if isComplex {
-		log.Printf("⏳ [FSM] Enviando ACK imediato para solicitação complexa (RAG/Mutação)")
-		go wpClient.SendMessage(msg.From, "⏳ Processando sua solicitação...")
+		go func() {
+			env := ports.OutboundEnvelope{
+				ConversationID: msg.ConversationID,
+				To:             msg.From,
+				Type:           ports.OutboundTypeText,
+				Text:           "⏳ Processando sua solicitação...",
+			}
+			wpClient.Send(context.Background(), env)
+		}()
 	}
 
 	// 5. Sequential Processing of Intents
@@ -632,7 +673,7 @@ Você DEVE retornar EXCLUSIVAMENTE um objeto JSON válido, sem markdown, sem jus
 		}
 
 		// 3. Executar o loop de agente isolado para esta intenção
-		resMsg, res := handleDuvidaFallback(ctx, wpClient, ttsClient, phone, llmClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, string(intent), filteredTools, guard, historyManager, mcpServer, agentDomain, fastRouterRes)
+		resMsg, res := handleDuvidaFallback(ctx, wpClient, ttsClient, phone, llmClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, string(intent), filteredTools, guard, historyManager, mcpServer, agentDomain, fastRouterRes, memoryCache)
 
 		if resMsg != "" {
 			finalResponses = append(finalResponses, resMsg)
@@ -649,7 +690,7 @@ Você DEVE retornar EXCLUSIVAMENTE um objeto JSON válido, sem markdown, sem jus
 	// 6. Consolidated Success Feedback
 	if len(finalResponses) > 0 {
 		aggregatedResponse := strings.Join(finalResponses, "\n\n---\n\n")
-		sendFeedback(sbClient, wpClient, ttsClient, msg.From, aggregatedResponse, respondWithAudio)
+		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, aggregatedResponse, respondWithAudio)
 		return lastRes
 	}
 
@@ -659,7 +700,7 @@ Você DEVE retornar EXCLUSIVAMENTE um objeto JSON válido, sem markdown, sem jus
 
 	// 7. Hard fallback: aggregatedResponse is empty after all processing.
 	log.Printf("⚠️ [FSM] Nenhuma resposta gerada após processamento completo. Enviando fallback.")
-	sendFeedback(sbClient, wpClient, ttsClient, msg.From, "Desculpe, não consegui processar sua mensagem. Pode tentar novamente?", respondWithAudio)
+	sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "Desculpe, não consegui processar sua mensagem. Pode tentar novamente?", respondWithAudio)
 	return ProcessResult{Success: false, Reason: "empty_aggregated_response"}
 }
 
@@ -680,7 +721,7 @@ func entityMatchesIntent(entityIntencao string, intent llm.Intent) bool {
 }
 
 // dispatchEntity routes a single action to its respective handler and returns the response string
-func dispatchEntity(ctx context.Context, entity llm.AcaoEstruturada, profile *supabase.Profile, sbClient *supabase.Client, wpClient ports.MessageSender, llmClient LLMClient, ttsClient ports.Synthesizer, mcpServer *mcp.Server, historyManager *history.Manager, phone string, body string, respondWithAudio bool, startTime time.Time, routedIntent llm.Intent, filteredTools []llm.FerramentaAgnostica, guard *mcp.LoopGuard, routerModel string, agentDomain string, fastRouterRes RouterResult) (string, ProcessResult) {
+func dispatchEntity(ctx context.Context, entity llm.AcaoEstruturada, profile *supabase.Profile, sbClient *supabase.Client, wpClient ports.ChannelSender, llmClient LLMClient, ttsClient ports.Synthesizer, mcpServer *mcp.Server, historyManager *history.Manager, phone string, body string, respondWithAudio bool, startTime time.Time, routedIntent llm.Intent, filteredTools []llm.FerramentaAgnostica, guard *mcp.LoopGuard, routerModel string, agentDomain string, fastRouterRes RouterResult, memoryCache ports.MemoryCacheService) (string, ProcessResult) {
 	// Map AcaoEstruturada to groq.ExtractionResult for handler compatibility
 	extracted := &groq.ExtractionResult{
 		Intencao:          entity.Intencao,
@@ -743,7 +784,7 @@ func dispatchEntity(ctx context.Context, entity llm.AcaoEstruturada, profile *su
 		return handleAssumirCota(ctx, extracted, profile, sbClient, wpClient, llmClient, ttsClient, phone, body, respondWithAudio, startTime, routerModel, routerModel)
 
 	case "duvida":
-		return handleDuvidaFallback(ctx, wpClient, ttsClient, phone, llmClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, string(routedIntent), filteredTools, guard, historyManager, mcpServer, agentDomain, fastRouterRes)
+		return handleDuvidaFallback(ctx, wpClient, ttsClient, phone, llmClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, string(routedIntent), filteredTools, guard, historyManager, mcpServer, agentDomain, fastRouterRes, memoryCache)
 
 	case "saudacao":
 		return "Olá! Sou o assistente do ManejoORG. Como posso ajudar com seu registro ou dúvida hoje?", ProcessResult{Success: true, Reason: "greeting"}
@@ -756,7 +797,7 @@ func dispatchEntity(ctx context.Context, entity llm.AcaoEstruturada, profile *su
 		}
 
 		if routedIntent == llm.IntentRAG || routedIntent == llm.IntentDatabase {
-			return handleDuvidaFallback(ctx, wpClient, ttsClient, phone, llmClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, string(routedIntent), filteredTools, guard, historyManager, mcpServer, agentDomain, fastRouterRes)
+			return handleDuvidaFallback(ctx, wpClient, ttsClient, phone, llmClient, body, respondWithAudio, sbClient, profile, startTime, 0, 0, string(routedIntent), filteredTools, guard, historyManager, mcpServer, agentDomain, fastRouterRes, memoryCache)
 		}
 		return "", ProcessResult{Success: true, Reason: "ignored"}
 	}
@@ -764,7 +805,7 @@ func dispatchEntity(ctx context.Context, entity llm.AcaoEstruturada, profile *su
 
 // handleActiveState dispatches turn-2 messages to their respective handlers
 // handleActiveState dispatches turn-2 messages to their respective handlers
-func handleActiveState(state string, ctxState map[string]interface{}, body string, from string, phone string, profile *supabase.Profile, respondWithAudio bool, sbClient *supabase.Client, wpClient ports.MessageSender, ttsClient ports.Synthesizer, historyManager *history.Manager, startTime time.Time, modelConfigured string, llmClient LLMClient, mcpServer *mcp.Server) ProcessResult {
+func handleActiveState(state string, ctxState map[string]interface{}, body string, from string, phone string, profile *supabase.Profile, respondWithAudio bool, sbClient *supabase.Client, wpClient ports.ChannelSender, ttsClient ports.Synthesizer, historyManager *history.Manager, startTime time.Time, modelConfigured string, llmClient LLMClient, mcpServer *mcp.Server, memoryCache ports.MemoryCacheService) ProcessResult {
 	ctx := context.Background()
 	var botResponse string
 	var res ProcessResult
@@ -795,7 +836,7 @@ func handleActiveState(state string, ctxState map[string]interface{}, body strin
 			pending = pending[1:]
 
 			log.Printf("🔄 [FSM-PENDING] Consumindo ação pendente do batch: %s", next.Intencao)
-			resMsg, nextRes := dispatchEntity(ctx, next, profile, sbClient, wpClient, llmClient, ttsClient, mcpServer, historyManager, phone, "", respondWithAudio, startTime, llm.IntentDatabase, nil, nil, modelConfigured, "general", RouterResult{})
+			resMsg, nextRes := dispatchEntity(ctx, next, profile, sbClient, wpClient, llmClient, ttsClient, mcpServer, historyManager, phone, "", respondWithAudio, startTime, llm.IntentDatabase, nil, nil, modelConfigured, "general", RouterResult{}, memoryCache)
 
 			if nextRes.Success {
 				if resMsg != "" {
@@ -838,7 +879,7 @@ func handleActiveState(state string, ctxState map[string]interface{}, body strin
 				res = nextRes
 				botResponse = strings.Join(responses, "\n\n---\n\n")
 				if botResponse != "" {
-					sendFeedback(sbClient, wpClient, ttsClient, from, botResponse, respondWithAudio)
+					sendFeedback(sbClient, wpClient, ttsClient, "", from, botResponse, respondWithAudio)
 				}
 				return res
 			}
@@ -848,7 +889,7 @@ func handleActiveState(state string, ctxState map[string]interface{}, body strin
 	}
 
 	if botResponse != "" {
-		sendFeedback(sbClient, wpClient, ttsClient, from, botResponse, respondWithAudio)
+		sendFeedback(sbClient, wpClient, ttsClient, "", from, botResponse, respondWithAudio)
 	}
 	return res
 }
@@ -899,3 +940,4 @@ func isSaldoQuery(body string) bool {
 
 	return false
 }
+

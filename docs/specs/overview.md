@@ -103,8 +103,7 @@ pmo_bot/
 │   ├── conventions.md
 │   ├── PMO_DATA_STRUCTURE.md
 │   └── README.md
-├── audios_recebidos/       # Temp de áudios baixados
-└── wppconnect-server/      # Servidor WPPConnect
+└── audios_recebidos/       # Temp de áudios baixados
 ```
 
 ---
@@ -112,11 +111,7 @@ pmo_bot/
 ## 🚀 Como Executar
 
 ```bash
-# 1. Iniciar WPPConnect Server
-cd wppconnect-server
-npm run dev
-
-# 2. Iniciar Bot
+# Iniciar Bot
 cd pmo_bot
 python webhook.py
 ```
@@ -126,7 +121,6 @@ python webhook.py
 GROQ_API_KEY=gsk_...
 SUPABASE_URL=https://xxx.supabase.co
 SUPABASE_KEY=eyJ...
-WPP_TOKEN=seu_token_wppconnect
 ```
 
 ---

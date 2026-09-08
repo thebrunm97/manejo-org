@@ -71,6 +71,9 @@ db.sqlite3
 # ── Go Backend ────────────────────────────────
 pmo-bot-go/bin/
 pmo-bot-go/tmp_test_bin*
+pmo-bot-go/tmp_server
+pmo-bot-go/tmp_bot
+pmo-bot-go/cmd/server/seu-bot
 pmo-bot-go/.telemetria_acumulada.log
 evolution-go-source/evolution-go
 
@@ -161,3 +164,18 @@ scripts/reset_checkpoint.py
 scripts/test_gemini_batch.py
 scripts/test_rag_query.py
 scripts/test_mcp.js
+
+# ── Obsidian vault config (preferências locais) ──
+wiki/.obsidian/
+
+# ── Cartographer (grafo gerado, cache local) ──
+.cartographer/
+
+# ── Config MCP local (caminhos absolutos da máquina) ──
+.mcp.json
+
+# ── DT-30: clone não relacionado do SDK MCP da Microsoft, commitado por
+# engano como gitlink quebrado em 2026-03 (sem relação com pmo-bot-go/
+# internal/mcp) — quebrava o checkout do CI ("No url found for submodule
+# path 'mcp'"). Removido do controle de versão; ignorado para não voltar.
+/mcp/

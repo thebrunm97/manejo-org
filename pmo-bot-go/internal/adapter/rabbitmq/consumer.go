@@ -15,7 +15,7 @@ type Consumer struct {
 	url      string
 	conn     *amqp.Connection
 	ch       *amqp.Channel
-	handler  func(context.Context, *ports.IncomingMessage, []byte) error
+	handler  func(context.Context, *ports.IncomingEnvelope, []byte) error
 	exchange string
 	queue    string
 }
@@ -89,7 +89,7 @@ func (c *Consumer) Connect() error {
 	return nil
 }
 
-func (c *Consumer) Consume(handler func(context.Context, *ports.IncomingMessage, []byte) error) error {
+func (c *Consumer) Consume(handler func(context.Context, *ports.IncomingEnvelope, []byte) error) error {
 	c.handler = handler
 
 	msgs, err := c.ch.Consume(

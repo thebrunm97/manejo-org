@@ -20,12 +20,12 @@ type SimpleAsker interface {
 type ProactiveEngine struct {
 	cron     *cron.Cron
 	db       *supabase.Client
-	evoAPI   ports.MessageSender
+	evoAPI   ports.ChannelSender
 	llmAgent SimpleAsker
 }
 
 // NewProactiveEngine inicializa o motor de proatividade
-func NewProactiveEngine(db *supabase.Client, evo ports.MessageSender, llmAgent SimpleAsker) *ProactiveEngine {
+func NewProactiveEngine(db *supabase.Client, evo ports.ChannelSender, llmAgent SimpleAsker) *ProactiveEngine {
 	// Inicializa o cron usando o timezone local da aplicação
 	c := cron.New()
 	return &ProactiveEngine{
@@ -90,7 +90,7 @@ Regras:
 		}
 
 		// 3. Dispara a mensagem via Evolution API
-		err = e.evoAPI.SendMessage(task.PhoneNumber, payloadMsg)
+		err = e.evoAPI.Send(context.Background(), ports.OutboundEnvelope{To: task.PhoneNumber, Type: ports.OutboundTypeText, Text: payloadMsg})
 		if err != nil {
 			log.Printf("❌ Erro ao enviar WhatsApp proativo para %s: %v", task.PhoneNumber, err)
 		} else {
@@ -98,3 +98,4 @@ Regras:
 		}
 	}
 }
+

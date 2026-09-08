@@ -454,4 +454,6 @@ export interface Propriedade {
     inscricao_estadual?: string;
     matricula?: string;
     endereco_cadastral?: string;
+    latitude?: number;
+    longitude?: number;
 }

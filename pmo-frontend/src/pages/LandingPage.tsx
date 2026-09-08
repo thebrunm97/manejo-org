@@ -4,7 +4,6 @@ import {
     Tractor,
     MessageSquare,
     ArrowRight,
-    TrendingUp,
     Zap,
     Send,
     Map,
@@ -23,67 +22,6 @@ import {
     Sun
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-
-// ==========================================================================
-// 1. COMPONENTE DE CONTADOR ANIMADO DINÂMICO
-// ==========================================================================
-interface AnimatedCounterProps {
-    target: number;
-    suffix?: string;
-    duration?: number;
-}
-
-const AnimatedCounter: React.FC<AnimatedCounterProps> = ({ target, suffix = '', duration = 1500 }) => {
-    const [count, setCount] = useState(0);
-    const elementRef = useRef<HTMLSpanElement>(null);
-    const hasAnimated = useRef(false);
-
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-            (entries) => {
-                const [entry] = entries;
-                if (entry.isIntersecting && !hasAnimated.current) {
-                    hasAnimated.current = true;
-                    
-                    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-                    if (prefersReduced) {
-                        setCount(target);
-                        return;
-                    }
-
-                    const startTime = performance.now();
-                    const animate = (currentTime: number) => {
-                        const elapsed = currentTime - startTime;
-                        const progress = Math.min(elapsed / duration, 1);
-                        const easeOutProgress = progress * (2 - progress);
-                        const currentValue = Math.floor(easeOutProgress * target);
-
-                        setCount(currentValue);
-
-                        if (progress < 1) {
-                            requestAnimationFrame(animate);
-                        } else {
-                            setCount(target);
-                        }
-                    };
-                    requestAnimationFrame(animate);
-                }
-            },
-            { threshold: 0.1 }
-        );
-
-        if (elementRef.current) observer.observe(elementRef.current);
-        return () => {
-            if (elementRef.current) observer.unobserve(elementRef.current);
-        };
-    }, [target, duration]);
-
-    return (
-        <span ref={elementRef} className="font-serif text-5xl lg:text-6xl text-agro-floresta font-bold tracking-tight">
-            {count}{suffix}
-        </span>
-    );
-};
 
 // ==========================================================================
 // 2. MOCKUP DE DISPOSITIVO HÍBRIDO OVERLAPPING (HERO)

@@ -9,6 +9,7 @@ package state
 // botões — ou seja, o único que funciona para todo mundo hoje.
 
 import (
+	"context"
 	"log"
 	"strings"
 
@@ -93,7 +94,7 @@ func handlePreferenceCommand(
 	from string,
 	phone string,
 	sbClient *supabase.Client,
-	wpClient ports.MessageSender,
+	wpClient ports.ChannelSender,
 	ttsClient ports.Synthesizer,
 ) (ProcessResult, bool) {
 	pref, ok := parsePreferenceCommand(body)
@@ -107,16 +108,25 @@ func handlePreferenceCommand(
 		// Sem perfil não há onde gravar. Dizer isso é melhor que confirmar uma
 		// mudança que não aconteceu — o produtor perceberia a discrepância na
 		// mensagem seguinte, e aí sem nenhuma pista do motivo.
-		_ = wpClient.SendMessage(from,
-			"Ainda não consegui identificar seu cadastro para guardar essa preferência. "+
-				"Assim que seu cadastro estiver ativo, o comando funciona.")
+		env := ports.OutboundEnvelope{
+			ConversationID: "",
+			To:             from,
+			Type:           ports.OutboundTypeText,
+			Text:           "Ainda não consegui identificar seu cadastro para guardar essa preferência. Assim que seu cadastro estiver ativo, o comando funciona.",
+		}
+		_ = wpClient.Send(context.Background(), env)
 		return ProcessResult{Success: true, Reason: "preference_command_no_profile"}, true
 	}
 
 	if err := sbClient.SetResponsePreference(phone, string(pref)); err != nil {
 		log.Printf("⚠️ [FSM] Falha ao gravar preferência de formato: %v", err)
-		_ = wpClient.SendMessage(from,
-			"Não consegui salvar essa preferência agora. Pode tentar de novo em instantes?")
+		env := ports.OutboundEnvelope{
+			ConversationID: "",
+			To:             from,
+			Type:           ports.OutboundTypeText,
+			Text:           "Não consegui salvar essa preferência agora. Pode tentar de novo em instantes?",
+		}
+		_ = wpClient.Send(context.Background(), env)
 		return ProcessResult{Success: false, Reason: "preference_command_persist_failed"}, true
 	}
 
@@ -124,9 +134,10 @@ func handlePreferenceCommand(
 	// e comprova na hora que funciona; quem pediu texto não é obrigado a ouvir
 	// mais um áudio justamente para saber que não vai receber mais áudios.
 	confirmarComAudio := pref == ports.PreferenceAudio
-	if err := sendFeedback(sbClient, wpClient, ttsClient, from, confirmacaoPreferencia[pref], confirmarComAudio); err != nil {
+	if err := sendFeedback(sbClient, wpClient, ttsClient, "", from, confirmacaoPreferencia[pref], confirmarComAudio); err != nil {
 		log.Printf("⚠️ [FSM] Preferência gravada, mas a confirmação falhou: %v", err)
 	}
 
 	return ProcessResult{Success: true, Reason: "preference_command_" + string(pref)}, true
 }
+

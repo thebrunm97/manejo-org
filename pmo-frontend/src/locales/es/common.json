@@ -4,7 +4,20 @@
     "properties": "Propiedades",
     "reports": "Informes",
     "settings": "Configuración",
-    "logout": "Cerrar Sesión"
+    "logout": "Cerrar Sesión",
+    "pmoList": "Planes de Manejo",
+    "notebook": "Cuaderno de Campo",
+    "finance": "Finanzas / ERG",
+    "map": "Mapa de la Propiedad",
+    "crops": "Mis Cultivos",
+    "changelog": "Novedades",
+    "propertyData": "Datos de la Propiedad",
+    "profile": "Mi Perfil",
+    "mural": "Mural de Demandas",
+    "coop": "Panel Cooperativa",
+    "admin": "Administración",
+    "liveMonitor": "Monitor en Vivo",
+    "section": "Gestión"
   },
   "language": {
     "pt": "Português",

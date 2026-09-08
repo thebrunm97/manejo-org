@@ -45,9 +45,9 @@ func SetBusinessEvaluator(eval guardrails.BusinessEvaluator) {
 	ActiveBusinessEvaluator = eval
 }
 
-// handleDuvidaFallback is the specialist multi-agent entry point.
-// It uses modular prompts, filtered tools, loop protection, and short-term memory injection.
-func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, _ ports.Synthesizer, from string, llmClient LLMClient, body string, _ bool, sbClient *supabase.Client, profile *supabase.Profile, startTime time.Time, _ int, _ int, finalIntent string, tools []llm.FerramentaAgnostica, guard *mcp.LoopGuard, historyManager *history.Manager, mcpServer *mcp.Server, agentDomain string, routerResult RouterResult) (string, ProcessResult) {
+// handleDuvidaFallback executa o fluxo agêntico generalista (orquestrador).
+// Usado quando a intenção é DuvidaAgro, Clarification, Chat ou como fallback seguro de outros estados.
+func handleDuvidaFallback(ctx context.Context, wpClient ports.ChannelSender, ttsClient ports.Synthesizer, from string, llmClient LLMClient, body string, isAudio bool, sbClient *supabase.Client, profile *supabase.Profile, startTime time.Time, _ int, _ int, finalIntent string, tools []llm.FerramentaAgnostica, guard *mcp.LoopGuard, historyManager *history.Manager, mcpServer *mcp.Server, agentDomain string, routerResult RouterResult, memoryCache ports.MemoryCacheService) (string, ProcessResult) {
 	log.Printf("🤖 [FSM] Iniciando Fluxo Especialista (Intent: %s)", finalIntent)
 
 	// 1. Prepare Specialized Context
@@ -86,7 +86,17 @@ func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, _ p
 
 	// 2.5 Buscar Memória Persistente (Recall)
 	var userMemories string
+	var activeBlock string
 	if profile != nil && profile.PmoAtivoID > 0 {
+		// [NOVO] Busca 3-camadas (Redis recent -> Redis scored -> Supabase semantic)
+		if memoryCache != nil {
+			activeCtxFrags, errCtx := memoryCache.GetActiveContext(ctx, int64(profile.PmoAtivoID), body)
+			if errCtx == nil && len(activeCtxFrags) > 0 {
+				pm := NewPromptManager()
+				activeBlock = pm.BuildActiveContextBlock(activeCtxFrags)
+			}
+		}
+
 		// Gera embedding da dúvida
 		queryEmb, err := sbClient.GetEmbedding(body, "CONSULTA")
 		if err == nil {
@@ -102,7 +112,7 @@ func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, _ p
 		}
 	}
 
-	botResponse, newHistory, trace, usage, modelUsed, err := orchestrator.ExecuteAgenticLoop(ctx, profile, specPrompt, body, tools, agnosticHistory, guard, agentDomain, userMemories, routerResult)
+	botResponse, newHistory, trace, usage, modelUsed, err := orchestrator.ExecuteAgenticLoop(ctx, profile, specPrompt, body, tools, agnosticHistory, guard, agentDomain, userMemories, activeBlock, routerResult)
 	if err != nil {
 		if err.Error() == "hitl_pending" {
 			log.Printf("⏸️ [FSM] HITL pendente. Salvando histórico e silenciando resposta conversacional.")
@@ -168,3 +178,4 @@ func handleDuvidaFallback(ctx context.Context, wpClient ports.MessageSender, _ p
 
 	return botResponse, ProcessResult{Success: true, Reason: "agent_responded"}
 }
+

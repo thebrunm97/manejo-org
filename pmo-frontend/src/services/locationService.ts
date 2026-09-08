@@ -159,6 +159,7 @@ export const locationService = {
      * Cria um novo talhão.
      */
     createTalhao: async (talhaoData: TalhaoInsert): Promise<TalhaoRow> => {
+        // DT-59, fatia 3: via gateway Go — ver internal/gateway/rpc_proxy.go.
         const { data, error } = await goApiRpc<TalhaoRow>('create_talhao', { p_payload: talhaoData });
 
         if (error) {
@@ -168,13 +169,14 @@ export const locationService = {
         if (!data) {
             throw new Error("create_talhao não devolveu o talhão criado.");
         }
-        return data;
+        return data as TalhaoRow;
     },
 
     /**
      * Remove um talhão pelo ID.
      */
     deleteTalhao: async (id: string | number): Promise<boolean> => {
+        // DT-59, fatia 3: via gateway Go — ver internal/gateway/rpc_proxy.go.
         const { error } = await goApiRpc('delete_talhao', { p_id: id });
 
         if (error) {

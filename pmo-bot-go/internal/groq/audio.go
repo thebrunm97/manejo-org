@@ -65,14 +65,8 @@ func (c *Client) Transcribe(ctx context.Context, req AudioTranscriptionRequest) 
 		return nil, fmt.Errorf("failed to close multipart writer: %w", err)
 	}
 
-	// Create request with strict timeout context
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, audioApiURL, body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create groq audio request: %w", err)
-	}
-
-	httpReq.Header.Set("Content-Type", writer.FormDataContentType())
-	httpReq.Header.Set("Authorization", "Bearer "+c.apiKey)
+	bodyBytes := body.Bytes()
+	contentType := writer.FormDataContentType()
 
 	// Retry loop for transient failures
 	var lastErr error
@@ -85,6 +79,16 @@ func (c *Client) Transcribe(ctx context.Context, req AudioTranscriptionRequest) 
 			case <-time.After(backoff):
 			}
 		}
+
+		// Build the request fresh on every attempt: http.Request consumes the
+		// body reader, so reusing a single request here would send an empty body
+		// on retries (ContentLength mismatch / truncated multipart).
+		httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, audioApiURL, bytes.NewReader(bodyBytes))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create groq audio request: %w", err)
+		}
+		httpReq.Header.Set("Content-Type", contentType)
+		httpReq.Header.Set("Authorization", "Bearer "+c.apiKey)
 
 		resp, err := c.httpClient.Do(httpReq)
 		if err != nil {

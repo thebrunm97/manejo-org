@@ -17,14 +17,10 @@ type AlocacaoTalhao struct {
 	ValorAlocado float64 `json:"valor_alocado"`
 }
 
-func (s *Server) handleCalcularAdubacao(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
-	// SECURE SESSION INJECTION
-	if profile == nil {
-		return nil, fmt.Errorf("unauthorized: missing profile")
-	}
-	pmoID := profile.PmoAtivoID
-	userID := profile.ID
-	propID := profile.PropriedadeAtivaID
+func (s *Server) handleCalcularAdubacao(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
+	pmoID := tenant.PmoID
+	userID := tenant.UserID
+	propID := tenant.PropriedadeID
 	_ = pmoID
 	_ = userID
 	_ = propID
@@ -46,19 +42,13 @@ func (s *Server) handleCalcularAdubacao(ctx context.Context, args map[string]int
 	return res, nil
 }
 
-func (s *Server) handleAdicionarInsumoPMO(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
-	// SECURE SESSION INJECTION — pmo_id from profile ONLY, never from args
-	if profile == nil {
-		return nil, fmt.Errorf("unauthorized: missing profile")
-	}
-	pmoID := profile.PmoAtivoID
-	if pmoID == 0 {
-		return nil, fmt.Errorf("validation: usuário não tem PMO ativa selecionada")
-	}
+func (s *Server) handleAdicionarInsumoPMO(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
+	// SECURE SESSION INJECTION — pmo_id vem do TenantCtx, nunca dos args (DT-67)
+	pmoID := tenant.PmoID
 
 	log.Printf("🚨 [DEBUG TOOL] handleAdicionarInsumoPMO Args recebidos do LLM: %+v", args)
 
-	// SECURITY: pmo_id always from profile, args value is ignored
+	// SECURITY: pmo_id sempre do TenantCtx, args value is ignored
 	pmoIDVal := pmoID
 	var pmoIDPtr *int64
 	if pmoIDVal > 0 {
@@ -92,14 +82,10 @@ func (s *Server) handleAdicionarInsumoPMO(ctx context.Context, args map[string]i
 	return fmt.Sprintf("Insumo '%s' registrado com sucesso na Seção 8 do seu plano.", record.ProdutoManejo), nil
 }
 
-func (s *Server) handleRegistrarLimpeza(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
-	// SECURE SESSION INJECTION
-	if profile == nil {
-		return nil, fmt.Errorf("unauthorized: missing profile")
-	}
-	pmoID := profile.PmoAtivoID
-	userID := profile.ID
-	propID := profile.PropriedadeAtivaID
+func (s *Server) handleRegistrarLimpeza(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
+	pmoID := tenant.PmoID
+	userID := tenant.UserID
+	propID := tenant.PropriedadeID
 	_ = pmoID
 	_ = userID
 	_ = propID
@@ -134,7 +120,7 @@ func (s *Server) handleRegistrarLimpeza(ctx context.Context, args map[string]int
 	}, dataArg)
 
 	if err != nil {
-		return fmt.Errorf("erro ao registrar limpeza: %w", err), nil
+		return nil, fmt.Errorf("erro ao registrar limpeza: %w", err)
 	}
 
 	if status, ok := res["status"].(string); ok && status == "error" {
@@ -144,14 +130,10 @@ func (s *Server) handleRegistrarLimpeza(ctx context.Context, args map[string]int
 	return fmt.Sprintf("Limpeza de '%s' registrada com sucesso.", payload["item_area"]), nil
 }
 
-func (s *Server) handleRegistrarPropagacaoVegetal(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
-	// SECURE SESSION INJECTION
-	if profile == nil {
-		return nil, fmt.Errorf("unauthorized: missing profile")
-	}
-	pmoID := profile.PmoAtivoID
-	userID := profile.ID
-	propID := profile.PropriedadeAtivaID
+func (s *Server) handleRegistrarPropagacaoVegetal(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
+	pmoID := tenant.PmoID
+	userID := tenant.UserID
+	propID := tenant.PropriedadeID
 	_ = pmoID
 	_ = userID
 	_ = propID
@@ -192,7 +174,7 @@ func (s *Server) handleRegistrarPropagacaoVegetal(ctx context.Context, args map[
 	}, dataArg)
 
 	if err != nil {
-		return fmt.Errorf("erro ao registrar propagação: %w", err), nil
+		return nil, fmt.Errorf("erro ao registrar propagação: %w", err)
 	}
 
 	if status, ok := res["status"].(string); ok && status == "error" {
@@ -202,14 +184,10 @@ func (s *Server) handleRegistrarPropagacaoVegetal(ctx context.Context, args map[
 	return fmt.Sprintf("Material de propagação '%s' (%s) registrado com sucesso.", payload["especies"], payload["tipo"]), nil
 }
 
-func (s *Server) handleRegistrarCompostagem(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
-	// SECURE SESSION INJECTION
-	if profile == nil {
-		return nil, fmt.Errorf("unauthorized: missing profile")
-	}
-	pmoID := profile.PmoAtivoID
-	userID := profile.ID
-	propID := profile.PropriedadeAtivaID
+func (s *Server) handleRegistrarCompostagem(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
+	pmoID := tenant.PmoID
+	userID := tenant.UserID
+	propID := tenant.PropriedadeID
 	_ = pmoID
 	_ = userID
 	_ = propID
@@ -247,7 +225,7 @@ func (s *Server) handleRegistrarCompostagem(ctx context.Context, args map[string
 	}, dataArg)
 
 	if err != nil {
-		return fmt.Errorf("erro ao processar ação de compostagem: %w", err), nil
+		return nil, fmt.Errorf("erro ao processar ação de compostagem: %w", err)
 	}
 
 	if status, ok := res["status"].(string); ok && status == "error" {
@@ -257,14 +235,10 @@ func (s *Server) handleRegistrarCompostagem(ctx context.Context, args map[string
 	return res["message"], nil
 }
 
-func (s *Server) handleRegistrarCompraInsumo(ctx context.Context, args map[string]interface{}, profile *supabase.Profile) (interface{}, error) {
-	// SECURE SESSION INJECTION
-	if profile == nil {
-		return nil, fmt.Errorf("unauthorized: missing profile")
-	}
-	pmoID := profile.PmoAtivoID
-	userID := profile.ID
-	propID := profile.PropriedadeAtivaID
+func (s *Server) handleRegistrarCompraInsumo(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
+	pmoID := tenant.PmoID
+	userID := tenant.UserID
+	propID := tenant.PropriedadeID
 	_ = pmoID
 	_ = userID
 	_ = propID
@@ -335,7 +309,7 @@ func (s *Server) handleRegistrarCompraInsumo(ctx context.Context, args map[strin
 
 	resp, err := s.supabase.RegistrarCompraInsumoRPC(ctx, rpcArgs)
 	if err != nil {
-		return fmt.Errorf("erro ao registrar compra via RPC: %w", err), nil
+		return nil, fmt.Errorf("erro ao registrar compra via RPC: %w", err)
 	}
 
 	if status, ok := resp["status"].(string); ok && status == "error" {
