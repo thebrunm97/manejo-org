@@ -5,6 +5,13 @@ on:
     branches:
       - main
 
+env:
+  # Project ref não é segredo (aparece na própria URL do dashboard) — só o
+  # access token e a senha do banco (abaixo, via secrets) são sensíveis.
+  SUPABASE_PROJECT_ID: hejewayflbuemnffrhae
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+  SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
 jobs:
   verify_schema_parity:
     name: Verify Schema Parity
@@ -17,14 +24,14 @@ jobs:
         with:
           version: latest
 
-      # A ideia aqui é checar se existem diferenças estruturais
-      # entre o ambiente de Staging e o de Produção,
-      # garantindo que as migrations estão alinhadas.
-      # Nota: Para o comando de diff abaixo funcionar corretamente, precisamos linkar o staging.
-      # Por simplicidade, podemos apenas validar que a DB_URL de produção não tem diff contra as migrations locais.
+      - name: Link Production Project
+        run: supabase link --project-ref $SUPABASE_PROJECT_ID
+
+      # Compara as migrations locais contra o schema real do banco de
+      # produção (linkado acima), garantindo que não há diferença estrutural
+      # antes do push.
       - name: Verify Migrations (Prod vs Local)
-        run: |
-          supabase db diff --db-url ${{ secrets.PROD_DB_URL }}
+        run: supabase db diff --linked
 
   deploy:
     name: Deploy Migrations to Production
@@ -39,6 +46,8 @@ jobs:
         with:
           version: latest
 
+      - name: Link Production Project
+        run: supabase link --project-ref $SUPABASE_PROJECT_ID
+
       - name: Push Migrations
-        run: |
-          supabase db push --db-url ${{ secrets.PROD_DB_URL }}
+        run: supabase db push
