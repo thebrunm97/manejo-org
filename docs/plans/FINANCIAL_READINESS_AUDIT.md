@@ -1,5 +1,7 @@
 # FINANCIAL_READINESS_AUDIT.md
 
+> **Status: ✅ Concluído** — `rpc_registrar_transacao_com_rateio` existe; `Alocacoes` está em `AcaoEstruturada`. Mantido para histórico (auditoria de documentação, 2026-09-08).
+
 ## 1. Raio-X do Banco de Dados (Supabase)
 
 ### 1.1 Colunas Financeiras no `caderno_campo`

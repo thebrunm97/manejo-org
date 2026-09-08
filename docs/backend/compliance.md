@@ -14,7 +14,7 @@ Diferente de versões anteriores, a **blacklist agora é dinâmica**, armazenada
 - **Termos Genéricos**: "Veneno", "Agrotóxico".
 
 ### Fluxo de Sincronização
-O backend Go mantém um **BlacklistCache** em memória, atualizado automaticamente a cada 24 horas via Goroutine/Ticker, garantindo performance ultra-rápida na triagem de mensagens do WhatsApp.
+O backend Go mantém um **BlacklistCache** em memória (`internal/supabase/client.go`, campo `blacklistCache`), atualizado automaticamente a cada 24 horas via Goroutine/Ticker, garantindo performance ultra-rápida na triagem de mensagens do WhatsApp.
 
 ---
 

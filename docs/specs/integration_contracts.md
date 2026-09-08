@@ -1,5 +1,7 @@
 # 🔌 Contratos de Integração - PMO Bot
 
+> ⚠️ **Documento histórico** — descreve a arquitetura anterior (Python/Flask/WPPConnect), substituída por Go (`pmo-bot-go/`) + Evolution API. Mantido para referência histórica; não reflete o sistema atual. Ver `wiki/components/pmo-bot-go.md` e `docs/architecture/data-flow.md` para a arquitetura vigente.
+
 > Especificação HTTP para integrações externas
 
 ---

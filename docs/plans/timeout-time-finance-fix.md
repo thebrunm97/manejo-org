@@ -1,5 +1,7 @@
 # Correção de Timeout, Relógio e Leak Financeiro
 
+> **Status: ✅ Concluído** — `20260606_fix_registrar_colheita.sql` existe e os ajustes de timeout foram aplicados. Mantido para histórico (auditoria de documentação, 2026-09-08).
+
 ## Goal
 Resolver os problemas de timeout do roteador, injeção da data atual para o LLM não errar o mês da colheita, e a perda do parâmetro `valor_total` na inserção de transações financeiras pela colheita.
 

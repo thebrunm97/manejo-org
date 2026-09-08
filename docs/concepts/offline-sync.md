@@ -15,7 +15,7 @@ O aplicativo utiliza uma abordagem híbrida:
 
 ## 2. Mecanismo de Sync
 
-Quando a conexão retorna (`window.onLine` event), o hook `useSync` (e seus derivados `usePmoFormLogic`, `useCadernoSync`) é acionado:
+Quando a conexão retorna (`window.onLine` event), o hook `useSyncEngine` (`pmo-frontend/src/hooks/offline/useSyncEngine.ts`) é acionado:
 
 1.  **Iteração:** O sistema lê todos os registros pendentes no IndexedDB.
 2.  **Identificação:**

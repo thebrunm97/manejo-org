@@ -47,8 +47,6 @@ Mapa central de todos os arquivos de documentação do projeto. Gerado em 06/09/
 | [**ai_retry_plan.md**](./docs/specs/ai_retry_plan.md) | Plano de retry para chamadas de IA. |
 | [**task_judge.md**](./docs/specs/task_judge.md) | Especificação do avaliador de tarefas. |
 | [**organic_inputs_research.md**](./docs/specs/organic_inputs_research.md) | Pesquisa de insumos orgânicos. |
-| [**whatsapp_client_plan.md**](./docs/specs/whatsapp_client_plan.md) | Plano do cliente WhatsApp. |
-| [**wppconnect_session.md**](./docs/specs/wppconnect_session.md) | Sessão WPPConnect. |
 
 ### Backend / Database / Frontend
 
@@ -84,8 +82,9 @@ Mapa central de todos os arquivos de documentação do projeto. Gerado em 06/09/
 ### Planos (PLAN-*.md e plans/)
 
 - **docs/PLAN.md**
-- `PLAN-adubacao-milho`, `PLAN-bge-m3-migration`, `PLAN-contextual-windowing`, `PLAN-evolution-license-fix`, `PLAN-f1-auth-pkce`, `PLAN-fase-2-financeiro`, `PLAN-fsm-agentic-loop`, `PLAN-hitl-judge-bugfix`, `PLAN-knowledge-ops`, `PLAN-limites-seguranca`, `PLAN-rag-threshold`, `PLAN-supabase-rpc-error`, `PLAN-training-logs-fix`, `PLAN-whatsapp-ux-buttons`
+- `PLAN-adubacao-milho`, `PLAN-bge-m3-migration`, `PLAN-contextual-windowing`, `PLAN-evolution-license-fix`, `PLAN-f1-auth-pkce`, `PLAN-fase-2-financeiro`, `PLAN-fsm-agentic-loop`, `PLAN-hitl-judge-bugfix`, `PLAN-knowledge-ops`, `PLAN-limites-seguranca`, `PLAN-rag-threshold`, `PLAN-supabase-rpc-error`, `PLAN-training-logs-fix`
 - **docs/plans/:** `FINANCIAL_MODULE_PLAN`, `FINANCIAL_READINESS_AUDIT`, `GUARDRAILS_PLAN`, `MULTI_MODALITY_HARDENING_PLAN`, `PLAN_NER_EXECUTION`, `PLAN_PHASE_3_NER`, `PLAN-adr-011-chat-abstraction`, `PLAN-compra-form-sync`, `PLAN-fase-2-financeiro`, `PLAN-onboarding-integration`, `PLAN-rag-tabela-fix`, `PLAN-rpi-integration`, `timeout-time-finance-fix`, `deterministic-audit-backend`
+- **Checkpoints/inventário (06/09):** [`docs/checkpoint-2026-09-06.md`](./docs/checkpoint-2026-09-06.md), [`docs/branch-inventory-2026-09-06.md`](./docs/branch-inventory-2026-09-06.md), [`docs/CHECKPOINT-feature-multicanal.md`](./docs/CHECKPOINT-feature-multicanal.md), [`docs/PLAN-feature-multicanal.md`](./docs/PLAN-feature-multicanal.md)
 
 ### Auditorias / Pesquisas / Fontes Brutas
 
@@ -104,7 +103,7 @@ Mapa central de todos os arquivos de documentação do projeto. Gerado em 06/09/
 | Documento | Conteúdo |
 |---|---|
 | [**index.md**](./docs/index.md) | Wiki master catalog (ingest). |
-| [**concepts/**](./docs/concepts/) | `offline-sync`, `prd-agrovivo`, `rpi-optimizations`. |
+| [**concepts/**](./docs/concepts/) | `offline-sync`, `prd-agrovivo`, `rpi-optimizations`, [`webhook-auth-evolution`](./docs/concepts/webhook-auth-evolution.md). |
 | [**interacao_ser_rio.md**](./docs/interacao_ser_rio.md) | Interação com o Ser/rio. |
 | [**live-chat-monitor.md**](./docs/live-chat-monitor.md) | Monitor de chat ao vivo. |
 | [**FEATURE-multicanal.md**](./docs/FEATURE-multicanal.md) | Feature multicanal (WhatsApp, Telegram e Chat Web/PWA). |
@@ -131,6 +130,9 @@ Mapa central de todos os arquivos de documentação do projeto. Gerado em 06/09/
 
 **Raiz:** [README.md](./pmo-bot-go/README.md), [CHANGELOG.md](./pmo-bot-go/CHANGELOG.md)
 
+### Planejamento ativo
+- [`docs/PLAN-sprint-pre-viagem-2026-09-08.md`](./pmo-bot-go/docs/PLAN-sprint-pre-viagem-2026-09-08.md) — sprint em andamento.
+
 ### Arquitetura & Auditoria
 - `docs/AUDIT-REPORT.md`, `docs/MULTITENANCY.md`, `docs/state.md`, `docs/debitos_tecnicos.md`
 - `docs/architecture/001-llm-agnostico-fallback.md`, `docs/architecture/MULTI_AGENT_ARCHITECTURE.md`
@@ -144,7 +146,7 @@ Mapa central de todos os arquivos de documentação do projeto. Gerado em 06/09/
 
 ### Pesquisas & Runbooks
 - `docs/RESEARCH-proactive-agent-gap-analysis.md`, `docs/RESEARCH-vector-db-improvements.md`, `docs/RESEARCH_STRUCTURED_OUTPUT.md`, `docs/RESEARCH-proactive-agent-gap-analysis.md`
-- `docs/RUNBOOK-envio-manual-whatsapp.md`, `docs/SURVEY_MUTATION_TOOLS.md`, `docs/REF-groq-rate-limits.md`
+- `docs/RUNBOOK-envio-manual-whatsapp.md`, [`docs/RUNBOOK-ai-memory-setup.md`](./pmo-bot-go/docs/RUNBOOK-ai-memory-setup.md), `docs/SURVEY_MUTATION_TOOLS.md`, `docs/REF-groq-rate-limits.md`
 - `docs/FEATURE-saf-spatial-engine.md`, `docs/HANDOFF-2026-08-22.md`, `docs/estado_tarefa.md`
 
 **Outros:** `cmd/loadtest/README.md`, `thoughts/research/` (`memory_management`, `orchestrator_god_object`, `webhook_worker_pool`), `logs/*.txt`

@@ -1,5 +1,7 @@
 # /plan - Supabase RPC Silent Failure
 
+> **Status: ✅ Concluído** — o fix (`20260607_fase2_ledger_rateio.sql`) existe e o fluxo de rateio financeiro está implementado. Mantido para histórico (auditoria de documentação, 2026-09-08).
+
 ## Contexto e Investigação
 O usuário reportou que a "Compra de Adubo" (registrada na sessão via Bot com Múltiplas Intenções) confirmou sucesso no WhatsApp, mas não apareceu no **Dashboard Financeiro (DRE)**, retornando "Nenhuma transação encontrada".
 
@@ -7,7 +9,7 @@ O usuário reportou que a "Compra de Adubo" (registrada na sessão via Bot com M
 A falha ocorreu devido a uma característica silenciosa do **PostgREST** (camada REST do Supabase):
 1. O backend em Go foi atualizado na Fase 2 para enviar `valor_total_arg` e `alocacoes_talhoes_arg` no payload RPC.
 2. No entanto, o script SQL de atualização (`20260607_fase2_ledger_rateio.sql`) **nunca foi executado no banco de dados em produção**.
-3. Como o Supabase ignora parâmetros JSON adicionais não mapeados, ele processou a requisição usando a **RPC antiga** (`20260401000000_multi_modalidade.sql`).
+3. Como o Supabase ignora parâmetros JSON adicionais não mapeados, ele processou a requisição usando a **RPC antiga** (`20260526180000_update_operacional_rpcs.sql`).
 4. A RPC antiga registrou o evento no `caderno_campo` com sucesso (retornando o `compra_id` que validou o fluxo no Go), mas ignorou totalmente a parte financeira (que não existia na versão antiga), causando um vazamento (vazio) no DRE.
 
 ---

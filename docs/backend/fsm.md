@@ -49,8 +49,8 @@ stateDiagram-v2
 
 O sistema utiliza um mecanismo de **LoopGuard** para evitar que a IA entre em loops infinitos ou gaste tokens desnecessariamente.
 
-- **Implementação:** `internal/mcp/loopguard.go`
-- **Funcionamento:** Bloqueia se o loop de ferramentas exceder **5 iterações** ou se a mesma ferramenta for chamada com argumentos idênticos mais de **2 vezes**.
+- **Implementação:** `internal/mcp/server.go` (`type LoopGuard`, próximo à linha 33)
+- **Funcionamento:** Bloqueia se a mesma ferramenta for chamada repetidamente além do limite configurado — `internal/state/fsm.go` usa `NewLoopGuard(2)` e `internal/webhook/handler.go` usa `NewLoopGuard(3)`, ou seja, o limite não é um número único de "5 iterações", varia por caller.
 
 ## Guia: Como Adicionar um Novo Fluxo/Estado
 

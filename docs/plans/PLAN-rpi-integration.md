@@ -1,5 +1,7 @@
 # Plan: Integração RPI (Harness, Loop, Graph)
 
+> Nota: as referências a `.agent/skills/`/`.agent/workflows/` abaixo apontam para uma estrutura antiga, reorganizada desde então. Mantido como histórico do plano original.
+
 ## Overview
 Integração do framework RPI (Research, Plan, Implement) e os conceitos de Harness, Loop e Graph Engineering na infraestrutura de IA do projeto (pasta `.agent`). O objetivo é evoluir o comportamento da IA para um modelo **Goal-Based Loop (Nível 2)**, garantindo desenvolvimento orientado a especificações (Spec-Driven Development) e minimizando erros compostos através de memória de estado (`estado_tarefa.md`).
 

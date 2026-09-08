@@ -17,7 +17,13 @@ fazenda.
    (documentos da fazenda) e `knowledge_chunks` (corpus geral)
    — `supabase/migrations/20260526120000_unify_rag_rpc_union_all.sql`.
    Dimensão atual: 1024 (`20260720163000_match_documents_1024.sql`).
-5. **Rerank** — `pmo-bot-go/internal/llm/reranker.go`.
+5. **Rerank (não está em produção)** — `RerankDocuments`
+   (`pmo-bot-go/internal/llm/reranker.go`) existe e funciona, mas hoje o
+   único chamador é o binário de arena/avaliação
+   (`cmd/tester/arena/main.go`). O fluxo real do bot vai do retrieval
+   vetorial direto para a expansão de contexto, sem rerank — decisão de
+   promover ou não está em aberto (ver DT-71/DT-72 em
+   `pmo-bot-go/docs/debitos_tecnicos.md`).
 
 ## Avaliação
 

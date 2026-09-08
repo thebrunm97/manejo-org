@@ -1,5 +1,7 @@
 # 📚 Documentação Técnica - AgroVivo PMO
 
+> ⚠️ **Documento histórico** — descreve a arquitetura anterior (Python/Flask/WPPConnect), substituída por Go (`pmo-bot-go/`) + Evolution API. Mantido para referência histórica; não reflete o sistema atual. Ver `wiki/components/pmo-bot-go.md` e `docs/architecture/data-flow.md` para a arquitetura vigente.
+
 Bem-vindo à documentação técnica do sistema de Planos de Manejo Orgânico (PMO) da AgroVivo.
 
 ---
@@ -11,27 +13,6 @@ Bem-vindo à documentação técnica do sistema de Planos de Manejo Orgânico (P
 | Documento | Descrição | Última Atualização |
 |-----------|-----------|-------------------|
 | **[PMO_DATA_STRUCTURE.md](./PMO_DATA_STRUCTURE.md)** | Estrutura canônica do `form_data` (JSONB) no Supabase. Contrato entre backend Python e frontend React. | 21/12/2024 |
-
-### 🔄 Integrações
-
-| Documento | Descrição | Status |
-|-----------|-----------|--------|
-| `WHATSAPP_INTEGRATION.md` | Fluxo de sincronização via WhatsApp → Whisper → Llama 3.3 | ✅ Implementado (WPPConnect) |
-| `SUPABASE_SCHEMA.md` | Esquema completo do banco de dados Supabase | 🚧 Planejado |
-
-### 🎨 Frontend
-
-| Documento | Descrição | Status |
-|-----------|-----------|--------|
-| `COMPONENTS_GUIDE.md` | Guia de componentes React/MUI reutilizáveis | 🚧 Planejado |
-| `FORM_VALIDATION.md` | Regras de validação por seção do formulário | 🚧 Planejado |
-
-### 🐍 Backend
-
-| Documento | Descrição | Status |
-|-----------|-----------|--------|
-| `API_ENDPOINTS.md` | Documentação de endpoints Flask | 🚧 Planejado |
-| `AI_PROMPTS.md` | Prompts do Llama 3.3 para extração de dados | ✅ Implementado |
 
 ---
 

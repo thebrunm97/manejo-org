@@ -11,7 +11,7 @@ Este documento centraliza as grandes iniciativas, refatorações planejadas e vi
 
 ## 🛠️ Refatorações Críticas
 
-- [ ] Migração total de MUI para Tailwind (Em andamento).
+- [x] Migração total de MUI para Tailwind (**Concluída** — `@mui/material` não aparece mais em `dependencies`; UI usa `@base-ui/react`. Verificado 2026-09-08).
 - [ ] Padronização de Tipagem TypeScript no Core.
 
 ## ✅ Concluído (Histórico Recente)

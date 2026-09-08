@@ -1,5 +1,7 @@
 # CURRENT_SCHEMA_VISUALIZATION.md
 
+> ⚠️ **Desatualizado** — este diagrama não reflete migrations aplicadas depois de sua geração (faltam, entre outras, `message_queue`, as tabelas `rag_*`, e o ledger financeiro). Ver `wiki/components/supabase-postgres.md` para a lista de famílias de tabelas atual.
+
 ## 1. Diagrama Entidade-Relacionamento (ER)
 Este diagrama foca nas tabelas centrais e nos campos com impacto financeiro ou de rastreabilidade para o novo módulo.
 

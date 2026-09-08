@@ -1,5 +1,11 @@
 # RESEARCH: Camada de Structured Output Agnóstica em Go
 
+> **Nota:** esta é a versão resumida. A investigação completa (com
+> "Sumário Executivo" e todas as fases detalhadas) vive em
+> [`pmo-bot-go/docs/research/RESEARCH_STRUCTURED_OUTPUT.md`](../../pmo-bot-go/docs/research/RESEARCH_STRUCTURED_OUTPUT.md)
+> — consulte-a como fonte canônica; este resumo é mantido como índice
+> rápido (auditoria de documentação, 2026-09-08).
+
 **Projeto:** `manejo-org` | **Data:** 2026-04-09 | **Status:** Investigação Concluída ✅
 
 ---

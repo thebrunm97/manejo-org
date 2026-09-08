@@ -44,8 +44,11 @@ Middlewares: `RequestID`, `CORS`, `RequireAuth` (JWT), `RequireAdmin`.
 
 ## Binários (`cmd/`)
 
-`server` (principal), `ingestor`, `reindex`, `evaluate`, `loadtest`,
-`loadtest_piper`, `pricing-refresh`, `check_all_tools`.
+`server` (principal), `reindex`, `evaluate`, `loadtest`, `loadtest_piper`,
+`pricing-refresh`, `check_all_tools`, `tester`, `test_audio`,
+`test_gemini_api`, `test_openrouter`, `test_schema`. (`ingestor` foi
+removido; a ingestão de RAG hoje é via `scripts/rag_ingest.py` e o
+handler `POST /knowledge/upload`.)
 
 ## O proxy de RPC — decisão importante
 

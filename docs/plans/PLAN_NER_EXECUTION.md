@@ -1,5 +1,7 @@
 # Plano de Execução: NER Multimodal (Múltiplas Intenções - Fase 3)
 
+> **Status: ✅ Concluído** — `AcaoEstruturada` (`llm/types.go:373`), `Entities []AcaoEstruturada` em `UnifiedIntentResult`, `dispatchEntity` (`fsm.go:724`) implementados. Mantido para histórico (auditoria de documentação, 2026-09-08).
+
 Este plano descreve as modificações necessárias no ecossistema **ManejoOrg** para refatorar o Classificador de Intenções (Router) e a Máquina de Estados (FSM) de modo a suportar o processamento de múltiplas intenções agrícolas e financeiras a partir de uma única mensagem composta do produtor.
 
 ---

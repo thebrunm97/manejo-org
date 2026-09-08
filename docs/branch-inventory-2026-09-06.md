@@ -314,7 +314,7 @@ no tip. Referência: tip `34f943a`, `main = 959603c`.
 | `bc8186c` webhook narrow | dt-04 | `webhook/handler.go:48` **ainda** `LLMClient llm.LLMProvider` | NÃO absorvido — decisão DT-04 |
 | `3ac21ec` composto `aiProvider` | dt-04 | `main.go:164` **ainda** `var llmProvider llm.LLMProvider` | NÃO absorvido — decisão DT-04 |
 | `adbe7fe` cache_control OpenRouter | dt-37 | `internal/gemini/client.go` sem `cache_control` | NÃO absorvido — DT-37 consolidado: "sem ação segura até telemetria real" (debitos) |
-| `7029433` DV CPF/CNPJ | dt-44 | `filter_pii.go` sem validação de dígito; board **DT-44 em aberto** ("corrigir validando o DV antes de redigir") | **NÃO ABSORVIDO — A APLICAR** |
+| `7029433` DV CPF/CNPJ | dt-44 | `filter_pii.go` sem validação de dígito; board **DT-44 em aberto** ("corrigir validando o DV antes de redigir") | **NÃO ABSORVIDO — A APLICAR** [nota: DT-44 foi resolvido ainda em 2026-09-06 via cherry-pick `7029433`→`3b0f5cc`+`e62dd9c`, ver seção 9.4 abaixo e `pmo-bot-go/docs/debitos_tecnicos.md`] |
 | `61d049a` seed.sql + testes slug | magical | seed.sql do tip **ainda** `INSERT INTO profiles (id, user_id, full_name, role)` → `supabase db reset` quebrado; testes sem `slug` | **NÃO ABSORVIDO — A APLICAR** |
 | `32d7a22` dedupe msg_id | modest | `queue/manager.go` Enqueue **ainda sem** `?on_conflict=msg_id` → dedup nunca dispara (índice `20260901115000`/DT-22 existe) | **NÃO ABSORVIDO — A APLICAR** (1 linha + migração redundante a pular) |
 | `79e1cdb` docs DT-67 | modest | board DT-67 do tip não registra achado msg_id | docs — cobrir junto com `32d7a22` |

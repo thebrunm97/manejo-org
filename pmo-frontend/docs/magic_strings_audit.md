@@ -3,6 +3,13 @@
 **Data Ref:** 10/01/2026
 **Escopo:** Identificação de valores literais e tipagem fraca para padronização.
 
+> **Atualização (2026-09-08):** o enum `ActivityType` recomendado abaixo
+> **já existe** em `src/types/CadernoTypes.ts:7` (`PLANTIO`, `MANEJO`,
+> `COLHEITA`, `VENDA`, `COMPOSTAGEM`, `OUTRO`, `INSUMO`, `CANCELADO`). A
+> recomendação de consolidar unidades em `src/constants/units.ts` **não**
+> foi implementada dessa forma — as constantes de unidade vivem hoje em
+> `useUnitSelection.ts`.
+
 ---
 
 ## 1. Atividades (Activity Types)

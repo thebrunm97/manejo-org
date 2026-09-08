@@ -355,12 +355,12 @@ Dados salvos com sucesso no backend não apareciam no frontend (tabela vazia).
 
 **Solução:**
 1. **Backend:** Mantida a lógica de salvar na raiz (estrutura correta)
-2. **Frontend:** Modificado `PmoFormPage.jsx` para passar prop `formData={formData}` completo
+2. **Frontend:** Modificado `PmoFormPage.tsx` para passar prop `formData={formData}` completo
 3. **Frontend:** Ajustado `Secao8_MUI.jsx` para buscar de `formData.insumos_melhorar_fertilidade`
 
 **Arquivos Modificados:**
-- `backend/sincronizar_secao_8.py` (validação)
-- `frontend/src/pages/PmoFormPage.jsx` (linha 276)
+- `backend/sincronizar_secao_8.py` (validação) — [backend Python não existe mais no repositório atual]
+- `pmo-frontend/src/pages/PmoFormPage.tsx` (linha 276)
 - `frontend/src/components/PmoForm/Secao8_MUI.jsx` (linha 11, 47)
 
 **Prevenção Futura:**

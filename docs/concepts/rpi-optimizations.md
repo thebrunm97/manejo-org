@@ -3,13 +3,13 @@
 ## RESEARCH PHASE
 
 ### Diagnóstico Confirmado
-- **Problema**: Log mostra 35+ requisições duplicadas (App.tsx, AuthContext.tsx, DashboardPage_MUI.tsx carregados 2x)
+- **Problema**: Log mostra 35+ requisições duplicadas (App.tsx, AuthContext.tsx, DashboardPage.tsx carregados 2x)
 - **Causa Raiz**: Context sem `useMemo`, useEffect sem dependências corretas, Route Guards duplicadas
 - **Impacto**: Re-renders em cascata, requests em loop infinito, 5-10s de latência
 
 ### Arquivos Afetados
 1. **src/context/AuthContext.tsx** - Context value recriado a cada render
-2. **src/pages/DashboardPage_MUI.tsx** - useEffect sem dependências, funções não memoizadas
+2. **src/pages/DashboardPage.tsx** - useEffect sem dependências, funções não memoizadas
 3. **src/components/DashboardLayout.tsx** - Layout context sem memoização
 4. **src/App.tsx** - RouteGuard duplicado em múltiplas rotas
 5. **src/hooks/dashboard/useDashboardLogic.ts** - 3 useEffect separados quando poderia ser 1
@@ -103,15 +103,15 @@ export function AuthProvider({ children }) {
 
 ---
 
-### Step 2: Corrigir DashboardPage_MUI.tsx
+### Step 2: Corrigir DashboardPage.tsx
 
-**Arquivo**: `src/pages/DashboardPage_MUI.tsx`
+**Arquivo**: `src/pages/DashboardPage.tsx`
 
 **Tipo de Mudança**: Adicionar `useCallback` e dependências corretas
 
 **Antes**:
 ```typescript
-export function DashboardPage_MUI() {
+export function DashboardPage() {
   const [pmos, setPmos] = useState([]);
   const { user } = useContext(AuthContext);
   
@@ -137,7 +137,7 @@ export function DashboardPage_MUI() {
 ```typescript
 import { useCallback } from 'react';
 
-export function DashboardPage_MUI() {
+export function DashboardPage() {
   const [pmos, setPmos] = useState([]);
   const [loading, setLoading] = useState(false);
   const { user } = useContext(AuthContext);
@@ -431,7 +431,7 @@ ManualRecordDialog.displayName = 'ManualRecordDialog';
 6. Verificar:
    - [ ] App.tsx carregado apenas 1x (antes: 2x)
    - [ ] AuthContext.tsx carregado apenas 1x (antes: 2x)
-   - [ ] DashboardPage_MUI.tsx carregado apenas 1x (antes: 2x)
+   - [ ] DashboardPage.tsx carregado apenas 1x (antes: 2x)
    - [ ] Total de requisições reduzido de 35+ para 5-8
 7. Tirar screenshot antes/depois
 

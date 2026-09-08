@@ -1,5 +1,7 @@
 # Transição FSM para Agentic Loop (Fase 1: Read-Only Tool Calling)
 
+> **Status: ✅ Concluído** — `ConsultarLeiOrganica_RAG` (`tools_registry.go:151`) e `handleConsultarLeiOrganica` (`tools_rag.go:227`) existem e estão implementados. Mantido para histórico (auditoria de documentação, 2026-09-08).
+
 Implementação do modo sandbox do orquestrador com a nova ferramenta especializada `ConsultarLeiOrganica_RAG` de leitura de dados, garantindo a robustez do Agentic Loop sem risco de mutação acidental ou panics por argumentos inválidos.
 
 ## User Review Required

@@ -179,7 +179,7 @@ text = "\n\n".join(page.get_text() for page in doc if page.get_text().strip())
 
 ## Referências
 
-- [Chunk Verification Output](../../../chunk_verify.txt) — arquivo gerado em 2026-07-24 com amostra dos 139 chunks extraídos
+- Chunk Verification Output — [artefato de teste não versionado] — arquivo gerado em 2026-07-24 com amostra dos 139 chunks extraídos
 - [PyMuPDF Docs — Text Extraction](https://pymupdf.readthedocs.io/en/latest/page.html#Page.get_text)
 - [ADR-006 (Supersedido)](./006-pdf-extraction-engine.md)
 - Tarefa de investigação: `task-4301` → `task-4515` (2026-07-24)

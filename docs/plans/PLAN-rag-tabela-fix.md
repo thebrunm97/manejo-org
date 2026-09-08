@@ -1,5 +1,7 @@
 # RAG Tabela Fix — Migrar knowledge_chunks → farm_documents
 
+> **Status: ✅ Concluído** — checkboxes já marcados `[x]`, validação completa (Opção B/UNION ALL aplicada). Mantido para histórico (auditoria de documentação, 2026-09-08).
+
 ## Goal
 O bot consulta a tabela `farm_documents` via RPC `match_farm_documents`, mas os PDFs da Embrapa (milho, hortaliças) foram ingeridos na tabela `knowledge_chunks`. São tabelas **completamente separadas** — por isso o RAG retorna "Não encontrei" para milho.
 

@@ -1,5 +1,7 @@
 # FINANCIAL_MODULE_PLAN.md - Módulo Financeiro e de Custos
 
+> **Status: Parcialmente concluído** — Fases 01/02 (fundação de dados + cérebro financeiro) implementadas: migration do ledger + RPC + `TransacaoFinanceira`. As Fases 03/04 não foram verificadas nesta rodada de auditoria e podem seguir abertas. Mantido para histórico (auditoria de documentação, 2026-09-08).
+
 ## 1. Modelagem de Dados (O Padrão Ledger)
 
 Para separar o operacional do financeiro sem perder o vínculo técnico, utilizaremos um modelo de **Lançamento em Partida Simples com Rateio Direto**.

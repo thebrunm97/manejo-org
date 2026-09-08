@@ -1,5 +1,7 @@
 # [Migração Atômica para BGE-M3 (1024d) com Estratégia Dual-Route]
 
+> **Status: ✅ Concluído** — migration `sql/migration_1024`, `GetEmbedding` dual-route em `internal/supabase/client.go:228` e `cmd/reindex/main.go` implementados. Mantido para histórico (auditoria de documentação, 2026-09-08).
+
 O objetivo deste plano é migrar de forma atômica e segura a tabela `documentos_embeddings` de uma dimensionalidade de 3072d (Gemini) para 1024d (BGE-M3). Implementaremos também uma arquitetura de vetorização baseada em roteamento (Dual-Route) dependente do contexto do utilizador ou do ambiente.
 
 ## User Review Required

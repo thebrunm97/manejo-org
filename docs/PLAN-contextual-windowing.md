@@ -1,5 +1,7 @@
 # Plano de Projeto: RAG com Janelamento Contextual (Contextual Windowing)
 
+> **Status: ✅ Concluído** — `match_documents_with_context` + `MatchFarmDocumentsContext` implementados. Mantido para histórico (auditoria de documentação, 2026-09-08).
+
 ## 1. Escopo e Objetivo
 A missão consiste em refatorar a mecânica de busca do sistema RAG para adicionar Contextual Windowing. 
 Sempre que um *chunk* relevante for encontrado pelo cálculo de similaridade de cosseno (via embeddings de 1024 dimensões do BGE-M3), a base de dados deverá retornar também os *chunks* imediatamente vizinhos (N-1 e N+1) pertencentes ao mesmo documento (`source_document_id`). Isto enriquecerá significativamente o contexto enviado ao LLM, evitando cortes abruptos na informação.

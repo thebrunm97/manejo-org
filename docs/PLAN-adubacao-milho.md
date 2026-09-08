@@ -1,5 +1,7 @@
 # PLAN-adubacao-milho.md - Plano de Inclusão da Cultura do Milho e Busca Parcial no Motor Agronômico
 
+> **Status: ✅ Concluído** — migration `20260525120000_expand_agronomic_engine.sql` aplicada (Milho Grão/Silagem). Mantido para histórico (auditoria de documentação, 2026-09-08).
+
 Este plano descreve as etapas necessárias para cadastrar a cultura do **Milho** (separada em **Milho Grão** e **Milho Silagem**) na base de dados agronômica de referência e ajustar a RPC do Supabase para aceitar buscas fluidas por termos parciais de culturas e insumos.
 
 ---
@@ -19,7 +21,7 @@ Com base nas definições acordadas com o usuário:
 
 ### 1. Banco de Dados (Supabase Migration)
 
-#### [NEW] [20260525_expand_agronomic_engine.sql](file:///c:/Users/brunn/Documents/PROGRAMACAO/manejo-org-app-clean/supabase/migrations/20260525_expand_agronomic_engine.sql)
+#### [NEW] [20260525120000_expand_agronomic_engine.sql](file:///c:/Users/brunn/Documents/PROGRAMACAO/manejo-org-app-clean/supabase/migrations/20260525120000_expand_agronomic_engine.sql)
 Criaremos uma nova migration SQL para:
 * Inserir dados de extração de referência para `Milho Grão` e `Milho Silagem` na tabela `public.ref_cultura_extracao`.
 * Atualizar a definição da função RPC `public.calcular_balanco_nutricional` para usar a busca parcial (`%`) nas tabelas `ref_cultura_extracao` e `ref_adubos_organicos`.

@@ -1,5 +1,7 @@
 # SPEC-DRIVEN PLAN: Migração PMO-Bot para Golang
 
+> **Status: ✅ Concluído/Histórico** — plano original da migração do PMO Bot para Go; Fases 1-6 concluídas (marcadas ✅ abaixo). Alguns detalhes (ex: `cmd/knowledge_loader/main.go`, provedor WPPConnect) já não refletem a arquitetura atual do código. Mantido para histórico (auditoria de documentação, 2026-09-08).
+
 ## Fase 1: Fundação HTTP & WPPConnect ✅
 - [x] Criar `cmd/server/main.go` com inicialização do servidor Gin.
 - [x] Criar `internal/webhook/handler.go` com a `struct` exata do payload do WPPConnect.

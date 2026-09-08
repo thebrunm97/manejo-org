@@ -22,7 +22,7 @@ O diagrama abaixo ilustra a interação entre os principais serviços do sistema
 
 ```mermaid
 graph TD
-    User([Produtor]) <-->|WhatsApp| WPP[WPPConnect Gateway]
+    User([Produtor]) <-->|WhatsApp| WPP[Evolution API]
     WPP <-->|Webhook POST + HMAC| BE[Backend Go - Gin]
     BE -->|Intent Classification| ROUTER{AI Router}
     ROUTER -->|Registro| DB_OP[DB Operator - Gemini 2.0 Flash]
@@ -44,7 +44,7 @@ graph TD
 | Categoria | Tecnologia | Uso Principal |
 |-----------|------------|---------------|
 | **Backend** | Go 1.23+ | Orquestração, FSM, Webhooks |
-| **Frontend** | React 18 / Vite | Interface PWA / Bento UI |
+| **Frontend** | React 19 / Vite | Interface PWA / Bento UI |
 | **IA (Orchestrator)** | Gemini 2.0 Flash | Raciocínio, Tool Calling |
 | **IA (Inference)** | Groq (Llama 3.3 / Whisper) | Transcrição e Extração NER ultra-rápida |
 | **IA (Vision)** | Gemini 1.5 Flash | Análise de anexos e fotos do campo |

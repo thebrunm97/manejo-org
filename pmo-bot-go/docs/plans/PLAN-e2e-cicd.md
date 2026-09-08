@@ -68,7 +68,7 @@ pmo-bot-go/
 - **Priority:** P2
 - **Dependencies:** Task 3.
 - **INPUT:** Decisão do T-04 e secrets do GitHub.
-- **OUTPUT:** Workflow YAML (ex: `e2e-tests-backend.yml`) que instala Go, importa as ENVs/Secrets e corre `go test -tags=e2e ./e2e/...`.
+- **OUTPUT:** Workflow YAML (`backend-e2e.yml`) que instala Go, importa as ENVs/Secrets e corre `go test -tags=e2e ./e2e/...`.
 - **VERIFY:** Um trigger manual ou mock PR comprova a execução da action e a interação correta com a DB de produção via PMO 9999.
 
 # Phase X: Final Verification (MANDATORY)

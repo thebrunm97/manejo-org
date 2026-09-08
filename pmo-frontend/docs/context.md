@@ -26,13 +26,18 @@ Este documento consolida a arquitetura, padrões e regras de negócio para manut
     *   Justificativas são concatenadas no campo `observacao_original` com timestamp para fins de auditoria simples.
 
 ## 3. Mapa de Arquitetura
-*   **Orquestrador (Pai):** `src/pages/DashboardPage_MUI.jsx`
+
+> Nota (2026-09-08): a migração de MUI para Tailwind foi concluída — os
+> arquivos `_MUI` abaixo não existem mais. Nomes atuais anotados entre
+> colchetes.
+
+*   **Orquestrador (Pai):** `src/pages/DashboardPage_MUI.jsx` [hoje: `src/pages/DashboardPage.tsx`]
     *   Gerencia o Layout, Autenticação e Estado Global da página (ex: data da última sincronização).
 *   **Features Modernas (TSX):**
     *   `src/components/Dashboard/ManualRecordDialog.tsx`: Modal de entrada de dados (Create & Edit). Implementa fluxo de justificativa.
     *   `src/components/Dashboard/HarvestDashboard.tsx`: Componente de visualização. Implementa Realtime e "Lifting State Up".
 *   **Núcleo Legado (JSX):**
-    *   `src/components/Common/TabelaDinamica_MUI.jsx`: Renderiza listagens antigas e complexas. Código crítico que deve ser mantido funcional e protegido contra regressões.
+    *   `src/components/Common/TabelaDinamica_MUI.jsx` [hoje: `src/components/PmoForm/TabelaDinamica.tsx`]: Renderiza listagens antigas e complexas. Código crítico que deve ser mantido funcional e protegido contra regressões.
 
 ## 4. Camada de Dados
 *   **Tabela Principal:** `caderno_campo`

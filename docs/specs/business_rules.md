@@ -40,7 +40,7 @@ O monitoramento de substâncias proibidas é realizado de forma dinâmica e auto
 
 ### Mecanismo de Verificação
 - **Base de Dados**: A lista oficial de substâncias e produtos proibidos reside na tabela `insumos_proibidos` do Supabase.
-- **Performance (Go Cache)**: Para garantir baixa latência no WhatsApp, o backend mantém um cache em memória (`internal/compliance/blacklist.go`) protegido por um `sync.RWMutex`.
+- **Performance (Go Cache)**: Para garantir baixa latência no WhatsApp, o backend mantém um cache em memória (`internal/supabase/client.go`, campo `blacklistCache`) protegido por um `sync.RWMutex`.
 - **Auto-Refresh**: O cache é atualizado automaticamente a cada 24 horas via Goroutine em background, permitindo que alterações no compliance sejam aplicadas sem downtime.
 
 **Mensagem de bloqueio padrão**:

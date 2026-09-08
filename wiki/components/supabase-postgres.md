@@ -7,7 +7,7 @@ Diretório: `supabase/`.
 ## Estrutura
 
 ```
-supabase/migrations/  ~60 migrations versionadas por data
+supabase/migrations/  98 migrations versionadas por data
 supabase/rollbacks/   reversões
 supabase/tests/       testes de banco
 supabase/seed.sql     dados iniciais

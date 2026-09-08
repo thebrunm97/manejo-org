@@ -1,5 +1,7 @@
 # Orchestration Plan: LLM-as-a-Judge RAG Pipeline (Revised)
 
+> **Status: ✅ Concluído** — infraestrutura do judge (`rag_run_judgments`, `AutomatedEvaluator`, `cmd/evaluate`) toda implementada. Mantido para histórico (auditoria de documentação, 2026-09-08).
+
 **Phase 1: Database Architecture (Audit & Versioning Focus)**
 - Maintain `rag_run_judgments` as a separate table to preserve historical evaluations per run.
 - Update `rag_run_judgments` schema (via new migration or altering `20260721230000_rag_judge_runs.sql`) to strictly include:

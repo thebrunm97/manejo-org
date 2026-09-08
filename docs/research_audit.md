@@ -50,7 +50,7 @@ Arquitetura **Fat Database** onde a lógica transacional pesada reside em RPCs.
 - **RPCs Principais:**
     - `rpc_registrar_operacao_campo`: Lógica polimórfica para registros de manejo.
     - `rpc_registrar_compra_insumo`: Registro atômico de aquisições.
-    - `match_farm_documents`: Busca de similaridade para o RAG.
+    - `match_documents_with_context_1024`: Busca de similaridade para o RAG (superou `match_farm_documents`; chamada real hoje em `internal/supabase/client.go` perto da linha 1083).
 
 ---
 

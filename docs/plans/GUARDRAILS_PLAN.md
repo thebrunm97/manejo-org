@@ -1,5 +1,7 @@
 # PLANO DE IMPLEMENTAÇÃO: GUARDRAILS (AVALIADOR GLOBAL DETERMINÍSTICO)
 
+> **Status: ✅ Concluído** — `business.go`/`business_test.go` + `BusinessEvaluator` injetado nos handlers + `limites_seguranca` consultada. Mantido para histórico (auditoria de documentação, 2026-09-08).
+
 Este plano descreve o mapeamento arquitetural, o design e o roteiro de integração do novo módulo de **Guardrails Determinísticos** para o `pmo-bot-go`. 
 O objetivo deste componente é analisar as intenções e payloads estruturados gerados pela LLM (ou preenchidos deterministicamente em entrevistas) antes da chamada de qualquer RPC no Supabase, agindo como um "Fail-Safe" de segurança de dados e conformidade agrícola.
 

@@ -42,7 +42,7 @@ Isso já doeu uma vez:
 **removeu** a policy "membros veem membros da mesma organização" por recursão
 infinita de RLS, e empurrou toda leitura coletiva de volta para RPCs `SECURITY
 DEFINER`. A RLS, onde o projeto mais investiu (ADR hardening em
-`20260124192000_harden_rls_strategies.sql`, o fix de `security_invoker` do DT-62),
+`20260124192000_harden_rls_strategies.sql` [referência de migration não localizada — verificar], o fix de `security_invoker` do DT-62),
 fica fora do caminho justamente na consulta mais sensível: a que cruza dados de
 produtores diferentes.
 

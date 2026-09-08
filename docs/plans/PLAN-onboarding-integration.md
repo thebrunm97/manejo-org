@@ -13,7 +13,7 @@ O objetivo é pegar o fluxo de onboarding criado no mockup do frontend (Perfil -
    - Não será obrigatório ter um talhão de cara.
    - Será possível atrelar talhões criados no futuro (via WhatsApp/Chat) a polígonos reais cadastrados pela Web.
 4. **Referência da Landing Page:**
-   - A referência será a **Landing Page da ORTH (AskOrth)**, documentada no arquivo `askorth_reference.md`. Vamos puxar o conceito de "Value Proposition direta" (Seu Agrônomo IA 24/7), "How it works" simplificado em 3 passos sem sensores, e "Social Proof", mesclando isso com as visualizações ricas (Mockup WhatsApp + Dashboard) que já temos hoje.
+   - A referência será a **Landing Page da ORTH (AskOrth)** [arquivo de referência não localizado no repositório]. Vamos puxar o conceito de "Value Proposition direta" (Seu Agrônomo IA 24/7), "How it works" simplificado em 3 passos sem sensores, e "Social Proof", mesclando isso com as visualizações ricas (Mockup WhatsApp + Dashboard) que já temos hoje.
 
 ## Project Type
 **FULL STACK** (Web: `frontend-specialist`, Backend/DB: `backend-specialist`, Auth/Security: `security-auditor`)
@@ -32,7 +32,7 @@ Mudanças esperadas:
 ```text
 pmo-frontend/
 ├── src/pages/Onboarding.tsx (versão real conectada ao DB)
-├── src/lib/supabase.ts (cliente Supabase)
+├── src/supabaseClient.ts (cliente Supabase)
 ├── src/services/onboardingService.ts (lógica de inserção no banco)
 
 pmo-bot-go/

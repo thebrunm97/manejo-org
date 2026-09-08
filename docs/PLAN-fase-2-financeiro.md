@@ -1,5 +1,12 @@
 # Plano: Fase 2 - Módulo Financeiro
 
+> **Status: ✅ Concluído** — padrão `SECURITY INVOKER` aplicado às RPCs
+> financeiras. Mantido para histórico (auditoria de documentação,
+> 2026-09-08). Existe outro documento com nome parecido em
+> [`docs/plans/PLAN-fase-2-financeiro.md`](plans/PLAN-fase-2-financeiro.md)
+> — não é duplicata, cobre o rateio entre talhões (split-billing), um
+> plano complementar a este; ambos implementados.
+
 Este documento oficializa o fluxo de integração do backend Go e a Máquina de Estados (FSM) com as novas tabelas financeiras implementadas na Fase 1.
 
 ## Princípio Base de Segurança e RLS

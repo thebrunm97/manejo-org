@@ -6,7 +6,7 @@ Implementação de um painel administrativo no `pmo-frontend` para acompanhar as
 
 ### Database Config (Database Architect)
 
-#### [NEW] [20260610_evolve_messages_table.sql](file:///c:/Users/brunn/Documents/PROGRAMACAO/manejo-org-app-clean/supabase/migrations/20260610_evolve_messages_table.sql)
+#### [NEW] [20260610120000_evolve_messages_table.sql](file:///c:/Users/brunn/Documents/PROGRAMACAO/manejo-org-app-clean/supabase/migrations/20260610120000_evolve_messages_table.sql)
 Criar migração SQL contendo:
 - Adição da coluna `phone` (text) para guardar o telefone de contato (remetente/destinatário do chat).
 - Adição da coluna `content` (text) para armazenar o corpo do texto da mensagem.

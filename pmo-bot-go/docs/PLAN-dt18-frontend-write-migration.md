@@ -1,10 +1,15 @@
 # PLAN-dt18-frontend-write-migration
 
-> **Status:** 🟡 **PLANEJADO, NÃO IMPLEMENTADO** — investigação completa em 2026-09-03,
-> nenhuma linha de código ou migration criada ainda. **Achado principal: o épico DT-18
-> já está ~85% resolvido** — o board descrevia um estado de agosto que não existe mais.
-> O escopo real deste plano é bem menor do que a entrada original do DT-18 sugeria: 3
-> caminhos de escrita quebrados, não 7 arquivos inteiros. · **Data:** 2026-09-03 ·
+> **Status: ✅ Concluído** — DT-18 fechado em 2026-09-05 (ver `debitos_tecnicos.md`): os
+> últimos 3 caminhos de escrita direta foram resolvidos rodando `supabase db push --linked
+> --include-all` em produção, aplicando a migration `20260903110000_create_dt18_remaining_mutation_rpcs.sql`
+> que já existia no repositório. Mantido para histórico (auditoria de documentação, 2026-09-08).
+>
+> Investigação original (2026-09-03), nenhuma linha de código ou migration criada ainda
+> naquele momento. **Achado principal: o épico DT-18 já estava ~85% resolvido** — o board
+> descrevia um estado de agosto que não existe mais. O escopo real deste plano era bem
+> menor do que a entrada original do DT-18 sugeria: 3 caminhos de escrita quebrados, não 7
+> arquivos inteiros. · **Data:** 2026-09-03 (investigação) / 2026-09-05 (fechamento) ·
 > **Rastreio:** DT-18 · **Componentes:** `pmo-frontend/src/components/PmoForm/Secao9.tsx`,
 > `pmo-frontend/src/services/pmoService.ts`, `pmo-frontend/src/pages/PropertyProfilePage.tsx`,
 > `supabase/migrations/`

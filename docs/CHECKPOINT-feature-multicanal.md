@@ -141,7 +141,7 @@ go test ./...   → exit code 0, todos os pacotes  (verificado na sessão seguin
 | B.10 — Quota por canal com pesos | ❌ **PENDENTE** | |
 | B.11 — `GetOrCreateConversation` | ❌ **PENDENTE** | centralizar em todos os adapters |
 | B.X — `EvolutionAdapter.Send()` | ✅ | adicionado nesta sessão |
-| B.X — `WppConnect.Send()` | ✅ | adicionado nesta sessão |
+| B.X — `WppConnect.Send()` | ⚠️ **Não existe** | `internal/adapter/wppconnect/` não existe no repositório (confirmado via `ls pmo-bot-go/internal/adapter/`); o adapter em produção é `internal/adapter/evolution/` |
 | B.X — `SendTyping()` nos adapters | ✅ | implementado/no-op |
 | B.X — `DownloadMedia` unificado | ✅ | queue/media_worker usa `DownloadMedia` |
 
@@ -168,7 +168,7 @@ internal/
     tool_pipeline.go                — SendButton → OutboundEnvelope
   adapter/
     evolution/adapter.go            — Send() + SendTyping() IMPLEMENTADOS
-    wppconnect/adapter.go           — Send() + SendTyping() IMPLEMENTADOS
+    wppconnect/adapter.go           — [pacote não existe neste repositório; substituído por internal/adapter/evolution/]
   queue/
     delivery.go                     — SendVoice → Send(OutboundEnvelope)
     media_worker.go                 — DownloadAudio/Image → DownloadMedia; strings corrigidas
@@ -243,7 +243,7 @@ Criar `internal/adapter/web/adapter.go`:
 
 ## Convenções estabelecidas
 
-- **Nunca** usar `MessageSender` — interface removida, usar `ChannelSender`
+- **Nunca** usar `MessageSender` para o fluxo de saída — a interface ainda existe em `internal/ports/whatsapp.go`, mas o código de produção deve usar `ChannelSender`
 - **Nunca** chamar `SendMessage(phone, text)` diretamente — usar `Send(ctx, OutboundEnvelope)`
 - **Nunca** chamar `SendPresence/SetPresence` — usar `SendTyping(ctx, channel, to)`
 - **Nunca** chamar `DownloadAudio/DownloadImage` — usar `DownloadMedia(ctx, msgID, rawPayload)`

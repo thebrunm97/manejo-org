@@ -1,5 +1,7 @@
 # Investigação: Phase 3 - Multi-Entity Extraction (NER Avançado)
 
+> **Status: ✅ Concluído** — `AcaoEstruturada` (`llm/types.go:373`), `Entities []AcaoEstruturada` em `UnifiedIntentResult`, `dispatchEntity` (`fsm.go:724`) implementados. Mantido para histórico (auditoria de documentação, 2026-09-08).
+
 Este documento detalha o planejamento técnico para permitir a extração de múltiplas entidades/ações de uma única mensagem do usuário, utilizando o motor agnóstico de Structured Output.
 
 ## 1. Transformação da Struct `UnifiedIntentResult`

@@ -4,6 +4,13 @@
 **Responsável:** Staff Engineer / Senior Architect Agent
 **Filosofia:** "Choose Boring Technology" (Estabilidade e Manutenibilidade)
 
+> **Atualização (2026-09-08):** os arquivos `TabelaDinamica_MUI.jsx/tsx` e
+> `FastTextField` citados abaixo **não existem mais** (migração MUI→Tailwind
+> concluída; ver `pmo-frontend/docs/ROADMAP.md`). Nenhuma das recomendações
+> desta auditoria (`<SafeSelect/>`, `<AppTextField/>`, hook
+> `useCadernoRegistro`) foi implementada. Mantido como registro histórico
+> do estado da árvore em 10/01/2026, não do estado atual.
+
 ---
 
 ## 1. O Fator "Jenga" (Complexidade Híbrida)

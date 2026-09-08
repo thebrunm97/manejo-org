@@ -1,5 +1,13 @@
 # Plano de Implementação: Rateio Financeiro (Ledger Fase 2)
 
+> **Status: ✅ Concluído** — `20260607_fase2_ledger_rateio.sql`, a tool
+> `registrar_compra_insumo`, `financeiroTypes.ts`, `useTransacoes.ts` e
+> `TransacoesTable.tsx` implementados. Mantido para histórico (auditoria
+> de documentação, 2026-09-08). Existe outro documento com nome parecido
+> em [`docs/PLAN-fase-2-financeiro.md`](../PLAN-fase-2-financeiro.md) —
+> não é duplicata, cobre o padrão RLS/`SECURITY INVOKER` das RPCs
+> financeiras, um plano complementar a este; ambos implementados.
+
 Este documento descreve o plano de arquitetura e implementação para dar suporte ao rateio (split-billing) de despesas em múltiplos talhões no ecossistema **ManejoOrg**. Quando o produtor registrar uma compra informando os talhões destino, o sistema dividirá os custos de forma proporcional no ledger financeiro.
 
 ---

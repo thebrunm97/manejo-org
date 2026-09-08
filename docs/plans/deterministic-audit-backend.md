@@ -1,5 +1,7 @@
 # Deterministic Audit Trail Backend Plan
 
+> **Status: ✅ Concluído** — `internal/supabase/audit.go` + `RawPayloadID` em `ports/channel.go:78` + `UpdateRawPayloadStatus` usado nos pipelines. Mantido para histórico (auditoria de documentação, 2026-09-08).
+
 ## Goal
 Refactor the pmo-bot-go webhook ingestion pipeline to persist all raw payloads, enforce idempotency at the database level, propagate the audit record UUID, and update status accordingly.
 

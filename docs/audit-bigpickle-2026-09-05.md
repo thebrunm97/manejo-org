@@ -390,6 +390,6 @@ Cada finding foi confirmado lendo o arquivo citado (as linhas marcadas com `~` s
 
 ## 8. Vínculo com o rastreio existente
 
-- **Backend Go:** o rastreio oficial vive em `pmo-bot-go/docs/debitos_tecnicos.md` (IDs `DT-XX`). O **B6** já é conhecido como **DT-72** lá; os demais achados desta auditoria ainda **não** receberam ID — ao triar, registrar como novos DT-XX ou apontar para este relatório.
+- **Backend Go:** o rastreio oficial vive em `pmo-bot-go/docs/debitos_tecnicos.md` (IDs `DT-XX`). O **B6** já é conhecido como **DT-72** lá (e DT-71 também já existia); os demais achados desta auditoria já foram catalogados como **DT-106 a DT-118** nesse mesmo documento.
 - **Frontend/debt geral:** `TECHNICAL_DEBT.md` (raiz) guarda itens ainda não absorvidos pelo registro Go — os F1–F20 podem ser transferidos para lá.
 - **Log de correções desta branch:** `bigpickle-log.md` registra fixes já aplicados no `fix/bigpickle-bugfix-loop`; este relatório cobre a auditoria (não os fixes).

@@ -1,5 +1,7 @@
 # Sincronização do Formulário de Registro de Compras (Criação vs. Edição)
 
+> **Status: ✅ Concluído** — `useRecordFormState.ts`, `useRecordValidation.ts`, `useManualRecordSave.ts`, `ManualRecordDialog.tsx` e `ComprasForm.tsx` existem e implementam o plano. Mantido para histórico (auditoria de documentação, 2026-09-08).
+
 Esse plano detalha a correção das inconsistências no formulário de registro de compras (ComprasForm) para garantir paridade total entre os fluxos de criação e edição. O plano engloba a exibição do seletor de locais (rateio por talhões/canteiros), a flexibilização do campo de quantidade para torná-lo opcional e a correção do redirecionamento de abas ao editar compras.
 
 ## User Review Required

@@ -1,6 +1,6 @@
 # 🖥️ Frontend — Páginas e Rotas
 
-O frontend do ManejoORG é um PWA (Progressive Web App) desenvolvido em React 18, Vite e Tailwind CSS v4. Ele segue o padrão **Bento UI** para uma experiência moderna e mobile-first.
+O frontend do ManejoORG é um PWA (Progressive Web App) desenvolvido em React 19, Vite e Tailwind CSS v4. Ele segue o padrão **Bento UI** para uma experiência moderna e mobile-first.
 
 ---
 
@@ -15,13 +15,23 @@ As rotas são gerenciadas pelo `react-router-dom` e protegidas por `RouteGuard` 
 | `/dashboard` | `DashboardPage` | Privado | Visão geral da fazenda em formato Bento Grid. |
 | `/perfil` | `ProfilePage` | Privado | Gestão de dados do usuário e avatar. |
 | `/mapa` | `MapaPropriedade` | Privado | Gestão geográfica (MapLibre GL) de Talhões e Canteiros. |
-| `/caderno` | `DiarioDeCampo` | Privado | Visualização tabular do histórico de atividades. |
+| `/caderno` | `DiarioDeCampo` | Privado | Visualização tabular do histórico de atividades. Nota: apesar de aparecer nesta lista de "páginas", o componente vive em `src/components/DiarioDeCampo.tsx`, não em `src/pages/`. |
 | `/planos` | `PlanosManejoList` | Privado | Listagem de Planos de Manejo Orgânico (PMO). |
 | `/pmo/:id` | `PmoDetailPage` | Privado | Detalhes técnicos de um plano específico. |
 | `/pmo/novo` | `PmoFormPage` | Privado | Wizard para criação de novo PMO. |
 | `/culturas` | `MinhasCulturas` | Privado | Gestão de sementes e variedades plantadas. |
 | `/admin` | `AdminDashboard` | Admin | Monitoramento global do sistema. |
 | `/changelog` | `ChangelogPage` | Público | Notas de atualização do sistema. |
+| `/financeiro` | `FinanceiroPage` | Privado | Dashboard financeiro (DRE, ledger, rateio por talhão). |
+| `/hub` | `FarmHubPage` | Privado | Hub de seleção multi-fazenda. |
+| `/mural` | `MuralDemandas` | Privado | Mural de demandas/avisos. |
+| `/onboarding` | `OnboardingPage` | Privado | Wizard de onboarding do produtor. |
+| `/propriedade` | `PropertyProfilePage` | Privado | Configurações/perfil da propriedade. |
+| `/t/:id` | `PublicTraceabilityPage` | Público | Página pública de rastreabilidade (QR code). |
+| `/lab` | `DesignLab` | Público/Híbrido | Rota de debug/visibilidade de componentes. |
+| `/auth/callback` | `AuthCallback` | Público (callback) | Callback de autenticação Supabase. |
+
+Nota: `PmoParaImpressao` (`src/pages/PmoParaImpressao.tsx`) não é uma rota própria — é renderizado como componente de visualização de impressão dentro de `PmoDetailPage`.
 
 ---
 

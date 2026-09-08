@@ -41,8 +41,5 @@ O Open-Meteo utiliza códigos numéricos da WMO (World Meteorological Organizati
 ---
 
 ## 4. Como Testar
-Para validar mudanças no módulo de clima sem depender do agendador automático:
-```bash
-go run cmd/tester/weather/main.go
-```
+Para validar mudanças no módulo de clima sem depender do agendador automático: não há mais um binário de teste dedicado (`cmd/tester/weather/`) no repositório — valide via testes de integração do pacote `internal/weather` ou disparando o fluxo end-to-end.
 *(Certifique-se de disparar com uma localização válida no formato "lat,lng")*
