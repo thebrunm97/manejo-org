@@ -42,6 +42,22 @@ const (
 	// tentativas do primário mais a escalada poderiam ultrapassar 100s, muito
 	// além dos 30s de orçamento do turno.
 	fallbackTimeout = 15 * time.Second
+
+	// ttftStallTimeout — DT-41-STREAM. O DT-41 já eliminou os retries no mesmo
+	// endpoint (custavam ~79s), mas ainda esperava o attemptTimeout inteiro
+	// (25s) para reconhecer um stall, porque a chamada não-streaming só sabe
+	// "terminou" ou "não terminou". Com GenerateContentStream dá pra medir o
+	// TIME-TO-FIRST-TOKEN e escalar assim que fica claro que a conexão não vai
+	// responder — sem esperar terminar de "pensar".
+	//
+	// Valor provisório: ainda não existe dado real de TTFT em produção (só de
+	// latência TOTAL, medida no DT-41 — 121 chamadas, respostas legítimas em
+	// 17-23s). Escolhido bem abaixo do attemptTimeout de 25s para dar folga real
+	// de detecção precoce, mas não tão agressivo a ponto de arriscar tratar
+	// "modelo ainda processando o prompt" como stall antes de ter dado real.
+	// Revisar com telemetria de ttft_ms (emitida em todo event=llm_provider_call)
+	// antes de apertar mais — mesmo método já usado no DT-33/DT-41.
+	ttftStallTimeout = 12 * time.Second
 )
 
 // FallbackReason classifica POR QUE houve escalada.
@@ -774,7 +790,28 @@ func (c *Client) CallGoogle(ctx context.Context, modelName string, sysInst strin
 	// Converter Histórico
 	googleHistory := llm.ParaGoogleHistory(history)
 
-	log.Printf("📡 [GEMINI SDK] Chamada (%s) com %d ferramentas e %d msgs de histórico.", modelName, len(tools), len(googleHistory))
+	log.Printf("📡 [GEMINI SDK] Chamada (%s) com %d ferramentas e %d msgs de histórico (streaming).", modelName, len(tools), len(googleHistory))
+
+	// streamCtx é derivado do ctx do chamador (que já carrega o attemptTimeout
+	// de 25s/15s aplicado por newAttemptContext) — cancelStream() só é chamado
+	// cedo no caso de stall por TTFT, nunca estende o prazo original.
+	streamCtx, cancelStream := context.WithCancel(ctx)
+	defer cancelStream()
+
+	chunks := make(chan streamChunk, 4)
+	go func() {
+		defer close(chunks)
+		for resp, err := range c.Client.Models.GenerateContentStream(streamCtx, modelName, googleHistory, config) {
+			select {
+			case chunks <- streamChunk{resp: resp, err: err}:
+			case <-streamCtx.Done():
+				return
+			}
+			if err != nil {
+				return
+			}
+		}
+	}()
 
 	// DT-33 — instrumentação no nível do PROVIDER, e não de cada chamador.
 	//
@@ -784,28 +821,125 @@ func (c *Client) CallGoogle(ctx context.Context, modelName string, sysInst strin
 	// "Olá, bom dia" com ZERO ferramentas — um dado que contraria a hipótese de
 	// que só a carga explica os timeouts. Medindo aqui, nenhuma chamada escapa.
 	startProvider := time.Now()
-	resp, err := c.Client.Models.GenerateContent(ctx, modelName, googleHistory, config)
+	agnosticResp, ttft, err := assembleFromStream(chunks, cancelStream, ttftStallTimeout, modelName)
 	providerLatency := time.Since(startProvider)
 
+	ttftMs := "stall"
+	if ttft >= 0 {
+		ttftMs = fmt.Sprintf("%d", ttft.Milliseconds())
+	}
+
 	if err != nil {
-		log.Printf("telemetry event=llm_provider_call provider=google status=erro modelo=%s latency_ms=%d ferramentas=%d msgs_historico=%d motivo=%s",
-			modelName, providerLatency.Milliseconds(), len(tools), len(googleHistory), classifyFallbackReason(err))
+		log.Printf("telemetry event=llm_provider_call provider=google status=erro modelo=%s latency_ms=%d ttft_ms=%s ferramentas=%d msgs_historico=%d motivo=%s",
+			modelName, providerLatency.Milliseconds(), ttftMs, len(tools), len(googleHistory), classifyFallbackReason(err))
 		return llm.RespostaAgnostica{}, err
 	}
 
-	log.Printf("telemetry event=llm_provider_call provider=google status=ok modelo=%s latency_ms=%d ferramentas=%d msgs_historico=%d",
-		modelName, providerLatency.Milliseconds(), len(tools), len(googleHistory))
+	log.Printf("telemetry event=llm_provider_call provider=google status=ok modelo=%s latency_ms=%d ttft_ms=%s ferramentas=%d msgs_historico=%d",
+		modelName, providerLatency.Milliseconds(), ttftMs, len(tools), len(googleHistory))
 
-	if len(resp.Candidates) == 0 {
+	if agnosticResp.Texto == "" && len(agnosticResp.ToolCalls) == 0 {
 		return llm.RespostaAgnostica{}, fmt.Errorf("no candidates in google response")
 	}
 
-	candidate := resp.Candidates[0]
+	return agnosticResp, nil
+}
+
+// streamChunk carrega um item bruto do iterador de GenerateContentStream —
+// existe só para poder passar pelo channel entre a goroutine que consome o
+// SDK e o loop que monta a resposta.
+type streamChunk struct {
+	resp *genai.GenerateContentResponse
+	err  error
+}
+
+// assembleFromStream consome os chunks de um GenerateContentStream e monta a
+// RespostaAgnostica incrementalmente (texto, tool calls, thought signature,
+// usage — sempre do último chunk que os traz). Extraída da CallGoogle para
+// ser testável sem precisar de um *genai.Client real: o teste alimenta o
+// channel `chunks` diretamente, com os atrasos que quiser simular.
+//
+// Detecta stall por TIME-TO-FIRST-TOKEN (DT-41-STREAM): se nenhum chunk
+// chegar dentro de ttftTimeout, chama cancelStream (aborta a chamada real ao
+// provider) e devolve um erro que envolve context.DeadlineExceeded — o mesmo
+// contrato que isStallError/classifyFallbackReason já reconhecem, então
+// withFallback escala de imediato, sem precisar de nenhuma mudança lá.
+//
+// ttft negativo (-1) sinaliza que nenhum chunk chegou a tempo (stall); caso
+// contrário é o tempo até o primeiro chunk, útil mesmo em erros parciais
+// (ex.: primeiro chunk chegou, stream caiu no meio).
+func assembleFromStream(chunks <-chan streamChunk, cancelStream context.CancelFunc, ttftTimeout time.Duration, modelName string) (llm.RespostaAgnostica, time.Duration, error) {
+	start := time.Now()
+	ttftTimer := time.NewTimer(ttftTimeout)
+	defer ttftTimer.Stop()
+
 	agnosticResp := llm.RespostaAgnostica{
-		Model:    resp.ModelVersion,
+		Model:    modelName,
 		Provider: "google",
 	}
+	gotFirst := false
+	ttft := time.Duration(-1)
 
+	for {
+		select {
+		case <-ttftTimer.C:
+			if !gotFirst {
+				cancelStream()
+				return llm.RespostaAgnostica{}, -1, fmt.Errorf("gemini stream: nenhum token em %v (stall): %w", ttftTimeout, context.DeadlineExceeded)
+			}
+			// Já recebemos o primeiro chunk antes do timer disparar (corrida
+			// entre o case do timer e o case do channel) — trata como chunk
+			// normal na próxima iteração; o timer já foi consumido e não
+			// dispara de novo.
+
+		case cr, ok := <-chunks:
+			if !ok {
+				// Canal fechado sem erro explícito = stream terminou normalmente.
+				return agnosticResp, ttft, nil
+			}
+			if !gotFirst {
+				gotFirst = true
+				ttft = time.Since(start)
+				if !ttftTimer.Stop() {
+					<-ttftTimer.C
+				}
+			}
+			if cr.err != nil {
+				return llm.RespostaAgnostica{}, ttft, cr.err
+			}
+			mergeStreamResponse(&agnosticResp, cr.resp)
+		}
+	}
+}
+
+// mergeStreamResponse acumula um chunk de GenerateContentResponse na resposta
+// agnóstica em construção. Texto é concatenado (cada chunk traz um pedaço
+// incremental); ModelVersion e Usage são sobrescritos pelo valor mais recente
+// não-vazio, porque só o último chunk normalmente os traz completos.
+func mergeStreamResponse(agnosticResp *llm.RespostaAgnostica, resp *genai.GenerateContentResponse) {
+	if resp == nil || len(resp.Candidates) == 0 {
+		return
+	}
+	candidate := resp.Candidates[0]
+	if candidate.Content != nil {
+		for _, part := range candidate.Content.Parts {
+			if part.Text != "" {
+				agnosticResp.Texto += part.Text
+			}
+			if part.ThoughtSignature != nil {
+				agnosticResp.ThoughtSignature = base64.StdEncoding.EncodeToString(part.ThoughtSignature)
+			}
+			if part.FunctionCall != nil {
+				agnosticResp.ToolCalls = append(agnosticResp.ToolCalls, llm.ChamadaFerramentaAgnostica{
+					Nome: part.FunctionCall.Name,
+					Args: part.FunctionCall.Args,
+				})
+			}
+		}
+	}
+	if resp.ModelVersion != "" {
+		agnosticResp.Model = resp.ModelVersion
+	}
 	if resp.UsageMetadata != nil {
 		agnosticResp.Usage = llm.UsoMetadados{
 			PromptTokens:     resp.UsageMetadata.PromptTokenCount,
@@ -817,23 +951,6 @@ func (c *Client) CallGoogle(ctx context.Context, modelName string, sysInst strin
 			CachedTokens: resp.UsageMetadata.CachedContentTokenCount,
 		}
 	}
-
-	for _, part := range candidate.Content.Parts {
-		if part.Text != "" {
-			agnosticResp.Texto += part.Text
-		}
-		if part.ThoughtSignature != nil {
-			agnosticResp.ThoughtSignature = base64.StdEncoding.EncodeToString(part.ThoughtSignature)
-		}
-		if part.FunctionCall != nil {
-			agnosticResp.ToolCalls = append(agnosticResp.ToolCalls, llm.ChamadaFerramentaAgnostica{
-				Nome: part.FunctionCall.Name,
-				Args: part.FunctionCall.Args,
-			})
-		}
-	}
-
-	return agnosticResp, nil
 }
 
 // EvaluateEvidenceListwise evaluates a list of retrieved chunks against a query.
