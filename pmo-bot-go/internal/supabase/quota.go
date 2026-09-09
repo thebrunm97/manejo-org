@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -168,10 +169,17 @@ func (c *Client) CheckSaldo(profileID string) (int, int, error) {
 }
 
 // LinkDeviceToWeb handles the "CONECTAR" command process pairing the device.
-// It searches for the 6-digit code in the profiles table, and if found, updates the telefone column.
+// It searches for the 6-digit code in the profiles table (only if still
+// dentro da validade — DT-109), and if found, updates the telefone column.
 func (c *Client) LinkDeviceToWeb(phone string, code string) error {
-	// First, lookup if this code exists and is pending
-	reqURL := fmt.Sprintf("%s/rest/v1/profiles?codigo_vinculo=eq.%s&select=id", c.config.URL, code)
+	// DT-109: código só é aceito dentro da janela de 10min definida por
+	// generate_whatsapp_link_code; e.QueryEscape evita que caracteres do
+	// código quebrem o filtro do PostgREST (mesma classe do DT-89).
+	nowISO := url.QueryEscape(time.Now().UTC().Format(time.RFC3339))
+	reqURL := fmt.Sprintf(
+		"%s/rest/v1/profiles?codigo_vinculo=eq.%s&codigo_vinculo_expira_em=gt.%s&select=id",
+		c.config.URL, url.QueryEscape(code), nowISO,
+	)
 	body, err := c.doRequest(http.MethodGet, reqURL, nil)
 	if err != nil {
 		return fmt.Errorf("falha ao buscar código: %w", err)
@@ -189,11 +197,12 @@ func (c *Client) LinkDeviceToWeb(phone string, code string) error {
 	profileID := profiles[0].ID
 
 	// Update the profile with the sanitized phone number and clear the code
-	updateURL := fmt.Sprintf("%s/rest/v1/profiles?id=eq.%s", c.config.URL, profileID)
+	updateURL := fmt.Sprintf("%s/rest/v1/profiles?id=eq.%s", c.config.URL, url.QueryEscape(profileID))
 
 	patchData := map[string]interface{}{
-		"telefone":       phone,
-		"codigo_vinculo": nil, // Limpa para não reutilizarem
+		"telefone":                 phone,
+		"codigo_vinculo":           nil, // Limpa para não reutilizarem
+		"codigo_vinculo_expira_em": nil,
 	}
 
 	patchBytes, _ := json.Marshal(patchData)

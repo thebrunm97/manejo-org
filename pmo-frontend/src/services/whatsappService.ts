@@ -7,37 +7,26 @@
 import { supabase } from '../supabaseClient';
 
 /**
- * Generate a random 6-character uppercase alphanumeric code.
- */
-function generateRandomCode(): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let code = '';
-    for (let i = 0; i < 6; i++) {
-        code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return code;
-}
-
-/**
  * Generate and save a WhatsApp connection code for the user.
- * 
- * @param userId - The Supabase Auth user ID
+ *
+ * O código é gerado dentro da RPC `generate_whatsapp_link_code` (nunca no
+ * cliente) — expira em 10 minutos e é revogado no primeiro uso pelo bot
+ * (DT-109). `update_profile` não grava esse campo por design: ele fica de
+ * fora do whitelist da RPC genérica de propósito, para forçar a geração a
+ * passar sempre por aqui.
+ *
  * @returns The generated 6-character uppercase code
  * @throws Error if the database update fails
  */
 export async function generateWhatsappCode(_userId: string): Promise<string> {
-    const code = generateRandomCode();
+    const { data, error } = await supabase.rpc('generate_whatsapp_link_code');
 
-    const { error } = await supabase.rpc('update_profile', { 
-        p_updates: { codigo_vinculo: code } 
-    });
-
-    if (error) {
-        console.error('[whatsappService] Error saving codigo_vinculo:', error);
+    if (error || !data || data.length === 0) {
+        console.error('[whatsappService] Error generating codigo_vinculo:', error);
         throw new Error('Não foi possível gerar o código. Tente novamente.');
     }
 
-    return code;
+    return data[0].codigo;
 }
 
 /**
@@ -57,13 +46,20 @@ export function getWhatsappBotNumber(): string | null {
  * @throws Error if the database update fails
  */
 export async function unlinkWhatsapp(_userId: string): Promise<{ success: boolean }> {
-    const { error } = await supabase.rpc('update_profile', { 
-        p_updates: { telefone: null, codigo_vinculo: null } 
+    const { error } = await supabase.rpc('update_profile', {
+        p_updates: { telefone: null }
     });
 
     if (error) {
         console.error('[whatsappService] Error unlinking WhatsApp:', error);
         throw new Error('Não foi possível desconectar. Tente novamente.');
+    }
+
+    // codigo_vinculo fica fora do whitelist de update_profile de propósito
+    // (DT-109) — revogado por uma RPC dedicada.
+    const { error: revokeError } = await supabase.rpc('revoke_whatsapp_link_code');
+    if (revokeError) {
+        console.error('[whatsappService] Error revoking codigo_vinculo:', revokeError);
     }
 
     return { success: true };
