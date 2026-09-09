@@ -2,7 +2,6 @@ package state
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -85,29 +84,28 @@ func handleDuvidaFallback(ctx context.Context, wpClient ports.ChannelSender, tts
 	orchestrator.WhatsApp = wpClient // wire message sender for HITL confirmation prompts
 
 	// 2.5 Buscar Memória Persistente (Recall)
+	//
+	// DT-106: userMemories via sbClient.MatchUserMemory (RPC match_user_memory)
+	// removido — código morto desde sempre. A migration que criava essa RPC e a
+	// tabela user_memory_profiles (pmo-bot-go/migrations/008,009) referencia
+	// `pmo(id)` (tabela inexistente; a real é `pmos`, com id BIGINT, não UUID)
+	// e nunca foi aplicada em produção nem staging (confirmado via
+	// introspecção). Todo turno com PMO ativo pagava uma chamada de
+	// GetEmbedding só pra essa busca falhar sempre em silêncio (errMatch != nil
+	// engolido) — custo e latência sem nenhum benefício. Superseded por
+	// memoryCache.GetActiveContext (pmo_memory_cache, DT-93), que já cobre o
+	// mesmo caso de uso com pgvector + Redis. userMemories mantido como
+	// parâmetro (prompt_manager.go ainda o usa) mas sempre vazio agora — igual
+	// ao comportamento real de produção antes desta limpeza.
 	var userMemories string
 	var activeBlock string
 	if profile != nil && profile.PmoAtivoID > 0 {
-		// [NOVO] Busca 3-camadas (Redis recent -> Redis scored -> Supabase semantic)
+		// Busca 3-camadas (Redis recent -> Redis scored -> Supabase semantic)
 		if memoryCache != nil {
 			activeCtxFrags, errCtx := memoryCache.GetActiveContext(ctx, int64(profile.PmoAtivoID), body)
 			if errCtx == nil && len(activeCtxFrags) > 0 {
 				pm := NewPromptManager()
 				activeBlock = pm.BuildActiveContextBlock(activeCtxFrags)
-			}
-		}
-
-		// Gera embedding da dúvida
-		queryEmb, err := sbClient.GetEmbedding(body, "CONSULTA")
-		if err == nil {
-			// Busca top 3 memorias
-			matches, errMatch := sbClient.MatchUserMemory(ctx, fmt.Sprintf("%d", profile.PmoAtivoID), queryEmb)
-			if errMatch == nil && len(matches) > 0 {
-				var b strings.Builder
-				for _, m := range matches {
-					b.WriteString(fmt.Sprintf("- Categoria [%s]: %s\n", m.Category, m.Fact))
-				}
-				userMemories = b.String()
 			}
 		}
 	}

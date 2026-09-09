@@ -57,59 +57,13 @@ func (c *Client) SaveUserMemory(ctx context.Context, pmoID string, phone string,
 	return nil
 }
 
-type MatchMemoryRequest struct {
-	QueryEmbedding []float32 `json:"query_embedding"`
-	MatchPmoID     string    `json:"match_pmo_id"`
-	MatchThreshold float64   `json:"match_threshold"`
-	MatchCount     int       `json:"match_count"`
-}
-
-type MemoryMatchResult struct {
-	ID         string  `json:"id"`
-	Fact       string  `json:"fact"`
-	Category   string  `json:"category"`
-	Similarity float64 `json:"similarity"`
-}
-
-// MatchUserMemory busca fatos relevantes na memória do produtor usando a RPC vetorial
-func (c *Client) MatchUserMemory(ctx context.Context, pmoID string, embedding []float32) ([]MemoryMatchResult, error) {
-	reqBody := MatchMemoryRequest{
-		QueryEmbedding: embedding,
-		MatchPmoID:     pmoID,
-		MatchThreshold: 0.70, // Default threshold para aceitação de semelhança
-		MatchCount:     5,    // Traz até 5 memórias mais relevantes
-	}
-
-	payload, err := json.Marshal(reqBody)
-	if err != nil {
-		return nil, err
-	}
-
-	url := fmt.Sprintf("%s/rest/v1/rpc/match_user_memory", c.config.URL)
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(payload))
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("apikey", c.config.Key)
-	req.Header.Set("Authorization", "Bearer "+c.config.Key)
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 300 {
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("erro ao buscar memória: %d - %s", resp.StatusCode, string(bodyBytes))
-	}
-
-	var results []MemoryMatchResult
-	if err := json.NewDecoder(resp.Body).Decode(&results); err != nil {
-		return nil, err
-	}
-
-	return results, nil
-}
+// MatchUserMemory (RPC match_user_memory) removido — DT-106. A tabela
+// user_memory_profiles nunca existiu em produção nem staging (a migration
+// que a criava referenciava `pmo(id)`, tabela inexistente; a real é `pmos`,
+// com id BIGINT, não UUID) e a RPC nunca chegou a existir. Todo turno com
+// PMO ativo pagava uma chamada de embedding só pra essa busca falhar sempre
+// (ver specialized_handlers.go). SaveUserMemory continua — ainda usado pela
+// ferramenta SalvarMemoriaProdutor (internal/mcp/tools_memory.go), que
+// também sempre falha hoje pelo mesmo motivo; decisão de produto pendente
+// sobre construir de verdade (padrão mais maduro do pmo_memory_cache,
+// DT-93) ou aposentar a ferramenta — ver DT-106 em debitos_tecnicos.md.
