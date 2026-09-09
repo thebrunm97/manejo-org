@@ -256,8 +256,14 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingEnvelope, sbClient *s
 		// no portal web — é verificado primeiro justamente para que o
 		// onboarding não sequestre esse fluxo.
 		if strings.HasPrefix(strings.ToUpper(body), "CONECTAR ") {
+			// DT-109: cooldown por telefone antes de sequer consultar o banco.
+			if !AllowLinkAttempt(phone) {
+				sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "❌ Muitas tentativas. Aguarde alguns minutos e tente de novo.", respondWithAudio)
+				return ProcessResult{Success: false, Reason: "link_attempt_rate_limited"}
+			}
 			code := strings.TrimSpace(body[9:])
 			if err := sbClient.LinkDeviceToWeb(phone, code); err == nil {
+				ResetLinkAttempts(phone)
 				sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "✅ Aparelho vinculado com sucesso!", respondWithAudio)
 				return ProcessResult{Success: true, Reason: "device_linked"}
 			}
