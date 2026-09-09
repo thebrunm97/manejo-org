@@ -21,8 +21,8 @@ objetiva"** — um comando com resultado binário (passa/falha), pensado pra que
 
 | Lote | Item | Pode ir pro BigPickle? | Por quê |
 |---|---|---|---|
-| A | DT-82 | ✅ **Sim** | Mudança isolada em Go, sem migration, sem acesso a produção. Critério de sucesso é mecânico (`go build`/`go vet` + o teste do lote). |
-| C | F1 | 🟡 **Parcial** | A troca de código (config PKCE + remover interceptação manual) é mecânica e verificável por `tsc --noEmit`/`npm run build`. Mas o teste real — clicar num magic link de e-mail de verdade e confirmar que a sessão abre — só um humano faz. BigPickle pode implementar; **não deixe ele marcar como concluído sem esse teste manual**. |
+| A | DT-82 | ✅ **Feito** (2026-09-09, commit `ef2c697` em `main`) | Mudança isolada em Go, sem migration, sem acesso a produção. Critério de sucesso é mecânico (`go build`/`go vet` + o teste do lote). |
+| C | F1 | ✅ **Já estava resolvido** — nenhuma execução necessária | Ao conferir o código antes de gerar o prompt, a vulnerabilidade descrita já não existia (ver Lote C abaixo). Documento de débito estava desatualizado, não o código. |
 | B | DT-122/DT-125 | ❌ **Não** | Exige SSH na VPS de produção com credenciais reais, gerar e rotacionar senha, reiniciar containers com produtores usando o sistema. Nenhum agente autônomo deveria ter esse acesso sem supervisão direta. |
 | D | DT-133/135/136/137 | ❌ **Não** | DT-135/136 exigem introspecção contra produção **e** staging antes de escrever qualquer coisa (histórico de migrations já mentiu antes, ver DT-22/DT-70/DT-106/DT-107); DT-133 trava numa decisão de produto que só o responsável responde; DT-137 depende do DT-131, ainda não fechado. Reconciliar schema errado quebra RLS de verdade em produção — risco alto demais pra loop sem revisão. |
 
@@ -139,33 +139,18 @@ pelo `evolution-go` (`:127`); portas `5672`/`15672` publicadas em `0.0.0.0`.
 
 ---
 
-## Lote C — F1: token de sessão na URL do onboarding (~2-3h, frontend) — 🟡 código no BigPickle, teste manual obrigatório
+## Lote C — F1: ✅ já resolvido, não precisa de execução
 
-**O quê:** `pmo-frontend/src/pages/OnboardingPage.tsx:41-61` intercepta `?token=` manualmente e
-chama `supabase.auth.setSession(...)`; o token transita na query string (vaza em log de proxy e
-referrer) e é logado em `console.log:47`.
+**Descoberto em 2026-09-09, ao conferir o código antes de gerar o prompt de execução:** o item
+descrito aqui (`OnboardingPage.tsx:41-61` interceptando `?token=` cru e logando em
+`console.log`) não existe mais — foi substituído pelo fluxo `AuthCallback.tsx` (commit `4dc01f2`,
+07/09/2026), que já usa `code` opaco + troca server-side + `detectSessionInUrl: true`, exatamente
+a correção que este lote pedia. Nenhuma ação de código restante. Registro completo movido pra
+seção "🟢 Concluído" do [`TECHNICAL_DEBT.md`](../../TECHNICAL_DEBT.md).
 
-**Passo a passo:**
-1. Migrar o magic link para o fluxo PKCE nativo do Supabase Auth
-   (`detectSessionInUrl: true` na config do client, já documentado pelo SDK) — remove a
-   necessidade de interceptar `?token=` manualmente.
-2. Remover a interceptação manual e o `console.log` do token em `OnboardingPage.tsx:41-61`
-   (fecha também o F18, que lista esse mesmo `console.log` como achado separado).
-3. Testar o fluxo de magic link ponta a ponta (link recebido por e-mail → clique → sessão
-   estabelecida) em ambiente de staging antes de subir — é o caminho de autenticação, qualquer
-   regressão bloqueia login.
-
-**Verificação objetiva:**
-```bash
-cd pmo-frontend
-npx tsc --noEmit
-npm run build
-```
-Isso garante que o código compila — **não** garante que o login funciona. O passo 3 (clicar num
-magic link de e-mail real recebido em staging) não tem substituto automatizável; é o único gate
-manual deste plano que não pode virar comando de shell. Se o BigPickle implementar este lote,
-**um humano ainda precisa clicar o link antes de considerar fechado** — é o caminho de
-autenticação inteiro, uma regressão aqui tranca todo mundo fora do app.
+Isso é o segundo item nesta sessão (depois do DT-126 no backend) em que o documento de débito
+estava desatualizado em relação ao código real — vale reconferir os itens "abertos" restantes
+contra o código antes de escrever mais prompts de execução, não só contra o texto do débito.
 
 ---
 
@@ -211,13 +196,13 @@ documentado sem correção.
 ## Checklist de progresso
 
 **Verificação de estado (fazer primeiro, sempre)**
-- [ ] `git merge origin/main` na branch atual — traz os 13 itens já fechados
+- [ ] `git merge origin/main` nas outras branches em andamento (ex. `feat/zarc-plantio-referencia-olericolas`) — traz os itens já fechados
 
 **Itens genuinamente abertos**
-- [x] DT-82 — cota de ingestão burlável sem `pmo_id`
+- [x] DT-82 — cota de ingestão burlável sem `pmo_id` (2026-09-09, `ef2c697` em `main`)
 - [ ] DT-122 — RabbitMQ credenciais + portas públicas (com o responsável por perto)
 - [ ] DT-125 — evolution-go porta pública (mesma manutenção do DT-122)
-- [ ] F1 — token de sessão na URL do onboarding (PKCE)
+- [x] F1 — token de sessão na URL do onboarding — já resolvido em `4dc01f2` (07/09), sem ação necessária
 
 **Descobertos durante o DT-132, mesma classe de risco**
 - [ ] DT-135 — `pmo_equipamentos`: reconciliar schema produção/staging primeiro

@@ -14,11 +14,6 @@
 
 ## 🔴 Alta Prioridade
 
-### F1 — Injeção de sessão via token na URL (`OnboardingPage`)
-- **Evidência:** `pmo-frontend/src/pages/OnboardingPage.tsx:41-61`
-- **Problema:** Intercepta `?token=` e chama `supabase.auth.setSession({ access_token: token, refresh_token: '' })`. O token transita na query string (vaza em logs de proxy e referrer) e é logado em `console.log:47`. A limpeza com `history.replaceState` remove do endereço mas não previne o vazamento durante o trânsito.
-- **Sugestão:** Migrar magic link para PKCE nativo do Supabase Auth (`detectSessionInUrl`); remover interceptação manual.
-
 ### F13 — Sync offline cria PMO duplicado em retry (`useSyncEngine`)
 - **Evidência:** `pmo-frontend/src/hooks/offline/useSyncEngine.ts:89-101`
 - **Problema:** `createPmo(payload)` não usa chave de idempotência; `localDb.delete(item.id)` ocorre _depois_ do create. Se o create grava no Supabase mas o delete da fila falha (IndexedDB), o próximo sync cria outro PMO.
@@ -157,4 +152,27 @@ A atual infraestrutura de ingestão (`/api/v1/admin/knowledge/ingest`) foi const
 2. **Nova Tela (Frontend):** `/propriedade?tab=knowledge` — upload de cartilhas pessoais, análises de solo; exibe só `ingestion_jobs` do próprio `pmo_id`.
 
 **Objetivo:** similarity search usa documentos globais (Admin) **+** documentos do PMO do usuário.
+
+---
+
+## 🟢 Concluído
+
+### F1 — Injeção de sessão via token na URL (`OnboardingPage`)
+**Concluído em:** 2026-09-09 (achado ao verificar o código antes de gerar um prompt de correção
+pro BigPickle — a entrada abaixo estava desatualizada, o código real já tinha sido substituído).
+
+O código descrito neste item (`OnboardingPage.tsx:41-61` interceptando `?token=` e chamando
+`supabase.auth.setSession({ access_token: token, refresh_token: '' })`, com `console.log` do
+token) **não existe mais no repositório**. O fluxo de magic link foi reescrito no commit
+`4dc01f2` (07/09/2026, "feat(multicanal): liga ChannelSender/DeliveryManager e conserta
+onboarding") para uma página dedicada, `pmo-frontend/src/pages/AuthCallback.tsx`: a URL carrega
+só um `code` opaco (nunca o `access_token`/`refresh_token` cru), trocado por tokens reais via
+`POST /api/v1/auth/exchange` no backend (`pmo-bot-go/internal/api/auth_pkce_test.go` confirma a
+implementação), com `history.replaceState` limpando a URL depois e nenhum log do código/token —
+só `console.error` da mensagem de erro em caso de falha. `supabaseClient.ts` já tem
+`detectSessionInUrl: true`, exatamente a sugestão original deste item.
+
+Nenhuma ação de código foi necessária — este registro só estava com o status desatualizado
+(mesmo padrão já visto no DT-126 do backend: o código já tinha sido corrigido em outra sessão,
+mas o documento de débito nunca foi atualizado para refletir isso).
 
