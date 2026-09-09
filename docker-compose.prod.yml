@@ -71,6 +71,11 @@ services:
       # Sem esta variável o bot sobe com rate limiting DESLIGADO (ver
       # internal/ports/ratelimit.go).
       REDIS_URL: redis://redis:6379/0
+      # DT-79: em produção o boot é abortado se o Redis estiver ausente ou
+      # inalcançável, em vez de degradar em silêncio para rate limiting
+      # desligado (fail-open). Ambientes locais/dev sem esta env mantêm o
+      # comportamento antigo — ver cmd/server/main.go.
+      RATE_LIMIT_REQUIRE_REDIS: "true"
       RABBITMQ_URL: "amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672/"
       # Dominio do frontend (ver pmo-frontend/ mais abaixo). Nao e segredo --
       # e so a lista de origens que o navegador tem permissao de chamar essa
