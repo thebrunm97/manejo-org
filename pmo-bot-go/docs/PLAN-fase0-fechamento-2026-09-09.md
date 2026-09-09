@@ -23,7 +23,7 @@ objetiva"** — um comando com resultado binário (passa/falha), pensado pra que
 |---|---|---|---|
 | A | DT-82 | ✅ **Feito** (2026-09-09, commit `ef2c697` em `main`) | Mudança isolada em Go, sem migration, sem acesso a produção. Critério de sucesso é mecânico (`go build`/`go vet` + o teste do lote). |
 | C | F1 | ✅ **Já estava resolvido** — nenhuma execução necessária | Ao conferir o código antes de gerar o prompt, a vulnerabilidade descrita já não existia (ver Lote C abaixo). Documento de débito estava desatualizado, não o código. |
-| B | DT-122/DT-125 | ❌ **Não** | Exige SSH na VPS de produção com credenciais reais, gerar e rotacionar senha, reiniciar containers com produtores usando o sistema. Nenhum agente autônomo deveria ter esse acesso sem supervisão direta. |
+| B | DT-122/DT-125 | ✅ **Já estavam resolvidos** — nenhuma execução necessária | Corrigidos em `7273552` (07/09), confirmado ao vivo via SSH em 09/09. Documento estava desatualizado, não a infra. |
 | D | DT-133/135/136/137 | ❌ **Não** | DT-135/136 exigem introspecção contra produção **e** staging antes de escrever qualquer coisa (histórico de migrations já mentiu antes, ver DT-22/DT-70/DT-106/DT-107); DT-133 trava numa decisão de produto que só o responsável responde; DT-137 depende do DT-131, ainda não fechado. Reconciliar schema errado quebra RLS de verdade em produção — risco alto demais pra loop sem revisão. |
 
 **Se você rodar o BigPickle mesmo assim nos lotes B/D**, no mínimo: rode em branch isolada, sem
@@ -111,31 +111,27 @@ resposta é 4xx (ou que o `pmo_id` foi derivado do JWT, nunca `0`) — não bast
 
 ---
 
-## Lote B — DT-122: RabbitMQ com credenciais hardcoded (~2h, precisa da VPS ao vivo) — ❌ não mandar pro BigPickle
+## Lote B — DT-122/DT-125: ✅ já resolvidos, verificado ao vivo em 2026-09-09
 
-**Fazer por último, com o responsável por perto** — mesma ressalva do plano anterior: mexe na
-stack de produção rodando de verdade. Exige SSH real na VPS e rotação de credencial — nenhum
-agente autônomo deveria fazer isso sem um humano assistindo cada comando.
+**Descoberto ao conectar na VPS pra começar este lote:** o `docker-compose.prod.yml` já não
+tem nada hardcoded — `RABBITMQ_DEFAULT_USER`/`PASS` vêm de `${RABBITMQ_USER}`/
+`${RABBITMQ_PASSWORD}` (`.env.prod`, fora do repo), e as portas `5672`/`15672`/`8082` já estão
+com bind `127.0.0.1:...`, não `0.0.0.0`. Corrigido no commit `7273552` (07/09/2026,
+"hardening da Fase 0/3"), como parte da migração pra VPS — só nunca foi movido pra
+"Concluído" no `debitos_tecnicos.md`, terceiro caso desta sessão de débito fechado no código
+mas aberto no documento (depois do DT-126 e do F1).
 
-**O quê:** `docker-compose.prod.yml:169-187` tem `RABBITMQ_DEFAULT_USER=admin` /
-`RABBITMQ_DEFAULT_PASS=admin_password` fixos no repo, referenciados também pelo bot (`:74`) e
-pelo `evolution-go` (`:127`); portas `5672`/`15672` publicadas em `0.0.0.0`.
+**Verificado via SSH antes de qualquer ação** (não bastou ler o compose — confirmei os
+containers rodando de verdade):
+```
+docker ps --format '{{.Names}}\t{{.Ports}}' | grep -i 'rabbitmq\|evolution'
+# pmo-prod-stack-evolution-go-1   127.0.0.1:8082->8082/tcp
+# pmo-prod-stack-rabbitmq-1       ...127.0.0.1:5672->5672/tcp...127.0.0.1:15672->15672/tcp
+```
+E que `RABBITMQ_PASSWORD` em `.env.prod` não é mais o default fraco `admin_password`
+(comparado sem imprimir o valor real).
 
-**Passo a passo:**
-1. Gerar uma senha nova forte (gerenciador de senha ou `openssl rand -base64 32` — nunca colar
-   em terminal cru, lição já registrada do DT-01).
-2. Mover usuário/senha para `.env.prod` (fora do repo), referenciado via `${RABBITMQ_USER}` /
-   `${RABBITMQ_PASS}` no compose, nos três lugares que hoje têm o valor fixo.
-3. Remover `ports: ["5672:5672", "15672:15672"]` do serviço `rabbitmq` — a rede interna do
-   compose (`pmo_prod_net`) já resolve `rabbitmq:5672` para o bot e o evolution-go; a porta de
-   gestão (15672) só precisa existir se alguém acessa o management UI de fora, e nesse caso
-   trocar para bind `127.0.0.1:15672:15672` (acesso só via túnel SSH), nunca `0.0.0.0`.
-4. Aplicar na VPS: atualizar `.env.prod`, `docker compose up -d --force-recreate rabbitmq`,
-   confirmar que bot e evolution-go reconectam com a credencial nova antes de considerar
-   fechado (checar logs dos três containers).
-5. Cross-referência: DT-125 (evolution-go publica `8082:8082` sem necessidade) é o mesmo padrão
-   de correção — remover `ports:` ou trocar para bind localhost. Vale fazer os dois na mesma
-   manutenção já que exige o mesmo acesso à VPS.
+Nada a executar. `debitos_tecnicos.md` atualizado, os dois movidos pra Concluído.
 
 ---
 
@@ -200,8 +196,8 @@ documentado sem correção.
 
 **Itens genuinamente abertos**
 - [x] DT-82 — cota de ingestão burlável sem `pmo_id` (2026-09-09, `ef2c697` em `main`)
-- [ ] DT-122 — RabbitMQ credenciais + portas públicas (com o responsável por perto)
-- [ ] DT-125 — evolution-go porta pública (mesma manutenção do DT-122)
+- [x] DT-122 — RabbitMQ credenciais + portas públicas — já resolvido em `7273552` (07/09), confirmado ao vivo em 09/09
+- [x] DT-125 — evolution-go porta pública — mesma correção do DT-122, mesmo commit
 - [x] F1 — token de sessão na URL do onboarding — já resolvido em `4dc01f2` (07/09), sem ação necessária
 
 **Descobertos durante o DT-132, mesma classe de risco**
