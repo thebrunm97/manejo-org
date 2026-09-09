@@ -41,6 +41,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/notify"
 	"github.com/thebrunm97/pmo-bot-go/internal/memory"
 	"github.com/thebrunm97/pmo-bot-go/internal/okf"
+	"github.com/thebrunm97/pmo-bot-go/internal/plantioref"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/proactivity"
 	"github.com/thebrunm97/pmo-bot-go/internal/prompt"
@@ -304,6 +305,26 @@ func main() {
 		}
 	} else {
 		log.Println("⚠️ ZARC_DB_PATH não definida. Consulta de janela de plantio desativada.")
+	}
+
+	// --- Janelas de plantio de REFERÊNCIA (culturas fora do ZARC) ---
+	//
+	// Ao contrário do ZARC, esta tabela vem embarcada no binário: são poucas
+	// dezenas de linhas de CSV curado à mão (ver internal/plantioref),
+	// versionado em Git e atualizado por PR + deploy — não há caminho de
+	// arquivo para configurar, e por isso não há variável de ambiente.
+	//
+	// CSV inválido não derruba o boot: o portão real é o CI (o teste
+	// TestCSVEmbutidoEhValido reprova o build antes de chegar aqui). Se ainda
+	// assim falhar em produção, a ferramenta consultar_janela_plantio volta ao
+	// "nao_zoneada" puro — um dado auxiliar quebrado custa uma resposta de
+	// conveniência, não o atendimento de WhatsApp inteiro.
+	if tabelaRef, err := plantioref.Carregar(); err != nil {
+		log.Printf("❌ [PlantioRef] CSV de referência inválido: %v — camada desativada", err)
+	} else {
+		mcpServer.SetPlantioRef(tabelaRef)
+		log.Printf("📗 [PlantioRef] %d janela(s) de referência, %d cultura(s) (sha256=%.12s…)",
+			tabelaRef.Total(), len(tabelaRef.Culturas()), tabelaRef.SHA())
 	}
 
 	// --- Cofre de Auditoria Efêmero (DT-42) ---

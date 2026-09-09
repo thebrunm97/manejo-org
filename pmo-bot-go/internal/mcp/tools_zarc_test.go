@@ -3,12 +3,14 @@ package mcp
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/thebrunm97/pmo-bot-go/internal/plantioref"
 	"github.com/thebrunm97/pmo-bot-go/internal/zarc"
 )
 
@@ -57,6 +59,31 @@ func servidorComZarc(t *testing.T) *Server {
 
 	s := NewServer(nil, nil, nil, nil)
 	s.SetZarcStore(store)
+	return s
+}
+
+// servidorComReferencia liga a tabela REAL embarcada em internal/plantioref,
+// não uma sintética: é ela que vai a produção, e o valor deste teste é
+// justamente afirmar que o piloto (tomate, alface, cenoura) responde de
+// verdade — sem base ZARC nenhuma.
+func servidorComReferencia(t *testing.T) *Server {
+	t.Helper()
+	tab, err := plantioref.Carregar()
+	require.NoError(t, err)
+
+	s := NewServer(nil, nil, nil, nil)
+	s.SetPlantioRef(tab)
+	return s
+}
+
+// servidorComZarcEReferencia liga as duas fontes, para os testes de
+// precedência: o dado oficial não pode nunca ser ofuscado pela referência.
+func servidorComZarcEReferencia(t *testing.T) *Server {
+	t.Helper()
+	s := servidorComZarc(t)
+	tab, err := plantioref.Carregar()
+	require.NoError(t, err)
+	s.SetPlantioRef(tab)
 	return s
 }
 
@@ -161,6 +188,113 @@ func TestJanelaPlantioRegistradaComSchemaEsperado(t *testing.T) {
 
 	require.Equal(t, []string{"cultura"}, tool.Definition.Parameters["required"],
 		"a cidade vem da propriedade da sessão; exigi-la do LLM quebraria o fluxo normal")
+}
+
+// --- internal/plantioref: janelas de referência para culturas fora do ZARC ---
+
+func TestJanelaPlantioCaiNaReferenciaQuandoZarcNaoZoneia(t *testing.T) {
+	s := servidorComZarcEReferencia(t)
+
+	res, err := s.handleConsultarJanelaPlantio(context.Background(), map[string]interface{}{
+		"cultura":          "tomate",
+		"cidade_informada": "São Paulo/SP",
+	}, TenantCtx{})
+	require.NoError(t, err)
+
+	m := exigeMapa(t, res)
+	require.Equal(t, "referencia_nao_oficial", m["status"])
+	require.NotEmpty(t, m["janelas_referencia"])
+	msg, _ := m["message"].(string)
+	require.Contains(t, msg, "NÃO é o ZARC")
+	require.Contains(t, msg, "crédito rural")
+	require.Contains(t, msg, "seguro agrícola")
+}
+
+// O teste que impede a regressão que a feature inteira existe para evitar: se
+// o retorno de referência se parecer com o do ZARC, o LLM funde os dois na
+// mesma frase e o produtor não distingue dado oficial de literatura.
+func TestRetornoDeReferenciaNaoPareceZarc(t *testing.T) {
+	s := servidorComReferencia(t)
+
+	res, err := s.handleConsultarJanelaPlantio(context.Background(), map[string]interface{}{
+		"cultura":          "alface",
+		"cidade_informada": "Belo Horizonte, MG",
+	}, TenantCtx{})
+	require.NoError(t, err)
+
+	m := exigeMapa(t, res)
+	require.Equal(t, "referencia_nao_oficial", m["status"])
+
+	_, temJanelasOficiais := m["janelas"]
+	require.False(t, temJanelasOficiais, "retorno de referência não pode ter a chave \"janelas\", reservada ao ZARC oficial")
+	_, temPortaria := m["portaria"]
+	require.False(t, temPortaria, "retorno de referência não pode ter \"portaria\"")
+
+	// A palavra "risco" aparece de propósito na mensagem — é o próprio texto
+	// que instrui o LLM a NÃO inventar percentual de risco. O que não pode
+	// existir é um CAMPO de risco, como zarc.Periodo tem ("risco_percentual").
+	serializado, err := json.Marshal(m)
+	require.NoError(t, err)
+	require.NotContains(t, string(serializado), "risco_percentual", "retorno de referência não pode ter um campo de risco percentual, exclusivo do ZARC")
+
+	// dd/mm é o formato exclusivo do ZARC (zarc.Periodo). Checado só nos campos
+	// voltados ao produtor — mes_inicio/mes_fim (por extenso) e a mensagem —
+	// não no JSON inteiro, que inclui a fonte_url e teria falsos positivos
+	// (ex.: um id de documento como ".../1355126/2502095/..." bate ##/##).
+	refs, ok := m["janelas_referencia"].([]plantioref.JanelaRef)
+	require.True(t, ok, "janelas_referencia deveria ser []plantioref.JanelaRef")
+	for _, r := range refs {
+		require.NotRegexp(t, `\d{2}/\d{2}`, r.MesInicio, "mes_inicio deve estar por extenso, nunca dd/mm")
+		require.NotRegexp(t, `\d{2}/\d{2}`, r.MesFim, "mes_fim deve estar por extenso, nunca dd/mm")
+	}
+	require.NotRegexp(t, `\d{2}/\d{2}`, m["message"], "a mensagem ao LLM não pode conter datas dd/mm")
+}
+
+func TestJanelaPlantioUsaReferenciaSemBaseZarc(t *testing.T) {
+	s := servidorComReferencia(t) // sem SetZarcStore
+
+	res, err := s.handleConsultarJanelaPlantio(context.Background(), map[string]interface{}{
+		"cultura":          "cenoura",
+		"cidade_informada": "Uberlândia, MG",
+	}, TenantCtx{})
+	require.NoError(t, err)
+
+	m := exigeMapa(t, res)
+	require.NotEqual(t, "unavailable", m["status"], "referência não depende do arquivo do ZARC")
+	require.Equal(t, "referencia_nao_oficial", m["status"])
+}
+
+func TestZarcOficialTemPrecedenciaSobreReferencia(t *testing.T) {
+	s := servidorComZarcEReferencia(t)
+
+	res, err := s.handleConsultarJanelaPlantio(context.Background(), map[string]interface{}{
+		"cultura":          "cebola",
+		"cidade_informada": "Sao Paulo, SP",
+	}, TenantCtx{})
+	require.NoError(t, err)
+
+	m := exigeMapa(t, res)
+	require.Equal(t, "ok", m["status"], "dado oficial não pode ser ofuscado pela referência quando ambos existem")
+	janelas, ok := m["janelas"].([]zarc.Janela)
+	require.True(t, ok)
+	require.NotEmpty(t, janelas[0].Portaria)
+}
+
+func TestSemZarcNemReferenciaMantemNaoZoneada(t *testing.T) {
+	s := servidorComZarcEReferencia(t)
+
+	res, err := s.handleConsultarJanelaPlantio(context.Background(), map[string]interface{}{
+		"cultura":          "quiabo", // fora do ZARC e fora do piloto de referência
+		"cidade_informada": "Sao Paulo, SP",
+	}, TenantCtx{})
+	require.NoError(t, err)
+
+	m := exigeMapa(t, res)
+	require.Equal(t, "nao_zoneada", m["status"])
+	require.Contains(t, m["message"], "NÃO invente datas")
+	culturasRef, ok := m["culturas_com_referencia"].([]string)
+	require.True(t, ok)
+	require.NotEmpty(t, culturasRef, "com a camada de referência ligada, o bot deveria poder oferecer o piloto")
 }
 
 func exigeMapa(t *testing.T, res interface{}) map[string]interface{} {
