@@ -40,15 +40,17 @@ export function AuthCoreProvider({ children }: { children: ReactNode }) {
 
     const signIn = useCallback(async (email: string, pass: string) => {
         const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
+        if (error) throw error;
         return { error };
     }, []);
 
     const signUp = useCallback(async (email: string, pass: string, metadata: any) => {
-        const { error } = await supabase.auth.signUp({ 
-            email, 
+        const { error } = await supabase.auth.signUp({
+            email,
             password: pass,
             options: { data: metadata }
         });
+        if (error) throw error;
         return { error };
     }, []);
 

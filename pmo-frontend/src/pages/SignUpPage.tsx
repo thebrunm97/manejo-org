@@ -30,8 +30,8 @@ const SignUpPage: React.FC = () => {
 
     const handleSignUp = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        if (password.length < 6) {
-            setError('A senha deve ter no mínimo 6 caracteres.');
+        if (password.length < 6 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+            setError('A senha deve ter no mínimo 6 caracteres, com letra minúscula, maiúscula e número.');
             return;
         }
         setLoading(true);
@@ -226,7 +226,7 @@ const SignUpPage: React.FC = () => {
                                         required
                                         type={showPassword ? "text" : "password"}
                                         id="password"
-                                        placeholder="Mínimo de 6 caracteres"
+                                        placeholder="Mín. 6 caracteres, com maiúscula, minúscula e número"
                                         autoComplete="new-password"
                                         value={password}
                                         onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
