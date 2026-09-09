@@ -79,6 +79,11 @@
 - **Problema:** Sem allowlist de colunas, um componente/site pode gravar qualquer coluna de `profiles` (ex.: sobrescrever `role`), contornando a proteção da RLS para escritas permitidas.
 - **Sugestão:** Tipar com transform apenas dos campos editáveis (nome, telefone, avatar_url) e validar contra um conjunto fechado.
 
+### F28 — `vitest run` coleta os specs do Playwright em `e2e/`, e 15 testes de componente falham por timeout de `waitFor`
+- **Evidência:** `npx vitest run` (2026-09-09) — 25 de 52 arquivos "falham", mas 14 desses são `e2e/**/*.spec.ts` (compliance-multimodality, auth-regression, manual-record-dialog, etc.), que usam a API do Playwright, não a do vitest; o glob padrão do vitest não exclui `e2e/`. Cross-ref DT-129 (E2E sem secrets/ambiente configurado) — mesma família de débito de infraestrutura de teste, achado diferente.
+- **Problema:** Além disso, 15 testes de verdade falham por `waitFor` expirando após ações como "abrir modal e adicionar item" ou "upload de arquivo": `Secao2`, `Secao3`, `Secao9`, `Secao10`, `Secao11`, `Secao13`, `Secao15`, `Secao18`, `Coordenadas`, `DadosCadastrais`. Confirmado que não é regressão do trabalho de segurança desta sessão (backend/RLS, nenhum arquivo de frontend tocado) nem do `resendConfirmation` em progresso em `AuthContext`/`AuthCoreContext` (mudança puramente aditiva, sem relação com essas telas) — padrão de falha pré-existente, ainda não investigado a fundo.
+- **Sugestão:** Excluir `e2e/**` do `test.include` do vitest (`vite.config.ts`) pra parar de coletar specs do Playwright; investigar separadamente por que os 15 testes de componente estão dando timeout no `waitFor` (suspeita: mock de callback assíncrono não resolvendo, ou timeout padrão curto demais pra essas interações).
+
 ---
 
 ## 🟢 Baixa Prioridade / Higiene
