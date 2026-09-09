@@ -252,6 +252,12 @@ export interface PmoPayload {
     nome_identificador: string;
     form_data: PMOFormData;
     status: PmoStatus;
+    /**
+     * Chave de deduplicação para createPmo (F13). Opcional: só o fluxo de
+     * sync offline (useSyncEngine) precisa dela, para que um retry depois de
+     * uma resposta perdida não crie um PMO duplicado no servidor.
+     */
+    idempotency_key?: string;
 }
 
 /**
