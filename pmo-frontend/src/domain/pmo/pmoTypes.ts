@@ -252,6 +252,12 @@ export interface PmoPayload {
     nome_identificador: string;
     form_data: PMOFormData;
     status: PmoStatus;
+    /**
+     * Chave de deduplicação para createPmo (F13). Opcional: só o fluxo de
+     * sync offline (useSyncEngine) precisa dela, para que um retry depois de
+     * uma resposta perdida não crie um PMO duplicado no servidor.
+     */
+    idempotency_key?: string;
 }
 
 /**
@@ -293,6 +299,13 @@ export interface UserProfile {
     telefone?: string;
     role?: 'user' | 'admin'; // Role based access control
     plan_tier?: string; // Plan tier (e.g., 'free', 'pro')
+    /**
+     * Consentimento para Session Replay do Sentry (F17/LGPD). `null`/`undefined`
+     * = ainda não perguntado (banner de consentimento aparece); `true`/`false`
+     * = decisão já tomada, banner não aparece mais.
+     */
+    consentimento_replay_sessao?: boolean | null;
+    consentimento_replay_sessao_em?: string | null;
 }
 
 // ==================================================================

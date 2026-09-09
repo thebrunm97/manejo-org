@@ -38,7 +38,7 @@ export function AuthProfileProvider({ children }: { children: ReactNode }) {
             // Fetch profile with only needed columns (SEC-04 partial fix)
             const { data: profileData, error: profileError } = await supabase
                 .from('profiles')
-                .select('id, nome, avatar_url, pmo_ativo_id, pmo_ativo:pmos(*), role, plan_tier, propriedade_ativa_id, telefone')
+                .select('id, nome, avatar_url, pmo_ativo_id, pmo_ativo:pmos(*), role, plan_tier, propriedade_ativa_id, telefone, consentimento_replay_sessao')
                 .eq('id', userId)
                 .single();
 
