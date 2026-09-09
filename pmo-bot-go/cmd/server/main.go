@@ -468,19 +468,28 @@ func main() {
 	//
 	// O Redis já subia no docker-compose.prod.yml sem nenhum consumidor. Este é
 	// o primeiro uso real dele. Sem REDIS_URL, ou com o Redis fora do ar, o bot
-	// sobe assim mesmo com um limiter que permite tudo: a proteção contra abuso
-	// não vale interromper o recebimento de mensagens (ver ports.RateLimiter).
+	// por padrão sobe assim mesmo com um limiter que permite tudo: a proteção
+	// contra abuso não vale interromper o recebimento de mensagens (ver
+	// ports.RateLimiter) — mas isso é fail-open (DT-79): sem cota de entrada,
+	// qualquer remetente dispara LLM/TTS/transcrição sem limite. Em produção
+	// (RATE_LIMIT_REQUIRE_REDIS=true, setado em docker-compose.prod.yml) o
+	// boot é abortado em vez de degradar silenciosamente; ambientes locais/
+	// dev sem essa env continuam com o comportamento antigo.
 	var inboundLimiter ports.RateLimiter = ports.NoopRateLimiter{}
 	var warningLimiter ports.RateLimiter = ports.NoopRateLimiter{}
 	var authLimiter ports.RateLimiter = ports.NoopRateLimiter{}
 	var memorySvc ports.MemoryCacheService
 	memoryCacheEnabled := os.Getenv("MEMORY_CACHE_ENABLED") != "false"
+	requireRedis := os.Getenv("RATE_LIMIT_REQUIRE_REDIS") == "true"
 
 	// Contexto base para goroutines e workers de background
 	appCtx, appCancel := context.WithCancel(context.Background())
 	defer appCancel() // Garante limpeza se a função panicar
 
 	if cfg.RedisURL == "" {
+		if requireRedis {
+			log.Fatalf("❌ [RateLimit] REDIS_URL não definida e RATE_LIMIT_REQUIRE_REDIS=true — recusando subir sem cota de entrada")
+		}
 		log.Println("⚠️  [RateLimit] REDIS_URL não definida — rate limiting de entrada DESLIGADO")
 		log.Println("⚠️  [RateLimit] Sem Redis, as rotas de satélite ficam SEM teto de cota do Earth Engine")
 		if memoryCacheEnabled {
@@ -490,6 +499,9 @@ func main() {
 			memorySvc = ports.NoopMemoryCacheService{}
 		}
 	} else if redisClient, err := redisstore.New(context.Background(), cfg.RedisURL); err != nil {
+		if requireRedis {
+			log.Fatalf("❌ [RateLimit] Redis indisponível (%v) e RATE_LIMIT_REQUIRE_REDIS=true — recusando subir sem cota de entrada", err)
+		}
 		log.Printf("⚠️  [RateLimit] Redis indisponível (%v) — rate limiting de entrada DESLIGADO", err)
 		if memoryCacheEnabled {
 			log.Printf("⚠️  [MemoryCache] Degradado: Redis indisponível (%v), usando NoopMemoryCacheService", err)
@@ -844,9 +856,20 @@ func main() {
 	proactiveEngine.Start()
 
 	// --- Start ---
+	// DT-80: sem nenhum timeout, uma conexão lenta ou maliciosa segurava a
+	// goroutine indefinidamente (slowloris/exaustão de goroutines) — tolerável
+	// em localhost (firewall do SO limita exposição), crítico numa VPS
+	// pública (DT-38). Os workers de fila (media/ai_worker) processam
+	// assíncrono, então nenhum handler síncrono depende de escrever uma
+	// resposta longa — 30s de folga sobre o teto de geração do LLM (25s,
+	// DT-73) cobre isso sem represar conexões lentas por mais tempo.
 	srv := &http.Server{
-		Addr:    "0.0.0.0:" + port,
-		Handler: r,
+		Addr:              "0.0.0.0:" + port,
+		Handler:           r,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       120 * time.Second,
 	}
 
 	go func() {
