@@ -200,15 +200,15 @@ já fechados.
 - [ ] DT-107 — policies `USING (true)` do harness (confirmar aplicação real primeiro)
 - [x] DT-108 — bucket `avatars` sem dono (2026-09-09, mergeado em `main`; branch também corrigida no GitHub via `push --force-with-lease` — ver DT-108 em Concluído)
 - [x] DT-111 — bucket `comprovantes` sem dono (2026-09-09, mergeado em `main`; fechou junto o `anexos-pmos`)
-- [ ] DT-109 — `CONECTAR` sem brute-force/expiração
-- [ ] DT-126 — loop no vínculo via OTP (plano pronto em `dt126-otp-loop.md`)
+- [x] DT-109 — `CONECTAR` sem brute-force/expiração (2026-09-09, mergeado em `main`; achado colateral: o pareamento estava funcionalmente quebrado, ver DT-109 em Concluído)
+- [x] DT-126 — loop no vínculo via OTP (fechado em 2026-09-08, commit `2fa2398`)
 
 **Dia 2**
-- [ ] DT-79 — rate limiting fail-open sem `REDIS_URL`
-- [ ] DT-80 — `http.Server` sem timeouts
-- [ ] DT-74 — `complete_onboarding` sem idempotência
-- [ ] DT-75 — modalidade desconhecida vira `CONVENCIONAL`
-- [ ] DT-77 — `update_log_treinamento` sem validação server-side
-- [ ] DT-88 — fallback de telefone por `ilike` últimos 8 dígitos
+- [x] DT-79 — rate limiting fail-open sem `REDIS_URL` (2026-09-09, mergeado em `main`)
+- [x] DT-80 — `http.Server` sem timeouts (2026-09-09, mesma branch do DT-79)
+- [x] DT-74 — `complete_onboarding` sem idempotência (2026-09-09, mergeado em `main`)
+- [x] DT-75 — modalidade desconhecida vira `CONVENCIONAL` (2026-09-09, mesma migration do DT-74)
+- [x] DT-77 — `update_log_treinamento` sem validação server-side (2026-09-09, mergeado em `main`)
+- [x] DT-88 — fallback de telefone por `ilike` últimos 8 dígitos (2026-09-09, mergeado em `main`)
 - [ ] DT-122 — RabbitMQ credenciais + portas públicas (fazer com o responsável por perto)
 - [ ] LGPD (DT-42) — escopo mínimo, se sobrar tempo
