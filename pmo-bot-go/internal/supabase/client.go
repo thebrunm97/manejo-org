@@ -610,18 +610,28 @@ func (c *Client) GetProfileByPhone(phone string) (*Profile, error) {
 		}
 	}
 
-	// Terceira tentativa: Tentar LIKE pegando os ultimos 8 digitos
+	// Terceira tentativa: Tentar LIKE pegando os ultimos 8 digitos.
+	// DT-88: dois telefones com os mesmos últimos 8 dígitos (DDDs diferentes)
+	// não podem cair no mesmo perfil por sorte de results[0] — se o fallback
+	// achar mais de um candidato, a ambiguidade é um erro explícito, nunca
+	// uma escolha arbitrária que entregaria dados/mensagens ao produtor errado.
 	if len(phone) >= 8 {
 		last8 := phone[len(phone)-8:]
 		reqURL = fmt.Sprintf("%s/rest/v1/profiles?telefone=ilike.*%s*&select=%s", c.config.URL, last8, selectQuery)
 		body, err = c.doRequest(http.MethodGet, reqURL, nil)
 		if err == nil {
-			if err := json.Unmarshal(body, &results); err == nil && len(results) > 0 {
-				p := results[0].Profile
-				p.ModalidadePredominante = results[0].Propriedades.ModalidadePredominante
-				p.TemProducaoParalela = results[0].Propriedades.TemProducaoParalela
-				p.Talhoes = results[0].Propriedades.Talhoes
-				return &p, nil
+			if err := json.Unmarshal(body, &results); err == nil {
+				if len(results) > 1 {
+					log.Printf("⚠️ [Supabase] Fallback ilike de telefone ambíguo para %s (%d perfis com os mesmos últimos 8 dígitos) — recusando escolher.", phone, len(results))
+					return nil, fmt.Errorf("telefone ambíguo: múltiplos perfis compartilham os últimos 8 dígitos de %s", phone)
+				}
+				if len(results) == 1 {
+					p := results[0].Profile
+					p.ModalidadePredominante = results[0].Propriedades.ModalidadePredominante
+					p.TemProducaoParalela = results[0].Propriedades.TemProducaoParalela
+					p.Talhoes = results[0].Propriedades.Talhoes
+					return &p, nil
+				}
 			}
 		}
 	}
