@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Mail, Phone, Shield, Save, Camera, Lock, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { fetchUserProfile, updateUserProfile, uploadAvatar } from '../services/profileService';
+import { fetchUserProfile, updateUserProfile, uploadAvatar, obterUrlAssinadaAvatar } from '../services/profileService';
 import { formatPhoneBR } from '../utils/masks';
 import { useAppNavigation } from '../hooks/navigation/useAppNavigation';
 import { toast } from 'react-toastify';
@@ -22,6 +22,7 @@ const ProfilePage: React.FC = () => {
         email: user?.email || '',
         avatar_url: ''
     });
+    const [avatarSrc, setAvatarSrc] = useState<string | null>(null);
 
     useEffect(() => {
         const loadProfile = async () => {
@@ -48,6 +49,17 @@ const ProfilePage: React.FC = () => {
 
         loadProfile();
     }, [user?.id]);
+
+    useEffect(() => {
+        let active = true;
+        setAvatarSrc(null);
+        obterUrlAssinadaAvatar(formData.avatar_url).then(src => {
+            if (active) setAvatarSrc(src);
+        });
+        return () => {
+            active = false;
+        };
+    }, [formData.avatar_url]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -170,8 +182,8 @@ const ProfilePage: React.FC = () => {
                                     onChange={handleFileChange} 
                                 />
                                 <div className="w-32 h-32 rounded-full border-4 border-white shadow-md bg-slate-100 flex items-center justify-center overflow-hidden mx-auto relative group">
-                                    {formData.avatar_url ? (
-                                        <img src={formData.avatar_url} alt="Avatar do Fazendeiro" className="w-full h-full object-cover" />
+                                    {avatarSrc ? (
+                                        <img src={avatarSrc} alt="Avatar do Fazendeiro" className="w-full h-full object-cover" />
                                     ) : (
                                         <User size={64} className="text-slate-300" />
                                     )}
