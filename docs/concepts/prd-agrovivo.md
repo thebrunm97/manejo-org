@@ -258,6 +258,18 @@ Acesse www.manejoorg.com.br e automatize a gestão da sua fazenda.
 #### Tática 2: Relatório Espacial Compartilhável
 Permite ao consultor técnico gerar um link público do mapa da propriedade com o histórico das últimas atividades realizadas nos talhões, facilitando a apresentação para cooperativas e potenciais compradores.
 
+### 8.2 Estratégia de Aquisição (Orgânico e Pago)
+
+Sem orçamento de mídia definido no momento, a aquisição prioriza o canal OPAC/OCS/OAC
+(organismos de certificação e controle social) como multiplicador — cada parceria abre
+acesso a dezenas de produtores de uma vez, aproveitando o modelo de organizações
+(ADR-010) já suportado pelo produto. Mídia paga fica documentada como fase futura,
+condicionada a orçamento e tração orgânica prévia.
+
+Ver detalhamento completo (canais, compliance de outreach com a base LGPD/planilha CNPO,
+e pré-requisitos para a fase paga) em
+[`growth-acquisition-strategy.md`](./growth-acquisition-strategy.md).
+
 ---
 
 ## 9. Roadmap de Expansão (Atualizado)
