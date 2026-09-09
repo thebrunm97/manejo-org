@@ -7,7 +7,6 @@ import './i18n'; // Configuração do i18next
 import './index.css';
 import { BrowserRouter } from 'react-router-dom';
 import * as Sentry from "@sentry/react";
-import { addIntegration } from "@sentry/browser";
 
 Sentry.init({
   dsn: import.meta.env.VITE_SENTRY_DSN,
@@ -16,28 +15,10 @@ Sentry.init({
   ],
   // Performance Monitoring — 10% em produção reduz overhead do tracing sem perder visibilidade
   tracesSampleRate: import.meta.env.PROD ? 0.1 : 1.0,
-  // Session Replay config (carregado sob demanda em `loadReplayLazy`)
+  // Session Replay config (a integration em si só é adicionada com consentimento
+  // explícito do produtor — ver components/SessionReplayConsent.tsx, F17).
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1.0,
-});
-
-/**
- * Session Replay (rrweb) é carregado sob demanda (lazy) para não pesar no
- * primeiro load. Sobe apenas após a primeira interação do usuário, mantendo
- * a funcionalidade de gravação de sessão (inclusive em erros).
- */
-const loadReplayLazy = () => {
-  import('@sentry/replay').then(({ replayIntegration }) => {
-    if (import.meta.env.VITE_SENTRY_DSN) {
-      addIntegration(replayIntegration());
-    }
-  }).catch(() => {
-    // Replay é best-effort: falha silenciosa não deve impactar o app
-  });
-};
-
-['pointerdown', 'keydown', 'touchstart'].forEach((eventName) => {
-  window.addEventListener(eventName, loadReplayLazy, { once: true });
 });
 
 // Import do Provedor de Autenticação
@@ -45,6 +26,9 @@ import { AuthProvider } from './context/AuthContext';
 
 // Import do ErrorBoundary
 import ErrorBoundary from './components/ErrorBoundary';
+
+// F17: banner de consentimento LGPD + gate do Session Replay
+import SessionReplayConsent from './components/SessionReplayConsent';
 
 
 // Renderização da aplicação
@@ -54,6 +38,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             <BrowserRouter>
                 <AuthProvider>
                     <App />
+                    <SessionReplayConsent />
                 </AuthProvider>
             </BrowserRouter>
         </ErrorBoundary>

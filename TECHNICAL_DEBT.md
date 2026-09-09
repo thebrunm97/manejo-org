@@ -14,11 +14,6 @@
 
 ## 🔴 Alta Prioridade
 
-### F17 — Session Replay Sentry sem gate de ambiente ou consentimento LGPD
-- **Evidência:** `pmo-frontend/src/main.tsx:20-21` — `replaysOnErrorSampleRate: 1.0`
-- **Problema:** 100% dos erros gravam a sessão inteira (rrweb), incluindo dados sensíveis do caderno de campo, sem opt-in do produtor e sem desabilitação em produção.
-- **Sugestão:** Desligar replay fora de staging; exigir consentimento; mascarar campos sensíveis com `maskAllText`/seletores.
-
 ---
 
 ## 🟡 Média Prioridade
@@ -151,6 +146,28 @@ A atual infraestrutura de ingestão (`/api/v1/admin/knowledge/ingest`) foi const
 ---
 
 ## 🟢 Concluído
+
+### F17 — Session Replay Sentry sem gate de ambiente ou consentimento LGPD
+**Concluído em:** 2026-09-09.
+
+`replaysOnErrorSampleRate: 1.0` gravava a sessão inteira (rrweb) em 100% dos erros sem opt-in do
+produtor. O masking padrão do SDK (`maskAllText`/`blockAllMedia`) já mitigava parte do risco, mas
+não substituía consentimento explícito exigido pela LGPD. Corrigido com gate de consentimento
+persistido: duas colunas novas em `profiles` (`consentimento_replay_sessao` — `NULL` = ainda não
+perguntado, `true`/`false` = decisão tomada — e `consentimento_replay_sessao_em`, timestamp da
+decisão), `update_profile` (RPC allowlist, mesmo padrão do F24) estendida pra aceitar esse campo.
+Novo componente `pmo-frontend/src/components/SessionReplayConsent.tsx`: mostra um banner só
+quando o produtor está logado e ainda não decidiu; a integration do replay só é adicionada ao
+Sentry (`addIntegration`, lazy na primeira interação) depois de um "aceitar" explícito, com
+`maskAllText`/`blockAllMedia` passados de forma explícita no código (antes dependiam do default
+implícito do SDK). `main.tsx` deixou de carregar o replay incondicionalmente — `Sentry.init` ficou
+só com tracing/erro. Decisão persistida em `profiles` (não `localStorage`) para não pedir de novo
+se o produtor trocar de aparelho. Migration
+`supabase/migrations/20260909130000_f17_session_replay_consent.sql`, aplicada em staging
+(`pmo-staging`) e produção (`pmo-inteligente`) — `update_profile` em produção comparado via
+`pg_proc.prosrc` contra o arquivo do repositório antes de sobrescrever, confirmado idêntico ao que
+o F24 tinha deixado. `tsc --noEmit` limpo, suíte de testes de `hooks/offline` passando, app
+verificado subindo sem erro de console/servidor no preview local.
 
 ### F13 — Sync offline cria PMO duplicado em retry (`useSyncEngine`)
 **Concluído em:** 2026-09-09.
