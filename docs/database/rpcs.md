@@ -35,6 +35,26 @@ Utilizada para configurar a fazenda rapidamente.
 
 ---
 
+## 2.1. RPCs de Onboarding
+
+### `complete_onboarding`
+Finaliza o cadastro do produtor no fluxo web (PWA).
+- **Argumentos:** `p_tipo_perfil`, `p_culturas_interesse`, `p_latitude`, `p_longitude`, `p_modalidade_producao`.
+- **Ação:** Atualiza o `profile`, cria a propriedade e o talhão default ("Sede") do produtor,
+  e marca `profiles.propriedade_ativa_id`.
+- **Retorno:** `{ success, propriedade_id, talhao_id, already_onboarded? }`. Em erro de
+  autenticação ou modalidade inválida: `{ success: false, error }`.
+- **Idempotência (DT-74):** se o produtor já tiver `propriedade_ativa_id` setado, a função não
+  insere de novo — apenas retorna `already_onboarded: true` com os ids já existentes. Um índice
+  único parcial em `propriedades(user_id) WHERE nome = 'Sítio / Fazenda'` (e o equivalente em
+  `talhoes`) cobre a corrida de duas chamadas concorrentes, capturada via
+  `EXCEPTION WHEN unique_violation`.
+- **Validação de modalidade (DT-75):** `p_modalidade_producao` fora do enum conhecido
+  (`ORGANICO`/`CONVENCIONAL`/`TRANSICAO`/`EM_CONVERSAO`/`CONVERSAO`) retorna erro explícito, em
+  vez de cair silenciosamente em `CONVENCIONAL`.
+
+---
+
 ## 3. RPCs de Inteligência (IA)
 
 ### `match_farm_documents`

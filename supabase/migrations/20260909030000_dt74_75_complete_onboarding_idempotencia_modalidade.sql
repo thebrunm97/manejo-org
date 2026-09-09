@@ -8,6 +8,13 @@
 -- inserir de novo. propriedade_ativa_id é o marcador de conclusão correto
 -- (não lat/lng, que pode variar por jitter de GPS entre tentativas do mesmo
 -- fluxo).
+-- Rede de segurança contra corrida (duas chamadas concorrentes passando pelo
+-- fast-path antes de qualquer uma commitar): dois índices únicos parciais
+-- identificam a linha "default" do onboarding (nome fixo, criada só por essa
+-- RPC) sem restringir usuários que legitimamente têm mais propriedades/talhões
+-- por outros caminhos. O INSERT de propriedades fica num bloco aninhado que
+-- captura `unique_violation` e devolve os dados do vencedor da corrida, em vez
+-- de estourar erro.
 --
 -- DT-75: o ELSE do mapeamento convertia qualquer valor fora do enum
 -- conhecido para CONVENCIONAL sem erro. Confirmado ao ler o único chamador
@@ -15,6 +22,14 @@
 -- já é sempre um dos três válidos — a troca para erro explícito não quebra
 -- esse caller, só fecha a porta para um futuro caller (ex.: onboarding via
 -- WhatsApp do DT-58) que mande algo como 'nao_sei' e polua o cadastro.
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_propriedades_user_onboarding_default
+  ON public.propriedades (user_id)
+  WHERE nome = 'Sítio / Fazenda';
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_talhoes_propriedade_onboarding_default
+  ON public.talhoes (propriedade_id)
+  WHERE nome = 'Sede';
 
 CREATE OR REPLACE FUNCTION public.complete_onboarding(
   p_tipo_perfil TEXT,
@@ -78,10 +93,31 @@ BEGIN
     culturas_interesse = p_culturas_interesse
   WHERE id = v_user_id;
 
-  -- 2. Inserir Propriedade
-  INSERT INTO public.propriedades (nome, latitude, longitude, user_id, area_total_ha)
-  VALUES (E'Sítio / Fazenda', p_latitude, p_longitude, v_user_id, 0)
-  RETURNING id INTO v_propriedade_id;
+  -- 2. Inserir Propriedade, com rede de segurança contra corrida (DT-74).
+  BEGIN
+    INSERT INTO public.propriedades (nome, latitude, longitude, user_id, area_total_ha)
+    VALUES (E'Sítio / Fazenda', p_latitude, p_longitude, v_user_id, 0)
+    RETURNING id INTO v_propriedade_id;
+  EXCEPTION WHEN unique_violation THEN
+    -- Outra chamada concorrente venceu a corrida e já criou a propriedade default.
+    SELECT id INTO v_propriedade_id
+    FROM public.propriedades
+    WHERE user_id = v_user_id AND nome = 'Sítio / Fazenda'
+    LIMIT 1;
+
+    SELECT id INTO v_talhao_id
+    FROM public.talhoes
+    WHERE propriedade_id = v_propriedade_id AND user_id = v_user_id
+    ORDER BY id ASC
+    LIMIT 1;
+
+    RETURN jsonb_build_object(
+      'success', true,
+      'propriedade_id', v_propriedade_id,
+      'talhao_id', v_talhao_id,
+      'already_onboarded', true
+    );
+  END;
 
   -- 3. Atualizar Propriedade Ativa no Profile
   UPDATE public.profiles
