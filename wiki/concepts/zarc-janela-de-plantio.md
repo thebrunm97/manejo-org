@@ -25,9 +25,15 @@ horticultura: o ZARC zoneia **cebola, alho, batata, mandioca, melancia, abacaxi,
 mamão, banana, café, citros, uva, maçã, pêssego, cacau e açaí**, entre outras — mas
 **não zoneia tomate, alface, couve, cenoura nem brócolis**.
 
-Para essas culturas não existe janela oficial, e a resposta correta é dizer isso.
-Recomendação de época para elas depende de [[rag-e-base-de-conhecimento]], com a
-literatura curada — não do ZARC.
+Para essas culturas não existe janela oficial do MAPA. Desde a referência de
+plantio para olerícolas (pacote `internal/plantioref`, separado
+deliberadamente de `internal/zarc` para não misturar dado oficial com
+literatura), o bot tem uma segunda fonte pra esse caso: uma tabela embarcada
+(Embrapa Hortaliças/Sebrae, por região) com janela sugerida para tomate,
+alface, cenoura e outras olerícolas fora do escopo do ZARC. É referência de
+literatura, não documento de crédito rural/seguro — a resposta do bot marca
+essa diferença. Fora dessa tabela, a recomendação ainda depende de
+[[rag-e-base-de-conhecimento]], com a literatura curada.
 
 ## Decêndios
 
