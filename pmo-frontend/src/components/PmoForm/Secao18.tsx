@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 import { useMediaManager } from '../../hooks/media/useMediaManager';
+import { obterUrlAssinadaAnexo } from '../../services/storageBucketService';
 import { Camera, Paperclip, FileText, CheckCircle, Link as LinkIcon, Trash2, Loader2 } from 'lucide-react';
 
 interface Anexo { nome_documento: string; descricao?: string; url_arquivo: string; path_arquivo: string; }
@@ -42,6 +43,12 @@ const Secao18: React.FC<Secao18Props> = ({ data, onSectionChange }) => {
     };
 
     const handleCancel = () => { clearAsset(); setDocName(''); setDocDescription(''); };
+
+    const abrirAnexo = async (anexo: Anexo) => {
+        const url = await obterUrlAssinadaAnexo(anexo.path_arquivo || anexo.url_arquivo);
+        if (!url) { alert('Não foi possível abrir o anexo.'); return; }
+        window.open(url, '_blank', 'noopener,noreferrer');
+    };
 
     const removerAnexo = async (index: number, path: string) => {
         try {
@@ -89,7 +96,7 @@ const Secao18: React.FC<Secao18Props> = ({ data, onSectionChange }) => {
                             <li key={i} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50">
                                 <div className="min-w-0 flex-1"><p className="text-sm font-medium text-gray-800 truncate">{a.nome_documento}</p>{a.descricao && <p className="text-xs text-gray-500 truncate">{a.descricao}</p>}</div>
                                 <div className="flex items-center gap-1 ml-3 shrink-0">
-                                    <a href={a.url_arquivo} target="_blank" rel="noopener noreferrer" className="p-1.5 text-blue-500 hover:bg-blue-50 rounded"><LinkIcon size={16} /></a>
+                                    <button type="button" onClick={() => abrirAnexo(a)} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded"><LinkIcon size={16} /></button>
                                     <button onClick={() => removerAnexo(i, a.path_arquivo)} className="p-1.5 text-red-500 hover:bg-red-50 rounded"><Trash2 size={16} /></button>
                                 </div>
                             </li>

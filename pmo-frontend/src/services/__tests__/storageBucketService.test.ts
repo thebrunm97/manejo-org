@@ -33,11 +33,9 @@ describe('storageBucketService', () => {
         const userId = 'user-1';
 
         const mockUpload = vi.fn().mockResolvedValue({ error: null });
-        const mockGetUrl = vi.fn().mockReturnValue({ data: { publicUrl: 'http://cdn/img.jpg' } });
 
         vi.mocked(supabase.storage.from).mockReturnValue({
-            upload: mockUpload,
-            getPublicUrl: mockGetUrl
+            upload: mockUpload
         } as any);
 
         const result = await uploadFileToBucket(asset, userId);
@@ -47,7 +45,7 @@ describe('storageBucketService', () => {
             mockFile,
             expect.objectContaining({ contentType: 'image/jpeg' })
         );
-        expect(result).toBe('http://cdn/img.jpg');
+        expect(result).toContain('user-1/');
     });
 
     it('should upload from asset.uri (Mobile)', async () => {
@@ -65,11 +63,9 @@ describe('storageBucketService', () => {
         } as any);
 
         const mockUpload = vi.fn().mockResolvedValue({ error: null });
-        const mockGetUrl = vi.fn().mockReturnValue({ data: { publicUrl: 'http://cdn/photo.png' } });
 
         vi.mocked(supabase.storage.from).mockReturnValue({
-            upload: mockUpload,
-            getPublicUrl: mockGetUrl
+            upload: mockUpload
         } as any);
 
         const result = await uploadFileToBucket(asset, userId);
@@ -80,15 +76,14 @@ describe('storageBucketService', () => {
             mockBlob,
             expect.any(Object)
         );
-        expect(result).toBe('http://cdn/photo.png');
+        expect(result).toContain('user-2/');
     });
 
     it('should return null if upload fails', async () => {
         const asset: MediaAsset = { name: 'f.txt', file: new File([], 'f.txt'), mimeType: 'text/plain', type: 'document', uri: '' };
 
         vi.mocked(supabase.storage.from).mockReturnValue({
-            upload: vi.fn().mockResolvedValue({ error: new Error('Storage Full') }),
-            getPublicUrl: vi.fn()
+            upload: vi.fn().mockResolvedValue({ error: new Error('Storage Full') })
         } as any);
 
         const result = await uploadFileToBucket(asset, 'u-3');
