@@ -192,14 +192,14 @@ Marcar aqui **e** mover a entrada correspondente para 🟢 Concluído em
 já fechados.
 
 **Dia 1**
-- [ ] DT-93 — RPC `save_pmo_memory_cache`/`match_pmo_memory_cache`
-- [ ] DT-94 — RPC `create_or_supersede_mutation_draft`/`commit_mutation_draft`
-- [ ] DT-95 — RPCs Knowledge Ops / `upsert_arena_models`
-- [ ] DT-96 — `get_knowledge_role()` privilege escalation
+- [x] DT-93 — RPC `save_pmo_memory_cache`/`match_pmo_memory_cache` (2026-09-09, mergeado em `main`, reverificado contra Postgres local)
+- [x] DT-94 — RPC `create_or_supersede_mutation_draft`/`commit_mutation_draft` (2026-09-09, idem)
+- [x] DT-95 — RPCs Knowledge Ops / `upsert_arena_models` (2026-09-09, idem)
+- [x] DT-96 — `get_knowledge_role()` privilege escalation (2026-09-09, idem)
 - [ ] DT-106 — `user_memory_profiles`/`match_user_memory` (confirmar aplicação real primeiro)
 - [ ] DT-107 — policies `USING (true)` do harness (confirmar aplicação real primeiro)
-- [ ] DT-108 — bucket `avatars` sem dono
-- [ ] DT-111 — bucket `comprovantes` sem dono
+- [x] DT-108 — bucket `avatars` sem dono (2026-09-09, mergeado em `main`; branch também corrigida no GitHub via `push --force-with-lease` — ver DT-108 em Concluído)
+- [x] DT-111 — bucket `comprovantes` sem dono (2026-09-09, mergeado em `main`; fechou junto o `anexos-pmos`)
 - [ ] DT-109 — `CONECTAR` sem brute-force/expiração
 - [ ] DT-126 — loop no vínculo via OTP (plano pronto em `dt126-otp-loop.md`)
 
