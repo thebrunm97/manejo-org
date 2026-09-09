@@ -625,35 +625,34 @@ func (h *Handler) handleKnowledgeUpload(c *gin.Context) {
 		return
 	}
 
-	// 2. Parse PMO ID (optional)
+	// 2. Parse PMO ID (required — DT-82)
 	pmoIDStr := c.PostForm("pmo_id")
-	var pmoID int64
-	if pmoIDStr != "" {
-		id, err := strconv.ParseInt(pmoIDStr, 10, 64)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid pmo_id"})
+	if pmoIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "pmo_id é obrigatório"})
+		return
+	}
+	pmoID, err := strconv.ParseInt(pmoIDStr, 10, 64)
+	if err != nil || pmoID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "pmo_id inválido"})
+		return
+	}
+
+	// --- QUOTA CHECK ---
+	tier, count, err := h.cfg.SupabaseClient.GetIngestionStats(pmoID)
+	if err == nil {
+		if tier != "pro" && count >= 3 {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error":  "Limite de cota atingido",
+				"detail": "Usuários gratuitos podem ingerir até 3 documentos. Faça upgrade para Pro para ilimitado.",
+				"count":  count,
+				"tier":   tier,
+			})
 			return
 		}
-		pmoID = id
-
-		// --- QUOTA CHECK ---
-		tier, count, err := h.cfg.SupabaseClient.GetIngestionStats(pmoID)
-		if err == nil {
-			// Rule: 3 docs for non-pro
-			if tier != "pro" && count >= 3 {
-				c.JSON(http.StatusForbidden, gin.H{
-					"error":  "Limite de cota atingido",
-					"detail": "Usuários gratuitos podem ingerir até 3 documentos. Faça upgrade para Pro para ilimitado.",
-					"count":  count,
-					"tier":   tier,
-				})
-				return
-			}
-		} else {
-			log.Printf("⚠️ [UPLOAD] Erro ao verificar quota: %v", err)
-		}
-		// -------------------
+	} else {
+		log.Printf("⚠️ [UPLOAD] Erro ao verificar quota: %v", err)
 	}
+	// -------------------
 
 	// 3. Get file from form
 	file, err := c.FormFile("file")
