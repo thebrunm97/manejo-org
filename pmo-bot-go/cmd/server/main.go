@@ -454,9 +454,15 @@ func main() {
 	// rota existir.
 
 
+	// DT-120: producerRateLimit nasce com NoopRateLimiter (Redis ainda não foi
+	// inicializado nesta altura do boot) e é ligado ao limiter de verdade mais
+	// abaixo, junto do resto do rate limiting de entrada.
+	producerRateLimit := middleware.NewRateLimitBox()
+
 	gatewayHandler := gateway.NewHandler(sbURL, sbKey)
 	producerGroup := r.Group("/api/v1")
 	producerGroup.Use(middleware.RequireAuth(jwtVerifier))
+	producerGroup.Use(producerRateLimit.Middleware("gateway"))
 	gatewayHandler.RegisterRoutes(producerGroup)
 
 	// Rota para tiles do GEE (Fase 3 - acessível pelo produtor no app)
@@ -513,6 +519,7 @@ func main() {
 		}
 		log.Println("⚠️  [RateLimit] REDIS_URL não definida — rate limiting de entrada DESLIGADO")
 		log.Println("⚠️  [RateLimit] Sem Redis, as rotas de satélite ficam SEM teto de cota do Earth Engine")
+		log.Println("⚠️  [RateLimit] Sem Redis, o gateway /api/v1 fica SEM teto de requisições por usuário")
 		if memoryCacheEnabled {
 			log.Println("⚠️  [MemoryCache] Degradado: Redis indisponível, usando NoopMemoryCacheService")
 			memorySvc = ports.NoopMemoryCacheService{}
@@ -546,6 +553,10 @@ func main() {
 		warningLimiter = redisstore.NewRateLimiter(redisClient, "ratelimit:warning", 1, 5*time.Minute)
 		authLimiter = redisstore.NewRateLimiter(redisClient, "ratelimit:auth", 5, time.Minute)
 		log.Printf("✅ [RateLimit] Redis conectado — %d mensagens/min por telefone", limitPerMin)
+
+		gatewayLimitPerMin := parseEnvInt("GATEWAY_RATE_LIMIT_PER_MINUTE", 60)
+		producerRateLimit.SetLimiter(redisstore.NewRateLimiter(redisClient, "ratelimit:gateway", gatewayLimitPerMin, time.Minute))
+		log.Printf("✅ [RateLimit] Gateway /api/v1 protegido — %d requisições/min por usuário", gatewayLimitPerMin)
 
 		// Cota do Earth Engine: teto baixo de propósito. Uma chamada zonal
 		// custa uma consulta POR TALHÃO, então o limite é por usuário e conta
