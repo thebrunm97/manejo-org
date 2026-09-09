@@ -161,7 +161,6 @@ const OnboardingPage: React.FC = () => {
     if (step === STEPS.PROFILE) return !selectedRole;
     if (step === STEPS.CROPS) return selectedCrops.length === 0;
     if (step === STEPS.MODALITY) return !selectedModality;
-    if (step === STEPS.LOCATION) return !selectedLocation;
     return false;
   };
 
@@ -409,7 +408,7 @@ const OnboardingPage: React.FC = () => {
                 <MapPin className="w-8 h-8 text-emerald-700" />
               </div>
               <h1 className="text-3xl font-bold tracking-tight mb-2">Onde fica a propriedade?</h1>
-              <p className="text-slate-500 mb-6">Busque pela sua cidade ou arraste o mapa e clique para marcar a localização da propriedade.</p>
+              <p className="text-slate-500 mb-6">Busque pela sua cidade ou arraste o mapa e clique para marcar a localização da propriedade. Esse passo é opcional — você pode pular e registrar depois.</p>
               
               <div className="w-full mb-6">
                 <form onSubmit={handleSearch} className="relative flex items-center">
@@ -487,7 +486,7 @@ const OnboardingPage: React.FC = () => {
                   Salvando...
                 </>
               ) : step === Object.keys(STEPS).length ? (
-                "Concluir"
+                step === STEPS.LOCATION && !selectedLocation ? "Pular e concluir" : "Concluir"
               ) : (
                 <>
                   Continuar
