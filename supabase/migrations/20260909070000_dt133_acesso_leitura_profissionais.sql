@@ -122,6 +122,7 @@ CREATE POLICY "Só o dono do PMO revoga acesso"
 CREATE OR REPLACE FUNCTION public.pmo_acessos_profissionais_bloqueia_alteracao_campos_imutaveis()
 RETURNS TRIGGER
 LANGUAGE plpgsql
+SET search_path = public
 AS $$
 BEGIN
   IF NEW.pmo_id IS DISTINCT FROM OLD.pmo_id
