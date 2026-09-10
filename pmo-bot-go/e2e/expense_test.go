@@ -18,30 +18,30 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/thebrunm97/pmo-bot-go/internal/config"
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
+	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/webhook"
 )
 
 // MockMessageSender avoids sending real WhatsApp messages during tests.
+// Implementa ports.ChannelSender (Send/SendTyping/DownloadMedia) -- a
+// interface antiga (SendMessage/SendVoice/SendReply/DownloadAudio/
+// DownloadImage/SetPresence/SendPresence/SendButton) foi substituída por
+// ChannelSender em algum refactor que não atualizou este mock, quebrando a
+// compilação dos testes E2E (build tag e2e não roda no CI normal, por isso
+// passou despercebido).
 type MockMessageSender struct {
 	SentMessages []string
 }
 
-func (m *MockMessageSender) SendMessage(to, message string) error {
-	m.SentMessages = append(m.SentMessages, message)
+func (m *MockMessageSender) Send(ctx context.Context, env ports.OutboundEnvelope) error {
+	m.SentMessages = append(m.SentMessages, env.Text)
 	return nil
 }
-func (m *MockMessageSender) SendVoice(to, base64Audio string, isPtt bool) error { return nil }
-func (m *MockMessageSender) SendReply(to, message, replyToMessageID string) error { return nil }
-func (m *MockMessageSender) DownloadAudio(messageID string, rawPayload []byte) ([]byte, string, error) {
-	return nil, "", nil
-}
-func (m *MockMessageSender) DownloadImage(messageID string, rawPayload []byte) ([]byte, string, error) {
-	return nil, "", nil
-}
-func (m *MockMessageSender) SetPresence(to string, presence string) error                      { return nil }
-func (m *MockMessageSender) SendPresence(ctx context.Context, to string, state string) error   { return nil }
-func (m *MockMessageSender) SendButton(to string, title, desc, footer string, btn []map[string]string) error {
+func (m *MockMessageSender) SendTyping(ctx context.Context, channel ports.ChannelType, to string) error {
 	return nil
+}
+func (m *MockMessageSender) DownloadMedia(ctx context.Context, mediaID string, rawPayload []byte) ([]byte, string, error) {
+	return nil, "", nil
 }
 
 func TestExpenseMutationE2E(t *testing.T) {
