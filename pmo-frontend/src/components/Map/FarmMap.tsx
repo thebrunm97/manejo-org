@@ -713,6 +713,16 @@ const FarmMapInner: React.FC<FarmMapProps> = (props) => {
         if (map) setHover(map, null);
     }, [isDrawerOpen, setHover, setCursorSafe]);
 
+    // O MapboxDraw fica montado só durante desenho/edição (ver render abaixo).
+    // Ao sair desses modos o controle é desmontado e a instância deixa de
+    // existir — zera a referência para os efeitos abaixo não chamarem método
+    // num draw já destruído pelo useControl.
+    useEffect(() => {
+        if (!isDrawingMode && !isEditingMode) {
+            setDrawInstance(null);
+        }
+    }, [isDrawingMode, isEditingMode]);
+
     useEffect(() => {
         if (!drawInstance) return;
         try {
@@ -868,17 +878,24 @@ const FarmMapInner: React.FC<FarmMapProps> = (props) => {
                 />
             </Source>
 
-            <MapDrawControl
-                position="top-left"
-                displayControlsDefault={false}
-                controls={{ polygon: false, trash: false }}
-                defaultMode="simple_select"
-                getDrawInstance={setDrawInstance}
-                onCreate={stableOnDrawCreate}
-                onUpdate={stableOnDrawUpdate}
-                onDelete={stableOnDrawDelete}
-                onModeChange={handleModeChange}
-            />
+            {/* Montado só durante desenho/edição: o MapboxDraw intercepta touch
+                events no container inteiro do mapa (não só no canvas) mesmo
+                parado em simple_select — bug conhecido documentado em
+                .agent/rules/react-frontend.md. Mantê-lo sempre montado
+                engolia o toque nos <Marker> dos talhões no mobile. */}
+            {(isDrawingMode || isEditingMode) && (
+                <MapDrawControl
+                    position="top-left"
+                    displayControlsDefault={false}
+                    controls={{ polygon: false, trash: false }}
+                    defaultMode="simple_select"
+                    getDrawInstance={setDrawInstance}
+                    onCreate={stableOnDrawCreate}
+                    onUpdate={stableOnDrawUpdate}
+                    onDelete={stableOnDrawDelete}
+                    onModeChange={handleModeChange}
+                />
+            )}
 
             {hoverInfo && !isDrawingMode && !isEditingMode && (
                 <Popup
