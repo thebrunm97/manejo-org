@@ -75,10 +75,13 @@ func TestHarvestMutationE2E(t *testing.T) {
 	body, err := json.Marshal(payload)
 	assert.NoError(t, err)
 
-	reqURL := fmt.Sprintf("%s/webhook?token=test-e2e-token", ts.URL)
+	// Token via Authorization: Bearer -- handleWebhook parou de aceitar
+	// ?token= na query string (vazava em logs de proxy/referrer).
+	reqURL := fmt.Sprintf("%s/webhook", ts.URL)
 	req, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewBuffer(body))
 	assert.NoError(t, err)
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer test-e2e-token")
 
 	// 5. Enviar Request HTTP (Pode demorar uns segundos enquanto bate no LLM)
 	t.Log("Enviando requisição de webhook (Colheita)... Aguardando resposta do LLM...")
