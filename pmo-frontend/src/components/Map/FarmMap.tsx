@@ -926,6 +926,13 @@ const FarmMapInner: React.FC<FarmMapProps> = (props) => {
                 const cor = c.talhao.fillColor || c.talhao.cor || getCropColor(c.talhao.cultura);
                 const area = c.talhao.area_total_m2 || c.talhao.area_m2 || 0;
 
+                // Impede que o toque no pino seja visto pelos handlers de
+                // gesto do próprio MapLibre (pan/zoom) antes do clique nativo
+                // ser sintetizado -- sem isso, num toque real (diferente do
+                // mouse), o mapa por baixo "ganha" o gesto e o pino nunca
+                // recebe o clique.
+                const pararPropagacao = (e: React.SyntheticEvent) => e.stopPropagation();
+
                 return (
                     <Marker
                         key={`pino-${c.id}`}
@@ -935,7 +942,12 @@ const FarmMapInner: React.FC<FarmMapProps> = (props) => {
                         onClick={() => onTalhaoClick?.(c.talhao)}
                     >
                         {selecionado ? (
-                            <div className="flex items-center gap-2.5 bg-white rounded-full pl-1.5 pr-4 py-1.5 shadow-[0_12px_28px_-8px_rgba(15,23,42,0.55)] whitespace-nowrap cursor-pointer select-none animate-in fade-in zoom-in-95 duration-200">
+                            <div
+                                className="flex items-center gap-2.5 bg-white rounded-full pl-1.5 pr-4 py-1.5 shadow-[0_12px_28px_-8px_rgba(15,23,42,0.55)] whitespace-nowrap cursor-pointer select-none animate-in fade-in zoom-in-95 duration-200"
+                                onPointerDown={pararPropagacao}
+                                onTouchStart={pararPropagacao}
+                                onMouseDown={pararPropagacao}
+                            >
                                 <span
                                     className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
                                     style={{ backgroundColor: cor }}
@@ -959,6 +971,9 @@ const FarmMapInner: React.FC<FarmMapProps> = (props) => {
                             <span
                                 className="w-11 h-11 rounded-full flex items-center justify-center cursor-pointer"
                                 style={{ touchAction: 'manipulation' }}
+                                onPointerDown={pararPropagacao}
+                                onTouchStart={pararPropagacao}
+                                onMouseDown={pararPropagacao}
                             >
                                 <span className="w-8 h-8 rounded-full bg-white/25 border border-white/50 backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-transform">
                                     <span
