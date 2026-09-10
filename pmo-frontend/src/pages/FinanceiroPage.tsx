@@ -53,6 +53,7 @@ const FinanceiroPage: React.FC = () => {
     const {
         transacoes,
         loading: loadingTransacoes,
+        isOnline,
         refetch: refetchTransacoes
     } = useTransacoes(currentPropriedade?.id);
 
@@ -264,7 +265,7 @@ const FinanceiroPage: React.FC = () => {
 
             {/* Tabela de Transações (Feed) */}
             <div className="mt-8">
-                <TransacoesTable transacoes={transacoes} loading={loadingTransacoes} />
+                <TransacoesTable transacoes={transacoes} loading={loadingTransacoes} isOnline={isOnline} />
             </div>
 
             {/* Modal de Nova Transação */}

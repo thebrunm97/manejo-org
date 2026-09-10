@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { getDREMensal, getLucroPorTalhao } from '../../services/financeiroService';
 import { DREMensal, DRESummary, LucroTalhao } from '../../domain/financeiro/financeiroTypes';
 
@@ -38,11 +38,18 @@ export function useFinanceiroStats(
     const [summary, setSummary] = useState<DRESummary>(EMPTY_SUMMARY);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const hasLoadedOnceRef = useRef(false);
 
     const fetchAll = useCallback(async () => {
         if (!propriedadeId) return;
 
-        setLoading(true);
+        // Sem conexão: mantém os números já calculados na tela em vez de
+        // disparar o overlay de "Atualizando dados..." sem necessidade.
+        if (!navigator.onLine) return;
+
+        if (!hasLoadedOnceRef.current) {
+            setLoading(true);
+        }
         setError(null);
 
         const [dreResult, talhoesResult] = await Promise.all([
@@ -64,6 +71,11 @@ export function useFinanceiroStats(
         }
 
         setLoading(false);
+        hasLoadedOnceRef.current = true;
+    }, [propriedadeId, ano]);
+
+    useEffect(() => {
+        hasLoadedOnceRef.current = false;
     }, [propriedadeId, ano]);
 
     useEffect(() => {
