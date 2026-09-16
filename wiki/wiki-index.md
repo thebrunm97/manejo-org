@@ -9,7 +9,6 @@ carregadas em contexto por um agente de IA sem arrastar o repositório inteiro.
 - **`concepts/`** — o domínio e a regulação. Por que o software existe.
 - **`entities/`** — o modelo de dados. O que o sistema guarda.
 - **`components/`** — o software real. Onde o código está.
-- **`RAW/`** — material bruto não destilado. Ver `RAW/README.md`.
 
 Cada nota de componente aponta para caminhos reais de arquivo, verificados
 contra o código na data indicada no rodapé da nota.

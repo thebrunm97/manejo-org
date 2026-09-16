@@ -1,16 +1,26 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../supabaseClient';
 import { TransacaoFinanceira } from '../../domain/financeiro/financeiroTypes';
+import { useOnlineStatus } from '../useOnlineStatus';
 
 export function useTransacoes(propriedadeId: number | undefined) {
     const [transacoes, setTransacoes] = useState<TransacaoFinanceira[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const isOnline = useOnlineStatus();
+    const hasLoadedOnceRef = useRef(false);
 
     const fetchTransacoes = useCallback(async () => {
         if (!propriedadeId) return;
 
-        setLoading(true);
+        // Sem conexão: mantém os dados já carregados em vez de recarregar/limpar a tela.
+        if (!navigator.onLine) return;
+
+        // Só mostra o spinner de carregamento na primeira busca — refetches em
+        // segundo plano (realtime/polling) não devem substituir a tabela por um loader.
+        if (!hasLoadedOnceRef.current) {
+            setLoading(true);
+        }
         setError(null);
 
         try {
@@ -67,12 +77,19 @@ export function useTransacoes(propriedadeId: number | undefined) {
             });
 
             setTransacoes(mapped);
+            hasLoadedOnceRef.current = true;
         } catch (err: any) {
             console.error('[useTransacoes] Erro:', err.message);
+            // Mantém as transações já exibidas — um erro de rede não deve
+            // esvaziar a tabela nem prender a tela no spinner de carregamento.
             setError(err.message);
         } finally {
             setLoading(false);
         }
+    }, [propriedadeId]);
+
+    useEffect(() => {
+        hasLoadedOnceRef.current = false;
     }, [propriedadeId]);
 
     useEffect(() => {
@@ -81,7 +98,9 @@ export function useTransacoes(propriedadeId: number | undefined) {
         // Executar busca inicial
         fetchTransacoes();
 
-        // Subscrição em tempo real para mudanças na tabela de transacoes_financeiras
+        // Subscrição em tempo real para mudanças na tabela de transacoes_financeiras.
+        // Sem polling adicional: a subscrição + o refetch manual após ações (nova
+        // transação, reconexão) já garantem consistência sem gastar dados/bateria à toa.
         const channel = supabase
             .channel(`realtime:transacoes:${propriedadeId}`)
             .on(
@@ -99,16 +118,17 @@ export function useTransacoes(propriedadeId: number | undefined) {
             )
             .subscribe();
 
-        // Polling de baixo consumo (fallback) a cada 10 segundos para garantir consistência
-        const interval = setInterval(() => {
-            fetchTransacoes();
-        }, 10000);
-
         return () => {
             supabase.removeChannel(channel);
-            clearInterval(interval);
         };
     }, [propriedadeId, fetchTransacoes]);
 
-    return { transacoes, loading, error, refetch: fetchTransacoes };
+    // Ao recuperar a conexão, busca uma vez para sincronizar o que foi perdido.
+    useEffect(() => {
+        if (isOnline && hasLoadedOnceRef.current) {
+            fetchTransacoes();
+        }
+    }, [isOnline, fetchTransacoes]);
+
+    return { transacoes, loading, error, isOnline, refetch: fetchTransacoes };
 }

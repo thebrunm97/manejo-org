@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { TransacaoFinanceira } from '../../domain/financeiro/financeiroTypes';
-import { Search, Filter, AlertCircle } from 'lucide-react';
+import { Search, Filter, AlertCircle, WifiOff } from 'lucide-react';
 
 const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -21,11 +21,16 @@ const formatDate = (dateStr: string) => {
 interface TransacoesTableProps {
     transacoes: TransacaoFinanceira[];
     loading: boolean;
+    isOnline?: boolean;
 }
 
-const TransacoesTable: React.FC<TransacoesTableProps> = ({ transacoes, loading }) => {
+const TransacoesTable: React.FC<TransacoesTableProps> = ({ transacoes, loading, isOnline = true }) => {
     const [filtroTipo, setFiltroTipo] = useState<'ALL' | 'RECEITA' | 'DESPESA'>('ALL');
     const [searchTerm, setSearchTerm] = useState('');
+
+    // Só mostra o spinner quando ainda não há nenhuma transação carregada.
+    // Um refetch em segundo plano (realtime) nunca deve substituir a lista já exibida.
+    const showLoadingState = loading && transacoes.length === 0;
 
     const filteredTransacoes = transacoes.filter((t) => {
         // Filter by type
@@ -42,11 +47,68 @@ const TransacoesTable: React.FC<TransacoesTableProps> = ({ transacoes, loading }
         return true;
     });
 
+    const renderTalhaoBadges = (t: TransacaoFinanceira, tooltipUp: boolean) => (
+        <>
+            {t.talhao_canteiro && (
+                <span
+                    title={t.talhao_canteiro.split(';').map(s => s.trim()).filter(Boolean).join(', ')}
+                    className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 max-w-[150px] truncate cursor-help font-sans"
+                >
+                    {t.talhao_canteiro.split(';').map(s => s.trim()).filter(Boolean).join(', ')}
+                </span>
+            )}
+            {!t.talhao_canteiro && t.alocacoes && t.alocacoes.length === 1 && t.alocacoes[0].talhao_nome !== 'Global' && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 font-sans">
+                    {t.alocacoes[0].talhao_nome}
+                </span>
+            )}
+            {t.alocacoes && t.alocacoes.length > 1 && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 cursor-help group relative font-sans">
+                    Rateado
+
+                    <div className={`absolute left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-900 text-white text-[11px] rounded-lg p-2.5 shadow-lg z-30 min-w-[180px] border border-slate-700 ${
+                        tooltipUp ? 'bottom-full mb-2' : 'top-full mt-2'
+                    }`}>
+                        <div className="font-bold border-b border-slate-700 pb-1 mb-1 text-[9px] text-slate-400 uppercase tracking-wider font-sans">
+                            Divisão do Rateio
+                        </div>
+                        <div className="space-y-1 font-sans">
+                            {t.alocacoes.map((a) => (
+                                <div key={a.id} className="flex justify-between gap-3 text-left">
+                                    <span className="text-slate-300 font-medium">{a.talhao_nome}</span>
+                                    <span className="font-bold text-white tabular-nums">
+                                        {formatCurrency(a.valor_alocado)} ({a.percentual_alocado.toFixed(0)}%)
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                        <div className={`absolute left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent ${
+                            tooltipUp
+                                ? 'top-full -mt-1 border-t-4 border-t-slate-900'
+                                : 'bottom-full -mb-1 border-b-4 border-b-slate-900'
+                        }`} />
+                    </div>
+                </span>
+            )}
+        </>
+    );
+
     return (
         <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col h-full">
             <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <h3 className="font-bold text-slate-800 text-lg">Histórico de Transações</h3>
-                
+                <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-slate-800 text-lg">Histórico de Transações</h3>
+                    {!isOnline && (
+                        <span
+                            title="Sem conexão — exibindo os últimos dados salvos"
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-100"
+                        >
+                            <WifiOff size={12} />
+                            Offline
+                        </span>
+                    )}
+                </div>
+
                 <div className="flex flex-col sm:flex-row items-center gap-3">
                     <div className="relative w-full sm:w-auto">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -76,112 +138,100 @@ const TransacoesTable: React.FC<TransacoesTableProps> = ({ transacoes, loading }
                 </div>
             </div>
 
-            <div className="flex-1 overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr className="bg-slate-50/50 border-b border-slate-100 text-xs uppercase tracking-wider font-semibold text-slate-500">
-                            <th className="p-4 pl-6 whitespace-nowrap">Data</th>
-                            <th className="p-4 whitespace-nowrap">Categoria</th>
-                            <th className="p-4 whitespace-nowrap">Fornecedor / Origem</th>
-                            <th className="p-4 whitespace-nowrap text-right pr-6">Valor</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100/80">
-                        {loading ? (
-                            <tr>
-                                <td colSpan={4} className="p-8 text-center">
-                                    <div className="flex flex-col items-center justify-center gap-2">
-                                        <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
-                                        <span className="text-sm font-medium text-slate-500">Carregando transações…</span>
+            {showLoadingState ? (
+                <div className="p-8 text-center">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                        <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
+                        <span className="text-sm font-medium text-slate-500">Carregando transações…</span>
+                    </div>
+                </div>
+            ) : filteredTransacoes.length === 0 ? (
+                <div className="p-12 text-center">
+                    <div className="flex flex-col items-center justify-center text-slate-400">
+                        <div className="p-3 bg-slate-50 rounded-full mb-3">
+                            <AlertCircle size={24} className="text-slate-300" />
+                        </div>
+                        <p className="font-medium text-slate-600">Nenhuma transação encontrada</p>
+                        <p className="text-sm mt-1">Nenhum registro corresponde aos filtros atuais.</p>
+                    </div>
+                </div>
+            ) : (
+                <>
+                    {/* Mobile: lista de cards — evita rolagem horizontal em telas pequenas */}
+                    <div className="sm:hidden flex-1 overflow-y-auto divide-y divide-slate-100">
+                        {filteredTransacoes.map((t) => (
+                            <div key={t.id} className="p-4 flex flex-col gap-2">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="flex flex-wrap items-center gap-1.5">
+                                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 font-sans">
+                                            {t.categoria_nome}
+                                        </span>
+                                        {renderTalhaoBadges(t, false)}
                                     </div>
-                                </td>
-                            </tr>
-                        ) : filteredTransacoes.length === 0 ? (
-                            <tr>
-                                <td colSpan={4} className="p-12 text-center">
-                                    <div className="flex flex-col items-center justify-center text-slate-400">
-                                        <div className="p-3 bg-slate-50 rounded-full mb-3">
-                                            <AlertCircle size={24} className="text-slate-300" />
-                                        </div>
-                                        <p className="font-medium text-slate-600">Nenhuma transação encontrada</p>
-                                        <p className="text-sm mt-1">Nenhum registro corresponde aos filtros atuais.</p>
+                                    <div className="text-right shrink-0">
+                                        <span className={`block text-sm font-bold whitespace-nowrap ${t.tipo === 'RECEITA' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                            {t.tipo === 'RECEITA' ? '+' : '-'} {formatCurrency(t.valor_total)}
+                                        </span>
+                                        <span className="text-[10px] text-slate-400 font-medium tracking-wide uppercase">
+                                            {t.tipo}
+                                        </span>
                                     </div>
-                                </td>
-                            </tr>
-                        ) : (
-                            filteredTransacoes.map((t, index) => (
-                                <tr key={t.id} className="hover:bg-slate-50 transition-colors group">
-                                    <td className="p-4 pl-6 whitespace-nowrap text-sm text-slate-600 font-medium">
-                                        {formatDate(t.data_transacao)}
-                                    </td>
-                                    <td className="p-4 whitespace-nowrap">
-                                        <div className="flex items-center gap-2">
-                                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 font-sans">
-                                                {t.categoria_nome}
-                                            </span>
-                                            {t.talhao_canteiro && (
-                                                <span 
-                                                    title={t.talhao_canteiro.split(';').map(s => s.trim()).filter(Boolean).join(', ')}
-                                                    className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 max-w-[150px] truncate cursor-help font-sans"
-                                                >
-                                                    {t.talhao_canteiro.split(';').map(s => s.trim()).filter(Boolean).join(', ')}
-                                                </span>
-                                            )}
-                                            {!t.talhao_canteiro && t.alocacoes && t.alocacoes.length === 1 && t.alocacoes[0].talhao_nome !== 'Global' && (
-                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 font-sans">
-                                                    {t.alocacoes[0].talhao_nome}
-                                                </span>
-                                            )}
-                                            {t.alocacoes && t.alocacoes.length > 1 && (
-                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 cursor-help group relative font-sans">
-                                                    Rateado
-                                                    
-                                                    {/* Tooltip premium com posicionamento inteligente */}
-                                                    <div className={`absolute left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-900 text-white text-[11px] rounded-lg p-2.5 shadow-lg z-30 min-w-[180px] border border-slate-700 ${
-                                                        index === 0 ? 'top-full mt-2' : 'bottom-full mb-2'
-                                                    }`}>
-                                                        <div className="font-bold border-b border-slate-700 pb-1 mb-1 text-[9px] text-slate-400 uppercase tracking-wider font-sans">
-                                                            Divisão do Rateio
-                                                        </div>
-                                                        <div className="space-y-1 font-sans">
-                                                            {t.alocacoes.map((a) => (
-                                                                <div key={a.id} className="flex justify-between gap-3 text-left">
-                                                                    <span className="text-slate-300 font-medium">{a.talhao_nome}</span>
-                                                                    <span className="font-bold text-white tabular-nums">
-                                                                        {formatCurrency(a.valor_alocado)} ({a.percentual_alocado.toFixed(0)}%)
-                                                                    </span>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                        <div className={`absolute left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent ${
-                                                            index === 0 
-                                                                ? 'bottom-full -mb-1 border-b-4 border-b-slate-900' 
-                                                                : 'top-full -mt-1 border-t-4 border-t-slate-900'
-                                                        }`} />
-                                                    </div>
-                                                </span>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td className="p-4 text-sm text-slate-600">
+                                </div>
+                                <div className="flex items-center justify-between text-sm text-slate-500">
+                                    <span>{formatDate(t.data_transacao)}</span>
+                                    <span className="truncate max-w-[60%] text-right">
                                         {t.fornecedor || <span className="text-slate-400 italic">Não informado</span>}
-                                    </td>
-                                    <td className="p-4 pr-6 whitespace-nowrap text-right">
-                                        <div className="flex flex-col items-end">
-                                            <span className={`text-sm font-bold ${t.tipo === 'RECEITA' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                                {t.tipo === 'RECEITA' ? '+' : '-'} {formatCurrency(t.valor_total)}
-                                            </span>
-                                            <span className="text-[10px] text-slate-400 font-medium tracking-wide uppercase mt-0.5">
-                                                {t.tipo}
-                                            </span>
-                                        </div>
-                                    </td>
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Desktop/tablet: tabela completa */}
+                    <div className="hidden sm:block flex-1 overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-slate-50/50 border-b border-slate-100 text-xs uppercase tracking-wider font-semibold text-slate-500">
+                                    <th className="p-4 pl-6 whitespace-nowrap">Data</th>
+                                    <th className="p-4 whitespace-nowrap">Categoria</th>
+                                    <th className="p-4 whitespace-nowrap">Fornecedor / Origem</th>
+                                    <th className="p-4 whitespace-nowrap text-right pr-6">Valor</th>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-            </div>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100/80">
+                                {filteredTransacoes.map((t, index) => (
+                                    <tr key={t.id} className="hover:bg-slate-50 transition-colors group">
+                                        <td className="p-4 pl-6 whitespace-nowrap text-sm text-slate-600 font-medium">
+                                            {formatDate(t.data_transacao)}
+                                        </td>
+                                        <td className="p-4 whitespace-nowrap">
+                                            <div className="flex items-center gap-2">
+                                                <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 font-sans">
+                                                    {t.categoria_nome}
+                                                </span>
+                                                {renderTalhaoBadges(t, index !== 0)}
+                                            </div>
+                                        </td>
+                                        <td className="p-4 text-sm text-slate-600">
+                                            {t.fornecedor || <span className="text-slate-400 italic">Não informado</span>}
+                                        </td>
+                                        <td className="p-4 pr-6 whitespace-nowrap text-right">
+                                            <div className="flex flex-col items-end">
+                                                <span className={`text-sm font-bold ${t.tipo === 'RECEITA' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                                    {t.tipo === 'RECEITA' ? '+' : '-'} {formatCurrency(t.valor_total)}
+                                                </span>
+                                                <span className="text-[10px] text-slate-400 font-medium tracking-wide uppercase mt-0.5">
+                                                    {t.tipo}
+                                                </span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </>
+            )}
         </div>
     );
 };

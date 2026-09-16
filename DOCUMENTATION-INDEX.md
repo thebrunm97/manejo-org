@@ -103,7 +103,7 @@ Mapa central de todos os arquivos de documentação do projeto. Gerado em 06/09/
 | Documento | Conteúdo |
 |---|---|
 | [**index.md**](./docs/index.md) | Wiki master catalog (ingest). |
-| [**concepts/**](./docs/concepts/) | `offline-sync`, `prd-agrovivo`, `rpi-optimizations`, [`webhook-auth-evolution`](./docs/concepts/webhook-auth-evolution.md). |
+| [**concepts/**](./docs/concepts/) | `offline-sync`, `prd-agrovivo`, `rpi-optimizations`, [`webhook-auth-evolution`](./docs/concepts/webhook-auth-evolution.md), [`growth-acquisition-strategy`](./docs/concepts/growth-acquisition-strategy.md). |
 | [**interacao_ser_rio.md**](./docs/interacao_ser_rio.md) | Interação com o Ser/rio. |
 | [**live-chat-monitor.md**](./docs/live-chat-monitor.md) | Monitor de chat ao vivo. |
 | [**FEATURE-multicanal.md**](./docs/FEATURE-multicanal.md) | Feature multicanal (WhatsApp, Telegram e Chat Web/PWA). |

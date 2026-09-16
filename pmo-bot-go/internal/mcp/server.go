@@ -7,6 +7,7 @@ import (
 	"log"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
+	"github.com/thebrunm97/pmo-bot-go/internal/plantioref"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"github.com/thebrunm97/pmo-bot-go/internal/zarc"
@@ -69,6 +70,13 @@ type Server struct {
 	// passam nil,nil,nil,nil, e nenhum deles precisa do ZARC. Quem tem o
 	// arquivo chama SetZarcStore — ver cmd/server/main.go.
 	zarc *zarc.Store
+
+	// plantioRef é a tabela CURADA de janelas de referência (literatura
+	// agronômica), usada quando o ZARC não zoneia a cultura. Mesmo motivo do
+	// zarc para ficar fora de NewServer: os 11 call sites não precisam dela.
+	// Nil deixa a ferramenta voltar ao "nao_zoneada" puro, que é o
+	// comportamento de hoje.
+	plantioRef *plantioref.Tabela
 }
 
 // SetZarcStore liga a base do ZARC ao servidor. Chamar com nil (ou não chamar)
@@ -76,6 +84,12 @@ type Server struct {
 // o comportamento correto em staging e na máquina do desenvolvedor, onde o
 // arquivo de ~400 MB normalmente não existe.
 func (s *Server) SetZarcStore(st *zarc.Store) { s.zarc = st }
+
+// SetPlantioRef liga a tabela de janelas de referência ao servidor. Ao
+// contrário do ZARC, ela vem embarcada no binário (ver internal/plantioref) —
+// não há arquivo externo, então normalmente estará sempre presente; nil só
+// acontece se o CSV embutido falhar a validação no boot.
+func (s *Server) SetPlantioRef(t *plantioref.Tabela) { s.plantioRef = t }
 
 // ToolCategory defines if a tool is for knowledge (RAG) or farm records (DATABASE)
 type ToolCategory string

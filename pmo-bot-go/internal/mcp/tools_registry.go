@@ -682,7 +682,7 @@ func (s *Server) InitializeTools() {
 	s.RegisterTool(Tool{
 		Definition: llm.FerramentaAgnostica{
 			Name: "consultar_janela_plantio",
-			Description: "Consulta a janela oficial de plantio (ZARC/MAPA) de uma cultura no municipio da propriedade: em quais periodos do ano o plantio tem risco climatico de 20%, 30% ou 40%. Use sempre que o produtor perguntar se pode plantar algo agora, qual a melhor epoca de plantio, se esta atrasado, ou ate quando da para plantar.",
+			Description: "Consulta a janela oficial de plantio (ZARC/MAPA) de uma cultura no municipio da propriedade: em quais periodos do ano o plantio tem risco climatico de 20%, 30% ou 40%. Use sempre que o produtor perguntar se pode plantar algo agora, qual a melhor epoca de plantio, se esta atrasado, ou ate quando da para plantar. Se a cultura nao for zoneada pelo ZARC (tomate, alface, cenoura e outras olericolas), devolve uma janela de referencia da literatura agronomica, claramente marcada como nao-oficial.",
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{

@@ -71,10 +71,13 @@ func TestRAGQueryE2E(t *testing.T) {
 	body, err := json.Marshal(payload)
 	assert.NoError(t, err)
 
-	reqURL := fmt.Sprintf("%s/webhook?token=test-e2e-token", ts.URL)
+	// Token via Authorization: Bearer -- handleWebhook parou de aceitar
+	// ?token= na query string (vazava em logs de proxy/referrer).
+	reqURL := fmt.Sprintf("%s/webhook", ts.URL)
 	req, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewBuffer(body))
 	assert.NoError(t, err)
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer test-e2e-token")
 
 	// 5. Enviar Request HTTP
 	t.Log("Enviando requisição de webhook (RAG)... Aguardando resposta do LLM...")

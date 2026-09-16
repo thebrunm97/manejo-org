@@ -20,8 +20,7 @@ const ProfilePage: React.FC = () => {
         telefone: '',
         role: 'user',
         email: user?.email || '',
-        avatar_url: '',
-        consentimento_replay_sessao: false
+        avatar_url: ''
     });
     const [avatarSrc, setAvatarSrc] = useState<string | null>(null);
 
@@ -37,8 +36,7 @@ const ProfilePage: React.FC = () => {
                         nome: result.data?.nome || '',
                         telefone: formatPhoneBR(result.data?.telefone || ''),
                         role: (result.data as any).role || 'user',
-                        avatar_url: result.data?.avatar_url || '',
-                        consentimento_replay_sessao: !!(result.data as any).consentimento_replay_sessao
+                        avatar_url: result.data?.avatar_url || ''
                     }));
                 }
             } catch (error) {
@@ -89,8 +87,7 @@ const ProfilePage: React.FC = () => {
             const result = await updateUserProfile(user.id, {
                 nome: formData.nome,
                 telefone: phoneDigits,
-                avatar_url: formData.avatar_url,
-                consentimento_replay_sessao: formData.consentimento_replay_sessao
+                avatar_url: formData.avatar_url
             });
 
             if (result.success) {
@@ -294,22 +291,6 @@ const ProfilePage: React.FC = () => {
                                         <strong>Dica:</strong> Este é o número que a Inteligência Artificial reconhecerá quando você enviar mensagens de voz ou texto.
                                     </p>
                                 </div>
-                            </div>
-
-                            {/* Session Replay Consent (F17) */}
-                            <div className="space-y-2">
-                                <label className="flex items-start gap-3 p-4 rounded-xl border border-slate-200 bg-slate-50/30 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={formData.consentimento_replay_sessao}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, consentimento_replay_sessao: e.target.checked }))}
-                                        className="mt-1"
-                                    />
-                                    <span className="text-sm text-slate-700">
-                                        <strong className="block text-slate-900">Permitir gravação de sessão em caso de erro</strong>
-                                        Ajuda nosso time a diagnosticar problemas técnicos gravando sua navegação quando um erro acontece. Textos digitados ficam sempre ocultos. Desligado por padrão.
-                                    </span>
-                                </label>
                             </div>
 
                             {/* Account Type (Read-only) */}

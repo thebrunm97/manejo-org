@@ -3,7 +3,6 @@ import { supabase } from '../supabaseClient';
 import { UserProfile, Propriedade } from '../domain/pmo/pmoTypes';
 import { fetchAllPropriedades, updateActivePropriedade } from '../services/propriedadeService';
 import { useAuthCore } from './AuthCoreContext';
-import { applySessionReplayConsent } from '../utils/sentryReplayConsent';
 
 interface AuthProfileContextType {
     profile: UserProfile | null;
@@ -49,8 +48,6 @@ export function AuthProfileProvider({ children }: { children: ReactNode }) {
             }
 
             setProfile(profileData as any);
-            // F17: só habilita Session Replay depois de confirmar opt-in explícito do perfil.
-            applySessionReplayConsent(!!profileData?.consentimento_replay_sessao);
 
             // Fetch properties
             const props = await fetchAllPropriedades(userId);

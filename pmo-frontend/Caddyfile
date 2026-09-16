@@ -8,6 +8,30 @@
 	root * /srv
 	encode gzip zstd
 
+	# F22: headers de seguranca do response. Faltavam por completo -- o
+	# vercel.json antigo tambem nunca teve isso, e migrar pra Caddy sem
+	# repor a lacuna so trocaria o lugar onde falta.
+	#
+	# CSP e construida a partir dos dominios que o app de fato chama, nao
+	# de uma lista generica: Supabase (API/Realtime/Storage do projeto de
+	# producao), o gateway do bot (bot.fyto.io == SITE_DOMAIN), Google
+	# Fonts (index.html), tiles de satelite (Google Tile API + OSM,
+	# ver useSatelliteMapStyle.ts/mapService.ts) e o ingest do Sentry.
+	# style-src precisa de 'unsafe-inline' porque React aplica estilo via
+	# atributo style="" (prop style={{}}), que a CSP trata como inline --
+	# nao ha nonce viavel pra isso num SPA estatico servido por arquivo.
+	header {
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://tile.googleapis.com https://tile.openstreetmap.org https://hejewayflbuemnffrhae.supabase.co; connect-src 'self' https://hejewayflbuemnffrhae.supabase.co wss://hejewayflbuemnffrhae.supabase.co https://bot.fyto.io https://tile.googleapis.com https://*.sentry.io https://*.ingest.sentry.io; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+		X-Frame-Options "DENY"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# Geolocalizacao e usada no cadastro de talhao/coordenadas
+		# (Coordenadas.tsx); camera/microfone nao sao usados pelo app web
+		# (audio e so no bot do WhatsApp).
+		Permissions-Policy "geolocation=(self), camera=(), microphone=(), payment=()"
+		-Server
+	}
+
 	@sw path /sw.js
 	header @sw Cache-Control "public, max-age=0, must-revalidate"
 

@@ -14,7 +14,7 @@
 
 ## 🔴 Alta Prioridade
 
-_(nenhum item aberto no momento — ver 🟢 Concluído: F13 e F17 fechados em 2026-09-16)_
+_(nenhum item aberto no momento — ver 🟢 Concluído: F13, F17, F22 e F24)_
 
 ---
 
@@ -56,15 +56,15 @@ _(nenhum item aberto no momento — ver 🟢 Concluído: F13 e F17 fechados em 2
 - **Sugestão:** Remover geração local; consumir apenas o status/expiração devolvidos pelo backend (DT-109) e refrigerar a UI de `CONECTAR`.
 - **Cross-ref:** DT-109 (`pmo-bot-go/internal/supabase/quota.go:172-218`).
 
-### F22 — Zero CSP e security headers no deploy (Vercel)
-- **Evidência:** `pmo-frontend/vercel.json:8-27` — apenas headers de `Cache-Control`
-- **Problema:** Sem Content-Security-Policy, `X-Frame-Options`, `Referrer-Policy` etc.; qualquer XSS exfiltra sem barreira e a app pode ser emoldada (clickjacking).
-- **Sugestão:** Adicionar CSP (`default-src 'self'` + allowlist Google Maps/Sentry/Vercel), `frame-ancestors 'none'`, `referrer-policy: no-referrer`.
-
 ### F23 — Rotas `/lab` e `/teste-mapa` acessíveis em produção
 - **Evidência:** `pmo-frontend/src/App.tsx:74,76`
 - **Problema:** Páginas experimentais publicadas no bundle de produção sem gate de ambiente; `/lab` pode expor utilitários que quebram em prod.
 - **Sugestão:** Bloquear por `import.meta.env.DEV` ou mover para build separado; nunca expor em produção sem guarda.
+
+### F28 — `vitest run` coleta os specs do Playwright em `e2e/`, e 15 testes de componente falham por timeout de `waitFor`
+- **Evidência:** `npx vitest run` (2026-09-09) — 25 de 52 arquivos "falham", mas 14 desses são `e2e/**/*.spec.ts` (compliance-multimodality, auth-regression, manual-record-dialog, etc.), que usam a API do Playwright, não a do vitest; o glob padrão do vitest não exclui `e2e/`. Cross-ref DT-129 (E2E sem secrets/ambiente configurado) — mesma família de débito de infraestrutura de teste, achado diferente.
+- **Problema:** Além disso, 15 testes de verdade falham por `waitFor` expirando após ações como "abrir modal e adicionar item" ou "upload de arquivo": `Secao2`, `Secao3`, `Secao9`, `Secao10`, `Secao11`, `Secao13`, `Secao15`, `Secao18`, `Coordenadas`, `DadosCadastrais`. Confirmado que não é regressão do trabalho de segurança desta sessão (backend/RLS, nenhum arquivo de frontend tocado) nem do `resendConfirmation` em progresso em `AuthContext`/`AuthCoreContext` (mudança puramente aditiva, sem relação com essas telas) — padrão de falha pré-existente, ainda não investigado a fundo.
+- **Sugestão:** Excluir `e2e/**` do `test.include` do vitest (`vite.config.ts`) pra parar de coletar specs do Playwright; investigar separadamente por que os 15 testes de componente estão dando timeout no `waitFor` (suspeita: mock de callback assíncrono não resolvendo, ou timeout padrão curto demais pra essas interações).
 
 ---
 
@@ -156,31 +156,70 @@ próprio usuário. `profileService.ts` já chama via `supabase.rpc('update_profi
 `data` tipado como objeto fechado (não `Record<string, unknown>`). Confirmado ao vivo: `EXECUTE`
 revogado de `PUBLIC`, concedido só a `authenticated`.
 
-### F13 — Sync offline cria PMO duplicado em retry (`useSyncEngine`)
-**Concluído em:** 2026-09-16.
-
-O banco já tinha a metade da correção pronta e nunca conectada: uma migration anterior
-(`f13_pmo_create_idempotency`, aplicada em produção) adicionou `pmos.idempotency_key` + índice
-único `(user_id, idempotency_key)` e trocou a RPC `create_pmo` para deduplicar por essa chave —
-mas `useSyncEngine.ts` nunca enviava `idempotency_key` no payload, então a proteção existia e
-nunca era usada. Corrigido passando o `id` `offline_*` (gerado uma vez no client, estável entre
-retries) como `idempotency_key` em `createPmo({ ...payload, idempotency_key: id })`
-(`useSyncEngine.ts:89-93`, tipo adicionado em `PmoPayload`).
-
 ### F17 — Session Replay Sentry sem gate de ambiente ou consentimento LGPD
-**Concluído em:** 2026-09-16.
+**Concluído em:** 2026-09-09.
 
-Mesmo padrão do F13: uma migration anterior (`f17_session_replay_consent`, aplicada em produção)
-já tinha adicionado `profiles.consentimento_replay_sessao` e o campo correspondente em
-`update_profile`, mas nenhum arquivo do frontend lia ou escrevia essa coluna — `main.tsx`
-continuava com `replaysOnErrorSampleRate: 1.0` fixo, gravando 100% das sessões com erro para
-todo mundo, sem checar a coluna. Corrigido: `Sentry.init` agora sobe com as duas sample rates em
-`0`; um novo módulo (`utils/sentryReplayConsent.ts`) só registra a integração de Replay (com
-`maskAllText`/`blockAllMedia`) quando `applySessionReplayConsent(true)` é chamado — o que só
-acontece em `AuthProfileContext.tsx` depois do perfil carregar, condicionado a
-`profile.consentimento_replay_sessao`. Adicionado também um toggle em `ProfilePage.tsx` para o
-produtor efetivamente dar ou revogar esse opt-in (antes não existia nenhuma superfície de UI para
-a coluna).
+`replaysOnErrorSampleRate: 1.0` gravava a sessão inteira (rrweb) em 100% dos erros sem opt-in do
+produtor. O masking padrão do SDK (`maskAllText`/`blockAllMedia`) já mitigava parte do risco, mas
+não substituía consentimento explícito exigido pela LGPD. Corrigido com gate de consentimento
+persistido: duas colunas novas em `profiles` (`consentimento_replay_sessao` — `NULL` = ainda não
+perguntado, `true`/`false` = decisão tomada — e `consentimento_replay_sessao_em`, timestamp da
+decisão), `update_profile` (RPC allowlist, mesmo padrão do F24) estendida pra aceitar esse campo.
+Novo componente `pmo-frontend/src/components/SessionReplayConsent.tsx`: mostra um banner só
+quando o produtor está logado e ainda não decidiu; a integration do replay só é adicionada ao
+Sentry (`addIntegration`, lazy na primeira interação) depois de um "aceitar" explícito, com
+`maskAllText`/`blockAllMedia` passados de forma explícita no código (antes dependiam do default
+implícito do SDK). `main.tsx` deixou de carregar o replay incondicionalmente — `Sentry.init` ficou
+só com tracing/erro. Decisão persistida em `profiles` (não `localStorage`) para não pedir de novo
+se o produtor trocar de aparelho. Migration
+`supabase/migrations/20260909130000_f17_session_replay_consent.sql`, aplicada em staging
+(`pmo-staging`) e produção (`pmo-inteligente`) — `update_profile` em produção comparado via
+`pg_proc.prosrc` contra o arquivo do repositório antes de sobrescrever, confirmado idêntico ao que
+o F24 tinha deixado. `tsc --noEmit` limpo, suíte de testes de `hooks/offline` passando, app
+verificado subindo sem erro de console/servidor no preview local.
+
+### F13 — Sync offline cria PMO duplicado em retry (`useSyncEngine`)
+**Concluído em:** 2026-09-09.
+
+`create_pmo` (RPC, `supabase/migrations/20260818160000_create_pmo_mutation_rpcs.sql`) não tinha
+chave de idempotência — o padrão "claim-then-delete" do `useSyncEngine.ts` (marca como `syncing`,
+chama `createPmo`, só apaga da fila IndexedDB depois do sucesso) deixava uma janela real: se a
+resposta se perdesse depois do servidor já ter criado o PMO, o próximo sync reenviava o mesmo
+payload e criava um segundo PMO. Corrigido com o mesmo padrão de dedupe já usado em
+`rpc_registrar_operacao_campo` e companhia (`20260816000000_add_idempotency_to_mutations.sql`):
+coluna `idempotency_key` em `pmos` + índice único parcial em `(user_id, idempotency_key)`, e o
+`create_pmo` devolve a linha já existente em vez de inserir de novo quando reconhece a chave.
+`useSyncEngine.ts` passa o próprio `id` local (`offline_<timestamp>`, estável para o item enquanto
+ele fica na fila) como `idempotency_key`, sem precisar gerar nada novo. `update_pmo` não recebeu o
+mesmo tratamento — um retry de UPDATE só reaplica os mesmos campos sobre a mesma linha, sem risco
+de duplicação, então a chave lá seria defesa sem um failure mode real por trás. Migration
+`supabase/migrations/20260909120000_f13_pmo_create_idempotency.sql`, aplicada em staging
+(`pmo-staging`) e produção (`pmo-inteligente`), coluna e índice confirmados via SQL direto nos
+dois. Mecânica do índice único testada isoladamente numa tabela temporária em staging (rejeita
+segunda linha com a mesma `(user_id, idempotency_key)`); não foi possível testar a RPC ponta a
+ponta em staging por falta de usuários reais em `auth.users` lá (`count(*) = 0`), então a
+verificação ficou em: `go`... não se aplica aqui, TS `tsc --noEmit` limpo + leitura de
+`pg_proc.prosrc` confirmando que o código aplicado bate exatamente com o arquivo do repositório.
+
+### F22 — Zero CSP e security headers no deploy
+**Concluído em:** 2026-09-09.
+
+O `vercel.json` mudou de papel desde que a infra migrou pra VPS (ver commit em andamento no mesmo
+arquivo): hoje ele só redireciona todo o tráfego do domínio antigo da Vercel para
+`https://manejo.fyto.io` (`"redirects": [{"source": "/(.*)", ...}]`). Quem serve o frontend de
+verdade é `pmo-frontend/Caddyfile` (Docker, atrás do Caddy reverso da VPS — ver
+`deploy/Caddyfile`), que já se descrevia como replicando o comportamento do `vercel.json` antigo
+e nunca tinha ganhado os headers de segurança. Adicionados os dois lugares: no Caddyfile (onde
+tem efeito real) e no `vercel.json` (defesa em profundidade, sem custo). CSP construída a partir
+dos domínios que o app de fato chama (não uma allowlist genérica): Supabase do projeto de
+produção (API/Realtime/Storage), o gateway do bot (`bot.fyto.io`), Google Fonts, tiles de
+satélite (Google Tile API + OpenStreetMap) e o ingest do Sentry — mais `X-Frame-Options: DENY`,
+`X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin` e
+`Permissions-Policy` (geolocalização liberada por ser usada no cadastro de talhão; câmera/mic
+negados, o app web não usa nenhum dos dois). `style-src` precisou de `'unsafe-inline'` porque
+React aplica estilo via atributo `style=""`, que a CSP trata como inline — sem nonce viável num
+SPA estático servido por arquivo. Caddyfile validado com `caddy validate` (imagem oficial via
+Docker); `vercel.json` validado como JSON bem formado.
 
 ### F1 — Injeção de sessão via token na URL (`OnboardingPage`)
 **Concluído em:** 2026-09-09 (achado ao verificar o código antes de gerar um prompt de correção

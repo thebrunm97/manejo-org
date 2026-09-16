@@ -15,13 +15,10 @@ Sentry.init({
   ],
   // Performance Monitoring — 10% em produção reduz overhead do tracing sem perder visibilidade
   tracesSampleRate: import.meta.env.PROD ? 0.1 : 1.0,
-  // F17: Session Replay começa DESLIGADO (0/0). Só é habilitado via
-  // `applySessionReplayConsent`, chamado depois que o perfil carrega e
-  // confirma opt-in explícito em `profiles.consentimento_replay_sessao`.
-  // Gravar 100% das sessões com erro por padrão, sem consentimento, expunha
-  // dados sensíveis do caderno de campo (LGPD).
-  replaysSessionSampleRate: 0,
-  replaysOnErrorSampleRate: 0,
+  // Session Replay config (a integration em si só é adicionada com consentimento
+  // explícito do produtor — ver components/SessionReplayConsent.tsx, F17).
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1.0,
 });
 
 // Import do Provedor de Autenticação
@@ -29,6 +26,9 @@ import { AuthProvider } from './context/AuthContext';
 
 // Import do ErrorBoundary
 import ErrorBoundary from './components/ErrorBoundary';
+
+// F17: banner de consentimento LGPD + gate do Session Replay
+import SessionReplayConsent from './components/SessionReplayConsent';
 
 
 // Renderização da aplicação
@@ -38,6 +38,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             <BrowserRouter>
                 <AuthProvider>
                     <App />
+                    <SessionReplayConsent />
                 </AuthProvider>
             </BrowserRouter>
         </ErrorBoundary>

@@ -88,7 +88,7 @@ export async function fetchUserProperties(userId: string): Promise<FetchResult<a
  */
 export async function updateUserProfile(
     _userId: string,
-    data: { nome?: string; telefone?: string; avatar_url?: string; consentimento_replay_sessao?: boolean }
+    data: { nome?: string; telefone?: string; avatar_url?: string }
 ): Promise<SaveResult> {
     try {
         const { error } = await supabase.rpc('update_profile', {
@@ -102,6 +102,32 @@ export async function updateUserProfile(
         return { success: true };
     } catch (err) {
         const message = err instanceof Error ? err.message : 'Erro ao atualizar perfil';
+        return { success: false, error: message };
+    }
+}
+
+/**
+ * Grava a decisão do produtor sobre Session Replay do Sentry (F17/LGPD).
+ * Persistida em `profiles` (não localStorage) para sobreviver entre
+ * dispositivos — o banner de consentimento não deve reaparecer só porque o
+ * produtor trocou de aparelho.
+ *
+ * @param consent - true (aceitou) ou false (recusou); os dois casos marcam
+ *   a decisão como tomada e o banner some.
+ */
+export async function updateSessionReplayConsent(consent: boolean): Promise<SaveResult> {
+    try {
+        const { error } = await supabase.rpc('update_profile', {
+            p_updates: { consentimento_replay_sessao: consent }
+        });
+
+        if (error) {
+            return { success: false, error: error.message };
+        }
+
+        return { success: true };
+    } catch (err) {
+        const message = err instanceof Error ? err.message : 'Erro ao registrar consentimento';
         return { success: false, error: message };
     }
 }

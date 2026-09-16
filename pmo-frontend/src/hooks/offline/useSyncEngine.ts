@@ -87,10 +87,15 @@ export function useSyncEngine() {
                         const isNew = String(record.id).startsWith('offline_');
 
                         if (isNew) {
+                            // F13: usa o próprio id local ("offline_<timestamp>", estável
+                            // para este item enquanto ele permanecer na fila) como chave
+                            // de idempotência. Sem isso, se a resposta do create_pmo se
+                            // perder depois do servidor já ter processado (rede caiu, aba
+                            // fechou, antes do delete da fila), o próximo sync reenvia o
+                            // mesmo payload e cria um segundo PMO — create_pmo (F13
+                            // fix) agora reconhece a chave repetida e devolve o PMO já
+                            // criado em vez de duplicar.
                             const { id, ...payload } = record;
-                            // F13: id offline_* é estável entre retries — usar como idempotency_key
-                            // evita PMO duplicado se o create_pmo suceder no servidor mas o delete
-                            // da fila local falhar antes de confirmar.
                             const result = await createPmo({ ...payload, idempotency_key: id });
                             if (!result.success) throw new Error(result.error);
                         } else {

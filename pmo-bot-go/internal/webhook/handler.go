@@ -21,6 +21,7 @@ import (
 
 	"github.com/Flagsmith/flagsmith-go-client/v3"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/thebrunm97/pmo-bot-go/internal/adapter/evolution"
 	"github.com/thebrunm97/pmo-bot-go/internal/groq"
 	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
@@ -610,15 +611,39 @@ func (h *Handler) processLegacy(msg ports.IncomingEnvelope) {
 	}
 }
 
+// maxKnowledgeUploadBytes limita o tamanho de upload de PDFs para a base de
+// conhecimento (DT-85). 20MB cobre PMOs longos com fotos sem abrir a porta
+// para um upload sem limite travar disco/memória do processo.
+const maxKnowledgeUploadBytes = 20 << 20 // 20MB
+
+// sanitizeUploadFilename reduz um nome de arquivo vindo do multipart a algo
+// seguro para usar em filepath.Join (DT-84). filepath.Base descarta qualquer
+// componente de diretório (bloqueia "../../etc/passwd" e afins); o restante
+// mantém só letras, dígitos, ponto, hífen e underscore, e cai num nome padrão
+// se sobrar vazio.
+func sanitizeUploadFilename(name string) string {
+	base := filepath.Base(name)
+	var b strings.Builder
+	for _, r := range base {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '.' || r == '-' || r == '_' {
+			b.WriteRune(r)
+		}
+	}
+	safe := b.String()
+	if safe == "" || safe == "." || safe == ".." {
+		return "upload.pdf"
+	}
+	return safe
+}
+
 // handleKnowledgeUpload handles the knowledge base update via PDF upload
 func (h *Handler) handleKnowledgeUpload(c *gin.Context) {
-	// 1. Basic Token Check
-	token := c.Query("token")
-	if token == "" {
-		auth := c.GetHeader("Authorization")
-		if len(auth) > 7 && auth[:7] == "Bearer " {
-			token = auth[7:]
-		}
+	// 1. Basic Token Check — só via header Authorization: Bearer <token>.
+	// DT-83: query string ?token=... vazava o segredo em logs de proxy/acesso
+	// e histórico de URL, mesmo problema já corrigido no handleWebhook irmão.
+	token := ""
+	if auth := c.GetHeader("Authorization"); len(auth) > 7 && auth[:7] == "Bearer " {
+		token = auth[7:]
 	}
 	if !h.verifyToken(token) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Access Denied"})
@@ -655,15 +680,24 @@ func (h *Handler) handleKnowledgeUpload(c *gin.Context) {
 	// -------------------
 
 	// 3. Get file from form
+	// DT-85: limita o tamanho do corpo antes do parse do multipart — sem isso,
+	// um upload gigante trava a leitura do form inteiro sem limite algum.
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxKnowledgeUploadBytes)
 	file, err := c.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "No file uploaded"})
+		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "Arquivo excede o limite de 20MB ou upload inválido"})
 		return
 	}
 
 	// 4. Save to temp location (in-memory would be risky for large PDFs)
+	// DT-84: file.Filename vem do multipart sem qualquer sanitização — usá-lo
+	// direto em filepath.Join permite path traversal (ex. "../../etc/passwd")
+	// e caracteres que quebram o filesystem. filepath.Base descarta qualquer
+	// componente de diretório, e o prefixo com UUID evita colisão/overwrite
+	// entre uploads concorrentes com o mesmo nome de arquivo.
 	tempDir := os.TempDir()
-	tempPath := filepath.Join(tempDir, fmt.Sprintf("upload-%d-%s", time.Now().Unix(), file.Filename))
+	safeName := sanitizeUploadFilename(file.Filename)
+	tempPath := filepath.Join(tempDir, fmt.Sprintf("upload-%s-%s", uuid.NewString(), safeName))
 	if err := c.SaveUploadedFile(file, tempPath); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save file"})
 		return
