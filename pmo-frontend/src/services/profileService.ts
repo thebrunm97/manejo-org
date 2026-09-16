@@ -13,7 +13,7 @@ export async function fetchUserProfile(
     try {
         const { data, error } = await supabase
             .from('profiles')
-            .select('id, nome, avatar_url, pmo_ativo_id, telefone, role')
+            .select('id, nome, avatar_url, pmo_ativo_id, telefone, role, consentimento_replay_sessao')
             .eq('id', userId)
             .single();
 
@@ -88,7 +88,7 @@ export async function fetchUserProperties(userId: string): Promise<FetchResult<a
  */
 export async function updateUserProfile(
     _userId: string,
-    data: { nome?: string; telefone?: string; avatar_url?: string }
+    data: { nome?: string; telefone?: string; avatar_url?: string; consentimento_replay_sessao?: boolean }
 ): Promise<SaveResult> {
     try {
         const { error } = await supabase.rpc('update_profile', {

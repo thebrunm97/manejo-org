@@ -252,6 +252,8 @@ export interface PmoPayload {
     nome_identificador: string;
     form_data: PMOFormData;
     status: PmoStatus;
+    /** Chave de deduplicação (F13): usar o id offline_* gerado no client, estável entre retries. */
+    idempotency_key?: string;
 }
 
 /**
@@ -293,6 +295,8 @@ export interface UserProfile {
     telefone?: string;
     role?: 'user' | 'admin'; // Role based access control
     plan_tier?: string; // Plan tier (e.g., 'free', 'pro')
+    /** F17: opt-in explícito para Session Replay (Sentry). Default null/false = desligado. */
+    consentimento_replay_sessao?: boolean | null;
 }
 
 // ==================================================================

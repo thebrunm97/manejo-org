@@ -88,7 +88,10 @@ export function useSyncEngine() {
 
                         if (isNew) {
                             const { id, ...payload } = record;
-                            const result = await createPmo(payload);
+                            // F13: id offline_* é estável entre retries — usar como idempotency_key
+                            // evita PMO duplicado se o create_pmo suceder no servidor mas o delete
+                            // da fila local falhar antes de confirmar.
+                            const result = await createPmo({ ...payload, idempotency_key: id });
                             if (!result.success) throw new Error(result.error);
                         } else {
                             const { id, ...payload } = record;
