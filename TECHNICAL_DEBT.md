@@ -14,15 +14,7 @@
 
 ## 🔴 Alta Prioridade
 
-### F13 — Sync offline cria PMO duplicado em retry (`useSyncEngine`)
-- **Evidência:** `pmo-frontend/src/hooks/offline/useSyncEngine.ts:89-101`
-- **Problema:** `createPmo(payload)` não usa chave de idempotência; `localDb.delete(item.id)` ocorre _depois_ do create. Se o create grava no Supabase mas o delete da fila falha (IndexedDB), o próximo sync cria outro PMO.
-- **Sugestão:** Gerar `idempotency_key` antes de enfileirar e passá-la na RPC; ou gravar o `id` do servidor de volta no item de fila e usar upsert.
-
-### F17 — Session Replay Sentry sem gate de ambiente ou consentimento LGPD
-- **Evidência:** `pmo-frontend/src/main.tsx:20-21` — `replaysOnErrorSampleRate: 1.0`
-- **Problema:** 100% dos erros gravam a sessão inteira (rrweb), incluindo dados sensíveis do caderno de campo, sem opt-in do produtor e sem desabilitação em produção.
-- **Sugestão:** Desligar replay fora de staging; exigir consentimento; mascarar campos sensíveis com `maskAllText`/seletores.
+_(nenhum item aberto no momento — ver 🟢 Concluído: F13 e F17 fechados em 2026-09-16)_
 
 ---
 
@@ -73,11 +65,6 @@
 - **Evidência:** `pmo-frontend/src/App.tsx:74,76`
 - **Problema:** Páginas experimentais publicadas no bundle de produção sem gate de ambiente; `/lab` pode expor utilitários que quebram em prod.
 - **Sugestão:** Bloquear por `import.meta.env.DEV` ou mover para build separado; nunca expor em produção sem guarda.
-
-### F24 — `update_profile` aceita mapa arbitrário (escreve colunas indevidas)
-- **Evidência:** `pmo-frontend/src/services/profileService.ts:94-95` — `supabase.from('profiles').update(patch)` com `patch` tipado como `Record<string, unknown>`
-- **Problema:** Sem allowlist de colunas, um componente/site pode gravar qualquer coluna de `profiles` (ex.: sobrescrever `role`), contornando a proteção da RLS para escritas permitidas.
-- **Sugestão:** Tipar com transform apenas dos campos editáveis (nome, telefone, avatar_url) e validar contra um conjunto fechado.
 
 ---
 
@@ -156,6 +143,44 @@ A atual infraestrutura de ingestão (`/api/v1/admin/knowledge/ingest`) foi const
 ---
 
 ## 🟢 Concluído
+
+### F24 — `update_profile` aceita mapa arbitrário (escreve colunas indevidas)
+**Concluído** (achado já resolvido em produção ao auditar, confirmado ao vivo via introspecção de
+`pg_proc` em 2026-09-16, sem commit local rastreável para a data exata).
+
+`update_profile(p_updates jsonb)` deixou de ser um `UPDATE ... SET` genérico e passou a ser uma
+RPC `SECURITY DEFINER` com allowlist fechada via `CASE WHEN p_updates ? 'campo'`: só
+`pmo_ativo_id`, `propriedade_ativa_id`, `nome`, `telefone`, `avatar_url` e
+`consentimento_replay_sessao` são graváveis, e `v_user_id := auth.uid()` amarra a escrita ao
+próprio usuário. `profileService.ts` já chama via `supabase.rpc('update_profile', ...)` com o
+`data` tipado como objeto fechado (não `Record<string, unknown>`). Confirmado ao vivo: `EXECUTE`
+revogado de `PUBLIC`, concedido só a `authenticated`.
+
+### F13 — Sync offline cria PMO duplicado em retry (`useSyncEngine`)
+**Concluído em:** 2026-09-16.
+
+O banco já tinha a metade da correção pronta e nunca conectada: uma migration anterior
+(`f13_pmo_create_idempotency`, aplicada em produção) adicionou `pmos.idempotency_key` + índice
+único `(user_id, idempotency_key)` e trocou a RPC `create_pmo` para deduplicar por essa chave —
+mas `useSyncEngine.ts` nunca enviava `idempotency_key` no payload, então a proteção existia e
+nunca era usada. Corrigido passando o `id` `offline_*` (gerado uma vez no client, estável entre
+retries) como `idempotency_key` em `createPmo({ ...payload, idempotency_key: id })`
+(`useSyncEngine.ts:89-93`, tipo adicionado em `PmoPayload`).
+
+### F17 — Session Replay Sentry sem gate de ambiente ou consentimento LGPD
+**Concluído em:** 2026-09-16.
+
+Mesmo padrão do F13: uma migration anterior (`f17_session_replay_consent`, aplicada em produção)
+já tinha adicionado `profiles.consentimento_replay_sessao` e o campo correspondente em
+`update_profile`, mas nenhum arquivo do frontend lia ou escrevia essa coluna — `main.tsx`
+continuava com `replaysOnErrorSampleRate: 1.0` fixo, gravando 100% das sessões com erro para
+todo mundo, sem checar a coluna. Corrigido: `Sentry.init` agora sobe com as duas sample rates em
+`0`; um novo módulo (`utils/sentryReplayConsent.ts`) só registra a integração de Replay (com
+`maskAllText`/`blockAllMedia`) quando `applySessionReplayConsent(true)` é chamado — o que só
+acontece em `AuthProfileContext.tsx` depois do perfil carregar, condicionado a
+`profile.consentimento_replay_sessao`. Adicionado também um toggle em `ProfilePage.tsx` para o
+produtor efetivamente dar ou revogar esse opt-in (antes não existia nenhuma superfície de UI para
+a coluna).
 
 ### F1 — Injeção de sessão via token na URL (`OnboardingPage`)
 **Concluído em:** 2026-09-09 (achado ao verificar o código antes de gerar um prompt de correção
