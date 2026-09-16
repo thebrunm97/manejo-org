@@ -82,7 +82,11 @@ export default defineConfig({
     test: {
         globals: true,
         environment: 'jsdom',
-        setupFiles: './src/setupTests.js',
+        setupFiles: './src/setupTests.ts',
+        // F28: exclui specs do Playwright (e2e/**) do glob padrão do vitest —
+        // sem isso, vitest tentava coletar e rodar arquivos que usam a API do
+        // Playwright, não a do vitest.
+        exclude: ['**/node_modules/**', '**/dist/**', 'e2e/**'],
     },
     resolve: {
         alias: [
