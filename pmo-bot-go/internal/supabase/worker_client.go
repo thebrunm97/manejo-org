@@ -158,6 +158,40 @@ func (c *Client) InsertKnowledgeVersion(ctx context.Context, v KnowledgeVersion)
 	return nil
 }
 
+// GetMaxKnowledgeVersionNumber returns the highest version_number already
+// recorded for a document, or 0 if none exists yet (DT-90: reindexing a
+// document used to always insert VersionNumber 1, overwriting history).
+func (c *Client) GetMaxKnowledgeVersionNumber(ctx context.Context, docID string) (int, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
+		c.config.URL+"/rest/v1/knowledge_versions?document_id=eq."+docID+"&select=version_number&order=version_number.desc&limit=1", nil)
+	if err != nil {
+		return 0, fmt.Errorf("build request: %w", err)
+	}
+	c.setHeaders(req)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return 0, fmt.Errorf("http: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 300 {
+		b, _ := io.ReadAll(resp.Body)
+		return 0, fmt.Errorf("get max version number: status %d — %s", resp.StatusCode, string(b))
+	}
+
+	var rows []struct {
+		VersionNumber int `json:"version_number"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&rows); err != nil {
+		return 0, fmt.Errorf("decode: %w", err)
+	}
+	if len(rows) == 0 {
+		return 0, nil
+	}
+	return rows[0].VersionNumber, nil
+}
+
 // GetKnowledgeDocumentByID fetches a single document by primary key.
 func (c *Client) GetKnowledgeDocumentByID(ctx context.Context, docID string) (*KnowledgeDocument, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet,

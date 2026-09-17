@@ -2,6 +2,7 @@ package knowledge
 
 import (
 	"context"
+	"embed"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -10,6 +11,13 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 )
+
+// judgePrompts embute os prompts do juiz no binário (DT-116): os.ReadFile com
+// path relativo dependia do CWD do processo, quebrando silenciosamente a
+// avaliação Knowledge Ops se o container rodasse de outro diretório.
+//
+//go:embed prompts/*.txt
+var judgePrompts embed.FS
 
 // RawChatter define a capacidade mínima de LLM exigida pelo avaliador: apenas
 // disparar uma chamada de chat "crua" e receber a resposta estruturada.
@@ -178,7 +186,7 @@ func (e *AutomatedEvaluator) callJudge(ctx context.Context, experiment supabase.
 		fmt.Printf("[Judge] WARNING: Could not verify if '%s' supports structured outputs (err: %v). Proceeding cautiously.\n", judgeModel, err)
 	}
 
-	systemPromptBytes, err := os.ReadFile("internal/knowledge/prompts/" + e.promptVersion + ".txt")
+	systemPromptBytes, err := judgePrompts.ReadFile("prompts/" + e.promptVersion + ".txt")
 	if err != nil {
 		return out, JudgeUsage{}, err
 	}

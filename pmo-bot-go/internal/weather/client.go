@@ -252,9 +252,9 @@ func doFetchOpenMeteo(ctx context.Context, lat, lng string) (*WeatherData, error
 
 func fetchWeatherLegacy(ctx context.Context, apiKey, location string) (*WeatherData, error) {
 	client := &http.Client{Timeout: 15 * time.Second}
-	url := fmt.Sprintf("http://api.weatherapi.com/v1/forecast.json?key=%s&q=%s&days=3&aqi=no&alerts=no", apiKey, location)
+	reqURL := fmt.Sprintf("https://api.weatherapi.com/v1/forecast.json?key=%s&q=%s&days=3&aqi=no&alerts=no", url.QueryEscape(apiKey), url.QueryEscape(location))
 
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -103,13 +103,18 @@ func (p *WorkerPool) processJob(ctx context.Context, job *supabase.KnowledgeInge
 	// ── Step 3: Create draft knowledge_version ────────────────────────────
 	// The version holds the raw extracted content. Future steps will
 	// handle semantic chunking and vector embedding via the OKF pipeline.
+	maxVersion, err := p.sb.GetMaxKnowledgeVersionNumber(ctx, docID)
+	if err != nil {
+		return fmt.Errorf("get max version number: %w", err)
+	}
+
 	versionID := uuid.New().String()
 	version := supabase.KnowledgeVersion{
 		ID:            versionID,
 		DocumentID:    docID,
 		Content:       extractedText,
 		ContentFormat: contentFormat(doc.SourceType),
-		VersionNumber: 1, // TODO: increment from previous versions
+		VersionNumber: maxVersion + 1, // DT-90: reindexar não sobrescreve mais a versão 1
 		Status:        "draft",
 	}
 
