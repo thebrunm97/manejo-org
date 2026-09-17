@@ -11,6 +11,8 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 )
 
 // SupabaseViolationLogger persists GuardrailEvents to the guardrail_events table
@@ -63,7 +65,7 @@ func (l *SupabaseViolationLogger) LogViolation(ctx context.Context, event Guardr
 	// Capture all values before the goroutine to avoid data races on the caller's stack.
 	row := l.toRow(event)
 
-	go func() {
+	utils.SafeGo("guardrail-logger", func() {
 		// Dedicate a fresh context with bounded timeout — the parent ctx may already
 		// be cancelled by the time this goroutine runs.
 		insertCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -74,7 +76,7 @@ func (l *SupabaseViolationLogger) LogViolation(ctx context.Context, event Guardr
 				row.Layer, row.FilterName, err)
 			// Fail-silent: do not propagate. The guardrail itself already acted correctly.
 		}
-	}()
+	})
 }
 
 // insert performs the actual HTTP POST to the Supabase REST endpoint.

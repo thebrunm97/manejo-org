@@ -16,6 +16,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
+	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -138,7 +139,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingEnvelope, sbClient *s
 			wpClient.Send(context.Background(), env)
 			
 			if sbClient != nil && phone != "" {
-				go func() {
+				utils.SafeGo("fsm-greeting-guard-log", func() {
 					dbCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 					defer cancel()
 					_ = sbClient.InsertMessage(dbCtx, supabase.MessageInsert{
@@ -151,7 +152,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingEnvelope, sbClient *s
 						Content: "Olá! Sou o assistente do ManejoORG. Como posso ajudar com seu registro ou dúvida hoje?",
 						Role:    "assistant",
 					})
-				}()
+				})
 			}
 			return ProcessResult{Success: true, Reason: "greeting_guard_ultra"}
 		}

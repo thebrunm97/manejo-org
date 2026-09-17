@@ -109,12 +109,30 @@ func (c *Consumer) Consume(handler func(context.Context, *ports.IncomingEnvelope
 
 	go func() {
 		for d := range msgs {
-			c.processDelivery(d)
+			// DT-121: recover por mensagem, não por loop inteiro — um pânico
+			// aqui sem isolamento derrubaria o processo inteiro (goroutine
+			// não tratada), e recover só interrompe o loop `for d := range
+			// msgs` se ficar do lado de fora dele; isolando por mensagem, o
+			// consumer segue vivo e processando a próxima.
+			func(delivery amqp.Delivery) {
+				defer func() {
+					if r := recover(); r != nil {
+						log.Printf("⚠️ [RabbitMQ] Pânico recuperado ao processar entrega: %v", r)
+						delivery.Reject(false)
+					}
+				}()
+				c.processDelivery(delivery)
+			}(d)
 		}
 	}()
 
 	return nil
 }
+
+// timeoutHandler limita quanto tempo o handler pode levar por mensagem —
+// sem isso, um handler pendurado (LLM, rede) trava o consumer inteiro
+// indefinidamente, já que as entregas são processadas uma de cada vez.
+const timeoutHandler = 60 * time.Second
 
 func (c *Consumer) processDelivery(d amqp.Delivery) {
 	// Payload from Evolution is a JSON matching the webhook format
@@ -130,7 +148,8 @@ func (c *Consumer) processDelivery(d amqp.Delivery) {
 		return
 	}
 
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), timeoutHandler)
+	defer cancel()
 	err = c.handler(ctx, payload, d.Body)
 
 	if err != nil {

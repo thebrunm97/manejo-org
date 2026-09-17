@@ -23,6 +23,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 	"golang.org/x/sync/errgroup"
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
+	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 )
 
 // Handler holds the dependencies for all knowledge admin endpoints.
@@ -508,10 +509,11 @@ func (h *Handler) PlaygroundRAG(c *gin.Context) {
 				// Async Hooks (Judge & Telemetry)
 				if run.Status == "success" {
 					if cfg.ProviderName == "openrouter" && run.OpenRouterGenerationID != "" {
-						go h.asyncFetchTelemetry(run.ID, run.OpenRouterGenerationID)
+						runID, genID := run.ID, run.OpenRouterGenerationID
+						utils.SafeGo("asyncFetchTelemetry", func() { h.asyncFetchTelemetry(runID, genID) })
 					}
 
-					go func() {
+					utils.SafeGo("playground-judge-eval", func() {
 						ctxTimeout, cancel := context.WithTimeout(context.Background(), 35*time.Second)
 						defer cancel()
 
@@ -549,7 +551,7 @@ func (h *Handler) PlaygroundRAG(c *gin.Context) {
 						} else {
 							log.Printf("[Playground] Failed to create judge provider: %v", err)
 						}
-					}()
+					})
 				}
 
 				return nil
