@@ -85,8 +85,6 @@ services:
       # .env.prod, pelo mesmo motivo do REDIS_URL acima: é topologia da stack,
       # não segredo.
       ZARC_DB_PATH: /data/zarc.sqlite
-    cap_add:
-      - SYS_TIME
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ./pmo-bot-go/.secrets:/.secrets:ro
@@ -147,8 +145,6 @@ services:
     restart: always
     env_file:
       - .env.prod
-    cap_add:
-      - SYS_TIME
     environment:
       # Override db paths to explicit /data directory which is bind-mounted to the host
       DATABASE_CONNECTION_URI: file:/data/sqlite.db?_foreign_keys=on
