@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"time"
 )
 
 // RerankDocuments chama a API de Rerank do OpenRouter (Cohere) para ordenar os documentos
@@ -36,7 +37,11 @@ func RerankDocuments(query string, docs []string, topN int) ([]int, error) {
 	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
+	// DT-72 (parcial): timeout evita segurar a goroutine indefinidamente se o
+	// OpenRouter não responder. Retry e degradação graciosa (queda pros top-N
+	// crus) ficam de fora — dependem da decisão de produto do DT-71 sobre
+	// promover ou não o rerank ao caminho de produção.
+	client := &http.Client{Timeout: 15 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("falha na requisição de rerank: %w", err)
