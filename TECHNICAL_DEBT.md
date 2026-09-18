@@ -142,6 +142,31 @@ A atual infraestrutura de ingestão (`/api/v1/admin/knowledge/ingest`) foi const
 
 ---
 
+### [Internacionalização] Adaptação para Moçambique / África Oriental
+**Data:** 18/09/2026 | **Status:** 📌 Pendente — pensar antes de codar
+
+Ideia do usuário: expandir para Moçambique, considerando baixo acesso a internet/e-mail e alta familiaridade com SMS/USSD (`*155#`). Ver DT-141 (`pmo-bot-go/docs/debitos_tecnicos.md`) para o vínculo de conta por SMS, já implementado atrás de flag.
+
+Levantamento do que mais precisa de atenção, checado no código (não é lista de suposições):
+
+**Bloqueio de produto grande, precisa de decisão de negócio antes de qualquer código:**
+- **PMO e ZARC são amarrados à regulação brasileira.** `ZARC` (`internal/zarc`, `wiki/concepts/zarc-janela-de-plantio.md`) é dataset do MAPA (Ministério da Agricultura do Brasil), citado nas respostas do bot porque lastreia crédito rural e seguro agrícola brasileiros (Proagro) — não existe equivalente moçambicano no código, e provavelmente não existe o mesmo instrumento de crédito/seguro lá. O próprio conceito de "PMO" (Plano de Manejo Orgânico) é um documento de certificação orgânica do sistema brasileiro. **Pergunta central:** o produto em Moçambique mantém a mesma proposta de "documento de certificação com peso legal", adaptada pra lá, ou vira uma ferramenta de manejo agrícola mais genérica (sem a camada de compliance) até existir clareza sobre o marco regulatório moçambicano de agricultura orgânica?
+
+**Gaps técnicos confirmados, sem decisão de negócio pendente — dá pra planejar:**
+- **Moeda hardcoded em R$.** `internal/guardrails/hitl.go`, `business.go`, `internal/mcp/tools_financeiro.go`, `tools_producao.go`, `tools_registry.go`, `internal/state/handlers_financeiro.go` — tudo assume Real brasileiro. Precisa de um campo de moeda por conta/organização (Metical, MZN) antes de qualquer produtor moçambicano usar o módulo financeiro.
+- **Meios de pagamento.** Se o produto cobrar por assinatura lá, cartão/Pix (o que provavelmente existe hoje) não serve — a região usa dinheiro móvel (M-Pesa, e-Mola, mKesh). Precisa de gateway compatível.
+- **Timezone.** Moçambique é UTC+2 (CAT); não auditado ainda se alguma lógica de data/hora assume o fuso brasileiro.
+- **Consumo de dados.** Mapas de satélite (Mapbox/Google Tiles em `FarmMap`) pesam no plano de dados; vale medir antes de assumir que a experiência de mapa se sustenta em conectividade fraca — o modo texto (DT-29) e o sync offline já ajudam aqui, mas o mapa em si não foi pensado pra isso.
+
+**Já confirmado que NÃO é problema (verificado, não suposição):**
+- **Idioma:** português é língua oficial de Moçambique — sem necessidade de tradução, só revisão de tom/vocabulário (expressões só brasileiras tipo "Beleza!" podem soar estranhas lá, vale revisão com alguém local).
+- **Validação de telefone:** a lógica do 9º dígito em `internal/utils/phone.go` já é condicionada a `strings.HasPrefix(numericOnly, "55")` (Brasil) — não deve interferir em números moçambicanos (+258), mas vale um teste dedicado antes de confiar.
+- **Evolution API/WhatsApp:** é um canal global, sem dependência de país.
+
+**Caminho futuro sugerido, não iniciado:** se SMS (DT-141) validar bem, USSD é o passo natural seguinte pra região — é o canal que o produtor moçambicano já usa (tipo `*155#` do dinheiro móvel), mais acessível que WhatsApp em rede muito fraca. Provedores como Africa's Talking cobrem SMS e USSD na mesma integração.
+
+---
+
 ## 🟢 Concluído
 
 ### F24 — `update_profile` aceita mapa arbitrário (escreve colunas indevidas)
