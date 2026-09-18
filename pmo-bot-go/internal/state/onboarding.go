@@ -50,10 +50,18 @@ import (
 const (
 	// StatePerguntaContaExistente: o bot pergunta se o usuário já tem conta.
 	StatePerguntaContaExistente = "pergunta_conta_existente"
+	// StateEscolhendoCanalVinculo: com SMS_OTP_ENABLED, o bot pergunta se o
+	// vínculo será confirmado por e-mail ou por SMS.
+	StateEscolhendoCanalVinculo = "escolhendo_canal_vinculo"
 	// StateAguardandoEmail: o usuário disse que tem conta e o bot pediu o e-mail.
 	StateAguardandoEmail = "aguardando_email"
 	// StateAguardandoOTPEmail: o OTP foi enviado e o bot aguarda os 6 dígitos.
 	StateAguardandoOTPEmail = "aguardando_otp_email"
+	// StateAguardandoTelefoneVinculo: o usuário escolheu SMS e o bot pediu o
+	// número de telefone cadastrado na conta (pode diferir do WhatsApp atual).
+	StateAguardandoTelefoneVinculo = "aguardando_telefone_vinculo"
+	// StateAguardandoOTPSMS: o OTP por SMS foi enviado e o bot aguarda os 6 dígitos.
+	StateAguardandoOTPSMS = "aguardando_otp_sms"
 	// StateAguardandoCadastro: o bot confirmou que é novo e espera os dados.
 	StateAguardandoCadastro = "aguardando_cadastro"
 	// StateConfirmandoCadastro: os dados foram extraídos e aguardam o SIM.
@@ -87,6 +95,25 @@ func (d DadosCadastro) completo() bool { return len(d.faltantes()) == 0 }
 const msgBoasVindas = `👋 Olá! Sou o assistente do *ManejoORG*.
 
 Vi que este número ainda não está vinculado. Você já tem um cadastro feito por e-mail no nosso site? *(Responda Sim ou Não)*`
+
+// smsOTPEnabled reporta se o vínculo por SMS pode ser oferecido.
+//
+// O envio de SMS depende de um provedor configurado no dashboard do Supabase
+// Auth (Twilio, Vonage, MessageBird...) — sem isso, SendPhoneOTP sempre
+// falha. Este flag existe para que o caminho por SMS só apareça pro produtor
+// depois que um provedor de verdade estiver configurado em produção; até lá,
+// o comportamento é idêntico ao de antes (só e-mail).
+//
+// Pensado para mercados com baixo acesso a e-mail/internet (ex.: Moçambique,
+// onde SMS/USSD tipo *155# já é o canal do dia a dia) — ver nota em
+// SendPhoneOTP.
+func smsOTPEnabled() bool {
+	return strings.EqualFold(strings.TrimSpace(os.Getenv("SMS_OTP_ENABLED")), "true")
+}
+
+const msgEscolhaCanalVinculo = `Posso confirmar de duas formas: *e-mail* (código de 6 dígitos no seu e-mail) ou *SMS* (código de 6 dígitos por mensagem de texto). Qual prefere? *(Responda EMAIL ou SMS)*`
+
+const msgPedirTelefoneVinculo = `Beleza! Me diga o número de telefone que está cadastrado na sua conta (pode ser diferente deste WhatsApp), com DDD/código do país. Ex.: +258 84 123 4567`
 
 const promptExtracaoCadastro = `Você extrai dados de cadastro de produtores rurais a partir de mensagens de WhatsApp.
 
@@ -319,9 +346,104 @@ func HandleOnboarding(
 		return ProcessResult{Success: true, Reason: "otp_enviado"}, true
 	}
 
+	// ── Escolha de Canal (E-mail vs SMS) ─────────────────────────────────────
+	if estado == StateEscolhendoCanalVinculo {
+		escolha := strings.ToLower(strings.TrimSpace(body))
+		switch {
+		case strings.Contains(escolha, "email") || strings.Contains(escolha, "e-mail"):
+			historyManager.SetFSMState(phone, StateAguardandoEmail, nil, nil)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "Me diga qual é o e-mail que você usou no site para eu te enviar um código de segurança.", respondWithAudio)
+			return ProcessResult{Success: true, Reason: "escolheu_email"}, true
+		case strings.Contains(escolha, "sms"):
+			historyManager.SetFSMState(phone, StateAguardandoTelefoneVinculo, nil, nil)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, msgPedirTelefoneVinculo, respondWithAudio)
+			return ProcessResult{Success: true, Reason: "escolheu_sms"}, true
+		default:
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, msgEscolhaCanalVinculo, respondWithAudio)
+			return ProcessResult{Success: true, Reason: "escolha_canal_nao_reconhecida"}, true
+		}
+	}
+
+	// ── SMS: Telefone Cadastrado (Aguardando Telefone) ───────────────────────
+	//
+	// O telefone que o produtor informa aqui é o que está em profiles.telefone
+	// na conta dele — pode ser diferente do WhatsApp de onde ele está falando
+	// agora (aparelho emprestado, chip trocado etc.). Localizamos a conta por
+	// esse telefone, anexamos como não-confirmado (AttachUnconfirmedPhone) e só
+	// então pedimos ao GoTrue pra mandar o OTP — sem o anexo, SendPhoneOTP
+	// falharia porque esse número ainda não é uma identidade de auth.
+	if estado == StateAguardandoTelefoneVinculo {
+		telefoneCadastro := utils.SanitizePhone(body)
+		if telefoneCadastro == "" {
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "Não consegui reconhecer esse número. Pode reenviar com DDD/código do país?", respondWithAudio)
+			return ProcessResult{Success: false, Reason: "telefone_vinculo_invalido"}, true
+		}
+
+		perfilExistente, err := sbClient.GetProfileByPhone(telefoneCadastro)
+		if err != nil || perfilExistente == nil {
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From,
+				"Não encontrei nenhuma conta com esse telefone. Confere o número ou digite CANCELAR pra tentar por e-mail.", respondWithAudio)
+			return ProcessResult{Success: false, Reason: "telefone_vinculo_nao_encontrado"}, true
+		}
+
+		if err := sbClient.AttachUnconfirmedPhone(perfilExistente.ID, telefoneCadastro); err != nil {
+			log.Printf("⚠️ [Onboarding] Falha ao anexar telefone %s ao usuário %s: %v", telefoneCadastro, perfilExistente.ID, err)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "Erro interno ao preparar a confirmação por SMS. Tente de novo mais tarde.", respondWithAudio)
+			return ProcessResult{Success: false, Reason: "sms_attach_falhou"}, true
+		}
+
+		if err := sbClient.SendPhoneOTP(telefoneCadastro); err != nil {
+			log.Printf("⚠️ [Onboarding] Falha ao enviar OTP SMS para %s: %v", telefoneCadastro, err)
+		}
+		historyManager.SetFSMState(phone, StateAguardandoOTPSMS, map[string]interface{}{"telefone_vinculo": telefoneCadastro}, nil)
+		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "Enviei um código de 6 dígitos por SMS pra esse número. Digite os 6 números aqui:", respondWithAudio)
+		return ProcessResult{Success: true, Reason: "otp_sms_enviado"}, true
+	}
+
+	// ── SMS: OTP (Aguardando Código) ──────────────────────────────────────────
+	if estado == StateAguardandoOTPSMS {
+		token := strings.TrimSpace(body)
+		telefoneCadastro, _ := ctxFSM["telefone_vinculo"].(string)
+
+		user, err := sbClient.VerifyPhoneOTP(telefoneCadastro, token)
+		if err != nil {
+			log.Printf("⚠️ [Onboarding] OTP SMS inválido para %s: %v", telefoneCadastro, err)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "O código parece incorreto ou expirou. Tente novamente ou digite CANCELAR.", respondWithAudio)
+			return ProcessResult{Success: false, Reason: "otp_sms_invalido"}, true
+		}
+
+		// A partir daqui, mesmo desfecho do vínculo por e-mail: liga ESTE
+		// WhatsApp (phone) à conta encontrada, não o telefone cadastrado.
+		if err := sbClient.LinkPhoneToUser(user.ID, phone); err != nil {
+			log.Printf("⚠️ [Onboarding] Erro ao vincular telefone %s: %v", phone, err)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "Erro interno ao vincular conta. Tente de novo mais tarde.", respondWithAudio)
+			return ProcessResult{Success: false, Reason: "erro_vincular"}, true
+		}
+
+		if err := sbClient.UpdateProfilePhone(user.ID, phone); err != nil {
+			if strings.Contains(err.Error(), "telefone_em_uso") {
+				log.Printf("⚠️ [Onboarding] Colisão de perfil no OTP SMS para %s: %v", phone, err)
+				sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "Este número de WhatsApp já está vinculado a outro perfil. Desvincule a conta anterior ou contate o suporte.", respondWithAudio)
+				return ProcessResult{Success: false, Reason: "telefone_em_uso"}, true
+			}
+			log.Printf("⚠️ [Onboarding] Erro ao atualizar perfil para %s: %v", phone, err)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "Erro interno ao completar o vínculo. Tente de novo mais tarde.", respondWithAudio)
+			return ProcessResult{Success: false, Reason: "erro_vincular_perfil"}, true
+		}
+
+		historyManager.SetFSMState(phone, "", nil, nil)
+		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "✅ Pronto! Seu WhatsApp foi vinculado à sua conta com sucesso. Pode começar a usar!", respondWithAudio)
+		return ProcessResult{Success: true, Reason: "conta_vinculada_sms"}, true
+	}
+
 	// ── Pergunta Conta Existente ────────────────────────────────────────────
 	if estado == StatePerguntaContaExistente {
 		if ehConfirmacao(body) {
+			if smsOTPEnabled() {
+				historyManager.SetFSMState(phone, StateEscolhendoCanalVinculo, nil, nil)
+				sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, msgEscolhaCanalVinculo, respondWithAudio)
+				return ProcessResult{Success: true, Reason: "escolha_canal_vinculo"}, true
+			}
 			historyManager.SetFSMState(phone, StateAguardandoEmail, nil, nil)
 			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "Legal! Me diga qual é o e-mail que você usou no site para eu te enviar um código de segurança.", respondWithAudio)
 			return ProcessResult{Success: true, Reason: "iniciou_vinculo"}, true
