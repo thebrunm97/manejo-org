@@ -197,7 +197,12 @@ func doFetchOpenMeteo(ctx context.Context, lat, lng string) (*WeatherData, error
 		},
 	}
 
-	apiURL := fmt.Sprintf("https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code,et0_fao_evapotranspiration,uv_index_max&timezone=America/Sao_Paulo&forecast_days=3", lat, lng)
+	// timezone=auto (não um fuso fixo): a Open-Meteo resolve o fuso real a
+	// partir de lat/lng. Antes desta correção, todo horário vinha em
+	// America/Sao_Paulo mesmo pra propriedades em outros fusos — dentro do
+	// Brasil (Manaus, Fernando de Noronha) e, mais ainda, fora dele
+	// (Moçambique é UTC+2, 5h à frente de São Paulo).
+	apiURL := fmt.Sprintf("https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code,et0_fao_evapotranspiration,uv_index_max&timezone=auto&forecast_days=3", lat, lng)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
 	if err != nil {

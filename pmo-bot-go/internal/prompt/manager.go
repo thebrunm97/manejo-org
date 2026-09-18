@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
+	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 )
 
 //go:embed prompts/system_prompt.md
@@ -89,8 +90,7 @@ func ForIntent(intent llm.Intent, modality string, temProducaoParalela bool) str
 	p = strings.ReplaceAll(p, "{{TEM_PRODUCAO_PARALELA}}", parallelMsg)
 
 	// Inject current date (avoids hardcoded dates in prompts)
-	loc, _ := time.LoadLocation("America/Sao_Paulo")
-	now := time.Now().In(loc)
+	now := time.Now().In(utils.TimezoneSistema())
 	currentDateBR := now.Format("02 de Janeiro de 2006")
 	p = strings.ReplaceAll(p, "{{CURRENT_DATE_BR}}", currentDateBR)
 
@@ -110,5 +110,10 @@ func RouterSystemPrompt() string {
 		template = "Você é um classificador de intenções agrícolas. Data atual do sistema: {{CURRENT_DATE}}"
 		log.Printf("[prompt] WARNING: RouterSystemPrompt using inline fallback — check gemini.json")
 	}
-	return strings.ReplaceAll(template, "{{CURRENT_DATE}}", time.Now().Format("2006-01-02"))
+	// utils.TimezoneSistema(), não time.Now() cru: o container não seta TZ
+	// (roda em UTC por padrão), então antes desta correção esta data podia
+	// divergir da injetada em ForIntent (que usava America/Sao_Paulo fixo) —
+	// duas fontes de "hoje" diferentes pro mesmo bot, dependendo de qual
+	// prompt fosse usado.
+	return strings.ReplaceAll(template, "{{CURRENT_DATE}}", time.Now().In(utils.TimezoneSistema()).Format("2006-01-02"))
 }
