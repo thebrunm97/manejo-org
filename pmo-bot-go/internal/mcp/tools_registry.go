@@ -8,6 +8,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/domain"
 	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
+	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 )
 
 // CalcularAdubacaoDef is the agnostic definition for the agronomic calculation tool.
@@ -452,7 +453,7 @@ func (s *Server) InitializeTools() {
 								},
 								"valor_alocado": map[string]interface{}{
 									"type":        "number",
-									"description": "Valor financeiro (R$) alocado para este talhão.",
+									"description": fmt.Sprintf("Valor financeiro (%s) alocado para este talhão.", utils.MoedaSimbolo()),
 								},
 							},
 							"required": []string{"talhao_nome", "valor_alocado"},

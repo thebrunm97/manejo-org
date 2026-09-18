@@ -28,6 +28,7 @@ import { useFinanceiroStats } from '../hooks/financeiro/useFinanceiroStats';
 import { useTransacoes } from '../hooks/financeiro/useTransacoes';
 import TransacoesTable from '../components/Financeiro/TransacoesTable';
 import TransacaoDialog from '../components/Financeiro/TransacaoDialog';
+import { CURRENCY_SYMBOL } from '../utils/currency';
 
 const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -157,7 +158,7 @@ const FinanceiroPage: React.FC = () => {
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="font-bold text-slate-800 flex items-center gap-2">
                             <LayoutDashboard size={18} className="text-indigo-500" />
-                            Evolução Mensal (R$)
+                            Evolução Mensal ({CURRENCY_SYMBOL})
                         </h3>
                     </div>
                     <div className="h-[350px] w-full">
@@ -174,7 +175,7 @@ const FinanceiroPage: React.FC = () => {
                                     axisLine={false} 
                                     tickLine={false} 
                                     tick={{ fill: '#64748b', fontSize: 12 }}
-                                    tickFormatter={(val) => `R$ ${val / 1000}k`}
+                                    tickFormatter={(val) => `${CURRENCY_SYMBOL} ${val / 1000}k`}
                                 />
                                 <Tooltip 
                                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { DollarSign } from 'lucide-react';
+import { CURRENCY_SYMBOL } from '../../../../utils/currency';
 
 interface ValorTotalInputProps {
     value: number | undefined;
@@ -11,7 +12,7 @@ interface ValorTotalInputProps {
 }
 
 /**
- * Reusable monetary input with R$ prefix for hybrid cost tracking.
+ * Reusable monetary input with a currency prefix (CURRENCY_SYMBOL) for hybrid cost tracking.
  * Allows the user to optionally associate a cost with any field operation.
  * Sends undefined (not 0) when empty so the backend skips the financial ledger INSERT.
  */
@@ -41,7 +42,7 @@ const ValorTotalInput: React.FC<ValorTotalInputProps> = ({
             <div className="relative flex items-center">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
                     <DollarSign size={16} className="text-emerald-600" />
-                    <span className="ml-1 text-sm font-bold text-emerald-700 select-none">R$</span>
+                    <span className="ml-1 text-sm font-bold text-emerald-700 select-none">{CURRENCY_SYMBOL}</span>
                 </div>
                 <input
                     id={id}

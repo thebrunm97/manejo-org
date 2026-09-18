@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+
+	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 )
 
 // handleConsultarBalancoFinanceiro processes the tool call to get financial reports.
@@ -94,6 +96,6 @@ func (s *Server) handleRegistrarDespesa(ctx context.Context, args map[string]int
 		return nil, fmt.Errorf("erro ao registrar despesa no banco de dados: %w", err)
 	}
 
-	log.Printf("✅ [MCP] Despesa de R$ %.2f registrada com sucesso", valorTotalFloat)
-	return fmt.Sprintf("Despesa registrada com sucesso no valor de R$ %.2f (Categoria: %s).", valorTotalFloat, categoriaNome), nil
+	log.Printf("✅ [MCP] Despesa de %s %.2f registrada com sucesso", utils.MoedaSimbolo(), valorTotalFloat)
+	return fmt.Sprintf("Despesa registrada com sucesso no valor de %s %.2f (Categoria: %s).", utils.MoedaSimbolo(), valorTotalFloat, categoriaNome), nil
 }

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/domain"
+	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 )
 
 // HighRiskIrreversibleTools defines tools that always require producer confirmation regardless of values.
@@ -81,10 +82,10 @@ func RequiresHITL(toolName string, rawArgs map[string]interface{}) (bool, string
 		val := parseArgFloat(rawArgs, "valor_total", "valor")
 		desc := parseArgString(rawArgs, "descricao", "item", "categoria_nome")
 		if val > 500.0 {
-			return true, fmt.Sprintf("Despesa Financeira de R$ %.2f (%s)", val, desc)
+			return true, fmt.Sprintf("Despesa Financeira de %s %.2f (%s)", utils.MoedaSimbolo(), val, desc)
 		}
 		if desc == "" && val > 0 {
-			return true, fmt.Sprintf("Despesa Financeira de R$ %.2f", val)
+			return true, fmt.Sprintf("Despesa Financeira de %s %.2f", utils.MoedaSimbolo(), val)
 		}
 
 	case "registrar_compra_insumo":
@@ -92,14 +93,14 @@ func RequiresHITL(toolName string, rawArgs map[string]interface{}) (bool, string
 		prod := parseArgString(rawArgs, "produto")
 		nf := parseArgString(rawArgs, "nota_fiscal")
 		if val > 500.0 || (val > 200.0 && nf == "") {
-			return true, fmt.Sprintf("Compra de %s (R$ %.2f)", prod, val)
+			return true, fmt.Sprintf("Compra de %s (%s %.2f)", prod, utils.MoedaSimbolo(), val)
 		}
 
 	case "registrar_venda":
 		val := parseArgFloat(rawArgs, "valor_total")
 		prod := parseArgString(rawArgs, "produto")
 		if val > 500.0 {
-			return true, fmt.Sprintf("Venda de %s (R$ %.2f)", prod, val)
+			return true, fmt.Sprintf("Venda de %s (%s %.2f)", prod, utils.MoedaSimbolo(), val)
 		}
 	}
 
@@ -382,7 +383,7 @@ func formatValueCleanly(val interface{}, depth int) string {
 				finalStr = fmt.Sprintf("• %s", nameStr)
 			}
 			if valorAlocado != nil && fmt.Sprintf("%v", valorAlocado) != "" {
-				finalStr += fmt.Sprintf(": R$ %v", valorAlocado)
+				finalStr += fmt.Sprintf(": %s %v", utils.MoedaSimbolo(), valorAlocado)
 			}
 			return finalStr
 		}
@@ -431,7 +432,7 @@ func formatValueCleanly(val interface{}, depth int) string {
 				finalStr = fmt.Sprintf("• %s", nameStr)
 			}
 			if valorAlocado != nil && fmt.Sprintf("%v", valorAlocado) != "" {
-				finalStr += fmt.Sprintf(": R$ %v", valorAlocado)
+				finalStr += fmt.Sprintf(": %s %v", utils.MoedaSimbolo(), valorAlocado)
 			}
 			return finalStr
 		}

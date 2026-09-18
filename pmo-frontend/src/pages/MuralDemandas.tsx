@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
+import { CURRENCY_SYMBOL } from '../utils/currency';
 import { 
     Search, 
     RefreshCw, 
@@ -196,7 +197,7 @@ const MuralDemandas: React.FC = () => {
                                     </div>
                                     <div className="text-right">
                                         <p className="text-[10px] text-slate-400 font-black uppercase tracking-tighter">Remuneração Base</p>
-                                        <p className="text-sm font-black text-emerald-600">R$ {demanda.preco_referencia?.toFixed(2) || '---'}</p>
+                                        <p className="text-sm font-black text-emerald-600">{CURRENCY_SYMBOL} {demanda.preco_referencia?.toFixed(2) || '---'}</p>
                                     </div>
                                 </div>
 
@@ -261,7 +262,7 @@ const MuralDemandas: React.FC = () => {
                                     <div className="grid grid-cols-2 gap-3 md:gap-4">
                                         <div className="p-3 md:p-4 bg-emerald-50 rounded-[20px] md:rounded-[24px] border border-emerald-100">
                                             <p className="text-[9px] md:text-[10px] text-emerald-600 font-black uppercase tracking-tighter">Preço Base</p>
-                                            <p className="text-base md:text-lg font-black text-emerald-700">R$ {selectedDemanda.preco_referencia?.toFixed(2) || '---'}</p>
+                                            <p className="text-base md:text-lg font-black text-emerald-700">{CURRENCY_SYMBOL} {selectedDemanda.preco_referencia?.toFixed(2) || '---'}</p>
                                             <p className="text-[8px] md:text-[9px] text-emerald-500 font-bold">por {selectedDemanda.unidade}</p>
                                         </div>
                                         <div className="p-3 md:p-4 bg-slate-50 rounded-[20px] md:rounded-[24px] border border-slate-100">

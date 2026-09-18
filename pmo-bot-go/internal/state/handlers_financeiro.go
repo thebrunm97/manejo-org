@@ -15,6 +15,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
+	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 )
 
 func handleRegistroFinanceiro(ctx context.Context, ext *groq.ExtractionResult, profile *supabase.Profile, sbClient *supabase.Client, _ ports.ChannelSender, _ ports.Synthesizer, from string, _ bool, historyManager *history.Manager) (string, ProcessResult) {
@@ -126,7 +127,7 @@ func handleRegistroFinanceiro(ctx context.Context, ext *groq.ExtractionResult, p
 
 	msg := fmt.Sprintf("%s *Registro Financeiro:*\n", emoji)
 	msg += fmt.Sprintf("• *Tipo:* %s\n", tipo)
-	msg += fmt.Sprintf("• *Valor:* R$ %.2f\n", valorTotal)
+	msg += fmt.Sprintf("• *Valor:* %s %.2f\n", utils.MoedaSimbolo(), valorTotal)
 	if ext.Fornecedor != "" {
 		msg += fmt.Sprintf("• *Origem/Destino:* %s", ext.Fornecedor)
 	}

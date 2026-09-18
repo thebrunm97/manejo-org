@@ -3,6 +3,7 @@ import { ShoppingCart, MapPin, X } from 'lucide-react';
 import { ComprasDraft, ValidationErrors } from '../../../../hooks/manual-record';
 import ComprasTab from '../Tabs/ComprasTab';
 import ValorTotalInput from './ValorTotalInput';
+import { CURRENCY_SYMBOL } from '../../../../utils/currency';
 
 interface ComprasFormProps {
     formData: ComprasDraft;
@@ -117,7 +118,7 @@ const ComprasForm: React.FC<ComprasFormProps> = ({
                     id="compras-valor-total"
                     value={formData.valor_total}
                     onChange={(v) => updateForm('valor_total', v)}
-                    label="Valor Total Pago (R$)"
+                    label={`Valor Total Pago (${CURRENCY_SYMBOL})`}
                     hint="Preencha para lançar automaticamente esta despesa no módulo financeiro."
                 />
             </div>

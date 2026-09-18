@@ -2,6 +2,7 @@ import React from 'react';
 import { UnitType } from '../../../../types/CadernoTypes';
 import { VendasDraft } from '../../../../hooks/manual-record';
 import { ShoppingCart, User, DollarSign, FileText, Package } from 'lucide-react';
+import { CURRENCY_SYMBOL } from '../../../../utils/currency';
 
 interface VendasTabProps {
     draft: VendasDraft;
@@ -129,7 +130,7 @@ const VendasTab: React.FC<VendasTabProps> = ({ draft, updateDraft }) => {
                     </div>
                     <div>
                         <label className={`block text-sm font-semibold mb-1.5 ${draft.destinacao === 'venda' ? 'text-blue-900' : 'text-slate-500'}`}>
-                            Valor Unitário (R$)
+                            Valor Unitário ({CURRENCY_SYMBOL})
                         </label>
                         <div className="relative">
                             <DollarSign size={18} className="absolute left-3.5 top-3.5 text-slate-400" />

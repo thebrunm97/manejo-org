@@ -6,6 +6,7 @@ import { fetchPropriedade, updatePropriedade, getPropriedadeMetrics, deletePropr
 import { fetchPropriedadeOrganizacoes } from '../services/organizacaoService';
 import { OrganizacaoMembro } from '../domain/organizacao/orgTypes';
 import { useAppNavigation } from '../hooks/navigation/useAppNavigation';
+import { CURRENCY_SYMBOL } from '../utils/currency';
 import { toast } from 'react-toastify';
 import { SCREENS } from '../routes/routeNames';
 import { cn } from '../utils/cn';
@@ -714,7 +715,7 @@ const PropertyProfilePage: React.FC = () => {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <div className="space-y-3">
                                             <label htmlFor="limite_transacao" className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                                Limite de Transação (R$)
+                                                Limite de Transação ({CURRENCY_SYMBOL})
                                             </label>
                                             <input
                                                 type="number"
@@ -728,7 +729,7 @@ const PropertyProfilePage: React.FC = () => {
                                                 className="w-full px-6 py-4.5 rounded-2xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all bg-slate-50/30 text-lg font-bold text-slate-800 disabled:opacity-60 disabled:cursor-not-allowed"
                                             />
                                             <p className="text-slate-400 text-[10px] italic font-medium leading-relaxed">
-                                                Valor máximo determinístico permitido por transação financeira. Exceder este limite disparará um aviso de segurança. (Padrão: R$ 50.000,00).
+                                                Valor máximo determinístico permitido por transação financeira. Exceder este limite disparará um aviso de segurança. (Padrão: {CURRENCY_SYMBOL} 50.000,00).
                                             </p>
                                         </div>
 
@@ -762,7 +763,7 @@ const PropertyProfilePage: React.FC = () => {
                                                 Funcionamento dos Guardrails
                                             </p>
                                             <p className="text-[11px] text-emerald-700/80 font-medium leading-relaxed">
-                                                Esses valores parametrizam o Avaliador Global em Go. Se nenhuma configuração customizada for definida aqui, os limites padrão de R$ 50.000,00 e 5.000 kg/L serão aplicados automaticamente.
+                                                Esses valores parametrizam o Avaliador Global em Go. Se nenhuma configuração customizada for definida aqui, os limites padrão de {CURRENCY_SYMBOL} 50.000,00 e 5.000 kg/L serão aplicados automaticamente.
                                             </p>
                                         </div>
                                     </div>

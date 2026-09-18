@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"time"
+
+	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 )
 
 func (s *Server) handleRegistrarColheita(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
@@ -167,7 +169,7 @@ func (s *Server) handleConsultarDemandasCooperativa(ctx context.Context, args ma
 		response += fmt.Sprintf("   • Produto: %s\n", d.Cultura)
 		response += fmt.Sprintf("   • Volume: %v %s\n", d.QuantidadeTotal, d.Unidade)
 		if d.PrecoReferencia > 0 {
-			response += fmt.Sprintf("   • Preço Ref.: R$ %.2f/%s\n", d.PrecoReferencia, d.Unidade)
+			response += fmt.Sprintf("   • Preço Ref.: %s %.2f/%s\n", utils.MoedaSimbolo(), d.PrecoReferencia, d.Unidade)
 		}
 		response += fmt.Sprintf("   • Prazo: %s\n", prazo)
 		if d.ModalidadeExigida != "" {

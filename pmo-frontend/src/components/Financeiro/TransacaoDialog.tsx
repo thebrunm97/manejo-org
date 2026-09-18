@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { toast } from 'react-toastify';
 import { getCategorias, registrarTransacaoPura, TransacaoPayload } from '../../services/financeiroService';
 import { fetchAllPmos } from '../../services/pmoService';
+import { CURRENCY_SYMBOL } from '../../utils/currency';
 
 interface Categoria {
     id: string;
@@ -175,10 +176,10 @@ const TransacaoDialog: React.FC<TransacaoDialogProps> = ({ open, onClose, onSucc
 
                     {/* Valor */}
                     <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1.5">Valor (R$)</label>
+                        <label className="block text-sm font-semibold text-slate-700 mb-1.5">Valor ({CURRENCY_SYMBOL})</label>
                         <div className="relative">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <span className={`font-bold ${tipo === 'RECEITA' ? 'text-emerald-600' : 'text-rose-600'}`}>R$</span>
+                                <span className={`font-bold ${tipo === 'RECEITA' ? 'text-emerald-600' : 'text-rose-600'}`}>{CURRENCY_SYMBOL}</span>
                             </div>
                             <input
                                 type="number"

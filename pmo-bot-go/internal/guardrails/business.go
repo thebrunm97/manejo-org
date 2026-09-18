@@ -5,11 +5,18 @@ import (
 	"fmt"
 	"log"
 	"time"
+
+	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 )
 
 // Constantes padrão de limites compiladas no código
+//
+// O VALOR de DefaultLimiteTransacao é uma política de negócio (não muda
+// sozinho com o símbolo de utils.MoedaSimbolo()) — 50.000 tem magnitude
+// diferente em BRL e em MZN, por exemplo. Revisar o valor em si é decisão de
+// produto, não deste débito de i18n do símbolo.
 const (
-	DefaultLimiteTransacao = 50000.00 // R$ 50.000,00
+	DefaultLimiteTransacao = 50000.00 // 50.000,00 na moeda configurada (utils.MoedaSimbolo)
 	DefaultLimiteManejo    = 5000.00  // 5.000 kg ou Litros
 )
 
@@ -77,7 +84,7 @@ func (e *DeterministicEvaluator) EvaluateTransaction(ctx context.Context, evalCt
 
 	// Regra 1: Limite de Valor
 	if payload.ValorTotal > limiteTransacao {
-		return fmt.Errorf("Atenção: O valor de R$ %.2f excede o limite de segurança de R$ %.2f configurado para a sua propriedade. Por favor, reenvie a operação com o valor correto.", payload.ValorTotal, limiteTransacao)
+		return fmt.Errorf("Atenção: O valor de %s %.2f excede o limite de segurança de %s %.2f configurado para a sua propriedade. Por favor, reenvie a operação com o valor correto.", utils.MoedaSimbolo(), payload.ValorTotal, utils.MoedaSimbolo(), limiteTransacao)
 	}
 
 	return nil

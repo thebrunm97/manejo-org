@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
+import { CURRENCY_SYMBOL } from '../../utils/currency';
 import { 
     PlusCircle, 
     ClipboardList, 
@@ -376,7 +377,7 @@ const CoopDemandasPage: React.FC = () => {
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Preço Ref. (R$ / {formData.unidade_medida})</label>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Preço Ref. ({CURRENCY_SYMBOL} / {formData.unidade_medida})</label>
                                         <input
                                             type="number"
                                             step="0.01"
