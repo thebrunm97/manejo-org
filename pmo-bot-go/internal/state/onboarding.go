@@ -36,6 +36,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
@@ -98,15 +99,20 @@ Vi que este número ainda não está vinculado. Você já tem um cadastro feito 
 
 // smsOTPEnabled reporta se o vínculo por SMS pode ser oferecido.
 //
-// O envio de SMS depende de um provedor configurado no dashboard do Supabase
-// Auth (Twilio, Vonage, MessageBird...) — sem isso, SendPhoneOTP sempre
-// falha. Este flag existe para que o caminho por SMS só apareça pro produtor
-// depois que um provedor de verdade estiver configurado em produção; até lá,
-// o comportamento é idêntico ao de antes (só e-mail).
+// O envio de SMS depende de SMSSender estar configurado com um provedor real
+// (ver sms_otp.go) — sem isso, SMSSender retorna erro explícito. Este flag
+// existe para que o caminho por SMS só apareça pro produtor depois que um
+// provedor de verdade estiver configurado em produção; até lá, o
+// comportamento é idêntico ao de antes (só e-mail).
+//
+// O código em si é gerado/verificado por nós, não pelo /auth/v1/otp do
+// GoTrue — aquele endpoint só integra com Twilio/Vonage/MessageBird/
+// TextLocal, e a Africa's Talking (candidata mais forte pra Moçambique, com
+// caminho pra USSD) não está nessa lista.
 //
 // Pensado para mercados com baixo acesso a e-mail/internet (ex.: Moçambique,
-// onde SMS/USSD tipo *155# já é o canal do dia a dia) — ver nota em
-// SendPhoneOTP.
+// onde SMS/USSD tipo *155# já é o canal do dia a dia) — ver nota em SMSSender
+// (sms_otp.go).
 func smsOTPEnabled() bool {
 	return strings.EqualFold(strings.TrimSpace(os.Getenv("SMS_OTP_ENABLED")), "true")
 }
@@ -368,10 +374,12 @@ func HandleOnboarding(
 	//
 	// O telefone que o produtor informa aqui é o que está em profiles.telefone
 	// na conta dele — pode ser diferente do WhatsApp de onde ele está falando
-	// agora (aparelho emprestado, chip trocado etc.). Localizamos a conta por
-	// esse telefone, anexamos como não-confirmado (AttachUnconfirmedPhone) e só
-	// então pedimos ao GoTrue pra mandar o OTP — sem o anexo, SendPhoneOTP
-	// falharia porque esse número ainda não é uma identidade de auth.
+	// agora (aparelho emprestado, chip trocado etc.). O código é gerado e
+	// verificado por nós (não pelo /auth/v1/otp do GoTrue): esse endpoint só
+	// integra com Twilio/Vonage/MessageBird/TextLocal, e a Africa's Talking
+	// (candidata mais forte pra Moçambique, com caminho pra USSD) não está
+	// nessa lista — gerar/validar o código nós mesmos deixa o SMSSender livre
+	// pra plugar qualquer provedor, sem depender do que o Supabase suporta.
 	if estado == StateAguardandoTelefoneVinculo {
 		telefoneCadastro := utils.SanitizePhone(body)
 		if telefoneCadastro == "" {
@@ -386,31 +394,68 @@ func HandleOnboarding(
 			return ProcessResult{Success: false, Reason: "telefone_vinculo_nao_encontrado"}, true
 		}
 
-		if err := sbClient.AttachUnconfirmedPhone(perfilExistente.ID, telefoneCadastro); err != nil {
-			log.Printf("⚠️ [Onboarding] Falha ao anexar telefone %s ao usuário %s: %v", telefoneCadastro, perfilExistente.ID, err)
+		codigo, err := gerarCodigoOTP()
+		if err != nil {
+			log.Printf("⚠️ [Onboarding] Falha ao gerar OTP SMS: %v", err)
 			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "Erro interno ao preparar a confirmação por SMS. Tente de novo mais tarde.", respondWithAudio)
-			return ProcessResult{Success: false, Reason: "sms_attach_falhou"}, true
+			return ProcessResult{Success: false, Reason: "sms_gerar_otp_falhou"}, true
 		}
 
-		if err := sbClient.SendPhoneOTP(telefoneCadastro); err != nil {
+		if err := SMSSender(ctx, telefoneCadastro, fmt.Sprintf("Seu código Manejo.ORG: %s (válido por 10 minutos)", codigo)); err != nil {
+			// Falha aqui é permanente (nenhum provedor configurado), não
+			// transitória — não adianta seguir como se tivesse enviado.
 			log.Printf("⚠️ [Onboarding] Falha ao enviar OTP SMS para %s: %v", telefoneCadastro, err)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From,
+				"Não consegui enviar o SMS agora. Tente por e-mail ou mais tarde.", respondWithAudio)
+			return ProcessResult{Success: false, Reason: "sms_envio_falhou"}, true
 		}
-		historyManager.SetFSMState(phone, StateAguardandoOTPSMS, map[string]interface{}{"telefone_vinculo": telefoneCadastro}, nil)
+
+		historyManager.SetFSMState(phone, StateAguardandoOTPSMS, map[string]interface{}{
+			"telefone_vinculo": telefoneCadastro,
+			"user_id_vinculo":  perfilExistente.ID,
+			"otp_hash":         hashCodigoOTP(codigo),
+			"otp_expira_em":    time.Now().Add(otpSMSTTL).Format(time.RFC3339),
+			"otp_tentativas":   0,
+		}, nil)
 		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "Enviei um código de 6 dígitos por SMS pra esse número. Digite os 6 números aqui:", respondWithAudio)
 		return ProcessResult{Success: true, Reason: "otp_sms_enviado"}, true
 	}
 
 	// ── SMS: OTP (Aguardando Código) ──────────────────────────────────────────
 	if estado == StateAguardandoOTPSMS {
-		token := strings.TrimSpace(body)
-		telefoneCadastro, _ := ctxFSM["telefone_vinculo"].(string)
+		candidato := strings.TrimSpace(body)
+		otpHash, _ := ctxFSM["otp_hash"].(string)
+		userIDVinculo, _ := ctxFSM["user_id_vinculo"].(string)
+		expiraStr, _ := ctxFSM["otp_expira_em"].(string)
+		tentativas := tentativasOTPDoContexto(ctxFSM)
 
-		user, err := sbClient.VerifyPhoneOTP(telefoneCadastro, token)
-		if err != nil {
-			log.Printf("⚠️ [Onboarding] OTP SMS inválido para %s: %v", telefoneCadastro, err)
-			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "O código parece incorreto ou expirou. Tente novamente ou digite CANCELAR.", respondWithAudio)
+		expira, errParse := time.Parse(time.RFC3339, expiraStr)
+		if otpHash == "" || userIDVinculo == "" || errParse != nil || time.Now().After(expira) {
+			historyManager.SetFSMState(phone, StateEscolhendoCanalVinculo, nil, nil)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "O código expirou. Vamos tentar de novo — "+msgEscolhaCanalVinculo, respondWithAudio)
+			return ProcessResult{Success: false, Reason: "otp_sms_expirado"}, true
+		}
+
+		if tentativas >= otpSMSMaxTentativas {
+			historyManager.SetFSMState(phone, StateEscolhendoCanalVinculo, nil, nil)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "Muitas tentativas erradas. Vamos recomeçar — "+msgEscolhaCanalVinculo, respondWithAudio)
+			return ProcessResult{Success: false, Reason: "otp_sms_max_tentativas"}, true
+		}
+
+		if !codigoOTPConfere(otpHash, candidato) {
+			ctxAtualizado := map[string]interface{}{
+				"telefone_vinculo": ctxFSM["telefone_vinculo"],
+				"user_id_vinculo":  userIDVinculo,
+				"otp_hash":         otpHash,
+				"otp_expira_em":    expiraStr,
+				"otp_tentativas":   tentativas + 1,
+			}
+			historyManager.SetFSMState(phone, StateAguardandoOTPSMS, ctxAtualizado, nil)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "O código parece incorreto. Tente novamente ou digite CANCELAR.", respondWithAudio)
 			return ProcessResult{Success: false, Reason: "otp_sms_invalido"}, true
 		}
+
+		user := &supabase.AuthUser{ID: userIDVinculo}
 
 		// A partir daqui, mesmo desfecho do vínculo por e-mail: liga ESTE
 		// WhatsApp (phone) à conta encontrada, não o telefone cadastrado.
@@ -751,6 +796,21 @@ func tentativasDoContexto(ctxFSM map[string]interface{}) int {
 	}
 	// O contexto da FSM passa por JSON, então o número volta como float64.
 	switch v := ctxFSM["tentativas_nome"].(type) {
+	case float64:
+		return int(v)
+	case int:
+		return v
+	}
+	return 0
+}
+
+// tentativasOTPDoContexto lê o contador de tentativas erradas de OTP por SMS
+// — mesmo raciocínio do tentativasDoContexto acima, chave diferente.
+func tentativasOTPDoContexto(ctxFSM map[string]interface{}) int {
+	if ctxFSM == nil {
+		return 0
+	}
+	switch v := ctxFSM["otp_tentativas"].(type) {
 	case float64:
 		return int(v)
 	case int:
