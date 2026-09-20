@@ -17,6 +17,7 @@ contra o código na data indicada no rodapé da nota.
 
 - [[agricultura-organica]] — a base agronômica e legal.
 - [[certificacao-organica]] — Lei 10.831, Decreto 6.323 e os três mecanismos de garantia.
+- [[certificacao-organica-mocambique]] — ausência de marco legal nacional, certificação de terceira parte, legislação interna em desenvolvimento.
 - [[spg-sistema-participativo-de-garantia]] — a certificação por confiança coletiva.
 - [[plano-de-manejo-organico]] — o PMO como documento obrigatório.
 - [[caderneta-de-campo]] — o registro diário que sustenta a auditoria.
