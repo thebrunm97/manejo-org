@@ -36,6 +36,7 @@ import { useSatelliteMapStyle, maxZoomForProvider } from './useSatelliteMapStyle
 import MapDrawControl from './MapDrawControl';
 import MapLayersPanel from './MapLayersPanel';
 import { cn } from '../../utils/cn';
+import { useMapDataUsageTracking } from '../../hooks/map/useMapDataUsageTracking';
 
 interface GeoJSONData {
     type: 'FeatureCollection';
@@ -265,6 +266,10 @@ const FarmMapInner: React.FC<FarmMapProps> = (props) => {
     const [mapReady, setMapReady] = useState(false);
     const [drawInstance, setDrawInstance] = useState<MapboxDraw | null>(null);
     const { style: satelliteStyle, provider: satelliteProvider, usingFallback: satelliteFallback } = useSatelliteMapStyle();
+
+    // Só mede consumo de dados de rede (tiles, satélite) enquanto o mapa
+    // está aberto — não muda nenhum comportamento. Ver hook para o porquê.
+    useMapDataUsageTracking('farm-map');
 
     useEffect(() => {
         const googleKeyConfigured = Boolean(import.meta.env.VITE_GOOGLE_MAPS_TILES_KEY);
