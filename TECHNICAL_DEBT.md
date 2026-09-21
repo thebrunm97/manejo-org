@@ -61,18 +61,14 @@ _(nenhum item aberto no momento — ver 🟢 Concluído: F13, F17, F22 e F24)_
 - **Problema:** Páginas experimentais publicadas no bundle de produção sem gate de ambiente; `/lab` pode expor utilitários que quebram em prod.
 - **Sugestão:** Bloquear por `import.meta.env.DEV` ou mover para build separado; nunca expor em produção sem guarda.
 
-### F28 — `vitest run` coleta os specs do Playwright em `e2e/`, e 15 testes de componente falham por timeout de `waitFor`
-- **Evidência:** `npx vitest run` (2026-09-09) — 25 de 52 arquivos "falham", mas 14 desses são `e2e/**/*.spec.ts` (compliance-multimodality, auth-regression, manual-record-dialog, etc.), que usam a API do Playwright, não a do vitest; o glob padrão do vitest não exclui `e2e/`. Cross-ref DT-129 (E2E sem secrets/ambiente configurado) — mesma família de débito de infraestrutura de teste, achado diferente.
-- **Problema:** Além disso, 15 testes de verdade falham por `waitFor` expirando após ações como "abrir modal e adicionar item" ou "upload de arquivo": `Secao2`, `Secao3`, `Secao9`, `Secao10`, `Secao11`, `Secao13`, `Secao15`, `Secao18`, `Coordenadas`, `DadosCadastrais`. Confirmado que não é regressão do trabalho de segurança desta sessão (backend/RLS, nenhum arquivo de frontend tocado) nem do `resendConfirmation` em progresso em `AuthContext`/`AuthCoreContext` (mudança puramente aditiva, sem relação com essas telas) — padrão de falha pré-existente, ainda não investigado a fundo.
-- **Sugestão:** Excluir `e2e/**` do `test.include` do vitest (`vite.config.ts`) pra parar de coletar specs do Playwright; investigar separadamente por que os 15 testes de componente estão dando timeout no `waitFor` (suspeita: mock de callback assíncrono não resolvendo, ou timeout padrão curto demais pra essas interações).
+### F28 — parcialmente resolvido: glob do vitest corrigido, os 15 timeouts de `waitFor` continuam abertos
+- **Evidência:** `npx vitest run` (2026-09-09) — 25 de 52 arquivos "falhavam", mas 14 desses eram `e2e/**/*.spec.ts` (compliance-multimodality, auth-regression, manual-record-dialog, etc.), que usam a API do Playwright, não a do vitest; o glob padrão do vitest não excluía `e2e/`. Cross-ref DT-129 (E2E sem secrets/ambiente configurado) — mesma família de débito de infraestrutura de teste, achado diferente.
+- **Corrigido em 2026-09-17:** adicionado `exclude: ['**/node_modules/**', '**/dist/**', 'e2e/**']` em `vite.config.ts` — vitest para de coletar specs do Playwright.
+- **Ainda em aberto:** 15 testes de verdade falham por `waitFor` expirando após ações como "abrir modal e adicionar item" ou "upload de arquivo": `Secao2`, `Secao3`, `Secao9`, `Secao10`, `Secao11`, `Secao13`, `Secao15`, `Secao18`, `Coordenadas`, `DadosCadastrais`. Confirmado, reconfirmado em 2026-09-17 e 2026-09-19: contagem idêntica (10 arquivos falhando/15 testes/215 passando) antes e depois de várias sessões de mudança no backend E no frontend — não é regressão de nada feito depois, é pré-existente. Ainda não investigado a fundo (suspeita: mock de callback assíncrono não resolvendo, ou timeout padrão curto demais pra essas interações).
 
 ---
 
 ## 🟢 Baixa Prioridade / Higiene
-
-### F3 — `setupFiles` do Vitest aponta para `.js` inexistente
-- **Evidência:** `pmo-frontend/vite.config.ts:85` → `./src/setupTests.js`; arquivo existe como `.ts`
-- **Sugestão:** Corrigir para `./src/setupTests.ts`.
 
 ### F4 — PWA precacheia `robots.txt` e `apple-touch-icon.png` ausentes
 - **Evidência:** `pmo-frontend/vite.config.ts:52`; `Test-Path` = False para ambos (e para `favicon.ico`)
@@ -168,6 +164,11 @@ Levantamento do que mais precisa de atenção, checado no código (não é lista
 ---
 
 ## 🟢 Concluído
+
+### F3 — `setupFiles` do Vitest apontava para `.js` inexistente
+**Concluído em 2026-09-17.** `pmo-frontend/vite.config.ts:85` apontava pra `./src/setupTests.js`,
+mas o arquivo existe como `.ts` — o vitest silenciosamente não carregava o setup (`jest-dom`
+matchers, mock de `AuthContext`). Corrigido para `./src/setupTests.ts`.
 
 ### F24 — `update_profile` aceita mapa arbitrário (escreve colunas indevidas)
 **Concluído** (achado já resolvido em produção ao auditar, confirmado ao vivo via introspecção de
