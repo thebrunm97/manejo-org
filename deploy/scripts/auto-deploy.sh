@@ -136,12 +136,17 @@ if [ ${#servicos[@]} -gt 0 ]; then
     echo "$alvo" >"$STATE_DIR/failed"
     exit 1
   fi
-  "${COMPOSE[@]}" up -d --no-deps "${servicos[@]}" >>"$STATE_DIR/build.log" 2>&1
+  # --force-recreate: sem ele o compose às vezes mantém o container antigo
+  # ("Running") mesmo com :latest apontando para imagem nova — aconteceu no
+  # primeiro ciclo real, e o health check aprovou o container velho.
+  "${COMPOSE[@]}" up -d --no-deps --force-recreate "${servicos[@]}" >>"$STATE_DIR/build.log" 2>&1
 fi
 
 saudavel() {
   local s="$1" c="$PROJECT-$1-1"
   [ "$(docker inspect -f '{{.State.Status}}' "$c" 2>/dev/null)" = running ] || return 1
+  # Tem que estar rodando a imagem que acabou de ser buildada.
+  [ "$(docker inspect -f '{{.Image}}' "$c")" = "$(docker image inspect -f '{{.Id}}' "$PROJECT-$s:latest")" ] || return 1
   [ "$(docker inspect -f '{{.RestartCount}}' "$c")" = 0 ] || return 1
   if docker logs --since 5m "$c" 2>&1 | grep -qE '^panic:|fatal error:'; then return 1; fi
   if [ "$s" = pmo-frontend ]; then
@@ -164,7 +169,7 @@ if [ ${#falhos[@]} -gt 0 ]; then
     docker tag "$PROJECT-$s:latest" "$PROJECT-$s:falhou-auto-deploy"
     docker tag "$PROJECT-$s:pre-auto-deploy" "$PROJECT-$s:latest"
   done
-  "${COMPOSE[@]}" up -d --no-deps "${servicos[@]}" >>"$STATE_DIR/build.log" 2>&1
+  "${COMPOSE[@]}" up -d --no-deps --force-recreate "${servicos[@]}" >>"$STATE_DIR/build.log" 2>&1
   log "ROLLBACK ${alvo:0:7}: health check falhou em [${falhos[*]}] — imagens anteriores restauradas (a quebrada ficou em :falhou-auto-deploy)"
   echo "$alvo" >"$STATE_DIR/failed"
   exit 1

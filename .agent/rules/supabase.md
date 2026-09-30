@@ -32,3 +32,18 @@ Antes de modificar o banco de dados, consultar:
 - **Chaves de API NUNCA no SQL.** Usar variáveis de ambiente.
 - **RLS:** deve garantir que usuários só acessam dados do seu próprio PMO.
 - **Service role key:** é APENAS para o backend. Frontend usa anon key.
+
+## Aplicando migration direto em produção (MCP) — não criar drift
+O `apply_migration` do MCP registra a migration em
+`supabase_migrations.schema_migrations` com o **timestamp da hora em que
+rodou**, não com a versão do arquivo. Foi isso que quebrou o pipeline
+`Deploy to Production` de 2026-09-08 a 2026-09-30 (histórico do repo ≠
+produção; sincronizado em 2026-09-30). Ao aplicar via MCP:
+1. Depois do `apply_migration`, renomeie o arquivo local para a versão que
+   produção registrou (`list_migrations`) — **ou** rode o SQL com
+   `execute_sql` e insira a linha em `schema_migrations` com a versão do
+   arquivo.
+2. Nunca aplique em produção uma migration de "reconciliação" (que faz
+   `DROP TABLE` para bancos novos): só registre em `schema_migrations`.
+3. Confira: `md5(string_agg(version, ',' order by version))` em produção
+   tem que bater com a lista de arquivos de `supabase/migrations/`.
