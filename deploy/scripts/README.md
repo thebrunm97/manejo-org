@@ -11,6 +11,7 @@ Ordem de execução (ver conversa/checklist completo nas fases 0–7):
 | `04-cutover-vps.sh` | VPS | 5 | Recria os containers com os dados reais, acompanha reconexão do WhatsApp |
 | `05-validate-fase6.sh` | VPS | 6 | Checklist de validação ponta a ponta |
 | `06-deploy-ai-memory.sh` | VPS | — | Sobe o ai-memory (memória de longo prazo cross-agent) mesclado na mesma stack/Caddy. Independente das fases 0-6, roda quando quiser depois que a VPS já estiver de pé. |
+| `auto-deploy.sh` | VPS (cron) | — | Deploy contínuo (DT-128): a cada 5 min busca o `origin/main` e, se CI e `go test` passarem, rebuilda só `pmo-bot-go`/`pmo-frontend`/Caddy afetados, com health check e rollback automático. Instalar uma vez com `--install-cron`. Log em `~/.local/state/pmo-auto-deploy/deploy.log`. |
 
 Todos exigem variáveis de ambiente específicas (`REPO_URL`, `VPS_HOST`, etc.) —
 cada script lista as suas no cabeçalho e falha cedo se faltar alguma.
