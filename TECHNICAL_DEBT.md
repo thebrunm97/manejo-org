@@ -247,6 +247,17 @@ React aplica estilo via atributo `style=""`, que a CSP trata como inline — sem
 SPA estático servido por arquivo. Caddyfile validado com `caddy validate` (imagem oficial via
 Docker); `vercel.json` validado como JSON bem formado.
 
+**Correção pós-deploy (2026-09-30):** a CSP só entrou em produção no redeploy de 2026-09-30 e a
+allowlist original estava incompleta. Varredura dos hosts `https://` presentes nos bundles
+servidos achou quatro bloqueios reais: o mapa de satélite de fallback (ESRI,
+`server.arcgisonline.com` — é o caminho ativo, já que `VITE_GOOGLE_MAPS_TILES_KEY` não está
+configurada; MapLibre baixa tiles via `fetch`, então precisa de `connect-src` além de `img-src`),
+a geocodificação do onboarding (`nominatim.openstreetmap.org`, `fetch` → `connect-src`) e as
+fotos de fundo de login/cadastro/landing/onboarding (`images.unsplash.com`,
+`images.pexels.com` → `img-src`). Adicionados no Caddyfile e no `vercel.json`, frontend
+rebuildado e redeployado, header conferido no container. (`api.mapbox.com` aparece no bundle
+mas é string interna do MapLibre, não chamada pelo app.)
+
 ### F1 — Injeção de sessão via token na URL (`OnboardingPage`)
 **Concluído em:** 2026-09-09 (achado ao verificar o código antes de gerar um prompt de correção
 pro BigPickle — a entrada abaixo estava desatualizada, o código real já tinha sido substituído).

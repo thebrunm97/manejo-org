@@ -21,7 +21,7 @@
 	# atributo style="" (prop style={{}}), que a CSP trata como inline --
 	# nao ha nonce viavel pra isso num SPA estatico servido por arquivo.
 	header {
-		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://tile.googleapis.com https://tile.openstreetmap.org https://hejewayflbuemnffrhae.supabase.co; connect-src 'self' https://hejewayflbuemnffrhae.supabase.co wss://hejewayflbuemnffrhae.supabase.co https://bot.fyto.io https://tile.googleapis.com https://*.sentry.io https://*.ingest.sentry.io; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://tile.googleapis.com https://tile.openstreetmap.org https://server.arcgisonline.com https://images.unsplash.com https://images.pexels.com https://hejewayflbuemnffrhae.supabase.co; connect-src 'self' https://server.arcgisonline.com https://nominatim.openstreetmap.org https://hejewayflbuemnffrhae.supabase.co wss://hejewayflbuemnffrhae.supabase.co https://bot.fyto.io https://tile.googleapis.com https://*.sentry.io https://*.ingest.sentry.io; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
 		X-Frame-Options "DENY"
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"

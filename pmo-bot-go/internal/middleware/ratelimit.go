@@ -24,14 +24,23 @@ import (
 // RateLimitBox guarda um ports.RateLimiter trocável após a criação do
 // middleware, para acomodar a ordem de boot em main.go (as rotas são
 // registradas antes do Redis estar disponível).
+//
+// atomic.Pointer de um holder, não atomic.Value direto: atomic.Value exige
+// que todo Store tenha o MESMO tipo concreto, e aqui a box nasce com
+// NoopRateLimiter e depois recebe o limiter do Redis (outro tipo) — isso
+// derrubava o bot no boot com "store of inconsistently typed value".
 type RateLimitBox struct {
-	limiter atomic.Value // ports.RateLimiter
+	limiter atomic.Pointer[limiterHolder]
+}
+
+type limiterHolder struct {
+	l ports.RateLimiter
 }
 
 // NewRateLimitBox cria uma box já com NoopRateLimiter — nunca fica nil.
 func NewRateLimitBox() *RateLimitBox {
 	b := &RateLimitBox{}
-	b.limiter.Store(ports.RateLimiter(ports.NoopRateLimiter{}))
+	b.limiter.Store(&limiterHolder{l: ports.NoopRateLimiter{}})
 	return b
 }
 
@@ -39,7 +48,7 @@ func NewRateLimitBox() *RateLimitBox {
 // boot, antes do servidor aceitar tráfego real.
 func (b *RateLimitBox) SetLimiter(l ports.RateLimiter) {
 	if l != nil {
-		b.limiter.Store(l)
+		b.limiter.Store(&limiterHolder{l: l})
 	}
 }
 
@@ -49,7 +58,7 @@ func (b *RateLimitBox) SetLimiter(l ports.RateLimiter) {
 // conforme o contrato de ports.RateLimiter: falha do backend deixa passar.
 func (b *RateLimitBox) Middleware(operacao string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		limiter := b.limiter.Load().(ports.RateLimiter)
+		limiter := b.limiter.Load().l
 
 		userID := c.GetString(ContextUserID)
 		if userID == "" {
