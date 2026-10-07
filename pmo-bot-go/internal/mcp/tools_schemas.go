@@ -103,6 +103,40 @@ type SelecionarPMOSchema struct {
 	AnoSafra string `json:"ano_safra"`
 }
 
+// Schemas de validação das ferramentas individuais registrar_compostagem,
+// registrar_compra_insumo, registrar_limpeza e registrar_venda.
+//
+// Antes elas validavam com os structs de cima (RegistrarCompostagemSchema
+// etc.), que usam os nomes de campo da ferramenta de LOTE — não os que a
+// própria ferramenta anuncia ao LLM. Resultado: o validador sempre acusava
+// "faltam campos obrigatórios" e essas 4 ferramentas nunca gravavam nada.
+// Os structs de cima continuam valendo para registrar_lote_operacoes
+// (OperacaoLoteItem). TestSchemaDeValidacaoBateComParametrosAnunciados
+// impede que os dois lados voltem a divergir.
+
+type RegistrarCompostagemToolSchema struct {
+	Acao               string `json:"acao" validate:"required"`
+	IdentificadorPilha string `json:"identificador_pilha" validate:"required"`
+}
+
+type RegistrarCompraInsumoToolSchema struct {
+	Produto           string  `json:"produto" validate:"required"`
+	QuantidadeValor   float64 `json:"quantidade_valor" validate:"required,gt=0"`
+	QuantidadeUnidade string  `json:"quantidade_unidade" validate:"required"`
+}
+
+type RegistrarLimpezaToolSchema struct {
+	ItemArea    string `json:"item_area" validate:"required"`
+	TipoLimpeza string `json:"tipo_limpeza" validate:"required"`
+}
+
+type RegistrarVendaToolSchema struct {
+	Produto    string `json:"produto" validate:"required"`
+	Quantidade string `json:"quantidade" validate:"required"`
+	Unidade    string `json:"unidade" validate:"required"`
+	Destinacao string `json:"destinacao" validate:"required"`
+}
+
 type OperacaoLoteItem struct {
 	Tipo        string                      `json:"tipo" validate:"required"`
 	Limpeza     *RegistrarLimpezaSchema     `json:"limpeza,omitempty"`

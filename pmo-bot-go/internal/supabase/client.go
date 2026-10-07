@@ -2328,15 +2328,18 @@ func (c *Client) CriarPropriedadeComPMO(ctx context.Context, userID, nome string
 	propID := createdProp[0].ID
 
 	// 2. Insert initial PMO
+	//
+	// Sem cultura/produtividade_kg_ha: essas colunas só existiam em bancos
+	// montados pelo baseline das migrations, nunca em produção — lá o
+	// PostgREST rejeitava o insert inteiro e a propriedade ficava sem PMO
+	// (ver 20261007120000_reconcilia_schema_prod_vs_migrations.sql).
 	anoAtual := fmt.Sprintf("%d", time.Now().Year())
 	pmoRecord := map[string]interface{}{
-		"propriedade_id":      propID,
-		"user_id":             userID,
-		"nome_identificador":  fmt.Sprintf("PMO %s - %s", nome, anoAtual),
-		"status":              "ativo",
-		"cultura":             "Geral / Diversificada",
-		"produtividade_kg_ha": 0,
-		"version":             1,
+		"propriedade_id":     propID,
+		"user_id":            userID,
+		"nome_identificador": fmt.Sprintf("PMO %s - %s", nome, anoAtual),
+		"status":             "ativo",
+		"version":            1,
 		"form_data": map[string]interface{}{
 			"ano_safra":               anoAtual,
 			"modalidade_predominante": modalidade,

@@ -3,165 +3,56 @@
 package e2e
 
 import (
-	"bytes"
-	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
-	"net/http/httptest"
-	"os"
 	"testing"
-	"time"
-
-	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
-	"github.com/thebrunm97/pmo-bot-go/internal/config"
-	"github.com/thebrunm97/pmo-bot-go/internal/history"
-	"github.com/thebrunm97/pmo-bot-go/internal/ports"
-	"github.com/thebrunm97/pmo-bot-go/internal/webhook"
 )
 
-// MockMessageSender avoids sending real WhatsApp messages during tests.
-// Implementa ports.ChannelSender (Send/SendTyping/DownloadMedia) -- a
-// interface antiga (SendMessage/SendVoice/SendReply/DownloadAudio/
-// DownloadImage/SetPresence/SendPresence/SendButton) foi substituída por
-// ChannelSender em algum refactor que não atualizou este mock, quebrando a
-// compilação dos testes E2E (build tag e2e não roda no CI normal, por isso
-// passou despercebido).
-type MockMessageSender struct {
-	SentMessages []string
-}
-
-func (m *MockMessageSender) Send(ctx context.Context, env ports.OutboundEnvelope) error {
-	m.SentMessages = append(m.SentMessages, env.Text)
-	return nil
-}
-func (m *MockMessageSender) SendTyping(ctx context.Context, channel ports.ChannelType, to string) error {
-	return nil
-}
-func (m *MockMessageSender) DownloadMedia(ctx context.Context, mediaID string, rawPayload []byte) ([]byte, string, error) {
-	return nil, "", nil
-}
-
+// Despesa vai para transacoes_financeiras com o valor em valor_total (não
+// valor/amount).
 func TestExpenseMutationE2E(t *testing.T) {
 	client := SetupSupabaseClient(t)
+	TeardownE2E(t, client)
 	defer TeardownE2E(t, client)
 
-	url := os.Getenv("SUPABASE_URL")
-	key := os.Getenv("SUPABASE_KEY")
+	bot := novoBotE2E(t, client)
+	bot.enviar(t, "Comprei 10 sacos de adubo por 500 reais")
 
-	// 1. Instanciar LLM real (Gemini) e dependências básicas
-	_ = config.LoadConfig()
-
-	llmProvider := SetupLLMProvider(t)
-
-	historyManager := history.NewManager(5*time.Minute, 10)
-	mockWpp := &MockMessageSender{}
-
-	// 2. Configurar Webhook Handler
-	whConfig := webhook.Config{
-		Token:          "test-e2e-token",
-		MaxMessageAge:  600,
-		SupabaseClient: client,
-		LLMClient:      llmProvider,
-		WhatsAppClient: mockWpp,
-		HistoryManager: historyManager,
-	}
-
-	whHandler := webhook.NewHandler(whConfig)
-
-	// 3. Subir httptest server
-	gin.SetMode(gin.TestMode)
-	r := gin.New()
-	whHandler.RegisterRoutes(r)
-
-	ts := httptest.NewServer(r)
-	defer ts.Close()
-
-	// 4. Construir o payload fake da Evolution API
-	// Supomos que "999999999" (ou formato E164) resolve para o PMO 9999 no BD.
-	// O Seed de produção deve ter um PMO com ID 9999 e telefone 5511999999999 associado.
-	payload := map[string]interface{}{
-		"event": "messages.upsert",
-		"data": map[string]interface{}{
-			"info": map[string]interface{}{
-				"ID":       "MSG_E2E_EXPENSE_1",
-				"Chat":     "5511999999999@s.whatsapp.net",
-				"Sender":   "5511999999999@s.whatsapp.net",
-				"IsFromMe": false,
-				"Type":     "text",
-			},
-			"message": map[string]interface{}{
-				"conversation": "Comprei 10 sacos de adubo por 500 reais",
-			},
-		},
-	}
-
-	body, err := json.Marshal(payload)
-	assert.NoError(t, err)
-
-	// Token via Authorization: Bearer -- handleWebhook parou de aceitar
-	// ?token= na query string (vazava em logs de proxy/referrer).
-	reqURL := fmt.Sprintf("%s/webhook", ts.URL)
-	req, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewBuffer(body))
-	assert.NoError(t, err)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer test-e2e-token")
-
-	// 5. Enviar Request HTTP (Pode demorar uns segundos enquanto bate no LLM)
-	t.Log("Enviando requisição de webhook... Aguardando resposta do LLM...")
-	start := time.Now()
-	
-	httpClient := &http.Client{Timeout: 30 * time.Second}
-	resp, err := httpClient.Do(req)
-	assert.NoError(t, err)
-	defer resp.Body.Close()
-
-	assert.Equal(t, http.StatusOK, resp.StatusCode, "O Webhook deve retornar 200")
-	t.Logf("Webhook processado em %v", time.Since(start))
-
-	// Como o webhook executa a lógica legacy ou handler principal (que pode ser async em algumas partes, 
-	// mas a resposta LLM geralmente ocorre antes do webhook acabar no modelo legacy sem fila),
-	// damos uma margem de segurança de 2 segs se for 100% async. 
-	time.Sleep(2 * time.Second)
-
-	// 6. Verificar o BD (Tabela: transacoes_financeiras)
-	getURL := fmt.Sprintf("%s/rest/v1/transacoes_financeiras?pmo_id=eq.%d", url, TestPMOID)
-	getReq, err := http.NewRequest(http.MethodGet, getURL, nil)
-	assert.NoError(t, err)
-
-	getReq.Header.Set("apikey", key)
-	getReq.Header.Set("Authorization", "Bearer "+key)
-
-	getResp, err := httpClient.Do(getReq)
-	assert.NoError(t, err)
-	defer getResp.Body.Close()
-
-	assert.Equal(t, http.StatusOK, getResp.StatusCode)
-
-	getRespBody, _ := io.ReadAll(getResp.Body)
-	var records []map[string]interface{}
-	err = json.Unmarshal(getRespBody, &records)
-	assert.NoError(t, err)
-
-	assert.GreaterOrEqual(t, len(records), 1, "Deveria haver pelo menos 1 transação inserida")
-
-	foundAmount := false
-	for _, rec := range records {
-		// A coluna de valor pode se chamar "valor", "amount", etc. 
-		// Assumimos que o json unmarshal para float64, conferimos se 500 está presente
-		if val, ok := rec["valor"].(float64); ok && val == 500 {
-			foundAmount = true
-			break
-		} else if amount, ok := rec["amount"].(float64); ok && amount == 500 {
-			foundAmount = true
-			break
+	consulta := fmt.Sprintf("transacoes_financeiras?pmo_id=eq.%d&select=id,tipo,valor_total", TestPMOID)
+	registrouDespesa := func() bool {
+		for _, rec := range restGet(t, consulta) {
+			if v, ok := rec["valor_total"].(float64); ok && v == 500 {
+				return true
+			}
 		}
+		return false
 	}
-	assert.True(t, foundAmount, "A transação financeira no valor de 500 não foi encontrada")
-	
-	if len(mockWpp.SentMessages) > 0 {
-		t.Logf("Bot respondeu: %s", mockWpp.SentMessages[len(mockWpp.SentMessages)-1])
+
+	confirmarSePedido(t, bot, registrouDespesa)
+
+	if !registrouDespesa() {
+		t.Fatalf("nenhuma transação com valor_total=500; registros: %v", restGet(t, consulta))
 	}
+}
+
+// confirmarSePedido espera o bot reagir à primeira mensagem. Ferramentas que
+// gravam dados exigem confirmação explícita do produtor (middleware do MCP,
+// RequiresConfirmation): se nada foi gravado depois da primeira resposta, o
+// teste confirma uma vez e espera de novo. Não dá para detectar o pedido pelo
+// texto — o LLM reescreve a frase a cada execução.
+func confirmarSePedido(t *testing.T, bot *botE2E, gravou func() bool) {
+	t.Helper()
+	esperarAte(esperaProcessamento, func() bool { return gravou() || len(bot.whatsapp.Mensagens()) > 0 })
+	if gravou() {
+		return
+	}
+
+	msgs := bot.esperarResposta(t, 1)
+	if len(msgs) == 0 {
+		t.Fatalf("o bot não respondeu nem gravou nada em %s", esperaProcessamento)
+	}
+
+	t.Log("Nada gravado ainda — confirmando como o produtor faria")
+	bot.enviar(t, "Sim, confirmo")
+	esperarAte(esperaProcessamento, gravou)
+	bot.esperarResposta(t, len(msgs)+1)
 }

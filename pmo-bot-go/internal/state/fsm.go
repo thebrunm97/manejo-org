@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
@@ -61,7 +62,9 @@ func getSessionMutex(phone string) *sync.Mutex {
 func ProcessMessage(ctx context.Context, msg ports.IncomingEnvelope, sbClient *supabase.Client, groqClient *groq.Client, wpClient ports.ChannelSender, llmClient LLMClient, ttsClient ports.Synthesizer, mcpServer *mcp.Server, historyManager *history.Manager, flgClient *flagsmith.Client, routerCfg RouterConfig, memoryCache ports.MemoryCacheService) (res ProcessResult) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("🔥 [FSM-PANIC] Erro interno catastrófico: %v", r)
+			// Com o stack: sem ele o log dizia só "nil pointer dereference",
+			// sem nenhuma pista de onde (achado ao rodar os testes E2E).
+			log.Printf("🔥 [FSM-PANIC] Erro interno catastrófico: %v\n%s", r, debug.Stack())
 			res = ProcessResult{Success: false, Reason: "internal_panic"}
 		}
 	}()

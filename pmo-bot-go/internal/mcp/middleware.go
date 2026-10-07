@@ -3,6 +3,8 @@ package mcp
 import (
 	"context"
 	"fmt"
+	"log"
+	"reflect"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
@@ -25,18 +27,45 @@ type ToolOptions struct {
 	CustomValidator func(schema interface{}) error
 }
 
+// MotivoConfirmacaoPendente marca o resultado de uma ferramenta que NÃO
+// executou porque falta a confirmação do produtor. O orquestrador usa isso
+// para não deixar o LLM anunciar como feito algo que não foi gravado.
+const MotivoConfirmacaoPendente = "confirmacao_pendente"
+
 // Validator instance (thread-safe, can be shared)
 var validate = validator.New()
 
 // wrapWithMiddleware wraps a tool's base handler with validation, dry-run, and confirmation checks.
 func wrapWithMiddleware(opts ToolOptions, baseHandler ToolHandler) ToolHandler {
+	checado := checkBeforeExecute(opts, baseHandler)
+	return func(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
+		res, err := checado(ctx, args, tenant)
+		// Quando a ferramenta NÃO executa (validação ou confirmação pendente),
+		// só o LLM ficava sabendo — e ele reescreve o motivo como quiser
+		// (num teste E2E virou "tive um problema ao registrar"). Sem este log
+		// não havia como saber por que um registro não foi gravado.
+		if m, ok := res.(map[string]interface{}); ok && m["status"] == "requires_user_input" {
+			log.Printf("⏸️ [MCP-GUARD] Ferramenta não executada: %v | args=%v", m["message"], args)
+		}
+		return res, err
+	}
+}
+
+func checkBeforeExecute(opts ToolOptions, baseHandler ToolHandler) ToolHandler {
 	return func(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
 		
 		// 1. Schema Check
 		if opts.Schema != nil {
+			// Instância nova a cada chamada: antes o decode ia direto em
+			// opts.Schema, um único ponteiro compartilhado por todas as
+			// chamadas da ferramenta — corrida entre produtores simultâneos
+			// e, pior, campo que sobrava da chamada anterior fazia o
+			// "required" passar mesmo quando o LLM não mandou o campo.
+			schema := reflect.New(reflect.TypeOf(opts.Schema).Elem()).Interface()
+
 			// Convert map[string]interface{} to the provided struct
 			decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
-				Result:           opts.Schema,
+				Result:           schema,
 				TagName:          "json",
 				Squash:           true,
 				WeaklyTypedInput: true,
@@ -53,13 +82,13 @@ func wrapWithMiddleware(opts ToolOptions, baseHandler ToolHandler) ToolHandler {
 			}
 
 			// Validate using go-playground/validator
-			if err := validate.Struct(opts.Schema); err != nil {
+			if err := validate.Struct(schema); err != nil {
 				return formatValidationError(err)
 			}
 
 			// Custom Validation (Business Rules)
 			if opts.CustomValidator != nil {
-				if err := opts.CustomValidator(opts.Schema); err != nil {
+				if err := opts.CustomValidator(schema); err != nil {
 					return map[string]interface{}{
 						"status":  "requires_user_input",
 						"message": fmt.Sprintf("A validação da regra de negócio falhou: %s. Por favor, instrua o usuário sobre o que está errado e peça os dados corretos ou o que fazer em seguida.", err.Error()),
@@ -83,6 +112,7 @@ func wrapWithMiddleware(opts ToolOptions, baseHandler ToolHandler) ToolHandler {
 				// The tool requires confirmation, but the LLM didn't provide confirmed: true
 				return map[string]interface{}{
 					"status":  "requires_user_input",
+					"motivo":  MotivoConfirmacaoPendente,
 					"message": "Atenção: Esta é uma operação crítica que modifica dados. Você DEVE pedir permissão explícita ao usuário antes de prosseguir. Responda ao usuário com: 'Confirma a execução desta ação na sua fazenda?'",
 				}, nil
 			}

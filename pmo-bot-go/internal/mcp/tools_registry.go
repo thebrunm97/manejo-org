@@ -328,7 +328,7 @@ func (s *Server) InitializeTools() {
 		},
 		Category: CategoryDBWrite,
 		Options: &ToolOptions{
-			Schema:               &RegistrarLimpezaSchema{},
+			Schema:               &RegistrarLimpezaToolSchema{},
 			RequiresConfirmation: true,
 		},
 		Handler:  s.handleRegistrarLimpeza,
@@ -396,7 +396,7 @@ func (s *Server) InitializeTools() {
 		},
 		Category: CategoryDBWrite,
 		Options: &ToolOptions{
-			Schema:               &RegistrarCompostagemSchema{},
+			Schema:               &RegistrarCompostagemToolSchema{},
 			RequiresConfirmation: true,
 		},
 		Handler:  s.handleRegistrarCompostagem,
@@ -469,7 +469,7 @@ func (s *Server) InitializeTools() {
 		},
 		Category: CategoryDBWrite,
 		Options: &ToolOptions{
-			Schema:               &RegistrarCompraSchema{},
+			Schema:               &RegistrarCompraInsumoToolSchema{},
 			RequiresConfirmation: true,
 		},
 		Handler:  s.handleRegistrarCompraInsumo,
@@ -573,7 +573,7 @@ func (s *Server) InitializeTools() {
 		},
 		Category: CategoryDBWrite,
 		Options: &ToolOptions{
-			Schema:               &RegistrarVendaSchema{},
+			Schema:               &RegistrarVendaToolSchema{},
 			RequiresConfirmation: true,
 		},
 		Handler:  s.handleRegistrarVenda,

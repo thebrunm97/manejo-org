@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -65,6 +66,11 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 	var trace []TraceEvent
 	var usage llm.UsoMetadados
 	var lastToolMsg string
+	// Ferramenta de gravação que parou esperando confirmação do produtor. Se
+	// continuar pendente ao fim do loop, a resposta final é o pedido de
+	// confirmação — nunca o texto do LLM, que nos testes E2E chegou a
+	// anunciar "✅ Colheita registrada" com nada gravado.
+	var confirmacaoPendente *llm.ChamadaFerramentaAgnostica
 	var usedTools []string
 	effectiveModel := o.LLM.ModelName()
 
@@ -213,6 +219,12 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 
 			finalTexto = sanitizeResponse(finalTexto)
 
+			if confirmacaoPendente != nil {
+				log.Printf("🛡️ [Orchestrator] %s aguarda confirmação — resposta do LLM substituída pelo pedido de confirmação (texto original: %q)", confirmacaoPendente.Nome, finalTexto)
+				finalTexto = textoPedidoConfirmacao(*confirmacaoPendente)
+				history[len(history)-1].Content = finalTexto
+			}
+
 			if finalTexto != "" && o.OutputJudge != nil {
 				// Mesma derivação usada pela telemetria (loopIntent): manter as
 				// duas cópias em sincronia era convite a divergência silenciosa.
@@ -350,6 +362,13 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 				resMap, ok = toolResp.Result.(map[string]interface{})
 				if !ok {
 					resMap = map[string]interface{}{"result": toolResp.Result}
+				}
+
+				if resMap["motivo"] == mcp.MotivoConfirmacaoPendente {
+					pendente := tc
+					confirmacaoPendente = &pendente
+				} else if confirmacaoPendente != nil && confirmacaoPendente.Nome == tc.Nome {
+					confirmacaoPendente = nil // a mesma ferramenta executou depois
 				}
 
 				if msg, ok := resMap["message"].(string); ok && msg != "" {
@@ -550,3 +569,26 @@ func intentFromSystemPrompt(systemPrompt string) string {
 	}
 }
 
+// textoPedidoConfirmacao monta, sem LLM, o pedido de confirmação de uma
+// ferramenta de gravação que ainda não executou, com os dados que serão
+// salvos — para o produtor conferir antes de responder SIM.
+func textoPedidoConfirmacao(tc llm.ChamadaFerramentaAgnostica) string {
+	acao := strings.ReplaceAll(strings.TrimPrefix(tc.Nome, "registrar_"), "_", " ")
+
+	chaves := make([]string, 0, len(tc.Args))
+	for k, v := range tc.Args {
+		if v == nil || v == "" || k == "confirmed" || k == "dry_run" || k == "idempotency_key" || k == "raw_payload_id" {
+			continue
+		}
+		chaves = append(chaves, k)
+	}
+	sort.Strings(chaves)
+
+	var b strings.Builder
+	fmt.Fprintf(&b, "📝 *Confirma o registro de %s?*\n", acao)
+	for _, k := range chaves {
+		fmt.Fprintf(&b, "\n• %s: %v", strings.ReplaceAll(k, "_", " "), tc.Args[k])
+	}
+	b.WriteString("\n\nResponda *SIM* para salvar, ou me diga o que corrigir. Ainda não salvei nada.")
+	return b.String()
+}
