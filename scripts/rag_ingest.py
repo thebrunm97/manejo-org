@@ -80,7 +80,7 @@ import argparse
 import tempfile
 import subprocess
 import requests
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 from pathlib import Path
 
 # Root of the project = parent of the 'scripts/' directory
@@ -319,8 +319,8 @@ def upsert_farm_documents(records: List[Dict[str, Any]]) -> None:
     sb.table("farm_documents").upsert(records, on_conflict="chunk_hash").execute()
 
 
-def process_pdf(filepath: Path, categoria: str = "geral") -> None:
-    logger.info(f"📄 Processando: {filepath.name}  [{categoria}]")
+def process_pdf(filepath: Path, categoria: str = "geral", pais: Optional[str] = "BR") -> None:
+    logger.info(f"📄 Processando: {filepath.name}  [{categoria}] pais={pais or 'universal'}")
 
     # 1. Extract text with PyMuPDF (UTF-8 safe)
     try:
@@ -371,6 +371,10 @@ def process_pdf(filepath: Path, categoria: str = "geral") -> None:
                 "embedding_1024":     pad(emb),
                 "chunk_hash":         chunk_hash(filepath.name, idx, text),
                 "source_document_id": filepath.stem,
+                # País a que o documento se aplica (None = universal). A busca
+                # só devolve documento global do país da propriedade — ver
+                # supabase/migrations/20261008130000_farm_documents_pais.sql.
+                "pais":               pais,
             })
 
         upsert_farm_documents(records)
@@ -399,7 +403,13 @@ def main() -> None:
     parser.add_argument("--force", action="store_true", help="Ignorar checkpoint e reindexa tudo")
     parser.add_argument("--dir", type=str, default=None,
                          help=f"Diretório de PDFs (padrão: {DEFAULT_INPUT_DIR})")
+    parser.add_argument("--pais", type=str, default="BR",
+                         help="País dos documentos (ISO alfa-2, ex.: BR, MZ) ou 'universal'. Padrão: BR (acervo atual).")
     args = parser.parse_args()
+
+    pais = None if args.pais.lower() == "universal" else args.pais.upper()
+    if pais is not None and not re.fullmatch(r"[A-Z]{2}", pais):
+        sys.exit(f"[ERROR] --pais inválido: {args.pais!r} (use BR, MZ... ou universal)")
 
     input_dir = Path(args.dir).resolve() if args.dir else DEFAULT_INPUT_DIR
 
@@ -425,11 +435,12 @@ def main() -> None:
                 continue
 
         try:
-            process_pdf(pdf_path, categoria)
+            process_pdf(pdf_path, categoria, pais)
             checkpoint[pdf_path.name] = {
                 "hash":          fhash,
                 "processed_at":  time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                 "categoria":     categoria,
+                "pais":          pais,
             }
             save_checkpoint(checkpoint)
         except Exception as e:

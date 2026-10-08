@@ -1,0 +1,12 @@
+# Fontes de Moçambique para a base técnica (RAG, farm_documents.pais = 'MZ').
+# Os PDFs NÃO são versionados (DT-124: histórico enxuto). Baixar com:
+#   python scripts/ingestion/fontes_mz.py
+# e ingerir com:
+#   python scripts/rag_ingest.py --dir pmo-bot-go/docs/knowledge_base_mz --pais MZ
+# O sha256 garante que o arquivo é o mesmo que foi revisado; se a fonte mudar,
+# o download falha e alguém precisa revisar de novo antes de atualizar o hash.
+arquivo,titulo,instituicao,ano,url,sha256,uso
+IIAM_Catalogo_Tecnologias_Libertadas_2011-2022.pdf,Catálogo de Tecnologias Libertadas pelo IIAM 2011-2022,IIAM / MADER,2022,https://iiam.gov.mz/wp-content/uploads/2025/07/Catalogo-de-Tecnologias-Libertadas-do-IIAM-2011-22-1.pdf,999dd46440e5f9e5de29e1231563de634e3cc6f8cf8c9c5d26eed1c7d1ec4605,RAG + tabela de variedades (internal/zae/dados/variedades_iiam.csv)
+Embrapa-IIAM_Horticultura_em_Mocambique_2015.pdf,"Horticultura em Moçambique: características, tecnologias de produção e de pós-colheita",Embrapa / IIAM,2015,https://www.infoteca.cnptia.embrapa.br/infoteca/bitstream/doc/1029218/1/HorticulturaemMocambiquePDF.pdf,c0703b49f2dc070ecb0f68de29c2ff04debd19402344e942b1a842fcee864b35,RAG + épocas recomendadas (internal/zae/dados/janelas_manual.csv)
+IIAM-CCAFS_Necessidades_Informacao_Adaptacao_Chicualacuala.pdf,Necessidades de Informação e Transferência de Tecnologias dos Produtores Agrários para Adaptação às Mudanças Climáticas no Distrito de Chicualacuala,IIAM / CCAFS,2022,https://iiam.gov.mz/wp-content/uploads/2022/05/CCAFS-Report-Necessidades-de-Informacao-Transferencia-de-Tecnologias-Distrito-de-Chicualacuala-FINAL.pdf,e164aa8edb025fe5b56b1f4c807bea689fa453a48d2e6fb88159cdca698a938d,RAG
+CGIAR-IIAM_Adaptacao_Climatica_Xai-Xai.pdf,Problems Faced and Strategies Adopted by Farmers for Adapting to Climate Change in Xai-Xai District,CGIAR / IIAM,2022,https://iiam.gov.mz/wp-content/uploads/2022/05/Problems-Faced-and-Strategies-Adopted-by-Farmers-for-Adapting-to-Climate-Change-in-Xai-Xai-District-Gaza-Province-Mozambique-.pdf,f4b6546af72dcb11d487bbe8038cd04495cd3dacd3579442a85a7290486df8ed,RAG

@@ -111,8 +111,28 @@ type Janela struct {
 	Revisado         bool   `json:"revisado_por_agronomo"`
 }
 
+// Variedade é uma ficha do "Catálogo de Tecnologias Libertadas pelo IIAM
+// 2011-2022" (dados/variedades_iiam.csv, gerado por
+// scripts/ingestion/iiam_variedades.py). Ficha é o texto ORIGINAL da fonte e é
+// dele que o bot deve responder; os demais campos só existem quando a extração
+// foi inequívoca (vazio = não extraído, nunca chutado).
+type Variedade struct {
+	Cultura       string `json:"cultura"`
+	Variedade     string `json:"variedade"`
+	Tipo          string `json:"tipo,omitempty"`
+	Maturacao     string `json:"maturacao,omitempty"`
+	Rendimento    string `json:"rendimento,omitempty"`
+	AnoLibertacao string `json:"ano_libertacao,omitempty"`
+	Ficha         string `json:"ficha"`
+	Pagina        int    `json:"pagina"`
+	NotaCuradoria string `json:"nota_curadoria,omitempty"`
+	Fonte         string `json:"fonte"`
+	FonteURL      string `json:"fonte_url"`
+}
+
 // Tabela é o conjunto validado de zonas, distritos e janelas.
 type Tabela struct {
+	variedades map[string][]Variedade                 // cultura (chave) -> fichas do IIAM
 	zonas      map[string]string                      // R1 -> unidades administrativas (texto da fonte)
 	distritos  map[string]map[string][]ZonaDoDistrito // provincia -> distrito (chave) ou "*" -> zonas
 	porCultura map[string][]Janela                    // cultura (chave) -> janelas
@@ -120,9 +140,10 @@ type Tabela struct {
 }
 
 var (
-	headerZonas     = []string{"zona", "fao_aez_id", "unidades_administrativas", "praticas_agricolas", "fonte", "url"}
-	headerDistritos = []string{"provincia", "distrito", "zona", "cobertura", "observacao", "fonte", "url"}
-	headerJanelas   = []string{
+	headerZonas      = []string{"zona", "fao_aez_id", "unidades_administrativas", "praticas_agricolas", "fonte", "url"}
+	headerDistritos  = []string{"provincia", "distrito", "zona", "cobertura", "observacao", "fonte", "url"}
+	headerVariedades = []string{"cultura", "variedade", "tipo", "maturacao", "rendimento", "ano_libertacao", "ficha", "pagina", "nota_curadoria", "fonte", "url"}
+	headerJanelas    = []string{
 		"cultura", "cultura_fonte", "zona", "epoca", "sementeira_inicio", "sementeira_fim",
 		"colheita_inicio", "colheita_fim", "ciclo", "observacao_epoca", "observacao",
 		"fonte", "ano", "url", "revisor",
@@ -156,7 +177,78 @@ func Carregar() (*Tabela, error) {
 	if err != nil {
 		return nil, err
 	}
-	return CarregarDe(zonas, distritos, fao, manual)
+	t, err := CarregarDe(zonas, distritos, fao, manual)
+	if err != nil {
+		return nil, err
+	}
+	variedades, err := ler("variedades_iiam.csv")
+	if err != nil {
+		return nil, err
+	}
+	if err := t.CarregarVariedades(variedades); err != nil {
+		return nil, err
+	}
+	return t, nil
+}
+
+// CarregarVariedades valida e indexa as fichas de variedades do IIAM.
+func (t *Tabela) CarregarVariedades(r io.Reader) error {
+	linhas, err := lerCSV("variedades_iiam.csv", r, headerVariedades)
+	if err != nil {
+		return err
+	}
+	var erros []string
+	t.variedades = map[string][]Variedade{}
+	for _, l := range linhas {
+		errs := exigirFonte(l, 9, 10)
+		if l.campo(0) == "" || l.campo(1) == "" || l.campo(6) == "" {
+			errs = append(errs, l.erro("cultura, variedade e ficha são obrigatórias"))
+		}
+		pagina, errPag := strconv.Atoi(l.campo(7))
+		if errPag != nil || pagina <= 0 {
+			errs = append(errs, l.erro("pagina %q inválida", l.campo(7)))
+		}
+		erros = append(erros, errs...)
+		if len(errs) > 0 {
+			continue
+		}
+		k := canonica(l.campo(0))
+		t.variedades[k] = append(t.variedades[k], Variedade{
+			Cultura: l.campo(0), Variedade: l.campo(1), Tipo: l.campo(2), Maturacao: l.campo(3),
+			Rendimento: l.campo(4), AnoLibertacao: l.campo(5), Ficha: l.campo(6), Pagina: pagina,
+			NotaCuradoria: l.campo(8), Fonte: l.campo(9), FonteURL: l.campo(10),
+		})
+	}
+	if len(erros) > 0 {
+		return fmt.Errorf("variedades_iiam.csv inválido (%d erro(s)):\n%s", len(erros), strings.Join(erros, "\n"))
+	}
+	return nil
+}
+
+// Variedades devolve as fichas do IIAM para a cultura (com sinônimos e
+// casamento por prefixo, como Buscar).
+func (t *Tabela) Variedades(cultura string) []Variedade {
+	if t == nil || len(t.variedades) == 0 {
+		return nil
+	}
+	k := canonica(cultura)
+	if k == "" {
+		return nil
+	}
+	if vs, ok := t.variedades[k]; ok {
+		return vs
+	}
+	chaves := make([]string, 0, len(t.variedades))
+	for c := range t.variedades {
+		chaves = append(chaves, c)
+	}
+	sort.Strings(chaves)
+	for _, c := range chaves {
+		if strings.HasPrefix(k, c) || strings.HasPrefix(c, k) {
+			return t.variedades[c]
+		}
+	}
+	return nil
 }
 
 // CarregarDe valida e monta a tabela a partir de leitores arbitrários —
@@ -381,6 +473,9 @@ var sinonimos = map[string]string{
 	"chives": "cebolinha", "teff": "tef", "wheat": "trigo", "rice": "arroz",
 	"soybean": "soja", "sunflower": "girassol", "spinach": "espinafre",
 	"lettuce": "alface", "carrot": "cenoura", "garlic": "alho",
+	"sorgo": "mapira", "sorghum": "mapira", "batata doce": "batata doce", "sweet potato": "batata doce",
+	"amaranthus": "amaranto", "cotton": "algodao", "mango": "manga", "tomato": "tomate",
+	"onion": "cebola", "barley": "cevada", "strawberry": "morango", "arracacha": "mandioquinha salsa",
 }
 
 func canonica(cultura string) string {

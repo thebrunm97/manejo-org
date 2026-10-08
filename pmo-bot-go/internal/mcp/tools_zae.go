@@ -25,6 +25,12 @@ const mensagemReferenciaMZ = "ATENÇÃO — Moçambique NÃO tem zoneamento ofic
 	"Lembre que, no sequeiro, a 1ª época depende do início efetivo das chuvas: se vier inicio_das_chuvas, diga em uma frase se as chuvas " +
 	"já se estabeleceram (estabelecidas), começaram há pouco (inicio_recente), tiveram falso início ou ainda não chegaram — como indicativo. Responda curto."
 
+// mensagemVariedadesMZ orienta o uso de variedades_iiam. A ficha é o texto da
+// fonte; os campos estruturados podem estar vazios (não extraídos).
+const mensagemVariedadesMZ = "Se vier variedades_iiam: são variedades libertadas pelo IIAM (Catálogo 2011-2022). Cite no máximo 3 que " +
+	"façam sentido para a pergunta, com o ciclo e o que a FICHA diz (use só o texto da ficha — não complete dado ausente) e a página. " +
+	"Se houver nota_curadoria, mencione-a. "
+
 // janelaMocambique responde a consulta de janela para uma machamba em
 // Moçambique, a partir de internal/zae. Nunca devolve erro: falta de dado é um
 // status com instrução, como no resto de tools_zarc.go.
@@ -70,6 +76,13 @@ func (s *Server) janelaMocambique(ctx context.Context, cultura, distrito, provin
 		"zona_inferida_da_provincia": porProvincia,
 	}
 
+	// Variedades libertadas pelo IIAM para a cultura — vêm mesmo sem janela de
+	// época (tomate, por exemplo, tem variedades no catálogo e não tem janela
+	// na FAO): ajudam o produtor a escolher o que semear.
+	if vs := s.zae.Variedades(cultura); len(vs) > 0 {
+		base["variedades_iiam"] = vs
+	}
+
 	if len(janelas) == 0 {
 		lista := make([]string, 0, len(disponiveis))
 		for c := range disponiveis {
@@ -79,7 +92,7 @@ func (s *Server) janelaMocambique(ctx context.Context, cultura, distrito, provin
 		log.Printf("🌍 [MCP] ZAE/MZ sem dado para %q em %s (%s), zonas %v", cultura, distrito, provincia, zonas)
 		base["status"] = "sem_dado"
 		base["culturas_com_dado_na_zona"] = lista
-		base["message"] = "Não há janela de sementeira publicada para esta cultura nesta zona de Moçambique (a fonte, o calendário da FAO, " +
+		base["message"] = mensagemVariedadesMZ + "Não há janela de sementeira publicada para esta cultura nesta zona de Moçambique (a fonte, o calendário da FAO, " +
 			"ainda cobre poucas culturas por zona). Diga isso ao produtor com honestidade, ofereça as culturas que têm dado se forem úteis " +
 			"e sugira confirmar com os serviços distritais de extensão agrária. NÃO invente datas."
 		return base
@@ -101,7 +114,7 @@ func (s *Server) janelaMocambique(ctx context.Context, cultura, distrito, provin
 	log.Printf("🌍 [MCP] ZAE/MZ: %d janela(s) para %q em %s (%s)", len(janelas), cultura, distrito, provincia)
 	base["status"] = "referencia_nao_oficial"
 	base["janelas_referencia"] = janelas
-	base["message"] = mensagemReferenciaMZ
+	base["message"] = mensagemReferenciaMZ + " " + mensagemVariedadesMZ
 	return base
 }
 

@@ -152,3 +152,28 @@ func TestSepararDistritoProvincia(t *testing.T) {
 		}
 	}
 }
+
+func TestVariedadesIIAM(t *testing.T) {
+	tab, err := Carregar()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if vs := tab.Variedades("sorgo"); len(vs) == 0 || vs[0].Cultura != "mapira" {
+		t.Errorf("sorgo deveria achar as variedades de mapira; veio %v", vs)
+	}
+	if vs := tab.Variedades("feijão"); len(vs) == 0 {
+		t.Error("feijão deveria achar as variedades de feijão vulgar")
+	}
+	achouNota := false
+	for _, v := range tab.Variedades("gergelim") {
+		if v.Variedade == "RAMA-JACOMA" && v.NotaCuradoria != "" {
+			achouNota = true
+		}
+	}
+	if !achouNota {
+		t.Error("o erro da fonte em RAMA-JACOMA precisa vir com nota de curadoria")
+	}
+	if vs := tab.Variedades("couve"); len(vs) != 0 {
+		t.Errorf("couve não está no catálogo; veio %v", vs)
+	}
+}

@@ -110,3 +110,34 @@ func TestPaisDoTenantPeloDDISemPropriedade(t *testing.T) {
 	require.Equal(t, "MZ", s.paisDoTenant(TenantCtx{Telefone: "258841234567"}))
 	require.Equal(t, "", s.paisDoTenant(TenantCtx{Telefone: "5511999999999"}), "sem propriedade e sem DDI conhecido: sem filtro")
 }
+
+func TestJanelaMocambiqueIncluiVariedadesIIAM(t *testing.T) {
+	m := consultarMZ(t, servidorComZae(t), "milho", "Boane, Maputo")
+	vs, ok := m["variedades_iiam"].([]zae.Variedade)
+	require.True(t, ok, "milho tem variedades no catálogo do IIAM")
+	require.NotEmpty(t, vs)
+	for _, v := range vs {
+		require.Equal(t, "milho", v.Cultura)
+		require.NotEmpty(t, v.Ficha, "o bot responde a partir do texto da ficha")
+		require.Positive(t, v.Pagina)
+	}
+	require.Contains(t, m["message"], "variedades_iiam")
+}
+
+func TestJanelaMocambiqueSemJanelaMasComVariedades(t *testing.T) {
+	// Tomate: sem janela na FAO para a R1, mas com variedades do IIAM.
+	m := consultarMZ(t, servidorComZae(t), "tomate", "Boane, Maputo")
+	require.Equal(t, "sem_dado", m["status"])
+	vs, ok := m["variedades_iiam"].([]zae.Variedade)
+	require.True(t, ok)
+	require.NotEmpty(t, vs)
+}
+
+func TestJanelaMocambiqueMorangoDoManualDeHorticultura(t *testing.T) {
+	m := consultarMZ(t, servidorComZae(t), "morango", "Boane, Maputo")
+	require.Equal(t, "referencia_nao_oficial", m["status"])
+	js := m["janelas_referencia"].([]zae.Janela)
+	require.Len(t, js, 1)
+	require.Equal(t, "21/03", js[0].SementeiraInicio)
+	require.Contains(t, js[0].Fonte, "Horticultura em Moçambique")
+}
