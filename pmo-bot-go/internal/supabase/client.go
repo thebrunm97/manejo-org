@@ -1130,7 +1130,11 @@ func (c *Client) MatchFarmDocumentsContext(pmoID int64, embedding []float32, thr
 }
 
 // MatchFarmDocumentsContextWithContext calls the match_documents_with_context_1024 RPC to find similar chunks + neighbors with a context
-func (c *Client) MatchFarmDocumentsContextWithContext(ctx context.Context, pmoID int64, embedding []float32, threshold float32, count int, windowSize int) ([]DocumentMatchContext, error) {
+//
+// pais (ISO alfa-2) restringe os documentos GLOBAIS aos do país da propriedade
+// e aos universais; documentos da própria fazenda valem sempre. Vazio = sem
+// filtro (comportamento anterior). Ver 20261008130000_farm_documents_pais.sql.
+func (c *Client) MatchFarmDocumentsContextWithContext(ctx context.Context, pmoID int64, embedding []float32, threshold float32, count int, windowSize int, pais string) ([]DocumentMatchContext, error) {
 	// Point to the new 1024-dimensional RPC for BGE-m3
 	reqURL := fmt.Sprintf("%s/rest/v1/rpc/match_documents_with_context_1024", c.config.URL)
 
@@ -1141,6 +1145,9 @@ func (c *Client) MatchFarmDocumentsContextWithContext(ctx context.Context, pmoID
 		"match_count":     count,
 		"window_size":     windowSize,
 	}
+	if pais != "" {
+		params["match_pais"] = pais
+	}
 
 	payload, err := json.Marshal(params)
 	if err != nil {
@@ -1148,6 +1155,13 @@ func (c *Client) MatchFarmDocumentsContextWithContext(ctx context.Context, pmoID
 	}
 
 	body, err := c.doRequestWithContext(ctx, http.MethodPost, reqURL, payload)
+	if err != nil && pais != "" && strings.Contains(err.Error(), "match_pais") {
+		// Bot já atualizado, migration ainda não aplicada (deploys
+		// independentes): busca sem o filtro em vez de deixar o produtor
+		// sem resposta.
+		log.Printf("⚠️ [Supabase RPC] match_pais ainda não existe no banco — buscando sem filtro de país")
+		return c.MatchFarmDocumentsContextWithContext(ctx, pmoID, embedding, threshold, count, windowSize, "")
+	}
 	if err != nil {
 		return nil, err
 	}

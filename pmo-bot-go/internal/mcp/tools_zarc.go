@@ -192,7 +192,7 @@ func (s *Server) localizacaoParaZarc(args map[string]interface{}, tenant TenantC
 	pais := loc.Pais
 	// Propriedade criada antes de existir o campo país (default BR), de um
 	// produtor com DDI de Moçambique e província moçambicana no cadastro.
-	if pais == "BR" && strings.HasPrefix(tenant.Telefone, "258") {
+	if pais == "BR" && ddiMocambique(tenant.Telefone) {
 		if _, okProv := zae.ProvinciaISO(loc.UF); okProv {
 			pais = "MZ"
 		}

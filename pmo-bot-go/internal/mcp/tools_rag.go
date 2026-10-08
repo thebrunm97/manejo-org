@@ -83,9 +83,13 @@ func (s *Server) handleConsultarBaseConhecimento(ctx context.Context, args map[s
 	// 2. Vector search in Supabase with Contextual Windowing (threshold 0.55, top-K 3, window 1)
 	// Reduzido para 3 como mitigação de tokens para prevenir "Lost in the Middle"
 	
+	// Documentos globais só do país da propriedade (ou universais): sem isso,
+	// um produtor de Moçambique recebia a legislação brasileira.
+	pais := s.paisDoTenant(tenant)
+
 	startRetrieval := time.Now()
 	retrievalCtx, retrievalCancel := context.WithTimeout(ctx, 2*time.Second)
-	matches, err := s.supabase.MatchFarmDocumentsContextWithContext(retrievalCtx, pmoID, embedding, 0.55, 3, 1)
+	matches, err := s.supabase.MatchFarmDocumentsContextWithContext(retrievalCtx, pmoID, embedding, 0.55, 3, 1, pais)
 	retrievalCancel()
 	
 	retrievalLatency := time.Since(startRetrieval).Milliseconds()

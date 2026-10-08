@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/zae"
@@ -112,3 +113,24 @@ func temPrimeiraEpoca(js []zae.Janela) bool {
 	}
 	return false
 }
+
+// paisDoTenant devolve o país (ISO alfa-2) da propriedade ativa do produtor.
+// Sem propriedade, usa o DDI do telefone; sem nenhum dos dois, "" (sem filtro).
+func (s *Server) paisDoTenant(tenant TenantCtx) string {
+	if s.supabase != nil && tenant.PropriedadeID != 0 {
+		if loc, err := s.supabase.GetPropriedadeLocalizacao(tenant.PropriedadeID); err == nil {
+			if loc.Pais == "BR" && ddiMocambique(tenant.Telefone) {
+				if _, ok := zae.ProvinciaISO(loc.UF); ok {
+					return "MZ"
+				}
+			}
+			return loc.Pais
+		}
+	}
+	if ddiMocambique(tenant.Telefone) {
+		return "MZ"
+	}
+	return ""
+}
+
+func ddiMocambique(telefone string) bool { return strings.HasPrefix(telefone, "258") }

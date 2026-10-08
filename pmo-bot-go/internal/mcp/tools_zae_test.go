@@ -104,3 +104,9 @@ func TestJanelaMocambiqueSemIndicadorQuandoFalha(t *testing.T) {
 	require.Equal(t, "referencia_nao_oficial", m["status"], "falha do indicador não derruba a resposta")
 	require.Nil(t, m["inicio_das_chuvas"])
 }
+
+func TestPaisDoTenantPeloDDISemPropriedade(t *testing.T) {
+	s := NewServer(nil, nil, nil, nil)
+	require.Equal(t, "MZ", s.paisDoTenant(TenantCtx{Telefone: "258841234567"}))
+	require.Equal(t, "", s.paisDoTenant(TenantCtx{Telefone: "5511999999999"}), "sem propriedade e sem DDI conhecido: sem filtro")
+}
