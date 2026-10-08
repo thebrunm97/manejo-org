@@ -37,9 +37,9 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/knowledge"
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
+	"github.com/thebrunm97/pmo-bot-go/internal/memory"
 	"github.com/thebrunm97/pmo-bot-go/internal/middleware"
 	"github.com/thebrunm97/pmo-bot-go/internal/notify"
-	"github.com/thebrunm97/pmo-bot-go/internal/memory"
 	"github.com/thebrunm97/pmo-bot-go/internal/okf"
 	"github.com/thebrunm97/pmo-bot-go/internal/plantioref"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
@@ -49,11 +49,12 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/selfheal"
 	"github.com/thebrunm97/pmo-bot-go/internal/state"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
-	"github.com/thebrunm97/pmo-bot-go/internal/zarc"
 	"github.com/thebrunm97/pmo-bot-go/internal/telemetry"
 	"github.com/thebrunm97/pmo-bot-go/internal/tts"
 	"github.com/thebrunm97/pmo-bot-go/internal/weather"
 	"github.com/thebrunm97/pmo-bot-go/internal/webhook"
+	"github.com/thebrunm97/pmo-bot-go/internal/zae"
+	"github.com/thebrunm97/pmo-bot-go/internal/zarc"
 )
 
 // parseEnvInt helper
@@ -327,6 +328,17 @@ func main() {
 			tabelaRef.Total(), len(tabelaRef.Culturas()), tabelaRef.SHA())
 	}
 
+	// Janelas de sementeira de referência de Moçambique, por zona
+	// agroecológica (internal/zae). Mesmo racional do plantioref: embarcada,
+	// e uma falha só desativa a consulta para produtores de Moçambique.
+	if tabelaZae, err := zae.Carregar(); err != nil {
+		log.Printf("❌ [ZAE] Tabelas de Moçambique inválidas: %v — consulta MZ desativada", err)
+	} else {
+		mcpServer.SetZaeTabela(tabelaZae)
+		mcpServer.SetInicioChuvas(weather.InicioDasChuvas)
+		log.Printf("🌍 [ZAE] Moçambique: %d janela(s) de referência carregadas", tabelaZae.Total())
+	}
+
 	// --- Cofre de Auditoria Efêmero (DT-42) ---
 	//
 	// Ativado apenas com cliente Supabase disponível. Sem ele o campo fica nil,
@@ -452,7 +464,6 @@ func main() {
 	// autenticado pode chamar; quem decide o que ele pode fazer com cada RPC
 	// continua sendo o auth.uid() dentro da função, como já era antes desta
 	// rota existir.
-
 
 	// DT-120: producerRateLimit nasce com NoopRateLimiter (Redis ainda não foi
 	// inicializado nesta altura do boot) e é ligado ao limiter de verdade mais
@@ -715,8 +726,6 @@ func main() {
 	} else {
 		log.Println("⚠️  [Harness] HARNESS_ENABLED=false — rodando em modo legado (goroutines diretas)")
 	}
-
-
 
 	// --- Register webhook routes ---
 	handler := webhook.NewHandler(webhook.Config{
@@ -1113,4 +1122,3 @@ func sendHeartbeat(instance string, wp ports.ChannelSender, sb *supabase.Client,
 	}
 	return isConnected
 }
-

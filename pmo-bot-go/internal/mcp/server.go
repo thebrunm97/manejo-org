@@ -10,6 +10,8 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/plantioref"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
+	"github.com/thebrunm97/pmo-bot-go/internal/weather"
+	"github.com/thebrunm97/pmo-bot-go/internal/zae"
 	"github.com/thebrunm97/pmo-bot-go/internal/zarc"
 )
 
@@ -77,6 +79,16 @@ type Server struct {
 	// Nil deixa a ferramenta voltar ao "nao_zoneada" puro, que é o
 	// comportamento de hoje.
 	plantioRef *plantioref.Tabela
+
+	// zae é a tabela de janelas de sementeira de REFERÊNCIA de Moçambique,
+	// por zona agroecológica (internal/zae). Embarcada no binário como
+	// plantioRef; usada só quando a propriedade é de Moçambique.
+	zae *zae.Tabela
+
+	// inicioChuvas avalia se as chuvas já se estabeleceram no local (Fase 3 da
+	// janela de Moçambique). Injetável para os testes não dependerem de rede;
+	// nil simplesmente omite o indicador.
+	inicioChuvas func(ctx context.Context, local, pais string) (*weather.SituacaoChuvas, error)
 }
 
 // SetZarcStore liga a base do ZARC ao servidor. Chamar com nil (ou não chamar)
@@ -91,14 +103,24 @@ func (s *Server) SetZarcStore(st *zarc.Store) { s.zarc = st }
 // acontece se o CSV embutido falhar a validação no boot.
 func (s *Server) SetPlantioRef(t *plantioref.Tabela) { s.plantioRef = t }
 
+// SetZaeTabela liga a tabela de Moçambique (internal/zae). Nil faz produtores
+// de Moçambique receberem "unavailable" na consulta de janela de plantio.
+func (s *Server) SetZaeTabela(t *zae.Tabela) { s.zae = t }
+
+// SetInicioChuvas liga o indicador de início das chuvas (weather.InicioDasChuvas
+// em produção).
+func (s *Server) SetInicioChuvas(f func(ctx context.Context, local, pais string) (*weather.SituacaoChuvas, error)) {
+	s.inicioChuvas = f
+}
+
 // ToolCategory defines if a tool is for knowledge (RAG) or farm records (DATABASE)
 type ToolCategory string
 
 const (
-	CategoryRAG      ToolCategory = "RAG"      // Knowledge retrieval
-	CategoryDBRead   ToolCategory = "DB_READ"  // Read data from DB
-	CategoryDBWrite  ToolCategory = "DB_WRITE" // Write data to DB
-	CategoryChat     ToolCategory = "CHAT"     // Simple chat or calculation
+	CategoryRAG     ToolCategory = "RAG"      // Knowledge retrieval
+	CategoryDBRead  ToolCategory = "DB_READ"  // Read data from DB
+	CategoryDBWrite ToolCategory = "DB_WRITE" // Write data to DB
+	CategoryChat    ToolCategory = "CHAT"     // Simple chat or calculation
 )
 
 // TenantCtx carrega os identificadores de tenant já resolvidos e validados a
@@ -219,7 +241,7 @@ func (s *Server) GetToolsForIntent(intent string) []llm.FerramentaAgnostica {
 			}
 
 		case "CHAT", "CLARIFICATION", "SCHEDULING", "WORKFLOW":
-			// Allow Database tools in CHAT so that simple confirmations like "Sim" 
+			// Allow Database tools in CHAT so that simple confirmations like "Sim"
 			// (which route to CHAT) can still trigger the pending tool call.
 			if t.Category == CategoryDBWrite || t.Category == CategoryDBRead {
 				include = true

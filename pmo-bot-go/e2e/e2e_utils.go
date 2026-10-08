@@ -24,9 +24,12 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/history"
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
+	"github.com/thebrunm97/pmo-bot-go/internal/plantioref"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
+	"github.com/thebrunm97/pmo-bot-go/internal/weather"
 	"github.com/thebrunm97/pmo-bot-go/internal/webhook"
+	"github.com/thebrunm97/pmo-bot-go/internal/zae"
 )
 
 // Fixture: e2e/fixture.sql cria o produtor com este telefone, dono do PMO
@@ -34,6 +37,7 @@ import (
 const (
 	TestPMOID int64 = 9999
 	TestPhone       = "5511999999999"
+	TestPhoneMZ     = "258841234567" // produtor de Moçambique: machamba em Boane (fixture.sql)
 
 	webhookToken = "test-e2e-token"
 
@@ -72,6 +76,7 @@ var limpezaE2E = []string{
 	fmt.Sprintf("hitl_pending?pmo_id=eq.%d", TestPMOID),
 	fmt.Sprintf("farm_documents?pmo_id=eq.%d", TestPMOID),
 	fmt.Sprintf("messages?phone=eq.%s", TestPhone),
+	fmt.Sprintf("messages?phone=eq.%s", TestPhoneMZ),
 }
 
 // TeardownE2E apaga o que os testes escreveram no fixture. Também é chamado
@@ -196,6 +201,16 @@ func novoBotE2E(t *testing.T, client *supabase.Client) *botE2E {
 	embedder := embedcache.NewCachedEmbedder(llmProvider.Embedder(), 15*time.Minute)
 	mcpServer := mcp.NewServer(client, agriRepo, embedder, llmProvider)
 	mcpServer.InitializeTools()
+	// Tabelas embarcadas, ligadas como em cmd/server/main.go.
+	if ref, err := plantioref.Carregar(); err == nil {
+		mcpServer.SetPlantioRef(ref)
+	}
+	tabZae, err := zae.Carregar()
+	if err != nil {
+		t.Fatalf("tabelas de Moçambique inválidas: %v", err)
+	}
+	mcpServer.SetZaeTabela(tabZae)
+	mcpServer.SetInicioChuvas(weather.InicioDasChuvas)
 
 	handler := webhook.NewHandler(webhook.Config{
 		Token:          webhookToken,
@@ -221,13 +236,19 @@ func novoBotE2E(t *testing.T, client *supabase.Client) *botE2E {
 // de mensagem, e um ID fixo faria a segunda execução ser descartada.
 func (b *botE2E) enviar(t *testing.T, texto string) {
 	t.Helper()
+	b.enviarDe(t, TestPhone, texto)
+}
+
+// enviarDe é enviar com outro remetente (ex.: o produtor de Moçambique).
+func (b *botE2E) enviarDe(t *testing.T, telefone, texto string) {
+	t.Helper()
 	payload := map[string]interface{}{
 		"event": "messages.upsert",
 		"data": map[string]interface{}{
 			"info": map[string]interface{}{
 				"ID":       fmt.Sprintf("MSG_E2E_%d", time.Now().UnixNano()),
-				"Chat":     TestPhone + "@s.whatsapp.net",
-				"Sender":   TestPhone + "@s.whatsapp.net",
+				"Chat":     telefone + "@s.whatsapp.net",
+				"Sender":   telefone + "@s.whatsapp.net",
 				"IsFromMe": false,
 				"Type":     "text",
 			},

@@ -27,6 +27,7 @@ contra o código na data indicada no rodapé da nota.
 - [[offline-first]] — por que o campo não tem sinal.
 - [[rag-e-base-de-conhecimento]] — como a IA responde com base na norma.
 - [[zarc-janela-de-plantio]] — a janela oficial de plantio e o que ela nao cobre.
+- [[zoneamento-agroecologico-mocambique]] — as 10 zonas (R1–R10), épocas de sementeira e como o bot responde em Moçambique sem ZARC.
 
 ## Entidades
 

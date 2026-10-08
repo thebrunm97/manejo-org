@@ -3,6 +3,7 @@ package mcp
 import (
 	"context"
 	"fmt"
+	"github.com/thebrunm97/pmo-bot-go/internal/zae"
 	"log"
 	"time"
 )
@@ -87,9 +88,23 @@ func (s *Server) handleCadastrarPropriedade(ctx context.Context, args map[string
 		modalidade = "Organico"
 	}
 
+	// Moçambique: "estado" é a província. Guarda o código ISO 3166-2:MZ em uf
+	// e marca pais = MZ (ver internal/zae e a migration propriedades_pais).
+	provinciaMZ, ehMZ := zae.ProvinciaISO(estado)
+	if ehMZ {
+		estado = provinciaMZ
+	}
+
 	propID, pmoID, err := s.supabase.CriarPropriedadeComPMO(ctx, tenant.UserID, nome, areaTotal, cidade, estado, modalidade)
 	if err != nil {
 		return nil, fmt.Errorf("falha ao cadastrar propriedade: %w", err)
+	}
+	if ehMZ {
+		// Passo separado, e só para MZ: o insert do Brasil não envia "pais"
+		// e continua funcionando mesmo antes da coluna existir.
+		if err := s.supabase.DefinirPaisPropriedade(ctx, propID, "MZ"); err != nil {
+			log.Printf("⚠️ [MCP] Propriedade %d criada, mas falhou ao marcar país MZ: %v", propID, err)
+		}
 	}
 
 	// Atualiza o tenant ativo para o RESTO DESTE TURNO: se o LLM encadear outra

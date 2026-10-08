@@ -46,3 +46,35 @@ BEGIN
   UPDATE public.profiles SET pmo_ativo_id = 9999, propriedade_ativa_id = v_prop, plan_tier = 'pro' WHERE id = v_user;
 END
 $$;
+
+-- Produtor de Moçambique (internacionalização, janela de sementeira por zona
+-- agroecológica — internal/zae): machamba em Boane, província de Maputo (L),
+-- PMO 9998. Em MZ, cidade = distrito e uf = província ISO 3166-2:MZ.
+DO $$
+DECLARE
+  v_user uuid := '00000000-0000-4000-8000-00000000e2e1';
+  v_prop bigint;
+BEGIN
+  PERFORM set_config('request.jwt.claims', '{"role":"service_role"}', true);
+
+  INSERT INTO auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at, raw_app_meta_data, raw_user_meta_data)
+  VALUES (v_user, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'e2e-produtor-mz@manejo.test', '', now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}')
+  ON CONFLICT (id) DO NOTHING;
+
+  INSERT INTO public.profiles (id, nome, telefone)
+  VALUES (v_user, 'Produtor E2E Moçambique', '258841234567')
+  ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, telefone = EXCLUDED.telefone;
+
+  SELECT id INTO v_prop FROM public.propriedades WHERE user_id = v_user ORDER BY id LIMIT 1;
+  IF v_prop IS NULL THEN
+    INSERT INTO public.propriedades (nome, user_id, cidade, uf, pais)
+    VALUES ('Machamba E2E', v_user, 'Boane', 'L', 'MZ') RETURNING id INTO v_prop;
+  END IF;
+
+  INSERT INTO public.pmos (id, user_id, propriedade_id, nome_identificador, status, form_data)
+  VALUES (9998, v_user, v_prop, 'PMO E2E MZ', 'ativo', '{}')
+  ON CONFLICT (id) DO UPDATE SET user_id = EXCLUDED.user_id, propriedade_id = EXCLUDED.propriedade_id;
+
+  UPDATE public.profiles SET pmo_ativo_id = 9998, propriedade_ativa_id = v_prop, plan_tier = 'pro' WHERE id = v_user;
+END
+$$;

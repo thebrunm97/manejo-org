@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/thebrunm97/pmo-bot-go/internal/zae"
 	"github.com/thebrunm97/pmo-bot-go/internal/zarc"
 )
 
@@ -28,7 +29,7 @@ func (s *Server) handleConsultarJanelaPlantio(ctx context.Context, args map[stri
 	// Só é "unavailable" se NENHUMA das duas fontes existir. A referência não
 	// depende do arquivo de ~400 MB do ZARC — só da UF — e por isso continua
 	// disponível em staging e na máquina do desenvolvedor mesmo sem ele.
-	if s.zarc == nil && s.plantioRef == nil {
+	if s.zarc == nil && s.plantioRef == nil && s.zae == nil {
 		return map[string]interface{}{
 			"status":  "unavailable",
 			"message": "A consulta de janela de plantio não está disponível neste ambiente. Diga isso ao produtor e NÃO invente datas de plantio.",
@@ -45,9 +46,21 @@ func (s *Server) handleConsultarJanelaPlantio(ctx context.Context, args map[stri
 
 	log.Printf("🌱 [MCP] handleConsultarJanelaPlantio executado com args: %v", args)
 
-	cidade, uf, resposta := s.localizacaoParaZarc(args, tenant)
+	cidade, uf, pais, resposta := s.localizacaoParaZarc(args, tenant)
 	if resposta != nil {
 		return resposta, nil
+	}
+
+	// Moçambique não tem ZARC: vai para a tabela de referência por zona
+	// agroecológica (tools_zae.go). O caminho do Brasil abaixo não muda.
+	if pais == "MZ" {
+		return s.janelaMocambique(ctx, cultura, cidade, uf), nil
+	}
+	if s.zarc == nil && s.plantioRef == nil {
+		return map[string]interface{}{
+			"status":  "unavailable",
+			"message": "A consulta de janela de plantio não está disponível neste ambiente. Diga isso ao produtor e NÃO invente datas de plantio.",
+		}, nil
 	}
 
 	var disponiveis []string
@@ -146,42 +159,55 @@ func (s *Server) handleConsultarJanelaPlantio(ctx context.Context, args map[stri
 //
 // Devolve um terceiro valor não-nulo quando não deu para resolver: nesse caso é
 // esse mapa que deve ser retornado ao LLM, sem erro.
-func (s *Server) localizacaoParaZarc(args map[string]interface{}, tenant TenantCtx) (string, string, map[string]interface{}) {
+func (s *Server) localizacaoParaZarc(args map[string]interface{}, tenant TenantCtx) (string, string, string, map[string]interface{}) {
+	pedir := func(msg string) (string, string, string, map[string]interface{}) {
+		return "", "", "", map[string]interface{}{"status": "requires_user_input", "message": msg}
+	}
+
 	if v, ok := args["cidade_informada"].(string); ok && strings.TrimSpace(v) != "" {
+		// "Boane, Maputo" / "Chókwè - Gaza": província de Moçambique no fim.
+		// Nenhuma província (nem código ISO) colide com UF brasileira.
+		if distrito, prov, okMZ := zae.SepararDistritoProvincia(v); okMZ {
+			return distrito, prov, "MZ", nil
+		}
 		cidade, uf := zarc.SepararCidadeUF(v)
 		if uf == "" {
-			return "", "", map[string]interface{}{
-				"status": "requires_user_input",
-				"message": fmt.Sprintf(
-					"O produtor informou %q sem o estado. O ZARC precisa da UF porque há municípios com o mesmo nome em estados diferentes. Peça o estado.",
-					v),
-			}
+			return pedir(fmt.Sprintf(
+				"O produtor informou %q sem o estado (ou, em Moçambique, sem a província). O ZARC precisa da UF porque há municípios com o mesmo nome em estados diferentes. Peça o estado — ou a província, se ele estiver em Moçambique.",
+				v))
 		}
-		return cidade, uf, nil
+		return cidade, uf, "BR", nil
 	}
 
 	if s.supabase == nil || tenant.PropriedadeID == 0 {
-		return "", "", map[string]interface{}{
-			"status":  "requires_user_input",
-			"message": "Localização não encontrada no cadastro. Pergunte ao produtor a cidade e o estado da propriedade.",
-		}
+		return pedir("Localização não encontrada no cadastro. Pergunte ao produtor a cidade e o estado da propriedade (em Moçambique: distrito e província).")
 	}
 
-	loc, err := s.supabase.GetPropriedadeLocation(tenant.PropriedadeID)
+	loc, err := s.supabase.GetPropriedadeLocalizacao(tenant.PropriedadeID)
 	if err != nil {
 		log.Printf("⚠️ [MCP] ZARC: falha ao obter localização da propriedade %d: %v", tenant.PropriedadeID, err)
-		return "", "", map[string]interface{}{
-			"status":  "requires_user_input",
-			"message": "Localização não encontrada no cadastro. Pergunte ao produtor a cidade e o estado da propriedade.",
+		return pedir("Localização não encontrada no cadastro. Pergunte ao produtor a cidade e o estado da propriedade (em Moçambique: distrito e província).")
+	}
+
+	pais := loc.Pais
+	// Propriedade criada antes de existir o campo país (default BR), de um
+	// produtor com DDI de Moçambique e província moçambicana no cadastro.
+	if pais == "BR" && strings.HasPrefix(tenant.Telefone, "258") {
+		if _, okProv := zae.ProvinciaISO(loc.UF); okProv {
+			pais = "MZ"
 		}
 	}
 
-	cidade, uf := zarc.SepararCidadeUF(loc)
-	if uf == "" {
-		return "", "", map[string]interface{}{
-			"status":  "requires_user_input",
-			"message": "A propriedade está cadastrada sem o estado. Peça ao produtor a cidade e o estado.",
+	if pais == "MZ" {
+		prov, okProv := zae.ProvinciaISO(loc.UF)
+		if strings.TrimSpace(loc.Cidade) == "" || !okProv {
+			return pedir("A machamba está cadastrada sem distrito ou província. Pergunte ao produtor o distrito e a província.")
 		}
+		return loc.Cidade, prov, "MZ", nil
 	}
-	return cidade, uf, nil
+
+	if strings.TrimSpace(loc.Cidade) == "" || strings.TrimSpace(loc.UF) == "" {
+		return pedir("A propriedade está cadastrada sem a cidade ou o estado. Peça ao produtor a cidade e o estado.")
+	}
+	return loc.Cidade, strings.ToUpper(strings.TrimSpace(loc.UF)), pais, nil
 }

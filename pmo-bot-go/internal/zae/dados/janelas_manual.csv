@@ -1,0 +1,3 @@
+# CURADO À MÃO: janelas de fontes além da FAO (IIAM, MASA, FEWS NET...). Mesmas colunas de janelas_fao.csv.
+# Toda linha precisa de fonte e url — internal/zae falha no teste se faltar.
+cultura,cultura_fonte,zona,epoca,sementeira_inicio,sementeira_fim,colheita_inicio,colheita_fim,ciclo,observacao_epoca,observacao,fonte,ano,url,revisor

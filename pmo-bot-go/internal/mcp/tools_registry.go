@@ -13,7 +13,7 @@ import (
 
 // CalcularAdubacaoDef is the agnostic definition for the agronomic calculation tool.
 var CalcularAdubacaoDef = llm.FerramentaAgnostica{
-	Name:        "calcular_recomendacao_adubacao",
+	Name: "calcular_recomendacao_adubacao",
 	// Regras gerais de comportamento do agente (IDs técnicos, extração de
 	// propriedade_id, lógica de "área total") vivem no system prompt — ver
 	// prompts/system_prompt.md e prompts/agronomist.md. Estavam duplicadas aqui
@@ -76,7 +76,6 @@ var RegistrarPlantioDef = llm.FerramentaAgnostica{
 	},
 }
 
-
 // InitializeTools registers the initial set of tools to the MCP server.
 func (s *Server) InitializeTools() {
 	s.RegisterTool(Tool{
@@ -130,7 +129,7 @@ func (s *Server) InitializeTools() {
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-										"pergunta": map[string]interface{}{
+					"pergunta": map[string]interface{}{
 						"type":        "string",
 						"description": "A pergunta ou termo de busca para pesquisar na base de conhecimento.",
 					},
@@ -173,7 +172,7 @@ func (s *Server) InitializeTools() {
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-										"tabela": map[string]interface{}{
+					"tabela": map[string]interface{}{
 						"type":        "string",
 						"enum":        []string{"talhoes", "canteiros", "caderno_recente"},
 						"description": "A categoria de dados que deseja consultar.",
@@ -218,7 +217,7 @@ func (s *Server) InitializeTools() {
 			Schema:               &CriarInfraestruturaSchema{},
 			RequiresConfirmation: true,
 		},
-		Handler:  s.handleCriarInfraestruturaFazenda,
+		Handler: s.handleCriarInfraestruturaFazenda,
 	})
 
 	s.RegisterTool(Tool{
@@ -228,7 +227,7 @@ func (s *Server) InitializeTools() {
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-										"produto_manejo":  map[string]interface{}{"type": "string", "description": "Nome do insumo ou equipamento (Ex: Esterco de curral, Enxada, Substrato)."},
+					"produto_manejo":  map[string]interface{}{"type": "string", "description": "Nome do insumo ou equipamento (Ex: Esterco de curral, Enxada, Substrato)."},
 					"cultura_destino": map[string]interface{}{"type": "string", "description": "Para qual cultura este insumo será usado (Ex: Alface, Milho)."},
 					"epoca_frequencia": map[string]interface{}{
 						"type":        "string",
@@ -259,7 +258,7 @@ func (s *Server) InitializeTools() {
 			Schema:               &AdicionarInsumoSchema{},
 			RequiresConfirmation: true,
 		},
-		Handler:  s.handleAdicionarInsumoPMO,
+		Handler: s.handleAdicionarInsumoPMO,
 	})
 
 	s.RegisterTool(Tool{
@@ -269,7 +268,7 @@ func (s *Server) InitializeTools() {
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-															"tipo": map[string]interface{}{
+					"tipo": map[string]interface{}{
 						"type":        "string",
 						"description": "Atividade realizada: Compra/Aquisição (se apenas comprou), Plantio (se colocou na terra), Semeadura ou Transplante.",
 						"enum":        []string{"Compra/Aquisição", "Plantio", "Semeadura", "Transplante"},
@@ -307,7 +306,7 @@ func (s *Server) InitializeTools() {
 			Schema:               &RegistrarPropagacaoSchema{},
 			RequiresConfirmation: true,
 		},
-		Handler:  s.handleRegistrarPropagacaoVegetal,
+		Handler: s.handleRegistrarPropagacaoVegetal,
 	})
 
 	s.RegisterTool(Tool{
@@ -317,7 +316,7 @@ func (s *Server) InitializeTools() {
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-															"item_area":         map[string]interface{}{"type": "string", "description": "O que foi limpo (Ex: Trator, Galpão, Enxadas)."},
+					"item_area":         map[string]interface{}{"type": "string", "description": "O que foi limpo (Ex: Trator, Galpão, Enxadas)."},
 					"tipo_limpeza":      map[string]interface{}{"type": "string", "description": "Como foi feito (Ex: Lavagem, Varrição, Desinfecção)."},
 					"produto_utilizado": map[string]interface{}{"type": "string", "description": "Produto usado, se houver (Ex: Sabão neutro, Álcool 70%)."},
 					"dosagem":           map[string]interface{}{"type": "string", "description": "Quantidade do produto usado."},
@@ -331,7 +330,7 @@ func (s *Server) InitializeTools() {
 			Schema:               &RegistrarLimpezaToolSchema{},
 			RequiresConfirmation: true,
 		},
-		Handler:  s.handleRegistrarLimpeza,
+		Handler: s.handleRegistrarLimpeza,
 	})
 
 	s.RegisterTool(Tool{
@@ -341,9 +340,9 @@ func (s *Server) InitializeTools() {
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-															"nome_talhao":    map[string]interface{}{"type": "string", "description": "Nome descritivo (Ex: Gleba 01, Horta dos Pomares)."},
-					"area_hectares":  map[string]interface{}{"type": "number", "description": "Tamanho da área em hectares (Ex: 0.5, 1.2)."},
-					"cultura":        map[string]interface{}{"type": "string", "description": "Cultura principal plantada (Opcional)."},
+					"nome_talhao":   map[string]interface{}{"type": "string", "description": "Nome descritivo (Ex: Gleba 01, Horta dos Pomares)."},
+					"area_hectares": map[string]interface{}{"type": "number", "description": "Tamanho da área em hectares (Ex: 0.5, 1.2)."},
+					"cultura":       map[string]interface{}{"type": "string", "description": "Cultura principal plantada (Opcional)."},
 				},
 				"required": []string{"nome_talhao", "area_hectares"},
 			},
@@ -353,7 +352,7 @@ func (s *Server) InitializeTools() {
 			Schema:               &CriarTalhaoSchema{},
 			RequiresConfirmation: true,
 		},
-		Handler:  s.handleCriarNovoTalhao,
+		Handler: s.handleCriarNovoTalhao,
 	})
 
 	s.RegisterTool(Tool{
@@ -375,7 +374,7 @@ func (s *Server) InitializeTools() {
 			Schema:               &CriarCanteirosSchema{},
 			RequiresConfirmation: true,
 		},
-		Handler:  s.handleCriarNovosCanteiros,
+		Handler: s.handleCriarNovosCanteiros,
 	})
 
 	s.RegisterTool(Tool{
@@ -385,7 +384,7 @@ func (s *Server) InitializeTools() {
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-															"acao":                map[string]interface{}{"type": "string", "description": "Ação realizada: 'Nova Pilha', 'Revirada', 'Temperatura', 'Agua' ou 'Uso'.", "enum": []string{"Nova Pilha", "Revirada", "Temperatura", "Agua", "Uso"}},
+					"acao":                map[string]interface{}{"type": "string", "description": "Ação realizada: 'Nova Pilha', 'Revirada', 'Temperatura', 'Agua' ou 'Uso'.", "enum": []string{"Nova Pilha", "Revirada", "Temperatura", "Agua", "Uso"}},
 					"identificador_pilha": map[string]interface{}{"type": "string", "description": "Identificador ou número da pilha (ex: 'Pilha 01')."},
 					"materiais":           map[string]interface{}{"type": "string", "description": "Apenas se acao = 'Nova Pilha'. Ingredientes adicionados."},
 					"temperatura":         map[string]interface{}{"type": "number", "description": "Apenas se fornecida temperatura (em ºC)."},
@@ -399,7 +398,7 @@ func (s *Server) InitializeTools() {
 			Schema:               &RegistrarCompostagemToolSchema{},
 			RequiresConfirmation: true,
 		},
-		Handler:  s.handleRegistrarCompostagem,
+		Handler: s.handleRegistrarCompostagem,
 	})
 
 	s.RegisterTool(Tool{
@@ -409,7 +408,7 @@ func (s *Server) InitializeTools() {
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-															"produto": map[string]interface{}{
+					"produto": map[string]interface{}{
 						"type":        "string",
 						"description": "Nome do produto/insumo adquirido (Ex: Esterco, Enxada, Semente de Alface, Adubo orgânico).",
 					},
@@ -472,7 +471,7 @@ func (s *Server) InitializeTools() {
 			Schema:               &RegistrarCompraInsumoToolSchema{},
 			RequiresConfirmation: true,
 		},
-		Handler:  s.handleRegistrarCompraInsumo,
+		Handler: s.handleRegistrarCompraInsumo,
 	})
 
 	s.RegisterTool(Tool{
@@ -482,7 +481,7 @@ func (s *Server) InitializeTools() {
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-															"data":            map[string]interface{}{"type": "string", "description": "Data da colheita (YYYY-MM-DD)."},
+					"data":            map[string]interface{}{"type": "string", "description": "Data da colheita (YYYY-MM-DD)."},
 					"cultura":         map[string]interface{}{"type": "string", "description": "Nome da cultura colhida (Ex: Alface Crespa, Tomate)."},
 					"talhao":          map[string]interface{}{"type": "string", "description": "Nome do talhão onde foi colhido (Ex: Talhão 01)."},
 					"quantidade":      map[string]interface{}{"type": "number", "description": "Quantidade colhida."},
@@ -501,7 +500,7 @@ func (s *Server) InitializeTools() {
 			Schema:               &RegistrarColheitaSchema{},
 			RequiresConfirmation: true,
 		},
-		Handler:  s.handleRegistrarColheita,
+		Handler: s.handleRegistrarColheita,
 	})
 
 	s.RegisterTool(Tool{
@@ -550,7 +549,7 @@ func (s *Server) InitializeTools() {
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-															"data":           map[string]interface{}{"type": "string", "description": "Data da venda/saída (YYYY-MM-DD)."},
+					"data":           map[string]interface{}{"type": "string", "description": "Data da venda/saída (YYYY-MM-DD)."},
 					"produto":        map[string]interface{}{"type": "string", "description": "Nome do produto vendido (Ex: Alface, Tomate)."},
 					"quantidade":     map[string]interface{}{"type": "number"},
 					"unidade":        map[string]interface{}{"type": "string", "description": "Unidade de medida (Ex: kg, maços, caixas)."},
@@ -576,7 +575,7 @@ func (s *Server) InitializeTools() {
 			Schema:               &RegistrarVendaToolSchema{},
 			RequiresConfirmation: true,
 		},
-		Handler:  s.handleRegistrarVenda,
+		Handler: s.handleRegistrarVenda,
 	})
 
 	s.RegisterTool(Tool{
@@ -586,7 +585,7 @@ func (s *Server) InitializeTools() {
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-										"nome_propriedade": map[string]interface{}{"type": "string", "description": "O nome da fazenda (para feedback amigável)."},
+					"nome_propriedade": map[string]interface{}{"type": "string", "description": "O nome da fazenda (para feedback amigável)."},
 				},
 				"required": []string{},
 			},
@@ -596,7 +595,7 @@ func (s *Server) InitializeTools() {
 			Schema:               &SelecionarFazendaSchema{},
 			RequiresConfirmation: false,
 		},
-		Handler:  s.handleSelecionarFazenda,
+		Handler: s.handleSelecionarFazenda,
 	})
 
 	s.RegisterTool(Tool{
@@ -606,7 +605,7 @@ func (s *Server) InitializeTools() {
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-										"ano_safra": map[string]interface{}{"type": "string", "description": "O ano ou identificador do PMO (para feedback amigável)."},
+					"ano_safra": map[string]interface{}{"type": "string", "description": "O ano ou identificador do PMO (para feedback amigável)."},
 				},
 				"required": []string{},
 			},
@@ -616,7 +615,7 @@ func (s *Server) InitializeTools() {
 			Schema:               &SelecionarPMOSchema{},
 			RequiresConfirmation: false,
 		},
-		Handler:  s.handleSelecionarPMO,
+		Handler: s.handleSelecionarPMO,
 	})
 
 	s.RegisterTool(Tool{
@@ -624,10 +623,9 @@ func (s *Server) InitializeTools() {
 			Name:        "consultar_demandas_cooperativa",
 			Description: "Consulta o 'Mural de Demandas' das cooperativas e associações às quais o agricultor está vinculado. Use esta ferramenta sempre que o usuário perguntar sobre 'demandas atuais', 'o que a cooperativa está pedindo', 'quais produtos são necessários', 'contratos abertos' ou 'oportunidades de venda'. Esta ferramenta retorna dados estruturados e atualizados diretamente do banco de dados, sendo a fonte primária para informações de mercado.",
 			Parameters: map[string]interface{}{
-				"type": "object",
-				"properties": map[string]interface{}{
-									},
-				"required": []string{},
+				"type":       "object",
+				"properties": map[string]interface{}{},
+				"required":   []string{},
 			},
 		},
 		Category: CategoryDBRead,
@@ -641,7 +639,7 @@ func (s *Server) InitializeTools() {
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-										"ano": map[string]interface{}{
+					"ano": map[string]interface{}{
 						"type":        "integer",
 						"description": "O ano do balanço (ex: 2026). OBRIGATÓRIO: Se o usuário não especificar o ano, você DEVE fornecer o ano atual (2026) como padrão.",
 					},
@@ -664,7 +662,7 @@ func (s *Server) InitializeTools() {
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-										"cidade_informada": map[string]interface{}{
+					"cidade_informada": map[string]interface{}{
 						"type":        "string",
 						"description": "Nome da cidade ou coordenadas informada na mesma frase. Apenas se o usuário pedir explicitamente para uma cidade, senão omita.",
 					},
@@ -682,8 +680,8 @@ func (s *Server) InitializeTools() {
 
 	s.RegisterTool(Tool{
 		Definition: llm.FerramentaAgnostica{
-			Name: "consultar_janela_plantio",
-			Description: "Consulta a janela oficial de plantio (ZARC/MAPA) de uma cultura no municipio da propriedade: em quais periodos do ano o plantio tem risco climatico de 20%, 30% ou 40%. Use sempre que o produtor perguntar se pode plantar algo agora, qual a melhor epoca de plantio, se esta atrasado, ou ate quando da para plantar. Se a cultura nao for zoneada pelo ZARC (tomate, alface, cenoura e outras olericolas), devolve uma janela de referencia da literatura agronomica, claramente marcada como nao-oficial.",
+			Name:        "consultar_janela_plantio",
+			Description: "Consulta a janela oficial de plantio (ZARC/MAPA) de uma cultura no municipio da propriedade: em quais periodos do ano o plantio tem risco climatico de 20%, 30% ou 40%. Use sempre que o produtor perguntar se pode plantar algo agora, qual a melhor epoca de plantio, se esta atrasado, ou ate quando da para plantar. Se a cultura nao for zoneada pelo ZARC (tomate, alface, cenoura e outras olericolas), devolve uma janela de referencia da literatura agronomica, claramente marcada como nao-oficial. Para machambas em Mocambique (sem ZARC), devolve janelas de sementeira de referencia por zona agroecologica (calendario da FAO/IIAM), tambem nao-oficiais.",
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
@@ -693,7 +691,7 @@ func (s *Server) InitializeTools() {
 					},
 					"cidade_informada": map[string]interface{}{
 						"type":        "string",
-						"description": "Cidade e estado informados na mesma frase, com a UF (ex: 'Uberlandia, MG'). Apenas se o produtor perguntar explicitamente sobre outro municipio; senao omita.",
+						"description": "Cidade e estado informados na mesma frase, com a UF (ex: 'Uberlandia, MG'); em Mocambique, distrito e provincia (ex: 'Boane, Maputo', 'Chokwe, Gaza'). Apenas se o produtor perguntar explicitamente sobre outro lugar; senao omita.",
 					},
 				},
 				"required": []string{"cultura"},
@@ -720,11 +718,11 @@ func (s *Server) InitializeTools() {
 					},
 					"municipio": map[string]interface{}{
 						"type":        "string",
-						"description": "Cidade / Município da propriedade.",
+						"description": "Cidade / Município da propriedade. Em Moçambique, o DISTRITO (ex: Boane, Chókwè).",
 					},
 					"uf": map[string]interface{}{
 						"type":        "string",
-						"description": "Estado (UF) com 2 letras (Ex: SP, MG, PR).",
+						"description": "Estado (UF) com 2 letras (Ex: SP, MG, PR). Em Moçambique, a PROVÍNCIA (ex: Maputo, Gaza, Manica).",
 					},
 					"modalidade_predominante": map[string]interface{}{
 						"type":        "string",
@@ -828,7 +826,7 @@ var RegistrarLoteOperacoesDef = llm.FerramentaAgnostica{
 		"type": "object",
 		"properties": map[string]interface{}{
 			"operacoes": map[string]interface{}{
-				"type": "array",
+				"type":        "array",
 				"description": "Lista de operações a serem registradas.",
 				"items": map[string]interface{}{
 					"type": "object",
@@ -837,12 +835,12 @@ var RegistrarLoteOperacoesDef = llm.FerramentaAgnostica{
 							"type": "string",
 							"enum": []string{"Limpeza", "Propagacao", "Compostagem", "Compra", "Colheita", "Venda"},
 						},
-						"limpeza": map[string]interface{}{"type": "object", "description": "Dados da limpeza, se tipo=Limpeza"},
-						"propagacao": map[string]interface{}{"type": "object"},
+						"limpeza":     map[string]interface{}{"type": "object", "description": "Dados da limpeza, se tipo=Limpeza"},
+						"propagacao":  map[string]interface{}{"type": "object"},
 						"compostagem": map[string]interface{}{"type": "object"},
-						"compra": map[string]interface{}{"type": "object"},
-						"colheita": map[string]interface{}{"type": "object"},
-						"venda": map[string]interface{}{"type": "object"},
+						"compra":      map[string]interface{}{"type": "object"},
+						"colheita":    map[string]interface{}{"type": "object"},
+						"venda":       map[string]interface{}{"type": "object"},
 					},
 					"required": []string{"tipo"},
 				},
@@ -941,5 +939,3 @@ func (s *Server) handleProposeBatchMutations(ctx context.Context, args map[strin
 		"message":         confirmationMsg,
 	}, nil
 }
-
-
