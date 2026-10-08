@@ -283,7 +283,10 @@ func main() {
 
 	// --- Initialize MCP Server ---
 	agriRepo := agriculture.NewSupabaseAgriculturalRepository(sbClient)
-	cachedEmbedder := embedcache.NewCachedEmbedder(llmProvider.Embedder(), 15*time.Minute)
+	// bge-m3 (o mesmo espaço vetorial do acervo em farm_documents), e NÃO
+	// llmProvider.Embedder(): com o Gemini ativo aquilo gera 3072 dimensões e a
+	// busca da base técnica falhava sempre. Ver supabase.BGEEmbedder.
+	cachedEmbedder := embedcache.NewCachedEmbedder(supabase.NewBGEEmbedder(sbClient), 15*time.Minute)
 	mcpServer := mcp.NewServer(sbClient, agriRepo, cachedEmbedder, llmProvider)
 
 	// --- Base ZARC (Zoneamento Agrícola de Risco Climático) ---

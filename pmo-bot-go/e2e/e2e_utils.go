@@ -198,7 +198,7 @@ func novoBotE2E(t *testing.T, client *supabase.Client) *botE2E {
 	// FSM entrava em panic (nil pointer em mcp.(*Server).GetToolsForIntent)
 	// em toda mensagem que chegava ao agente.
 	agriRepo := agriculture.NewSupabaseAgriculturalRepository(client)
-	embedder := embedcache.NewCachedEmbedder(llmProvider.Embedder(), 15*time.Minute)
+	embedder := embedcache.NewCachedEmbedder(supabase.NewBGEEmbedder(client), 15*time.Minute)
 	mcpServer := mcp.NewServer(client, agriRepo, embedder, llmProvider)
 	mcpServer.InitializeTools()
 	// Tabelas embarcadas, ligadas como em cmd/server/main.go.
