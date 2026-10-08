@@ -14,11 +14,13 @@ func TestJobShouldRespondWithAudioUsesExplicitFlag(t *testing.T) {
 	}
 }
 
-func TestJobShouldRespondWithAudioFallsBackToLegacyAudioInput(t *testing.T) {
+// Desde 2026-10-08 a entrada em áudio, sozinha, não gera mais resposta em
+// áudio (custo de dados do produtor) — só com "modo áudio" ou modo gravado.
+func TestJobShouldRespondWithAudioNaoEspelhaEntradaEmAudio(t *testing.T) {
 	job := &Job{RawPayload: ports.IncomingEnvelope{IsAudio: true}}
 
-	if !job.ShouldRespondWithAudio() {
-		t.Fatalf("expected legacy audio input to preserve audio response preference")
+	if job.ShouldRespondWithAudio() {
+		t.Fatalf("áudio recebido sem preferência deveria responder só em texto")
 	}
 }
 

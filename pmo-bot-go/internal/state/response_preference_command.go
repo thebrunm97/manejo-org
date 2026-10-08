@@ -65,9 +65,9 @@ var confirmacaoPreferencia = map[ports.ResponsePreference]string{
 	ports.PreferenceAudio: "Pronto! A partir de agora mando o texto e o áudio junto. " +
 		"O texto chega primeiro e o áudio logo depois. " +
 		"Se quiser parar o áudio, é só mandar *modo texto*.",
-	ports.PreferenceAuto: "Pronto! Voltei ao normal: se você mandar áudio, respondo com áudio; " +
-		"se mandar escrito, respondo escrito. " +
-		"Pode fixar com *modo texto* ou *modo áudio* quando quiser.",
+	ports.PreferenceAuto: "Pronto! Voltei ao normal: respondo por escrito, para economizar seus dados. " +
+		"Você pode continuar me mandando áudio à vontade. " +
+		"Se preferir receber a resposta em áudio também, mande *modo áudio*.",
 }
 
 // parsePreferenceCommand reconhece um comando de preferência de formato.

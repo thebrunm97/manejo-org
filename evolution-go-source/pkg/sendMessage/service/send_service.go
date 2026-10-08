@@ -12,6 +12,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"os"
 	"os/exec"
 	"regexp"
 	"strconv"
@@ -737,6 +738,20 @@ func convertAudioWithApi(apiUrl string, apiKey string, convertData ConvertAudio)
 	return base64ToBytes, apiResponse.Duration, nil
 }
 
+// opusBitrate é o bitrate da nota de voz entregue ao WhatsApp.
+//
+// Era 128k fixo — bitrate de música. Para voz mono (Opus em modo voip),
+// 24k soa praticamente igual e, medido com uma resposta de 5,5s do Piper,
+// cai de 97 KB para 18 KB (5,4x). O produtor paga pacote de dados (Brasil e
+// Moçambique), então isso é custo direto para ele. Ajustável por
+// AUDIO_OPUS_BITRATE (ex.: "16k", "32k").
+func opusBitrate() string {
+	if b := strings.TrimSpace(os.Getenv("AUDIO_OPUS_BITRATE")); b != "" {
+		return b
+	}
+	return "24k"
+}
+
 func convertAudioToOpusWithDuration(inputData []byte) ([]byte, int, error) {
 	cmd := exec.Command("ffmpeg", "-i", "pipe:0",
 		"-f",
@@ -747,7 +762,7 @@ func convertAudioToOpusWithDuration(inputData []byte) ([]byte, int, error) {
 		"-avoid_negative_ts",
 		"make_zero",
 		"-b:a",
-		"128k",
+		opusBitrate(),
 		"-ar",
 		"48000",
 		"-ac",

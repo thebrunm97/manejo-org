@@ -143,22 +143,11 @@ func handleDuvidaFallback(ctx context.Context, wpClient ports.ChannelSender, tts
 		log.Printf("⚠️ [FSM] Resposta do bot vazia após execução do orquestrador. Usando fallback amigável.")
 		botResponse = "✅ Operação registrada no sistema com sucesso!"
 	} else {
-		trimmed := strings.TrimSpace(botResponse)
-		// Check for specific emojis that signal a non-technical header message
-		excludePrefixes := []string{"✅", "❌", "🗑️", "⏳", "⚠️"}
-		shouldOmitHeader := false
-		for _, prefix := range excludePrefixes {
-			if strings.HasPrefix(trimmed, prefix) {
-				shouldOmitHeader = true
-				break
-			}
-		}
-
-		if shouldOmitHeader || finalIntent == "DATABASE" {
-			botResponse = trimmed // Keep clean confirmation/error
-		} else {
-			botResponse = "🌿 *Consulta Técnica:*\n\n" + trimmed
-		}
+		// Sem o cabeçalho "🌿 *Consulta Técnica:*" que era prefixado aqui em
+		// toda resposta não-DATABASE — inclusive em pedidos de confirmação e
+		// conversa simples. Respostas curtas e diretas (custo de dados e
+		// leitura no celular, decisão de 2026-10-08).
+		botResponse = strings.TrimSpace(botResponse)
 	}
 
 	// 4. Logging and History Storage (No direct sendFeedback)

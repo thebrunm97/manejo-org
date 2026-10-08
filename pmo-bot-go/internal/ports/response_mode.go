@@ -9,11 +9,15 @@ import "strings"
 type ResponsePreference string
 
 const (
-	// PreferenceAuto espelha a entrada: áudio recebido → áudio devolvido.
-	// É o default, e é deliberado. Ver a migration 20260823100000 para o
-	// porquê de não ser 'texto': espelhar não exige alfabetização para
-	// funcionar, e o público-alvo inclui quem manda áudio justamente porque
-	// ler e escrever é custoso.
+	// PreferenceAuto é o default de quem nunca escolheu: responde só em TEXTO.
+	//
+	// Até 2026-10-08 espelhava a entrada (áudio recebido → texto + áudio),
+	// decisão da migration 20260823100000 pensando em quem tem dificuldade de
+	// ler. Revista pelo responsável a partir da realidade de Moçambique (e do
+	// Brasil): o produtor paga pacote de dados, e a resposta em áudio vem
+	// ALÉM do texto — quem falava pagava a resposta duas vezes. Quem quiser
+	// áudio continua tendo: basta pedir "modo áudio" (PreferenceAudio).
+	// Mandar áudio PARA o bot segue funcionando normalmente.
 	PreferenceAuto ResponsePreference = "automatico"
 
 	// PreferenceText nunca sintetiza. É o modo que elimina carga do Piper,
@@ -62,7 +66,7 @@ func ResolveResponseMode(msg IncomingEnvelope) bool {
 //     resolve uma vez e marca; reabrir a decisão depois disso faria o mesmo
 //     job responder em formatos diferentes conforme o caminho de código.
 //  2. Preferência do produtor. É uma escolha declarada e ganha do espelho.
-//  3. Espelhamento da entrada (IsAudio), o default histórico.
+//  3. Sem preferência: texto (até 2026-10-08 espelhava a entrada).
 //
 // RespondWithAudio sem flag explícita é tratado no nível 2 por compatibilidade
 // com jobs legados enfileirados antes do DT-29.
@@ -78,9 +82,8 @@ func ResolveResponseModeFor(msg IncomingEnvelope, pref ResponsePreference) bool 
 		return true
 	}
 
-	if msg.RespondWithAudio {
-		return true
-	}
-
-	return msg.IsAudio
+	// Sem preferência declarada: texto, mesmo que a entrada tenha sido áudio
+	// (ver PreferenceAuto). RespondWithAudio só vale para jobs legados
+	// enfileirados antes do DT-29 com o modo já gravado.
+	return msg.RespondWithAudio
 }

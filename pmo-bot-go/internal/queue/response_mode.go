@@ -19,7 +19,7 @@ func (j *Job) ShouldRespondWithAudio() bool {
 //  2. Preferência do produtor — escolha declarada, ganha do espelho.
 //  3. Campos legados (RespondWithAudio, RespondAudio), para jobs enfileirados
 //     antes do DT-29 e ainda na fila durante o deploy.
-//  4. Espelhamento da entrada (IsAudio), o default histórico.
+//  4. Sem nada disso: texto (até 2026-10-08 espelhava a entrada, IsAudio).
 //
 // A preferência entra ACIMA dos campos legados, e isso é deliberado: um job
 // antigo na fila carrega o espelhamento da entrada como se fosse escolha, e
@@ -57,5 +57,7 @@ func (j *Job) ShouldRespondWithAudioFor(pref ports.ResponsePreference) bool {
 		return true
 	}
 
-	return j.RawPayload.IsAudio
+	// Sem preferência: texto, mesmo que a entrada tenha sido áudio — ver
+	// ports.PreferenceAuto (custo do pacote de dados do produtor).
+	return false
 }

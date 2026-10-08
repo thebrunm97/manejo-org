@@ -212,7 +212,11 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingEnvelope, sbClient *s
 		log.Printf("[AUDIO-DEBUG] Transcrição concluída: \"%s\"", cleanText)
 		routerText = cleanText
 		body = cleanText
-		respondWithAudio = true
+		// Áudio de entrada não implica mais áudio de resposta: só para quem
+		// pediu "modo áudio" (ver ports.PreferenceAuto — custo de dados).
+		if profile != nil && ports.ParseResponsePreference(profile.PreferenciaResposta) == ports.PreferenceAudio {
+			respondWithAudio = true
+		}
 	} else if msg.IsImage {
 		imageBytes, mimeType, err := wpClient.DownloadMedia(ctx, msg.ID, msg.RawPayload)
 		if err == nil {

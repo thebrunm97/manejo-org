@@ -58,13 +58,21 @@ func TestResolveResponseModeFor_PrecedenciaDaPreferencia(t *testing.T) {
 			quer: false,
 		},
 		{
-			nome: "sem preferencia, espelha audio",
+			// Desde 2026-10-08: áudio de entrada não gera mais áudio de
+			// resposta sem pedido explícito (custo de dados do produtor).
+			nome: "sem preferencia, audio recebido responde so em texto",
 			msg:  IncomingEnvelope{IsAudio: true},
 			pref: PreferenceAuto,
+			quer: false,
+		},
+		{
+			nome: "preferencia audio, audio recebido responde em audio",
+			msg:  IncomingEnvelope{IsAudio: true},
+			pref: PreferenceAudio,
 			quer: true,
 		},
 		{
-			nome: "sem preferencia, espelha texto",
+			nome: "sem preferencia, texto recebido responde em texto",
 			msg:  IncomingEnvelope{IsAudio: false},
 			pref: PreferenceAuto,
 			quer: false,
@@ -80,8 +88,8 @@ func TestResolveResponseModeFor_PrecedenciaDaPreferencia(t *testing.T) {
 	}
 }
 
-// A função antiga precisa continuar decidindo exatamente como antes, senão o
-// DT-29 muda o comportamento de quem nunca escolheu nada.
+// A função antiga (sem preferência conhecida) segue a mesma regra de
+// ResolveResponseModeFor com PreferenceAuto: só texto, salvo modo já gravado.
 func TestResolveResponseMode_CompatibilidadePreservada(t *testing.T) {
 	casos := []struct {
 		msg  IncomingEnvelope
@@ -90,7 +98,7 @@ func TestResolveResponseMode_CompatibilidadePreservada(t *testing.T) {
 		{IncomingEnvelope{HasExplicitResponseMode: true, RespondWithAudio: true}, true},
 		{IncomingEnvelope{HasExplicitResponseMode: true, RespondWithAudio: false}, false},
 		{IncomingEnvelope{RespondWithAudio: true}, true},
-		{IncomingEnvelope{IsAudio: true}, true},
+		{IncomingEnvelope{IsAudio: true}, false},
 		{IncomingEnvelope{}, false},
 	}
 

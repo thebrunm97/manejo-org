@@ -32,10 +32,11 @@ func TestShouldRespondWithAudioFor_Precedencia(t *testing.T) {
 			quer: false,
 		},
 		{
-			nome: "sem preferencia, espelha a entrada",
+			// Desde 2026-10-08: sem preferência, áudio recebido → só texto.
+			nome: "sem preferencia, audio recebido responde so em texto",
 			job:  &Job{RawPayload: ports.IncomingEnvelope{IsAudio: true}},
 			pref: ports.PreferenceAuto,
-			quer: true,
+			quer: false,
 		},
 		{
 			nome: "job nil nao entra em panico",
@@ -81,7 +82,7 @@ func TestShouldRespondWithAudio_CompatibilidadePreservada(t *testing.T) {
 		{"explicito true", &Job{HasExplicitResponseMode: true, RespondWithAudio: true}, true},
 		{"explicito false", &Job{HasExplicitResponseMode: true, RespondWithAudio: false}, false},
 		{"legado RespondAudio", &Job{RespondAudio: true}, true},
-		{"payload de audio", &Job{RawPayload: ports.IncomingEnvelope{IsAudio: true}}, true},
+		{"payload de audio sem preferencia vira texto", &Job{RawPayload: ports.IncomingEnvelope{IsAudio: true}}, false},
 		{"texto puro", &Job{}, false},
 		{"nil", nil, false},
 	}
