@@ -64,6 +64,22 @@ func TestResolverZonas(t *testing.T) {
 	}
 }
 
+func TestProvinciasDoDistrito(t *testing.T) {
+	tab, err := Carregar()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := tab.ProvinciasDoDistrito("boane"); strings.Join(got, ",") != "L" {
+		t.Errorf("Boane deveria estar só em Maputo (L); veio %v", got)
+	}
+	if got := tab.ProvinciasDoDistrito("Inventado"); len(got) != 0 {
+		t.Errorf("distrito inexistente; veio %v", got)
+	}
+	if got := tab.ProvinciasDoDistrito("*"); len(got) != 0 {
+		t.Errorf("a linha curinga da província não é distrito; veio %v", got)
+	}
+}
+
 func TestBuscarComSinonimos(t *testing.T) {
 	tab, err := Carregar()
 	if err != nil {

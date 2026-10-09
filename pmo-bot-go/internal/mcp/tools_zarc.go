@@ -179,14 +179,18 @@ func (s *Server) localizacaoParaZarc(args map[string]interface{}, tenant TenantC
 		return cidade, uf, "BR", nil
 	}
 
+	msgSemLocal := "Localização não encontrada no cadastro. Pergunte ao produtor a cidade e o estado da propriedade (em Moçambique: distrito e província)."
+	if ddiMocambique(tenant.Telefone) {
+		msgSemLocal = "A machamba ainda não tem localização no cadastro. Pergunte ao produtor o distrito e a província (ex.: Boane, Maputo)."
+	}
 	if s.supabase == nil || tenant.PropriedadeID == 0 {
-		return pedir("Localização não encontrada no cadastro. Pergunte ao produtor a cidade e o estado da propriedade (em Moçambique: distrito e província).")
+		return pedir(msgSemLocal)
 	}
 
 	loc, err := s.supabase.GetPropriedadeLocalizacao(tenant.PropriedadeID)
 	if err != nil {
 		log.Printf("⚠️ [MCP] ZARC: falha ao obter localização da propriedade %d: %v", tenant.PropriedadeID, err)
-		return pedir("Localização não encontrada no cadastro. Pergunte ao produtor a cidade e o estado da propriedade (em Moçambique: distrito e província).")
+		return pedir(msgSemLocal)
 	}
 
 	pais := loc.Pais

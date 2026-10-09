@@ -681,6 +681,17 @@ func finalizarCadastro(
 
 	historyManager.ClearFSMState(phone)
 
+	// Moçambique: em vez do link do formulário web (dados caros, e o mapa de
+	// lá é pensado para o Brasil), pergunta já o distrito e a província —
+	// ver onboarding_machamba_mz.go.
+	if ehTelefoneMZ(phone) {
+		historyManager.SetFSMState(phone, StateAguardandoMachambaMZ, nil, nil)
+		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, fmt.Sprintf(
+			"✅ *Registo feito, %s!*\n\n%s", primeiroNome(dados.Nome), msgPedirMachambaMZ), respondWithAudio)
+		log.Printf("🎉 [Onboarding] Produtor cadastrado pelo WhatsApp (MZ): phone=%s user=%s", phone, usuario.ID)
+		return ProcessResult{Success: true, Reason: "onboarding_concluido"}
+	}
+
 	tokenURL := ""
 	tokenString, errOpaque := sbClient.GenerateOpaqueToken(usuario.ID)
 	if errOpaque != nil {

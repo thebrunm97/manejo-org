@@ -387,6 +387,28 @@ func (t *Tabela) ResolverZonas(distrito, provincia string) (zonas []ZonaDoDistri
 	return nil, false, false
 }
 
+// ProvinciasDoDistrito devolve, em ordem, as províncias (código ISO) que têm um
+// distrito com este nome na tabela. Serve para o produtor que responde só
+// "Boane": com uma província só, não é preciso perguntar de novo. Só acha os
+// distritos listados um a um — os cobertos pela linha "*" da província não.
+func (t *Tabela) ProvinciasDoDistrito(distrito string) []string {
+	if t == nil {
+		return nil
+	}
+	k := chave(distrito)
+	if k == "" || k == "*" {
+		return nil
+	}
+	var out []string
+	for prov, ds := range t.distritos {
+		if len(ds[k]) > 0 {
+			out = append(out, prov)
+		}
+	}
+	sort.Strings(out)
+	return out
+}
+
 // Buscar devolve as janelas da cultura numa zona. Aceita sinônimos (milho,
 // maize, corn; nhemba, feijão-frade, cowpea...) e casa por prefixo nas duas
 // direções, como plantioref ("feijão nhemba precoce" acha "feijão-nhemba").

@@ -77,10 +77,17 @@ type OpenMeteoResponse struct {
 
 // FetchWeather busca dados climáticos com retries e fallback para WeatherAPI
 func FetchWeather(apiKey string, location string) (*WeatherData, error) {
+	return FetchWeatherNoPais(apiKey, location, "")
+}
+
+// FetchWeatherNoPais restringe o geocoding ao país (ISO alfa-2). Sem isso,
+// "Boane,L" (distrito, província de Moçambique) é procurado só pelo nome em
+// todo o mundo e pode cair num homônimo de outro país.
+func FetchWeatherNoPais(apiKey, location, pais string) (*WeatherData, error) {
 	ctx := context.Background()
 
 	// 1. Tentar Open-Meteo com Retry e Timeout Robusto
-	data, err := fetchWeatherWithRetry(ctx, location)
+	data, err := fetchWeatherWithRetry(ctx, location, pais)
 	if err == nil {
 		return data, nil
 	}
@@ -90,13 +97,18 @@ func FetchWeather(apiKey string, location string) (*WeatherData, error) {
 	// 2. Fallback para WeatherAPI (se apiKey disponível)
 	if apiKey != "" {
 		log.Printf("🔄 [WeatherSync] Iniciando fallback para WeatherAPI...")
+		if pais == "MZ" {
+			// A WeatherAPI não conhece o código da província ("L"): vai o
+			// distrito com o nome do país.
+			location = strings.TrimSpace(strings.Split(location, ",")[0]) + ", Mozambique"
+		}
 		return fetchWeatherLegacy(ctx, apiKey, location)
 	}
 
 	return nil, fmt.Errorf("clima indisponível (Open-Meteo falhou e sem API Key de fallback): %w", err)
 }
 
-func fetchWeatherWithRetry(ctx context.Context, location string) (*WeatherData, error) {
+func fetchWeatherWithRetry(ctx context.Context, location, pais string) (*WeatherData, error) {
 	const maxRetries = 3
 	const baseDelay = 2 * time.Second
 
@@ -116,7 +128,7 @@ func fetchWeatherWithRetry(ctx context.Context, location string) (*WeatherData, 
 
 	if !isCoord {
 		var err error
-		lat, lng, err = geocodeOpenMeteo(ctx, location)
+		lat, lng, err = geocodeOpenMeteo(ctx, location, pais)
 		if err != nil {
 			return nil, fmt.Errorf("falha no geocoding para '%s': %w", location, err)
 		}
@@ -143,7 +155,7 @@ func fetchWeatherWithRetry(ctx context.Context, location string) (*WeatherData, 
 	return nil, lastErr
 }
 
-func geocodeOpenMeteo(ctx context.Context, query string) (string, string, error) {
+func geocodeOpenMeteo(ctx context.Context, query, pais string) (string, string, error) {
 	parts := strings.Split(query, ",")
 	cityName := strings.TrimSpace(parts[0])
 	
@@ -154,6 +166,9 @@ func geocodeOpenMeteo(ctx context.Context, query string) (string, string, error)
 	}
 
 	apiURL := fmt.Sprintf("https://geocoding-api.open-meteo.com/v1/search?name=%s&count=1&language=pt", url.QueryEscape(cityName))
+	if pais != "" {
+		apiURL += "&countryCode=" + url.QueryEscape(pais)
+	}
 	req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
 	if err != nil {
 		return "", "", err

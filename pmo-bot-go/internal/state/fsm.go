@@ -293,6 +293,17 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingEnvelope, sbClient *s
 
 	bodyLower := strings.ToLower(strings.TrimSpace(body))
 
+	// 3.0 Moçambique: resposta à pergunta da localização feita logo após o
+	// registo. Vem antes da auto-seleção porque a machamba ainda não existe.
+	if historyManager != nil {
+		if st, ctxSt, _ := historyManager.GetFSMState(phone); st == StateAguardandoMachambaMZ {
+			if res, tratado := HandleMachambaMZ(ctx, msg, phone, body, profile, ctxSt, respondWithAudio,
+				sbClient, wpClient, ttsClient, historyManager); tratado {
+				return res
+			}
+		}
+	}
+
 	// 3.1 Auto-Seleção Silenciosa & Forçada
 	if profile.PmoAtivoID == 0 && bodyLower != "/trocar" && bodyLower != "/fazenda" {
 		state, _, _ := historyManager.GetFSMState(phone)
