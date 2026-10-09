@@ -91,6 +91,30 @@ func interpretarMachambaMZ(tab *zae.Tabela, texto string) (localMachamba, result
 	}
 }
 
+// pareceLocalMZSemMachamba: produtor de Moçambique ainda sem propriedade que
+// manda algo no formato "distrito, província". Exige a província explícita
+// para não capturar uma conversa qualquer.
+func pareceLocalMZSemMachamba(phone string, profile *supabase.Profile, body string) bool {
+	if !ehTelefoneMZ(phone) || profile == nil || profile.PropriedadeAtivaID != 0 || profile.PmoAtivoID != 0 {
+		return false
+	}
+	if strings.Contains(body, "?") || len(strings.Fields(body)) > 6 {
+		return false
+	}
+	d, _, ok := zae.SepararDistritoProvincia(body)
+	return ok && d != ""
+}
+
+// semPropriedades confirma no banco que o produtor não tem nenhuma
+// propriedade (perfil sem ativa pode ter várias sem seleção).
+func semPropriedades(sbClient *supabase.Client, userID string) bool {
+	if sbClient == nil {
+		return false
+	}
+	props, err := sbClient.GetPropriedadesDoUsuario(userID)
+	return err == nil && len(props) == 0
+}
+
 // textoZonas descreve a(s) zona(s) para o produtor.
 func textoZonas(l localMachamba) string {
 	nomes := make([]string, 0, len(l.Zonas))

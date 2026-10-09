@@ -295,8 +295,11 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingEnvelope, sbClient *s
 
 	// 3.0 Moçambique: resposta à pergunta da localização feita logo após o
 	// registo. Vem antes da auto-seleção porque a machamba ainda não existe.
+	// Também vale depois (quem respondeu DEPOIS ou teve falha): produtor MZ
+	// sem nenhuma propriedade que manda "distrito, província".
 	if historyManager != nil {
-		if st, ctxSt, _ := historyManager.GetFSMState(phone); st == StateAguardandoMachambaMZ {
+		st, ctxSt, _ := historyManager.GetFSMState(phone)
+		if st == StateAguardandoMachambaMZ || (st == StateInitial && pareceLocalMZSemMachamba(phone, profile, body) && semPropriedades(sbClient, profile.ID)) {
 			if res, tratado := HandleMachambaMZ(ctx, msg, phone, body, profile, ctxSt, respondWithAudio,
 				sbClient, wpClient, ttsClient, historyManager); tratado {
 				return res

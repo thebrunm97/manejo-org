@@ -3,6 +3,8 @@ package state
 import (
 	"strings"
 	"testing"
+
+	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
 )
 
 func TestInterpretarMachambaMZ(t *testing.T) {
@@ -56,5 +58,25 @@ func TestTextoZonas(t *testing.T) {
 func TestTelefoneMZ(t *testing.T) {
 	if !ehTelefoneMZ("258841234567") || ehTelefoneMZ("5511999999999") {
 		t.Error("detecção pelo DDI 258")
+	}
+}
+
+func TestPareceLocalMZSemMachamba(t *testing.T) {
+	semProp := &supabase.Profile{ID: "u"}
+	if !pareceLocalMZSemMachamba("258841234567", semProp, "Boane, Maputo") {
+		t.Error("produtor MZ sem machamba mandando distrito, província")
+	}
+	for _, c := range []struct {
+		phone, body string
+		p           *supabase.Profile
+	}{
+		{"5511999999999", "Boane, Maputo", semProp},                       // não é MZ
+		{"258841234567", "Boane", semProp},                                // sem província explícita
+		{"258841234567", "posso semear milho em Boane, Maputo?", semProp}, // pergunta
+		{"258841234567", "Boane, Maputo", &supabase.Profile{ID: "u", PropriedadeAtivaID: 7}},
+	} {
+		if pareceLocalMZSemMachamba(c.phone, c.p, c.body) {
+			t.Errorf("não deveria capturar %q de %s", c.body, c.phone)
+		}
 	}
 }
