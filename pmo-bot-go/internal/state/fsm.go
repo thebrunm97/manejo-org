@@ -614,7 +614,7 @@ Você DEVE retornar EXCLUSIVAMENTE um objeto JSON válido, sem markdown, sem jus
 				ConversationID: msg.ConversationID,
 				To:             msg.From,
 				Type:           ports.OutboundTypeText,
-				Text:           "⏳ Processando sua solicitação...",
+				Text:           MsgProcessando(phone),
 			}
 			wpClient.Send(context.Background(), env)
 		}()

@@ -40,6 +40,25 @@ var tabelaZAE = sync.OnceValues(zae.Carregar)
 
 func ehTelefoneMZ(phone string) bool { return strings.HasPrefix(phone, "258") }
 
+// porPais escolhe o texto pelo DDI: o produtor moçambicano lê "registo",
+// "machamba" e "o seu", não "cadastro", "propriedade" e "você".
+func porPais(phone, br, mz string) string {
+	if ehTelefoneMZ(phone) {
+		return mz
+	}
+	return br
+}
+
+// Textos do registo em português de Moçambique (os de cima são do Brasil).
+const msgBoasVindasMZ = `👋 Olá! Sou o assistente do *ManejoORG*.
+
+Este número ainda não está registado. Já tem uma conta criada por e-mail no nosso site? *(Responda Sim ou Não)*`
+
+// MsgProcessando é o aviso de progresso das consultas mais demoradas.
+func MsgProcessando(phone string) string {
+	return porPais(phone, "⏳ Processando sua solicitação...", "⏳ A processar o seu pedido...")
+}
+
 type resultadoMachamba int
 
 const (

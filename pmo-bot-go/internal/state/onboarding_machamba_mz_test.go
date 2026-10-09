@@ -80,3 +80,19 @@ func TestPareceLocalMZSemMachamba(t *testing.T) {
 		}
 	}
 }
+
+// O produtor de Moçambique não deve ler o vocabulário do Brasil no registo.
+func TestTextosRegistoMZ(t *testing.T) {
+	const mz = "258841234567"
+	d := DadosCadastro{Nome: "Ana Machava"}
+	for _, txt := range []string{msgBoasVindasMZ, resumoCadastro(mz, d), MsgProcessando(mz), msgPedirMachambaMZ} {
+		for _, br := range []string{"cadastr", "você", "propriedade", "Processando", "solicitação"} {
+			if strings.Contains(strings.ToLower(txt), strings.ToLower(br)) {
+				t.Errorf("texto MZ com %q: %q", br, txt)
+			}
+		}
+	}
+	if !strings.Contains(resumoCadastro("5511999999999", d), "Posso cadastrar") {
+		t.Error("o texto do Brasil não pode mudar")
+	}
+}

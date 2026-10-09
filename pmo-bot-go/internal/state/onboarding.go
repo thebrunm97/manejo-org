@@ -86,7 +86,7 @@ type DadosCadastro struct {
 func (d DadosCadastro) faltantes() []string {
 	var f []string
 	if strings.TrimSpace(d.Nome) == "" {
-		f = append(f, "seu nome completo")
+		f = append(f, "o seu nome completo")
 	}
 	return f
 }
@@ -217,9 +217,10 @@ func extrairDadosCadastro(ctx context.Context, llmClient LLMClient, texto string
 }
 
 // resumoCadastro monta o texto de conferência mostrado antes de gravar.
-func resumoCadastro(d DadosCadastro) string {
-	return fmt.Sprintf(
+func resumoCadastro(phone string, d DadosCadastro) string {
+	return fmt.Sprintf(porPais(phone,
 		"Confere pra mim se está certo:\n\n👤 *Nome:* %s\n\nPosso cadastrar assim? Os dados da propriedade a gente completa depois.",
+		"Confirme se está certo:\n\n👤 *Nome:* %s\n\nPosso fazer o registo assim? A seguir pergunto onde fica a sua machamba."),
 		d.Nome)
 }
 
@@ -269,8 +270,9 @@ func HandleOnboarding(
 	if estado == StateConfirmandoCadastro {
 		if ehNegacao(body) {
 			historyManager.SetFSMState(phone, StateAguardandoCadastro, nil, nil)
-			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From,
-				"Sem problema! Me manda os dados de novo, do jeito certo desta vez. 🙂", respondWithAudio)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, porPais(phone,
+				"Sem problema! Me manda os dados de novo, do jeito certo desta vez. 🙂",
+				"Sem problema! Envie-me o seu nome outra vez, como deve ficar. 🙂"), respondWithAudio)
 			return ProcessResult{Success: true, Reason: "onboarding_corrigir"}, true
 		}
 
@@ -280,8 +282,9 @@ func HandleOnboarding(
 				// Estado perdido (restart) ou corrompido: reextrai em vez de
 				// gravar algo que não foi conferido.
 				historyManager.SetFSMState(phone, StateAguardandoCadastro, nil, nil)
-				sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From,
-					"Desculpa, perdi os dados que você tinha mandado. Pode reenviar?", respondWithAudio)
+				sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, porPais(phone,
+					"Desculpa, perdi os dados que você tinha mandado. Pode reenviar?",
+					"Desculpe, perdi os dados que tinha enviado. Pode mandar o seu nome outra vez?"), respondWithAudio)
 				return ProcessResult{Success: false, Reason: "onboarding_estado_perdido"}, true
 			}
 			return finalizarCadastro(phone, msg, dados, respondWithAudio, sbClient, wpClient, ttsClient, historyManager), true
@@ -294,7 +297,9 @@ func HandleOnboarding(
 	// ── Cancelamento Genérico ───────────────────────────────────────────────
 	if strings.ToUpper(strings.TrimSpace(body)) == "CANCELAR" {
 		historyManager.SetFSMState(phone, "", nil, nil)
-		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "Operação cancelada. Mande um 'Oi' quando quiser recomeçar.", respondWithAudio)
+		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, porPais(phone,
+			"Operação cancelada. Mande um 'Oi' quando quiser recomeçar.",
+			"Cancelado. Envie um 'Olá' quando quiser recomeçar."), respondWithAudio)
 		return ProcessResult{Success: true, Reason: "cancelado"}, true
 	}
 
@@ -494,13 +499,17 @@ func HandleOnboarding(
 			return ProcessResult{Success: true, Reason: "iniciou_vinculo"}, true
 		} else if ehNegacao(body) {
 			historyManager.SetFSMState(phone, StateAguardandoCadastro, nil, nil)
-			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "Perfeito, vou criar o seu agora mesmo. Me diz só o seu *nome completo* pra gente começar:", respondWithAudio)
+			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, porPais(phone,
+				"Perfeito, vou criar o seu agora mesmo. Me diz só o seu *nome completo* pra gente começar:",
+				"Muito bem, vamos fazer o seu registo agora. Para começar, diga-me o seu *nome completo*:"), respondWithAudio)
 			return ProcessResult{Success: true, Reason: "iniciou_novo_cadastro"}, true
 		} else {
 			if pareceConterDados(body) {
 				historyManager.SetFSMState(phone, StateAguardandoCadastro, nil, nil)
 			} else {
-				sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "Você já tem um cadastro feito por e-mail no nosso site? (Responda SIM ou NÃO)", respondWithAudio)
+				sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, porPais(phone,
+					"Você já tem um cadastro feito por e-mail no nosso site? (Responda SIM ou NÃO)",
+					"Já tem uma conta criada por e-mail no nosso site? (Responda SIM ou NÃO)"), respondWithAudio)
 				return ProcessResult{Success: true, Reason: "pergunta_nao_respondida"}, true
 			}
 		}
@@ -512,7 +521,7 @@ func HandleOnboarding(
 	// substância ou se já estivermos no meio do cadastro.
 	if estado == "" && !pareceConterDados(body) {
 		historyManager.SetFSMState(phone, StatePerguntaContaExistente, nil, nil)
-		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, msgBoasVindas, respondWithAudio)
+		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, porPais(phone, msgBoasVindas, msgBoasVindasMZ), respondWithAudio)
 		return ProcessResult{Success: true, Reason: "onboarding_iniciado"}, true
 	}
 
@@ -530,7 +539,7 @@ func HandleOnboarding(
 	// baixo porque a gravação ainda depende do SIM de conferência.
 	if estado == StateAguardandoCadastro && pareceNomeProprio(body) {
 		dados := DadosCadastro{Nome: strings.TrimSpace(body)}
-		return pedirConfirmacao(phone, msg, dados, resumoCadastro(dados), "onboarding_nome_direto",
+		return pedirConfirmacao(phone, msg, dados, resumoCadastro(phone, dados), "onboarding_nome_direto",
 			respondWithAudio, sbClient, wpClient, ttsClient, historyManager), true
 	}
 
@@ -540,7 +549,9 @@ func HandleOnboarding(
 		log.Printf("⚠️ [Onboarding] Falha ao extrair dados de %s: %v", phone, err)
 		historyManager.SetFSMState(phone, StateAguardandoCadastro, nil, nil)
 		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From,
-			"Não consegui entender os dados. Pode mandar de novo, com nome, propriedade, hectares e talhão?", respondWithAudio)
+			porPais(phone,
+				"Não consegui entender os dados. Pode mandar de novo, com nome, propriedade, hectares e talhão?",
+				"Não consegui perceber os dados. Pode enviar outra vez o seu nome completo?"), respondWithAudio)
 		return ProcessResult{Success: false, Reason: "onboarding_extracao_falhou"}, true
 	}
 
@@ -560,7 +571,9 @@ func HandleOnboarding(
 				log.Printf("⚠️ [Onboarding] Extração recusou %d vezes seguidas para %s; oferecendo o texto cru como nome", tentativas, phone)
 				dados := DadosCadastro{Nome: strings.TrimSpace(body)}
 				resumo := fmt.Sprintf(
-					"Só pra eu não errar: quer que eu cadastre o seu nome exatamente como *%s*?",
+					porPais(phone,
+						"Só pra eu não errar: quer que eu cadastre o seu nome exatamente como *%s*?",
+						"Só para eu não errar: quer que registe o seu nome exatamente como *%s*?"),
 					dados.Nome)
 				return pedirConfirmacao(phone, msg, dados, resumo, "onboarding_nome_ultima_tentativa",
 					respondWithAudio, sbClient, wpClient, ttsClient, historyManager), true
@@ -568,7 +581,9 @@ func HandleOnboarding(
 
 			historyManager.SetFSMState(phone, StateAguardandoCadastro, contextoDeTentativas(tentativas), nil)
 			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From,
-				"Não consegui identificar seu nome nessa mensagem. Pode me mandar só o seu nome completo?", respondWithAudio)
+				porPais(phone,
+					"Não consegui identificar seu nome nessa mensagem. Pode me mandar só o seu nome completo?",
+					"Não consegui identificar o seu nome nesta mensagem. Pode enviar-me só o seu nome completo?"), respondWithAudio)
 			return ProcessResult{Success: true, Reason: "onboarding_nao_e_cadastro"}, true
 		}
 		// Primeiro contato: a heurística achou que parecia cadastro, mas não
@@ -576,7 +591,7 @@ func HandleOnboarding(
 		// normal perguntando se já existe conta por e-mail, em vez de tentar
 		// registrar dados que não foram de fato fornecidos.
 		historyManager.SetFSMState(phone, StatePerguntaContaExistente, nil, nil)
-		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, msgBoasVindas, respondWithAudio)
+		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, porPais(phone, msgBoasVindas, msgBoasVindasMZ), respondWithAudio)
 		return ProcessResult{Success: true, Reason: "onboarding_pergunta_conta"}, true
 	}
 
@@ -584,12 +599,12 @@ func HandleOnboarding(
 		historyManager.SetFSMState(phone, StateAguardandoCadastro, contextoDosDados(dados), nil)
 		faltam := dados.faltantes()
 		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From,
-			fmt.Sprintf("Quase lá! Ainda preciso de: %s.", strings.Join(faltam, ", ")), respondWithAudio)
+			fmt.Sprintf(porPais(phone, "Quase lá! Ainda preciso de: %s.", "Quase pronto! Ainda preciso de: %s."), strings.Join(faltam, ", ")), respondWithAudio)
 		return ProcessResult{Success: true, Reason: "onboarding_incompleto"}, true
 	}
 
 	// ── Conferência ─────────────────────────────────────────────────────────
-	return pedirConfirmacao(phone, msg, dados, resumoCadastro(dados), "onboarding_aguardando_confirmacao",
+	return pedirConfirmacao(phone, msg, dados, resumoCadastro(phone, dados), "onboarding_aguardando_confirmacao",
 		respondWithAudio, sbClient, wpClient, ttsClient, historyManager), true
 }
 
@@ -644,7 +659,9 @@ func finalizarCadastro(
 	if err != nil {
 		log.Printf("❌ [Onboarding] Falha ao criar usuário para %s: %v", phone, err)
 		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From,
-			"Tive um problema para criar seu cadastro. Pode tentar de novo daqui a pouco?", respondWithAudio)
+			porPais(phone,
+				"Tive um problema para criar seu cadastro. Pode tentar de novo daqui a pouco?",
+				"Tive um problema ao fazer o seu registo. Pode tentar outra vez daqui a pouco?"), respondWithAudio)
 		return ProcessResult{Success: false, Reason: "onboarding_auth_falhou"}
 	}
 
@@ -659,7 +676,9 @@ func finalizarCadastro(
 			log.Printf("🔥 [Onboarding] Usuário %s ficou órfão em auth.users — limpeza manual necessária: %v", usuario.ID, errDel)
 		}
 		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From,
-			"Tive um problema para salvar seu cadastro. Pode tentar de novo daqui a pouco?", respondWithAudio)
+			porPais(phone,
+				"Tive um problema para salvar seu cadastro. Pode tentar de novo daqui a pouco?",
+				"Tive um problema ao guardar o seu registo. Pode tentar outra vez daqui a pouco?"), respondWithAudio)
 		return ProcessResult{Success: false, Reason: "onboarding_rpc_falhou"}
 	}
 
