@@ -614,30 +614,11 @@ func pedirConfirmacao(
 ) ProcessResult {
 	historyManager.SetFSMState(phone, StateConfirmandoCadastro, contextoDosDados(dados), nil)
 
-	if wpClient != nil {
-		// Título/Descrição/Rodapé são o trio que OutboundEnvelope reserva para
-		// botões; o corpo da conferência vai em Description, não em Text.
-		env := ports.OutboundEnvelope{
-			ConversationID: msg.ConversationID,
-			To:             msg.From,
-			Type:           ports.OutboundTypeButtons,
-			Title:          "Confirmar cadastro",
-			Description:    resumo,
-			Footer:         "É só tocar em SIM ou NÃO",
-			Buttons: []map[string]string{
-				{"id": "SIM", "title": "SIM"},
-				{"id": "NÃO", "title": "NÃO"},
-			},
-		}
-
-
-		if err := wpClient.Send(context.Background(), env); err != nil {
-			// Botão é enfeite, não requisito: se o provedor recusar, o texto
-			// sozinho já permite responder "sim".
-			log.Printf("⚠️ [Onboarding] Botões indisponíveis, seguindo em texto: %v", err)
-			sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, resumo+"\n\nResponda *SIM* ou *NÃO*.", respondWithAudio)
-		}
-	}
+	// Só texto: os botões interativos (OutboundTypeButtons) não aparecem no
+	// WhatsApp do produtor pela Evolution — o envio "dá certo", mas chega uma
+	// mensagem com "É só tocar em SIM ou NÃO" e nada para tocar (visto em
+	// produção em 2026-10-09).
+	sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, resumo+"\n\nResponda *SIM* ou *NÃO*.", respondWithAudio)
 
 	return ProcessResult{Success: true, Reason: reason}
 }
@@ -656,6 +637,9 @@ func finalizarCadastro(
 	usuario, err := sbClient.CreateAuthUserByPhone(phone, map[string]interface{}{
 		"nome":   dados.Nome,
 		"origem": "whatsapp_onboarding",
+		// O trigger handle_new_user copia daqui para profiles.telefone, que é
+		// por onde o bot reconhece o produtor nas mensagens seguintes.
+		"telefone": phone,
 	})
 	if err != nil {
 		log.Printf("❌ [Onboarding] Falha ao criar usuário para %s: %v", phone, err)
@@ -870,4 +854,3 @@ func dadosDoContexto(ctxFSM map[string]interface{}) (DadosCadastro, bool) {
 	}
 	return d, d.completo()
 }
-

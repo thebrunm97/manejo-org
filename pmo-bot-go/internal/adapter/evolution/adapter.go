@@ -197,11 +197,10 @@ func (a *EvolutionAdapter) Send(ctx context.Context, env ports.OutboundEnvelope)
 	case ports.OutboundTypeAudio:
 		return a.SendVoice(env.To, env.Base64Audio, env.IsVoiceNote)
 	case ports.OutboundTypeButtons:
-		buttons := env.Buttons
-		if len(buttons) == 0 {
-			return a.SendMessage(env.To, env.Text)
-		}
-		return a.SendButton(env.To, env.Title, env.Description, env.Footer, buttons)
+		// Botões interativos não aparecem no WhatsApp do produtor (a API
+		// aceita e o celular mostra só o texto, sem nada para tocar — visto
+		// em produção em 2026-10-09). Vira texto com as opções escritas.
+		return a.SendMessage(env.To, textoDosBotoes(env))
 	default: // OutboundTypeText
 		if env.ReplyToMessageID != "" {
 			return a.SendReply(env.To, env.Text, env.ReplyToMessageID)
@@ -832,4 +831,48 @@ func ParseWebhook(rawBody []byte) (*ports.IncomingEnvelope, error) {
 		HasExplicitResponseMode: true,
 		RawPayload:              payload.Data.Message,
 	}, nil
+}
+
+// textoDosBotoes converte um envelope de botões em texto: título, corpo
+// (Description ou Text), rodapé e "Responda *SIM* ou *NÃO*" a partir dos
+// rótulos dos botões.
+func textoDosBotoes(env ports.OutboundEnvelope) string {
+	var partes []string
+	if t := strings.TrimSpace(env.Title); t != "" {
+		partes = append(partes, "*"+t+"*")
+	}
+	corpo := strings.TrimSpace(env.Description)
+	if corpo == "" {
+		corpo = strings.TrimSpace(env.Text)
+	}
+	if corpo != "" {
+		partes = append(partes, corpo)
+	}
+	var opcoes []string
+	for _, b := range env.Buttons {
+		rotulo := b["title"]
+		if rotulo == "" {
+			rotulo = b["displayText"]
+		}
+		if rotulo == "" {
+			rotulo = b["id"]
+		}
+		if rotulo != "" {
+			opcoes = append(opcoes, "*"+rotulo+"*")
+		}
+	}
+	if len(opcoes) > 0 {
+		partes = append(partes, "Responda "+juntarOpcoes(opcoes)+".")
+	}
+	if f := strings.TrimSpace(env.Footer); f != "" {
+		partes = append(partes, "_"+f+"_")
+	}
+	return strings.Join(partes, "\n\n")
+}
+
+func juntarOpcoes(o []string) string {
+	if len(o) == 1 {
+		return o[0]
+	}
+	return strings.Join(o[:len(o)-1], ", ") + " ou " + o[len(o)-1]
 }

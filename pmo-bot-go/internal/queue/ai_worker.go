@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sync/atomic"
 	"time"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
@@ -197,8 +198,8 @@ func (w *AIWorker) processAIJob(ctx context.Context, job *Job, start time.Time) 
 				job.FromPhone, job.ID, gr.BlockReason)
 
 			// Notify the user with a clear, non-alarming message
-			_ = w.cfg.WhatsApp.Send(context.Background(), ports.OutboundEnvelope{To: msg.From, Type: ports.OutboundTypeText, Text: "⚠️ Sua mensagem não pôde ser processada por violar políticas de segurança.\n"+
-					"Por favor, reformule sua pergunta e tente novamente."})
+			_ = w.cfg.WhatsApp.Send(context.Background(), ports.OutboundEnvelope{To: msg.From, Type: ports.OutboundTypeText, Text: "⚠️ Sua mensagem não pôde ser processada por violar políticas de segurança.\n" +
+				"Por favor, reformule sua pergunta e tente novamente."})
 
 			// Mark Done (not Failed) — blocked attacks should NOT be retried
 			_ = w.cfg.Queue.MarkDone(ctx, job.ID, JobMeta{Reason: "guardrail_input_blocked"})
@@ -226,6 +227,16 @@ func (w *AIWorker) processAIJob(ctx context.Context, job *Job, start time.Time) 
 	// feedback pelo resto de uma chamada de LLM/RAG que costuma levar bem mais.
 	stopTyping := ports.KeepTyping(aiCtx, w.cfg.WhatsApp, "", msg.From)
 
+	// Conta o que chega ao produtor durante o job: se ele já recebeu
+	// resposta (inclusive uma mensagem de erro), retentar o job só repete a
+	// conversa — foi o que duplicou "Tive um problema para salvar seu
+	// cadastro" no onboarding de 2026-10-09.
+	enviados := &contadorEnvios{ChannelSender: w.cfg.WhatsApp}
+	var canal ports.ChannelSender = enviados
+	if w.cfg.WhatsApp == nil {
+		canal = nil // preserva as checagens "wpClient != nil" do FSM
+	}
+
 	startProcessMessage := time.Now()
 	// Delega para o ProcessMessage existente (reuso total do fluxo atual)
 	// O FSM existente já trata: autenticação, quota, router, orchestrator, TTS
@@ -234,7 +245,7 @@ func (w *AIWorker) processAIJob(ctx context.Context, job *Job, start time.Time) 
 		msg,
 		w.cfg.Supabase,
 		nil, // groqClient: não necessário — áudio já foi transcrito pela Camada 3
-		w.cfg.WhatsApp,
+		canal,
 		w.cfg.LLM,
 		w.cfg.TTS,
 		w.cfg.MCP,
@@ -248,8 +259,32 @@ func (w *AIWorker) processAIJob(ctx context.Context, job *Job, start time.Time) 
 
 	latencyMs := time.Since(start).Milliseconds()
 
+	if !result.Success && enviados.houveEnvio() {
+		// Falha já comunicada ao produtor: encerra sem retentativa. O motivo
+		// fica no log e no raw_payload como antes.
+		log.Printf("⚠️ [AIWorker] Job %s falhou (razão: %s) mas o produtor já foi respondido — sem retentativa", job.ID, result.Reason)
+		w.finalizeJob(job, msg, true, "respondido_"+result.Reason, latencyMs)
+		return
+	}
 	w.finalizeJob(job, msg, result.Success, result.Reason, latencyMs)
 }
+
+// contadorEnvios registra se alguma mensagem saiu com sucesso para o produtor.
+// Indicador de "digitando" não conta.
+type contadorEnvios struct {
+	ports.ChannelSender
+	n atomic.Int32
+}
+
+func (c *contadorEnvios) Send(ctx context.Context, env ports.OutboundEnvelope) error {
+	err := c.ChannelSender.Send(ctx, env)
+	if err == nil {
+		c.n.Add(1)
+	}
+	return err
+}
+
+func (c *contadorEnvios) houveEnvio() bool { return c.n.Load() > 0 }
 
 func (w *AIWorker) finalizeJob(
 	job *Job,
