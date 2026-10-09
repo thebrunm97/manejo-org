@@ -2299,6 +2299,25 @@ func (c *Client) GetPropriedadesDoUsuario(userID string) ([]Propriedade, error) 
 	return propriedades, nil
 }
 
+// ModalidadeEnum leva o texto livre ("Organico", "orgânico", "Agroecologico",
+// "convencional"...) a um valor de modalidade_producao_enum (ORGANICO,
+// CONVENCIONAL, TRANSICAO). Antes o texto ia cru para a coluna e o insert
+// inteiro falhava com 22P02 — todo cadastro de propriedade pelo bot quebrava
+// (visto em 2026-10-09). Agroecológico, permacultura e afins contam como
+// ORGANICO, que é também o default da coluna; o texto original segue no
+// form_data do PMO.
+func ModalidadeEnum(s string) string {
+	n := strings.ToLower(s)
+	switch {
+	case strings.Contains(n, "convenc"):
+		return "CONVENCIONAL"
+	case strings.Contains(n, "transi"):
+		return "TRANSICAO"
+	default:
+		return "ORGANICO"
+	}
+}
+
 // CriarPropriedadeComPMO creates a new property, initial PMO, and links to the user profile.
 func (c *Client) CriarPropriedadeComPMO(ctx context.Context, userID, nome string, areaTotalHa float64, cidade, estado, modalidade string) (int64, int64, error) {
 	// 1. Insert into propriedades
@@ -2308,7 +2327,7 @@ func (c *Client) CriarPropriedadeComPMO(ctx context.Context, userID, nome string
 		"area_total_ha":           areaTotalHa,
 		"cidade":                  cidade,
 		"uf":                      estado,
-		"modalidade_predominante": modalidade,
+		"modalidade_predominante": ModalidadeEnum(modalidade),
 	}
 	propJSON, _ := json.Marshal(propRecord)
 	reqURL := fmt.Sprintf("%s/rest/v1/propriedades", c.config.URL)
