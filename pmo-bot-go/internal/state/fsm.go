@@ -49,12 +49,42 @@ type RouterConfig struct {
 	FastRouterTimeoutMS    int
 }
 
-var sessionMu sync.Map // map[phone]*sync.Mutex — one lock per session
+// Uma trava por conversa, removida quando ninguém a usa (DT-112). Antes era um
+// sync.Map que só crescia: uma entrada para cada conversa já vista, para sempre.
+// Com contagem de referências, o mapa só guarda as conversas em processamento
+// ou na fila da trava naquele instante.
+type travaSessao struct {
+	mu   sync.Mutex
+	refs int
+}
 
-// getSessionMutex returns a dedicated mutex for each phone/session.
-func getSessionMutex(phone string) *sync.Mutex {
-	mu, _ := sessionMu.LoadOrStore(phone, &sync.Mutex{})
-	return mu.(*sync.Mutex)
+var (
+	sessionMapMu sync.Mutex
+	sessionLocks = map[string]*travaSessao{}
+)
+
+// lockSession trava a conversa e devolve a função que destrava e libera a
+// entrada do mapa se for a última referência.
+func lockSession(key string) (unlock func()) {
+	sessionMapMu.Lock()
+	t := sessionLocks[key]
+	if t == nil {
+		t = &travaSessao{}
+		sessionLocks[key] = t
+	}
+	t.refs++
+	sessionMapMu.Unlock()
+
+	t.mu.Lock()
+	return func() {
+		t.mu.Unlock()
+		sessionMapMu.Lock()
+		t.refs--
+		if t.refs == 0 {
+			delete(sessionLocks, key)
+		}
+		sessionMapMu.Unlock()
+	}
 }
 
 // ProcessMessage orchestrates the flow:
@@ -90,9 +120,7 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingEnvelope, sbClient *s
 	if lockKey == "" {
 		lockKey = msg.From
 	}
-	mu := getSessionMutex(lockKey)
-	mu.Lock()
-	defer mu.Unlock()
+	defer lockSession(lockKey)()
 
 	// 0. Ultra-Low Latency Greeting Guard (Immediate response for text greetings)
 	//

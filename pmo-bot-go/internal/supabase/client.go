@@ -488,7 +488,7 @@ func (c *Client) ResolvePhone(from string) (string, error) {
 	if strings.Contains(from, "@lid") {
 		lidStr := strings.Split(from, "@")[0]
 
-		reqURL := fmt.Sprintf("%s/rest/v1/lid_mappings?lid_id=eq.%s&select=phone_number", c.config.URL, lidStr)
+		reqURL := fmt.Sprintf("%s/rest/v1/lid_mappings?lid_id=eq.%s&select=phone_number", c.config.URL, pgVal(lidStr))
 		body, err := c.doRequest(http.MethodGet, reqURL, nil)
 		if err != nil {
 			return sanitized, err
@@ -524,7 +524,7 @@ func (c *Client) ResolvePhone(from string) (string, error) {
 // comportamento de espelhamento.
 func (c *Client) GetResponsePreference(phone string) (string, error) {
 	phone = utils.SanitizePhone(phone)
-	reqURL := fmt.Sprintf("%s/rest/v1/profiles?telefone=eq.%s&select=preferencia_resposta", c.config.URL, phone)
+	reqURL := fmt.Sprintf("%s/rest/v1/profiles?telefone=eq.%s&select=preferencia_resposta", c.config.URL, pgVal(phone))
 
 	body, err := c.doRequest(http.MethodGet, reqURL, nil)
 	if err != nil {
@@ -551,7 +551,7 @@ func (c *Client) GetResponsePreference(phone string) (string, error) {
 // mensagem seguinte, sem explicação.
 func (c *Client) SetResponsePreference(phone string, pref string) error {
 	phone = utils.SanitizePhone(phone)
-	reqURL := fmt.Sprintf("%s/rest/v1/profiles?telefone=eq.%s", c.config.URL, phone)
+	reqURL := fmt.Sprintf("%s/rest/v1/profiles?telefone=eq.%s", c.config.URL, pgVal(phone))
 
 	payload, err := json.Marshal(map[string]interface{}{
 		"preferencia_resposta": pref,
@@ -570,7 +570,7 @@ func (c *Client) GetProfileByPhone(phone string) (*Profile, error) {
 
 	// Fetch profile with active property and its talhões (Corrected nesting: properties -> talhoes)
 	selectQuery := "*,propriedades:propriedade_ativa_id(modalidade_predominante,tem_producao_paralela,talhoes:talhoes(id,nome,modalidade_producao))"
-	reqURL := fmt.Sprintf("%s/rest/v1/profiles?telefone=eq.%s&select=%s", c.config.URL, phone, selectQuery)
+	reqURL := fmt.Sprintf("%s/rest/v1/profiles?telefone=eq.%s&select=%s", c.config.URL, pgVal(phone), selectQuery)
 	var results []struct {
 		Profile
 		Propriedades struct {
@@ -596,7 +596,7 @@ func (c *Client) GetProfileByPhone(phone string) (*Profile, error) {
 	// Segunda tentativa: Formato BR sem o 9º dígito
 	if len(phone) == 13 && strings.HasPrefix(phone, "55") {
 		fallbackPhone := phone[:4] + phone[5:]
-		reqURL = fmt.Sprintf("%s/rest/v1/profiles?telefone=eq.%s&select=%s", c.config.URL, fallbackPhone, selectQuery)
+		reqURL = fmt.Sprintf("%s/rest/v1/profiles?telefone=eq.%s&select=%s", c.config.URL, pgVal(fallbackPhone), selectQuery)
 
 		body, err = c.doRequest(http.MethodGet, reqURL, nil)
 		if err == nil {
@@ -617,7 +617,7 @@ func (c *Client) GetProfileByPhone(phone string) (*Profile, error) {
 	// uma escolha arbitrária que entregaria dados/mensagens ao produtor errado.
 	if len(phone) >= 8 {
 		last8 := phone[len(phone)-8:]
-		reqURL = fmt.Sprintf("%s/rest/v1/profiles?telefone=ilike.*%s*&select=%s", c.config.URL, last8, selectQuery)
+		reqURL = fmt.Sprintf("%s/rest/v1/profiles?telefone=ilike.*%s*&select=%s", c.config.URL, pgVal(last8), selectQuery)
 		body, err = c.doRequest(http.MethodGet, reqURL, nil)
 		if err == nil {
 			if err := json.Unmarshal(body, &results); err == nil {
@@ -784,7 +784,7 @@ func (c *Client) RegistrarTransacaoComRateioRPC(ctx context.Context, args map[st
 // GetCategoriaFinanceiraByName looks up a category UUID by its name and type.
 func (c *Client) GetCategoriaFinanceiraByName(nome string, tipo string) (string, error) {
 	reqURL := fmt.Sprintf("%s/rest/v1/categorias_financeiras?nome=ilike.%s&tipo=eq.%s&select=id",
-		c.config.URL, nome, tipo)
+		c.config.URL, pgVal(nome), pgVal(tipo))
 
 	body, err := c.doRequest(http.MethodGet, reqURL, nil)
 	if err != nil {
@@ -1957,7 +1957,7 @@ func (c *Client) doRequestWithContext(ctx context.Context, method, url string, p
 func (c *Client) GetDemandaAtivaPorCultura(ctx context.Context, cultura string) (*DemandaColetiva, error) {
 	// Filter by culture (case insensitive) and active status.
 	reqURL := fmt.Sprintf("%s/rest/v1/demandas_coletivas?cultura=ilike.%s&status=in.(\"aberta\",\"em_captacao\")&limit=1",
-		c.config.URL, strings.ToUpper(cultura))
+		c.config.URL, pgVal(strings.ToUpper(cultura)))
 
 	body, err := c.doRequest(http.MethodGet, reqURL, nil)
 	if err != nil {

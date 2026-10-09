@@ -17,7 +17,7 @@ type IdentityResolutionResult struct {
 // ResolveIdentity busca a identidade canônica (user_id e tenant_id) de um produtor
 // a partir do seu identificador de canal (ex: telefone no WhatsApp, chat_id no Telegram).
 func (c *Client) ResolveIdentity(ctx context.Context, channel string, channelUserID string) (*IdentityResolutionResult, error) {
-	reqURL := fmt.Sprintf("%s/rest/v1/channel_links?channel=eq.%s&channel_user_id=eq.%s&select=user_id,profiles!inner(tenant_id,role)&limit=1", c.config.URL, channel, channelUserID)
+	reqURL := fmt.Sprintf("%s/rest/v1/channel_links?channel=eq.%s&channel_user_id=eq.%s&select=user_id,profiles!inner(tenant_id,role)&limit=1", c.config.URL, pgVal(channel), pgVal(channelUserID))
 	
 	body, err := c.doRequestWithContext(ctx, "GET", reqURL, nil)
 	if err != nil {

@@ -9,7 +9,7 @@ import (
 // número de telefone podia tentar códigos de 6 caracteres indefinidamente,
 // sem custo. Este limitador é por telefone (o único identificador disponível
 // nesse ponto do fluxo, já que o número ainda não tem perfil vinculado) e
-// vive em memória, mesmo padrão já aceito em sessionMu (DT-112): perde
+// vive em memória, como as travas de sessão em fsm.go: perde
 // estado num restart, o que é aceitável para um cooldown de minutos.
 const (
 	linkAttemptMax    = 5
