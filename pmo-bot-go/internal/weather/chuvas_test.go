@@ -74,6 +74,17 @@ func TestAvaliarInicioChuvas(t *testing.T) {
 			status: "inicio_recente",
 			inicio: "d27",
 		},
+		{
+			// Série real de Boane em 09/10/2026 (Open-Meteo): 24 mm em
+			// 27-29/09 e 9 dias secos até o fim da previsão. Antes saía
+			// "estabelecidas" — e o bot mandou semear.
+			nome: "início incerto (Boane, 09/10/2026)",
+			mm: []float64{0, 0, 0, 0, 0, 0.4, 0, 0, 0.1, 1.7, 0.1, 3.3, 1.7, 1.2, 0, 1.7, 0.8, 0,
+				12.7, 5.7, 5.9, 3.6, 0.9, 0, 1.0, 0, 0, 4.6, 0.3, 0, 0, 0.1, 0.3, 0, 0, 0, 0},
+			hoje:   30,
+			status: "inicio_incerto",
+			inicio: "d18",
+		},
 	}
 	for _, c := range casos {
 		t.Run(c.nome, func(t *testing.T) {

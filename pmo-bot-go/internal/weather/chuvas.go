@@ -21,6 +21,8 @@ import (
 //   - candidato a início: ≥ 20 mm acumulados em até 3 dias seguidos;
 //   - falso início: depois do candidato, um período seco de ≥ 10 dias
 //     seguidos (< 1 mm/dia) dentro dos 30 dias seguintes, contando a previsão.
+//   - início incerto: os 30 dias de vigia ainda não terminaram e a série acaba
+//     num período seco de ≥ 7 dias — o falso início pode estar em curso.
 // É sempre um INDICATIVO: dado de modelo (Open-Meteo), não estação local.
 
 const (
@@ -30,18 +32,23 @@ const (
 	diasSecosFalsoInicio = 10
 	diasVigiaFalsoInicio = 30
 	diasParaEstabelecer  = 10
+	diasSecosIncerto     = 7
 )
 
 // SituacaoChuvas é o resultado do indicador.
 type SituacaoChuvas struct {
-	// Status: "estabelecidas" | "inicio_recente" | "falso_inicio" | "ainda_nao".
+	// Status: "estabelecidas" | "inicio_recente" | "inicio_incerto" |
+	// "falso_inicio" | "ainda_nao".
 	Status         string  `json:"status"`
 	InicioProvavel string  `json:"inicio_provavel,omitempty"` // AAAA-MM-DD
 	ChuvaUlt10dMM  float64 `json:"chuva_ultimos_10_dias_mm"`
 	ChuvaUlt30dMM  float64 `json:"chuva_ultimos_30_dias_mm"`
 	PrevisaoProx7d float64 `json:"chuva_prevista_7_dias_mm"`
-	Criterio       string  `json:"criterio"`
-	Fonte          string  `json:"fonte"`
+	// DiasSecosNoFim: dias secos seguidos que fecham a série (passado +
+	// previsão). Alto = o período seco continua para além do que se vê.
+	DiasSecosNoFim int    `json:"dias_secos_seguidos_ate_fim_da_previsao"`
+	Criterio       string `json:"criterio"`
+	Fonte          string `json:"fonte"`
 }
 
 const textoCriterio = "Início = pelo menos 20 mm em até 3 dias, sem 10 dias seguidos secos depois. Indicativo, a partir de dado de modelo (não estação local)."
@@ -65,6 +72,9 @@ func AvaliarInicioChuvas(datas []string, mm []float64, hoje int) SituacaoChuvas 
 	}
 	for i := hoje + 1; i < len(mm); i++ {
 		s.PrevisaoProx7d += mm[i]
+	}
+	for i := len(mm) - 1; i >= 0 && mm[i] < diaSecoMM; i-- {
+		s.DiasSecosNoFim++
 	}
 
 	s.Status = "ainda_nao"
@@ -90,9 +100,15 @@ func AvaliarInicioChuvas(datas []string, mm []float64, hoje int) SituacaoChuvas 
 			continue // procura um início válido mais adiante
 		}
 		s.InicioProvavel = datas[i]
-		if hoje-fim >= diasParaEstabelecer {
+		// A série acaba antes de fechar a vigia e acaba seca: não dá para
+		// dizer que pegou (09/10/2026 em Boane: 9 dias secos e "estabelecidas").
+		vigiaIncompleta := fim+diasVigiaFalsoInicio > len(mm)-1
+		switch {
+		case vigiaIncompleta && s.DiasSecosNoFim >= diasSecosIncerto:
+			s.Status = "inicio_incerto"
+		case hoje-fim >= diasParaEstabelecer:
 			s.Status = "estabelecidas"
-		} else {
+		default:
 			s.Status = "inicio_recente"
 		}
 		return s

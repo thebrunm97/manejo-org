@@ -22,8 +22,12 @@ const mensagemReferenciaMZ = "ATENÇÃO — Moçambique NÃO tem zoneamento ofic
 	"NÃO invente percentuais de risco, datas nem épocas que não vieram; " +
 	"(4) se vier mais de uma zona, ou localizacao_aproximada=true, explicar que a zona depende de onde fica a machamba no distrito e mostrar cada opção. " +
 	"As observações vêm em inglês: traduza só o essencial. Use o vocabulário de Moçambique (sementeira, machamba, 1ª e 2ª época). " +
-	"Lembre que, no sequeiro, a 1ª época depende do início efetivo das chuvas: se vier inicio_das_chuvas, diga em uma frase se as chuvas " +
-	"já se estabeleceram (estabelecidas), começaram há pouco (inicio_recente), tiveram falso início ou ainda não chegaram — como indicativo. Responda curto."
+	"Lembre que, no sequeiro, a 1ª época depende do início efetivo das chuvas: se vier inicio_das_chuvas, diga em uma frase, " +
+	"COMEÇANDO por \"pelo modelo meteorológico\" ou \"indicativamente\" (é dado de modelo, não de estação local), se as chuvas " +
+	"já se estabeleceram (estabelecidas), começaram há pouco (inicio_recente), ainda não chegaram (ainda_nao) ou tiveram falso início (falso_inicio). " +
+	"Se o status for inicio_incerto: choveu o suficiente para começar, mas há dias_secos_seguidos_ate_fim_da_previsao dias secos seguidos — " +
+	"diga isso com o número e aconselhe esperar nova chuva boa antes de semear em sequeiro; NUNCA diga que as chuvas estão estabelecidas. " +
+	"Com falso_inicio, ainda_nao ou inicio_incerto, não diga que a sementeira \"está aberta\" sem essa ressalva. Responda curto."
 
 // mensagemVariedadesMZ orienta o uso de variedades_iiam. A ficha é o texto da
 // fonte; os campos estruturados podem estar vazios (não extraídos).
