@@ -121,6 +121,7 @@ func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profi
 
 		rpcArgs := map[string]interface{}{
 			"pmo_id_arg":             pmoID,
+			"propriedade_id_arg":     profile.PropriedadeAtivaID,
 			"user_id_arg":            profile.ID,
 			"produto_arg":            ext.InsumoCultura,
 			"quantidade_valor_arg":   parseToFloat(ext.Quantidade),
@@ -135,7 +136,12 @@ func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profi
 			return "❌ Falha técnica ao registrar compra no banco.", ProcessResult{Success: false, Reason: "rpc_http_error"}
 		}
 
-		id := resp["id"]
+		if status, _ := resp["status"].(string); status == "error" {
+			log.Printf("❌ [FSM] rpc_registrar_compra_insumo: %v", resp["message"])
+			return "❌ Não consegui registrar a compra no banco.", ProcessResult{Success: false, Reason: "rpc_db_error"}
+		}
+
+		id := resp["compra_id"]
 		if id == nil {
 			return "❌ Falha de Persistência: A compra foi processada, mas não retornou um ID. Verifique suas permissões.", ProcessResult{Success: false, Reason: "silent_failure_id_null"}
 		}

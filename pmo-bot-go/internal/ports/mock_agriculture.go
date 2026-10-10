@@ -18,7 +18,7 @@ func NewMockAgriculturalRepository[T any]() *MockAgriculturalRepository[T] {
 	}
 }
 
-func (m *MockAgriculturalRepository[T]) RegistrarLoteOperacoes(ctx context.Context, pmoID int, userID string, operacoes []T) (*BatchResult, error) {
+func (m *MockAgriculturalRepository[T]) RegistrarLoteOperacoes(ctx context.Context, pmoID int, propriedadeID int64, userID string, operacoes []T) (*BatchResult, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 

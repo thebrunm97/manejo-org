@@ -105,7 +105,7 @@ func main() {
 
 	// 3. Executar o Lote
 	ctx := context.Background()
-	resultado, err := repo.RegistrarLoteOperacoes(ctx, int(validPmoID), validUserID, lote)
+	resultado, err := repo.RegistrarLoteOperacoes(ctx, int(validPmoID), 0, validUserID, lote)
 	if err != nil {
 		log.Fatalf("❌ Falha crítica ao processar o lote: %v", err)
 	}

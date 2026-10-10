@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
@@ -27,7 +28,7 @@ func NewSupabaseAgriculturalRepository(client *supabase.Client) *SupabaseAgricul
 
 // RegistrarLoteOperacoes itera sobre um lote de operações e as registra no Supabase.
 // Implementa o modelo de Sucesso Parcial.
-func (r *SupabaseAgriculturalRepository) RegistrarLoteOperacoes(ctx context.Context, pmoID int, userID string, operacoes []mcp.OperacaoLoteItem) (*ports.BatchResult, error) {
+func (r *SupabaseAgriculturalRepository) RegistrarLoteOperacoes(ctx context.Context, pmoID int, propriedadeID int64, userID string, operacoes []mcp.OperacaoLoteItem) (*ports.BatchResult, error) {
 	result := &ports.BatchResult{
 		Sucessos: make([]string, 0),
 		Erros:    make([]string, 0),
@@ -44,7 +45,7 @@ func (r *SupabaseAgriculturalRepository) RegistrarLoteOperacoes(ctx context.Cont
 		case "Compostagem":
 			err = r.processarCompostagem(ctx, pmoID, userID, item.Compostagem)
 		case "Compra":
-			err = r.processarCompra(ctx, pmoID, userID, item.Compra)
+			err = r.processarCompra(ctx, pmoID, propriedadeID, userID, item.Compra)
 		case "Colheita":
 			err = r.processarColheita(ctx, pmoID, userID, item.Colheita)
 		case "Venda":
@@ -148,9 +149,12 @@ func (r *SupabaseAgriculturalRepository) processarCompostagem(ctx context.Contex
 	return checkRPCError(res, err)
 }
 
-func (r *SupabaseAgriculturalRepository) processarCompra(ctx context.Context, defaultPmoID int, userID string, schema *mcp.RegistrarCompraSchema) error {
+func (r *SupabaseAgriculturalRepository) processarCompra(ctx context.Context, defaultPmoID int, propriedadeID int64, userID string, schema *mcp.RegistrarCompraSchema) error {
 	if schema == nil {
 		return fmt.Errorf("schema de compra vazio")
+	}
+	if propriedadeID <= 0 {
+		return fmt.Errorf("nenhuma propriedade ativa para registrar a compra")
 	}
 	pmoID := resolvePmoID(schema.PmoID, defaultPmoID)
 
@@ -159,18 +163,42 @@ func (r *SupabaseAgriculturalRepository) processarCompra(ctx context.Context, de
 		dataCompra = time.Now().Format("2006-01-02")
 	}
 
-	payload := map[string]interface{}{
-		"pmo_id":      pmoID,
-		"item":        schema.Item,
-		"fornecedor":  schema.Fornecedor,
-		"quantidade":  schema.Quantidade,
-		"valor_pago":  schema.ValorPago,
-		"data_compra": dataCompra,
-		"user_id":     userID,
+	qtdValor, qtdUnidade := separarQuantidade(schema.Quantidade)
+	valorPago, _ := strconv.ParseFloat(strings.ReplaceAll(strings.TrimSpace(schema.ValorPago), ",", "."), 64)
+
+	args := map[string]interface{}{
+		"pmo_id_arg":             pmoID,
+		"propriedade_id_arg":     propriedadeID,
+		"user_id_arg":            userID,
+		"produto_arg":            schema.Item,
+		"quantidade_valor_arg":   qtdValor,
+		"quantidade_unidade_arg": qtdUnidade,
+		"fornecedor_arg":         schema.Fornecedor,
+		"data_compra_arg":        dataCompra,
+		"valor_total_arg":        valorPago,
 	}
 
-	res, err := r.client.RegistrarCompraInsumoRPC(ctx, payload)
+	res, err := r.client.RegistrarCompraInsumoRPC(ctx, args)
 	return checkRPCError(res, err)
+}
+
+// separarQuantidade divide "20 kg" / "2,5L" em valor e unidade. Sem número
+// no início, devolve valor nil e o texto inteiro como unidade.
+func separarQuantidade(s string) (interface{}, interface{}) {
+	s = strings.TrimSpace(s)
+	i := 0
+	for i < len(s) && (s[i] >= '0' && s[i] <= '9' || s[i] == ',' || s[i] == '.') {
+		i++
+	}
+	var unidade interface{}
+	if u := strings.TrimSpace(s[i:]); u != "" {
+		unidade = u
+	}
+	v, err := strconv.ParseFloat(strings.ReplaceAll(s[:i], ",", "."), 64)
+	if err != nil {
+		return nil, unidade
+	}
+	return v, unidade
 }
 
 func (r *SupabaseAgriculturalRepository) processarColheita(ctx context.Context, defaultPmoID int, userID string, schema *mcp.RegistrarColheitaSchema) error {

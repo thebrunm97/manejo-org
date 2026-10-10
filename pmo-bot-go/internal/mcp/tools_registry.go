@@ -861,7 +861,7 @@ func (s *Server) handleRegistrarLote(ctx context.Context, args map[string]interf
 		return nil, fmt.Errorf("formato inválido para lote: %w", err)
 	}
 
-	result, err := s.agriRepo.RegistrarLoteOperacoes(context.Background(), pmoID, userID, payload.Operacoes)
+	result, err := s.agriRepo.RegistrarLoteOperacoes(context.Background(), pmoID, tenant.PropriedadeID, userID, payload.Operacoes)
 	if err != nil {
 		return nil, fmt.Errorf("erro no processamento do lote: %w", err)
 	}

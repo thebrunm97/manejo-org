@@ -12,5 +12,5 @@ type BatchResult struct {
 // parametrizado por T para evitar dependências circulares com a camada MCP,
 // mas garantindo tipagem forte nas implementações.
 type AgriculturalRepository[T any] interface {
-	RegistrarLoteOperacoes(ctx context.Context, pmoID int, userID string, operacoes []T) (*BatchResult, error)
+	RegistrarLoteOperacoes(ctx context.Context, pmoID int, propriedadeID int64, userID string, operacoes []T) (*BatchResult, error)
 }
