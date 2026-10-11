@@ -69,8 +69,8 @@ func NewDeterministicEvaluator(provider LimitesProvider) *DeterministicEvaluator
 
 // EvaluateTransaction valida transações financeiras
 func (e *DeterministicEvaluator) EvaluateTransaction(ctx context.Context, evalCtx EvaluationContext, payload TransactionPayload) error {
-	// O padrão está em reais; limite customizado já vem na moeda da propriedade.
-	limiteTransacao := DefaultLimiteTransacao * utils.FatorMoeda(evalCtx.Telefone)
+	// Padrão do país do produtor; limite customizado da propriedade prevalece.
+	limiteTransacao := limitesPara(evalCtx.Telefone).Bloquear
 	moeda := utils.MoedaSimboloPara(evalCtx.Telefone)
 
 	// Buscar limites customizados com timeout curto (2 segundos)

@@ -64,7 +64,7 @@ func NewHITLController(supabaseURL, supabaseKey string) *HITLController {
 // 5. Routine operations below thresholds -> false (direct execution with post-action feedback)
 func RequiresHITL(phone, toolName string, rawArgs map[string]interface{}) (bool, string) {
 	moeda := utils.MoedaSimboloPara(phone)
-	fator := utils.FatorMoeda(phone) // limites abaixo estão em reais
+	lim := limitesPara(phone)
 	// Rule 1: Irreversible / Structural Tools
 	if label, ok := HighRiskIrreversibleTools[toolName]; ok {
 		return true, label
@@ -80,12 +80,12 @@ func RequiresHITL(phone, toolName string, rawArgs map[string]interface{}) (bool,
 		return true, "Registro de Operações em Lote"
 	}
 
-	// Rule 1: Financial Threshold (R$ 500, ou o equivalente pela FatorMoeda)
+	// Rule 1: Financial Threshold (limites do país, ver limites_pais.go)
 	switch toolName {
 	case "registrar_despesa", "registrar_transacao":
 		val := parseArgFloat(rawArgs, "valor_total", "valor")
 		desc := parseArgString(rawArgs, "descricao", "item", "categoria_nome")
-		if val > 500.0*fator {
+		if val > lim.Confirmar {
 			return true, fmt.Sprintf("Despesa de %s (%s)", formatarDinheiro(val, moeda), desc)
 		}
 		if desc == "" && val > 0 {
@@ -96,14 +96,14 @@ func RequiresHITL(phone, toolName string, rawArgs map[string]interface{}) (bool,
 		val := parseArgFloat(rawArgs, "valor_total")
 		prod := parseArgString(rawArgs, "produto")
 		nf := parseArgString(rawArgs, "nota_fiscal")
-		if val > 500.0*fator || (val > 200.0*fator && nf == "") {
+		if val > lim.Confirmar || (val > lim.ConfirmarSemNota && nf == "") {
 			return true, fmt.Sprintf("Compra de %s — %s", prod, formatarDinheiro(val, moeda))
 		}
 
 	case "registrar_venda":
 		val := parseArgFloat(rawArgs, "valor_total")
 		prod := parseArgString(rawArgs, "produto")
-		if val > 500.0*fator {
+		if val > lim.Confirmar {
 			return true, fmt.Sprintf("Venda de %s — %s", prod, formatarDinheiro(val, moeda))
 		}
 	}

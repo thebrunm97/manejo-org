@@ -33,16 +33,6 @@ func MoedaSimboloPara(phone string) string {
 	return MoedaSimbolo()
 }
 
-// FatorMoeda converte limites pensados em reais para a moeda do produtor.
-// Ordem de grandeza, não câmbio: 1 BRL ≈ 12 MZN (2026). Só para limiares de
-// confirmação/bloqueio; nunca para converter valores registrados.
-func FatorMoeda(phone string) float64 {
-	if MoedaSimboloPara(phone) == "MT" {
-		return 12
-	}
-	return 1
-}
-
 // FormatarValor escreve dinheiro no formato lusófono: 1.200,50.
 func FormatarValor(v float64) string {
 	neg := v < 0

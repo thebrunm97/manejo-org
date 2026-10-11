@@ -257,7 +257,7 @@ func TestBuildConfirmationMessage_CompraMZ(t *testing.T) {
 	assert.NotContains(t, msg, "R$")
 }
 
-// Limites de confirmação pensados em reais escalam para meticais.
+// Limites por país, escritos à mão (sem câmbio).
 func TestRequiresHITL_LimitesPorMoeda(t *testing.T) {
 	compra := func(v float64) map[string]interface{} {
 		return map[string]interface{}{"produto": "esterco", "valor_total": v}
@@ -266,13 +266,13 @@ func TestRequiresHITL_LimitesPorMoeda(t *testing.T) {
 
 	ok, _ := guardrails.RequiresHITL(mz, "registrar_compra_insumo", compra(300))
 	assert.False(t, ok, "300 MT não deveria pedir confirmação")
-	ok, _ = guardrails.RequiresHITL(mz, "registrar_compra_insumo", compra(3000))
-	assert.True(t, ok, "3.000 MT sem factura deveria pedir confirmação")
+	ok, _ = guardrails.RequiresHITL(mz, "registrar_compra_insumo", compra(2000))
+	assert.True(t, ok, "2.000 MT sem factura deveria pedir confirmação")
 	ok, _ = guardrails.RequiresHITL(br, "registrar_compra_insumo", compra(300))
 	assert.True(t, ok, "R$ 300 sem nota continua pedindo confirmação")
 
 	ev := guardrails.NewDeterministicEvaluator(nil)
-	tx := guardrails.TransactionPayload{ValorTotal: 100000}
+	tx := guardrails.TransactionPayload{ValorTotal: 100000} // < 250.000 MT, > R$ 50.000
 	assert.NoError(t, ev.EvaluateTransaction(context.Background(), guardrails.EvaluationContext{Telefone: mz}, tx))
 	assert.Error(t, ev.EvaluateTransaction(context.Background(), guardrails.EvaluationContext{Telefone: br}, tx))
 }
