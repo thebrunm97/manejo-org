@@ -148,6 +148,7 @@ func (m *BusinessGuardrailMiddleware) Process(ctx context.Context, req *ToolRequ
 		PmoID:         m.Profile.PmoAtivoID,
 		PropriedadeID: m.Profile.PropriedadeAtivaID,
 		UserID:        m.Profile.ID,
+		Telefone:      m.Profile.Telefone,
 	}
 
 	var evalErr error

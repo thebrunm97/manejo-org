@@ -99,6 +99,7 @@ func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profi
 				PmoID:         pmoID,
 				PropriedadeID: profile.PropriedadeAtivaID,
 				UserID:        profile.ID,
+				Telefone:      phone,
 			}
 
 			evalErr := ActiveBusinessEvaluator.EvaluateTransaction(ctx, evalCtx, guardrails.TransactionPayload{
@@ -163,6 +164,7 @@ func finalizeRegistration(ctx context.Context, ext *groq.ExtractionResult, profi
 			PmoID:         pmoID,
 			PropriedadeID: profile.PropriedadeAtivaID,
 			UserID:        profile.ID,
+			Telefone:      phone,
 		}
 
 		evalErr := ActiveBusinessEvaluator.EvaluateManejo(ctx, evalCtx, guardrails.ManejoPayload{

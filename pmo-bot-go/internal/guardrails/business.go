@@ -25,6 +25,7 @@ type EvaluationContext struct {
 	PmoID         int64
 	PropriedadeID int64
 	UserID        string
+	Telefone      string // escolhe moeda e escala do limite padrão
 }
 
 // TransactionPayload representa os dados financeiros de compras, despesas ou receitas
@@ -68,7 +69,9 @@ func NewDeterministicEvaluator(provider LimitesProvider) *DeterministicEvaluator
 
 // EvaluateTransaction valida transações financeiras
 func (e *DeterministicEvaluator) EvaluateTransaction(ctx context.Context, evalCtx EvaluationContext, payload TransactionPayload) error {
-	limiteTransacao := DefaultLimiteTransacao
+	// O padrão está em reais; limite customizado já vem na moeda da propriedade.
+	limiteTransacao := DefaultLimiteTransacao * utils.FatorMoeda(evalCtx.Telefone)
+	moeda := utils.MoedaSimboloPara(evalCtx.Telefone)
 
 	// Buscar limites customizados com timeout curto (2 segundos)
 	if e.Provider != nil && evalCtx.PropriedadeID > 0 {
@@ -84,7 +87,7 @@ func (e *DeterministicEvaluator) EvaluateTransaction(ctx context.Context, evalCt
 
 	// Regra 1: Limite de Valor
 	if payload.ValorTotal > limiteTransacao {
-		return fmt.Errorf("Atenção: O valor de %s %.2f excede o limite de segurança de %s %.2f configurado para a sua propriedade. Por favor, reenvie a operação com o valor correto.", utils.MoedaSimbolo(), payload.ValorTotal, utils.MoedaSimbolo(), limiteTransacao)
+		return fmt.Errorf("Atenção: O valor de %s %s excede o limite de segurança de %s %s configurado para a sua propriedade. Por favor, reenvie a operação com o valor correto.", moeda, utils.FormatarValor(payload.ValorTotal), moeda, utils.FormatarValor(limiteTransacao))
 	}
 
 	return nil

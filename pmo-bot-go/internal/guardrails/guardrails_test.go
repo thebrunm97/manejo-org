@@ -244,15 +244,35 @@ func TestBuildConfirmationMessage_CompraMZ(t *testing.T) {
 	phone := "258841234567"
 	args := map[string]interface{}{
 		"produto": "esterco", "quantidade_valor": 2.0, "quantidade_unidade": "sacos",
-		"valor_total": 300.0, "data_compra": "2026-10-10", "user_id": "u1",
+		"valor_total": 3000.0, "data_compra": "2026-10-10", "user_id": "u1",
 	}
 	_, label := guardrails.RequiresHITL(phone, "registrar_compra_insumo", args)
 	msg := guardrails.BuildConfirmationMessage(phone, label, args)
 
-	want := "*Confirma o registo?*\nCompra de esterco — 300,00 MT\n\n" +
-		"• Produto: esterco\n• Quantidade: 2 sacos\n• Valor: 300,00 MT\n• Data: 10/10/2026\n\n" +
+	want := "*Confirma o registo?*\nCompra de esterco — 3.000,00 MT\n\n" +
+		"• Produto: esterco\n• Quantidade: 2 sacos\n• Valor: 3.000,00 MT\n• Data: 10/10/2026\n\n" +
 		"Responda *SIM* para registar ou *NÃO* para cancelar.\n_Vale por 10 minutos._"
 	assert.Equal(t, want, msg)
 	assert.NotContains(t, msg, "_valor")
 	assert.NotContains(t, msg, "R$")
+}
+
+// Limites de confirmação pensados em reais escalam para meticais.
+func TestRequiresHITL_LimitesPorMoeda(t *testing.T) {
+	compra := func(v float64) map[string]interface{} {
+		return map[string]interface{}{"produto": "esterco", "valor_total": v}
+	}
+	mz, br := "258841234567", "5511999990000"
+
+	ok, _ := guardrails.RequiresHITL(mz, "registrar_compra_insumo", compra(300))
+	assert.False(t, ok, "300 MT não deveria pedir confirmação")
+	ok, _ = guardrails.RequiresHITL(mz, "registrar_compra_insumo", compra(3000))
+	assert.True(t, ok, "3.000 MT sem factura deveria pedir confirmação")
+	ok, _ = guardrails.RequiresHITL(br, "registrar_compra_insumo", compra(300))
+	assert.True(t, ok, "R$ 300 sem nota continua pedindo confirmação")
+
+	ev := guardrails.NewDeterministicEvaluator(nil)
+	tx := guardrails.TransactionPayload{ValorTotal: 100000}
+	assert.NoError(t, ev.EvaluateTransaction(context.Background(), guardrails.EvaluationContext{Telefone: mz}, tx))
+	assert.Error(t, ev.EvaluateTransaction(context.Background(), guardrails.EvaluationContext{Telefone: br}, tx))
 }

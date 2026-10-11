@@ -92,6 +92,7 @@ func handleRegistroFinanceiro(ctx context.Context, ext *groq.ExtractionResult, p
 			PmoID:         profile.PmoAtivoID,
 			PropriedadeID: profile.PropriedadeAtivaID,
 			UserID:        profile.ID,
+			Telefone:      profile.Telefone,
 		}
 
 		evalErr := ActiveBusinessEvaluator.EvaluateTransaction(ctx, evalCtx, guardrails.TransactionPayload{
