@@ -58,7 +58,7 @@ func (m *HITLMiddleware) Process(ctx context.Context, req *ToolRequest) (ToolRes
 		return ToolResponse{}, nil
 	}
 
-	if needsHITL, label := guardrails.RequiresHITL(req.ToolName, req.RawArgs); needsHITL {
+	if needsHITL, label := guardrails.RequiresHITL(m.Phone, req.ToolName, req.RawArgs); needsHITL {
 		fp := hitlFingerprint(req.ToolName, req.RawArgs)
 		if m.HitlRequested[fp] {
 			log.Printf("🔄 [HITL-DEDUP] Confirmação já solicitada para tool=%s (fp=%s) — reutilizando synthetic result", req.ToolName, fp)
@@ -88,22 +88,15 @@ func (m *HITLMiddleware) Process(ctx context.Context, req *ToolRequest) (ToolRes
 			m.HitlRequested[fp] = true
 			log.Printf("⏸️ [HITL] Aprovação solicitada — tool=%s token=%s phone=%s", req.ToolName, token, m.Phone)
 			if m.WhatsApp != nil {
-				confirmMsg := guardrails.BuildConfirmationMessage(label, req.RawArgs)
-				buttons := []map[string]string{
-					{"type": "reply", "displayText": "SIM", "id": "SIM"},
-					{"type": "reply", "displayText": "NÃO", "id": "NÃO"},
-				}
-				
+				// Texto puro: os botões não aparecem pela Evolution, e o
+				// fallback deles repetia título, "Responda SIM ou NÃO" e rodapé.
 				env := ports.OutboundEnvelope{
 					ConversationID: "", // Legacy orchestrator doesn't have convID yet
 					To:             m.Phone,
-					Type:           ports.OutboundTypeButtons,
-					Text:           confirmMsg,
-					Title:          "Confirmação Necessária",
-					Footer:         "Esta confirmação expira em 10 minutos",
-					Buttons:        buttons,
+					Type:           ports.OutboundTypeText,
+					Text:           guardrails.BuildConfirmationMessage(m.Phone, label, req.RawArgs),
 				}
-				
+
 				if err := m.WhatsApp.Send(context.Background(), env); err != nil {
 					log.Printf("⚠️ [HITL] Falha ao enviar botões de confirmação: %v", err)
 				}

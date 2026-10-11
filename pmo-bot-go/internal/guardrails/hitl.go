@@ -8,6 +8,8 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -60,7 +62,8 @@ func NewHITLController(supabaseURL, supabaseKey string) *HITLController {
 // 3. Agricultural operations with physical quantity > 2.500 kg/L -> true
 // 4. Batch operations with 2+ items -> true
 // 5. Routine operations below thresholds -> false (direct execution with post-action feedback)
-func RequiresHITL(toolName string, rawArgs map[string]interface{}) (bool, string) {
+func RequiresHITL(phone, toolName string, rawArgs map[string]interface{}) (bool, string) {
+	moeda := utils.MoedaSimboloPara(phone)
 	// Rule 1: Irreversible / Structural Tools
 	if label, ok := HighRiskIrreversibleTools[toolName]; ok {
 		return true, label
@@ -82,10 +85,10 @@ func RequiresHITL(toolName string, rawArgs map[string]interface{}) (bool, string
 		val := parseArgFloat(rawArgs, "valor_total", "valor")
 		desc := parseArgString(rawArgs, "descricao", "item", "categoria_nome")
 		if val > 500.0 {
-			return true, fmt.Sprintf("Despesa Financeira de %s %.2f (%s)", utils.MoedaSimbolo(), val, desc)
+			return true, fmt.Sprintf("Despesa de %s (%s)", formatarDinheiro(val, moeda), desc)
 		}
 		if desc == "" && val > 0 {
-			return true, fmt.Sprintf("Despesa Financeira de %s %.2f", utils.MoedaSimbolo(), val)
+			return true, fmt.Sprintf("Despesa de %s", formatarDinheiro(val, moeda))
 		}
 
 	case "registrar_compra_insumo":
@@ -93,14 +96,14 @@ func RequiresHITL(toolName string, rawArgs map[string]interface{}) (bool, string
 		prod := parseArgString(rawArgs, "produto")
 		nf := parseArgString(rawArgs, "nota_fiscal")
 		if val > 500.0 || (val > 200.0 && nf == "") {
-			return true, fmt.Sprintf("Compra de %s (%s %.2f)", prod, utils.MoedaSimbolo(), val)
+			return true, fmt.Sprintf("Compra de %s — %s", prod, formatarDinheiro(val, moeda))
 		}
 
 	case "registrar_venda":
 		val := parseArgFloat(rawArgs, "valor_total")
 		prod := parseArgString(rawArgs, "produto")
 		if val > 500.0 {
-			return true, fmt.Sprintf("Venda de %s (%s %.2f)", prod, utils.MoedaSimbolo(), val)
+			return true, fmt.Sprintf("Venda de %s — %s", prod, formatarDinheiro(val, moeda))
 		}
 	}
 
@@ -329,21 +332,21 @@ func (h *HITLController) setHeaders(req *http.Request) {
 
 // BuildConfirmationMessage returns the WhatsApp confirmation prompt for the producer.
 // Kept here so the message format is owned by the guardrails package (single source).
-func BuildConfirmationMessage(label string, args map[string]interface{}) string {
-	details := formatArgsForHuman(args)
+// Vai como texto puro: os botões não aparecem no WhatsApp pela Evolution.
+func BuildConfirmationMessage(phone, label string, args map[string]interface{}) string {
+	mz := strings.HasPrefix(strings.TrimPrefix(phone, "+"), "258")
+	titulo, acao := "Confirma o registro?", "registrar"
+	if mz {
+		titulo, acao = "Confirma o registo?", "registar"
+	}
 	return fmt.Sprintf(
-		"⚠️ *Confirmação Necessária*\n\n"+
-			"O assistente deseja realizar:\n*%s*\n\n"+
-			"%s\n"+
-			"_Responda *SIM* para confirmar ou *NÃO* para cancelar._\n"+
-			"_(Esta confirmação expira em 10 minutos)_",
-		label,
-		details,
+		"*%s*\n%s\n\n%s\n\nResponda *SIM* para %s ou *NÃO* para cancelar.\n_Vale por 10 minutos._",
+		titulo, label, formatArgsForHuman(phone, args), acao,
 	)
 }
 
 // formatValueCleanly recursively formats values, rendering talhão maps in a user-friendly format.
-func formatValueCleanly(val interface{}, depth int) string {
+func formatValueCleanly(val interface{}, depth int, moeda string) string {
 	indent := strings.Repeat("  ", depth)
 	switch v := val.(type) {
 	case map[string]interface{}:
@@ -383,14 +386,14 @@ func formatValueCleanly(val interface{}, depth int) string {
 				finalStr = fmt.Sprintf("• %s", nameStr)
 			}
 			if valorAlocado != nil && fmt.Sprintf("%v", valorAlocado) != "" {
-				finalStr += fmt.Sprintf(": %s %v", utils.MoedaSimbolo(), valorAlocado)
+				finalStr += ": " + formatarDinheiro(valorAlocado, moeda)
 			}
 			return finalStr
 		}
 
 		var parts []string
 		for k, valMap := range v {
-			parts = append(parts, fmt.Sprintf("%s%s: %s", indent, k, formatValueCleanly(valMap, depth+1)))
+			parts = append(parts, fmt.Sprintf("%s%s: %s", indent, k, formatValueCleanly(valMap, depth+1, moeda)))
 		}
 		return "{\n" + strings.Join(parts, "\n") + "\n" + indent + "}"
 
@@ -432,51 +435,197 @@ func formatValueCleanly(val interface{}, depth int) string {
 				finalStr = fmt.Sprintf("• %s", nameStr)
 			}
 			if valorAlocado != nil && fmt.Sprintf("%v", valorAlocado) != "" {
-				finalStr += fmt.Sprintf(": %s %v", utils.MoedaSimbolo(), valorAlocado)
+				finalStr += ": " + formatarDinheiro(valorAlocado, moeda)
 			}
 			return finalStr
 		}
 
 		var parts []string
 		for k, valMap := range v {
-			parts = append(parts, fmt.Sprintf("%s%v: %s", indent, k, formatValueCleanly(valMap, depth+1)))
+			parts = append(parts, fmt.Sprintf("%s%v: %s", indent, k, formatValueCleanly(valMap, depth+1, moeda)))
 		}
 		return "{\n" + strings.Join(parts, "\n") + "\n" + indent + "}"
 
 	case []interface{}:
 		var parts []string
 		for _, valSlice := range v {
-			parts = append(parts, formatValueCleanly(valSlice, depth))
+			parts = append(parts, formatValueCleanly(valSlice, depth, moeda))
 		}
 		return "\n" + strings.Join(parts, "\n")
 
+	case float64:
+		return formatarNumero(v)
 	default:
 		return fmt.Sprintf("%v", v)
 	}
 }
 
 // formatArgsForHuman renders the tool args as a readable bullet list,
-// filtering out system-injected fields (user_id, pmo_id, etc.).
-func formatArgsForHuman(args map[string]interface{}) string {
-	systemKeys := map[string]bool{
+// com nomes de campo em português, quantidade e unidade juntas, dinheiro na
+// moeda do produtor e datas em dd/mm/aaaa.
+func formatArgsForHuman(phone string, args map[string]interface{}) string {
+	moeda := utils.MoedaSimboloPara(phone)
+	mz := moeda == "MT"
+	vazio := func(v interface{}) bool { return v == nil || strings.TrimSpace(fmt.Sprintf("%v", v)) == "" }
+
+	usados := map[string]bool{
 		"user_id": true, "pmo_id": true, "propriedade_id": true, "data_arg": true,
+		"raw_payload_id": true, "idempotency_key": true, "talhao_id": true,
+	}
+	// Quantidade e dose entram como campos virtuais, já juntas com a unidade.
+	juntos := map[string]string{}
+
+	for _, par := range [][2]string{{"quantidade_valor", "quantidade_unidade"}, {"quantidade", "unidade"}, {"dosagem_valor", "dosagem_unidade"}} {
+		v, u := args[par[0]], args[par[1]]
+		if _, ok := args[par[0]]; ok && !vazio(v) {
+			q := formatValueCleanly(v, 0, moeda)
+			if !vazio(u) {
+				q += " " + fmt.Sprintf("%v", u)
+			}
+			chave := "#quantidade"
+			if strings.HasPrefix(par[0], "dosagem") {
+				chave = "#dose"
+			}
+			juntos[chave] = q
+		}
+		usados[par[0]], usados[par[1]] = true, true
 	}
 
+	chaves := make([]string, 0, len(args))
+	for k := range args {
+		if !usados[k] {
+			chaves = append(chaves, k)
+		}
+	}
+	for k := range juntos {
+		chaves = append(chaves, k)
+	}
+	sort.SliceStable(chaves, func(i, j int) bool {
+		oi, oj := ordemCampo(chaves[i]), ordemCampo(chaves[j])
+		if oi != oj {
+			return oi < oj
+		}
+		return chaves[i] < chaves[j]
+	})
+
 	var lines []string
-	for k, v := range args {
-		if systemKeys[k] {
+	add := func(rotulo, valor string) {
+		if strings.TrimSpace(valor) != "" {
+			lines = append(lines, fmt.Sprintf("• %s: %s", rotulo, valor))
+		}
+	}
+	for _, k := range chaves {
+		if q, ok := juntos[k]; ok {
+			add(nomesCampo[k], q)
 			continue
 		}
-		if v == nil || v == "" {
+		v := args[k]
+		if vazio(v) {
 			continue
 		}
-		lines = append(lines, fmt.Sprintf("• *%s:* %s", k, formatValueCleanly(v, 0)))
+		switch {
+		case camposDinheiro[k]:
+			add(rotuloCampo(k, mz), formatarDinheiro(v, moeda))
+		case strings.HasPrefix(k, "data"):
+			add(rotuloCampo(k, mz), formatarData(fmt.Sprintf("%v", v)))
+		default:
+			add(rotuloCampo(k, mz), formatValueCleanly(v, 0, moeda))
+		}
 	}
 
 	if len(lines) == 0 {
-		return "_(Sem detalhes adicionais disponíveis)_"
+		return "_(Sem detalhes)_"
 	}
 	return strings.Join(lines, "\n")
+}
+
+var camposDinheiro = map[string]bool{
+	"valor_total": true, "valor": true, "valor_pago": true, "valor_unitario": true, "preco": true,
+}
+
+var nomesCampo = map[string]string{
+	"produto": "Produto", "item": "Item", "descricao": "Descrição", "cultura": "Cultura",
+	"especies": "Espécie", "tipo": "Tipo", "valor_total": "Valor", "valor": "Valor",
+	"valor_pago": "Valor", "valor_unitario": "Valor unitário", "preco": "Preço",
+	"fornecedor": "Fornecedor", "cliente": "Cliente", "comprador": "Comprador",
+	"data_compra": "Data", "data": "Data", "data_venda": "Data", "nota_fiscal": "Nota fiscal",
+	"marca": "Marca", "composicao": "Composição", "procedencia": "Procedência",
+	"categoria_nome": "Categoria", "talhao_nome": "Talhão", "talhao": "Talhão",
+	"alocacoes_talhoes": "Por talhão", "destino": "Destino", "lote": "Lote",
+	"produto_insumo": "Insumo", "item_area": "Local", "observacoes": "Observações",
+	"#quantidade": "Quantidade", "#dose": "Dose", "nome": "Nome", "cidade": "Cidade", "uf": "Estado", "area": "Área",
+}
+
+var ordemCampos = []string{
+	"produto", "item", "produto_insumo", "descricao", "cultura", "especies", "nome", "tipo",
+	"#quantidade", "#dose",
+	"valor_total", "valor", "valor_pago", "valor_unitario", "preco",
+	"fornecedor", "cliente", "comprador", "data_compra", "data_venda", "data",
+	"talhao_nome", "talhao", "item_area", "categoria_nome", "nota_fiscal",
+}
+
+func ordemCampo(k string) int {
+	for i, c := range ordemCampos {
+		if c == k {
+			return i
+		}
+	}
+	return len(ordemCampos)
+}
+
+func rotuloCampo(k string, mz bool) string {
+	if mz {
+		switch k {
+		case "nota_fiscal":
+			return "Factura"
+		case "uf":
+			return "Província"
+		case "talhao_nome", "talhao":
+			return "Talhão"
+		}
+	}
+	if r, ok := nomesCampo[k]; ok {
+		return r
+	}
+	r := strings.ReplaceAll(k, "_", " ")
+	return strings.ToUpper(r[:1]) + r[1:]
+}
+
+func formatarNumero(f float64) string {
+	if f == float64(int64(f)) {
+		return strconv.FormatInt(int64(f), 10)
+	}
+	return strings.Replace(strconv.FormatFloat(f, 'f', -1, 64), ".", ",", 1)
+}
+
+func formatarDinheiro(v interface{}, moeda string) string {
+	var f float64
+	switch x := v.(type) {
+	case float64:
+		f = x
+	case int:
+		f = float64(x)
+	case int64:
+		f = float64(x)
+	case string:
+		var err error
+		if f, err = strconv.ParseFloat(strings.ReplaceAll(strings.TrimSpace(x), ",", "."), 64); err != nil {
+			return x
+		}
+	default:
+		return fmt.Sprintf("%v", v)
+	}
+	if moeda == "MT" {
+		return utils.FormatarValor(f) + " MT"
+	}
+	return moeda + " " + utils.FormatarValor(f)
+}
+
+func formatarData(s string) string {
+	if t, err := time.Parse("2006-01-02", s); err == nil {
+		return t.Format("02/01/2006")
+	}
+	return s
 }
 
 // CreateOrSupersedeDraft calls public.create_or_supersede_mutation_draft RPC atomically.
@@ -644,28 +793,35 @@ func (h *HITLController) RejectDraft(ctx context.Context, draftID string) error 
 }
 
 // BuildBatchConfirmationMessage builds a user-friendly Portuguese message summarizing a proposed batch of mutations.
-func BuildBatchConfirmationMessage(summaryText string, operations []domain.BatchMutationItem) string {
+func BuildBatchConfirmationMessage(phone, summaryText string, operations []domain.BatchMutationItem) string {
+	mz := strings.HasPrefix(strings.TrimPrefix(phone, "+"), "258")
 	var sb strings.Builder
-	sb.WriteString("📝 *Confirmação de Registro de Operações*\n\n")
+	if mz {
+		sb.WriteString("*Confirma estes registos?*\n")
+	} else {
+		sb.WriteString("*Confirma estes registros?*\n")
+	}
 
 	if summaryText != "" {
 		sb.WriteString(summaryText)
-		sb.WriteString("\n\n")
+		sb.WriteString("\n")
 	}
 
-	sb.WriteString(fmt.Sprintf("Identifiquei *%d* operação(ões) para registro:\n", len(operations)))
 	for i, op := range operations {
 		opLabel := op.Type
 		if op.TipoOperacao != "" {
 			opLabel = fmt.Sprintf("%s (%s)", op.Type, op.TipoOperacao)
 		}
-		sb.WriteString(fmt.Sprintf("\n*%d. %s:*\n", i+1, opLabel))
-		sb.WriteString(formatArgsForHuman(op.Payload))
+		sb.WriteString(fmt.Sprintf("\n*%d. %s*\n", i+1, opLabel))
+		sb.WriteString(formatArgsForHuman(phone, op.Payload))
 		sb.WriteString("\n")
 	}
 
-	sb.WriteString("\n_Responda *1* (ou *SIM*) para confirmar e gravar, ou *2* (ou *NÃO*) para cancelar._\n")
-	sb.WriteString("_(Esta confirmação expira em 45 minutos)_")
+	acao := "registrar"
+	if mz {
+		acao = "registar"
+	}
+	sb.WriteString(fmt.Sprintf("\nResponda *SIM* para %s ou *NÃO* para cancelar.\n_Vale por 45 minutos._", acao))
 	return sb.String()
 }
 

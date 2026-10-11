@@ -232,8 +232,27 @@ func TestBuildConfirmationMessage_CleanFormatting(t *testing.T) {
 			},
 		},
 	}
-	msg := guardrails.BuildConfirmationMessage("Registro de Compra de Insumo", args)
-	assert.Contains(t, msg, "• Talhão 3 (ID: 7): R$ 50")
-	assert.Contains(t, msg, "• Talhão 4 (ID: 8): R$ 50")
+	msg := guardrails.BuildConfirmationMessage("5511999990000", "Registro de Compra de Insumo", args)
+	assert.Contains(t, msg, "• Talhão 3 (ID: 7): R$ 50,00")
+	assert.Contains(t, msg, "• Talhão 4 (ID: 8): R$ 50,00")
 	assert.NotContains(t, msg, "map[")
+}
+
+// Caso visto em produção (2026-10-10): título duplicado, chaves cruas com
+// underline e "R$" para um produtor de Moçambique.
+func TestBuildConfirmationMessage_CompraMZ(t *testing.T) {
+	phone := "258841234567"
+	args := map[string]interface{}{
+		"produto": "esterco", "quantidade_valor": 2.0, "quantidade_unidade": "sacos",
+		"valor_total": 300.0, "data_compra": "2026-10-10", "user_id": "u1",
+	}
+	_, label := guardrails.RequiresHITL(phone, "registrar_compra_insumo", args)
+	msg := guardrails.BuildConfirmationMessage(phone, label, args)
+
+	want := "*Confirma o registo?*\nCompra de esterco — 300,00 MT\n\n" +
+		"• Produto: esterco\n• Quantidade: 2 sacos\n• Valor: 300,00 MT\n• Data: 10/10/2026\n\n" +
+		"Responda *SIM* para registar ou *NÃO* para cancelar.\n_Vale por 10 minutos._"
+	assert.Equal(t, want, msg)
+	assert.NotContains(t, msg, "_valor")
+	assert.NotContains(t, msg, "R$")
 }

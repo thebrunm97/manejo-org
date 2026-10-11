@@ -929,7 +929,7 @@ func (s *Server) handleProposeBatchMutations(ctx context.Context, args map[strin
 	}
 
 	draftID, _ := res["draft_id"].(string)
-	confirmationMsg := guardrails.BuildBatchConfirmationMessage(payload.ResumoAmigavel, payload.Operacoes)
+	confirmationMsg := guardrails.BuildBatchConfirmationMessage(phone, payload.ResumoAmigavel, payload.Operacoes)
 
 	return map[string]interface{}{
 		"status":          "pending_approval",

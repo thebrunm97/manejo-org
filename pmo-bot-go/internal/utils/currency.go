@@ -2,6 +2,7 @@ package utils
 
 import (
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -21,4 +22,35 @@ func MoedaSimbolo() string {
 		return v
 	}
 	return "R$"
+}
+
+// MoedaSimboloPara devolve a moeda pelo país do telefone: Moçambique (+258)
+// fala em meticais; o resto segue MoedaSimbolo().
+func MoedaSimboloPara(phone string) string {
+	if strings.HasPrefix(strings.TrimPrefix(phone, "+"), "258") {
+		return "MT"
+	}
+	return MoedaSimbolo()
+}
+
+// FormatarValor escreve dinheiro no formato lusófono: 1.200,50.
+func FormatarValor(v float64) string {
+	neg := v < 0
+	if neg {
+		v = -v
+	}
+	s := strconv.FormatFloat(v, 'f', 2, 64)
+	inteiro, dec := s[:len(s)-3], s[len(s)-2:]
+	var b strings.Builder
+	for i, c := range inteiro {
+		if i > 0 && (len(inteiro)-i)%3 == 0 {
+			b.WriteByte('.')
+		}
+		b.WriteRune(c)
+	}
+	out := b.String() + "," + dec
+	if neg {
+		out = "-" + out
+	}
+	return out
 }

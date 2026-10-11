@@ -114,7 +114,7 @@ func TestE2EHITLFlow(t *testing.T) {
 
 	// Simular Orchestrator pausando a tool
 	fmt.Println("\n[Passo 1] Orchestrator tenta invocar 'registrar_despesa'")
-	needsHITL, label := guardrails.RequiresHITL("registrar_despesa", toolArgs)
+	needsHITL, label := guardrails.RequiresHITL(phone, "registrar_despesa", toolArgs)
 	if !needsHITL {
 		t.Fatal("Esperava que registrar_despesa com valor > 500 exigisse HITL")
 	}
@@ -130,7 +130,7 @@ func TestE2EHITLFlow(t *testing.T) {
 		t.Fatalf("Erro ao solicitar HITL: %v", err)
 	}
 
-	mockWP.Send(context.Background(), ports.OutboundEnvelope{To: phone, Type: ports.OutboundTypeText, Text: guardrails.BuildConfirmationMessage(label, toolArgs)})
+	mockWP.Send(context.Background(), ports.OutboundEnvelope{To: phone, Type: ports.OutboundTypeText, Text: guardrails.BuildConfirmationMessage(phone, label, toolArgs)})
 
 	// 2. Webhook recebe a string "SIM"
 	fmt.Println("\n[Passo 2] Usuário responde 'SIM' via WhatsApp")
