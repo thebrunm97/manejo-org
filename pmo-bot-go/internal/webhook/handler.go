@@ -525,32 +525,41 @@ func (h *Handler) handleHITLResponse(phone string, verdict HITLVerdict) bool {
 			toolCtx, toolCancel := context.WithTimeout(context.Background(), 20*time.Second)
 			defer toolCancel()
 
-			recPmoID := int64(0)
+			// Perfil completo: a ferramenta precisa da propriedade ativa e do
+			// telefone (moeda, limites). Antes ia só ID+PMO, e a compra caía
+			// sem propriedade.
+			profile := &supabase.Profile{ID: rec.UserID, Telefone: phone}
+			if h.cfg.SupabaseClient != nil {
+				if p, err := h.cfg.SupabaseClient.GetProfileByPhone(phone); err == nil && p != nil && p.ID == rec.UserID {
+					profile = p
+				}
+			}
 			if rec.PmoID != nil {
-				recPmoID = *rec.PmoID
+				profile.PmoAtivoID = *rec.PmoID // o PMO que o produtor confirmou
 			}
-			profile := &supabase.Profile{
-				ID:         rec.UserID,
-				PmoAtivoID: recPmoID,
+
+			// O produtor acabou de responder SIM: é a confirmação que a trava
+			// RequiresConfirmation da ferramenta exige. Sem isto a ferramenta
+			// devolvia a instrução interna "Você DEVE pedir permissão...".
+			if toolArgs == nil {
+				toolArgs = map[string]interface{}{}
 			}
+			toolArgs["confirmed"] = true
 
 			guard := mcp.NewLoopGuard(3)
 			result, toolErr := h.cfg.MCPServer.CallToolWithGuard(toolCtx, guard, toolName, toolArgs, profile)
-			_ = result
 
 			if toolErr != nil {
 				log.Printf("❌ [HITL] Execução da ferramenta legada %s falhou: %v", toolName, toolErr)
 				if h.cfg.WhatsAppClient != nil {
-					_ = h.cfg.WhatsAppClient.Send(context.Background(), ports.OutboundEnvelope{To: phone, Type: ports.OutboundTypeText, Text: fmt.Sprintf("❌ Ocorreu um erro ao executar o registro aprovado: %v\nPor favor, tente novamente.", toolErr)})
+					_ = h.cfg.WhatsAppClient.Send(context.Background(), ports.OutboundEnvelope{To: phone, Type: ports.OutboundTypeText, Text: "❌ Não consegui fazer o registro. Por favor, envie de novo."})
 				}
 				return true
 			}
 
-			msg := "✅ *Operação confirmada e registrada com sucesso!*\n\n🌱 Seu caderno de campo foi atualizado."
-			if resMap, ok := result.(map[string]interface{}); ok {
-				if successMsg, ok := resMap["message"].(string); ok && successMsg != "" {
-					msg = "✅ " + successMsg
-				}
+			msg, ok := mensagemDoResultadoAprovado(result)
+			if !ok {
+				log.Printf("❌ [HITL] Ferramenta %s não gravou após SIM: %v", toolName, result)
 			}
 			if h.cfg.WhatsAppClient != nil {
 				_ = h.cfg.WhatsAppClient.Send(context.Background(), ports.OutboundEnvelope{To: phone, Type: ports.OutboundTypeText, Text: msg})
@@ -560,6 +569,35 @@ func (h *Handler) handleHITLResponse(phone string, verdict HITLVerdict) bool {
 	}
 
 	return false
+}
+
+// mensagemDoResultadoAprovado traduz o retorno da ferramenta executada após o
+// SIM em texto para o produtor. ok=false quando não gravou: nesse caso nunca
+// repassa "message" de status interno (instruções escritas para o LLM).
+func mensagemDoResultadoAprovado(result interface{}) (string, bool) {
+	falha := "❌ Não consegui fazer o registro. Por favor, envie de novo."
+	switch r := result.(type) {
+	case string:
+		t := strings.TrimSpace(r)
+		if t == "" {
+			break
+		}
+		if low := strings.ToLower(t); strings.HasPrefix(low, "erro") {
+			return falha, false
+		}
+		return "✅ " + t, true
+	case map[string]interface{}:
+		status, _ := r["status"].(string)
+		switch status {
+		case "", "success", "already_processed":
+			if m, _ := r["message"].(string); m != "" {
+				return "✅ " + m, true
+			}
+		default:
+			return falha, false
+		}
+	}
+	return "✅ *Registro confirmado e gravado.*", true
 }
 
 // processLegacy executa o fluxo de processamento legado (goroutine direta, sem persistência).
