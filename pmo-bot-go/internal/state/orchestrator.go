@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
+	"github.com/thebrunm97/pmo-bot-go/internal/history"
 	"github.com/thebrunm97/pmo-bot-go/internal/llm"
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
@@ -44,6 +45,9 @@ type Orchestrator struct {
 	WhatsApp ports.ChannelSender
 	// BusinessEvaluator validates business rules and limits deterministically before tool execution.
 	BusinessEvaluator guardrails.BusinessEvaluator
+	// History guarda o estado da conversa quando uma compra gravada pede
+	// complemento (StateAguardandoDetalheCompra). Nil desliga a pergunta.
+	History *history.Manager
 }
 
 // NewOrchestrator creates a new agentic orchestrator.
@@ -66,6 +70,8 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 	var trace []TraceEvent
 	var usage llm.UsoMetadados
 	var lastToolMsg string
+	// Resultado de compra gravada que pede complemento (tipo/peso).
+	var complementoCompra map[string]interface{}
 	// Ferramenta de gravação que parou esperando confirmação do produtor. Se
 	// continuar pendente ao fim do loop, a resposta final é o pedido de
 	// confirmação — nunca o texto do LLM, que nos testes E2E chegou a
@@ -252,6 +258,13 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 				}
 			}
 
+			if complementoCompra != nil && confirmacaoPendente == nil && finalTexto != "" {
+				if p := IniciarComplementoCompra(o.History, o.Phone, complementoCompra); p != "" {
+					finalTexto += "\n\n" + p
+					history[len(history)-1].Content = finalTexto
+				}
+			}
+
 			return finalTexto, history, trace, usage, effectiveModel, nil
 		}
 
@@ -362,6 +375,10 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 				resMap, ok = toolResp.Result.(map[string]interface{})
 				if !ok {
 					resMap = map[string]interface{}{"result": toolResp.Result}
+				}
+
+				if _, ok := resMap["complemento"].(map[string]interface{}); ok {
+					complementoCompra = resMap
 				}
 
 				if resMap["motivo"] == mcp.MotivoConfirmacaoPendente {

@@ -560,6 +560,8 @@ func (h *Handler) handleHITLResponse(phone string, verdict HITLVerdict) bool {
 			msg, ok := mensagemDoResultadoAprovado(result)
 			if !ok {
 				log.Printf("❌ [HITL] Ferramenta %s não gravou após SIM: %v", toolName, result)
+			} else if p := state.IniciarComplementoCompra(h.cfg.HistoryManager, phone, result); p != "" {
+				msg += "\n\n" + p
 			}
 			if h.cfg.WhatsAppClient != nil {
 				_ = h.cfg.WhatsAppClient.Send(context.Background(), ports.OutboundEnvelope{To: phone, Type: ports.OutboundTypeText, Text: msg})

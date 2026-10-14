@@ -335,6 +335,17 @@ func ProcessMessage(ctx context.Context, msg ports.IncomingEnvelope, sbClient *s
 		}
 	}
 
+	// 3.0b Resposta à pergunta de complemento de uma compra já gravada
+	// (tipo do insumo / peso da embalagem). Outro assunto segue o fluxo.
+	if historyManager != nil {
+		if st, ctxSt, _ := historyManager.GetFSMState(phone); st == StateAguardandoDetalheCompra {
+			if res, tratado := HandleDetalheCompra(ctx, msg, phone, body, profile, ctxSt, respondWithAudio,
+				sbClient, wpClient, ttsClient, historyManager); tratado {
+				return res
+			}
+		}
+	}
+
 	// 3.1 Auto-Seleção Silenciosa & Forçada
 	if profile.PmoAtivoID == 0 && bodyLower != "/trocar" && bodyLower != "/fazenda" {
 		state, _, _ := historyManager.GetFSMState(phone)

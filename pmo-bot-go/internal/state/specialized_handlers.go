@@ -81,6 +81,7 @@ func handleDuvidaFallback(ctx context.Context, wpClient ports.ChannelSender, tts
 		orchestrator.OutputJudge = nil // Disable for CHAT
 	}
 	orchestrator.Phone = phone       // needed for HITL WhatsApp confirmation
+	orchestrator.History = historyManager
 	orchestrator.WhatsApp = wpClient // wire message sender for HITL confirmation prompts
 
 	// 2.5 Buscar Memória Persistente (Recall)

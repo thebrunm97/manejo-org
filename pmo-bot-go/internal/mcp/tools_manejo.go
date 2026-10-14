@@ -321,5 +321,12 @@ func (s *Server) handleRegistrarCompraInsumo(ctx context.Context, args map[strin
 		return "Erro: O banco de dados confirmou o registro da compra, mas não retornou um ID (Silent Failure). Isso geralmente indica um bloqueio de RLS ou falta de vinculação com a propriedade correta.", nil
 	}
 
-	return fmt.Sprintf("Compra de '%s' registrada com sucesso.", produto), nil
+	compraIDStr := fmt.Sprintf("%v", compraID)
+	unidade, _ := qtdUnidadeVal.(string)
+	var quantidade float64
+	if qtdValorPtr != nil {
+		quantidade = *qtdValorPtr
+	}
+	return s.resultadoCompra(ctx, tenant, compraIDStr, produto, unidade, quantidade,
+		sanitize(args["marca"]), sanitize(args["composicao"]), resp["status"] == "already_processed"), nil
 }
