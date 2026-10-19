@@ -446,12 +446,32 @@ func (c *Client) IsProhibitedCheck(input string) bool {
 
 	inputLower := utils.Normalize(input)
 	for _, item := range c.blacklistCache {
-		// Busca parcial simples (contém)
-		if strings.Contains(inputLower, item) {
+		if contemTermo(inputLower, item) {
 			return true
 		}
 	}
 	return false
+}
+
+// contemTermo procura termo em texto (ambos já normalizados) como palavra
+// inteira: "npk 12-24-12" e "npk12" batem com "npk", mas "mapa" não bate com
+// "map". Só letras contam como continuação de palavra.
+func contemTermo(texto, termo string) bool {
+	if termo == "" {
+		return false
+	}
+	ehLetra := func(b byte) bool { return b >= 'a' && b <= 'z' }
+	for i := 0; ; {
+		j := strings.Index(texto[i:], termo)
+		if j < 0 {
+			return false
+		}
+		ini, fim := i+j, i+j+len(termo)
+		if (ini == 0 || !ehLetra(texto[ini-1])) && (fim == len(texto) || !ehLetra(texto[fim])) {
+			return true
+		}
+		i = ini + 1
+	}
 }
 
 // StartBlacklistAutoRefresh creates a background routine to refresh the blacklist cache
