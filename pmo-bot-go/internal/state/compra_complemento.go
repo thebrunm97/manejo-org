@@ -180,8 +180,8 @@ func textoComplementoGravado(phone string, profile *supabase.Profile, sbClient *
 	}
 	if r.tipo != "" && (modalidade == "ORGANICO" || modalidade == "TRANSICAO") && sbClient != nil && sbClient.IsProhibitedCheck(r.tipo) {
 		texto += porPais(phone,
-			fmt.Sprintf("\n\n⚠️ %s não é permitido na produção orgânica. A compra fica registrada, mas aplicar numa área orgânica compromete a certificação.", r.tipo),
-			fmt.Sprintf("\n\n⚠️ %s não é permitido na produção orgânica. A compra fica registada, mas aplicar numa machamba orgânica compromete a certificação.", r.tipo))
+			fmt.Sprintf("\n\n⚠️ O uso de %s não é permitido na produção orgânica. A compra fica registrada, mas aplicar numa área orgânica compromete a certificação.", r.tipo),
+			fmt.Sprintf("\n\n⚠️ O uso de %s não é permitido na produção orgânica. A compra fica registada, mas aplicar numa machamba orgânica compromete a certificação.", r.tipo))
 	}
 	return texto
 }
