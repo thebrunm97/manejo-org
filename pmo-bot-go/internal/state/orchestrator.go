@@ -268,6 +268,12 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 			return finalTexto, history, trace, usage, effectiveModel, nil
 		}
 
+		// Ferramentas de consulta devolvem "resposta_direta": o texto pronto
+		// vai ao produtor sem passar pelo LLM, que reescrevia (pt-BR em vez de
+		// pt-MZ, sem negrito, frase extra). Só quando TODAS as chamadas do
+		// turno são diretas; misturada com outra, o LLM compõe a resposta.
+		var respostasDiretas []string
+		todasDiretas := true
 		for _, tc := range resp.ToolCalls {
 			usedTools = append(usedTools, tc.Nome)
 			log.Printf("telemetry event=tool_invoked intent=%s tool=%s turno=%d ferramentas_ofertadas=%d",
@@ -364,12 +370,14 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 				if errChain != nil {
 					return toolResp.ErrorMessage, history, trace, usage, effectiveModel, errChain
 				}
+				todasDiretas = false
 				continue
 			}
 
 			var resMap map[string]interface{}
 			if errChain != nil {
 				resMap = map[string]interface{}{"error": errChain.Error()}
+				todasDiretas = false
 			} else {
 				var ok bool
 				resMap, ok = toolResp.Result.(map[string]interface{})
@@ -379,6 +387,11 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 
 				if _, ok := resMap["complemento"].(map[string]interface{}); ok {
 					complementoCompra = resMap
+				}
+				if d, ok := resMap["resposta_direta"].(string); ok && d != "" {
+					respostasDiretas = append(respostasDiretas, d)
+				} else {
+					todasDiretas = false
 				}
 
 				if resMap["motivo"] == mcp.MotivoConfirmacaoPendente {
@@ -412,6 +425,12 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 				Output: resMap,
 				Time:   time.Now(),
 			})
+		}
+
+		if todasDiretas && len(respostasDiretas) > 0 && confirmacaoPendente == nil {
+			finalTexto := strings.Join(respostasDiretas, "\n\n")
+			history = append(history, llm.MensagemAgnostica{Role: llm.PapelAssistant, Content: finalTexto})
+			return finalTexto, history, trace, usage, effectiveModel, nil
 		}
 	}
 

@@ -53,10 +53,9 @@ func (s *Server) handleConsultarRegistros(ctx context.Context, args map[string]i
 	return map[string]interface{}{
 		"status":     "success",
 		"quantidade": len(regs),
-		"texto":      TextoConsulta(tenant.Telefone, grupo, f, regs, time.Now()),
-		"message": "Mostre o campo 'texto' ao produtor exatamente como está (é a resposta pronta, " +
-			"já no formato do WhatsApp). Não invente, não some nem recalcule registos. " +
-			"Pode acrescentar no máximo uma frase curta depois, sem repetir os números.",
+		// O orquestrador envia resposta_direta tal como está, sem o LLM.
+		"resposta_direta": TextoConsulta(tenant.Telefone, grupo, f, regs, time.Now()),
+		"message":         "Lista pronta enviada ao produtor. Não invente, não some nem recalcule registos.",
 	}, nil
 }
 
