@@ -168,7 +168,7 @@ func (s *Server) InitializeTools() {
 	s.RegisterTool(Tool{
 		Definition: llm.FerramentaAgnostica{
 			Name:        "consultar_dados_fazenda",
-			Description: "Usa esta ferramenta para consultar dados estruturados da fazenda como talhões, canteiros ativos e registros recentes do caderno de campo.",
+			Description: "Usa esta ferramenta para consultar a estrutura da fazenda (talhões e canteiros). Para o produtor ver os registros dele (compras, colheitas, plantios, manejos, vendas), use consultar_registros.",
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
@@ -630,6 +630,45 @@ func (s *Server) InitializeTools() {
 		},
 		Category: CategoryDBRead,
 		Handler:  s.handleConsultarDemandasCooperativa,
+	})
+
+	s.RegisterTool(Tool{
+		Definition: llm.FerramentaAgnostica{
+			Name: "consultar_registros",
+			Description: "Lista os registros do caderno de campo do produtor (compras, colheitas, plantios/sementeiras, manejos/aplicações, vendas), " +
+				"mais recentes primeiro, já formatados para o WhatsApp. Use sempre que o produtor quiser VER o que registrou: " +
+				"'o que comprei este mês', 'minhas últimas colheitas', 'o que apliquei no talhão 2', 'quanto gastei em adubo'. " +
+				"Para saldo/receitas/despesas totais use consultar_balanco_financeiro.",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"tipo": map[string]interface{}{
+						"type":        "string",
+						"enum":        []string{"todos", "compra", "colheita", "plantio", "manejo", "venda"},
+						"description": "Tipo de registro. 'todos' se o produtor não especificar.",
+					},
+					"data_inicio": map[string]interface{}{
+						"type":        "string",
+						"description": "Primeiro dia do período (AAAA-MM-DD), calculado a partir da data de hoje. Ex.: 'este mês' = dia 1 do mês atual. Omita se o produtor não falar de período.",
+					},
+					"data_fim": map[string]interface{}{
+						"type":        "string",
+						"description": "Último dia do período (AAAA-MM-DD). Omita para 'até hoje'.",
+					},
+					"produto": map[string]interface{}{
+						"type":        "string",
+						"description": "Filtra por produto ou insumo (ex.: 'adubo', 'milho', 'NPK'). Opcional.",
+					},
+					"talhao": map[string]interface{}{
+						"type":        "string",
+						"description": "Filtra por talhão/canteiro/machamba (ex.: 'talhão 2'). Opcional.",
+					},
+				},
+				"required": []string{"tipo"},
+			},
+		},
+		Category: CategoryDBRead,
+		Handler:  s.handleConsultarRegistros,
 	})
 
 	s.RegisterTool(Tool{

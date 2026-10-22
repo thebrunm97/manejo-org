@@ -1705,7 +1705,7 @@ func (c *Client) FetchCanteiros(talhaoID int64) ([]map[string]interface{}, error
 
 // FetchCadernoRecentes returns the last N records from Caderno de Campo for a PMO
 func (c *Client) FetchCadernoRecentes(pmoID int64, limit int) ([]map[string]interface{}, error) {
-	reqURL := fmt.Sprintf("%s/rest/v1/caderno_campo?pmo_id=eq.%d&order=created_at.desc&limit=%d&select=id,created_at,tipo_atividade,produto,talhao_canteiro,quantidade_valor,quantidade_unidade", c.config.URL, pmoID, limit)
+	reqURL := fmt.Sprintf("%s/rest/v1/caderno_campo?pmo_id=eq.%d&order=criado_em.desc&limit=%d&select=id,criado_em,data_registro,tipo_atividade,produto,talhao_canteiro,quantidade_valor,quantidade_unidade", c.config.URL, pmoID, limit)
 	body, err := c.doRequest(http.MethodGet, reqURL, nil)
 	if err != nil {
 		return nil, err
