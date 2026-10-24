@@ -638,7 +638,8 @@ func (s *Server) InitializeTools() {
 			Description: "Lista os registros do caderno de campo do produtor (compras, colheitas, plantios/sementeiras, manejos/aplicações, vendas), " +
 				"mais recentes primeiro, já formatados para o WhatsApp. Use sempre que o produtor quiser VER o que registrou: " +
 				"'o que comprei este mês', 'minhas últimas colheitas', 'o que apliquei no talhão 2', 'quanto gastei em adubo'. " +
-				"Para saldo/receitas/despesas totais use consultar_balanco_financeiro.",
+				"Com modo='total' soma por produto ('quanto colhi de tomate este ano'); com modo='resumo' resume o período inteiro " +
+				"('como foi o mês', 'resumo da semana'). Para saldo/receitas/despesas totais use consultar_balanco_financeiro.",
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
@@ -646,6 +647,12 @@ func (s *Server) InitializeTools() {
 						"type":        "string",
 						"enum":        []string{"todos", "compra", "colheita", "plantio", "manejo", "venda"},
 						"description": "Tipo de registro. 'todos' se o produtor não especificar.",
+					},
+					"modo": map[string]interface{}{
+						"type": "string",
+						"enum": []string{"lista", "total", "resumo"},
+						"description": "'lista' (padrão): registro a registro. 'total': perguntas de 'quanto' (quanto colhi, quanto comprei de X) — soma por produto. " +
+							"'resumo': visão geral do período com todos os tipos (ignora 'tipo'; sem datas = mês atual).",
 					},
 					"data_inicio": map[string]interface{}{
 						"type":        "string",

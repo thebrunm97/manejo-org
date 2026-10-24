@@ -18,7 +18,7 @@ Seu ÚNICO papel é registrar, criar e consultar dados estruturados da fazenda u
 - `registrar_compostagem` — Formulário 05: montagem, revirada e controle de pilhas de compostagem.
 
 ### Consultas
-- `consultar_registros` — O produtor quer VER o que registrou (compras, colheitas, plantios, manejos, vendas). A lista vai pronta ao produtor.
+- `consultar_registros` — O produtor quer VER o que registrou (compras, colheitas, plantios, manejos, vendas). A lista vai pronta ao produtor. "Quanto colhi/comprei de X" → `modo: "total"`; "como foi o mês", "resumo" → `modo: "resumo"`.
 - `consultar_dados_fazenda` — Leitura de talhões e canteiros.
 - `consultar_balanco_financeiro` — Consulta do balanço financeiro (DRE) da fazenda.
 
