@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -846,8 +847,11 @@ func main() {
 	// virar spam logo na subida; depois do último marco, repete a cada 24h.
 	// Uma queda real ainda dispara ChaveWhatsAppCaiu a qualquer momento, fora
 	// deste cronograma — os dois mecanismos são independentes.
+	// whatsappOK guarda o último resultado do heartbeat para o ping de uptime
+	// não dizer "online" com o WhatsApp deslogado.
+	var whatsappOK atomic.Bool
 	if temCanal {
-		go pingDeUptime(context.Background(), notificador, cfg.EvoInstance)
+		go pingDeUptime(context.Background(), notificador, cfg.EvoInstance, whatsappOK.Load)
 	}
 
 	// --- Heartbeat goroutine ---
@@ -855,7 +859,11 @@ func main() {
 	// evolution-go loses webhook config on disconnect/reconnect cycles.
 	go func() {
 		bater := func() {
-			isConnected := sendHeartbeat(cfg.EvoInstance, deliveryManager, sbClient, notificador, rastreador)
+			// O adapter, não o deliveryManager: com o wrapper o heartbeat caía no
+			// ramo "generic sender" e marcava CONNECTED sempre (desde 4dc01f2), e
+			// a queda de out/2026 não foi detectada por aqui.
+			isConnected := sendHeartbeat(cfg.EvoInstance, wpClient, sbClient, notificador, rastreador)
+			whatsappOK.Store(isConnected)
 			if isConnected && cfg.WebhookURL != "" {
 				if err := wpClient.ConfigureWebhooks(cfg.WebhookURL); err != nil {
 					log.Printf("⚠️ [Heartbeat] Falha ao reconfigurar webhook: %v", err)
@@ -983,7 +991,7 @@ func checkClockSync() {
 // em diante, a cada 24h. Existe porque o self-heal (DT-53) só fala quando algo
 // dá errado — sem isto, um canal calado é ambíguo entre "tudo bem" e "ninguém
 // saberia se caísse". Roda até o contexto ser cancelado (processo encerrando).
-func pingDeUptime(ctx context.Context, notificador ports.Notifier, instance string) {
+func pingDeUptime(ctx context.Context, notificador ports.Notifier, instance string, whatsappOK func() bool) {
 	marcos := []time.Duration{1 * time.Hour, 3 * time.Hour, 6 * time.Hour, 12 * time.Hour, 24 * time.Hour}
 	inicio := time.Now()
 	decorrido := time.Duration(0)
@@ -996,13 +1004,7 @@ func pingDeUptime(ctx context.Context, notificador ports.Notifier, instance stri
 		case <-time.After(espera):
 		}
 		decorrido = marco
-		notify.Disparar(ctx, notificador, ports.Alerta{
-			Chave:      ports.ChavePingUptime,
-			Severidade: ports.SeveridadeRecuperado, // fura cooldown: confirmação de rotina, não deve ser suprimida
-			Titulo:     fmt.Sprintf("✅ %s online há %s", instance, formatarDuracaoPing(marco)),
-			Corpo:      fmt.Sprintf("pmo-bot-go segue no ar desde %s, sem interrupção detectada.", inicio.Format("02/01 15:04")),
-			Em:         time.Now(),
-		})
+		notify.Disparar(ctx, notificador, alertaUptime(instance, inicio, decorrido, whatsappOK()))
 	}
 
 	// Depois do último marco, repete a cada 24h enquanto o processo viver.
@@ -1014,15 +1016,27 @@ func pingDeUptime(ctx context.Context, notificador ports.Notifier, instance stri
 			return
 		case <-ticker.C:
 			decorrido += 24 * time.Hour
-			notify.Disparar(ctx, notificador, ports.Alerta{
-				Chave:      ports.ChavePingUptime,
-				Severidade: ports.SeveridadeRecuperado,
-				Titulo:     fmt.Sprintf("✅ %s online há %s", instance, formatarDuracaoPing(decorrido)),
-				Corpo:      fmt.Sprintf("pmo-bot-go segue no ar desde %s, sem interrupção detectada.", inicio.Format("02/01 15:04")),
-				Em:         time.Now(),
-			})
+			notify.Disparar(ctx, notificador, alertaUptime(instance, inicio, decorrido, whatsappOK()))
 		}
 	}
+}
+
+// alertaUptime monta o ping. Com o WhatsApp fora, o ping vira aviso: o
+// processo estar de pé não significa que o produtor é atendido.
+func alertaUptime(instance string, inicio time.Time, decorrido time.Duration, whatsappOK bool) ports.Alerta {
+	a := ports.Alerta{
+		Chave:      ports.ChavePingUptime,
+		Severidade: ports.SeveridadeRecuperado, // fura cooldown: confirmação de rotina, não deve ser suprimida
+		Titulo:     fmt.Sprintf("%s online há %s", instance, formatarDuracaoPing(decorrido)),
+		Corpo:      fmt.Sprintf("pmo-bot-go segue no ar desde %s, sem interrupção detectada.", inicio.Format("02/01 15:04")),
+		Em:         time.Now(),
+	}
+	if !whatsappOK {
+		a.Severidade = ports.SeveridadeCritico
+		a.Titulo = fmt.Sprintf("%s: processo no ar há %s, mas o WhatsApp está DESCONECTADO", instance, formatarDuracaoPing(decorrido))
+		a.Corpo = "O bot não recebe nem envia mensagens. Veja os alertas de self-heal (QR ou reconexão)."
+	}
+	return a
 }
 
 // formatarDuracaoPing traduz marcos de hora para um rótulo legível ("1h",

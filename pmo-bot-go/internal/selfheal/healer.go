@@ -44,6 +44,10 @@ const (
 	verificacaoIntervalo = 5 * time.Second
 	verificacaoJanela    = 30 * time.Second
 	timeoutChamadaPadrao = 10 * time.Second
+	// realertaManual: de quanto em quanto tempo repetir o alerta de um caso que
+	// só um humano resolve (QR, chave). Um alerta único some no meio dos pings
+	// de uptime; em out/2026 a sessão ficou deslogada 3 dias com um aviso só.
+	realertaManual = 6 * time.Hour
 )
 
 // ErrHealEmAndamento é devolvido quando HealOnce é chamado enquanto uma
@@ -115,8 +119,8 @@ type incidenteEmCurso struct {
 	proximaTentativaEm      time.Time
 	esgotadoEm              time.Time
 	consecutivasGatewayFora int
-	alertouDeslogada        bool
-	alertouNaoAutorizada    bool
+	alertouDeslogadaEm      time.Time
+	alertouNaoAutorizadaEm  time.Time
 	alertouGatewayFora      bool
 }
 
@@ -387,30 +391,33 @@ func (h *Healer) tratarSaudavel(ctx context.Context, agora time.Time, estado Est
 
 // tratarNaoRecuperavel cobre DESLOGADA e NAO_AUTORIZADA: estados em que agir
 // sozinho é errado (arriscaria QR ou já está sem credencial válida). Alerta
-// uma única vez por incidente — a chave decide qual booleano de "já alertei"
-// checar.
+// ao abrir o incidente e repete a cada realertaManual enquanto ele durar — a
+// chave decide qual "último alerta" checar.
 func (h *Healer) tratarNaoRecuperavel(ctx context.Context, agora time.Time, estado Estado, chave, motivo, explicacao string) Resultado {
 	if h.incidente == nil {
 		h.incidente = &incidenteEmCurso{inicio: agora}
 	}
 	inc := h.incidente
 
-	jaAlertado := true
+	var ultimo *time.Time
 	switch chave {
 	case ports.ChaveWhatsAppDeslogado:
-		jaAlertado = inc.alertouDeslogada
-		inc.alertouDeslogada = true
+		ultimo = &inc.alertouDeslogadaEm
 	case ports.ChaveNaoAutorizado:
-		jaAlertado = inc.alertouNaoAutorizada
-		inc.alertouNaoAutorizada = true
+		ultimo = &inc.alertouNaoAutorizadaEm
 	}
 
-	if !jaAlertado {
+	if ultimo != nil && (ultimo.IsZero() || agora.Sub(*ultimo) >= realertaManual) {
+		titulo := fmt.Sprintf("WhatsApp precisa de ação manual (%s)", h.opts.Instance)
+		if !ultimo.IsZero() {
+			titulo += fmt.Sprintf(" — continua parado há %s", agora.Sub(inc.inicio).Round(time.Minute))
+		}
+		*ultimo = agora
 		telemetry.WhatsAppConnected.Set(0)
 		notify.Disparar(ctx, h.notificador, ports.Alerta{
 			Chave:      chave,
 			Severidade: ports.SeveridadeCritico,
-			Titulo:     fmt.Sprintf("WhatsApp precisa de ação manual (%s)", h.opts.Instance),
+			Titulo:     titulo,
 			Corpo:      explicacao + "\n\nNenhuma reconexão automática será tentada.",
 			Em:         agora,
 		})

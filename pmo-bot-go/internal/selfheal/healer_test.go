@@ -609,3 +609,22 @@ func TestHealer_NotificarEvento_QRCodeRepetido_AlertaUmaSoVez(t *testing.T) {
 		t.Errorf("alertou %d vezes, queria exatamente 1", n.porChave(ports.ChaveQRDetectado))
 	}
 }
+
+// Caso que só um humano resolve não pode ficar com um alerta único: repete a
+// cada realertaManual enquanto durar, e não antes disso.
+func TestHealer_DeslogadaRepeteAlerta(t *testing.T) {
+	gw := &fakeGateway{status: []respStatus{caido()}, info: evolution.InstanceInfo{Jid: ""}}
+	n := novoFakeNotifier()
+	h := NewHealer(gw, n, opts(func(o *Options) { o.DownThreshold = 1 }))
+
+	h.HealOnce(context.Background(), base)                                 // alerta 1
+	h.HealOnce(context.Background(), base.Add(time.Hour))                  // cedo demais
+	h.HealOnce(context.Background(), base.Add(realertaManual))             // alerta 2
+	h.HealOnce(context.Background(), base.Add(realertaManual+time.Minute)) // cedo demais
+
+	n.aguardar(t, 2)
+	time.Sleep(50 * time.Millisecond)
+	if got := n.porChave(ports.ChaveWhatsAppDeslogado); got != 2 {
+		t.Errorf("alertas = %d, queria 2", got)
+	}
+}
