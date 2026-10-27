@@ -71,15 +71,16 @@ func (h *AuthHandler) Exchange(c *gin.Context) {
 	}
 	newPassword := base64.RawURLEncoding.EncodeToString(passBytes)
 
-	// 3. Atualizar senha e realizar login imediatamente
+	// 3. Emitir a sessão. Quem tem e-mail entra por magiclink sem trocar a
+	// senha; newPassword só é usada para quem tem apenas telefone.
 	// IMPORTANTE: a senha newPassword nunca é registrada (logada) em nenhum lugar.
-	session, errLogin := h.sbClient.UpdateUserPasswordAndLogin(userID, newPassword)
+	session, errLogin := h.sbClient.SessaoSemTrocarSenha(userID, newPassword)
 	if errLogin != nil {
 		// Embora raro, pode falhar por indisponibilidade momentânea da GoTrue
 		// Como o token já foi consumido na etapa 1, ele está perdido.
 		// O usuário terá que gerar outro clicando no WhatsApp novamente,
 		// o que cumpre o critério de segurança idempotente (novo token necessário).
-		log.Printf("⚠️ [Auth] UpdateUserPasswordAndLogin falhou para %s: %v", userID, errLogin)
+		log.Printf("⚠️ [Auth] SessaoSemTrocarSenha falhou para %s: %v", userID, errLogin)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "erro durante login"})
 		return
 	}

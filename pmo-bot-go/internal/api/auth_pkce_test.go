@@ -58,6 +58,12 @@ func setupMockSupabaseServer() *httptest.Server {
 			return
 		}
 
+		// Usuário só com telefone: segue pela senha aleatória
+		if strings.HasPrefix(r.URL.Path, "/auth/v1/admin/users/") && r.Method == "GET" {
+			w.Write([]byte(`{"id": "test-user-id", "phone": "5511999999999"}`))
+			return
+		}
+
 		// Mock do UpdateUserPasswordAndLogin
 		if strings.HasPrefix(r.URL.Path, "/auth/v1/admin/users/") && r.Method == "PUT" {
 			// Sucesso na troca de senha

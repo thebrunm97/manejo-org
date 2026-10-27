@@ -680,6 +680,27 @@ func (s *Server) InitializeTools() {
 
 	s.RegisterTool(Tool{
 		Definition: llm.FerramentaAgnostica{
+			Name: "enviar_link_app",
+			Description: "Envia ao produtor um link que abre o app já logado (válido 10 min, uso único). Use quando ele pedir para ver tudo, " +
+				"ver no app/no computador, ou pedir o link do caderno ou do financeiro.",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"destino": map[string]interface{}{
+						"type":        "string",
+						"enum":        []string{"caderno", "financeiro"},
+						"description": "Tela que o link abre. 'caderno' se não for sobre dinheiro.",
+					},
+				},
+				"required": []string{"destino"},
+			},
+		},
+		Category: CategoryDBRead,
+		Handler:  s.handleEnviarLinkApp,
+	})
+
+	s.RegisterTool(Tool{
+		Definition: llm.FerramentaAgnostica{
 			Name:        "consultar_balanco_financeiro",
 			Description: "Retorna o balanço financeiro (DRE) da fazenda (receitas, despesas, saldo, e top despesas), já formatado para o WhatsApp. Use quando o produtor pedir saldo, lucro, receitas, despesas ou balanço. Para 'como foi o mês' ou 'resumo do mês' use consultar_registros com modo='resumo'. OBRIGATÓRIO: Use sempre o ano atual (2026) por padrão se o usuário não especificar o ano no contexto da pergunta.",
 			Parameters: map[string]interface{}{

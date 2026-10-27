@@ -3,6 +3,9 @@ package mcp
 import (
 	"context"
 	"fmt"
+	"log"
+	"net/url"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -69,6 +72,14 @@ func (s *Server) handleConsultarRegistros(ctx context.Context, args map[string]i
 		texto = TextoTotais(tenant.Telefone, grupo, f, regs, agora)
 	default:
 		texto = TextoConsulta(tenant.Telefone, grupo, f, regs, agora)
+		// A mensagem mostra só maxLinhasConsulta; o resto fica no app.
+		if len(regs) > maxLinhasConsulta {
+			if link, err := s.linkApp(tenant.UserID, "/caderno"); err == nil {
+				texto += "\n\n" + textoLink(tenant.Telefone, "Ver todos no app", link)
+			} else {
+				log.Printf("⚠️ [Consulta] link do app falhou: %v", err)
+			}
+		}
 	}
 
 	return map[string]interface{}{
@@ -77,6 +88,47 @@ func (s *Server) handleConsultarRegistros(ctx context.Context, args map[string]i
 		// O orquestrador envia resposta_direta tal como está, sem o LLM.
 		"resposta_direta": texto,
 		"message":         "Lista pronta enviada ao produtor. Não invente, não some nem recalcule registos.",
+	}, nil
+}
+
+// linkApp gera o link de entrada no app já logado (token opaco de uso único,
+// 10 min) abrindo direto em destino. Destinos aceitos: ver AuthCallback.tsx.
+func (s *Server) linkApp(userID, destino string) (string, error) {
+	if userID == "" {
+		return "", fmt.Errorf("produtor sem conta")
+	}
+	base := strings.TrimRight(os.Getenv("FRONTEND_URL"), "/")
+	if base == "" {
+		return "", fmt.Errorf("FRONTEND_URL vazia")
+	}
+	token, err := s.supabase.GenerateOpaqueToken(userID)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s/auth/callback?code=%s&next=%s", base, url.QueryEscape(token), url.QueryEscape(destino)), nil
+}
+
+func textoLink(phone, rotulo, link string) string {
+	return fmt.Sprintf("🔗 %s (válido por 10 minutos, só uma vez):\n%s", rotulo, link)
+}
+
+var destinosApp = map[string]string{"caderno": "/caderno", "financeiro": "/financeiro"}
+
+func (s *Server) handleEnviarLinkApp(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
+	nome, _ := args["destino"].(string)
+	destino, ok := destinosApp[nome]
+	if !ok {
+		destino, nome = "/caderno", "caderno"
+	}
+	link, err := s.linkApp(tenant.UserID, destino)
+	if err != nil {
+		return nil, fmt.Errorf("não consegui gerar o link: %w", err)
+	}
+	rotulo := map[string]string{"caderno": "Abrir o caderno de campo no app", "financeiro": "Abrir o financeiro no app"}[nome]
+	return map[string]interface{}{
+		"status":          "success",
+		"resposta_direta": textoLink(tenant.Telefone, rotulo, link),
+		"message":         "Link enviado ao produtor.",
 	}, nil
 }
 

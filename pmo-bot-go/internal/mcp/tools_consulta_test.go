@@ -1,6 +1,8 @@
 package mcp
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -125,5 +127,29 @@ func TestTextoResumo_Vazio(t *testing.T) {
 	agora := time.Date(2026, 10, 24, 0, 0, 0, 0, time.UTC)
 	if got := TextoResumo("5511999999999", supabase.FiltroCaderno{Desde: "2026-10-01"}, nil, agora); got != "Não encontrei registros desde 01/10." {
 		t.Errorf("vazio: %q", got)
+	}
+}
+
+func TestLinkApp_URL(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte(`[{}]`))
+	}))
+	defer srv.Close()
+	sb, _ := supabase.NewClient(supabase.Config{URL: srv.URL, Key: "k"})
+	s := NewServer(sb, nil, nil, nil)
+	t.Setenv("FRONTEND_URL", "https://manejo.exemplo/")
+
+	link, err := s.linkApp("u1", "/caderno")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(link, "https://manejo.exemplo/auth/callback?code=") || !strings.HasSuffix(link, "&next=%2Fcaderno") {
+		t.Errorf("link: %s", link)
+	}
+
+	t.Setenv("FRONTEND_URL", "")
+	if _, err := s.linkApp("u1", "/caderno"); err == nil {
+		t.Error("sem FRONTEND_URL não pode gerar link para localhost")
 	}
 }

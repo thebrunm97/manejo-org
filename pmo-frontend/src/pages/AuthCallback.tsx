@@ -5,6 +5,15 @@ import { supabase } from '../supabaseClient';
 import { toast } from 'react-toastify';
 import { clsx } from 'clsx';
 
+// Destinos que o link do WhatsApp pode abrir depois do login. Lista fechada:
+// aceitar qualquer caminho viraria redirecionamento aberto.
+const DESTINOS_PERMITIDOS = ['/caderno', '/financeiro', '/dashboard'];
+
+export function destinoSeguro(next: string | null): string {
+    if (!next) return '/';
+    return DESTINOS_PERMITIDOS.includes(next) ? next : '/';
+}
+
 const AuthCallback: React.FC = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
@@ -73,8 +82,8 @@ const AuthCallback: React.FC = () => {
             // Limpa a URL para não deixar o código visível no histórico
             window.history.replaceState({}, document.title, window.location.pathname);
             
-            // Navega para a raiz, o RouteGuard redirecionará para hub, onboarding ou dashboard
-            navigate('/', { replace: true });
+            // Sem destino, a raiz: o RouteGuard redireciona para hub, onboarding ou dashboard
+            navigate(destinoSeguro(searchParams.get('next')), { replace: true });
 
         } catch (err: any) {
             console.error("Erro na autenticação:", err);
