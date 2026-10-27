@@ -373,6 +373,7 @@ func (a *EvolutionAdapter) GetConnectionState() (string, error) {
 	var result struct {
 		Data struct {
 			Connected bool `json:"Connected"`
+			LoggedIn  bool `json:"LoggedIn"`
 		} `json:"data"`
 	}
 
@@ -380,7 +381,9 @@ func (a *EvolutionAdapter) GetConnectionState() (string, error) {
 		return "", fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	if result.Data.Connected {
+	// Connected sozinho é só o websocket: fica true também durante o fluxo de
+	// QR, sem sessão. Sem LoggedIn o bot não recebe nem envia mensagem.
+	if result.Data.Connected && result.Data.LoggedIn {
 		return "open", nil
 	}
 	return "close", nil
