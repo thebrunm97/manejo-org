@@ -681,7 +681,7 @@ func (s *Server) InitializeTools() {
 	s.RegisterTool(Tool{
 		Definition: llm.FerramentaAgnostica{
 			Name:        "consultar_balanco_financeiro",
-			Description: "Retorna o balanço financeiro (DRE) da fazenda (receitas, despesas, saldo, e top despesas). OBRIGATÓRIO: Use sempre o ano atual (2026) por padrão se o usuário não especificar o ano no contexto da pergunta.",
+			Description: "Retorna o balanço financeiro (DRE) da fazenda (receitas, despesas, saldo, e top despesas), já formatado para o WhatsApp. Use quando o produtor pedir saldo, lucro, receitas, despesas ou balanço. Para 'como foi o mês' ou 'resumo do mês' use consultar_registros com modo='resumo'. OBRIGATÓRIO: Use sempre o ano atual (2026) por padrão se o usuário não especificar o ano no contexto da pergunta.",
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{

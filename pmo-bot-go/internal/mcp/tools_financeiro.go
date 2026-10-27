@@ -2,8 +2,10 @@ package mcp
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 )
@@ -41,7 +43,62 @@ func (s *Server) handleConsultarBalancoFinanceiro(ctx context.Context, args map[
 	}
 
 	log.Printf("✅ [MCP] Balanço financeiro retornado com sucesso para propriedade %d", propriedadeID)
-	return result, nil
+	var bal balancoIA
+	if err := json.Unmarshal([]byte(result), &bal); err != nil {
+		return result, nil // formato inesperado: deixa o LLM lidar com o JSON cru, como antes
+	}
+	return map[string]interface{}{
+		"status": "success",
+		"dados":  bal,
+		// Vai direto ao produtor: o LLM trocava MT por R$ e acrescentava
+		// comentário em pt-BR depois de um "---".
+		"resposta_direta": TextoBalanco(tenant.Telefone, ano, mesPtr, bal),
+		"message":         "Balanço pronto enviado ao produtor. Não recalcule nem repita os números.",
+	}, nil
+}
+
+// balancoIA é o JSON de rpc_get_balanco_ia.
+type balancoIA struct {
+	Receitas float64 `json:"receitas"`
+	Despesas float64 `json:"despesas"`
+	Saldo    float64 `json:"saldo"`
+	Top      []struct {
+		Categoria *string `json:"c"`
+		Valor     float64 `json:"v"`
+	} `json:"top_despesas"`
+}
+
+var nomesMes = []string{"janeiro", "fevereiro", "março", "abril", "maio", "junho",
+	"julho", "agosto", "setembro", "outubro", "novembro", "dezembro"}
+
+// TextoBalanco monta o balanço na moeda do país do produtor.
+func TextoBalanco(phone string, ano int, mes *int, b balancoIA) string {
+	moeda := utils.MoedaSimboloPara(phone)
+	valor := func(v float64) string {
+		if v < 0 {
+			return "−" + utils.FormatarValor(-v) + " " + moeda
+		}
+		return utils.FormatarValor(v) + " " + moeda
+	}
+	periodo := fmt.Sprintf("%d", ano)
+	if mes != nil && *mes >= 1 && *mes <= 12 {
+		periodo = fmt.Sprintf("%s/%d", nomesMes[*mes-1], ano)
+	}
+
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "💰 *Balanço — %s*\n\n", periodo)
+	fmt.Fprintf(&sb, "• Receitas: %s\n• Despesas: %s\n\n*Saldo:* %s", valor(b.Receitas), valor(b.Despesas), valor(b.Saldo))
+	if len(b.Top) > 0 && b.Despesas > 0 {
+		sb.WriteString("\n\nMaiores despesas:")
+		for _, t := range b.Top {
+			cat := "Sem categoria"
+			if t.Categoria != nil && strings.TrimSpace(*t.Categoria) != "" {
+				cat = *t.Categoria
+			}
+			fmt.Fprintf(&sb, "\n• %s: %s", cat, valor(t.Valor))
+		}
+	}
+	return sb.String()
 }
 
 // handleRegistrarDespesa processes the tool call to register a financial expense.
