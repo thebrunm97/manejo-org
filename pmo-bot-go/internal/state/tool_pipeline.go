@@ -14,6 +14,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/mcp"
 	"github.com/thebrunm97/pmo-bot-go/internal/ports"
 	"github.com/thebrunm97/pmo-bot-go/internal/supabase"
+	"github.com/thebrunm97/pmo-bot-go/internal/utils"
 )
 
 // ToolRequest encapsulates the context and payload of a tool execution.
@@ -51,6 +52,28 @@ type HITLMiddleware struct {
 	WhatsApp      ports.ChannelSender
 	Profile       *supabase.Profile
 	HitlRequested map[string]bool
+
+	// BuscarDuplicata procura no caderno um registro igual (mesmo produto e
+	// quantidade) desde o instante dado. Nil desliga a checagem.
+	BuscarDuplicata func(ctx context.Context, produto string, qtd float64, desde time.Time) (time.Time, bool)
+}
+
+// duplicata transforma um registro igual recente em pedido de confirmação.
+func (m *HITLMiddleware) duplicata(ctx context.Context, req *ToolRequest) (bool, string) {
+	if m.BuscarDuplicata == nil {
+		return false, ""
+	}
+	produto, qtd, tipo, ok := chaveDuplicata(req.ToolName, req.RawArgs)
+	if !ok {
+		return false, ""
+	}
+	agora := time.Now().In(utils.TimezoneSistema())
+	quando, achou := m.BuscarDuplicata(ctx, produto, qtd, agora.Add(-janelaDuplicata))
+	if !achou {
+		return false, ""
+	}
+	log.Printf("🔁 [Duplicata] %s de %s (%v) igual a registro de %s — pedindo confirmação", req.ToolName, produto, qtd, quando.Format(time.RFC3339))
+	return true, textoDuplicata(m.Phone, produto, qtd, tipo, quando, agora)
 }
 
 func (m *HITLMiddleware) Process(ctx context.Context, req *ToolRequest) (ToolResponse, error) {
@@ -58,7 +81,15 @@ func (m *HITLMiddleware) Process(ctx context.Context, req *ToolRequest) (ToolRes
 		return ToolResponse{}, nil
 	}
 
-	if needsHITL, label := guardrails.RequiresHITL(m.Phone, req.ToolName, req.RawArgs); needsHITL {
+	needsHITL, label := guardrails.RequiresHITL(m.Phone, req.ToolName, req.RawArgs)
+	if dup, aviso := m.duplicata(ctx, req); dup {
+		if needsHITL {
+			label = aviso + "\n" + label
+		} else {
+			needsHITL, label = true, aviso
+		}
+	}
+	if needsHITL {
 		fp := hitlFingerprint(req.ToolName, req.RawArgs)
 		if m.HitlRequested[fp] {
 			log.Printf("🔄 [HITL-DEDUP] Confirmação já solicitada para tool=%s (fp=%s) — reutilizando synthetic result", req.ToolName, fp)

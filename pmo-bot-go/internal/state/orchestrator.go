@@ -140,6 +140,18 @@ func (o *Orchestrator) ExecuteAgenticLoop(ctx context.Context, profile *supabase
 		Profile:       profile,
 		HitlRequested: hitlRequested,
 	}
+	if o.SB != nil && profile != nil && profile.PmoAtivoID > 0 {
+		sb, pmo := o.SB, profile.PmoAtivoID
+		hitlMw.BuscarDuplicata = func(ctx context.Context, produto string, qtd float64, desde time.Time) (time.Time, bool) {
+			quando, achou, err := sb.RegistroIgualRecente(ctx, pmo, produto, qtd, desde)
+			if err != nil {
+				// Falha na checagem não pode travar o registro.
+				log.Printf("⚠️ [Duplicata] checagem falhou: %v", err)
+				return time.Time{}, false
+			}
+			return quando, achou
+		}
+	}
 	bizMw := &BusinessGuardrailMiddleware{
 		Evaluator: o.BusinessEvaluator,
 		Profile:   profile,
