@@ -451,7 +451,7 @@ func (h *Handler) handleHITLResponse(phone string, verdict HITLVerdict) bool {
 					log.Printf("⚠️ [HITL] Erro ao rejeitar rascunho: %v", err)
 				}
 				if h.cfg.WhatsAppClient != nil {
-					_ = h.cfg.WhatsAppClient.Send(context.Background(), ports.OutboundEnvelope{To: phone, Type: ports.OutboundTypeText, Text: "✅ Rascunho de operações cancelado. Nenhuma alteração foi salva no sistema."})
+					_ = h.cfg.WhatsAppClient.Send(context.Background(), ports.OutboundEnvelope{To: phone, Type: ports.OutboundTypeText, Text: porPais(phone, "✅ Rascunho de operações cancelado. Nenhuma alteração foi salva no sistema.", "✅ Cancelado. Nada foi guardado no seu caderno.")})
 				}
 				return true
 			}
@@ -486,10 +486,7 @@ func (h *Handler) handleHITLResponse(phone string, verdict HITLVerdict) bool {
 				// Sucesso
 				log.Printf("✅ [HITL] Rascunho %s aprovado e comitado com sucesso", draft.ID)
 				if h.cfg.WhatsAppClient != nil {
-					texto := "✅ *Operações confirmadas e registradas com sucesso!*\n\n🌱 Seu caderno de campo e registros foram atualizados."
-					if strings.HasPrefix(strings.TrimPrefix(phone, "+"), "258") {
-						texto = "✅ *Registos confirmados e guardados.*\n\n🌱 O seu caderno de campo foi atualizado."
-					}
+					texto := porPais(phone, "✅ *Operações confirmadas e registradas com sucesso!*\n\n🌱 Seu caderno de campo e registros foram atualizados.", "✅ *Registos confirmados e guardados.*\n\n🌱 O seu caderno de campo foi atualizado.")
 					_ = h.cfg.WhatsAppClient.Send(context.Background(), ports.OutboundEnvelope{To: phone, Type: ports.OutboundTypeText, Text: texto})
 				}
 				return true
@@ -511,7 +508,7 @@ func (h *Handler) handleHITLResponse(phone string, verdict HITLVerdict) bool {
 				log.Printf("⚠️ [HITL] Erro ao rejeitar: %v", err)
 			}
 			if h.cfg.WhatsAppClient != nil {
-				_ = h.cfg.WhatsAppClient.Send(context.Background(), ports.OutboundEnvelope{To: phone, Type: ports.OutboundTypeText, Text: "✅ Operação cancelada conforme solicitado. Nenhuma alteração foi registrada no sistema."})
+				_ = h.cfg.WhatsAppClient.Send(context.Background(), ports.OutboundEnvelope{To: phone, Type: ports.OutboundTypeText, Text: porPais(phone, "✅ Operação cancelada conforme solicitado. Nenhuma alteração foi registrada no sistema.", "✅ Cancelado. Nada foi guardado no seu caderno.")})
 			}
 			return true
 		}
@@ -965,4 +962,12 @@ func (h *Handler) sendDebouncedWarning(ctx context.Context, from string) {
 			log.Printf("📣 [WarningLimiter] Aviso de instabilidade/cota enviado para %s", from)
 		}
 	}
+}
+
+// porPais escolhe o texto pt-MZ para números de Moçambique (+258).
+func porPais(phone, br, mz string) string {
+	if strings.HasPrefix(strings.TrimPrefix(phone, "+"), "258") {
+		return mz
+	}
+	return br
 }
