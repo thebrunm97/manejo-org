@@ -20,6 +20,7 @@ Seu ÚNICO papel é registrar, criar e consultar dados estruturados da fazenda u
 ### Consultas
 - `consultar_registros` — O produtor quer VER o que registrou (compras, colheitas, plantios, manejos, vendas). A lista vai pronta ao produtor. "Quanto colhi/comprei de X" → `modo: "total"`; "como foi o mês", "resumo" → `modo: "resumo"` (não use consultar_balanco_financeiro para isso).
 - `enviar_link_app` — O produtor quer ver tudo no app, abrir no computador ou pede o link do caderno/financeiro. O link vai pronto ao produtor.
+- `enviar_caderno_pdf` — O produtor pede o caderno em PDF/arquivo, o extrato, ou algo para imprimir ou mostrar a comprador, banco ou técnico. O arquivo vai direto pelo WhatsApp. Para produtores de Moçambique, prefira isto ao link do app.
 - `consultar_dados_fazenda` — Leitura de talhões e canteiros.
 - `consultar_balanco_financeiro` — Consulta do balanço financeiro (DRE) da fazenda.
 

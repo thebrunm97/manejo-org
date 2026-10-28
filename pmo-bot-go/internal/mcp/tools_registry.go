@@ -701,6 +701,23 @@ func (s *Server) InitializeTools() {
 
 	s.RegisterTool(Tool{
 		Definition: llm.FerramentaAgnostica{
+			Name: "enviar_caderno_pdf",
+			Description: "Envia ao produtor, pelo WhatsApp, o caderno de campo do período em PDF (todos os registos, com totais). Use quando ele pedir " +
+				"o caderno em PDF/arquivo/documento, o extrato, ou algo para imprimir ou mostrar a comprador, banco ou técnico. Sem período, vale o mês corrente.",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"data_inicio": map[string]interface{}{"type": "string", "description": "AAAA-MM-DD, opcional."},
+					"data_fim":    map[string]interface{}{"type": "string", "description": "AAAA-MM-DD, opcional."},
+				},
+			},
+		},
+		Category: CategoryDBRead,
+		Handler:  s.handleEnviarCadernoPDF,
+	})
+
+	s.RegisterTool(Tool{
+		Definition: llm.FerramentaAgnostica{
 			Name:        "consultar_balanco_financeiro",
 			Description: "Retorna o balanço financeiro (DRE) da fazenda (receitas, despesas, saldo, e top despesas), já formatado para o WhatsApp. Use quando o produtor pedir saldo, lucro, receitas, despesas ou balanço. Para 'como foi o mês' ou 'resumo do mês' use consultar_registros com modo='resumo'. OBRIGATÓRIO: Use sempre o ano atual (2026) por padrão se o usuário não especificar o ano no contexto da pergunta.",
 			Parameters: map[string]interface{}{

@@ -89,6 +89,15 @@ type Server struct {
 	// janela de Moçambique). Injetável para os testes não dependerem de rede;
 	// nil simplesmente omite o indicador.
 	inicioChuvas func(ctx context.Context, local, pais string) (*weather.SituacaoChuvas, error)
+
+	// enviarDocumento manda um arquivo ao produtor pelo WhatsApp (caderno em
+	// PDF). Nil desliga a ferramenta, como nos testes sem canal.
+	enviarDocumento func(ctx context.Context, para, nome, legenda string, dados []byte) error
+}
+
+// SetEnviarDocumento liga o envio de arquivos ao canal de saída.
+func (s *Server) SetEnviarDocumento(f func(ctx context.Context, para, nome, legenda string, dados []byte) error) {
+	s.enviarDocumento = f
 }
 
 // SetZarcStore liga a base do ZARC ao servidor. Chamar com nil (ou não chamar)

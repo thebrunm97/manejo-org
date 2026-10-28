@@ -152,6 +152,47 @@ func (a *EvolutionAdapter) SendVoice(to, base64Audio string, isPtt bool) error {
 	return nil
 }
 
+// SendDocument envia um arquivo (ex.: o caderno em PDF) pelo mesmo caminho
+// multipart do SendVoice: o JSON do /send/media só aceita URL pública.
+func (a *EvolutionAdapter) SendDocument(to, nome, legenda string, dados []byte) error {
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+	for campo, valor := range map[string]string{"number": to, "type": "document", "filename": nome, "caption": legenda} {
+		if err := writer.WriteField(campo, valor); err != nil {
+			return fmt.Errorf("SendDocument: campo %s: %w", campo, err)
+		}
+	}
+	part, err := writer.CreateFormFile("file", nome)
+	if err != nil {
+		return fmt.Errorf("SendDocument: %w", err)
+	}
+	if _, err := part.Write(dados); err != nil {
+		return fmt.Errorf("SendDocument: %w", err)
+	}
+	if err := writer.Close(); err != nil {
+		return fmt.Errorf("SendDocument: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/send/media", a.BaseURL), bytes.NewReader(body.Bytes()))
+	if err != nil {
+		return fmt.Errorf("SendDocument: %w", err)
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Set("apikey", a.APIKey)
+
+	resp, err := a.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("evolution SendDocument request failed: %w", err)
+	}
+	defer resp.Body.Close()
+	respBody, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("evolution API error (status %d): %s", resp.StatusCode, string(respBody))
+	}
+	log.Printf("✅ [Evolution] Documento %s enviado para %s", nome, to)
+	return nil
+}
+
 // SetPresence sends a presence update (composing, recording, etc.) to a chat.
 func (a *EvolutionAdapter) SetPresence(to string, presence string) error {
 	url := fmt.Sprintf("%s/message/presence", a.BaseURL)
@@ -196,6 +237,8 @@ func (a *EvolutionAdapter) Send(ctx context.Context, env ports.OutboundEnvelope)
 	switch env.Type {
 	case ports.OutboundTypeAudio:
 		return a.SendVoice(env.To, env.Base64Audio, env.IsVoiceNote)
+	case ports.OutboundTypeDocument:
+		return a.SendDocument(env.To, env.FileName, env.Caption, env.DocumentBytes)
 	case ports.OutboundTypeButtons:
 		// Botões interativos não aparecem no WhatsApp do produtor (a API
 		// aceita e o celular mostra só o texto, sem nada para tocar — visto

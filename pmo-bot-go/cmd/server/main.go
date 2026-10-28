@@ -343,6 +343,13 @@ func main() {
 		log.Printf("🌍 [ZAE] Moçambique: %d janela(s) de referência carregadas", tabelaZae.Total())
 	}
 
+	mcpServer.SetEnviarDocumento(func(ctx context.Context, para, nome, legenda string, dados []byte) error {
+		return deliveryManager.Send(ctx, ports.OutboundEnvelope{
+			To: para, Type: ports.OutboundTypeDocument,
+			FileName: nome, Caption: legenda, DocumentBytes: dados,
+		})
+	})
+
 	// --- Cofre de Auditoria Efêmero (DT-42) ---
 	//
 	// Ativado apenas com cliente Supabase disponível. Sem ele o campo fica nil,

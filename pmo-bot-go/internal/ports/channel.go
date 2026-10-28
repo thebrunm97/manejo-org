@@ -40,6 +40,11 @@ type OutboundEnvelope struct {
 	Base64Audio string
 	IsVoiceNote bool
 
+	// Campos para documento (ex: caderno em PDF)
+	DocumentBytes []byte
+	FileName      string
+	Caption       string
+
 	// Campos para botões (ex: Onboarding)
 	Title       string
 	Description string
@@ -53,10 +58,11 @@ type OutboundEnvelope struct {
 type OutboundType string
 
 const (
-	OutboundTypeText    OutboundType = "text"
-	OutboundTypeAudio   OutboundType = "audio"
-	OutboundTypeButtons OutboundType = "buttons"
-	OutboundTypeImage   OutboundType = "image"
+	OutboundTypeText     OutboundType = "text"
+	OutboundTypeAudio    OutboundType = "audio"
+	OutboundTypeButtons  OutboundType = "buttons"
+	OutboundTypeImage    OutboundType = "image"
+	OutboundTypeDocument OutboundType = "document"
 )
 
 // IncomingEnvelope (anteriormente IncomingEnvelope) representa uma mensagem recebida de forma agnóstica ao canal.

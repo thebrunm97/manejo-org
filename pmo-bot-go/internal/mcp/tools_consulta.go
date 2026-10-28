@@ -72,8 +72,11 @@ func (s *Server) handleConsultarRegistros(ctx context.Context, args map[string]i
 		texto = TextoTotais(tenant.Telefone, grupo, f, regs, agora)
 	default:
 		texto = TextoConsulta(tenant.Telefone, grupo, f, regs, agora)
-		// A mensagem mostra só maxLinhasConsulta; o resto fica no app.
-		if len(regs) > maxLinhasConsulta {
+		// A mensagem mostra só maxLinhasConsulta; o resto fica no app, ou no
+		// PDF para Moçambique, onde quase ninguém tem e-mail para usar o app.
+		if len(regs) > maxLinhasConsulta && ehMZ(tenant.Telefone) {
+			texto += "\n\n📄 Para ver todos, peça: *manda o caderno em PDF*."
+		} else if len(regs) > maxLinhasConsulta {
 			if link, err := s.linkApp(tenant.UserID, "/caderno"); err == nil {
 				texto += "\n\n" + textoLink(tenant.Telefone, "Ver todos no app", link)
 			} else {
