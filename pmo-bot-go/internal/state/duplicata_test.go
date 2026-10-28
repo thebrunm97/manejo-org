@@ -38,7 +38,7 @@ func TestChaveDuplicata(t *testing.T) {
 func TestTextoDuplicata_MZ(t *testing.T) {
 	agora := time.Date(2026, 10, 28, 12, 30, 0, 0, time.FixedZone("BRT", -3*3600))
 	quando := agora.Add(-20 * time.Minute) // 12:10 BRT = 17:10 em Maputo
-	got := textoDuplicata("+258840000000", "adubo", 1.5, "compra", quando, agora)
+	got := guardrails.TextoDuplicata("+258840000000", "adubo", 1.5, "compra", quando, agora)
 	for _, want := range []string{"compra de adubo (1,5)", "hoje às 17:10", "registo repetido"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("falta %q em %q", want, got)

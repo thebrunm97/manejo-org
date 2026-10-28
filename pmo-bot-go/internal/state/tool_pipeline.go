@@ -68,12 +68,12 @@ func (m *HITLMiddleware) duplicata(ctx context.Context, req *ToolRequest) (bool,
 		return false, ""
 	}
 	agora := time.Now().In(utils.TimezoneSistema())
-	quando, achou := m.BuscarDuplicata(ctx, produto, qtd, agora.Add(-janelaDuplicata))
+	quando, achou := m.BuscarDuplicata(ctx, produto, qtd, agora.Add(-guardrails.JanelaDuplicata))
 	if !achou {
 		return false, ""
 	}
 	log.Printf("🔁 [Duplicata] %s de %s (%v) igual a registro de %s — pedindo confirmação", req.ToolName, produto, qtd, quando.Format(time.RFC3339))
-	return true, textoDuplicata(m.Phone, produto, qtd, tipo, quando, agora)
+	return true, guardrails.TextoDuplicata(m.Phone, produto, qtd, tipo, quando, agora)
 }
 
 func (m *HITLMiddleware) Process(ctx context.Context, req *ToolRequest) (ToolResponse, error) {

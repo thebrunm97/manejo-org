@@ -486,7 +486,11 @@ func (h *Handler) handleHITLResponse(phone string, verdict HITLVerdict) bool {
 				// Sucesso
 				log.Printf("✅ [HITL] Rascunho %s aprovado e comitado com sucesso", draft.ID)
 				if h.cfg.WhatsAppClient != nil {
-					_ = h.cfg.WhatsAppClient.Send(context.Background(), ports.OutboundEnvelope{To: phone, Type: ports.OutboundTypeText, Text: "✅ *Operações confirmadas e registradas com sucesso!*\n\n🌱 Seu caderno de campo e registros foram atualizados."})
+					texto := "✅ *Operações confirmadas e registradas com sucesso!*\n\n🌱 Seu caderno de campo e registros foram atualizados."
+					if strings.HasPrefix(strings.TrimPrefix(phone, "+"), "258") {
+						texto = "✅ *Registos confirmados e guardados.*\n\n🌱 O seu caderno de campo foi atualizado."
+					}
+					_ = h.cfg.WhatsAppClient.Send(context.Background(), ports.OutboundEnvelope{To: phone, Type: ports.OutboundTypeText, Text: texto})
 				}
 				return true
 			}

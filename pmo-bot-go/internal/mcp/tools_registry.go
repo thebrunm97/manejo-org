@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/thebrunm97/pmo-bot-go/internal/domain"
 	"github.com/thebrunm97/pmo-bot-go/internal/guardrails"
@@ -1014,6 +1015,9 @@ func (s *Server) handleProposeBatchMutations(ctx context.Context, args map[strin
 
 	draftID, _ := res["draft_id"].(string)
 	confirmationMsg := guardrails.BuildBatchConfirmationMessage(phone, payload.ResumoAmigavel, payload.Operacoes)
+	if avisos := s.avisosDuplicata(ctx, pmoID, phone, payload.Operacoes); len(avisos) > 0 {
+		confirmationMsg = strings.Join(avisos, "\n") + "\n\n" + confirmationMsg
+	}
 
 	return map[string]interface{}{
 		"status":          "pending_approval",
