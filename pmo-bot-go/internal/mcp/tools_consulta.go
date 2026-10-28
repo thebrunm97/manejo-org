@@ -118,6 +118,11 @@ func textoLink(phone, rotulo, link string) string {
 var destinosApp = map[string]string{"caderno": "/caderno", "financeiro": "/financeiro"}
 
 func (s *Server) handleEnviarLinkApp(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
+	// Em Moçambique quase ninguém tem e-mail nem conta no app: o "ver tudo"
+	// vira o caderno em PDF no próprio WhatsApp.
+	if ehMZ(tenant.Telefone) {
+		return s.handleEnviarCadernoPDF(ctx, map[string]interface{}{}, tenant)
+	}
 	nome, _ := args["destino"].(string)
 	destino, ok := destinosApp[nome]
 	if !ok {
