@@ -513,27 +513,30 @@ func (PastParticipant_LeaveReason) EnumDescriptor() ([]byte, []int) {
 }
 
 type HistorySync struct {
-	state                                protoimpl.MessageState          `protogen:"open.v1"`
-	SyncType                             *HistorySync_HistorySyncType    `protobuf:"varint,1,req,name=syncType,enum=WAWebProtobufsHistorySync.HistorySync_HistorySyncType" json:"syncType,omitempty"`
-	Conversations                        []*Conversation                 `protobuf:"bytes,2,rep,name=conversations" json:"conversations,omitempty"`
-	StatusV3Messages                     []*waWeb.WebMessageInfo         `protobuf:"bytes,3,rep,name=statusV3Messages" json:"statusV3Messages,omitempty"`
-	ChunkOrder                           *uint32                         `protobuf:"varint,5,opt,name=chunkOrder" json:"chunkOrder,omitempty"`
-	Progress                             *uint32                         `protobuf:"varint,6,opt,name=progress" json:"progress,omitempty"`
-	Pushnames                            []*Pushname                     `protobuf:"bytes,7,rep,name=pushnames" json:"pushnames,omitempty"`
-	GlobalSettings                       *GlobalSettings                 `protobuf:"bytes,8,opt,name=globalSettings" json:"globalSettings,omitempty"`
-	ThreadIDUserSecret                   []byte                          `protobuf:"bytes,9,opt,name=threadIDUserSecret" json:"threadIDUserSecret,omitempty"`
-	ThreadDsTimeframeOffset              *uint32                         `protobuf:"varint,10,opt,name=threadDsTimeframeOffset" json:"threadDsTimeframeOffset,omitempty"`
-	RecentStickers                       []*StickerMetadata              `protobuf:"bytes,11,rep,name=recentStickers" json:"recentStickers,omitempty"`
-	PastParticipants                     []*PastParticipants             `protobuf:"bytes,12,rep,name=pastParticipants" json:"pastParticipants,omitempty"`
-	CallLogRecords                       []*waSyncAction.CallLogRecord   `protobuf:"bytes,13,rep,name=callLogRecords" json:"callLogRecords,omitempty"`
-	AiWaitListState                      *HistorySync_BotAIWaitListState `protobuf:"varint,14,opt,name=aiWaitListState,enum=WAWebProtobufsHistorySync.HistorySync_BotAIWaitListState" json:"aiWaitListState,omitempty"`
-	PhoneNumberToLidMappings             []*PhoneNumberToLIDMapping      `protobuf:"bytes,15,rep,name=phoneNumberToLidMappings" json:"phoneNumberToLidMappings,omitempty"`
-	CompanionMetaNonce                   *string                         `protobuf:"bytes,16,opt,name=companionMetaNonce" json:"companionMetaNonce,omitempty"`
-	ShareableChatIdentifierEncryptionKey []byte                          `protobuf:"bytes,17,opt,name=shareableChatIdentifierEncryptionKey" json:"shareableChatIdentifierEncryptionKey,omitempty"`
-	Accounts                             []*Account                      `protobuf:"bytes,18,rep,name=accounts" json:"accounts,omitempty"`
-	NctSalt                              []byte                          `protobuf:"bytes,19,opt,name=nctSalt" json:"nctSalt,omitempty"`
-	InlineContacts                       []*InlineContact                `protobuf:"bytes,20,rep,name=inlineContacts" json:"inlineContacts,omitempty"`
-	InlineContactsProvided               *bool                           `protobuf:"varint,21,opt,name=inlineContactsProvided" json:"inlineContactsProvided,omitempty"`
+	state                                protoimpl.MessageState            `protogen:"open.v1"`
+	SyncType                             *HistorySync_HistorySyncType      `protobuf:"varint,1,req,name=syncType,enum=WAWebProtobufsHistorySync.HistorySync_HistorySyncType" json:"syncType,omitempty"`
+	Conversations                        []*Conversation                   `protobuf:"bytes,2,rep,name=conversations" json:"conversations,omitempty"`
+	StatusV3Messages                     []*waWeb.WebMessageInfo           `protobuf:"bytes,3,rep,name=statusV3Messages" json:"statusV3Messages,omitempty"`
+	ChunkOrder                           *uint32                           `protobuf:"varint,5,opt,name=chunkOrder" json:"chunkOrder,omitempty"`
+	Progress                             *uint32                           `protobuf:"varint,6,opt,name=progress" json:"progress,omitempty"`
+	Pushnames                            []*Pushname                       `protobuf:"bytes,7,rep,name=pushnames" json:"pushnames,omitempty"`
+	GlobalSettings                       *GlobalSettings                   `protobuf:"bytes,8,opt,name=globalSettings" json:"globalSettings,omitempty"`
+	ThreadIDUserSecret                   []byte                            `protobuf:"bytes,9,opt,name=threadIDUserSecret" json:"threadIDUserSecret,omitempty"`
+	ThreadDsTimeframeOffset              *uint32                           `protobuf:"varint,10,opt,name=threadDsTimeframeOffset" json:"threadDsTimeframeOffset,omitempty"`
+	RecentStickers                       []*StickerMetadata                `protobuf:"bytes,11,rep,name=recentStickers" json:"recentStickers,omitempty"`
+	PastParticipants                     []*PastParticipants               `protobuf:"bytes,12,rep,name=pastParticipants" json:"pastParticipants,omitempty"`
+	CallLogRecords                       []*waSyncAction.CallLogRecord     `protobuf:"bytes,13,rep,name=callLogRecords" json:"callLogRecords,omitempty"`
+	AiWaitListState                      *HistorySync_BotAIWaitListState   `protobuf:"varint,14,opt,name=aiWaitListState,enum=WAWebProtobufsHistorySync.HistorySync_BotAIWaitListState" json:"aiWaitListState,omitempty"`
+	PhoneNumberToLidMappings             []*PhoneNumberToLIDMapping        `protobuf:"bytes,15,rep,name=phoneNumberToLidMappings" json:"phoneNumberToLidMappings,omitempty"`
+	CompanionMetaNonce                   *string                           `protobuf:"bytes,16,opt,name=companionMetaNonce" json:"companionMetaNonce,omitempty"`
+	ShareableChatIdentifierEncryptionKey []byte                            `protobuf:"bytes,17,opt,name=shareableChatIdentifierEncryptionKey" json:"shareableChatIdentifierEncryptionKey,omitempty"`
+	Accounts                             []*Account                        `protobuf:"bytes,18,rep,name=accounts" json:"accounts,omitempty"`
+	NctSalt                              []byte                            `protobuf:"bytes,19,opt,name=nctSalt" json:"nctSalt,omitempty"`
+	InlineContacts                       []*InlineContact                  `protobuf:"bytes,20,rep,name=inlineContacts" json:"inlineContacts,omitempty"`
+	InlineContactsProvided               *bool                             `protobuf:"varint,21,opt,name=inlineContactsProvided" json:"inlineContactsProvided,omitempty"`
+	FavoriteStickers                     []*StickerMetadata                `protobuf:"bytes,22,rep,name=favoriteStickers" json:"favoriteStickers,omitempty"`
+	OmittedConversations                 []*RecoverableHistoryConversation `protobuf:"bytes,23,rep,name=omittedConversations" json:"omittedConversations,omitempty"`
+	OmittedConversationsProvided         *bool                             `protobuf:"varint,24,opt,name=omittedConversationsProvided" json:"omittedConversationsProvided,omitempty"`
 	unknownFields                        protoimpl.UnknownFields
 	sizeCache                            protoimpl.SizeCache
 }
@@ -708,6 +711,27 @@ func (x *HistorySync) GetInlineContactsProvided() bool {
 	return false
 }
 
+func (x *HistorySync) GetFavoriteStickers() []*StickerMetadata {
+	if x != nil {
+		return x.FavoriteStickers
+	}
+	return nil
+}
+
+func (x *HistorySync) GetOmittedConversations() []*RecoverableHistoryConversation {
+	if x != nil {
+		return x.OmittedConversations
+	}
+	return nil
+}
+
+func (x *HistorySync) GetOmittedConversationsProvided() bool {
+	if x != nil && x.OmittedConversationsProvided != nil {
+		return *x.OmittedConversationsProvided
+	}
+	return false
+}
+
 type Conversation struct {
 	state                        protoimpl.MessageState                 `protogen:"open.v1"`
 	ID                           *string                                `protobuf:"bytes,1,req,name=ID" json:"ID,omitempty"`
@@ -772,6 +796,9 @@ type Conversation struct {
 	AppealUpdateTime             *uint64                                `protobuf:"varint,60,opt,name=appealUpdateTime" json:"appealUpdateTime,omitempty"`
 	AuthAgentParentCompanyName   *string                                `protobuf:"bytes,61,opt,name=authAgentParentCompanyName" json:"authAgentParentCompanyName,omitempty"`
 	AuthAgentObaPhoneNumber      *string                                `protobuf:"bytes,62,opt,name=authAgentObaPhoneNumber" json:"authAgentObaPhoneNumber,omitempty"`
+	IdentityVerification         *IdentityVerificationState             `protobuf:"bytes,63,opt,name=identityVerification" json:"identityVerification,omitempty"`
+	Acp2Setting                  *waCommon.ACP2Setting                  `protobuf:"bytes,64,opt,name=acp2Setting" json:"acp2Setting,omitempty"`
+	Acp2HistoryWithheld          *bool                                  `protobuf:"varint,65,opt,name=acp2HistoryWithheld" json:"acp2HistoryWithheld,omitempty"`
 	unknownFields                protoimpl.UnknownFields
 	sizeCache                    protoimpl.SizeCache
 }
@@ -1240,6 +1267,27 @@ func (x *Conversation) GetAuthAgentObaPhoneNumber() string {
 	return ""
 }
 
+func (x *Conversation) GetIdentityVerification() *IdentityVerificationState {
+	if x != nil {
+		return x.IdentityVerification
+	}
+	return nil
+}
+
+func (x *Conversation) GetAcp2Setting() *waCommon.ACP2Setting {
+	if x != nil {
+		return x.Acp2Setting
+	}
+	return nil
+}
+
+func (x *Conversation) GetAcp2HistoryWithheld() bool {
+	if x != nil && x.Acp2HistoryWithheld != nil {
+		return *x.Acp2HistoryWithheld
+	}
+	return false
+}
+
 type GroupParticipant struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserJID       *string                `protobuf:"bytes,1,req,name=userJID" json:"userJID,omitempty"`
@@ -1360,6 +1408,110 @@ func (x *PastParticipant) GetLeaveTS() uint64 {
 	return 0
 }
 
+type RecoverableHistoryConversation struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	HistoryChatID *string                `protobuf:"bytes,1,opt,name=historyChatID" json:"historyChatID,omitempty"`
+	AccountLid    *string                `protobuf:"bytes,2,opt,name=accountLid" json:"accountLid,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RecoverableHistoryConversation) Reset() {
+	*x = RecoverableHistoryConversation{}
+	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RecoverableHistoryConversation) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RecoverableHistoryConversation) ProtoMessage() {}
+
+func (x *RecoverableHistoryConversation) ProtoReflect() protoreflect.Message {
+	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RecoverableHistoryConversation.ProtoReflect.Descriptor instead.
+func (*RecoverableHistoryConversation) Descriptor() ([]byte, []int) {
+	return file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *RecoverableHistoryConversation) GetHistoryChatID() string {
+	if x != nil && x.HistoryChatID != nil {
+		return *x.HistoryChatID
+	}
+	return ""
+}
+
+func (x *RecoverableHistoryConversation) GetAccountLid() string {
+	if x != nil && x.AccountLid != nil {
+		return *x.AccountLid
+	}
+	return ""
+}
+
+type IdentityVerificationState struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Verified      *bool                  `protobuf:"varint,1,opt,name=verified" json:"verified,omitempty"`
+	ActionSeq     *uint64                `protobuf:"varint,2,opt,name=actionSeq" json:"actionSeq,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *IdentityVerificationState) Reset() {
+	*x = IdentityVerificationState{}
+	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *IdentityVerificationState) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IdentityVerificationState) ProtoMessage() {}
+
+func (x *IdentityVerificationState) ProtoReflect() protoreflect.Message {
+	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IdentityVerificationState.ProtoReflect.Descriptor instead.
+func (*IdentityVerificationState) Descriptor() ([]byte, []int) {
+	return file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *IdentityVerificationState) GetVerified() bool {
+	if x != nil && x.Verified != nil {
+		return *x.Verified
+	}
+	return false
+}
+
+func (x *IdentityVerificationState) GetActionSeq() uint64 {
+	if x != nil && x.ActionSeq != nil {
+		return *x.ActionSeq
+	}
+	return 0
+}
+
 type PhoneNumberToLIDMapping struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PnJID         *string                `protobuf:"bytes,1,opt,name=pnJID" json:"pnJID,omitempty"`
@@ -1370,7 +1522,7 @@ type PhoneNumberToLIDMapping struct {
 
 func (x *PhoneNumberToLIDMapping) Reset() {
 	*x = PhoneNumberToLIDMapping{}
-	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[4]
+	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1382,7 +1534,7 @@ func (x *PhoneNumberToLIDMapping) String() string {
 func (*PhoneNumberToLIDMapping) ProtoMessage() {}
 
 func (x *PhoneNumberToLIDMapping) ProtoReflect() protoreflect.Message {
-	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[4]
+	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1395,7 +1547,7 @@ func (x *PhoneNumberToLIDMapping) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PhoneNumberToLIDMapping.ProtoReflect.Descriptor instead.
 func (*PhoneNumberToLIDMapping) Descriptor() ([]byte, []int) {
-	return file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDescGZIP(), []int{4}
+	return file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *PhoneNumberToLIDMapping) GetPnJID() string {
@@ -1425,7 +1577,7 @@ type InlineContact struct {
 
 func (x *InlineContact) Reset() {
 	*x = InlineContact{}
-	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[5]
+	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1437,7 +1589,7 @@ func (x *InlineContact) String() string {
 func (*InlineContact) ProtoMessage() {}
 
 func (x *InlineContact) ProtoReflect() protoreflect.Message {
-	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[5]
+	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1450,7 +1602,7 @@ func (x *InlineContact) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InlineContact.ProtoReflect.Descriptor instead.
 func (*InlineContact) Descriptor() ([]byte, []int) {
-	return file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDescGZIP(), []int{5}
+	return file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *InlineContact) GetPnJID() string {
@@ -1500,7 +1652,7 @@ type Account struct {
 
 func (x *Account) Reset() {
 	*x = Account{}
-	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[6]
+	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1512,7 +1664,7 @@ func (x *Account) String() string {
 func (*Account) ProtoMessage() {}
 
 func (x *Account) ProtoReflect() protoreflect.Message {
-	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[6]
+	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1525,7 +1677,7 @@ func (x *Account) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Account.ProtoReflect.Descriptor instead.
 func (*Account) Descriptor() ([]byte, []int) {
-	return file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDescGZIP(), []int{6}
+	return file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *Account) GetLid() string {
@@ -1566,7 +1718,7 @@ type HistorySyncMsg struct {
 
 func (x *HistorySyncMsg) Reset() {
 	*x = HistorySyncMsg{}
-	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[7]
+	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1578,7 +1730,7 @@ func (x *HistorySyncMsg) String() string {
 func (*HistorySyncMsg) ProtoMessage() {}
 
 func (x *HistorySyncMsg) ProtoReflect() protoreflect.Message {
-	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[7]
+	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1591,7 +1743,7 @@ func (x *HistorySyncMsg) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HistorySyncMsg.ProtoReflect.Descriptor instead.
 func (*HistorySyncMsg) Descriptor() ([]byte, []int) {
-	return file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDescGZIP(), []int{7}
+	return file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *HistorySyncMsg) GetMessage() *waWeb.WebMessageInfo {
@@ -1618,7 +1770,7 @@ type Pushname struct {
 
 func (x *Pushname) Reset() {
 	*x = Pushname{}
-	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[8]
+	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1630,7 +1782,7 @@ func (x *Pushname) String() string {
 func (*Pushname) ProtoMessage() {}
 
 func (x *Pushname) ProtoReflect() protoreflect.Message {
-	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[8]
+	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1643,7 +1795,7 @@ func (x *Pushname) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Pushname.ProtoReflect.Descriptor instead.
 func (*Pushname) Descriptor() ([]byte, []int) {
-	return file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDescGZIP(), []int{8}
+	return file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *Pushname) GetID() string {
@@ -1671,7 +1823,7 @@ type WallpaperSettings struct {
 
 func (x *WallpaperSettings) Reset() {
 	*x = WallpaperSettings{}
-	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[9]
+	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1683,7 +1835,7 @@ func (x *WallpaperSettings) String() string {
 func (*WallpaperSettings) ProtoMessage() {}
 
 func (x *WallpaperSettings) ProtoReflect() protoreflect.Message {
-	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[9]
+	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1696,7 +1848,7 @@ func (x *WallpaperSettings) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WallpaperSettings.ProtoReflect.Descriptor instead.
 func (*WallpaperSettings) Descriptor() ([]byte, []int) {
-	return file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDescGZIP(), []int{9}
+	return file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *WallpaperSettings) GetFilename() string {
@@ -1748,7 +1900,7 @@ type GlobalSettings struct {
 
 func (x *GlobalSettings) Reset() {
 	*x = GlobalSettings{}
-	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[10]
+	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1760,7 +1912,7 @@ func (x *GlobalSettings) String() string {
 func (*GlobalSettings) ProtoMessage() {}
 
 func (x *GlobalSettings) ProtoReflect() protoreflect.Message {
-	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[10]
+	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1773,7 +1925,7 @@ func (x *GlobalSettings) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GlobalSettings.ProtoReflect.Descriptor instead.
 func (*GlobalSettings) Descriptor() ([]byte, []int) {
-	return file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDescGZIP(), []int{10}
+	return file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *GlobalSettings) GetLightThemeWallpaper() *WallpaperSettings {
@@ -1928,7 +2080,7 @@ type AutoDownloadSettings struct {
 
 func (x *AutoDownloadSettings) Reset() {
 	*x = AutoDownloadSettings{}
-	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[11]
+	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1940,7 +2092,7 @@ func (x *AutoDownloadSettings) String() string {
 func (*AutoDownloadSettings) ProtoMessage() {}
 
 func (x *AutoDownloadSettings) ProtoReflect() protoreflect.Message {
-	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[11]
+	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1953,7 +2105,7 @@ func (x *AutoDownloadSettings) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AutoDownloadSettings.ProtoReflect.Descriptor instead.
 func (*AutoDownloadSettings) Descriptor() ([]byte, []int) {
-	return file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDescGZIP(), []int{11}
+	return file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *AutoDownloadSettings) GetDownloadImages() bool {
@@ -2006,7 +2158,7 @@ type StickerMetadata struct {
 
 func (x *StickerMetadata) Reset() {
 	*x = StickerMetadata{}
-	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[12]
+	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2018,7 +2170,7 @@ func (x *StickerMetadata) String() string {
 func (*StickerMetadata) ProtoMessage() {}
 
 func (x *StickerMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[12]
+	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2031,7 +2183,7 @@ func (x *StickerMetadata) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StickerMetadata.ProtoReflect.Descriptor instead.
 func (*StickerMetadata) Descriptor() ([]byte, []int) {
-	return file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDescGZIP(), []int{12}
+	return file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *StickerMetadata) GetURL() string {
@@ -2142,7 +2294,7 @@ type PastParticipants struct {
 
 func (x *PastParticipants) Reset() {
 	*x = PastParticipants{}
-	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[13]
+	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2154,7 +2306,7 @@ func (x *PastParticipants) String() string {
 func (*PastParticipants) ProtoMessage() {}
 
 func (x *PastParticipants) ProtoReflect() protoreflect.Message {
-	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[13]
+	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2167,7 +2319,7 @@ func (x *PastParticipants) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PastParticipants.ProtoReflect.Descriptor instead.
 func (*PastParticipants) Descriptor() ([]byte, []int) {
-	return file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDescGZIP(), []int{13}
+	return file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *PastParticipants) GetGroupJID() string {
@@ -2194,7 +2346,7 @@ type AvatarUserSettings struct {
 
 func (x *AvatarUserSettings) Reset() {
 	*x = AvatarUserSettings{}
-	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[14]
+	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2206,7 +2358,7 @@ func (x *AvatarUserSettings) String() string {
 func (*AvatarUserSettings) ProtoMessage() {}
 
 func (x *AvatarUserSettings) ProtoReflect() protoreflect.Message {
-	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[14]
+	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2219,7 +2371,7 @@ func (x *AvatarUserSettings) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AvatarUserSettings.ProtoReflect.Descriptor instead.
 func (*AvatarUserSettings) Descriptor() ([]byte, []int) {
-	return file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDescGZIP(), []int{14}
+	return file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *AvatarUserSettings) GetFBID() string {
@@ -2250,7 +2402,7 @@ type NotificationSettings struct {
 
 func (x *NotificationSettings) Reset() {
 	*x = NotificationSettings{}
-	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[15]
+	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2262,7 +2414,7 @@ func (x *NotificationSettings) String() string {
 func (*NotificationSettings) ProtoMessage() {}
 
 func (x *NotificationSettings) ProtoReflect() protoreflect.Message {
-	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[15]
+	mi := &file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2275,7 +2427,7 @@ func (x *NotificationSettings) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NotificationSettings.ProtoReflect.Descriptor instead.
 func (*NotificationSettings) Descriptor() ([]byte, []int) {
-	return file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDescGZIP(), []int{15}
+	return file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *NotificationSettings) GetMessageVibrate() string {
@@ -2324,7 +2476,7 @@ var File_waHistorySync_WAWebProtobufsHistorySync_proto protoreflect.FileDescript
 
 const file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDesc = "" +
 	"\n" +
-	"-waHistorySync/WAWebProtobufsHistorySync.proto\x12\x19WAWebProtobufsHistorySync\x1a*waSyncAction/WAWebProtobufSyncAction.proto\x1a7waChatLockSettings/WAWebProtobufsChatLockSettings.proto\x1a\x1dwaE2E/WAWebProtobufsE2E.proto\x1a\x17waCommon/WACommon.proto\x1a\x1dwaWeb/WAWebProtobufsWeb.proto\"\xbb\f\n" +
+	"-waHistorySync/WAWebProtobufsHistorySync.proto\x12\x19WAWebProtobufsHistorySync\x1a*waSyncAction/WAWebProtobufSyncAction.proto\x1a7waChatLockSettings/WAWebProtobufsChatLockSettings.proto\x1a\x1dwaE2E/WAWebProtobufsE2E.proto\x1a\x17waCommon/WACommon.proto\x1a\x1dwaWeb/WAWebProtobufsWeb.proto\"\xc6\x0e\n" +
 	"\vHistorySync\x12R\n" +
 	"\bsyncType\x18\x01 \x02(\x0e26.WAWebProtobufsHistorySync.HistorySync.HistorySyncTypeR\bsyncType\x12M\n" +
 	"\rconversations\x18\x02 \x03(\v2'.WAWebProtobufsHistorySync.ConversationR\rconversations\x12M\n" +
@@ -2348,7 +2500,10 @@ const file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDesc = "" +
 	"\baccounts\x18\x12 \x03(\v2\".WAWebProtobufsHistorySync.AccountR\baccounts\x12\x18\n" +
 	"\anctSalt\x18\x13 \x01(\fR\anctSalt\x12P\n" +
 	"\x0einlineContacts\x18\x14 \x03(\v2(.WAWebProtobufsHistorySync.InlineContactR\x0einlineContacts\x126\n" +
-	"\x16inlineContactsProvided\x18\x15 \x01(\bR\x16inlineContactsProvided\"7\n" +
+	"\x16inlineContactsProvided\x18\x15 \x01(\bR\x16inlineContactsProvided\x12V\n" +
+	"\x10favoriteStickers\x18\x16 \x03(\v2*.WAWebProtobufsHistorySync.StickerMetadataR\x10favoriteStickers\x12m\n" +
+	"\x14omittedConversations\x18\x17 \x03(\v29.WAWebProtobufsHistorySync.RecoverableHistoryConversationR\x14omittedConversations\x12B\n" +
+	"\x1comittedConversationsProvided\x18\x18 \x01(\bR\x1comittedConversationsProvided\"7\n" +
 	"\x12BotAIWaitListState\x12\x0f\n" +
 	"\vIN_WAITLIST\x10\x00\x12\x10\n" +
 	"\fAI_AVAILABLE\x10\x01\"\x8a\x01\n" +
@@ -2360,7 +2515,7 @@ const file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDesc = "" +
 	"\x06RECENT\x10\x03\x12\r\n" +
 	"\tPUSH_NAME\x10\x04\x12\x15\n" +
 	"\x11NON_BLOCKING_DATA\x10\x05\x12\r\n" +
-	"\tON_DEMAND\x10\x06\"\xb2\x19\n" +
+	"\tON_DEMAND\x10\x06\"\x87\x1b\n" +
 	"\fConversation\x12\x0e\n" +
 	"\x02ID\x18\x01 \x02(\tR\x02ID\x12E\n" +
 	"\bmessages\x18\x02 \x03(\v2).WAWebProtobufsHistorySync.HistorySyncMsgR\bmessages\x12\x16\n" +
@@ -2430,7 +2585,10 @@ const file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDesc = "" +
 	"\fappealStatus\x18; \x01(\x0e29.WAWebProtobufsHistorySync.Conversation.GroupAppealStatusR\fappealStatus\x12*\n" +
 	"\x10appealUpdateTime\x18< \x01(\x04R\x10appealUpdateTime\x12>\n" +
 	"\x1aauthAgentParentCompanyName\x18= \x01(\tR\x1aauthAgentParentCompanyName\x128\n" +
-	"\x17authAgentObaPhoneNumber\x18> \x01(\tR\x17authAgentObaPhoneNumber\"b\n" +
+	"\x17authAgentObaPhoneNumber\x18> \x01(\tR\x17authAgentObaPhoneNumber\x12h\n" +
+	"\x14identityVerification\x18? \x01(\v24.WAWebProtobufsHistorySync.IdentityVerificationStateR\x14identityVerification\x127\n" +
+	"\vacp2Setting\x18@ \x01(\v2\x15.WACommon.ACP2SettingR\vacp2Setting\x120\n" +
+	"\x13acp2HistoryWithheld\x18A \x01(\bR\x13acp2HistoryWithheld\"b\n" +
 	"\x11GroupAppealStatus\x12\r\n" +
 	"\tNO_APPEAL\x10\x00\x12\x14\n" +
 	"\x10APPEAL_IN_REVIEW\x10\x01\x12\x13\n" +
@@ -2456,7 +2614,15 @@ const file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDesc = "" +
 	"\aleaveTS\x18\x03 \x01(\x04R\aleaveTS\"$\n" +
 	"\vLeaveReason\x12\b\n" +
 	"\x04LEFT\x10\x00\x12\v\n" +
-	"\aREMOVED\x10\x01\"G\n" +
+	"\aREMOVED\x10\x01\"f\n" +
+	"\x1eRecoverableHistoryConversation\x12$\n" +
+	"\rhistoryChatID\x18\x01 \x01(\tR\rhistoryChatID\x12\x1e\n" +
+	"\n" +
+	"accountLid\x18\x02 \x01(\tR\n" +
+	"accountLid\"U\n" +
+	"\x19IdentityVerificationState\x12\x1a\n" +
+	"\bverified\x18\x01 \x01(\bR\bverified\x12\x1c\n" +
+	"\tactionSeq\x18\x02 \x01(\x04R\tactionSeq\"G\n" +
 	"\x17PhoneNumberToLIDMapping\x12\x14\n" +
 	"\x05pnJID\x18\x01 \x01(\tR\x05pnJID\x12\x16\n" +
 	"\x06lidJID\x18\x02 \x01(\tR\x06lidJID\"\x93\x01\n" +
@@ -2568,7 +2734,7 @@ func file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDescGZIP() []byte {
 }
 
 var file_waHistorySync_WAWebProtobufsHistorySync_proto_enumTypes = make([]protoimpl.EnumInfo, 8)
-var file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_waHistorySync_WAWebProtobufsHistorySync_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_waHistorySync_WAWebProtobufsHistorySync_proto_goTypes = []any{
 	(MediaVisibility)(0),                        // 0: WAWebProtobufsHistorySync.MediaVisibility
 	(PrivacySystemMessage)(0),                   // 1: WAWebProtobufsHistorySync.PrivacySystemMessage
@@ -2582,67 +2748,74 @@ var file_waHistorySync_WAWebProtobufsHistorySync_proto_goTypes = []any{
 	(*Conversation)(nil),                        // 9: WAWebProtobufsHistorySync.Conversation
 	(*GroupParticipant)(nil),                    // 10: WAWebProtobufsHistorySync.GroupParticipant
 	(*PastParticipant)(nil),                     // 11: WAWebProtobufsHistorySync.PastParticipant
-	(*PhoneNumberToLIDMapping)(nil),             // 12: WAWebProtobufsHistorySync.PhoneNumberToLIDMapping
-	(*InlineContact)(nil),                       // 13: WAWebProtobufsHistorySync.InlineContact
-	(*Account)(nil),                             // 14: WAWebProtobufsHistorySync.Account
-	(*HistorySyncMsg)(nil),                      // 15: WAWebProtobufsHistorySync.HistorySyncMsg
-	(*Pushname)(nil),                            // 16: WAWebProtobufsHistorySync.Pushname
-	(*WallpaperSettings)(nil),                   // 17: WAWebProtobufsHistorySync.WallpaperSettings
-	(*GlobalSettings)(nil),                      // 18: WAWebProtobufsHistorySync.GlobalSettings
-	(*AutoDownloadSettings)(nil),                // 19: WAWebProtobufsHistorySync.AutoDownloadSettings
-	(*StickerMetadata)(nil),                     // 20: WAWebProtobufsHistorySync.StickerMetadata
-	(*PastParticipants)(nil),                    // 21: WAWebProtobufsHistorySync.PastParticipants
-	(*AvatarUserSettings)(nil),                  // 22: WAWebProtobufsHistorySync.AvatarUserSettings
-	(*NotificationSettings)(nil),                // 23: WAWebProtobufsHistorySync.NotificationSettings
-	(*waWeb.WebMessageInfo)(nil),                // 24: WAWebProtobufsWeb.WebMessageInfo
-	(*waSyncAction.CallLogRecord)(nil),          // 25: WAWebProtobufSyncAction.CallLogRecord
-	(*waE2E.DisappearingMode)(nil),              // 26: WAWebProtobufsE2E.DisappearingMode
-	(waCommon.LimitSharing_Trigger)(0),          // 27: WACommon.LimitSharing.Trigger
-	(*waE2E.MemberLabel)(nil),                   // 28: WAWebProtobufsE2E.MemberLabel
-	(*waChatLockSettings.ChatLockSettings)(nil), // 29: WAWebProtobufsChatLockSettings.ChatLockSettings
+	(*RecoverableHistoryConversation)(nil),      // 12: WAWebProtobufsHistorySync.RecoverableHistoryConversation
+	(*IdentityVerificationState)(nil),           // 13: WAWebProtobufsHistorySync.IdentityVerificationState
+	(*PhoneNumberToLIDMapping)(nil),             // 14: WAWebProtobufsHistorySync.PhoneNumberToLIDMapping
+	(*InlineContact)(nil),                       // 15: WAWebProtobufsHistorySync.InlineContact
+	(*Account)(nil),                             // 16: WAWebProtobufsHistorySync.Account
+	(*HistorySyncMsg)(nil),                      // 17: WAWebProtobufsHistorySync.HistorySyncMsg
+	(*Pushname)(nil),                            // 18: WAWebProtobufsHistorySync.Pushname
+	(*WallpaperSettings)(nil),                   // 19: WAWebProtobufsHistorySync.WallpaperSettings
+	(*GlobalSettings)(nil),                      // 20: WAWebProtobufsHistorySync.GlobalSettings
+	(*AutoDownloadSettings)(nil),                // 21: WAWebProtobufsHistorySync.AutoDownloadSettings
+	(*StickerMetadata)(nil),                     // 22: WAWebProtobufsHistorySync.StickerMetadata
+	(*PastParticipants)(nil),                    // 23: WAWebProtobufsHistorySync.PastParticipants
+	(*AvatarUserSettings)(nil),                  // 24: WAWebProtobufsHistorySync.AvatarUserSettings
+	(*NotificationSettings)(nil),                // 25: WAWebProtobufsHistorySync.NotificationSettings
+	(*waWeb.WebMessageInfo)(nil),                // 26: WAWebProtobufsWeb.WebMessageInfo
+	(*waSyncAction.CallLogRecord)(nil),          // 27: WAWebProtobufSyncAction.CallLogRecord
+	(*waE2E.DisappearingMode)(nil),              // 28: WAWebProtobufsE2E.DisappearingMode
+	(waCommon.LimitSharing_Trigger)(0),          // 29: WACommon.LimitSharing.Trigger
+	(*waCommon.ACP2Setting)(nil),                // 30: WACommon.ACP2Setting
+	(*waE2E.MemberLabel)(nil),                   // 31: WAWebProtobufsE2E.MemberLabel
+	(*waChatLockSettings.ChatLockSettings)(nil), // 32: WAWebProtobufsChatLockSettings.ChatLockSettings
 }
 var file_waHistorySync_WAWebProtobufsHistorySync_proto_depIdxs = []int32{
 	3,  // 0: WAWebProtobufsHistorySync.HistorySync.syncType:type_name -> WAWebProtobufsHistorySync.HistorySync.HistorySyncType
 	9,  // 1: WAWebProtobufsHistorySync.HistorySync.conversations:type_name -> WAWebProtobufsHistorySync.Conversation
-	24, // 2: WAWebProtobufsHistorySync.HistorySync.statusV3Messages:type_name -> WAWebProtobufsWeb.WebMessageInfo
-	16, // 3: WAWebProtobufsHistorySync.HistorySync.pushnames:type_name -> WAWebProtobufsHistorySync.Pushname
-	18, // 4: WAWebProtobufsHistorySync.HistorySync.globalSettings:type_name -> WAWebProtobufsHistorySync.GlobalSettings
-	20, // 5: WAWebProtobufsHistorySync.HistorySync.recentStickers:type_name -> WAWebProtobufsHistorySync.StickerMetadata
-	21, // 6: WAWebProtobufsHistorySync.HistorySync.pastParticipants:type_name -> WAWebProtobufsHistorySync.PastParticipants
-	25, // 7: WAWebProtobufsHistorySync.HistorySync.callLogRecords:type_name -> WAWebProtobufSyncAction.CallLogRecord
+	26, // 2: WAWebProtobufsHistorySync.HistorySync.statusV3Messages:type_name -> WAWebProtobufsWeb.WebMessageInfo
+	18, // 3: WAWebProtobufsHistorySync.HistorySync.pushnames:type_name -> WAWebProtobufsHistorySync.Pushname
+	20, // 4: WAWebProtobufsHistorySync.HistorySync.globalSettings:type_name -> WAWebProtobufsHistorySync.GlobalSettings
+	22, // 5: WAWebProtobufsHistorySync.HistorySync.recentStickers:type_name -> WAWebProtobufsHistorySync.StickerMetadata
+	23, // 6: WAWebProtobufsHistorySync.HistorySync.pastParticipants:type_name -> WAWebProtobufsHistorySync.PastParticipants
+	27, // 7: WAWebProtobufsHistorySync.HistorySync.callLogRecords:type_name -> WAWebProtobufSyncAction.CallLogRecord
 	2,  // 8: WAWebProtobufsHistorySync.HistorySync.aiWaitListState:type_name -> WAWebProtobufsHistorySync.HistorySync.BotAIWaitListState
-	12, // 9: WAWebProtobufsHistorySync.HistorySync.phoneNumberToLidMappings:type_name -> WAWebProtobufsHistorySync.PhoneNumberToLIDMapping
-	14, // 10: WAWebProtobufsHistorySync.HistorySync.accounts:type_name -> WAWebProtobufsHistorySync.Account
-	13, // 11: WAWebProtobufsHistorySync.HistorySync.inlineContacts:type_name -> WAWebProtobufsHistorySync.InlineContact
-	15, // 12: WAWebProtobufsHistorySync.Conversation.messages:type_name -> WAWebProtobufsHistorySync.HistorySyncMsg
-	5,  // 13: WAWebProtobufsHistorySync.Conversation.endOfHistoryTransferType:type_name -> WAWebProtobufsHistorySync.Conversation.EndOfHistoryTransferType
-	26, // 14: WAWebProtobufsHistorySync.Conversation.disappearingMode:type_name -> WAWebProtobufsE2E.DisappearingMode
-	10, // 15: WAWebProtobufsHistorySync.Conversation.participant:type_name -> WAWebProtobufsHistorySync.GroupParticipant
-	17, // 16: WAWebProtobufsHistorySync.Conversation.wallpaper:type_name -> WAWebProtobufsHistorySync.WallpaperSettings
-	0,  // 17: WAWebProtobufsHistorySync.Conversation.mediaVisibility:type_name -> WAWebProtobufsHistorySync.MediaVisibility
-	1,  // 18: WAWebProtobufsHistorySync.Conversation.systemMessageToInsert:type_name -> WAWebProtobufsHistorySync.PrivacySystemMessage
-	27, // 19: WAWebProtobufsHistorySync.Conversation.limitSharingTrigger:type_name -> WACommon.LimitSharing.Trigger
-	4,  // 20: WAWebProtobufsHistorySync.Conversation.appealStatus:type_name -> WAWebProtobufsHistorySync.Conversation.GroupAppealStatus
-	6,  // 21: WAWebProtobufsHistorySync.GroupParticipant.rank:type_name -> WAWebProtobufsHistorySync.GroupParticipant.Rank
-	28, // 22: WAWebProtobufsHistorySync.GroupParticipant.memberLabel:type_name -> WAWebProtobufsE2E.MemberLabel
-	7,  // 23: WAWebProtobufsHistorySync.PastParticipant.leaveReason:type_name -> WAWebProtobufsHistorySync.PastParticipant.LeaveReason
-	24, // 24: WAWebProtobufsHistorySync.HistorySyncMsg.message:type_name -> WAWebProtobufsWeb.WebMessageInfo
-	17, // 25: WAWebProtobufsHistorySync.GlobalSettings.lightThemeWallpaper:type_name -> WAWebProtobufsHistorySync.WallpaperSettings
-	0,  // 26: WAWebProtobufsHistorySync.GlobalSettings.mediaVisibility:type_name -> WAWebProtobufsHistorySync.MediaVisibility
-	17, // 27: WAWebProtobufsHistorySync.GlobalSettings.darkThemeWallpaper:type_name -> WAWebProtobufsHistorySync.WallpaperSettings
-	19, // 28: WAWebProtobufsHistorySync.GlobalSettings.autoDownloadWiFi:type_name -> WAWebProtobufsHistorySync.AutoDownloadSettings
-	19, // 29: WAWebProtobufsHistorySync.GlobalSettings.autoDownloadCellular:type_name -> WAWebProtobufsHistorySync.AutoDownloadSettings
-	19, // 30: WAWebProtobufsHistorySync.GlobalSettings.autoDownloadRoaming:type_name -> WAWebProtobufsHistorySync.AutoDownloadSettings
-	22, // 31: WAWebProtobufsHistorySync.GlobalSettings.avatarUserSettings:type_name -> WAWebProtobufsHistorySync.AvatarUserSettings
-	23, // 32: WAWebProtobufsHistorySync.GlobalSettings.individualNotificationSettings:type_name -> WAWebProtobufsHistorySync.NotificationSettings
-	23, // 33: WAWebProtobufsHistorySync.GlobalSettings.groupNotificationSettings:type_name -> WAWebProtobufsHistorySync.NotificationSettings
-	29, // 34: WAWebProtobufsHistorySync.GlobalSettings.chatLockSettings:type_name -> WAWebProtobufsChatLockSettings.ChatLockSettings
-	11, // 35: WAWebProtobufsHistorySync.PastParticipants.pastParticipants:type_name -> WAWebProtobufsHistorySync.PastParticipant
-	36, // [36:36] is the sub-list for method output_type
-	36, // [36:36] is the sub-list for method input_type
-	36, // [36:36] is the sub-list for extension type_name
-	36, // [36:36] is the sub-list for extension extendee
-	0,  // [0:36] is the sub-list for field type_name
+	14, // 9: WAWebProtobufsHistorySync.HistorySync.phoneNumberToLidMappings:type_name -> WAWebProtobufsHistorySync.PhoneNumberToLIDMapping
+	16, // 10: WAWebProtobufsHistorySync.HistorySync.accounts:type_name -> WAWebProtobufsHistorySync.Account
+	15, // 11: WAWebProtobufsHistorySync.HistorySync.inlineContacts:type_name -> WAWebProtobufsHistorySync.InlineContact
+	22, // 12: WAWebProtobufsHistorySync.HistorySync.favoriteStickers:type_name -> WAWebProtobufsHistorySync.StickerMetadata
+	12, // 13: WAWebProtobufsHistorySync.HistorySync.omittedConversations:type_name -> WAWebProtobufsHistorySync.RecoverableHistoryConversation
+	17, // 14: WAWebProtobufsHistorySync.Conversation.messages:type_name -> WAWebProtobufsHistorySync.HistorySyncMsg
+	5,  // 15: WAWebProtobufsHistorySync.Conversation.endOfHistoryTransferType:type_name -> WAWebProtobufsHistorySync.Conversation.EndOfHistoryTransferType
+	28, // 16: WAWebProtobufsHistorySync.Conversation.disappearingMode:type_name -> WAWebProtobufsE2E.DisappearingMode
+	10, // 17: WAWebProtobufsHistorySync.Conversation.participant:type_name -> WAWebProtobufsHistorySync.GroupParticipant
+	19, // 18: WAWebProtobufsHistorySync.Conversation.wallpaper:type_name -> WAWebProtobufsHistorySync.WallpaperSettings
+	0,  // 19: WAWebProtobufsHistorySync.Conversation.mediaVisibility:type_name -> WAWebProtobufsHistorySync.MediaVisibility
+	1,  // 20: WAWebProtobufsHistorySync.Conversation.systemMessageToInsert:type_name -> WAWebProtobufsHistorySync.PrivacySystemMessage
+	29, // 21: WAWebProtobufsHistorySync.Conversation.limitSharingTrigger:type_name -> WACommon.LimitSharing.Trigger
+	4,  // 22: WAWebProtobufsHistorySync.Conversation.appealStatus:type_name -> WAWebProtobufsHistorySync.Conversation.GroupAppealStatus
+	13, // 23: WAWebProtobufsHistorySync.Conversation.identityVerification:type_name -> WAWebProtobufsHistorySync.IdentityVerificationState
+	30, // 24: WAWebProtobufsHistorySync.Conversation.acp2Setting:type_name -> WACommon.ACP2Setting
+	6,  // 25: WAWebProtobufsHistorySync.GroupParticipant.rank:type_name -> WAWebProtobufsHistorySync.GroupParticipant.Rank
+	31, // 26: WAWebProtobufsHistorySync.GroupParticipant.memberLabel:type_name -> WAWebProtobufsE2E.MemberLabel
+	7,  // 27: WAWebProtobufsHistorySync.PastParticipant.leaveReason:type_name -> WAWebProtobufsHistorySync.PastParticipant.LeaveReason
+	26, // 28: WAWebProtobufsHistorySync.HistorySyncMsg.message:type_name -> WAWebProtobufsWeb.WebMessageInfo
+	19, // 29: WAWebProtobufsHistorySync.GlobalSettings.lightThemeWallpaper:type_name -> WAWebProtobufsHistorySync.WallpaperSettings
+	0,  // 30: WAWebProtobufsHistorySync.GlobalSettings.mediaVisibility:type_name -> WAWebProtobufsHistorySync.MediaVisibility
+	19, // 31: WAWebProtobufsHistorySync.GlobalSettings.darkThemeWallpaper:type_name -> WAWebProtobufsHistorySync.WallpaperSettings
+	21, // 32: WAWebProtobufsHistorySync.GlobalSettings.autoDownloadWiFi:type_name -> WAWebProtobufsHistorySync.AutoDownloadSettings
+	21, // 33: WAWebProtobufsHistorySync.GlobalSettings.autoDownloadCellular:type_name -> WAWebProtobufsHistorySync.AutoDownloadSettings
+	21, // 34: WAWebProtobufsHistorySync.GlobalSettings.autoDownloadRoaming:type_name -> WAWebProtobufsHistorySync.AutoDownloadSettings
+	24, // 35: WAWebProtobufsHistorySync.GlobalSettings.avatarUserSettings:type_name -> WAWebProtobufsHistorySync.AvatarUserSettings
+	25, // 36: WAWebProtobufsHistorySync.GlobalSettings.individualNotificationSettings:type_name -> WAWebProtobufsHistorySync.NotificationSettings
+	25, // 37: WAWebProtobufsHistorySync.GlobalSettings.groupNotificationSettings:type_name -> WAWebProtobufsHistorySync.NotificationSettings
+	32, // 38: WAWebProtobufsHistorySync.GlobalSettings.chatLockSettings:type_name -> WAWebProtobufsChatLockSettings.ChatLockSettings
+	11, // 39: WAWebProtobufsHistorySync.PastParticipants.pastParticipants:type_name -> WAWebProtobufsHistorySync.PastParticipant
+	40, // [40:40] is the sub-list for method output_type
+	40, // [40:40] is the sub-list for method input_type
+	40, // [40:40] is the sub-list for extension type_name
+	40, // [40:40] is the sub-list for extension extendee
+	0,  // [0:40] is the sub-list for field type_name
 }
 
 func init() { file_waHistorySync_WAWebProtobufsHistorySync_proto_init() }
@@ -2656,7 +2829,7 @@ func file_waHistorySync_WAWebProtobufsHistorySync_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDesc), len(file_waHistorySync_WAWebProtobufsHistorySync_proto_rawDesc)),
 			NumEnums:      8,
-			NumMessages:   16,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

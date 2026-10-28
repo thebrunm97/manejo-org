@@ -15,6 +15,15 @@ message DeviceCapabilities {
 		FULL = 2;
 	}
 
+	message ReverseHistorySync {
+		enum Product {
+			PRODUCT_UNSPECIFIED = 0;
+			HATCH = 1;
+		}
+
+		repeated Product enabledProducts = 1;
+	}
+
 	message AiThread {
 		enum SupportLevel {
 			NONE = 0;
@@ -23,6 +32,29 @@ message DeviceCapabilities {
 		}
 
 		optional SupportLevel supportLevel = 1;
+	}
+
+	message HostWriteMutationSupport {
+		repeated string mutationNames = 1;
+	}
+
+	message NewsletterChatsMigration {
+		optional bool effectiveMigrated = 1;
+		optional int64 countdownEndsAt = 2;
+		optional bool rolledBack = 3;
+	}
+
+	message ContactRefresh {
+		optional bool refreshSupported = 1;
+	}
+
+	message BizAiSettingsSync {
+		optional bool handoffRemovalTimingEnabled = 1;
+	}
+
+	message AiFbidMigration {
+		optional uint64 chatDbMigrationTimestamp = 1;
+		optional uint32 supportVersion = 2;
 	}
 
 	message UserHasAvatar {
@@ -35,6 +67,7 @@ message DeviceCapabilities {
 		optional bool campaignSyncEnabled = 3;
 		optional bool insightsSyncEnabled = 4;
 		optional int32 recipientLimit = 5;
+		optional bool proCompanionSupportEnabled = 6;
 	}
 
 	message LIDMigration {
@@ -47,4 +80,10 @@ message DeviceCapabilities {
 	optional UserHasAvatar userHasAvatar = 4;
 	optional MemberNameTagPrimarySupport memberNameTagPrimarySupport = 5;
 	optional AiThread aiThread = 6;
+	optional AiFbidMigration aiFbidMigration = 7;
+	optional BizAiSettingsSync bizAiSettingsSync = 8;
+	optional ContactRefresh contactRefresh = 9;
+	optional ReverseHistorySync reverseHistorySync = 10;
+	optional NewsletterChatsMigration newsletterChatsMigration = 11;
+	optional HostWriteMutationSupport hostWriteMutationSupport = 12;
 }
