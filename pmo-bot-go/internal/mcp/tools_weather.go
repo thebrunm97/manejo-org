@@ -10,6 +10,10 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/zae"
 )
 
+// vocabularioClimaMZ vai junto da previsão para produtores de Moçambique: sem
+// ele o LLM escrevia "umidade" e "chance de chuva", que soam brasileiros lá.
+const vocabularioClimaMZ = "Escreva em português de Moçambique: \"humidade\" (nunca \"umidade\"), \"probabilidade de chuva\" (nunca \"chance de chuva\"), \"machamba\" (nunca \"roça\" ou \"lavoura\"), \"sementeira\" (nunca \"semeadura\"), e temperaturas em °C."
+
 // handleConsultarPrevisaoTempo processa a requisição de previsão do tempo.
 // Recebe a localidade (ex: "São Paulo" ou "lat,lng") e consulta a API.
 func (s *Server) handleConsultarPrevisaoTempo(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
@@ -67,8 +71,12 @@ func (s *Server) handleConsultarPrevisaoTempo(ctx context.Context, args map[stri
 
 	// Como formataremos focando 100% no WhatsApp, o LLM vai traduzir isso para o produtor.
 	// Passamos os dados agrícolas (Evapotranspiração, UV) "cruamente" como o usuário solicitou (no objeto data).
+	mensagem := fmt.Sprintf("Previsão do tempo obtida com sucesso para a localidade (%s). Formate a resposta de forma amigável com emojis (☀️, 🌧️, 🌡️) e seja conciso. Se houver índices como Evapotranspiração ou UV relevantes para o manejo agronômico atual do agricultor, mencione isso no contexto.", localidade)
+	if pais == "MZ" || paisGeo == "MZ" {
+		mensagem += " " + vocabularioClimaMZ
+	}
 	return map[string]interface{}{
-		"mensagem":   fmt.Sprintf("Previsão do tempo obtida com sucesso para a localidade (%s). Formate a resposta de forma amigável com emojis (☀️, 🌧️, 🌡️) e seja conciso. Se houver índices como Evapotranspiração ou UV relevantes para o manejo agronômico atual do agricultor, mencione isso no contexto.", localidade),
+		"mensagem":   mensagem,
 		"localidade": localidade,
 		"clima":      data,
 	}, nil

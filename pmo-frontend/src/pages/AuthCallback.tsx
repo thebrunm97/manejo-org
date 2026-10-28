@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ShieldCheck, Loader2, AlertCircle, ArrowRight } from 'lucide-react';
 import { supabase } from '../supabaseClient';
-import { toast } from 'react-toastify';
 import { clsx } from 'clsx';
 
 // Destinos que o link do WhatsApp pode abrir depois do login. Lista fechada:
@@ -77,13 +76,10 @@ const AuthCallback: React.FC = () => {
                 throw sessionError;
             }
 
-            toast.success("Login realizado com sucesso!");
-            
-            // Limpa a URL para não deixar o código visível no histórico
-            window.history.replaceState({}, document.title, window.location.pathname);
-            
-            // Sem destino, a raiz: o RouteGuard redireciona para hub, onboarding ou dashboard
-            navigate(destinoSeguro(searchParams.get('next')), { replace: true });
+            // Recarga completa em vez de navigate(): o AuthContext relê a sessão
+            // recém-gravada ao subir, sem corrida com o RouteGuard, e o código
+            // sai do histórico (replace). Sem destino, a raiz.
+            window.location.replace(destinoSeguro(searchParams.get('next')));
 
         } catch (err: any) {
             console.error("Erro na autenticação:", err);
