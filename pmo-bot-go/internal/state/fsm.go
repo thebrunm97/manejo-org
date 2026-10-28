@@ -583,6 +583,7 @@ Você DEVE retornar EXCLUSIVAMENTE um objeto JSON válido, sem markdown, sem jus
 	_ = g.Wait()
 
 	log.Printf("⏱️ [TRACING] Sub-passo: Setup Inicial: %v", time.Since(startTime))
+	ctx = comRoteadorPronto(ctx, time.Now())
 
 	if !authQuota {
 		sendFeedback(sbClient, wpClient, ttsClient, msg.ConversationID, msg.From, "🪙 Limite esgotado.", false)

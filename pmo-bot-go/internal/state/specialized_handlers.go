@@ -112,6 +112,7 @@ func handleDuvidaFallback(ctx context.Context, wpClient ports.ChannelSender, tts
 	}
 
 	botResponse, newHistory, trace, usage, modelUsed, err := orchestrator.ExecuteAgenticLoop(ctx, profile, specPrompt, body, tools, agnosticHistory, guard, agentDomain, userMemories, activeBlock, routerResult)
+	trace = marcoRoteador(ctx, trace)
 	if err != nil {
 		if err.Error() == "hitl_pending" {
 			log.Printf("⏸️ [FSM] HITL pendente. Salvando histórico e silenciando resposta conversacional.")

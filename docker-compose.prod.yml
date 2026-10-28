@@ -88,8 +88,12 @@ services:
       # .env.prod, pelo mesmo motivo do REDIS_URL acima: é topologia da stack,
       # não segredo.
       ZARC_DB_PATH: /data/zarc.sqlite
+      # Cópia do log num arquivo com rotação (20 MB x 15, 60 dias). O docker
+      # logs morre a cada deploy, porque o container é recriado.
+      LOG_ARQUIVO: /logs/bot.log
     volumes:
       - /etc/localtime:/etc/localtime:ro
+      - ./pmo-bot-go/logs:/logs
       - ./pmo-bot-go/.secrets:/.secrets:ro
       # Base do ZARC (Zoneamento Agrícola de Risco Climático, MAPA).
       #

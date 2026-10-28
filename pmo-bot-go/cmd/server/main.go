@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"log/slog"
 	"net/http"
@@ -56,6 +57,8 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/webhook"
 	"github.com/thebrunm97/pmo-bot-go/internal/zae"
 	"github.com/thebrunm97/pmo-bot-go/internal/zarc"
+
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 // parseEnvInt helper
@@ -111,7 +114,16 @@ func main() {
 	}
 
 	// --- Configurar slog global (JSON) ---
-	slogHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+	// Além do stdout, LOG_ARQUIVO grava num arquivo com rotação. O docker logs
+	// some a cada deploy (o container é recriado); o arquivo fica num volume do
+	// host e guarda o histórico para medir latência e investigar quedas.
+	var saidaLog io.Writer = os.Stdout
+	if caminho := os.Getenv("LOG_ARQUIVO"); caminho != "" {
+		saidaLog = io.MultiWriter(os.Stdout, &lumberjack.Logger{
+			Filename: caminho, MaxSize: 20, MaxBackups: 15, MaxAge: 60, Compress: true,
+		})
+	}
+	slogHandler := slog.NewJSONHandler(saidaLog, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	})
 	slog.SetDefault(slog.New(slogHandler))
