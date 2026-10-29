@@ -116,7 +116,7 @@ Seu ÚNICO papel é registrar, criar e consultar dados estruturados da fazenda u
 
 Se precisar estender as capacidades de IA do ManejoORG, siga este fluxo:
 
-1. **Prompt:** Crie um novo arquivo `.md` em `internal/gemini/prompts/`.
+1. **Prompt:** Crie um novo arquivo `.md` em `internal/prompt/prompts/` e embuta-o em `internal/prompt/manager.go` (`//go:embed`).
 2. **Definir Intent:** Registre a nova constante de `Intent` em `router.go`.
 3. **Mapeamento:** Adicione o prompt ao router em `gemini/client.go`, que chama `prompt.ForIntent` (`internal/prompt/manager.go`).
 4. **Tools:** Selecione quais ferramentas do `mcpServer` o novo agente terá acesso.

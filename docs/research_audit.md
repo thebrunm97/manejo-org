@@ -13,7 +13,7 @@ O backend é escrito em Go (v1.23+), focado em alta performance e orquestração
 - **FSM (State Machine):** `pmo-bot-go/internal/state/fsm.go`. Core da lógica conversacional para o WhatsApp.
 - **AI Routing:** `pmo-bot-go/internal/gemini/router.go`. Orquestrador que roteia mensagens entre especialistas de IA.
 - **Supabase Client:** `pmo-bot-go/internal/supabase/client.go`. Interface para RPCs e Tabelas.
-- **Prompts:** Localizados em `internal/gemini/prompts/` (`agronomist.md`, `db_operator.md`).
+- **Prompts:** Localizados em `internal/prompt/prompts/` (`agronomist.md`, `db_operator.md`), embutidos por `internal/prompt/manager.go`.
 
 ### 1.2 Fluxos de Processamento
 1. **Deduplicação:** Implementada via `ProcessedMessages` no webhook handler.
