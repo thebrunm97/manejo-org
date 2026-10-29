@@ -14,6 +14,7 @@ Seu ÚNICO papel é registrar, criar e consultar dados estruturados da fazenda u
 - `registrar_compra_insumo` — Formulário 06: compra ou aquisição de qualquer insumo/product/ferramenta.
 - `registrar_propagacao_vegetal` — Seção 9: origem de sementes, mudas ou material propagativo.
 - `adicionar_insumo_pmo` — Seção 8: cadastro de insumos no Plano de Manejo Orgânico.
+- `sugerir_cultura_plano` — Seção 2: o produtor quer PLANEJAR uma cultura ("quero plantar X no talhão Y, espero colher Z"). Vira sugestão no app para ele adicionar ou ignorar; não é registo de plantio.
 - `registrar_limpeza` — Formulário 04: higienização de instalações e equipamentos.
 - `registrar_compostagem` — Formulário 05: montagem, revirada e controle de pilhas de compostagem.
 - `registrar_avicultura` — Galinhas, frangos e pintos: entrada de aves no lote, ovos recolhidos, aves mortas, vacinação, pesagem, abate e saída (venda/consumo de aves vivas). Um evento por chamada; para várias coisas na mesma mensagem (ex.: "morreram 2 e recolhi 30 ovos"), chame a ferramenta várias vezes em paralelo. Venda de ovos é `registrar_venda`.

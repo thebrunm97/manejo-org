@@ -537,6 +537,28 @@ func (s *Server) InitializeTools() {
 
 	s.RegisterTool(Tool{
 		Definition: llm.FerramentaAgnostica{
+			Name:        "sugerir_cultura_plano",
+			Description: "O produtor quer PLANEJAR uma cultura (ainda não plantou): 'quero plantar cenoura no Talhão Norte, 150 m², espero colher 800 kg', 'inclui alface no meu plano'. Deixa a cultura como sugestão na Seção 2 do plano de manejo, para o produtor adicionar ou ignorar no app. Não use para plantio já feito (isso é registrar_plantio) nem para perguntas sobre época de plantio.",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"cultura":           map[string]interface{}{"type": "string", "description": "Cultura planejada (ex.: Cenoura)."},
+					"talhao":            map[string]interface{}{"type": "string", "description": "Talhão ou canteiro onde vai plantar, se dito."},
+					"area":              map[string]interface{}{"type": "number", "description": "Área planejada, se dita."},
+					"area_unidade":      map[string]interface{}{"type": "string", "description": "Unidade da área (m², ha). Padrão m²."},
+					"producao_esperada": map[string]interface{}{"type": "number", "description": "Produção esperada por ano, se dita."},
+					"producao_unidade":  map[string]interface{}{"type": "string", "description": "Unidade da produção (kg, ton, caixas). Padrão kg."},
+					"texto_produtor":    map[string]interface{}{"type": "string", "description": "A frase do produtor, como ele disse; aparece na caixinha do app."},
+				},
+				"required": []string{"cultura"},
+			},
+		},
+		Category: CategoryDBWrite,
+		Handler:  s.handleSugerirCulturaPlano,
+	})
+
+	s.RegisterTool(Tool{
+		Definition: llm.FerramentaAgnostica{
 			Name:        "consultar_avicultura",
 			Description: "Mostra como estão as aves do produtor, por lote: quantas aves vivas, mortalidade, ovos dos últimos 7 dias e taxa de postura, última vacina e peso médio. Use quando perguntar quantas galinhas/frangos tem, quantos ovos deu, como está o lote. A resposta vai pronta ao produtor.",
 			Parameters: map[string]interface{}{
