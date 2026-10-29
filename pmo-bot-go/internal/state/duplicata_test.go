@@ -30,6 +30,9 @@ func TestChaveDuplicata(t *testing.T) {
 	if _, _, _, ok := chaveDuplicata("registrar_colheita", map[string]interface{}{"cultura": "tomate"}); ok {
 		t.Fatal("sem quantidade não dá para comparar")
 	}
+	if p, q, _, ok := chaveDuplicata("registrar_avicultura", map[string]interface{}{"evento": "postura", "quantidade": 40.0}); !ok || p != "Ovos" || q != 40 {
+		t.Fatalf("avicultura: %q %v %v", p, q, ok)
+	}
 	if _, _, _, ok := chaveDuplicata("consultar_registros", map[string]interface{}{"produto": "x", "quantidade_valor": 1.0}); ok {
 		t.Fatal("ferramenta de leitura não entra")
 	}

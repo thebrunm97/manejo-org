@@ -20,12 +20,13 @@ import (
 const maxLinhasConsulta = 8
 
 var tituloGrupo = map[string][2]string{ // [BR, MZ]
-	"":         {"Registros", "Registos"},
-	"plantio":  {"Plantios", "Sementeiras e plantios"},
-	"colheita": {"Colheitas", "Colheitas"},
-	"manejo":   {"Manejos e aplicações", "Manejos e aplicações"},
-	"compra":   {"Compras", "Compras"},
-	"venda":    {"Vendas", "Vendas"},
+	"":           {"Registros", "Registos"},
+	"plantio":    {"Plantios", "Sementeiras e plantios"},
+	"colheita":   {"Colheitas", "Colheitas"},
+	"manejo":     {"Manejos e aplicações", "Manejos e aplicações"},
+	"compra":     {"Compras", "Compras"},
+	"venda":      {"Vendas", "Vendas"},
+	"avicultura": {"Aves", "Aves"},
 }
 
 func (s *Server) handleConsultarRegistros(ctx context.Context, args map[string]interface{}, tenant TenantCtx) (interface{}, error) {
@@ -484,7 +485,7 @@ func rotuloAtividade(tipo string) string {
 	if g := grupoDe(tipo); g != "" {
 		return map[string]string{
 			"plantio": "Plantio", "colheita": "Colheita", "manejo": "Manejo",
-			"compra": "Compra", "venda": "Venda",
+			"compra": "Compra", "venda": "Venda", "avicultura": "Aves",
 		}[g]
 	}
 	return tipo

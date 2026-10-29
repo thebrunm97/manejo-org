@@ -106,6 +106,22 @@ func RequiresHITL(phone, toolName string, rawArgs map[string]interface{}) (bool,
 		if val > lim.Confirmar {
 			return true, fmt.Sprintf("Venda de %s — %s", prod, formatarDinheiro(val, moeda))
 		}
+
+	case "registrar_avicultura":
+		// Só a entrada pede SIM/NÃO: ela define quantas aves o lote tem. Ovos,
+		// mortes e vacinas são anotação de todo dia e vão direto.
+		qtd := parseArgFloat(rawArgs, "quantidade")
+		switch parseArgString(rawArgs, "evento") {
+		case "entrada":
+			// Sem finalidade a ferramenta pergunta antes; o SIM viria cedo demais.
+			if f := parseArgString(rawArgs, "finalidade"); f != "" {
+				return true, fmt.Sprintf("Entrada de %s aves (%s)", formatarNumero(qtd), f)
+			}
+		case "abate", "saida":
+			if val := parseArgFloat(rawArgs, "valor_total"); val > lim.Confirmar {
+				return true, fmt.Sprintf("Venda de %s aves — %s", formatarNumero(qtd), formatarDinheiro(val, moeda))
+			}
+		}
 	}
 
 	// Rule 2: Volume & Agronomic Scale (> 2.500 kg/L)
@@ -555,6 +571,8 @@ var nomesCampo = map[string]string{
 	"alocacoes_talhoes": "Por talhão", "destino": "Destino", "lote": "Lote",
 	"produto_insumo": "Insumo", "item_area": "Local", "observacoes": "Observações",
 	"#quantidade": "Quantidade", "#dose": "Dose", "nome": "Nome", "cidade": "Cidade", "uf": "Estado", "area": "Área",
+	"evento": "Evento", "finalidade": "Finalidade", "raca": "Raça", "vacina": "Vacina", "causa": "Causa",
+	"peso_medio_kg": "Peso médio (kg)", "observacao": "Observação",
 }
 
 var ordemCampos = []string{

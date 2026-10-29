@@ -506,6 +506,52 @@ func (s *Server) InitializeTools() {
 
 	s.RegisterTool(Tool{
 		Definition: llm.FerramentaAgnostica{
+			Name:        "registrar_avicultura",
+			Description: "Regista um evento das galinhas/frangos/pintos do produtor, um por chamada: entrada de aves num lote (compra ou nascimento de pintos), ovos recolhidos, aves mortas, vacinação, pesagem, abate, ou saída (venda, consumo, doação de aves vivas). Use esta ferramenta para aves em vez de propose_batch_mutations ou registrar_colheita. Venda de ovos é registrar_venda. O lote é escolhido sozinho quando o produtor só tem um; se a ferramenta perguntar, repasse a pergunta.",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"evento": map[string]interface{}{
+						"type":        "string",
+						"enum":        []string{"entrada", "postura", "mortalidade", "vacinacao", "pesagem", "abate", "saida"},
+						"description": "entrada = aves que chegaram ao lote; postura = ovos recolhidos; mortalidade = aves mortas; vacinacao; pesagem = peso médio; abate; saida = aves vivas vendidas, consumidas ou doadas.",
+					},
+					"quantidade":    map[string]interface{}{"type": "number", "description": "Número de aves; em postura, número de ovos; em pesagem, peso médio por ave em kg. Uma dúzia = 12 ovos; uma bandeja/cartela = 30 ovos."},
+					"lote":          map[string]interface{}{"type": "string", "description": "Nome do lote (ex.: Lote 1), só se o produtor disser. Na entrada sem nome, o lote novo recebe nome automático."},
+					"finalidade":    map[string]interface{}{"type": "string", "enum": []string{"corte", "postura", "dupla"}, "description": "Só na entrada: corte (carne), postura (ovos) ou dupla (galinha cafreal/landim, para os dois)."},
+					"raca":          map[string]interface{}{"type": "string", "description": "Raça ou linhagem, se dita (ex.: Cobb, Ross, landim, cafreal, Kuroiler)."},
+					"vacina":        map[string]interface{}{"type": "string", "description": "Na vacinação: nome da vacina (ex.: Newcastle, Gumboro, Bouba)."},
+					"causa":         map[string]interface{}{"type": "string", "description": "Na mortalidade: causa, se o produtor disser (doença, calor, predador...)."},
+					"peso_medio_kg": map[string]interface{}{"type": "number", "description": "No abate ou na saída: peso médio por ave em kg, se dito."},
+					"valor_total":   map[string]interface{}{"type": "number", "description": "Dinheiro envolvido, se dito: o que pagou pelos pintos/vacina, ou o que recebeu pelas aves abatidas/vendidas."},
+					"cliente":       map[string]interface{}{"type": "string", "description": "Comprador das aves, se dito."},
+					"data":          map[string]interface{}{"type": "string", "description": "Data do evento (YYYY-MM-DD). Omitir se foi hoje."},
+					"observacao":    map[string]interface{}{"type": "string", "description": "Outra informação útil dita pelo produtor."},
+				},
+				"required": []string{"evento", "quantidade"},
+			},
+		},
+		Category: CategoryDBWrite,
+		Handler:  s.handleRegistrarAvicultura,
+	})
+
+	s.RegisterTool(Tool{
+		Definition: llm.FerramentaAgnostica{
+			Name:        "consultar_avicultura",
+			Description: "Mostra como estão as aves do produtor, por lote: quantas aves vivas, mortalidade, ovos dos últimos 7 dias e taxa de postura, última vacina e peso médio. Use quando perguntar quantas galinhas/frangos tem, quantos ovos deu, como está o lote. A resposta vai pronta ao produtor.",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"lote": map[string]interface{}{"type": "string", "description": "Nome do lote, só se o produtor pedir um específico."},
+				},
+			},
+		},
+		Category: CategoryDBRead,
+		Handler:  s.handleConsultarAvicultura,
+	})
+
+	s.RegisterTool(Tool{
+		Definition: llm.FerramentaAgnostica{
 			Name:        "registrar_despesa",
 			Description: "Ferramenta para registrar despesas financeiras (compras, pagamentos). IMPORTANTE: Você PRECISA do valor_total e da descricao. Se o usuário não informar o valor, NÃO chame a ferramenta, pergunte a ele primeiro.",
 			Parameters: map[string]interface{}{
@@ -646,7 +692,7 @@ func (s *Server) InitializeTools() {
 				"properties": map[string]interface{}{
 					"tipo": map[string]interface{}{
 						"type":        "string",
-						"enum":        []string{"todos", "compra", "colheita", "plantio", "manejo", "venda"},
+						"enum":        []string{"todos", "compra", "colheita", "plantio", "manejo", "venda", "avicultura"},
 						"description": "Tipo de registro. 'todos' se o produtor não especificar.",
 					},
 					"modo": map[string]interface{}{

@@ -12,11 +12,12 @@ import (
 // para os valores de caderno_campo.tipo_atividade, que variam conforme quem
 // gravou (bot antigo, bot novo, app).
 var GruposAtividade = map[string][]string{
-	"plantio":  {"Plantio", "PLANTIO", "plantio", "Propagacao"},
-	"colheita": {"Colheita", "COLHEITA", "colheita"},
-	"manejo":   {"Manejo", "MANEJO", "manejo", "Insumo", "aplicacao_insumo"},
-	"compra":   {"Compra de Insumo", "Compra", "Compra/Aquisição"},
-	"venda":    {"Venda"},
+	"plantio":    {"Plantio", "PLANTIO", "plantio", "Propagacao"},
+	"colheita":   {"Colheita", "COLHEITA", "colheita"},
+	"manejo":     {"Manejo", "MANEJO", "manejo", "Insumo", "aplicacao_insumo"},
+	"compra":     {"Compra de Insumo", "Compra", "Compra/Aquisição"},
+	"venda":      {"Venda"},
+	"avicultura": {"Avicultura"},
 }
 
 // atividadesOcultas nunca aparecem numa consulta do produtor.
