@@ -36,3 +36,17 @@ filtros de ferramentas com um número em vez de impressão.
 
 `go test ./internal/mcp -run TestConjuntoRoteamentoValido` confere o formato e
 se as ferramentas citadas existem.
+
+## Rodar
+
+`cmd/eval-roteador` chama os dois roteadores do código para cada mensagem
+(sem as que dependem de contexto) e mostra acerto, tempo p50/p90 e os erros:
+
+```sh
+cd pmo-bot-go && CGO_ENABLED=0 go build -o /tmp/eval-roteador ./cmd/eval-roteador
+cd .. && docker run --rm --env-file .env.prod -v /tmp:/w -v $PWD/pmo-bot-go/eval:/eval:ro -w /w alpine:3.20 \
+  ./eval-roteador -arquivo /eval/roteamento/mensagens.jsonl -saida /w/resultado.json
+```
+
+Usa as chaves e modelos de `.env.prod` sem imprimi-los. Custa poucos
+centavos de dólar por rodada.
