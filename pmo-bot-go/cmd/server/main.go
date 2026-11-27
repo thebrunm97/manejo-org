@@ -27,6 +27,7 @@ import (
 	"github.com/thebrunm97/pmo-bot-go/internal/adapter/rabbitmq"
 	"github.com/thebrunm97/pmo-bot-go/internal/adapter/redisstore"
 	"github.com/thebrunm97/pmo-bot-go/internal/api"
+	"github.com/thebrunm97/pmo-bot-go/internal/comandos"
 	"github.com/thebrunm97/pmo-bot-go/internal/config"
 	"github.com/thebrunm97/pmo-bot-go/internal/domain"
 	"github.com/thebrunm97/pmo-bot-go/internal/gateway"
@@ -772,6 +773,18 @@ func main() {
 		MemoryCache:            memorySvc,
 	})
 	handler.RegisterRoutes(r)
+
+	// --- Comando /reconectar pelo Telegram (pareamento sem terminal) ---
+	// Ativo só com as três variáveis preenchidas. O setWebhook do Telegram
+	// precisa registrar o mesmo TELEGRAM_WEBHOOK_SECRET como secret_token.
+	if segredoTG := os.Getenv("TELEGRAM_WEBHOOK_SECRET"); segredoTG != "" && os.Getenv("TELEGRAM_BOT_TOKEN") != "" && os.Getenv("TELEGRAM_CHAT_ID") != "" {
+		tgResp := notify.NewTelegram(os.Getenv("TELEGRAM_BOT_TOKEN"), os.Getenv("TELEGRAM_CHAT_ID"))
+		reconectarCmd := comandos.NewReconectarHandler(segredoTG, os.Getenv("TELEGRAM_CHAT_ID"), wpClient, tgResp)
+		r.POST("/telegram/webhook", reconectarCmd.Handle)
+		log.Println("✅ [Telegram] Comando /reconectar ativo em /telegram/webhook")
+	} else {
+		log.Println("⚠️  [Telegram] Comando /reconectar desativado (TELEGRAM_WEBHOOK_SECRET, TELEGRAM_BOT_TOKEN ou TELEGRAM_CHAT_ID ausente)")
+	}
 
 	// --- Initialize RabbitMQ Consumer ---
 	var rabbitmqConsumer *rabbitmq.Consumer

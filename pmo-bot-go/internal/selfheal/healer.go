@@ -535,10 +535,10 @@ func (h *Healer) tratarEsgotamento(ctx context.Context, agora time.Time, inc *in
 			Corpo: fmt.Sprintf(
 				"%d tentativas automáticas de reconexão falharam ao longo de %s.\n"+
 					"Causa aparente: %s\n\n"+
-					"Remediação manual:\n  docker restart pmo-prod-stack-evolution-go-1\n\n"+
-					"Se isso não resolver, verifique se a instância religa sozinha no boot —\n"+
-					"'Found 0 connected instances' no log indica que não, e precisa de um\n"+
-					"POST manual em /instance/reconnect.\n\n"+
+					"Reconexão: envie /reconectar <numero> neste chat do Telegram\n"+
+					"(ex.: /reconectar 5534997202727). O bot devolve um código de pareamento\n"+
+					"para digitar no WhatsApp: Aparelhos conectados → Conectar com número.\n"+
+					"\n"+
 					"O self-heal tentará de novo em %s caso ainda esteja fora do ar.",
 				inc.tentativas, formatarDuracao(fora), causa, h.opts.Cooldown),
 			Em: agora,
