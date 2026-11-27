@@ -68,8 +68,27 @@ func MetaRAGJudgePrompt() string {
 
 // ForIntent selects the correct specialist system prompt based on the
 // classified Intent from the Router. Falls back to the default monolithic
-// prompt for CHAT or any unrecognized intent.
+// prompt for CHAT or any unrecognized intent. Sem telefone, assume Brasil.
 func ForIntent(intent llm.Intent, modality string, temProducaoParalela bool) string {
+	return forIntent(intent, modality, temProducaoParalela, "BR")
+}
+
+// ForIntentPais é como ForIntent, mas usa o país do telefone do produtor
+// para preencher {{PAIS}} no prompt (ex.: regras e vocabulário de Moçambique).
+func ForIntentPais(intent llm.Intent, modality string, temProducaoParalela bool, phone string) string {
+	return forIntent(intent, modality, temProducaoParalela, PaisDoTelefone(phone))
+}
+
+// PaisDoTelefone devolve "MZ" para números com DDI 258 (Moçambique) e "BR"
+// para os demais.
+func PaisDoTelefone(phone string) string {
+	if strings.HasPrefix(strings.TrimPrefix(phone, "+"), "258") {
+		return "MZ"
+	}
+	return "BR"
+}
+
+func forIntent(intent llm.Intent, modality string, temProducaoParalela bool, pais string) string {
 	var p string
 	switch intent {
 	case llm.IntentRAG, "AGRONOMY", "WORKFLOW", "SCHEDULING":
@@ -82,6 +101,7 @@ func ForIntent(intent llm.Intent, modality string, temProducaoParalela bool) str
 
 	// Inject dynamic context
 	p = strings.ReplaceAll(p, "{{MODALIDADE_PREDOMINANTE}}", modality)
+	p = strings.ReplaceAll(p, "{{PAIS}}", pais)
 
 	parallelMsg := "NÃO"
 	if temProducaoParalela {
