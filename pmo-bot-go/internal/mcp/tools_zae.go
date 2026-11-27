@@ -89,11 +89,16 @@ func (s *Server) janelaMocambique(ctx context.Context, cultura, distrito, provin
 
 	// Referências por região (Prognóstico do MADER, safra 2021-22): não são
 	// zonas, então vêm numa chave à parte e não entram nas janelas por zona.
-	refs := s.zae.Regionais(cultura)
+	refs, anteriores := s.zae.SplitRegionais(cultura)
 	if len(refs) > 0 {
 		base["referencias_regionais"] = refs
-		base["nota_referencias_regionais"] = "Estas são referências por REGIÃO de outra fonte oficial, para a safra indicada em fonte_ano. " +
+		base["nota_referencias_regionais"] = "Estas são referências por REGIÃO de outra fonte oficial, para a safra indicada em fonte_ano (a mais recente). " +
 			"Não são a janela da zona do produtor. Cite a região e a safra, e diga que a época pode variar com a chuva local."
+	}
+	if len(anteriores) > 0 {
+		base["referencias_regionais_anteriores"] = anteriores
+		base["nota_anteriores"] = "Safras antigas, só para comparar entre anos quando o produtor pedir. " +
+			"NUNCA as apresente como a época atual."
 	}
 
 	if len(janelas) == 0 {

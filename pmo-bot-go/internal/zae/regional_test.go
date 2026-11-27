@@ -44,7 +44,11 @@ func TestRegionaisEmbutidoCarrega(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Carregar: %v", err)
 	}
-	if len(tab.Regionais("milho")) != 3 {
-		t.Errorf("milho deveria ter 3 referências regionais (Sul, Centro, Norte)")
+	vigentes, anteriores := tab.SplitRegionais("milho")
+	if len(vigentes) != 3 || vigentes[0].FonteAno != 2026 {
+		t.Errorf("milho deveria ter 3 referências vigentes de 2026, veio %d", len(vigentes))
+	}
+	if len(anteriores) != 3 || anteriores[0].FonteAno != 2021 {
+		t.Errorf("milho deveria ter 3 referências anteriores de 2021, veio %d", len(anteriores))
 	}
 }
