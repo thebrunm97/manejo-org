@@ -56,6 +56,12 @@ func handleDuvidaFallback(ctx context.Context, wpClient ports.ChannelSender, tts
 		modality = "NÃO DEFINIDA"
 	}
 	specPrompt := prompt.ForIntentPais(llm.Intent(finalIntent), modality, profile.TemProducaoParalela, phone)
+	// Loga só o país e os 4 últimos dígitos, para diagnosticar o prompt por país sem expor o número.
+	if len(phone) >= 4 {
+		log.Printf("[FSM] país do produtor: %s (final %s)", prompt.PaisDoTelefone(phone), phone[len(phone)-4:])
+	} else {
+		log.Printf("[FSM] país do produtor: %s (telefone não resolvido)", prompt.PaisDoTelefone(phone))
+	}
 
 	// 2. Load History into Agnostic Format
 	var agnosticHistory []llm.MensagemAgnostica
