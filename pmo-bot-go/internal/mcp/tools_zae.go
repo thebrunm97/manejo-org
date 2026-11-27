@@ -16,7 +16,7 @@ import (
 // forma da resposta precisa impedir que o produtor tome uma referência
 // publicada por zoneamento oficial — que lá nem existe.
 const mensagemReferenciaMZ = "ATENÇÃO — Moçambique NÃO tem zoneamento oficial de risco climático como o ZARC do Brasil. " +
-	"Estas são janelas de sementeira de REFERÊNCIA do calendário agrícola da FAO, por zona agroecológica do IIAM. " +
+	"Estas são janelas de sementeira de REFERÊNCIA do calendário agrícola da FAO, por zona agroecológica (R1–R10). " +
 	"Ao responder você é OBRIGADO a: (1) dizer que é uma referência publicada, não uma recomendação oficial nem validada por agrónomo local; " +
 	"(2) citar a fonte e o ano; (3) usar as datas exatamente como vieram (dd/mm, podem atravessar a virada do ano) — " +
 	"NÃO invente percentuais de risco, datas nem épocas que não vieram; " +
@@ -135,6 +135,12 @@ func (s *Server) janelaMocambique(ctx context.Context, cultura, distrito, provin
 	base["status"] = "referencia_nao_oficial"
 	base["janelas_referencia"] = janelas
 	base["message"] = mensagemReferenciaMZ + " " + mensagemVariedadesMZ
+	if len(refs) > 0 {
+		base["message"] = base["message"].(string) +
+			" Além disso, há referência REGIONAL do MADER (safra 2021-22), em referencias_regionais. " +
+			"Inclua-a na resposta, em frase separada, citando a região, a safra e a fonte MADER. " +
+			"Não a apresente como janela da zona da machamba."
+	}
 	return base
 }
 
