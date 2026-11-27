@@ -89,7 +89,8 @@ func (s *Server) janelaMocambique(ctx context.Context, cultura, distrito, provin
 
 	// Referências por região (Prognóstico do MADER, safra 2021-22): não são
 	// zonas, então vêm numa chave à parte e não entram nas janelas por zona.
-	if refs := s.zae.Regionais(cultura); len(refs) > 0 {
+	refs := s.zae.Regionais(cultura)
+	if len(refs) > 0 {
 		base["referencias_regionais"] = refs
 		base["nota_referencias_regionais"] = "Estas são referências por REGIÃO de outra fonte oficial, para a safra indicada em fonte_ano. " +
 			"Não são a janela da zona do produtor. Cite a região e a safra, e diga que a época pode variar com a chuva local."
@@ -104,9 +105,16 @@ func (s *Server) janelaMocambique(ctx context.Context, cultura, distrito, provin
 		log.Printf("🌍 [MCP] ZAE/MZ sem dado para %q em %s (%s), zonas %v", cultura, distrito, provincia, zonas)
 		base["status"] = "sem_dado"
 		base["culturas_com_dado_na_zona"] = lista
-		base["message"] = mensagemVariedadesMZ + "Não há janela de sementeira publicada para esta cultura nesta zona de Moçambique (a fonte, o calendário da FAO, " +
-			"ainda cobre poucas culturas por zona). Diga isso ao produtor com honestidade, ofereça as culturas que têm dado se forem úteis " +
-			"e sugira confirmar com os serviços distritais de extensão agrária. NÃO invente datas."
+		if len(refs) > 0 {
+			base["message"] = mensagemVariedadesMZ +
+				"Não há janela da FAO para esta cultura nesta zona, mas existe referência regional do MADER " +
+				"(safra 2021-22), em referencias_regionais. Cite a região e a safra, sem dizer que a zona " +
+				"da machamba tem janela oficial. NÃO invente datas."
+		} else {
+			base["message"] = mensagemVariedadesMZ + "Não há janela de sementeira publicada para esta cultura nesta zona de Moçambique (a fonte, o calendário da FAO, " +
+				"ainda cobre poucas culturas por zona). Diga isso ao produtor com honestidade, ofereça as culturas que têm dado se forem úteis " +
+				"e sugira confirmar com os serviços distritais de extensão agrária. NÃO invente datas."
+		}
 		return base
 	}
 
