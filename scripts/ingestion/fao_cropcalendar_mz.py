@@ -41,7 +41,7 @@ import sys
 import urllib.request
 
 API = "https://api-cropcalendar.apps.fao.org/api/v1/countries/MZ"
-FONTE = "FAO Crop Calendar (Moçambique, zonas agroecológicas do IIAM)"
+FONTE = "FAO Crop Calendar (Moçambique)"
 SAIDA = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "..", "..", "pmo-bot-go", "internal", "zae", "dados"
 )
