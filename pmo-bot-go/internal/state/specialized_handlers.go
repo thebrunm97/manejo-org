@@ -55,7 +55,7 @@ func handleDuvidaFallback(ctx context.Context, wpClient ports.ChannelSender, tts
 	if modality == "" {
 		modality = "NÃO DEFINIDA"
 	}
-	specPrompt := prompt.ForIntent(llm.Intent(finalIntent), modality, profile.TemProducaoParalela)
+	specPrompt := prompt.ForIntentPais(llm.Intent(finalIntent), modality, profile.TemProducaoParalela, phone)
 
 	// 2. Load History into Agnostic Format
 	var agnosticHistory []llm.MensagemAgnostica
