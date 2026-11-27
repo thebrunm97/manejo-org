@@ -136,6 +136,7 @@ type Tabela struct {
 	zonas      map[string]string                      // R1 -> unidades administrativas (texto da fonte)
 	distritos  map[string]map[string][]ZonaDoDistrito // provincia -> distrito (chave) ou "*" -> zonas
 	porCultura map[string][]Janela                    // cultura (chave) -> janelas
+	regionais  []ReferenciaRegional                   // referências por região (fora das zonas)
 	total      int
 }
 
@@ -186,6 +187,13 @@ func Carregar() (*Tabela, error) {
 		return nil, err
 	}
 	if err := t.CarregarVariedades(variedades); err != nil {
+		return nil, err
+	}
+	regionais, err := ler("referencias_regionais.csv")
+	if err != nil {
+		return nil, err
+	}
+	if err := t.CarregarRegionais(regionais); err != nil {
 		return nil, err
 	}
 	return t, nil
