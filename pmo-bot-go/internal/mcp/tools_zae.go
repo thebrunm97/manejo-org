@@ -87,8 +87,9 @@ func (s *Server) janelaMocambique(ctx context.Context, cultura, distrito, provin
 		base["variedades_iiam"] = vs
 	}
 
-	// Referências por região (Prognóstico do MADER, safra 2021-22): não são
-	// zonas, então vêm numa chave à parte e não entram nas janelas por zona.
+	// Referências por região (Prognósticos do MADER/MAAP): não são zonas, então
+	// vêm numa chave à parte e não entram nas janelas por zona. A safra mais
+	// recente é a vigente; as anteriores ficam só para comparação entre anos.
 	refs, anteriores := s.zae.SplitRegionais(cultura)
 	if len(refs) > 0 {
 		base["referencias_regionais"] = refs
@@ -112,8 +113,8 @@ func (s *Server) janelaMocambique(ctx context.Context, cultura, distrito, provin
 		base["culturas_com_dado_na_zona"] = lista
 		if len(refs) > 0 {
 			base["message"] = mensagemVariedadesMZ +
-				"Não há janela da FAO para esta cultura nesta zona, mas existe referência regional do MADER " +
-				"(safra 2021-22), em referencias_regionais. Cite a região e a safra, sem dizer que a zona " +
+				"Não há janela da FAO para esta cultura nesta zona, mas existe referência regional oficial " +
+				"(safra mais recente, ver fonte e fonte_ano), em referencias_regionais. Cite a região, a safra e a fonte, sem dizer que a zona " +
 				"da machamba tem janela oficial. NÃO invente datas."
 		} else {
 			base["message"] = mensagemVariedadesMZ + "Não há janela de sementeira publicada para esta cultura nesta zona de Moçambique (a fonte, o calendário da FAO, " +
@@ -142,8 +143,8 @@ func (s *Server) janelaMocambique(ctx context.Context, cultura, distrito, provin
 	base["message"] = mensagemReferenciaMZ + " " + mensagemVariedadesMZ
 	if len(refs) > 0 {
 		base["message"] = base["message"].(string) +
-			" Além disso, há referência REGIONAL do MADER (safra 2021-22), em referencias_regionais. " +
-			"Inclua-a na resposta, em frase separada, citando a região, a safra e a fonte MADER. " +
+			" Além disso, há referência REGIONAL oficial (safra mais recente, ver fonte e fonte_ano), em referencias_regionais. " +
+			"Inclua-a na resposta, em frase separada, citando a região, a safra e a fonte como vieram. " +
 			"Não a apresente como janela da zona da machamba."
 	}
 	return base
