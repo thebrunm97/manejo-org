@@ -33,8 +33,8 @@ def main():
     with open(os.path.join(BASE, "FONTES.csv"), encoding="utf-8") as f:
         fontes = list(csv.DictReader(l for l in f if not l.startswith("#")))
 
-    # O site do IIAM serve uma cadeia de certificado incompleta (o curl e o
-    # Python recusam). A integridade fica garantida pelo sha256 abaixo, que é
+    # O site do IIAM serve uma cadeia de certificado incompleta e, desde
+    # nov/2026, um certificado expirado (o curl e o Python recusam). A integridade fica garantida pelo sha256 abaixo, que é
     # o que de fato importa aqui.
     ctx = ssl.create_default_context()
     ctx.check_hostname = False

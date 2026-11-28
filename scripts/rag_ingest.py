@@ -62,6 +62,10 @@ Uso:
   python scripts/rag_ingest.py                  # processa apenas arquivos novos/modificados
   python scripts/rag_ingest.py --force          # reindexa tudo (re-vetorização completa)
   python scripts/rag_ingest.py --dir <caminho>  # aponta para outro diretório de PDFs (testes)
+  python scripts/rag_ingest.py --variedades-iiam  # fichas do catálogo do IIAM, um trecho por variedade
+
+Reingerir um documento substitui todos os trechos globais dele (mesmo
+document_name) — nada da versão anterior fica para trás.
 
 Dependências:
   pip install pymupdf supabase langchain-text-splitters python-dotenv requests
@@ -138,6 +142,20 @@ SLEEP_BETWEEN_BATCHES   = 10  # seconds — cortesia com rate limit da OpenRoute
 DEFAULT_INPUT_DIR = PROJECT_ROOT / "pmo-bot-go" / "docs" / "knowledge_base"
 CHECKPOINT_FILE    = PROJECT_ROOT / "ingest_checkpoint.json"
 
+# Páginas (numeração do PDF, começando em 1) que NÃO vão para o RAG como texto
+# corrido. São fichas diagramadas em tabela de duas colunas: o splitter junta
+# atributos de duas variedades num trecho sem o nome de nenhuma ("Maturação:
+# 120 a 135 dias Dureza do Grão: Semi-Dentado Dureza do Grão: Muito duro…"), e
+# o bot pode atribuir a característica à variedade errada. O conteúdo dessas
+# páginas entra por --variedades-iiam: um trecho por ficha, com cultura e nome.
+PAGINAS_FORA_DO_RAG: Dict[str, range] = {
+    "IIAM_Catalogo_Tecnologias_Libertadas_2011-2022.pdf": range(15, 57),
+}
+
+# Fichas de variedades extraídas do catálogo por scripts/ingestion/iiam_variedades.py.
+VARIEDADES_IIAM_CSV = PROJECT_ROOT / "pmo-bot-go" / "internal" / "zae" / "dados" / "variedades_iiam.csv"
+VARIEDADES_IIAM_DOC = "IIAM_Catalogo_Tecnologias_Libertadas_2011-2022_fichas_variedades"
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
@@ -149,9 +167,15 @@ sb: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def extract_pdf_text(filepath: Path) -> str:
     """Extract all text from a PDF, preserving UTF-8 accents (ã, ç, ê, ô…)."""
+    fora = PAGINAS_FORA_DO_RAG.get(filepath.name, range(0))
     doc = fitz.open(str(filepath))
-    pages: List[str] = [page.get_text() for page in doc if page.get_text().strip()]
+    pages: List[str] = [
+        text for num, page in enumerate(doc, start=1)
+        if num not in fora and (text := page.get_text()).strip()
+    ]
     doc.close()
+    if fora:
+        logger.info(f"  Páginas {fora.start}-{fora.stop - 1} fora do RAG (fichas em tabela; ver PAGINAS_FORA_DO_RAG).")
     return "\n\n".join(pages)
 
 
@@ -348,39 +372,87 @@ def process_pdf(filepath: Path, categoria: str = "geral", pais: Optional[str] = 
         logger.warning(f"  Nenhum chunk. Pulando.")
         return
 
-    # 3. Batch embed (bge-m3) + upsert into farm_documents — a tabela que
-    #    match_documents_with_context (chamada por consultar_base_conhecimento)
-    #    de fato consulta.
-    total_batches = (len(chunks) + BATCH_SIZE - 1) // BATCH_SIZE
-
-    for i in range(0, len(chunks), BATCH_SIZE):
-        batch_texts = chunks[i : i + BATCH_SIZE]
-        batch_idx   = (i // BATCH_SIZE) + 1
-
-        logger.info(f"  Embedding lote {batch_idx}/{total_batches}...")
-        embeddings = get_embeddings(batch_texts, filepath.name)
-
-        records = []
-        for j, (text, emb) in enumerate(zip(batch_texts, embeddings)):
-            idx = i + j
-            records.append({
-                "pmo_id":             None,  # documento institucional global
-                "document_name":      filepath.name,
-                "chunk_index":        idx,
-                "content":            text,
-                "embedding_1024":     pad(emb),
-                "chunk_hash":         chunk_hash(filepath.name, idx, text),
-                "source_document_id": filepath.stem,
-                # País a que o documento se aplica (None = universal). A busca
-                # só devolve documento global do país da propriedade — ver
-                # supabase/migrations/20261008130000_farm_documents_pais.sql.
-                "pais":               pais,
-            })
-
-        upsert_farm_documents(records)
-        time.sleep(SLEEP_BETWEEN_BATCHES)
-
+    replace_document_chunks(filepath.name, filepath.stem, chunks, pais)
     logger.info(f"  ✅ {filepath.name} concluído ({len(chunks)} chunks em farm_documents).")
+
+
+def replace_document_chunks(doc_name: str, source_id: str, chunks: List[str], pais: Optional[str]) -> None:
+    """Embeda (bge-m3) e grava os trechos de um documento global em farm_documents —
+    a tabela que match_documents_with_context (chamada por consultar_base_conhecimento)
+    de fato consulta.
+
+    Substitui a versão anterior do documento: o upsert por chunk_hash não apaga
+    trecho que deixou de existir (texto mudou, páginas excluídas, chunking novo),
+    e o trecho velho continuaria sendo recuperado ao lado do novo. Todos os
+    embeddings são gerados ANTES de apagar, para uma falha no OpenRouter não
+    deixar o documento sumido da base.
+    """
+    embeddings: List[List[float]] = []
+    total_batches = (len(chunks) + BATCH_SIZE - 1) // BATCH_SIZE
+    for i in range(0, len(chunks), BATCH_SIZE):
+        logger.info(f"  Embedding lote {(i // BATCH_SIZE) + 1}/{total_batches}...")
+        embeddings.extend(get_embeddings(chunks[i : i + BATCH_SIZE], doc_name))
+        if i + BATCH_SIZE < len(chunks):
+            time.sleep(SLEEP_BETWEEN_BATCHES)
+
+    removed = (
+        sb.table("farm_documents").delete()
+        .eq("document_name", doc_name)
+        .or_("pmo_id.is.null,pmo_id.eq.0")
+        .execute()
+    )
+    if removed.data:
+        logger.info(f"  {len(removed.data)} trecho(s) da versão anterior removido(s).")
+
+    records = [{
+        "pmo_id":             None,  # documento institucional global
+        "document_name":      doc_name,
+        "chunk_index":        idx,
+        "content":            text,
+        "embedding_1024":     pad(emb),
+        "chunk_hash":         chunk_hash(doc_name, idx, text),
+        "source_document_id": source_id,
+        # País a que o documento se aplica (None = universal). A busca
+        # só devolve documento global do país da propriedade — ver
+        # supabase/migrations/20261008130000_farm_documents_pais.sql.
+        "pais":               pais,
+    } for idx, (text, emb) in enumerate(zip(chunks, embeddings))]
+    for i in range(0, len(records), BATCH_SIZE):
+        upsert_farm_documents(records[i : i + BATCH_SIZE])
+
+
+# ── Fichas de variedades do IIAM (um trecho por variedade) ────────────────────
+
+def variedade_chunks(csv_path: Path) -> List[str]:
+    """Um trecho autossuficiente por ficha: cultura, nome, página e o texto
+    original da ficha. A busca recupera a ficha inteira, nunca metade de duas."""
+    import csv
+    with open(csv_path, encoding="utf-8", newline="") as f:
+        rows = list(csv.DictReader(l for l in f if not l.startswith("#")))
+    chunks = []
+    for r in rows:
+        resumo = [f"{rotulo}: {r[campo]}" for rotulo, campo in (
+            ("Tipo", "tipo"), ("Maturação", "maturacao"),
+            ("Rendimento", "rendimento"), ("Ano de libertação", "ano_libertacao"),
+        ) if r[campo]]
+        partes = [
+            f"{r['fonte']} — ficha de variedade (pág. {r['pagina']}).",
+            f"Cultura: {r['cultura']}. Variedade: {r['variedade']}.",
+        ]
+        if resumo:
+            partes.append("; ".join(resumo) + ".")
+        if r["nota_curadoria"]:
+            partes.append(f"Nota de curadoria: {r['nota_curadoria']}")
+        partes.append(f"Texto da ficha: {r['ficha']}")
+        chunks.append("\n".join(partes))
+    return chunks
+
+
+def process_variedades_iiam() -> None:
+    chunks = variedade_chunks(VARIEDADES_IIAM_CSV)
+    logger.info(f"📄 Fichas de variedades do IIAM: {len(chunks)} trechos  pais=MZ")
+    replace_document_chunks(VARIEDADES_IIAM_DOC, VARIEDADES_IIAM_DOC, chunks, "MZ")
+    logger.info(f"  ✅ {VARIEDADES_IIAM_DOC} concluído.")
 
 
 # ── PDF discovery ──────────────────────────────────────────────────────────────
@@ -405,7 +477,13 @@ def main() -> None:
                          help=f"Diretório de PDFs (padrão: {DEFAULT_INPUT_DIR})")
     parser.add_argument("--pais", type=str, default="BR",
                          help="País dos documentos (ISO alfa-2, ex.: BR, MZ) ou 'universal'. Padrão: BR (acervo atual).")
+    parser.add_argument("--variedades-iiam", action="store_true",
+                         help=f"Só (re)grava as fichas de {VARIEDADES_IIAM_CSV.name} como trechos (pais=MZ) e sai.")
     args = parser.parse_args()
+
+    if args.variedades_iiam:
+        process_variedades_iiam()
+        return
 
     pais = None if args.pais.lower() == "universal" else args.pais.upper()
     if pais is not None and not re.fullmatch(r"[A-Z]{2}", pais):
