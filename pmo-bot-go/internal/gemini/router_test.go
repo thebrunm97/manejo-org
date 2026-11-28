@@ -36,7 +36,9 @@ func TestGetPromptForIntent(t *testing.T) {
 		{
 			name:           "RAG intent returns agronomist prompt",
 			intent:         llm.IntentRAG,
-			expectContains: "Consultor Orgânico Especialista",
+			// Só o agronomist.md tem esta frase; desde o #20 ele não se
+			// apresenta mais como "Consultor Orgânico Especialista".
+			expectContains: "responsável pela consultoria técnica da fazenda",
 		},
 		{
 			name:           "DATABASE intent returns db_operator prompt",

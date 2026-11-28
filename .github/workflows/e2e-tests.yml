@@ -8,7 +8,10 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # Fixo em 24.04: o ubuntu-latest passou a ser 26.04, que o Playwright 1.57
+    # não suporta ("Playwright does not support chromium on ubuntu26.04-x64").
+    # Voltar a ubuntu-latest quando o Playwright do pmo-frontend suportar 26.04.
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     
     defaults:
