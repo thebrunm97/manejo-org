@@ -233,7 +233,10 @@ def clean_text(text: str) -> str:
         stripped = line.strip()
         if re.search(r"\.{4,}", stripped):          # TOC entry (.......)
             continue
-        if 0 < len(stripped) < 20 and not stripped.startswith("#"):  # orphan/page num
+        # Só número de página ("12", "- 7 -", "xiv"). Antes caía toda linha com
+        # menos de 20 caracteres, e com ela conteúdo: "40 gotas por mL.",
+        # "NUNCA CONGELAR.", "Maio a Agosto." e títulos de seção ("Rega").
+        if re.fullmatch(r"[-–—\s]*(\d{1,4}|[ivxlcdm]{1,7})[-–—\s]*", stripped, re.I):
             continue
         cleaned.append(line)
     return re.sub(r"\n{3,}", "\n\n", "\n".join(cleaned)).strip()
