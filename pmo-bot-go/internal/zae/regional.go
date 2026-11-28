@@ -87,3 +87,24 @@ func (t *Tabela) Regionais(cultura string) []ReferenciaRegional {
 	}
 	return out
 }
+
+// SplitRegionais separa as referências de uma cultura em vigentes (safra mais
+// recente) e anteriores (safras antigas, guardadas para comparação entre anos).
+// Anteriores nunca devem ser citadas como janela atual.
+func (t *Tabela) SplitRegionais(cultura string) (vigentes, anteriores []ReferenciaRegional) {
+	todas := t.Regionais(cultura)
+	mais := 0
+	for _, r := range todas {
+		if r.FonteAno > mais {
+			mais = r.FonteAno
+		}
+	}
+	for _, r := range todas {
+		if r.FonteAno == mais {
+			vigentes = append(vigentes, r)
+		} else {
+			anteriores = append(anteriores, r)
+		}
+	}
+	return vigentes, anteriores
+}

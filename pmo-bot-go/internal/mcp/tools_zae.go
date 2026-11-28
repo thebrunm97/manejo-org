@@ -16,7 +16,7 @@ import (
 // forma da resposta precisa impedir que o produtor tome uma referência
 // publicada por zoneamento oficial — que lá nem existe.
 const mensagemReferenciaMZ = "ATENÇÃO — Moçambique NÃO tem zoneamento oficial de risco climático como o ZARC do Brasil. " +
-	"Estas são janelas de sementeira de REFERÊNCIA do calendário agrícola da FAO, por zona agroecológica do IIAM. " +
+	"Estas são janelas de sementeira de REFERÊNCIA do calendário agrícola da FAO, por zona agroecológica (R1–R10). " +
 	"Ao responder você é OBRIGADO a: (1) dizer que é uma referência publicada, não uma recomendação oficial nem validada por agrónomo local; " +
 	"(2) citar a fonte e o ano; (3) usar as datas exatamente como vieram (dd/mm, podem atravessar a virada do ano) — " +
 	"NÃO invente percentuais de risco, datas nem épocas que não vieram; " +
@@ -87,13 +87,19 @@ func (s *Server) janelaMocambique(ctx context.Context, cultura, distrito, provin
 		base["variedades_iiam"] = vs
 	}
 
-	// Referências por região (Prognóstico do MADER, safra 2021-22): não são
-	// zonas, então vêm numa chave à parte e não entram nas janelas por zona.
-	refs := s.zae.Regionais(cultura)
+	// Referências por região (Prognósticos do MADER/MAAP): não são zonas, então
+	// vêm numa chave à parte e não entram nas janelas por zona. A safra mais
+	// recente é a vigente; as anteriores ficam só para comparação entre anos.
+	refs, anteriores := s.zae.SplitRegionais(cultura)
 	if len(refs) > 0 {
 		base["referencias_regionais"] = refs
-		base["nota_referencias_regionais"] = "Estas são referências por REGIÃO de outra fonte oficial, para a safra indicada em fonte_ano. " +
+		base["nota_referencias_regionais"] = "Estas são referências por REGIÃO de outra fonte oficial, para a safra indicada em fonte_ano (a mais recente). " +
 			"Não são a janela da zona do produtor. Cite a região e a safra, e diga que a época pode variar com a chuva local."
+	}
+	if len(anteriores) > 0 {
+		base["referencias_regionais_anteriores"] = anteriores
+		base["nota_anteriores"] = "Safras antigas, só para comparar entre anos quando o produtor pedir. " +
+			"NUNCA as apresente como a época atual."
 	}
 
 	if len(janelas) == 0 {
@@ -107,8 +113,8 @@ func (s *Server) janelaMocambique(ctx context.Context, cultura, distrito, provin
 		base["culturas_com_dado_na_zona"] = lista
 		if len(refs) > 0 {
 			base["message"] = mensagemVariedadesMZ +
-				"Não há janela da FAO para esta cultura nesta zona, mas existe referência regional do MADER " +
-				"(safra 2021-22), em referencias_regionais. Cite a região e a safra, sem dizer que a zona " +
+				"Não há janela da FAO para esta cultura nesta zona, mas existe referência regional oficial " +
+				"(safra mais recente, ver fonte e fonte_ano), em referencias_regionais. Cite a região, a safra e a fonte, sem dizer que a zona " +
 				"da machamba tem janela oficial. NÃO invente datas."
 		} else {
 			base["message"] = mensagemVariedadesMZ + "Não há janela de sementeira publicada para esta cultura nesta zona de Moçambique (a fonte, o calendário da FAO, " +
@@ -135,6 +141,12 @@ func (s *Server) janelaMocambique(ctx context.Context, cultura, distrito, provin
 	base["status"] = "referencia_nao_oficial"
 	base["janelas_referencia"] = janelas
 	base["message"] = mensagemReferenciaMZ + " " + mensagemVariedadesMZ
+	if len(refs) > 0 {
+		base["message"] = base["message"].(string) +
+			" Além disso, há referência REGIONAL oficial (safra mais recente, ver fonte e fonte_ano), em referencias_regionais. " +
+			"Inclua-a na resposta, em frase separada, citando a região, a safra e a fonte como vieram. " +
+			"Não a apresente como janela da zona da machamba."
+	}
 	return base
 }
 

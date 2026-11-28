@@ -4,7 +4,8 @@ do FAO Crop Calendar (calendário agrícola por zona agroecológica).
 
 Moçambique não tem um equivalente digital ao ZARC brasileiro. O que existe de
 aberto e estruturado é o calendário da FAO, organizado pelas 10 zonas
-agroecológicas (R1–R10) do IIAM. Este script baixa esse calendário e escreve:
+agroecológicas (R1–R10); a origem desse zoneamento ainda não foi confirmada
+em fonte primária. Este script baixa esse calendário e escreve:
 
   pmo-bot-go/internal/zae/dados/zonas.csv        (gerado — não editar à mão)
   pmo-bot-go/internal/zae/dados/janelas_fao.csv  (gerado — não editar à mão)
@@ -41,7 +42,7 @@ import sys
 import urllib.request
 
 API = "https://api-cropcalendar.apps.fao.org/api/v1/countries/MZ"
-FONTE = "FAO Crop Calendar (Moçambique, zonas agroecológicas do IIAM)"
+FONTE = "FAO Crop Calendar (Moçambique)"
 SAIDA = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "..", "..", "pmo-bot-go", "internal", "zae", "dados"
 )
